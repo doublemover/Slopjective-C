@@ -22783,6 +22783,44 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
            << "},\n";
+  manifest << "  \"runtime_reflection_visibility_coherence_diagnostics_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeReflectionVisibilityCoherenceDiagnosticsSurfaceContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"registration_descriptor_artifact\":\""
+           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"runtime_reflection_query_surface_contract_id\":\""
+           << kObjc3RuntimeReflectionQuerySurfaceContractId
+           << "\",\"runtime_category_attachment_merged_dispatch_surface_contract_id\":\""
+           << kObjc3RuntimeCategoryAttachmentMergedDispatchSurfaceContractId
+           << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
+           << ",\"property_metadata_reflection_contract_id\":\""
+           << kObjc3RuntimePropertyMetadataReflectionContractId
+           << "\",\"runtime_backed_object_ownership_attribute_surface_contract_id\":\""
+           << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+           << "\",\"public_header_path\":\""
+           << runtime_bootstrap_api.public_header_path
+           << "\",\"internal_header_path\":\""
+           << kObjc3RuntimeBootstrapInternalHeaderPath
+           << "\",\"property_registry_state_snapshot_symbol\":\"objc3_runtime_copy_property_registry_state_for_testing\""
+           << ",\"property_entry_snapshot_symbol\":\"objc3_runtime_copy_property_entry_for_testing\""
+           << ",\"realized_class_entry_snapshot_symbol\":\"objc3_runtime_copy_realized_class_entry_for_testing\""
+           << ",\"protocol_conformance_query_symbol\":\"objc3_runtime_copy_protocol_conformance_query_for_testing\""
+           << ",\"method_cache_state_snapshot_symbol\":\"objc3_runtime_copy_method_cache_state_for_testing\""
+           << ",\"reflection_visibility_boundary_model\":\"private-testing-snapshots-remain-the-only-reflection-visibility-surface-and-publish-runtime-owned-class-property-and-protocol-state\""
+           << ",\"fail_closed_lookup_diagnostic_model\":\"missing-class-and-property-lookups-publish-found-zero-without-mutating-property-registry-or-realized-class-state\""
+           << ",\"runtime_coherence_diagnostic_model\":\"reflected-property-selectors-owner-identities-slot-layout-and-ownership-profiles-must-match-live-dispatch-realized-class-and-attached-protocol-state\""
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
   manifest << "  \"runtime_installation_abi_surface\":{\"contract_id\":\""
            << kObjc3RuntimeInstallationAbiSurfaceContractId
            << "\",\"public_header_path\":\""

@@ -139,6 +139,29 @@ Category attachment and merged dispatch surface:
   - attached categories publish owner and name through realized class entries
     and protocol-conformance queries
 
+Reflection visibility and runtime coherence diagnostics surface:
+
+- emitted compile-manifest key:
+  - `runtime_reflection_visibility_coherence_diagnostics_surface`
+- private coherence query boundary:
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+- semantic boundary:
+  - private testing snapshots remain the only reflection visibility surface over
+    runtime-owned class, property, and protocol state
+  - missing class/property lookups must fail closed without mutating property
+    registry or realized-class state
+  - reflected selector, owner-identity, slot-layout, and ownership-profile
+    metadata must remain coherent with live dispatch and attached-protocol state
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records

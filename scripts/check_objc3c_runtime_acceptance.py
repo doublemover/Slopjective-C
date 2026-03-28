@@ -47,6 +47,9 @@ RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID = (
 RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.category.attachment.merged.dispatch.surface.v1"
 )
+RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -218,6 +221,9 @@ def compile_fixture_with_args(
     )
     category_attachment_merged_dispatch_surface = manifest.get(
         "runtime_category_attachment_merged_dispatch_surface"
+    )
+    reflection_visibility_coherence_diagnostics_surface = manifest.get(
+        "runtime_reflection_visibility_coherence_diagnostics_surface"
     )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
@@ -1155,6 +1161,113 @@ def compile_fixture_with_args(
         raise RuntimeError(
             "runtime_category_attachment_merged_dispatch_surface must require a linked runtime probe"
         )
+    if not isinstance(reflection_visibility_coherence_diagnostics_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_reflection_visibility_coherence_diagnostics_surface"
+        )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get("contract_id")
+        != RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_reflection_visibility_coherence_diagnostics_surface contract"
+        )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if reflection_visibility_coherence_diagnostics_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface drifted from the emitted object artifact path"
+        )
+    if reflection_visibility_coherence_diagnostics_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_reflection_visibility_coherence_diagnostics_fields = {
+        "runtime_reflection_query_surface_contract_id": (
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID
+        ),
+        "runtime_category_attachment_merged_dispatch_surface_contract_id": (
+            RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID
+        ),
+        "dispatch_accessor_runtime_abi_surface_contract_id": (
+            "objc3c.runtime.dispatch_accessor.abi.surface.v1"
+        ),
+        "property_metadata_reflection_contract_id": (
+            "objc3c.runtime.property.metadata.reflection.v1"
+        ),
+        "runtime_backed_object_ownership_attribute_surface_contract_id": (
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1"
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "property_registry_state_snapshot_symbol": (
+            "objc3_runtime_copy_property_registry_state_for_testing"
+        ),
+        "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+        "realized_class_entry_snapshot_symbol": "objc3_runtime_copy_realized_class_entry_for_testing",
+        "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        "method_cache_state_snapshot_symbol": "objc3_runtime_copy_method_cache_state_for_testing",
+        "reflection_visibility_boundary_model": (
+            "private-testing-snapshots-remain-the-only-reflection-visibility-surface-and-publish-runtime-owned-class-property-and-protocol-state"
+        ),
+        "fail_closed_lookup_diagnostic_model": (
+            "missing-class-and-property-lookups-publish-found-zero-without-mutating-property-registry-or-realized-class-state"
+        ),
+        "runtime_coherence_diagnostic_model": (
+            "reflected-property-selectors-owner-identities-slot-layout-and-ownership-profiles-must-match-live-dispatch-realized-class-and-attached-protocol-state"
+        ),
+    }
+    for field, expected_value in expected_reflection_visibility_coherence_diagnostics_fields.items():
+        if reflection_visibility_coherence_diagnostics_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_reflection_visibility_coherence_diagnostics_surface drifted from {field}"
+            )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get(
+            "requires_real_compile_output"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface must require real compile output"
+        )
+    if (
+        reflection_visibility_coherence_diagnostics_surface.get(
+            "requires_linked_runtime_probe"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_reflection_visibility_coherence_diagnostics_surface must require a linked runtime probe"
+        )
     if not isinstance(runtime_installation_abi_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_installation_abi_surface")
     if (
@@ -1919,6 +2032,71 @@ def build_runtime_category_attachment_merged_dispatch_surface(
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_reflection_visibility_coherence_diagnostics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {
+            "canonical-sample-set",
+            "property-reflection",
+            "property-execution",
+            "storage-ownership-reflection",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
+            RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
+            "objc3c.runtime.dispatch_accessor.abi.surface.v1",
+            "objc3c.runtime.property.metadata.reflection.v1",
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1",
+        ],
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_coherence_query_boundary": [
+            "objc3_runtime_copy_property_registry_state_for_testing",
+            "objc3_runtime_copy_property_entry_for_testing",
+            "objc3_runtime_copy_realized_class_entry_for_testing",
+            "objc3_runtime_copy_protocol_conformance_query_for_testing",
+            "objc3_runtime_copy_method_cache_state_for_testing",
+        ],
+        "reflection_visibility_boundary_model": (
+            "private-testing-snapshots-remain-the-only-reflection-visibility-surface-and-publish-runtime-owned-class-property-and-protocol-state"
+        ),
+        "fail_closed_lookup_diagnostic_model": (
+            "missing-class-and-property-lookups-publish-found-zero-without-mutating-property-registry-or-realized-class-state"
+        ),
+        "runtime_coherence_diagnostic_model": (
+            "reflected-property-selectors-owner-identities-slot-layout-and-ownership-profiles-must-match-live-dispatch-realized-class-and-attached-protocol-state"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -3901,6 +4079,9 @@ def main() -> int:
         ),
         "runtime_category_attachment_merged_dispatch_surface": (
             build_runtime_category_attachment_merged_dispatch_surface(results)
+        ),
+        "runtime_reflection_visibility_coherence_diagnostics_surface": (
+            build_runtime_reflection_visibility_coherence_diagnostics_surface(results)
         ),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),

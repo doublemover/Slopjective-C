@@ -163,6 +163,21 @@ Category attachment and merged dispatch source of truth:
   extend that emitted surface instead of rederiving category merge truth from
   ad hoc probe payloads or stale milestone notes
 
+Reflection visibility and runtime coherence diagnostics source of truth:
+
+- compile publication exposes the coupled reflection-visibility and runtime
+  coherence diagnostics boundary through the emitted compile-manifest key
+  `runtime_reflection_visibility_coherence_diagnostics_surface`
+- that surface must point at the reflection query surface, category attachment
+  and merged dispatch surface, dispatch/accessor ABI surface, property metadata
+  reflection contract, ownership-backed property metadata contract, and the
+  private property-registry, property-entry, realized-class, protocol-
+  conformance, and method-cache query symbols that the live executable probes
+  consume
+- later reflection hardening and property/runtime consistency work must extend
+  that emitted surface instead of reconstructing coherence guarantees from ad
+  hoc probe payloads, milestone-local summaries, or source-only manifests
+
 Bootstrap legality and installation semantics:
 
 - duplicate translation-unit identity keys must fail closed with

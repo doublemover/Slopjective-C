@@ -249,6 +249,13 @@ def write_composite_validation_report(
         payload["runtime_category_attachment_merged_dispatch_surface"] = (
             runtime_category_attachment_merged_dispatch_surface
         )
+    runtime_reflection_visibility_coherence_diagnostics_surface = load_surface_from_report(
+        steps, "runtime_reflection_visibility_coherence_diagnostics_surface"
+    )
+    if runtime_reflection_visibility_coherence_diagnostics_surface is not None:
+        payload["runtime_reflection_visibility_coherence_diagnostics_surface"] = (
+            runtime_reflection_visibility_coherence_diagnostics_surface
+        )
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return report_path
 

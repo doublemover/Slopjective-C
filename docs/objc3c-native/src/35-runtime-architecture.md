@@ -383,6 +383,55 @@ dispatch and reflection. Downstream work must extend this emitted surface
 instead of reconstructing category merge truth from ad hoc sidecars or stale
 planning notes.
 
+## Reflection Visibility And Runtime Coherence Diagnostics Surface
+
+- authoritative compile-manifest key:
+  - `runtime_reflection_visibility_coherence_diagnostics_surface`
+- authoritative composed source inputs:
+  - `runtime_reflection_query_surface`
+  - `runtime_category_attachment_merged_dispatch_surface`
+  - `objc3c.runtime.dispatch_accessor.abi.surface.v1`
+  - `objc3c.runtime.property.metadata.reflection.v1`
+  - `objc3c.runtime.backed.object.ownership.attribute.surface.v1`
+- authoritative runtime boundary:
+  - public ABI:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+  - private coherence query boundary:
+    - `objc3_runtime_copy_property_registry_state_for_testing`
+    - `objc3_runtime_copy_property_entry_for_testing`
+    - `objc3_runtime_copy_realized_class_entry_for_testing`
+    - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+    - `objc3_runtime_copy_method_cache_state_for_testing`
+- frozen semantic models:
+  - reflection visibility boundary:
+    - `private-testing-snapshots-remain-the-only-reflection-visibility-surface-and-publish-runtime-owned-class-property-and-protocol-state`
+  - fail-closed lookup diagnostics:
+    - `missing-class-and-property-lookups-publish-found-zero-without-mutating-property-registry-or-realized-class-state`
+  - runtime coherence diagnostics:
+    - `reflected-property-selectors-owner-identities-slot-layout-and-ownership-profiles-must-match-live-dispatch-realized-class-and-attached-protocol-state`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+This is the authoritative reflection-visibility and runtime-coherence
+diagnostics boundary. It freezes the fact that reflection visibility remains on
+the private testing surface, that negative class/property queries fail closed
+without mutating runtime state, and that reflected selector/owner/layout/
+ownership metadata must remain coherent with live dispatch and attached-protocol
+results. Downstream work must extend this emitted surface instead of
+reconstructing coherence from source-only manifests, ad hoc probe payloads, or
+milestone-local notes.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

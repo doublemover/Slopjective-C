@@ -35,6 +35,7 @@ SURFACE_KEYS = (
     "runtime_realization_lookup_semantics_surface",
     "runtime_class_metaclass_protocol_realization_surface",
     "runtime_category_attachment_merged_dispatch_surface",
+    "runtime_reflection_visibility_coherence_diagnostics_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
 )
@@ -193,6 +194,9 @@ def main() -> int:
         ],
         "runtime_category_attachment_merged_dispatch_surface": runtime_acceptance_report[
             "runtime_category_attachment_merged_dispatch_surface"
+        ],
+        "runtime_reflection_visibility_coherence_diagnostics_surface": runtime_acceptance_report[
+            "runtime_reflection_visibility_coherence_diagnostics_surface"
         ],
         "runtime_installation_abi_surface": runtime_acceptance_report["runtime_installation_abi_surface"],
         "runtime_loader_lifecycle_surface": runtime_acceptance_report[

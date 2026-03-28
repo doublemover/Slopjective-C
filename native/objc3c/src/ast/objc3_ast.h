@@ -1139,6 +1139,9 @@ inline constexpr const char *kObjc3RuntimeClassMetaclassProtocolRealizationSurfa
     "objc3c.runtime.class.metaclass.protocol.realization.v1";
 inline constexpr const char *kObjc3RuntimeCategoryAttachmentMergedDispatchSurfaceContractId =
     "objc3c.runtime.category.attachment.merged.dispatch.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeReflectionVisibilityCoherenceDiagnosticsSurfaceContractId =
+        "objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1";
 inline constexpr const char *kObjc3RuntimeInstallationAbiSurfaceContractId =
     "objc3c.runtime.installation.abi.surface.v1";
 inline constexpr const char *kObjc3RuntimeLoaderLifecycleSurfaceContractId =
