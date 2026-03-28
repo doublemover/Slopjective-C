@@ -6549,6 +6549,97 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
     )
 
 
+def check_executable_throw_catch_cleanup_lowering_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "executable-throw-catch-cleanup-lowering"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_c002_error_out_abi_positive.objc3"
+    )
+    obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    ll_text = ll_path.read_text(encoding="utf-8")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    throws_abi = manifest.get("lowering_part6_throws_abi_propagation", {})
+    result_replay = manifest.get("lowering_part6_result_and_bridging_artifact_replay", {})
+    ns_error_bridging = manifest.get("lowering_ns_error_bridging", {})
+    unwind_cleanup = manifest.get("lowering_unwind_cleanup", {})
+    expect(obj_path.is_file(), "expected executable error lowering fixture to emit an object artifact")
+    expect(
+        "objc3_runtime_store_thrown_error_i32" in ll_text,
+        "expected executable error lowering to emit thrown-error store helper calls",
+    )
+    expect(
+        "objc3_runtime_load_thrown_error_i32" in ll_text,
+        "expected executable error lowering to emit thrown-error load helper calls",
+    )
+    expect(
+        "objc3_runtime_bridge_status_error_i32" in ll_text,
+        "expected executable error lowering to emit status-bridge helper calls",
+    )
+    expect(
+        "objc3_runtime_catch_matches_error_i32" in ll_text,
+        "expected executable error lowering to emit catch-match helper calls",
+    )
+    expect(
+        "objc_part6_throws_abi_propagation" in ll_text
+        and "objc_part6_result_and_bridging_artifact_replay" in ll_text,
+        "expected executable error lowering to preserve the part6 lowering metadata packets in emitted LLVM",
+    )
+    expect(
+        isinstance(throws_abi, dict)
+        and throws_abi.get("contract_id")
+        == "objc3c.part6.throws.abi.propagation.lowering.v1",
+        "expected executable error lowering fixture to preserve the throws ABI propagation contract",
+    )
+    expect(
+        "ready_for_runtime_execution=true"
+        in str(throws_abi.get("replay_key", "")),
+        "expected executable error lowering fixture to mark the throws ABI replay packet ready for runtime execution",
+    )
+    expect(
+        isinstance(result_replay, dict)
+        and result_replay.get("contract_id")
+        == "objc3c.part6.result.and.bridging.artifact.replay.v1",
+        "expected executable error lowering fixture to preserve the part6 replay contract",
+    )
+    expect(
+        isinstance(ns_error_bridging, dict)
+        and ns_error_bridging.get("lane_contract")
+        == "objc3c.ns.error.bridging.lowering.v1",
+        "expected executable error lowering fixture to preserve the NSError bridging lowering contract",
+    )
+    expect(
+        isinstance(unwind_cleanup, dict)
+        and unwind_cleanup.get("lane_contract")
+        == "objc3c.unwind.cleanup.lowering.v1",
+        "expected executable error lowering fixture to preserve the unwind cleanup lowering contract",
+    )
+    return CaseResult(
+        case_id="executable-throw-catch-cleanup-lowering",
+        probe="compile-artifact-llvm-helper-lowering",
+        fixture="tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "throws_abi_contract": throws_abi.get("contract_id"),
+            "result_replay_contract": result_replay.get("contract_id"),
+            "ns_error_bridging_contract": ns_error_bridging.get("lane_contract"),
+            "unwind_cleanup_contract": unwind_cleanup.get("lane_contract"),
+            "helper_calls": {
+                "store": "objc3_runtime_store_thrown_error_i32" in ll_text,
+                "load": "objc3_runtime_load_thrown_error_i32" in ll_text,
+                "status_bridge": "objc3_runtime_bridge_status_error_i32" in ll_text,
+                "catch_match": "objc3_runtime_catch_matches_error_i32" in ll_text,
+            },
+        },
+    )
+
+
 def check_cross_module_storage_reflection_artifact_preservation_case(
     run_dir: Path,
 ) -> CaseResult:
@@ -11693,6 +11784,7 @@ def main() -> int:
         check_executable_try_throw_do_catch_semantics_case(run_dir),
         check_bridging_filter_unwind_compatibility_diagnostics_case(run_dir),
         check_error_lowering_unwind_bridge_helper_surface_case(run_dir),
+        check_executable_throw_catch_cleanup_lowering_case(run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
