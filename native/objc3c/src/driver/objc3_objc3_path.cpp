@@ -699,6 +699,37 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3RuntimeAutoreleaseI32Symbol;
           manifest_inputs.dispatch_accessor_private_testing_surface_only = true;
           manifest_inputs.dispatch_accessor_deterministic = true;
+          manifest_inputs.storage_accessor_runtime_abi_contract_id =
+              kObjc3RuntimeStorageAccessorAbiSurfaceContractId;
+          manifest_inputs.storage_accessor_runtime_abi_boundary_model =
+              "private-bootstrap-internal-property-helper-and-reflection-snapshot-surface-without-public-header-widening";
+          manifest_inputs.storage_accessor_public_header_path =
+              "native/objc3c/src/runtime/objc3_runtime.h";
+          manifest_inputs.storage_accessor_private_header_path =
+              "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
+          manifest_inputs
+              .storage_accessor_property_registry_state_snapshot_symbol =
+              "objc3_runtime_copy_property_registry_state_for_testing";
+          manifest_inputs.storage_accessor_property_entry_snapshot_symbol =
+              "objc3_runtime_copy_property_entry_for_testing";
+          manifest_inputs.storage_accessor_current_property_read_symbol =
+              kObjc3RuntimeReadCurrentPropertyI32Symbol;
+          manifest_inputs.storage_accessor_current_property_write_symbol =
+              kObjc3RuntimeWriteCurrentPropertyI32Symbol;
+          manifest_inputs.storage_accessor_current_property_exchange_symbol =
+              kObjc3RuntimeExchangeCurrentPropertyI32Symbol;
+          manifest_inputs
+              .storage_accessor_bind_current_property_context_symbol =
+              "objc3_runtime_bind_current_property_context_for_testing";
+          manifest_inputs
+              .storage_accessor_clear_current_property_context_symbol =
+              "objc3_runtime_clear_current_property_context_for_testing";
+          manifest_inputs.storage_accessor_weak_current_property_load_symbol =
+              kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol;
+          manifest_inputs.storage_accessor_weak_current_property_store_symbol =
+              kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
+          manifest_inputs.storage_accessor_private_testing_surface_only = true;
+          manifest_inputs.storage_accessor_deterministic = true;
           manifest_inputs.registration_descriptor_source_contract_id =
               registration_descriptor_source_surface_summary.contract_id;
           manifest_inputs.registration_descriptor_source_surface_path =

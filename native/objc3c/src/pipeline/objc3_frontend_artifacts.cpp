@@ -22514,7 +22514,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_synthesis_ivar_binding_contract.ivar_binding_resolved
            << ",\"runtime_property_ivar_storage_accessor_source_surface_contract_id\":\""
            << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
-           << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
+           << "\",\"storage_accessor_runtime_abi_surface_contract_id\":\""
+           << kObjc3RuntimeStorageAccessorAbiSurfaceContractId
+           << "\""
            << ",\"accessor_storage_lowering_metadata_model\":\""
            << kObjc3AccessorStorageLoweringMetadataModel
            << "\",\"accessor_storage_lowering_helper_selection_model\":\""
@@ -22600,6 +22602,34 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ((property_synthesis_ivar_binding_contract.deterministic &&
                 dispatch_surface_classification_contract.deterministic &&
                 message_send_selector_lowering_contract.deterministic &&
+                runtime_shim_host_link_contract.deterministic)
+                   ? "true"
+                   : "false")
+           << "},\n";
+  manifest << "  \"storage_accessor_runtime_abi_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeStorageAccessorAbiSurfaceContractId
+           << "\",\"abi_boundary_model\":\"private-bootstrap-internal-property-helper-and-reflection-snapshot-surface-without-public-header-widening\""
+           << ",\"public_header_path\":\""
+           << runtime_bootstrap_api.public_header_path
+           << "\",\"private_header_path\":\""
+           << kObjc3RuntimeBootstrapInternalHeaderPath
+           << "\",\"property_registry_state_snapshot_symbol\":\"objc3_runtime_copy_property_registry_state_for_testing\""
+           << ",\"property_entry_snapshot_symbol\":\"objc3_runtime_copy_property_entry_for_testing\""
+           << ",\"current_property_read_symbol\":\""
+           << kObjc3RuntimeReadCurrentPropertyI32Symbol
+           << "\",\"current_property_write_symbol\":\""
+           << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+           << "\",\"current_property_exchange_symbol\":\""
+           << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+           << "\",\"bind_current_property_context_symbol\":\"objc3_runtime_bind_current_property_context_for_testing\""
+           << ",\"clear_current_property_context_symbol\":\"objc3_runtime_clear_current_property_context_for_testing\""
+           << ",\"weak_current_property_load_symbol\":\""
+           << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+           << "\",\"weak_current_property_store_symbol\":\""
+           << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+           << "\",\"private_testing_surface_only\":true"
+           << ",\"deterministic\":"
+           << ((property_synthesis_ivar_binding_contract.deterministic &&
                 runtime_shim_host_link_contract.deterministic)
                    ? "true"
                    : "false")
@@ -22943,7 +22973,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3ExecutableIvarLayoutEmissionContractId
            << "\",\"executable_synthesized_accessor_property_lowering_contract_id\":\""
            << kObjc3ExecutableSynthesizedAccessorPropertyLoweringContractId
-           << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
+           << "\",\"storage_accessor_runtime_abi_surface_contract_id\":\""
+           << kObjc3RuntimeStorageAccessorAbiSurfaceContractId
+           << "\""
            << ",\"accessor_storage_lowering_metadata_model\":\""
            << kObjc3AccessorStorageLoweringMetadataModel
            << "\",\"accessor_storage_lowering_helper_selection_model\":\""

@@ -706,6 +706,8 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarSourceModelCompletionCo
     "objc3c.executable.property.ivar.source.model.completion.v1";
 inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId =
     "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1";
+inline constexpr const char *kObjc3RuntimeStorageAccessorAbiSurfaceContractId =
+    "objc3c.runtime.storage.accessor.abi.surface.v1";
 inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceModel =
     "property-ivar-storage-accessor-runtime-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion";
 inline constexpr const char *kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId =

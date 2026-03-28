@@ -38,6 +38,9 @@ RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1"
 )
+RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.storage.accessor.abi.surface.v1"
+)
 RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.property.atomicity.synthesis.reflection.source.surface.v1"
 )
@@ -1000,8 +1003,8 @@ def compile_fixture_with_args(
         "executable_synthesized_accessor_property_lowering_contract_id": (
             "objc3c.executable.synthesized.accessor.property.lowering.v1"
         ),
-        "dispatch_accessor_runtime_abi_surface_contract_id": (
-            "objc3c.runtime.dispatch_accessor.abi.surface.v1"
+        "storage_accessor_runtime_abi_surface_contract_id": (
+            RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID
         ),
         "accessor_storage_lowering_metadata_model": (
             "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path"
@@ -5184,6 +5187,27 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected runtime ABI surface to remain on the private testing boundary")
     expect(runtime_abi_surface.get("deterministic") is True,
            "expected runtime ABI surface to report deterministic handoff")
+    storage_runtime_abi_surface = manifest.get("storage_accessor_runtime_abi_surface", {})
+    expect(isinstance(storage_runtime_abi_surface, dict),
+           "expected compile manifest to publish storage/accessor runtime ABI surface")
+    expect(storage_runtime_abi_surface.get("contract_id") == RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+           "expected storage/accessor runtime ABI surface contract id in compile manifest")
+    expect(storage_runtime_abi_surface.get("abi_boundary_model") == "private-bootstrap-internal-property-helper-and-reflection-snapshot-surface-without-public-header-widening",
+           "expected storage/accessor runtime ABI surface to publish the private helper boundary model")
+    expect(storage_runtime_abi_surface.get("property_registry_state_snapshot_symbol") == "objc3_runtime_copy_property_registry_state_for_testing",
+           "expected storage/accessor runtime ABI surface to publish property registry snapshot helper")
+    expect(storage_runtime_abi_surface.get("property_entry_snapshot_symbol") == "objc3_runtime_copy_property_entry_for_testing",
+           "expected storage/accessor runtime ABI surface to publish property entry snapshot helper")
+    expect(storage_runtime_abi_surface.get("current_property_read_symbol") == "objc3_runtime_read_current_property_i32",
+           "expected storage/accessor runtime ABI surface to publish current-property read helper")
+    expect(storage_runtime_abi_surface.get("current_property_exchange_symbol") == "objc3_runtime_exchange_current_property_i32",
+           "expected storage/accessor runtime ABI surface to publish current-property exchange helper")
+    expect(storage_runtime_abi_surface.get("weak_current_property_load_symbol") == "objc3_runtime_load_weak_current_property_i32",
+           "expected storage/accessor runtime ABI surface to publish weak current-property load helper")
+    expect(storage_runtime_abi_surface.get("private_testing_surface_only") is True,
+           "expected storage/accessor runtime ABI surface to remain private-testing only")
+    expect(storage_runtime_abi_surface.get("deterministic") is True,
+           "expected storage/accessor runtime ABI surface to report deterministic handoff")
     registration_runtime_abi_surface = registration_manifest.get("dispatch_accessor_runtime_abi_surface", {})
     expect(isinstance(registration_runtime_abi_surface, dict),
            "expected runtime registration manifest to publish dispatch/accessor runtime ABI surface")
@@ -5205,6 +5229,23 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected runtime registration manifest ABI surface to remain private-testing only")
     expect(registration_runtime_abi_surface.get("deterministic") is True,
            "expected runtime registration manifest ABI surface to report deterministic handoff")
+    registration_storage_runtime_abi_surface = registration_manifest.get("storage_accessor_runtime_abi_surface", {})
+    expect(isinstance(registration_storage_runtime_abi_surface, dict),
+           "expected runtime registration manifest to publish storage/accessor runtime ABI surface")
+    expect(registration_storage_runtime_abi_surface.get("contract_id") == RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+           "expected storage/accessor runtime ABI surface contract id in runtime registration manifest")
+    expect(registration_storage_runtime_abi_surface.get("property_registry_state_snapshot_symbol") == "objc3_runtime_copy_property_registry_state_for_testing",
+           "expected runtime registration manifest to publish property registry snapshot helper")
+    expect(registration_storage_runtime_abi_surface.get("current_property_write_symbol") == "objc3_runtime_write_current_property_i32",
+           "expected runtime registration manifest to publish current-property write helper")
+    expect(registration_storage_runtime_abi_surface.get("clear_current_property_context_symbol") == "objc3_runtime_clear_current_property_context_for_testing",
+           "expected runtime registration manifest to publish property context clear helper")
+    expect(registration_storage_runtime_abi_surface.get("weak_current_property_store_symbol") == "objc3_runtime_store_weak_current_property_i32",
+           "expected runtime registration manifest to publish weak current-property store helper")
+    expect(registration_storage_runtime_abi_surface.get("private_testing_surface_only") is True,
+           "expected runtime registration manifest storage/accessor ABI surface to remain private-testing only")
+    expect(registration_storage_runtime_abi_surface.get("deterministic") is True,
+           "expected runtime registration manifest storage/accessor ABI surface to report deterministic handoff")
 
     return CaseResult(
         case_id="dispatch-fast-path",
@@ -6305,10 +6346,10 @@ def check_accessor_storage_lowering_metadata_surface_case(
     )
     expect(
         synthesized_lowering_surface.get(
-            "dispatch_accessor_runtime_abi_surface_contract_id"
+            "storage_accessor_runtime_abi_surface_contract_id"
         )
-        == "objc3c.runtime.dispatch_accessor.abi.surface.v1",
-        "expected lowering surface to point at the dispatch/accessor runtime ABI surface",
+        == RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+        "expected lowering surface to point at the storage/accessor runtime ABI surface",
     )
     expect(
         synthesized_lowering_surface.get("accessor_storage_lowering_metadata_model")
@@ -7154,6 +7195,29 @@ def main() -> int:
             "retain_symbol": "objc3_runtime_retain_i32",
             "release_symbol": "objc3_runtime_release_i32",
             "autorelease_symbol": "objc3_runtime_autorelease_i32",
+            "private_testing_surface_only": True,
+            "deterministic": True,
+        },
+        "storage_accessor_runtime_abi_surface": {
+            "contract_id": RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+            "proof_cases": [
+                "dispatch-fast-path",
+                "accessor-storage-lowering-metadata-surface",
+                "property-accessor-layout-lowering",
+                "synthesized-accessor-runtime",
+                "property-layout",
+                "property-execution",
+                "arc-property-helper-abi",
+            ],
+            "property_registry_state_snapshot_symbol": "objc3_runtime_copy_property_registry_state_for_testing",
+            "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+            "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+            "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+            "current_property_exchange_symbol": "objc3_runtime_exchange_current_property_i32",
+            "bind_current_property_context_symbol": "objc3_runtime_bind_current_property_context_for_testing",
+            "clear_current_property_context_symbol": "objc3_runtime_clear_current_property_context_for_testing",
+            "weak_current_property_load_symbol": "objc3_runtime_load_weak_current_property_i32",
+            "weak_current_property_store_symbol": "objc3_runtime_store_weak_current_property_i32",
             "private_testing_surface_only": True,
             "deterministic": True,
         },
