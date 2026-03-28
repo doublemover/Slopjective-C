@@ -6368,7 +6368,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
     run_dir: Path,
 ) -> CaseResult:
     case_dir = run_dir / "property-reflection-accessor-compatibility-diagnostics"
-    accessor_negative = compile_fixture_expect_failure(
+    getter_negative = compile_fixture_expect_failure(
         ROOT
         / "tests"
         / "tooling"
@@ -6378,6 +6378,19 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         case_dir / "accessor-selector-mismatch",
         expected_snippets=[
             "type mismatch: effective getter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+        ],
+        expected_codes=["O3S206"],
+    )
+    setter_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m280_b004_property_setter_selector_compatibility_negative.objc3",
+        case_dir / "setter-selector-mismatch",
+        expected_snippets=[
+            "type mismatch: effective setter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
         ],
         expected_codes=["O3S206"],
     )
@@ -6402,7 +6415,10 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
-            "accessor_selector_negative_diagnostic_count": accessor_negative[
+            "getter_selector_negative_diagnostic_count": getter_negative[
+                "diagnostic_count"
+            ],
+            "setter_selector_negative_diagnostic_count": setter_negative[
                 "diagnostic_count"
             ],
             "reflection_attribute_negative_diagnostic_count": reflection_negative[
