@@ -6506,6 +6506,47 @@ def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
             f"expected ivar record for {owner_name}.{property_name} to preserve destruction order {destroy_index}",
         )
 
+    interface_property_records = [
+        property_index[( "class-interface", "Widget", property_name)]
+        for property_name in ("token", "value", "count")
+    ]
+    implementation_property_records = [
+        property_index[( "class-implementation", "Widget", property_name)]
+        for property_name in ("token", "value", "count")
+    ]
+    interface_init_order = [
+        record.get("executable_ivar_init_order_index")
+        for record in interface_property_records
+    ]
+    interface_destroy_order = [
+        record.get("executable_ivar_destroy_order_index")
+        for record in interface_property_records
+    ]
+    implementation_init_order = [
+        record.get("executable_ivar_init_order_index")
+        for record in implementation_property_records
+    ]
+    implementation_destroy_order = [
+        record.get("executable_ivar_destroy_order_index")
+        for record in implementation_property_records
+    ]
+    expect(
+        interface_init_order == [0, 1, 2],
+        "expected interface property init order to remain monotonic",
+    )
+    expect(
+        interface_destroy_order == [2, 1, 0],
+        "expected interface property destruction order to remain reverse-monotonic",
+    )
+    expect(
+        implementation_init_order == [0, 1, 2],
+        "expected implementation property init order to match interface ordering",
+    )
+    expect(
+        implementation_destroy_order == [2, 1, 0],
+        "expected implementation property destruction order to match interface reverse ordering",
+    )
+
     return CaseResult(
         case_id="property-ivar-ordering-semantics",
         probe="compile-manifest-source-records",
@@ -6521,6 +6562,10 @@ def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
             "count_init_order_index": property_index.get(
                 ("class-interface", "Widget", "count"), {}
             ).get("executable_ivar_init_order_index"),
+            "interface_init_order": interface_init_order,
+            "interface_destroy_order": interface_destroy_order,
+            "implementation_init_order": implementation_init_order,
+            "implementation_destroy_order": implementation_destroy_order,
         },
     )
 
