@@ -65,6 +65,23 @@ Object-model realization surface:
   - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
 
+Reflection query surface:
+
+- emitted compile-manifest key:
+  - `runtime_reflection_query_surface`
+- private query boundary:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+- explicit non-goal:
+  - no public reflection ABI widening beyond the current runtime header
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records

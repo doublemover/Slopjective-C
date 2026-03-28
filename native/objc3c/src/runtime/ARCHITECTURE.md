@@ -108,6 +108,18 @@ Object-model realization source of truth:
   rather than rederiving class/category/protocol behavior from sidecars or
   stale milestone notes
 
+Reflection query source of truth:
+
+- compile publication exposes the coupled reflection boundary through the
+  emitted compile-manifest key `runtime_reflection_query_surface`
+- that surface must point at the realization source surface, dispatch/accessor
+  ABI surface, property metadata reflection contract, ownership-backed property
+  metadata contract, and the private realized-class/property/protocol query
+  symbols that current executable probes consume
+- later reflection-query completion and conformance work must extend that
+  private testing surface rather than widening a public reflection ABI or
+  reconstructing query answers from source text
+
 Bootstrap legality and installation semantics:
 
 - duplicate translation-unit identity keys must fail closed with

@@ -286,6 +286,40 @@ later realization and reflection work must consume. Downstream work must extend
 this emitted surface rather than rederiving realized graph truth from
 sidecars, stale milestone notes, or synthetic probes.
 
+## Reflection Query Surface
+
+- authoritative compile-manifest key:
+  - `runtime_reflection_query_surface`
+- authoritative composed source inputs:
+  - `runtime_object_model_realization_source_surface`
+  - `objc3c.runtime.dispatch_accessor.abi.surface.v1`
+  - `objc3c.runtime.property.metadata.reflection.v1`
+  - `objc3c.runtime.backed.object.ownership.attribute.surface.v1`
+- authoritative query API boundary model:
+  - `private-testing-snapshots-over-runtime-owned-realized-class-property-and-protocol-metadata-with-no-public-reflection-abi`
+- authoritative private query symbols:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+This is the authoritative reflection-query source and API boundary. It freezes
+the fact that current reflection queries are runtime-backed, compile-coupled,
+and exposed only through the private testing snapshots over realized
+class/property/protocol metadata. Downstream work must extend this surface
+instead of inventing a public reflection ABI or recovering reflection answers
+from source-side manifests alone.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

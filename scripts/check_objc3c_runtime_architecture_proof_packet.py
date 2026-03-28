@@ -31,6 +31,7 @@ SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
     "runtime_object_model_realization_source_surface",
+    "runtime_reflection_query_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
 )
@@ -177,6 +178,9 @@ def main() -> int:
         "acceptance_suite_surface": runtime_acceptance_report["acceptance_suite_surface"],
         "runtime_object_model_realization_source_surface": runtime_acceptance_report[
             "runtime_object_model_realization_source_surface"
+        ],
+        "runtime_reflection_query_surface": runtime_acceptance_report[
+            "runtime_reflection_query_surface"
         ],
         "runtime_installation_abi_surface": runtime_acceptance_report["runtime_installation_abi_surface"],
         "runtime_loader_lifecycle_surface": runtime_acceptance_report[

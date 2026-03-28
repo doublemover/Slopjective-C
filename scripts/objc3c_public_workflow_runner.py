@@ -223,6 +223,11 @@ def write_composite_validation_report(
         payload["runtime_object_model_realization_source_surface"] = (
             runtime_object_model_realization_source_surface
         )
+    runtime_reflection_query_surface = load_surface_from_report(
+        steps, "runtime_reflection_query_surface"
+    )
+    if runtime_reflection_query_surface is not None:
+        payload["runtime_reflection_query_surface"] = runtime_reflection_query_surface
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return report_path
 
