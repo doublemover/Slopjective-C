@@ -6257,6 +6257,35 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
         "expected no-redeclaration property synthesis fixture to publish two resolved ivar bindings",
     )
     expect(
+        lowering_surface.get("synthesized_accessor_owner_entries") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two synthesized accessor owner entries",
+    )
+    expect(
+        lowering_surface.get("synthesized_getter_entries") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two synthesized getter entries",
+    )
+    expect(
+        lowering_surface.get("synthesized_setter_entries") == 1,
+        "expected no-redeclaration property synthesis fixture to publish one synthesized setter entry",
+    )
+    expect(
+        lowering_surface.get("current_property_read_entries") == 2,
+        "expected no-redeclaration property synthesis fixture to route both getters through current-property reads",
+    )
+    expect(
+        lowering_surface.get("current_property_exchange_entries") == 1,
+        "expected no-redeclaration property synthesis fixture to route the strong setter through current-property exchange",
+    )
+    expect(
+        lowering_surface.get("current_property_write_entries") == 0,
+        "expected no-redeclaration property synthesis fixture to avoid plain current-property writes for the strong setter path",
+    )
+    expect(
+        lowering_surface.get("weak_current_property_load_entries") == 0
+        and lowering_surface.get("weak_current_property_store_entries") == 0,
+        "expected no-redeclaration property synthesis fixture to avoid weak helper selection",
+    )
+    expect(
         registration_manifest.get("property_descriptor_count") == 2,
         "expected no-redeclaration property synthesis fixture to publish two property descriptors",
     )
@@ -6318,6 +6347,15 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
             ),
             "implementation_property_redeclaration_sites": lowering_surface.get(
                 "implementation_property_redeclaration_sites"
+            ),
+            "synthesized_getter_entries": lowering_surface.get(
+                "synthesized_getter_entries"
+            ),
+            "synthesized_setter_entries": lowering_surface.get(
+                "synthesized_setter_entries"
+            ),
+            "current_property_exchange_entries": lowering_surface.get(
+                "current_property_exchange_entries"
             ),
             "negative_incompatible_redeclaration_diagnostic_count": incompatible_negative[
                 "diagnostic_count"
