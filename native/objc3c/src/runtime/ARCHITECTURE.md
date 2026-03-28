@@ -120,6 +120,21 @@ Reflection query source of truth:
   private testing surface rather than widening a public reflection ABI or
   reconstructing query answers from source text
 
+Realization and lookup semantics source of truth:
+
+- compile publication exposes the coupled realization/lookup semantics boundary
+  through the emitted compile-manifest key
+  `runtime_realization_lookup_semantics_surface`
+- that surface must point at the realization source surface, reflection query
+  surface, dispatch/accessor ABI surface, runtime selector/materialization
+  entrypoints, and the private selector-table, method-cache, realized-class,
+  and protocol-conformance query symbols that the live executable probes
+  consume
+- later class/metaclass realization, category attachment, reflection
+  visibility, and runnable object-model conformance work must consume that
+  emitted surface instead of inferring lookup order from ad hoc probe logic or
+  stale milestone notes
+
 Bootstrap legality and installation semantics:
 
 - duplicate translation-unit identity keys must fail closed with

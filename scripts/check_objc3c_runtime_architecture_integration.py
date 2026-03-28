@@ -39,6 +39,7 @@ SURFACE_KEYS = (
     "acceptance_suite_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_reflection_query_surface",
+    "runtime_realization_lookup_semantics_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
 )
@@ -253,6 +254,9 @@ def main() -> int:
         ],
         "runtime_reflection_query_surface": public_workflow_report[
             "runtime_reflection_query_surface"
+        ],
+        "runtime_realization_lookup_semantics_surface": public_workflow_report[
+            "runtime_realization_lookup_semantics_surface"
         ],
         "runtime_installation_abi_surface": public_workflow_report["runtime_installation_abi_surface"],
         "runtime_loader_lifecycle_surface": public_workflow_report[

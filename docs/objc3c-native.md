@@ -320,6 +320,49 @@ class/property/protocol metadata. Downstream work must extend this surface
 instead of inventing a public reflection ABI or recovering reflection answers
 from source-side manifests alone.
 
+## Realization And Lookup Semantics Surface
+
+- authoritative compile-manifest key:
+  - `runtime_realization_lookup_semantics_surface`
+- authoritative composed source inputs:
+  - `runtime_object_model_realization_source_surface`
+  - `runtime_reflection_query_surface`
+  - `objc3c.runtime.dispatch_accessor.abi.surface.v1`
+- authoritative runtime boundary:
+  - public ABI:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+  - private lookup query boundary:
+    - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+    - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+    - `objc3_runtime_copy_method_cache_state_for_testing`
+    - `objc3_runtime_copy_method_cache_entry_for_testing`
+    - `objc3_runtime_copy_realized_class_entry_for_testing`
+    - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- frozen semantic models:
+  - lookup resolution order:
+    - `seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback`
+  - selector materialization:
+    - `metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup`
+  - unresolved selector behavior:
+    - `negative-cache-entry-preserved-and-deterministic-fallback-returned`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+
+This is the authoritative realization and lookup semantics boundary. It freezes
+the live selector-table, method-cache, realized-class, category-attachment, and
+protocol-conformance lookup rules against compile-coupled executable probes
+instead of letting later runtime work infer lookup order from individual probe
+payloads or stale planning notes.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

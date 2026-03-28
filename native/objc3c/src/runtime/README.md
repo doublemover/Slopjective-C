@@ -79,6 +79,22 @@ Reflection query surface:
   - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
   - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+Realization and lookup semantics surface:
+
+- emitted compile-manifest key:
+  - `runtime_realization_lookup_semantics_surface`
+- private lookup query boundary:
+  - `objc3_runtime_copy_selector_lookup_table_state_for_testing`
+  - `objc3_runtime_copy_selector_lookup_entry_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
 - explicit non-goal:
   - no public reflection ABI widening beyond the current runtime header
 

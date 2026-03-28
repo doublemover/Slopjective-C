@@ -38,6 +38,9 @@ RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.reflection.query.surface.v1"
 )
+RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.realization.lookup.semantics.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -201,6 +204,9 @@ def compile_fixture_with_args(
         "runtime_object_model_realization_source_surface"
     )
     reflection_query_surface = manifest.get("runtime_reflection_query_surface")
+    realization_lookup_semantics_surface = manifest.get(
+        "runtime_realization_lookup_semantics_surface"
+    )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
         manifest.get("objc_runtime_registration_descriptor_frontend_closure", {}),
@@ -886,6 +892,93 @@ def compile_fixture_with_args(
         raise RuntimeError(
             "runtime_reflection_query_surface must require a linked runtime probe"
         )
+    if not isinstance(realization_lookup_semantics_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_realization_lookup_semantics_surface"
+        )
+    if (
+        realization_lookup_semantics_surface.get("contract_id")
+        != RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_realization_lookup_semantics_surface contract"
+        )
+    if realization_lookup_semantics_surface.get("compile_manifest_artifact") != manifest_path.name:
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        realization_lookup_semantics_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        realization_lookup_semantics_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if realization_lookup_semantics_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface drifted from the emitted object artifact path"
+        )
+    if realization_lookup_semantics_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_realization_lookup_semantics_fields = {
+        "runtime_object_model_realization_source_surface_contract_id": (
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "runtime_reflection_query_surface_contract_id": (
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID
+        ),
+        "dispatch_accessor_runtime_abi_surface_contract_id": (
+            "objc3c.runtime.dispatch_accessor.abi.surface.v1"
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "registration_entrypoint_symbol": registration_manifest.get("registration_entrypoint_symbol"),
+        "selector_lookup_symbol": "objc3_runtime_lookup_selector",
+        "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+        "selector_lookup_table_state_snapshot_symbol": (
+            "objc3_runtime_copy_selector_lookup_table_state_for_testing"
+        ),
+        "selector_lookup_entry_snapshot_symbol": "objc3_runtime_copy_selector_lookup_entry_for_testing",
+        "method_cache_state_snapshot_symbol": "objc3_runtime_copy_method_cache_state_for_testing",
+        "method_cache_entry_snapshot_symbol": "objc3_runtime_copy_method_cache_entry_for_testing",
+        "realized_class_entry_snapshot_symbol": "objc3_runtime_copy_realized_class_entry_for_testing",
+        "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        "lookup_resolution_order_model": (
+            "seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback"
+        ),
+        "selector_materialization_model": (
+            "metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup"
+        ),
+        "unresolved_selector_behavior_model": (
+            "negative-cache-entry-preserved-and-deterministic-fallback-returned"
+        ),
+    }
+    for field, expected_value in expected_realization_lookup_semantics_fields.items():
+        if realization_lookup_semantics_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_realization_lookup_semantics_surface drifted from {field}"
+            )
+    if realization_lookup_semantics_surface.get("requires_coupled_registration_manifest") is not True:
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface must require the coupled runtime registration manifest"
+        )
+    if realization_lookup_semantics_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface must require real compile output"
+        )
+    if realization_lookup_semantics_surface.get("requires_linked_runtime_probe") is not True:
+        raise RuntimeError(
+            "runtime_realization_lookup_semantics_surface must require a linked runtime probe"
+        )
     if not isinstance(runtime_installation_abi_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_installation_abi_surface")
     if (
@@ -1385,6 +1478,7 @@ def build_runtime_object_model_realization_source_surface(
         for result in results
         if result.case_id in {
             "imported-runtime-packaging-replay",
+            "canonical-dispatch",
             "canonical-sample-set",
             "dispatch-fast-path",
         }
@@ -1415,11 +1509,13 @@ def build_runtime_object_model_realization_source_surface(
         "authoritative_fixture_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+            "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
             "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
+            "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
         ],
@@ -1477,6 +1573,60 @@ def build_runtime_reflection_query_surface(results: list[CaseResult]) -> dict[st
             "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "no_public_reflection_abi": True,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_realization_lookup_semantics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {
+            "canonical-dispatch",
+            "canonical-sample-set",
+            "dispatch-fast-path",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
+        "source_contract_ids": [
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
+            "objc3c.runtime.dispatch_accessor.abi.surface.v1",
+        ],
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_lookup_query_boundary": [
+            "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+            "objc3_runtime_copy_selector_lookup_entry_for_testing",
+            "objc3_runtime_copy_method_cache_state_for_testing",
+            "objc3_runtime_copy_method_cache_entry_for_testing",
+            "objc3_runtime_copy_realized_class_entry_for_testing",
+            "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        ],
+        "lookup_resolution_order_model": (
+            "seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback"
+        ),
+        "selector_materialization_model": (
+            "metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup"
+        ),
+        "unresolved_selector_behavior_model": (
+            "negative-cache-entry-preserved-and-deterministic-fallback-returned"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+        ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,
@@ -2083,14 +2233,29 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     expect(payload.get("alloc_value", 0) != 0, "expected alloc dispatch to return a realized instance receiver")
     expect(payload.get("init_value") == payload.get("alloc_value"), "expected init to preserve the allocated receiver")
     expect(payload.get("new_value", 0) != 0, "expected new dispatch to materialize an instance receiver")
+    expect(payload.get("ignored_value") == payload.get("ignored_expected"),
+           "expected unresolved selector dispatch to return the deterministic fallback value")
+    expect(payload.get("ignored_cached_value") == payload.get("ignored_expected"),
+           "expected cached unresolved selector dispatch to preserve the deterministic fallback value")
 
     worker_query = payload.get("worker_query", {})
     tracer_query = payload.get("tracer_query", {})
     method_state = payload.get("method_state", {})
+    inherited_state = payload.get("inherited_state", {})
+    traced_state = payload.get("traced_state", {})
+    class_state = payload.get("class_state", {})
+    ignored_state = payload.get("ignored_state", {})
+    ignored_cached_state = payload.get("ignored_cached_state", {})
     selector_handles = payload.get("selector_handles", {})
+    selector_table_state = payload.get("selector_table_state", {})
+    traced_selector_entry = payload.get("traced_selector_entry", {})
+    inherited_selector_entry = payload.get("inherited_selector_entry", {})
+    class_selector_entry = payload.get("class_selector_entry", {})
+    ignored_selector_entry = payload.get("ignored_selector_entry", {})
     traced_entry = payload.get("traced_entry", {})
     inherited_entry = payload.get("inherited_entry", {})
     class_entry = payload.get("class_entry", {})
+    ignored_entry = payload.get("ignored_entry", {})
     alloc_entry = payload.get("alloc_entry", {})
     init_entry = payload.get("init_entry", {})
     new_entry = payload.get("new_entry", {})
@@ -2098,9 +2263,9 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     expect(worker_query.get("conforms") == 1, "expected Widget to conform to Worker at runtime")
     expect(tracer_query.get("conforms") == 1, "expected Widget category attachment to satisfy Tracer at runtime")
     expect(method_state.get("live_dispatch_count", 0) >= 6, "expected live dispatch count to cover alloc/init/new/traced/inherited/class")
-    expect(method_state.get("fallback_dispatch_count", 0) == 0, "did not expect canonical dispatch workload to use fallback dispatch")
-    expect(method_state.get("last_selector_stable_id", 0) == selector_handles.get("classValue", 0),
-           "expected last dispatch selector stable id to match the selector pool handle for classValue")
+    expect(method_state.get("fallback_dispatch_count", 0) == 2, "expected canonical dispatch workload to publish both unresolved fallback calls")
+    expect(method_state.get("last_selector_stable_id", 0) == ignored_entry.get("selector_stable_id", 0),
+           "expected last dispatch selector stable id to match the negative-cache ignoredValue selector")
     expect(selector_handles.get("alloc", 0) != 0 and selector_handles.get("tracedValue", 0) != 0,
            "expected canonical dispatch selectors to be interned in the runtime selector pool")
     expect(alloc_entry.get("selector_stable_id", 0) == selector_handles.get("alloc", 0),
@@ -2118,6 +2283,115 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     expect(traced_entry.get("resolved") == 1, "expected tracedValue cache entry to resolve live")
     expect(inherited_entry.get("resolved") == 1, "expected inheritedValue cache entry to resolve live")
     expect(class_entry.get("resolved") == 1, "expected classValue cache entry to resolve live")
+    expect(selector_table_state.get("metadata_backed_selector_count", 0) >= 4,
+           "expected canonical dispatch selector materialization to keep metadata-backed selectors interned")
+    expect(selector_table_state.get("dynamic_selector_count", 0) >= 1,
+           "expected unresolved selector dispatch to intern a dynamic selector entry")
+    expect(selector_table_state.get("last_materialized_selector") == "ignoredValue",
+           "expected ignoredValue to be the last materialized selector after the fallback probe")
+    expect(selector_table_state.get("last_materialized_from_metadata") == 0,
+           "expected ignoredValue to be recorded as a dynamic selector lookup")
+    expect(
+        traced_selector_entry.get("found") == 1
+        and traced_selector_entry.get("metadata_backed") == 1
+        and traced_selector_entry.get("canonical_selector") == "tracedValue",
+        "expected tracedValue to remain metadata-backed in the selector table",
+    )
+    expect(
+        inherited_selector_entry.get("found") == 1
+        and inherited_selector_entry.get("metadata_backed") == 1
+        and inherited_selector_entry.get("canonical_selector") == "inheritedValue",
+        "expected inheritedValue to remain metadata-backed in the selector table",
+    )
+    expect(
+        class_selector_entry.get("found") == 1
+        and class_selector_entry.get("metadata_backed") == 1
+        and class_selector_entry.get("canonical_selector") == "classValue",
+        "expected classValue to remain metadata-backed in the selector table",
+    )
+    expect(
+        ignored_selector_entry.get("found") == 1
+        and ignored_selector_entry.get("metadata_backed") == 0
+        and ignored_selector_entry.get("canonical_selector") == "ignoredValue",
+        "expected ignoredValue to materialize as a dynamic selector-table entry",
+    )
+    expect(
+        inherited_state.get("last_dispatch_used_cache") == 0
+        and inherited_state.get("last_dispatch_resolved_live_method") == 1
+        and inherited_state.get("last_dispatch_fell_back") == 0
+        and inherited_state.get("last_selector_stable_id") == selector_handles.get("inheritedValue", 0)
+        and inherited_state.get("last_normalized_receiver_identity") == 1042
+        and inherited_state.get("last_category_probe_count") == 1
+        and inherited_state.get("last_protocol_probe_count") == 3,
+        "expected inheritedValue to miss cache first, resolve live, and preserve category/protocol probe counts",
+    )
+    expect(
+        traced_state.get("last_dispatch_used_cache") == 0
+        and traced_state.get("last_dispatch_resolved_live_method") == 1
+        and traced_state.get("last_dispatch_fell_back") == 0
+        and traced_state.get("last_selector_stable_id") == selector_handles.get("tracedValue", 0)
+        and traced_state.get("last_normalized_receiver_identity") == 1042
+        and traced_state.get("last_category_probe_count") == 1
+        and traced_state.get("last_protocol_probe_count") == 0,
+        "expected tracedValue to resolve live through the attached category without protocol fallback probes",
+    )
+    expect(
+        class_state.get("last_dispatch_used_cache") == 0
+        and class_state.get("last_dispatch_resolved_live_method") == 1
+        and class_state.get("last_dispatch_fell_back") == 0
+        and class_state.get("last_selector_stable_id") == selector_handles.get("classValue", 0)
+        and class_state.get("last_normalized_receiver_identity") == 1043,
+        "expected classValue to resolve live through the metaclass path",
+    )
+    expect(
+        ignored_state.get("last_dispatch_used_cache") == 0
+        and ignored_state.get("last_dispatch_resolved_live_method") == 0
+        and ignored_state.get("last_dispatch_fell_back") == 1
+        and ignored_state.get("last_selector_stable_id") == ignored_entry.get("selector_stable_id", 0)
+        and ignored_state.get("last_normalized_receiver_identity") == 1042
+        and ignored_state.get("last_category_probe_count") == 1
+        and ignored_state.get("last_protocol_probe_count") == 3,
+        "expected the first ignoredValue dispatch to materialize a negative cache entry and fall back deterministically",
+    )
+    expect(
+        ignored_cached_state.get("last_dispatch_used_cache") == 1
+        and ignored_cached_state.get("last_dispatch_resolved_live_method") == 0
+        and ignored_cached_state.get("last_dispatch_fell_back") == 1
+        and ignored_cached_state.get("last_selector_stable_id") == ignored_entry.get("selector_stable_id", 0)
+        and ignored_cached_state.get("last_normalized_receiver_identity") == 1042
+        and ignored_cached_state.get("last_category_probe_count") == 1
+        and ignored_cached_state.get("last_protocol_probe_count") == 3,
+        "expected the second ignoredValue dispatch to reuse the negative cache entry and preserve probe counts",
+    )
+    expect(
+        traced_entry.get("resolved_owner_identity") == "implementation:Widget(Tracing)::instance_method:tracedValue",
+        "expected tracedValue cache entry to preserve the category implementation owner",
+    )
+    expect(
+        inherited_entry.get("normalized_receiver_identity") == 1042
+        and inherited_entry.get("category_probe_count") == 1
+        and inherited_entry.get("protocol_probe_count") == 3
+        and inherited_entry.get("resolved_class_name") == "Base"
+        and inherited_entry.get("resolved_owner_identity") == "implementation:Base::instance_method:inheritedValue",
+        "expected inheritedValue cache entry to preserve the instance-family lookup result through Base",
+    )
+    expect(
+        class_entry.get("dispatch_family_is_class") == 1
+        and class_entry.get("normalized_receiver_identity") == 1043
+        and class_entry.get("resolved_class_name") == "Widget"
+        and class_entry.get("resolved_owner_identity") == "implementation:Widget::class_method:classValue",
+        "expected classValue cache entry to preserve the metaclass lookup result",
+    )
+    expect(
+        ignored_entry.get("found") == 1
+        and ignored_entry.get("resolved") == 0
+        and ignored_entry.get("dispatch_family_is_class") == 0
+        and ignored_entry.get("normalized_receiver_identity") == 1042
+        and ignored_entry.get("category_probe_count") == 1
+        and ignored_entry.get("protocol_probe_count") == 3
+        and ignored_entry.get("selector") == "ignoredValue",
+        "expected ignoredValue to preserve an unresolved negative cache entry on the canonical instance receiver",
+    )
 
     return CaseResult(
         case_id="canonical-dispatch",
@@ -2131,6 +2405,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
             "class_value": payload["class_value"],
             "live_dispatch_count": method_state["live_dispatch_count"],
             "attached_category_count": payload.get("graph_state", {}).get("attached_category_count"),
+            "ignored_fallback": payload["ignored_expected"],
         },
     )
 
@@ -3287,6 +3562,9 @@ def main() -> int:
             build_runtime_object_model_realization_source_surface(results)
         ),
         "runtime_reflection_query_surface": build_runtime_reflection_query_surface(results),
+        "runtime_realization_lookup_semantics_surface": (
+            build_runtime_realization_lookup_semantics_surface(results)
+        ),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),
         "runtime_loader_lifecycle_surface": build_runtime_loader_lifecycle_surface(results),
