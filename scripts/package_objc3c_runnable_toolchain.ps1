@@ -143,7 +143,9 @@ $requiredRelativeFiles = @(
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp",
-  "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
+  "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+  "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+  "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -172,6 +174,8 @@ $manifestPayload = [ordered]@{
   runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   object_model_probe = "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp"
+  storage_reflection_fixture = "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
+  storage_reflection_probe = "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
