@@ -223,6 +223,13 @@ def write_composite_validation_report(
         payload["runtime_object_model_realization_source_surface"] = (
             runtime_object_model_realization_source_surface
         )
+    runtime_realization_lowering_reflection_artifact_surface = load_surface_from_report(
+        steps, "runtime_realization_lowering_reflection_artifact_surface"
+    )
+    if runtime_realization_lowering_reflection_artifact_surface is not None:
+        payload["runtime_realization_lowering_reflection_artifact_surface"] = (
+            runtime_realization_lowering_reflection_artifact_surface
+        )
     runtime_reflection_query_surface = load_surface_from_report(
         steps, "runtime_reflection_query_surface"
     )

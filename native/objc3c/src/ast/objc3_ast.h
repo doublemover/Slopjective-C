@@ -1131,6 +1131,9 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId =
         "objc3c.runtime.object.model.realization.source.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeRealizationLoweringReflectionArtifactSurfaceContractId =
+        "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1";
 inline constexpr const char *kObjc3RuntimeReflectionQuerySurfaceContractId =
     "objc3c.runtime.reflection.query.surface.v1";
 inline constexpr const char *kObjc3RuntimeRealizationLookupSemanticsSurfaceContractId =

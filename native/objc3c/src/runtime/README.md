@@ -65,6 +65,32 @@ Object-model realization surface:
   - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
 
+Realization lowering and reflection artifact surface:
+
+- emitted compile-manifest key:
+  - `runtime_realization_lowering_reflection_artifact_surface`
+- coupled emitted artifacts:
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.runtime-registration-manifest.json`
+  - `<emit-prefix>.runtime-registration-descriptor.json`
+  - `<emit-prefix>.obj`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.compile-provenance.json`
+- private reflection artifact query boundary:
+  - `objc3_runtime_copy_property_registry_state_for_testing`
+  - `objc3_runtime_copy_property_entry_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+- semantic boundary:
+  - compile manifest, registration descriptor, object, LLVM IR, and compile
+    provenance co-publish realization lowering and reflection artifacts
+  - property metadata and ownership artifacts remain coupled to lowered
+    dispatch/accessor and executable realization-record outputs
+
 Reflection query surface:
 
 - emitted compile-manifest key:

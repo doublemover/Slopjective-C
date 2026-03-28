@@ -286,6 +286,59 @@ later realization and reflection work must consume. Downstream work must extend
 this emitted surface rather than rederiving realized graph truth from
 sidecars, stale milestone notes, or synthetic probes.
 
+## Realization Lowering And Reflection Artifact Surface
+
+- authoritative compile-manifest key:
+  - `runtime_realization_lowering_reflection_artifact_surface`
+- authoritative composed source inputs:
+  - `runtime_object_model_realization_source_surface`
+  - `objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1`
+  - `objc3c.executable.realization.records.v1`
+  - `objc3c.runtime.property.metadata.reflection.v1`
+  - `objc3c.runtime.backed.object.ownership.attribute.surface.v1`
+- coupled emitted artifacts:
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.runtime-registration-manifest.json`
+  - `<emit-prefix>.runtime-registration-descriptor.json`
+  - `<emit-prefix>.obj`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.compile-provenance.json`
+- authoritative runtime boundary:
+  - public ABI:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+  - private reflection artifact query boundary:
+    - `objc3_runtime_copy_property_registry_state_for_testing`
+    - `objc3_runtime_copy_property_entry_for_testing`
+- frozen semantic models:
+  - lowering artifact boundary:
+    - `compile-manifest-registration-descriptor-object-and-llvm-ir-co-publish-realization-lowering-and-reflection-artifacts`
+  - reflection artifact handoff:
+    - `property-metadata-and-ownership-artifacts-remain-coupled-to-lowered-dispatch-accessor-and-executable-realization-record-outputs`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+This is the authoritative realization-lowering and reflection-artifact
+boundary. It freezes the fact that the real compiler co-publishes the manifest,
+descriptor, object, LLVM IR, and provenance artifacts for lowered realization
+records and reflection metadata, and that those artifacts stay coupled to the
+same dispatch/accessor lowering path consumed by live executable probes.
+Downstream work must extend this emitted surface instead of inferring lowering
+truth from ad hoc IR inspection, source-only manifests, or milestone-local
+notes.
+
 ## Reflection Query Surface
 
 - authoritative compile-manifest key:

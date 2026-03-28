@@ -35,6 +35,9 @@ RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.object.model.realization.source.surface.v1"
 )
+RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1"
+)
 RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.reflection.query.surface.v1"
 )
@@ -211,6 +214,9 @@ def compile_fixture_with_args(
     )
     object_model_realization_source_surface = manifest.get(
         "runtime_object_model_realization_source_surface"
+    )
+    realization_lowering_reflection_artifact_surface = manifest.get(
+        "runtime_realization_lowering_reflection_artifact_surface"
     )
     reflection_query_surface = manifest.get("runtime_reflection_query_surface")
     realization_lookup_semantics_surface = manifest.get(
@@ -846,6 +852,124 @@ def compile_fixture_with_args(
     if object_model_realization_source_surface.get("requires_linked_runtime_probe") is not True:
         raise RuntimeError(
             "runtime_object_model_realization_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(realization_lowering_reflection_artifact_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_realization_lowering_reflection_artifact_surface"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get("contract_id")
+        != RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_realization_lowering_reflection_artifact_surface contract"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get(
+            "registration_manifest_artifact"
+        )
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get(
+            "registration_descriptor_artifact"
+        )
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if realization_lowering_reflection_artifact_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface drifted from the emitted object artifact path"
+        )
+    if realization_lowering_reflection_artifact_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_realization_lowering_reflection_artifact_fields = {
+        "runtime_object_model_realization_source_surface_contract_id": (
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "dispatch_and_synthesized_accessor_lowering_surface_contract_id": (
+            "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
+        ),
+        "executable_realization_records_contract_id": (
+            "objc3c.executable.realization.records.v1"
+        ),
+        "property_metadata_reflection_contract_id": (
+            "objc3c.runtime.property.metadata.reflection.v1"
+        ),
+        "runtime_backed_object_ownership_attribute_surface_contract_id": (
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1"
+        ),
+        "runtime_support_library_archive_relative_path": (
+            registration_manifest.get("runtime_support_library_archive_relative_path")
+        ),
+        "registration_entrypoint_symbol": registration_manifest.get("registration_entrypoint_symbol"),
+        "selector_lookup_symbol": "objc3_runtime_lookup_selector",
+        "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+        "property_registry_state_snapshot_symbol": (
+            "objc3_runtime_copy_property_registry_state_for_testing"
+        ),
+        "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+        "lowering_artifact_boundary_model": (
+            "compile-manifest-registration-descriptor-object-and-llvm-ir-co-publish-realization-lowering-and-reflection-artifacts"
+        ),
+        "reflection_artifact_handoff_model": (
+            "property-metadata-and-ownership-artifacts-remain-coupled-to-lowered-dispatch-accessor-and-executable-realization-record-outputs"
+        ),
+    }
+    for field, expected_value in expected_realization_lowering_reflection_artifact_fields.items():
+        if realization_lowering_reflection_artifact_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_realization_lowering_reflection_artifact_surface drifted from {field}"
+            )
+    if (
+        realization_lowering_reflection_artifact_surface.get(
+            "requires_coupled_registration_descriptor_artifact"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface must require the coupled runtime registration descriptor artifact"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get(
+            "requires_real_compile_output"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface must require real compile output"
+        )
+    if (
+        realization_lowering_reflection_artifact_surface.get(
+            "requires_compile_output_truthfulness"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_realization_lowering_reflection_artifact_surface must require compile output truthfulness"
         )
     if not isinstance(reflection_query_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_reflection_query_surface")
@@ -1811,6 +1935,70 @@ def build_runtime_object_model_realization_source_surface(
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_realization_lowering_reflection_artifact_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {
+            "canonical-dispatch",
+            "canonical-sample-set",
+            "property-reflection",
+            "property-execution",
+            "storage-ownership-reflection",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+            "<emit-prefix>.compile-provenance.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+            "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1",
+            "objc3c.executable.realization.records.v1",
+            "objc3c.runtime.property.metadata.reflection.v1",
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1",
+        ],
+        "lowering_artifact_boundary_model": (
+            "compile-manifest-registration-descriptor-object-and-llvm-ir-co-publish-realization-lowering-and-reflection-artifacts"
+        ),
+        "reflection_artifact_handoff_model": (
+            "property-metadata-and-ownership-artifacts-remain-coupled-to-lowered-dispatch-accessor-and-executable-realization-record-outputs"
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_reflection_artifact_query_boundary": [
+            "objc3_runtime_copy_property_registry_state_for_testing",
+            "objc3_runtime_copy_property_entry_for_testing",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        ],
+        "requires_coupled_registration_descriptor_artifact": True,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_compile_output_truthfulness": True,
     }
 
 
@@ -4069,6 +4257,9 @@ def main() -> int:
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)
+        ),
+        "runtime_realization_lowering_reflection_artifact_surface": (
+            build_runtime_realization_lowering_reflection_artifact_surface(results)
         ),
         "runtime_reflection_query_surface": build_runtime_reflection_query_surface(results),
         "runtime_realization_lookup_semantics_surface": (

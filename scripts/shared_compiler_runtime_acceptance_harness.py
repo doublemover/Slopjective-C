@@ -19,6 +19,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
@@ -80,6 +81,15 @@ COMMON_SURFACES = (
         (
             "source_contract_ids",
             "private_object_model_query_boundary",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_realization_lowering_reflection_artifact_surface",
+        RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "lowering_artifact_boundary_model",
             "authoritative_case_ids",
         ),
     ),
@@ -272,6 +282,7 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
             RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
             RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
             RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
             RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
             RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
@@ -333,6 +344,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "acceptance_suite_surface": surfaces["acceptance_suite_surface"],
         "runtime_object_model_realization_source_surface": surfaces[
             "runtime_object_model_realization_source_surface"
+        ],
+        "runtime_realization_lowering_reflection_artifact_surface": surfaces[
+            "runtime_realization_lowering_reflection_artifact_surface"
         ],
         "runtime_reflection_query_surface": surfaces["runtime_reflection_query_surface"],
         "runtime_realization_lookup_semantics_surface": surfaces[

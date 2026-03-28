@@ -108,6 +108,21 @@ Object-model realization source of truth:
   rather than rederiving class/category/protocol behavior from sidecars or
   stale milestone notes
 
+Realization lowering and reflection artifact source of truth:
+
+- compile publication exposes the coupled realization-lowering and reflection-
+  artifact boundary through the emitted compile-manifest key
+  `runtime_realization_lowering_reflection_artifact_surface`
+- that surface must point at the realization source surface, dispatch and
+  synthesized-accessor lowering surface, executable realization records
+  contract, property metadata reflection contract, ownership-backed property
+  metadata contract, and the coupled manifest/descriptor/object/LLVM IR/
+  provenance artifacts produced by the real compiler path
+- later dispatch-table lowering, reflection artifact preservation, and replay
+  hardening work must extend that emitted surface instead of reconstructing
+  lowering truth from source-only manifests, ad hoc IR inspection, or stale
+  milestone notes
+
 Reflection query source of truth:
 
 - compile publication exposes the coupled reflection boundary through the
