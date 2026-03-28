@@ -4,7 +4,45 @@
 #include <cstdio>
 #include <string>
 
+#ifndef OBJC3_RUNTIME_FIXTURE_MODULE_NAME
+#error "OBJC3_RUNTIME_FIXTURE_MODULE_NAME must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_TRANSLATION_UNIT_IDENTITY_KEY
+#error "OBJC3_RUNTIME_FIXTURE_TRANSLATION_UNIT_IDENTITY_KEY must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_REGISTRATION_ORDER_ORDINAL
+#error "OBJC3_RUNTIME_FIXTURE_REGISTRATION_ORDER_ORDINAL must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_CLASS_DESCRIPTOR_COUNT
+#error "OBJC3_RUNTIME_FIXTURE_CLASS_DESCRIPTOR_COUNT must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_PROTOCOL_DESCRIPTOR_COUNT
+#error "OBJC3_RUNTIME_FIXTURE_PROTOCOL_DESCRIPTOR_COUNT must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_CATEGORY_DESCRIPTOR_COUNT
+#error "OBJC3_RUNTIME_FIXTURE_CATEGORY_DESCRIPTOR_COUNT must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_PROPERTY_DESCRIPTOR_COUNT
+#error "OBJC3_RUNTIME_FIXTURE_PROPERTY_DESCRIPTOR_COUNT must be provided by the generated fixture config"
+#endif
+
+#ifndef OBJC3_RUNTIME_FIXTURE_IVAR_DESCRIPTOR_COUNT
+#error "OBJC3_RUNTIME_FIXTURE_IVAR_DESCRIPTOR_COUNT must be provided by the generated fixture config"
+#endif
+
 namespace {
+
+template <std::size_t EntryCount>
+struct ProbeAggregate {
+  std::uint64_t count;
+  const void *entries[EntryCount];
+};
 
 void PrintJsonStringOrNull(const char *value) {
   if (value == nullptr) {
@@ -134,6 +172,136 @@ int main() {
   const int post_reset_reset_replay_copy_status =
       objc3_runtime_copy_reset_replay_state_for_testing(
           &post_reset_reset_replay);
+
+  static const int kClassDescriptorSlots[4] = {1, 2, 3, 4};
+  static const int kProtocolDescriptorSlots[2] = {5, 6};
+  static const int kCategoryDescriptorSlots[2] = {7, 8};
+  static const int kDiscoveryPaddingSlots[2] = {9, 10};
+  static unsigned char kImageLocalInitState = 0;
+  const objc3_runtime_image_descriptor compiled_image_descriptor{
+      OBJC3_RUNTIME_FIXTURE_MODULE_NAME,
+      OBJC3_RUNTIME_FIXTURE_TRANSLATION_UNIT_IDENTITY_KEY,
+      OBJC3_RUNTIME_FIXTURE_REGISTRATION_ORDER_ORDINAL,
+      OBJC3_RUNTIME_FIXTURE_CLASS_DESCRIPTOR_COUNT,
+      OBJC3_RUNTIME_FIXTURE_PROTOCOL_DESCRIPTOR_COUNT,
+      OBJC3_RUNTIME_FIXTURE_CATEGORY_DESCRIPTOR_COUNT,
+      OBJC3_RUNTIME_FIXTURE_PROPERTY_DESCRIPTOR_COUNT,
+      OBJC3_RUNTIME_FIXTURE_IVAR_DESCRIPTOR_COUNT,
+  };
+  const ProbeAggregate<4> class_root = {
+      OBJC3_RUNTIME_FIXTURE_CLASS_DESCRIPTOR_COUNT,
+      {
+          &kClassDescriptorSlots[0],
+          &kClassDescriptorSlots[1],
+          &kClassDescriptorSlots[2],
+          &kClassDescriptorSlots[3],
+      },
+  };
+  const ProbeAggregate<2> protocol_root = {
+      OBJC3_RUNTIME_FIXTURE_PROTOCOL_DESCRIPTOR_COUNT,
+      {
+          &kProtocolDescriptorSlots[0],
+          &kProtocolDescriptorSlots[1],
+      },
+  };
+  const ProbeAggregate<2> category_root = {
+      OBJC3_RUNTIME_FIXTURE_CATEGORY_DESCRIPTOR_COUNT,
+      {
+          &kCategoryDescriptorSlots[0],
+          &kCategoryDescriptorSlots[1],
+      },
+  };
+  const ProbeAggregate<1> property_root = {
+      OBJC3_RUNTIME_FIXTURE_PROPERTY_DESCRIPTOR_COUNT,
+      {nullptr},
+  };
+  const ProbeAggregate<1> ivar_root = {
+      OBJC3_RUNTIME_FIXTURE_IVAR_DESCRIPTOR_COUNT,
+      {nullptr},
+  };
+  const ProbeAggregate<6> valid_discovery_root = {
+      6u,
+      {
+          &compiled_image_descriptor,
+          &class_root,
+          &protocol_root,
+          &category_root,
+          &property_root,
+          &ivar_root,
+      },
+  };
+  const void *valid_linker_anchor_target = &valid_discovery_root;
+  const void *invalid_linker_anchor_target = &class_root;
+  const ProbeAggregate<6> invalid_discovery_root = {
+      6u,
+      {
+          &compiled_image_descriptor,
+          &class_root,
+          &protocol_root,
+          &property_root,
+          &ivar_root,
+          &kDiscoveryPaddingSlots[0],
+      },
+  };
+
+  objc3_runtime_registration_table invalid_anchor_table = {
+      2u,
+      12u,
+      &compiled_image_descriptor,
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &valid_discovery_root),
+      &invalid_linker_anchor_target,
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&class_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&protocol_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&category_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&property_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&ivar_root),
+      nullptr,
+      nullptr,
+      nullptr,
+      &kImageLocalInitState,
+  };
+  objc3_runtime_stage_registration_table_for_bootstrap(&invalid_anchor_table);
+  const int post_reset_invalid_anchor_status =
+      objc3_runtime_register_image(&compiled_image_descriptor);
+  objc3_runtime_registration_state_snapshot after_invalid_anchor_registration{};
+  objc3_runtime_image_walk_state_snapshot after_invalid_anchor_walk{};
+  const int after_invalid_anchor_registration_copy_status =
+      objc3_runtime_copy_registration_state_for_testing(
+          &after_invalid_anchor_registration);
+  const int after_invalid_anchor_image_walk_copy_status =
+      objc3_runtime_copy_image_walk_state_for_testing(&after_invalid_anchor_walk);
+
+  objc3_runtime_registration_table invalid_discovery_root_table = {
+      2u,
+      12u,
+      &compiled_image_descriptor,
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(
+          &invalid_discovery_root),
+      &valid_linker_anchor_target,
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&class_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&protocol_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&category_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&property_root),
+      reinterpret_cast<const objc3_runtime_pointer_aggregate *>(&ivar_root),
+      nullptr,
+      nullptr,
+      nullptr,
+      &kImageLocalInitState,
+  };
+  objc3_runtime_stage_registration_table_for_bootstrap(
+      &invalid_discovery_root_table);
+  const int post_reset_invalid_discovery_root_status =
+      objc3_runtime_register_image(&compiled_image_descriptor);
+  objc3_runtime_registration_state_snapshot
+      after_invalid_discovery_root_registration{};
+  objc3_runtime_image_walk_state_snapshot after_invalid_discovery_root_walk{};
+  const int after_invalid_discovery_root_registration_copy_status =
+      objc3_runtime_copy_registration_state_for_testing(
+          &after_invalid_discovery_root_registration);
+  const int after_invalid_discovery_root_image_walk_copy_status =
+      objc3_runtime_copy_image_walk_state_for_testing(
+          &after_invalid_discovery_root_walk);
 
   const int replay_status = objc3_runtime_replay_registered_images_for_testing();
 
@@ -275,6 +443,48 @@ int main() {
               static_cast<unsigned long long>(
                   post_reset_reset_replay
                       .last_reset_cleared_image_local_init_state_count));
+  std::printf("\"post_reset_invalid_anchor_status\":%d,",
+              post_reset_invalid_anchor_status);
+  std::printf("\"after_invalid_anchor_registration_copy_status\":%d,",
+              after_invalid_anchor_registration_copy_status);
+  std::printf("\"after_invalid_anchor_image_walk_copy_status\":%d,",
+              after_invalid_anchor_image_walk_copy_status);
+  std::printf("\"after_invalid_anchor_registered_image_count\":%llu,",
+              static_cast<unsigned long long>(
+                  after_invalid_anchor_registration.registered_image_count));
+  std::printf("\"after_invalid_anchor_next_expected_registration_order_ordinal\":%llu,",
+              static_cast<unsigned long long>(
+                  after_invalid_anchor_registration
+                      .next_expected_registration_order_ordinal));
+  std::printf("\"after_invalid_anchor_last_registration_status\":%d,",
+              after_invalid_anchor_registration.last_registration_status);
+  std::printf("\"after_invalid_anchor_walked_image_count\":%llu,",
+              static_cast<unsigned long long>(
+                  after_invalid_anchor_walk.walked_image_count));
+  std::printf("\"after_invalid_anchor_last_linker_anchor_matches_discovery_root\":%d,",
+              after_invalid_anchor_walk.last_linker_anchor_matches_discovery_root);
+  std::printf("\"post_reset_invalid_discovery_root_status\":%d,",
+              post_reset_invalid_discovery_root_status);
+  std::printf("\"after_invalid_discovery_root_registration_copy_status\":%d,",
+              after_invalid_discovery_root_registration_copy_status);
+  std::printf("\"after_invalid_discovery_root_image_walk_copy_status\":%d,",
+              after_invalid_discovery_root_image_walk_copy_status);
+  std::printf("\"after_invalid_discovery_root_registered_image_count\":%llu,",
+              static_cast<unsigned long long>(
+                  after_invalid_discovery_root_registration
+                      .registered_image_count));
+  std::printf("\"after_invalid_discovery_root_next_expected_registration_order_ordinal\":%llu,",
+              static_cast<unsigned long long>(
+                  after_invalid_discovery_root_registration
+                      .next_expected_registration_order_ordinal));
+  std::printf("\"after_invalid_discovery_root_last_registration_status\":%d,",
+              after_invalid_discovery_root_registration.last_registration_status);
+  std::printf("\"after_invalid_discovery_root_walked_image_count\":%llu,",
+              static_cast<unsigned long long>(
+                  after_invalid_discovery_root_walk.walked_image_count));
+  std::printf("\"after_invalid_discovery_root_last_linker_anchor_matches_discovery_root\":%d,",
+              after_invalid_discovery_root_walk
+                  .last_linker_anchor_matches_discovery_root);
 
   std::printf("\"replay_status\":%d,", replay_status);
   std::printf("\"post_replay_registration_copy_status\":%d,",

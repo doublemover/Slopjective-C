@@ -140,6 +140,7 @@ runtime-side reports.
 - fail-closed legality statuses:
   - duplicate translation-unit identity key: `-2`
   - out-of-order registration ordinal: `-3`
+  - invalid registration roots / discovery root legality: `-4`
 - machine-readable keys:
   - `runtime_installation_abi_surface`
   - `loader_lifecycle_surface`
@@ -147,9 +148,10 @@ runtime-side reports.
 The installation ABI is the stable front door for ingesting emitted runtime
 images and reading installation state. Loader lifecycle proof remains on the
 private testing boundary, where runtime acceptance verifies startup
-installation, duplicate/out-of-order rejection without state advance, reset
-retention of the bootstrap catalog, and deterministic replay of registered
-images from the retained catalog.
+installation, duplicate/out-of-order rejection without state advance, explicit
+rejection of malformed staged registration roots and discovery roots without
+state advance, reset retention of the bootstrap catalog, and deterministic
+replay of registered images from the retained catalog.
 
 ## Acceptance Suite Surface
 

@@ -1073,6 +1073,8 @@ inline constexpr int kObjc3RuntimeBootstrapInvalidDescriptorStatusCode = -1;
 inline constexpr int
     kObjc3RuntimeBootstrapDuplicateRegistrationStatusCode = -2;
 inline constexpr int kObjc3RuntimeBootstrapOutOfOrderStatusCode = -3;
+inline constexpr int
+    kObjc3RuntimeBootstrapInvalidRegistrationRootsStatusCode = -4;
 inline constexpr std::uint64_t
     kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal = 1u;
 inline constexpr const char *kObjc3RuntimeBootstrapApiContractId =
@@ -1118,7 +1120,7 @@ inline constexpr const char *kObjc3RuntimeBootstrapImageWalkModel =
     "registration-table-roots-validated-and-staged-before-realization";
 inline constexpr const char
     *kObjc3RuntimeBootstrapDiscoveryRootValidationModel =
-        "linker-anchor-must-point-at-discovery-root";
+        "linker-anchor-must-point-at-discovery-root-and-discovery-root-must-close-over-registration-roots";
 inline constexpr const char
     *kObjc3RuntimeBootstrapSelectorPoolInterningModel =
         "canonical-selector-pool-preinterned-during-startup-image-walk";

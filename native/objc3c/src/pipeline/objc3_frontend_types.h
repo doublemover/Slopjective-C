@@ -4579,6 +4579,8 @@ struct Objc3RuntimeBootstrapSemanticsSummary {
       kObjc3RuntimeBootstrapDuplicateRegistrationStatusCode;
   int out_of_order_status_code =
       kObjc3RuntimeBootstrapOutOfOrderStatusCode;
+  int invalid_registration_roots_status_code =
+      kObjc3RuntimeBootstrapInvalidRegistrationRootsStatusCode;
   std::uint64_t translation_unit_registration_order_ordinal =
       kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal;
   bool fail_closed = false;
@@ -5087,6 +5089,8 @@ struct Objc3RuntimeBootstrapFailureRestartSemanticsSummary {
       kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol;
   int invalid_descriptor_status_code =
       kObjc3RuntimeBootstrapInvalidDescriptorStatusCode;
+  int invalid_registration_roots_status_code =
+      kObjc3RuntimeBootstrapInvalidRegistrationRootsStatusCode;
   std::uint64_t translation_unit_registration_order_ordinal =
       kObjc3RuntimeBootstrapTranslationUnitRegistrationOrderOrdinal;
   bool fail_closed = false;

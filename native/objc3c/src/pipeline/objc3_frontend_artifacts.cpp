@@ -11640,6 +11640,8 @@ std::string BuildRuntimeBootstrapSemanticsReplayKey(
       << summary.duplicate_registration_status_code
       << ";out_of_order_status_code="
       << summary.out_of_order_status_code
+      << ";invalid_registration_roots_status_code="
+      << summary.invalid_registration_roots_status_code
       << ";translation_unit_registration_order_ordinal="
       << summary.translation_unit_registration_order_ordinal
       << ";bootstrap_invariant_replay_key="
@@ -11728,6 +11730,8 @@ std::string BuildRuntimeBootstrapSemanticsSummaryJson(
       << summary.duplicate_registration_status_code
       << ",\"out_of_order_status_code\":"
       << summary.out_of_order_status_code
+      << ",\"invalid_registration_roots_status_code\":"
+      << summary.invalid_registration_roots_status_code
       << ",\"translation_unit_registration_order_ordinal\":"
       << summary.translation_unit_registration_order_ordinal
       << ",\"ready\":"
@@ -12796,6 +12800,8 @@ std::string BuildRuntimeBootstrapFailureRestartSemanticsReplayKey(
       << summary.reset_replay_state_snapshot_symbol
       << ";invalid_descriptor_status_code="
       << summary.invalid_descriptor_status_code
+      << ";invalid_registration_roots_status_code="
+      << summary.invalid_registration_roots_status_code
       << ";translation_unit_registration_order_ordinal="
       << summary.translation_unit_registration_order_ordinal
       << ";semantic_boundary_replay_key=" << summary.semantic_boundary_replay_key
@@ -12866,6 +12872,8 @@ BuildRuntimeBootstrapFailureRestartSemanticsSummary(
         bootstrap_semantics.runtime_state_snapshot_symbol;
     summary.invalid_descriptor_status_code =
         bootstrap_semantics.invalid_descriptor_status_code;
+    summary.invalid_registration_roots_status_code =
+        bootstrap_semantics.invalid_registration_roots_status_code;
     summary.translation_unit_registration_order_ordinal =
         bootstrap_semantics.translation_unit_registration_order_ordinal;
     summary.bootstrap_semantics_replay_key = bootstrap_semantics.replay_key;
@@ -12947,6 +12955,8 @@ std::string BuildRuntimeBootstrapFailureRestartSemanticsSummaryJson(
       << EscapeJsonString(summary.reset_replay_state_snapshot_symbol)
       << "\",\"invalid_descriptor_status_code\":"
       << summary.invalid_descriptor_status_code
+      << ",\"invalid_registration_roots_status_code\":"
+      << summary.invalid_registration_roots_status_code
       << ",\"translation_unit_registration_order_ordinal\":"
       << summary.translation_unit_registration_order_ordinal
       << ",\"ready\":"

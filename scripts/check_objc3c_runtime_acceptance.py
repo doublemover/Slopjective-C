@@ -178,6 +178,10 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         "objc_runtime_bootstrap_failure_restart_semantics",
         manifest.get("objc_runtime_bootstrap_failure_restart_semantics", {}),
     )
+    runtime_bootstrap_semantics = semantic_surface.get(
+        "objc_runtime_startup_bootstrap_semantics",
+        manifest.get("objc_runtime_startup_bootstrap_semantics", {}),
+    )
     bootstrap_api_contract = semantic_surface.get(
         "objc_runtime_bootstrap_api_contract",
         manifest.get("objc_runtime_bootstrap_api_contract", {}),
@@ -396,6 +400,14 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError(
             "runtime_multi_image_startup_ordering_source_surface drifted from the translation unit registration order ordinal"
         )
+    if runtime_bootstrap_semantics.get("invalid_registration_roots_status_code") != -4:
+        raise RuntimeError(
+            "objc_runtime_startup_bootstrap_semantics drifted from the invalid registration roots status code"
+        )
+    if bootstrap_failure_restart_semantics.get("invalid_registration_roots_status_code") != -4:
+        raise RuntimeError(
+            "objc_runtime_bootstrap_failure_restart_semantics drifted from the invalid registration roots status code"
+        )
     if (
         multi_image_startup_ordering_source_surface.get("next_expected_registration_order_field")
         != "next_expected_registration_order_ordinal"
@@ -452,6 +464,16 @@ def compile_fixture_outputs(fixture: Path, out_dir: Path) -> tuple[Path, Path, P
 
 
 def compile_probe(clangxx: str, probe: Path, exe_path: Path, extra_objects: list[Path]) -> None:
+    compile_probe_with_args(clangxx, probe, exe_path, extra_objects, [])
+
+
+def compile_probe_with_args(
+    clangxx: str,
+    probe: Path,
+    exe_path: Path,
+    extra_objects: list[Path],
+    extra_args: list[str],
+) -> None:
     exe_path.parent.mkdir(parents=True, exist_ok=True)
     command = [
         clangxx,
@@ -459,6 +481,7 @@ def compile_probe(clangxx: str, probe: Path, exe_path: Path, extra_objects: list
         "-fms-runtime-lib=dll",
         "-I",
         str(ROOT / "native" / "objc3c" / "src"),
+        *extra_args,
         str(probe),
         *[str(path) for path in extra_objects],
         str(RUNTIME_LIB),
@@ -698,12 +721,15 @@ def build_loader_lifecycle_surface(results: list[CaseResult]) -> dict[str, Any]:
             "startup-installed-runtime-state",
             "duplicate-registration-rejected-without-state-advance",
             "out-of-order-registration-rejected-without-state-advance",
+            "invalid-anchor-root-rejected-without-state-advance",
+            "invalid-discovery-root-rejected-without-state-advance",
             "reset-retained-bootstrap-catalog",
             "replay-restored-installed-runtime-state",
         ],
         "rejected_registration_status_codes": {
             "duplicate_translation_unit_identity_key": -2,
             "out_of_order_registration": -3,
+            "invalid_registration_roots": -4,
         },
         "retained_bootstrap_catalog_required": True,
         "deterministic_replay_required": True,
@@ -735,9 +761,41 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
     compile_started = perf_counter()
     obj_path = compile_fixture(fixture, case_dir / "compile")
     fixture_compile_ms = int((perf_counter() - compile_started) * 1000)
+    registration_descriptor = json.loads(
+        (case_dir / "compile" / "module.runtime-registration-descriptor.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    probe_fixture_config = case_dir / "runtime_installation_loader_lifecycle_probe_fixture_config.h"
+    probe_fixture_config.write_text(
+        "\n".join(
+            [
+                "#pragma once",
+                f"#define OBJC3_RUNTIME_FIXTURE_MODULE_NAME {json.dumps(registration_descriptor['registration_descriptor_identifier'].removesuffix('_registration_descriptor'))}",
+                f"#define OBJC3_RUNTIME_FIXTURE_TRANSLATION_UNIT_IDENTITY_KEY {json.dumps(registration_descriptor['translation_unit_identity_key'])}",
+                f"#define OBJC3_RUNTIME_FIXTURE_REGISTRATION_ORDER_ORDINAL {registration_descriptor['translation_unit_registration_order_ordinal']}ULL",
+                f"#define OBJC3_RUNTIME_FIXTURE_CLASS_DESCRIPTOR_COUNT {registration_descriptor['class_descriptor_count']}ULL",
+                f"#define OBJC3_RUNTIME_FIXTURE_PROTOCOL_DESCRIPTOR_COUNT {registration_descriptor['protocol_descriptor_count']}ULL",
+                f"#define OBJC3_RUNTIME_FIXTURE_CATEGORY_DESCRIPTOR_COUNT {registration_descriptor['category_descriptor_count']}ULL",
+                f"#define OBJC3_RUNTIME_FIXTURE_PROPERTY_DESCRIPTOR_COUNT {registration_descriptor['property_descriptor_count']}ULL",
+                f"#define OBJC3_RUNTIME_FIXTURE_IVAR_DESCRIPTOR_COUNT {registration_descriptor['ivar_descriptor_count']}ULL",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
     exe_path = case_dir / "runtime_installation_loader_lifecycle_probe.exe"
     probe_link_started = perf_counter()
-    compile_probe(clangxx, probe, exe_path, [obj_path])
+    compile_probe_with_args(
+        clangxx,
+        probe,
+        exe_path,
+        [obj_path],
+        [
+            "-include",
+            str(probe_fixture_config),
+        ],
+    )
     probe_link_ms = int((perf_counter() - probe_link_started) * 1000)
     probe_run_started = perf_counter()
     payload = parse_json_output(run_probe(exe_path), "runtime installation loader lifecycle probe")
@@ -791,6 +849,22 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
     expect(payload.get("post_reset_next_expected_registration_order_ordinal") == 1, "expected reset to restore the initial registration ordinal")
     expect(payload.get("post_reset_retained_bootstrap_image_count") == 1, "expected reset to retain one bootstrap image for replay")
     expect(payload.get("post_reset_last_reset_cleared_image_local_init_state_count") == 1, "expected reset to clear one image-local initialization state record")
+    expect(payload.get("post_reset_invalid_anchor_status") == -4, "expected mismatched linker-anchor registration to fail with invalid registration roots status")
+    expect(payload.get("after_invalid_anchor_registration_copy_status") == 0, "expected invalid-anchor rejection registration snapshot copy to succeed")
+    expect(payload.get("after_invalid_anchor_image_walk_copy_status") == 0, "expected invalid-anchor rejection image walk snapshot copy to succeed")
+    expect(payload.get("after_invalid_anchor_registered_image_count") == 0, "expected invalid-anchor rejection to preserve the cleared installed image count")
+    expect(payload.get("after_invalid_anchor_next_expected_registration_order_ordinal") == 1, "expected invalid-anchor rejection to preserve the reset registration ordinal")
+    expect(payload.get("after_invalid_anchor_last_registration_status") == -4, "expected invalid-anchor rejection snapshot to publish invalid registration roots status")
+    expect(payload.get("after_invalid_anchor_walked_image_count") == 0, "expected invalid-anchor rejection to leave image walk state empty")
+    expect(payload.get("after_invalid_anchor_last_linker_anchor_matches_discovery_root") == 0, "expected invalid-anchor rejection to leave linker-anchor/discovery-root proof unset")
+    expect(payload.get("post_reset_invalid_discovery_root_status") == -4, "expected malformed discovery-root registration to fail with invalid registration roots status")
+    expect(payload.get("after_invalid_discovery_root_registration_copy_status") == 0, "expected invalid-discovery-root rejection registration snapshot copy to succeed")
+    expect(payload.get("after_invalid_discovery_root_image_walk_copy_status") == 0, "expected invalid-discovery-root rejection image walk snapshot copy to succeed")
+    expect(payload.get("after_invalid_discovery_root_registered_image_count") == 0, "expected invalid-discovery-root rejection to preserve the cleared installed image count")
+    expect(payload.get("after_invalid_discovery_root_next_expected_registration_order_ordinal") == 1, "expected invalid-discovery-root rejection to preserve the reset registration ordinal")
+    expect(payload.get("after_invalid_discovery_root_last_registration_status") == -4, "expected invalid-discovery-root rejection snapshot to publish invalid registration roots status")
+    expect(payload.get("after_invalid_discovery_root_walked_image_count") == 0, "expected invalid-discovery-root rejection to leave image walk state empty")
+    expect(payload.get("after_invalid_discovery_root_last_linker_anchor_matches_discovery_root") == 0, "expected invalid-discovery-root rejection to leave linker-anchor/discovery-root proof unset")
 
     expect(payload.get("replay_status") == 0, "expected replay_registered_images_for_testing to succeed")
     expect(payload.get("post_replay_registration_copy_status") == 0, "expected post-replay registration snapshot copy to succeed")
@@ -825,6 +899,8 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "case_total_ms": case_total_ms,
             "duplicate_status": payload["duplicate_status"],
             "out_of_order_status": payload["out_of_order_status"],
+            "invalid_anchor_status": payload["post_reset_invalid_anchor_status"],
+            "invalid_discovery_root_status": payload["post_reset_invalid_discovery_root_status"],
             "startup_registered_image_count": payload["startup_registered_image_count"],
             "post_reset_registered_image_count": payload["post_reset_registered_image_count"],
             "post_replay_registered_image_count": payload["post_replay_registered_image_count"],

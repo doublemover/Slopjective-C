@@ -3528,8 +3528,9 @@ int RegisterImageUnlocked(
                                           record)) {
       ClearImageWalkSnapshotUnlocked(state);
       MarkRejectedRegistrationUnlocked(
-          state, image, OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR);
-      return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+          state, image,
+          OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS);
+      return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS;
     }
     descriptor_total = record.class_descriptor_count +
                        record.protocol_descriptor_count +

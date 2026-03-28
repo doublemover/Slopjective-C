@@ -84,6 +84,11 @@ Bootstrap legality and installation semantics:
 - out-of-order registration ordinals must fail closed with
   `OBJC3_RUNTIME_REGISTRATION_STATUS_OUT_OF_ORDER_REGISTRATION` and must not
   advance installed-image counts or next-expected registration ordinals
+- malformed staged registration roots must fail closed with
+  `OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_REGISTRATION_ROOTS`; the linker
+  anchor must point at the discovery root, and the discovery root must close
+  over the class/protocol/category/property/ivar descriptor roots before any
+  image-walk state is published
 - the shared proof path for those guarantees is
   `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`,
   exercised through `python scripts/check_objc3c_runtime_acceptance.py`
