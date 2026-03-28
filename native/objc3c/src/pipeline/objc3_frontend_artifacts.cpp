@@ -23171,7 +23171,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"llvm_ir_summary.runtime_block_byref_forwarding_heap_promotion_ownership_interop\""
            << ",\"runtime_api.objc3_runtime_promote_block_i32\""
            << ",\"runtime_api.objc3_runtime_invoke_block_i32\""
-           << ",\"runtime_api.objc3_runtime_copy_arc_debug_state_for_testing\"]"
+           << ",\"runtime_api.objc3_runtime_copy_arc_debug_state_for_testing\""
+           << ",\"runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing\"]"
            << ",\"block_runtime_boundary_model\":\""
            << Expr::kObjc3ExecutableBlockByrefMutationOwnershipModel
            << "\""
@@ -23196,7 +23197,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3\"]"
            << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp\""
            << ",\"tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp\""
-           << ",\"tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp\"]"
+           << ",\"tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp\""
+           << ",\"tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp\"]"
            << ",\"explicit_non_goals\":[\"no-public-block-object-abi-widening\""
            << ",\"no-milestone-specific-scaffolding\""
            << ",\"no-sidecar-only-block-or-arc-proof\"]"
@@ -23277,6 +23279,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_state_publication_emit_prefix << ".ll"
            << "\",\"block_arc_unified_source_surface_contract_id\":\""
            << kObjc3RuntimeBlockArcUnifiedSourceSurfaceContractId
+           << "\",\"runtime_block_arc_runtime_abi_surface_contract_id\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiSurfaceContractId
            << "\",\"ownership_transfer_capture_family_source_surface_contract_id\":\""
            << kObjc3RuntimeOwnershipTransferCaptureFamilySourceSurfaceContractId
            << "\",\"block_object_invoke_thunk_lowering_contract_id\":\""
@@ -23309,7 +23313,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"llvm_ir_summary.arc_block_autorelease_return_lowering\"]"
            << ",\"runtime_api_paths\":[\"runtime_api.objc3_runtime_promote_block_i32\""
            << ",\"runtime_api.objc3_runtime_invoke_block_i32\""
-           << ",\"runtime_api.objc3_runtime_copy_arc_debug_state_for_testing\"]"
+           << ",\"runtime_api.objc3_runtime_copy_arc_debug_state_for_testing\""
+           << ",\"runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing\"]"
            << ",\"authoritative_code_paths\":[\"native/objc3c/src/ast/objc3_ast.h\""
            << ",\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
            << ",\"native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp\""
@@ -23328,10 +23333,58 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3\"]"
            << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp\""
            << ",\"tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp\""
-           << ",\"tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp\"]"
+           << ",\"tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp\""
+           << ",\"tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp\"]"
            << ",\"explicit_non_goals\":[\"no-cross-module-packaging-claims\""
            << ",\"no-public-block-abi-widening\""
            << ",\"no-milestone-specific-scaffolding\"]"
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
+  manifest << "  \"runtime_block_arc_runtime_abi_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiSurfaceContractId
+           << "\",\"public_header_path\":\""
+           << runtime_bootstrap_api.public_header_path
+           << "\",\"internal_header_path\":\""
+           << kObjc3RuntimeBootstrapInternalHeaderPath
+           << "\",\"block_arc_unified_source_surface_contract_id\":\""
+           << kObjc3RuntimeBlockArcUnifiedSourceSurfaceContractId
+           << "\",\"block_arc_lowering_helper_surface_contract_id\":\""
+           << kObjc3RuntimeBlockArcLoweringHelperSurfaceContractId
+           << "\",\"public_runtime_abi_boundary\":[\""
+           << kObjc3RuntimeSupportLibraryRegisterImageSymbol << "\",\""
+           << kObjc3RuntimeSupportLibraryLookupSelectorSymbol << "\",\""
+           << kObjc3RuntimeSupportLibraryDispatchI32Symbol << "\",\""
+           << kObjc3RuntimeSupportLibraryResetForTestingSymbol << "\"]"
+           << ",\"private_block_arc_runtime_abi_boundary\":[\""
+           << kObjc3RuntimePromoteBlockI32Symbol << "\",\""
+           << kObjc3RuntimeInvokeBlockI32Symbol << "\",\""
+           << kObjc3RuntimeRetainI32Symbol << "\",\""
+           << kObjc3RuntimeReleaseI32Symbol << "\",\""
+           << kObjc3RuntimeAutoreleaseI32Symbol << "\",\""
+           << kObjc3RuntimePushAutoreleasepoolScopeSymbol << "\",\""
+           << kObjc3RuntimePopAutoreleasepoolScopeSymbol << "\",\""
+           << kObjc3RuntimeReadCurrentPropertyI32Symbol << "\",\""
+           << kObjc3RuntimeWriteCurrentPropertyI32Symbol << "\",\""
+           << kObjc3RuntimeExchangeCurrentPropertyI32Symbol << "\",\""
+           << "objc3_runtime_bind_current_property_context_for_testing"
+           << "\",\"objc3_runtime_clear_current_property_context_for_testing"
+           << "\",\"" << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol << "\",\""
+           << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol << "\",\""
+           << "objc3_runtime_copy_arc_debug_state_for_testing"
+           << "\",\"objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing\"]"
+           << ",\"block_arc_runtime_abi_snapshot_symbol\":\"objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing\""
+           << ",\"arc_debug_state_snapshot_symbol\":\"objc3_runtime_copy_arc_debug_state_for_testing\""
+           << ",\"runtime_abi_boundary_model\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel
+           << "\",\"block_runtime_model\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiBlockModel
+           << "\",\"arc_runtime_model\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiArcModel
+           << "\",\"fail_closed_model\":\""
+           << kObjc3RuntimeBlockArcRuntimeAbiFailClosedModel
+           << "\",\"authoritative_probe_path\":\"tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp\""
            << ",\"requires_coupled_registration_manifest\":true"
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"

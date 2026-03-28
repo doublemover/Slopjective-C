@@ -47,6 +47,9 @@ RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.block.arc.lowering.helper.surface.v1"
 )
+RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.block.arc.runtime.abi.surface.v1"
+)
 DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID = (
     "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
 )
@@ -144,6 +147,9 @@ BLOCK_OWNERSHIP_PRESERVATION_PROVIDER_FIXTURE = (
 BLOCK_OWNERSHIP_PRESERVATION_CONSUMER_FIXTURE = (
     "tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3"
 )
+BLOCK_ARC_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp"
+)
 REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE = (
     "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp"
 )
@@ -168,6 +174,36 @@ RUNTIME_LOADER_TESTING_BOUNDARY = [
     "objc3_runtime_replay_registered_images_for_testing",
     "objc3_runtime_copy_reset_replay_state_for_testing",
 ]
+PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY = [
+    "objc3_runtime_promote_block_i32",
+    "objc3_runtime_invoke_block_i32",
+    "objc3_runtime_retain_i32",
+    "objc3_runtime_release_i32",
+    "objc3_runtime_autorelease_i32",
+    "objc3_runtime_push_autoreleasepool_scope",
+    "objc3_runtime_pop_autoreleasepool_scope",
+    "objc3_runtime_read_current_property_i32",
+    "objc3_runtime_write_current_property_i32",
+    "objc3_runtime_exchange_current_property_i32",
+    "objc3_runtime_bind_current_property_context_for_testing",
+    "objc3_runtime_clear_current_property_context_for_testing",
+    "objc3_runtime_load_weak_current_property_i32",
+    "objc3_runtime_store_weak_current_property_i32",
+    "objc3_runtime_copy_arc_debug_state_for_testing",
+    "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
+]
+BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL = (
+    "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
+)
+BLOCK_ARC_RUNTIME_BLOCK_MODEL = (
+    "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints"
+)
+BLOCK_ARC_RUNTIME_ARC_MODEL = (
+    "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints"
+)
+BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL = (
+    "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-runtime-abi-widening"
+)
 COMPILE_PROVENANCE_CONTRACT_ID = "objc3c.native.compile.output.provenance.v1"
 COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID = "objc3c.native.compile.output.truthfulness.v1"
 
@@ -289,6 +325,9 @@ def compile_fixture_with_args(
     )
     block_arc_lowering_helper_surface = manifest.get(
         "runtime_block_arc_lowering_helper_surface"
+    )
+    block_arc_runtime_abi_surface = manifest.get(
+        "runtime_block_arc_runtime_abi_surface"
     )
     dispatch_and_synthesized_accessor_lowering_surface = manifest.get(
         "dispatch_and_synthesized_accessor_lowering_surface"
@@ -1702,6 +1741,7 @@ def compile_fixture_with_args(
         "runtime_api.objc3_runtime_promote_block_i32",
         "runtime_api.objc3_runtime_invoke_block_i32",
         "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
+        "runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
     ]
     if (
         block_arc_unified_source_surface.get("authoritative_source_fields")
@@ -1739,6 +1779,7 @@ def compile_fixture_with_args(
         "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
         "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
         "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
     ]
     if (
         block_arc_unified_source_surface.get("authoritative_probe_paths")
@@ -1996,6 +2037,9 @@ def compile_fixture_with_args(
         "block_arc_unified_source_surface_contract_id": (
             RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
         ),
+        "runtime_block_arc_runtime_abi_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID
+        ),
         "ownership_transfer_capture_family_source_surface_contract_id": (
             RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID
         ),
@@ -2064,6 +2108,7 @@ def compile_fixture_with_args(
         "runtime_api.objc3_runtime_promote_block_i32",
         "runtime_api.objc3_runtime_invoke_block_i32",
         "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
+        "runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
     ]
     if (
         block_arc_lowering_helper_surface.get("runtime_api_paths")
@@ -2110,6 +2155,7 @@ def compile_fixture_with_args(
         "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
         "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
         "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
     ]
     if (
         block_arc_lowering_helper_surface.get("authoritative_probe_paths")
@@ -2150,6 +2196,78 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_block_arc_lowering_helper_surface must require a linked runtime probe"
+        )
+    if not isinstance(block_arc_runtime_abi_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_block_arc_runtime_abi_surface"
+        )
+    if (
+        block_arc_runtime_abi_surface.get("contract_id")
+        != RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_block_arc_runtime_abi_surface contract"
+        )
+    expected_block_arc_runtime_abi_surface_fields = {
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "block_arc_unified_source_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "block_arc_lowering_helper_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID
+        ),
+        "block_arc_runtime_abi_snapshot_symbol": (
+            "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing"
+        ),
+        "arc_debug_state_snapshot_symbol": (
+            "objc3_runtime_copy_arc_debug_state_for_testing"
+        ),
+        "runtime_abi_boundary_model": BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
+        "block_runtime_model": BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+        "arc_runtime_model": BLOCK_ARC_RUNTIME_ARC_MODEL,
+        "fail_closed_model": BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
+        "authoritative_probe_path": BLOCK_ARC_RUNTIME_ABI_PROBE,
+    }
+    for field, expected_value in expected_block_arc_runtime_abi_surface_fields.items():
+        if block_arc_runtime_abi_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_block_arc_runtime_abi_surface drifted from {field}"
+            )
+    if (
+        block_arc_runtime_abi_surface.get("public_runtime_abi_boundary")
+        != PUBLIC_RUNTIME_ABI_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_runtime_abi_surface drifted from the public runtime ABI boundary"
+        )
+    if (
+        block_arc_runtime_abi_surface.get("private_block_arc_runtime_abi_boundary")
+        != PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_runtime_abi_surface drifted from the private block ARC runtime ABI boundary"
+        )
+    if (
+        block_arc_runtime_abi_surface.get("requires_coupled_registration_manifest")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_runtime_abi_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        block_arc_runtime_abi_surface.get("requires_real_compile_output")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_runtime_abi_surface must require real compile output"
+        )
+    if (
+        block_arc_runtime_abi_surface.get("requires_linked_runtime_probe")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_runtime_abi_surface must require a linked runtime probe"
         )
     if not isinstance(property_atomicity_synthesis_reflection_source_surface, dict):
         raise RuntimeError(
@@ -3964,6 +4082,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
         for result in results
         if result.case_id
         in {
+            "block-arc-runtime-abi",
             "escaping-block-capture-legality",
             "block-storage-arc-automation-semantics",
             "block-helper-runtime-execution",
@@ -4021,6 +4140,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "runtime_api.objc3_runtime_promote_block_i32",
             "runtime_api.objc3_runtime_invoke_block_i32",
             "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
+            "runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
         ],
         "block_runtime_boundary_model": (
             "source-only-sema-rejects-escaping-byref-and-owned-object-captures-before-runnable-block-ownership-lowering"
@@ -4051,6 +4171,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
             "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
             "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],
         "explicit_non_goals": [
             "no-public-block-object-abi-widening",
@@ -4166,6 +4287,7 @@ def build_runtime_block_arc_lowering_helper_surface(
         for result in results
         if result.case_id
         in {
+            "block-arc-runtime-abi",
             "escaping-block-capture-legality",
             "block-storage-arc-automation-semantics",
             "block-helper-runtime-execution",
@@ -4180,6 +4302,9 @@ def build_runtime_block_arc_lowering_helper_surface(
         "backend_artifact": "<emit-prefix>.ll",
         "block_arc_unified_source_surface_contract_id": (
             RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "runtime_block_arc_runtime_abi_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID
         ),
         "ownership_transfer_capture_family_source_surface_contract_id": (
             RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID
@@ -4222,6 +4347,7 @@ def build_runtime_block_arc_lowering_helper_surface(
             "runtime_api.objc3_runtime_promote_block_i32",
             "runtime_api.objc3_runtime_invoke_block_i32",
             "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
+            "runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
@@ -4248,12 +4374,56 @@ def build_runtime_block_arc_lowering_helper_surface(
             "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
             "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
             "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],
         "explicit_non_goals": [
             "no-cross-module-packaging-claims",
             "no-public-block-abi-widening",
             "no-milestone-specific-scaffolding",
         ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_block_arc_runtime_abi_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {
+            "block-arc-runtime-abi",
+            "block-helper-runtime-execution",
+            "arc-property-helper-abi",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "block_arc_unified_source_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "block_arc_lowering_helper_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_block_arc_runtime_abi_boundary": PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY,
+        "block_arc_runtime_abi_snapshot_symbol": (
+            "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing"
+        ),
+        "arc_debug_state_snapshot_symbol": (
+            "objc3_runtime_copy_arc_debug_state_for_testing"
+        ),
+        "runtime_abi_boundary_model": BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
+        "block_runtime_model": BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+        "arc_runtime_model": BLOCK_ARC_RUNTIME_ARC_MODEL,
+        "fail_closed_model": BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_probe_path": BLOCK_ARC_RUNTIME_ABI_PROBE,
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,
@@ -8114,6 +8284,124 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         },
     )
 
+def check_block_arc_runtime_abi_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "block-arc-runtime-abi"
+    probe = ROOT / Path(BLOCK_ARC_RUNTIME_ABI_PROBE)
+    exe_path = case_dir / "m281_d001_block_arc_runtime_abi_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_json_output(run_probe(exe_path), "block ARC runtime ABI probe")
+
+    expected_string_fields = {
+        "block_promote_symbol": "objc3_runtime_promote_block_i32",
+        "block_invoke_symbol": "objc3_runtime_invoke_block_i32",
+        "retain_symbol": "objc3_runtime_retain_i32",
+        "release_symbol": "objc3_runtime_release_i32",
+        "autorelease_symbol": "objc3_runtime_autorelease_i32",
+        "autoreleasepool_push_symbol": "objc3_runtime_push_autoreleasepool_scope",
+        "autoreleasepool_pop_symbol": "objc3_runtime_pop_autoreleasepool_scope",
+        "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+        "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+        "current_property_exchange_symbol": "objc3_runtime_exchange_current_property_i32",
+        "bind_current_property_context_symbol": (
+            "objc3_runtime_bind_current_property_context_for_testing"
+        ),
+        "clear_current_property_context_symbol": (
+            "objc3_runtime_clear_current_property_context_for_testing"
+        ),
+        "weak_current_property_load_symbol": (
+            "objc3_runtime_load_weak_current_property_i32"
+        ),
+        "weak_current_property_store_symbol": (
+            "objc3_runtime_store_weak_current_property_i32"
+        ),
+        "arc_debug_state_snapshot_symbol": (
+            "objc3_runtime_copy_arc_debug_state_for_testing"
+        ),
+        "runtime_abi_boundary_model": BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL,
+        "block_runtime_model": BLOCK_ARC_RUNTIME_BLOCK_MODEL,
+        "arc_runtime_model": BLOCK_ARC_RUNTIME_ARC_MODEL,
+        "fail_closed_model": BLOCK_ARC_RUNTIME_FAIL_CLOSED_MODEL,
+    }
+    for field, expected_value in expected_string_fields.items():
+        expect(
+            payload.get(field) == expected_value,
+            f"expected block ARC runtime ABI probe to preserve {field}",
+        )
+
+    expected_integer_fields = {
+        "abi_status": 0,
+        "arc_status": 0,
+        "retained": 77,
+        "autoreleased": 77,
+        "released": 77,
+        "invoke_result": 17,
+        "private_runtime_abi_ready": 1,
+        "public_runtime_header_unchanged": 1,
+        "deterministic": 1,
+        "live_runtime_block_handle_count": 0,
+        "block_promote_call_count": 1,
+        "block_invoke_call_count": 1,
+        "retain_call_count": 2,
+        "release_call_count": 3,
+        "autorelease_call_count": 1,
+        "autoreleasepool_push_count": 1,
+        "autoreleasepool_pop_count": 1,
+        "current_property_read_count": 0,
+        "current_property_write_count": 0,
+        "current_property_exchange_count": 0,
+        "weak_current_property_load_count": 0,
+        "weak_current_property_store_count": 0,
+        "last_promote_has_pointer_capture_storage": 1,
+        "last_block_invoke_result": 17,
+        "last_autorelease_value": 77,
+        "arc_retain_call_count": 2,
+        "arc_release_call_count": 3,
+        "arc_autorelease_call_count": 1,
+        "arc_autoreleasepool_push_count": 1,
+        "arc_autoreleasepool_pop_count": 1,
+    }
+    for field, expected_value in expected_integer_fields.items():
+        expect(
+            payload.get(field) == expected_value,
+            f"expected block ARC runtime ABI probe to preserve {field}",
+        )
+
+    handle = payload.get("handle")
+    expect(isinstance(handle, int) and handle > 0, "expected block ARC runtime ABI probe to publish a live promoted block handle")
+    expect(
+        payload.get("retain_handle_result") == handle
+        and payload.get("release_handle_result") == handle
+        and payload.get("final_release_result") == handle,
+        "expected block ARC runtime ABI probe to preserve block handle retain/release traffic",
+    )
+    expect(
+        payload.get("last_promoted_block_handle") == handle
+        and payload.get("last_invoked_block_handle") == handle,
+        "expected block ARC runtime ABI probe to preserve the last promoted and invoked block handle",
+    )
+    expect(
+        payload.get("last_retain_value") == handle
+        and payload.get("last_release_value") == handle,
+        "expected block ARC runtime ABI probe to preserve the last ARC retain/release value",
+    )
+
+    return CaseResult(
+        case_id="block-arc-runtime-abi",
+        probe=BLOCK_ARC_RUNTIME_ABI_PROBE,
+        fixture=None,
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "handle": handle,
+            "invoke_result": payload.get("invoke_result"),
+            "block_promote_call_count": payload.get("block_promote_call_count"),
+            "block_invoke_call_count": payload.get("block_invoke_call_count"),
+            "retain_call_count": payload.get("retain_call_count"),
+            "release_call_count": payload.get("release_call_count"),
+            "autorelease_call_count": payload.get("autorelease_call_count"),
+        },
+    )
+
 
 def check_block_helper_runtime_execution_case(
     clangxx: str, run_dir: Path
@@ -10377,6 +10665,7 @@ def main() -> int:
         check_property_reflection_case(clangxx, run_dir),
         check_escaping_block_capture_legality_case(run_dir),
         check_block_storage_arc_automation_semantics_case(run_dir),
+        check_block_arc_runtime_abi_case(clangxx, run_dir),
         check_block_helper_runtime_execution_case(clangxx, run_dir),
         check_arc_property_helper_case(clangxx, run_dir),
     ]
@@ -10418,6 +10707,9 @@ def main() -> int:
         ),
         "runtime_block_arc_lowering_helper_surface": (
             build_runtime_block_arc_lowering_helper_surface(results)
+        ),
+        "runtime_block_arc_runtime_abi_surface": (
+            build_runtime_block_arc_runtime_abi_surface(results)
         ),
         "runtime_property_ivar_storage_accessor_source_surface": (
             build_runtime_property_ivar_storage_accessor_source_surface(results)

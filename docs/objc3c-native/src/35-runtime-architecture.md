@@ -277,6 +277,13 @@ automation work must extend this emitted surface instead of reconstructing
 truth from sidecar-only notes, probe-local assumptions, or milestone-local
 scaffolding.
 
+The coupled source surface also carries the private runtime snapshot
+`runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
+and the linked probe
+`tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp` so later
+runtime ABI work extends the emitted compiler truth instead of rebuilding
+symbol inventories from ad hoc probes.
+
 ## Ownership Transfer And Capture-Family Source Surface
 
 - authoritative compile-manifest key:
@@ -352,6 +359,7 @@ milestone-local notes.
     - `runtime_api.objc3_runtime_promote_block_i32`
     - `runtime_api.objc3_runtime_invoke_block_i32`
     - `runtime_api.objc3_runtime_copy_arc_debug_state_for_testing`
+    - `runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
@@ -375,6 +383,7 @@ milestone-local notes.
     - `tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp`
     - `tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp`
     - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp`
 
 This is the authoritative lowering/helper boundary for `M281` lane C. It
 freezes the live semantic lowering packets, manifest replay keys, emitted LLVM
@@ -382,6 +391,50 @@ helper summaries, and private runtime hook symbols that together describe the
 current executable block/ARC lowering story. Cross-module preservation and
 runtime-ABI widening work must extend this emitted surface instead of inferring
 lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
+
+## Block/ARC Runtime ABI Surface
+
+- authoritative compile-manifest key:
+  - `runtime_block_arc_runtime_abi_surface`
+- authoritative header boundary:
+  - public header:
+    - `native/objc3c/src/runtime/objc3_runtime.h`
+  - internal header:
+    - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- authoritative public runtime ABI boundary:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+  - `objc3_runtime_reset_for_testing`
+- authoritative private block/ARC runtime ABI boundary:
+  - `objc3_runtime_promote_block_i32`
+  - `objc3_runtime_invoke_block_i32`
+  - `objc3_runtime_retain_i32`
+  - `objc3_runtime_release_i32`
+  - `objc3_runtime_autorelease_i32`
+  - `objc3_runtime_push_autoreleasepool_scope`
+  - `objc3_runtime_pop_autoreleasepool_scope`
+  - `objc3_runtime_read_current_property_i32`
+  - `objc3_runtime_write_current_property_i32`
+  - `objc3_runtime_exchange_current_property_i32`
+  - `objc3_runtime_bind_current_property_context_for_testing`
+  - `objc3_runtime_clear_current_property_context_for_testing`
+  - `objc3_runtime_load_weak_current_property_i32`
+  - `objc3_runtime_store_weak_current_property_i32`
+  - `objc3_runtime_copy_arc_debug_state_for_testing`
+  - `objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
+- authoritative proof path:
+  - `tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp`
+
+This is the authoritative live runtime ABI boundary for `M281` lane D. It
+freezes the supported private block-promotion, block-invoke, ARC helper, weak
+property helper, and testing snapshot entrypoints without widening the public
+runtime header. It composes directly on top of
+`runtime_block_arc_unified_source_surface` and
+`runtime_block_arc_lowering_helper_surface`, so later escaping-block,
+byref-forwarding, ARC-hardening, and packaged validation work must consume this
+emitted ABI surface instead of rebuilding symbol inventories from probes or ad
+hoc runtime inspection.
 
 ## Cross-Module Block Ownership Artifact Preservation
 

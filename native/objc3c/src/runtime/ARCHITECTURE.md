@@ -118,11 +118,27 @@ Block/ARC unified source of truth:
   contracts, the authoritative semantic-packet field names, and the runtime
   entrypoints `objc3_runtime_promote_block_i32`,
   `objc3_runtime_invoke_block_i32`, and
-  `objc3_runtime_copy_arc_debug_state_for_testing`
+  `objc3_runtime_copy_arc_debug_state_for_testing` plus the private ABI/testing
+  snapshot `objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
 - later ownership transfer, capture-family, generalized ARC insertion, block
   helper/runtime implementation, and runnable block-ARC validation work must
   extend that emitted surface rather than inferring runtime truth from sidecar
   probes, ad hoc IR inspection, or milestone-local notes
+
+Block/ARC runtime ABI source of truth:
+
+- compile publication exposes the private block/ARC runtime ABI boundary
+  through the emitted compile-manifest key
+  `runtime_block_arc_runtime_abi_surface`
+- that surface must point at the unchanged public runtime header, the internal
+  bootstrap runtime header, the fixed public registration/lookup/dispatch/reset
+  boundary, and the private block promotion/invoke, ARC helper, weak property
+  helper, and testing snapshot entrypoints that make up the live block/ARC
+  runtime ABI
+- later escaping block implementation, byref forwarding, ARC hardening, and
+  packaged validation work must extend that emitted ABI surface instead of
+  widening the public header or rebuilding runtime symbol inventories from
+  probe-local assumptions
 
 Ownership-transfer and capture-family source of truth:
 

@@ -638,6 +638,12 @@ thread_local int g_runtime_arc_debug_last_weak_stored_value = 0;
 thread_local int g_runtime_arc_debug_last_property_receiver = 0;
 thread_local std::string g_runtime_arc_debug_last_property_name;
 thread_local std::string g_runtime_arc_debug_last_property_owner_identity;
+thread_local std::uint64_t g_runtime_block_promote_call_count = 0;
+thread_local std::uint64_t g_runtime_block_invoke_call_count = 0;
+thread_local int g_runtime_last_promoted_block_handle = 0;
+thread_local int g_runtime_last_promote_has_pointer_capture_storage = 0;
+thread_local int g_runtime_last_invoked_block_handle = 0;
+thread_local int g_runtime_last_block_invoke_result = 0;
 thread_local std::uint64_t g_runtime_error_bridge_store_call_count = 0;
 thread_local std::uint64_t g_runtime_error_bridge_load_call_count = 0;
 thread_local std::uint64_t g_runtime_error_bridge_status_bridge_call_count = 0;
@@ -865,6 +871,12 @@ void ResetRuntimeAutoreleasepoolStateForTesting() {
   g_runtime_arc_debug_last_property_receiver = 0;
   g_runtime_arc_debug_last_property_name.clear();
   g_runtime_arc_debug_last_property_owner_identity.clear();
+  g_runtime_block_promote_call_count = 0;
+  g_runtime_block_invoke_call_count = 0;
+  g_runtime_last_promoted_block_handle = 0;
+  g_runtime_last_promote_has_pointer_capture_storage = 0;
+  g_runtime_last_invoked_block_handle = 0;
+  g_runtime_last_block_invoke_result = 0;
   g_runtime_error_bridge_store_call_count = 0;
   g_runtime_error_bridge_load_call_count = 0;
   g_runtime_error_bridge_status_bridge_call_count = 0;
@@ -4709,6 +4721,84 @@ int objc3_runtime_copy_arc_debug_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing(
+    objc3_runtime_block_arc_runtime_abi_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->private_runtime_abi_ready = 1;
+  snapshot->public_runtime_header_unchanged = 1;
+  snapshot->deterministic = 1;
+  snapshot->live_runtime_block_handle_count = 0;
+  snapshot->block_promote_call_count = g_runtime_block_promote_call_count;
+  snapshot->block_invoke_call_count = g_runtime_block_invoke_call_count;
+  snapshot->retain_call_count = g_runtime_arc_debug_retain_call_count;
+  snapshot->release_call_count = g_runtime_arc_debug_release_call_count;
+  snapshot->autorelease_call_count = g_runtime_arc_debug_autorelease_call_count;
+  snapshot->autoreleasepool_push_count =
+      g_runtime_arc_debug_autoreleasepool_push_count;
+  snapshot->autoreleasepool_pop_count =
+      g_runtime_arc_debug_autoreleasepool_pop_count;
+  snapshot->current_property_read_count =
+      g_runtime_arc_debug_current_property_read_count;
+  snapshot->current_property_write_count =
+      g_runtime_arc_debug_current_property_write_count;
+  snapshot->current_property_exchange_count =
+      g_runtime_arc_debug_current_property_exchange_count;
+  snapshot->weak_current_property_load_count =
+      g_runtime_arc_debug_weak_current_property_load_count;
+  snapshot->weak_current_property_store_count =
+      g_runtime_arc_debug_weak_current_property_store_count;
+  snapshot->last_promoted_block_handle = g_runtime_last_promoted_block_handle;
+  snapshot->last_promote_has_pointer_capture_storage =
+      g_runtime_last_promote_has_pointer_capture_storage;
+  snapshot->last_invoked_block_handle = g_runtime_last_invoked_block_handle;
+  snapshot->last_block_invoke_result = g_runtime_last_block_invoke_result;
+  snapshot->last_retain_value = g_runtime_arc_debug_last_retain_value;
+  snapshot->last_release_value = g_runtime_arc_debug_last_release_value;
+  snapshot->last_autorelease_value = g_runtime_arc_debug_last_autorelease_value;
+  snapshot->block_promote_symbol = "objc3_runtime_promote_block_i32";
+  snapshot->block_invoke_symbol = "objc3_runtime_invoke_block_i32";
+  snapshot->retain_symbol = "objc3_runtime_retain_i32";
+  snapshot->release_symbol = "objc3_runtime_release_i32";
+  snapshot->autorelease_symbol = "objc3_runtime_autorelease_i32";
+  snapshot->autoreleasepool_push_symbol =
+      "objc3_runtime_push_autoreleasepool_scope";
+  snapshot->autoreleasepool_pop_symbol =
+      "objc3_runtime_pop_autoreleasepool_scope";
+  snapshot->current_property_read_symbol =
+      "objc3_runtime_read_current_property_i32";
+  snapshot->current_property_write_symbol =
+      "objc3_runtime_write_current_property_i32";
+  snapshot->current_property_exchange_symbol =
+      "objc3_runtime_exchange_current_property_i32";
+  snapshot->bind_current_property_context_symbol =
+      "objc3_runtime_bind_current_property_context_for_testing";
+  snapshot->clear_current_property_context_symbol =
+      "objc3_runtime_clear_current_property_context_for_testing";
+  snapshot->weak_current_property_load_symbol =
+      "objc3_runtime_load_weak_current_property_i32";
+  snapshot->weak_current_property_store_symbol =
+      "objc3_runtime_store_weak_current_property_i32";
+  snapshot->arc_debug_state_snapshot_symbol =
+      "objc3_runtime_copy_arc_debug_state_for_testing";
+  snapshot->runtime_abi_boundary_model =
+      "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header";
+  snapshot->block_runtime_model =
+      "promote-invoke-and-handle-lifetime-for-supported-block-records-stay-on-bootstrap-internal-runtime-entrypoints";
+  snapshot->arc_runtime_model =
+      "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints";
+  snapshot->fail_closed_model =
+      "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-runtime-abi-widening";
+
+  RuntimeState &state = State();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->live_runtime_block_handle_count =
+      static_cast<std::uint64_t>(state.runtime_blocks_by_handle.size());
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_copy_error_bridge_state_for_testing(
     objc3_runtime_error_bridge_state_snapshot *snapshot) {
   if (snapshot == nullptr) {
@@ -5482,6 +5572,9 @@ extern "C" int objc3_runtime_promote_block_i32(
   if (storage == nullptr || storage_size_bytes == 0u) {
     return 0;
   }
+  ++g_runtime_block_promote_call_count;
+  g_runtime_last_promote_has_pointer_capture_storage =
+      has_pointer_capture_storage != 0 ? 1 : 0;
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
   int block_handle = state.next_runtime_block_handle;
@@ -5527,6 +5620,7 @@ extern "C" int objc3_runtime_promote_block_i32(
     return 0;
   }
   state.runtime_blocks_by_handle.emplace(block_handle, std::move(record));
+  g_runtime_last_promoted_block_handle = block_handle;
   return block_handle;
 }
 
@@ -5536,6 +5630,8 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
   // works for any promoted runtime block record with a concrete invoke thunk,
   // including pointer-capture storage promoted through the private helper
   // surface.
+  ++g_runtime_block_invoke_call_count;
+  g_runtime_last_invoked_block_handle = block_handle;
   RuntimeBlockInvokeFn invoke = nullptr;
   std::vector<std::uint64_t> storage_words;
   {
@@ -5552,7 +5648,9 @@ extern "C" int objc3_runtime_invoke_block_i32(int block_handle, int a0, int a1,
   if (invoke == nullptr || storage_words.empty()) {
     return 0;
   }
-  return invoke(storage_words.data(), a0, a1, a2, a3);
+  const int result = invoke(storage_words.data(), a0, a1, a2, a3);
+  g_runtime_last_block_invoke_result = result;
+  return result;
 }
 
 // runtime-memory-management implementation anchor: autoreleasepool
