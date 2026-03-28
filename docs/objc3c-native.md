@@ -386,6 +386,70 @@ semantic, lowering, and runtime work must extend this emitted surface instead
 of reinterpreting capture-family truth from ad hoc lowering state or
 milestone-local notes.
 
+## Block/ARC Lowering And Helper Surface
+
+- authoritative compile-manifest key:
+  - `runtime_block_arc_lowering_helper_surface`
+- authoritative upstream contracts:
+  - `objc3c.runtime.block.arc.unified.source.surface.v1`
+  - `objc3c.runtime.ownership.transfer.capture.family.source.surface.v1`
+  - `objc3c.executable.block.object.and.invoke.thunk.lowering.v1`
+  - `objc3c.executable.block.byref.helper.lowering.v1`
+  - `objc3c.executable.block.escape.runtime.hook.lowering.v1`
+  - `objc3c.arc.mode.handling.v1`
+  - `objc3c.arc.semantic.rules.v1`
+  - `objc3c.arc.inference.lifetime.v1`
+- authoritative live lowering packets:
+  - semantic surfaces:
+    - `frontend.pipeline.semantic_surface.objc_block_abi_invoke_trampoline_lowering_surface`
+    - `frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface`
+    - `frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface`
+    - `frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface`
+  - manifest replay summaries:
+    - `lowering_block_abi_invoke_trampoline`
+    - `lowering_block_storage_escape`
+    - `lowering_block_copy_dispose`
+  - LLVM IR summary anchors:
+    - `llvm_ir_summary.executable_block_object_invoke_thunk_lowering`
+    - `llvm_ir_summary.executable_block_byref_helper_lowering`
+    - `llvm_ir_summary.executable_block_escape_runtime_hook_lowering`
+    - `llvm_ir_summary.arc_cleanup_weak_lifetime_hooks`
+    - `llvm_ir_summary.arc_block_autorelease_return_lowering`
+  - private runtime hooks:
+    - `runtime_api.objc3_runtime_promote_block_i32`
+    - `runtime_api.objc3_runtime_invoke_block_i32`
+    - `runtime_api.objc3_runtime_copy_arc_debug_state_for_testing`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp`
+    - `tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp`
+    - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+
+This is the authoritative lowering/helper boundary for `M281` lane C. It
+freezes the live semantic lowering packets, manifest replay keys, emitted LLVM
+helper summaries, and private runtime hook symbols that together describe the
+current executable block/ARC lowering story. Cross-module preservation and
+runtime-ABI widening work must extend this emitted surface instead of inferring
+lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
+
 ## Property/Ivar/Storage/Accessor Source Surface
 
 - authoritative compile-manifest key:

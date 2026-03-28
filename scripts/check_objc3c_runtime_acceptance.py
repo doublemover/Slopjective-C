@@ -44,6 +44,9 @@ RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1"
 )
+RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.block.arc.lowering.helper.surface.v1"
+)
 DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID = (
     "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
 )
@@ -274,6 +277,9 @@ def compile_fixture_with_args(
     )
     ownership_transfer_capture_family_source_surface = manifest.get(
         "runtime_ownership_transfer_capture_family_source_surface"
+    )
+    block_arc_lowering_helper_surface = manifest.get(
+        "runtime_block_arc_lowering_helper_surface"
     )
     dispatch_and_synthesized_accessor_lowering_surface = manifest.get(
         "dispatch_and_synthesized_accessor_lowering_surface"
@@ -1936,6 +1942,205 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_ownership_transfer_capture_family_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(block_arc_lowering_helper_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_block_arc_lowering_helper_surface"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("contract_id")
+        != RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_block_arc_lowering_helper_surface contract"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if block_arc_lowering_helper_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from the emitted object artifact path"
+        )
+    if block_arc_lowering_helper_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_block_arc_lowering_helper_fields = {
+        "block_arc_unified_source_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "ownership_transfer_capture_family_source_surface_contract_id": (
+            RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "block_object_invoke_thunk_lowering_contract_id": (
+            "objc3c.executable.block.object.and.invoke.thunk.lowering.v1"
+        ),
+        "block_byref_helper_lowering_contract_id": (
+            "objc3c.executable.block.byref.helper.lowering.v1"
+        ),
+        "block_escape_runtime_hook_lowering_contract_id": (
+            "objc3c.executable.block.escape.runtime.hook.lowering.v1"
+        ),
+        "arc_mode_handling_contract_id": "objc3c.arc.mode.handling.v1",
+        "arc_semantic_rules_contract_id": "objc3c.arc.semantic.rules.v1",
+        "arc_inference_lifetime_contract_id": "objc3c.arc.inference.lifetime.v1",
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "lowering_helper_surface_model": (
+            "block-arc-lowering-helper-surface-freezes-live-semantic-lowering-packets-manifest-replay-keys-llvm-helper-summaries-and-private-runtime-hooks-before-cross-module-or-public-abi-expansion"
+        ),
+    }
+    for field, expected_value in expected_block_arc_lowering_helper_fields.items():
+        if block_arc_lowering_helper_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_block_arc_lowering_helper_surface drifted from {field}"
+            )
+    expected_block_arc_lowering_helper_semantic_surface_paths = [
+        "frontend.pipeline.semantic_surface.objc_block_abi_invoke_trampoline_lowering_surface",
+        "frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface",
+        "frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface",
+        "frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("semantic_surface_paths")
+        != expected_block_arc_lowering_helper_semantic_surface_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from semantic_surface_paths"
+        )
+    expected_block_arc_lowering_helper_manifest_lowering_paths = [
+        "lowering_block_abi_invoke_trampoline",
+        "lowering_block_storage_escape",
+        "lowering_block_copy_dispose",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("manifest_lowering_paths")
+        != expected_block_arc_lowering_helper_manifest_lowering_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from manifest_lowering_paths"
+        )
+    expected_block_arc_lowering_helper_llvm_ir_summary_paths = [
+        "llvm_ir_summary.executable_block_object_invoke_thunk_lowering",
+        "llvm_ir_summary.executable_block_byref_helper_lowering",
+        "llvm_ir_summary.executable_block_escape_runtime_hook_lowering",
+        "llvm_ir_summary.arc_cleanup_weak_lifetime_hooks",
+        "llvm_ir_summary.arc_block_autorelease_return_lowering",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("llvm_ir_summary_paths")
+        != expected_block_arc_lowering_helper_llvm_ir_summary_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from llvm_ir_summary_paths"
+        )
+    expected_block_arc_lowering_helper_runtime_api_paths = [
+        "runtime_api.objc3_runtime_promote_block_i32",
+        "runtime_api.objc3_runtime_invoke_block_i32",
+        "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("runtime_api_paths")
+        != expected_block_arc_lowering_helper_runtime_api_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from runtime_api_paths"
+        )
+    expected_block_arc_lowering_helper_code_paths = [
+        "native/objc3c/src/ast/objc3_ast.h",
+        "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("authoritative_code_paths")
+        != expected_block_arc_lowering_helper_code_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from authoritative_code_paths"
+        )
+    expected_block_arc_lowering_helper_fixture_paths = [
+        "tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
+        "tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3",
+        "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
+        "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("authoritative_fixture_paths")
+        != expected_block_arc_lowering_helper_fixture_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from authoritative_fixture_paths"
+        )
+    expected_block_arc_lowering_helper_probe_paths = [
+        "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("authoritative_probe_paths")
+        != expected_block_arc_lowering_helper_probe_paths
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from authoritative_probe_paths"
+        )
+    expected_block_arc_lowering_helper_non_goals = [
+        "no-cross-module-packaging-claims",
+        "no-public-block-abi-widening",
+        "no-milestone-specific-scaffolding",
+    ]
+    if (
+        block_arc_lowering_helper_surface.get("explicit_non_goals")
+        != expected_block_arc_lowering_helper_non_goals
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface drifted from explicit_non_goals"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("requires_coupled_registration_manifest")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("requires_real_compile_output")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface must require real compile output"
+        )
+    if (
+        block_arc_lowering_helper_surface.get("requires_linked_runtime_probe")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_block_arc_lowering_helper_surface must require a linked runtime probe"
         )
     if not isinstance(property_atomicity_synthesis_reflection_source_surface, dict):
         raise RuntimeError(
@@ -3906,6 +4111,107 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "no-parallel-semantics-path",
             "no-milestone-specific-scaffolding",
             "no-lowering-owned-reinterpretation-of-capture-family-truth",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_block_arc_lowering_helper_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {
+            "escaping-block-capture-legality",
+            "block-storage-arc-automation-semantics",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID,
+        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
+        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
+        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
+        "object_artifact": "<emit-prefix>.obj",
+        "backend_artifact": "<emit-prefix>.ll",
+        "block_arc_unified_source_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "ownership_transfer_capture_family_source_surface_contract_id": (
+            RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "block_object_invoke_thunk_lowering_contract_id": (
+            "objc3c.executable.block.object.and.invoke.thunk.lowering.v1"
+        ),
+        "block_byref_helper_lowering_contract_id": (
+            "objc3c.executable.block.byref.helper.lowering.v1"
+        ),
+        "block_escape_runtime_hook_lowering_contract_id": (
+            "objc3c.executable.block.escape.runtime.hook.lowering.v1"
+        ),
+        "arc_mode_handling_contract_id": "objc3c.arc.mode.handling.v1",
+        "arc_semantic_rules_contract_id": "objc3c.arc.semantic.rules.v1",
+        "arc_inference_lifetime_contract_id": "objc3c.arc.inference.lifetime.v1",
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "lowering_helper_surface_model": (
+            "block-arc-lowering-helper-surface-freezes-live-semantic-lowering-packets-manifest-replay-keys-llvm-helper-summaries-and-private-runtime-hooks-before-cross-module-or-public-abi-expansion"
+        ),
+        "semantic_surface_paths": [
+            "frontend.pipeline.semantic_surface.objc_block_abi_invoke_trampoline_lowering_surface",
+            "frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface",
+            "frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface",
+            "frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface",
+        ],
+        "manifest_lowering_paths": [
+            "lowering_block_abi_invoke_trampoline",
+            "lowering_block_storage_escape",
+            "lowering_block_copy_dispose",
+        ],
+        "llvm_ir_summary_paths": [
+            "llvm_ir_summary.executable_block_object_invoke_thunk_lowering",
+            "llvm_ir_summary.executable_block_byref_helper_lowering",
+            "llvm_ir_summary.executable_block_escape_runtime_hook_lowering",
+            "llvm_ir_summary.arc_cleanup_weak_lifetime_hooks",
+            "llvm_ir_summary.arc_block_autorelease_return_lowering",
+        ],
+        "runtime_api_paths": [
+            "runtime_api.objc3_runtime_promote_block_i32",
+            "runtime_api.objc3_runtime_invoke_block_i32",
+            "runtime_api.objc3_runtime_copy_arc_debug_state_for_testing",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
+            "tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3",
+            "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
+            "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-cross-module-packaging-claims",
+            "no-public-block-abi-widening",
+            "no-milestone-specific-scaffolding",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -9494,6 +9800,9 @@ def main() -> int:
         ),
         "runtime_ownership_transfer_capture_family_source_surface": (
             build_runtime_ownership_transfer_capture_family_source_surface(results)
+        ),
+        "runtime_block_arc_lowering_helper_surface": (
+            build_runtime_block_arc_lowering_helper_surface(results)
         ),
         "runtime_property_ivar_storage_accessor_source_surface": (
             build_runtime_property_ivar_storage_accessor_source_surface(results)

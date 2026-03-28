@@ -1335,6 +1335,12 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeOwnershipTransferCaptureFamilySourceSurfaceModel =
         "ownership-transfer-and-capture-family-source-surface-freezes-sema-level-move-capture-explicit-capture-mode-and-retainable-family-truth-before-lowering-or-runtime-lifetime-expansion";
+inline constexpr const char
+    *kObjc3RuntimeBlockArcLoweringHelperSurfaceContractId =
+        "objc3c.runtime.block.arc.lowering.helper.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeBlockArcLoweringHelperSurfaceModel =
+        "block-arc-lowering-helper-surface-freezes-live-semantic-lowering-packets-manifest-replay-keys-llvm-helper-summaries-and-private-runtime-hooks-before-cross-module-or-public-abi-expansion";
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,
