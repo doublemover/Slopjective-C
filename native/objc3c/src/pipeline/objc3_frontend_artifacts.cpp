@@ -22585,6 +22585,66 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"requires_linked_runtime_probe\":true"
            << ",\"requires_real_compile_output\":true"
            << "},\n";
+  manifest << "  \"runtime_installation_abi_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeInstallationAbiSurfaceContractId
+           << "\",\"public_header_path\":\""
+           << runtime_bootstrap_api.public_header_path
+           << "\",\"internal_header_path\":\""
+           << kObjc3RuntimeBootstrapInternalHeaderPath
+           << "\",\"bootstrap_api_contract_id\":\""
+           << runtime_bootstrap_api.contract_id
+           << "\",\"bootstrap_reset_contract_id\":\""
+           << kObjc3RuntimeBootstrapResetContractId
+           << "\",\"bootstrap_registrar_contract_id\":\""
+           << kObjc3RuntimeBootstrapRegistrarContractId
+           << "\",\"public_installation_abi_boundary\":[\""
+           << kObjc3RuntimeSupportLibraryRegisterImageSymbol << "\",\""
+           << kObjc3RuntimeBootstrapStateSnapshotSymbol << "\",\""
+           << kObjc3RuntimeSupportLibraryResetForTestingSymbol
+           << "\"],\"private_loader_testing_boundary\":[\""
+           << kObjc3RuntimeBootstrapStageRegistrationTableSymbol << "\",\""
+           << kObjc3RuntimeBootstrapImageWalkSnapshotSymbol << "\",\""
+           << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol << "\",\""
+           << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol
+           << "\"],\"installation_requires_coupled_registration_manifest\":true"
+           << ",\"register_image_consumes_staged_registration_table_once\":true"
+           << ",\"deterministic_reset_replay_supported\":true"
+           << "},\n";
+  manifest << "  \"runtime_loader_lifecycle_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeLoaderLifecycleSurfaceContractId
+           << "\",\"runtime_installation_abi_surface_contract_id\":\""
+           << kObjc3RuntimeInstallationAbiSurfaceContractId
+           << "\",\"bootstrap_semantics_contract_id\":\""
+           << runtime_bootstrap_semantics.contract_id
+           << "\",\"bootstrap_reset_contract_id\":\""
+           << kObjc3RuntimeBootstrapResetContractId
+           << "\",\"bootstrap_registrar_contract_id\":\""
+           << kObjc3RuntimeBootstrapRegistrarContractId
+           << "\",\"authoritative_probe_path\":\""
+           << kObjc3RuntimeInstallationLifecycleProbePath
+           << "\",\"loader_testing_boundary_symbols\":[\""
+           << kObjc3RuntimeBootstrapStageRegistrationTableSymbol << "\",\""
+           << kObjc3RuntimeBootstrapImageWalkSnapshotSymbol << "\",\""
+           << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol << "\",\""
+           << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol
+           << "\"],\"lifecycle_phases\":[\"startup-installed-runtime-state\""
+           << ",\"duplicate-registration-rejected-without-state-advance\""
+           << ",\"out-of-order-registration-rejected-without-state-advance\""
+           << ",\"invalid-anchor-root-rejected-without-state-advance\""
+           << ",\"invalid-discovery-root-rejected-without-state-advance\""
+           << ",\"reset-retained-bootstrap-catalog\""
+           << ",\"replay-restored-installed-runtime-state\""
+           << "],\"rejected_registration_status_codes\":{"
+           << "\"duplicate_translation_unit_identity_key\":"
+           << kObjc3RuntimeBootstrapDuplicateRegistrationStatusCode
+           << ",\"out_of_order_registration\":"
+           << kObjc3RuntimeBootstrapOutOfOrderStatusCode
+           << ",\"invalid_registration_roots\":"
+           << kObjc3RuntimeBootstrapInvalidRegistrationRootsStatusCode
+           << "},\"retained_bootstrap_catalog_required\":true"
+           << ",\"deterministic_replay_required\":true"
+           << ",\"requires_linked_fixture_or_loader_retained_roots\":true"
+           << "},\n";
   manifest << "  \"lowering_id_class_sel_object_pointer_typecheck\":{\"replay_key\":\""
            << id_class_sel_object_pointer_typecheck_replay_key
            << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract

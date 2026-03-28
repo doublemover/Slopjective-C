@@ -1128,6 +1128,10 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeMultiImageStartupOrderingSourceSurfaceContractId =
         "objc3c.runtime.multi.image.startup.ordering.source.surface.v1";
+inline constexpr const char *kObjc3RuntimeInstallationAbiSurfaceContractId =
+    "objc3c.runtime.installation.abi.surface.v1";
+inline constexpr const char *kObjc3RuntimeLoaderLifecycleSurfaceContractId =
+    "objc3c.runtime.loader.lifecycle.surface.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarContractId =
     "objc3c.runtime.bootstrap.registrar.image.walk.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarSurfacePath =
@@ -1160,6 +1164,8 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol =
         "objc3_runtime_copy_reset_replay_state_for_testing";
+inline constexpr const char *kObjc3RuntimeInstallationLifecycleProbePath =
+    "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp";
 inline constexpr const char *kObjc3RuntimeBootstrapResetLifecycleModel =
     "reset-clears-live-runtime-state-and-zeroes-image-local-init-cells";
 inline constexpr const char *kObjc3RuntimeBootstrapReplayOrderModel =

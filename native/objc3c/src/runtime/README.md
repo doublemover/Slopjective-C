@@ -44,6 +44,9 @@ Installation ABI and loader lifecycle surface:
   - `objc3_runtime_copy_reset_replay_state_for_testing`
 - authoritative executable probe:
   - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
+- emitted compile-manifest keys:
+  - `runtime_installation_abi_surface`
+  - `runtime_loader_lifecycle_surface`
 
 Current synthesized-property path:
 

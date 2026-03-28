@@ -70,6 +70,17 @@ PUBLIC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_dispatch_i32",
     "objc3_runtime_reset_for_testing",
 ]
+RUNTIME_INSTALLATION_ABI_BOUNDARY = [
+    "objc3_runtime_register_image",
+    "objc3_runtime_copy_registration_state_for_testing",
+    "objc3_runtime_reset_for_testing",
+]
+RUNTIME_LOADER_TESTING_BOUNDARY = [
+    "objc3_runtime_stage_registration_table_for_bootstrap",
+    "objc3_runtime_copy_image_walk_state_for_testing",
+    "objc3_runtime_replay_registered_images_for_testing",
+    "objc3_runtime_copy_reset_replay_state_for_testing",
+]
 COMPILE_PROVENANCE_CONTRACT_ID = "objc3c.native.compile.output.provenance.v1"
 COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID = "objc3c.native.compile.output.truthfulness.v1"
 
@@ -228,6 +239,8 @@ def compile_fixture_with_args(
         manifest.get("objc_runtime_bootstrap_archive_static_link_replay_corpus", {}),
     )
     publication_surface = manifest.get("runtime_state_publication_surface")
+    runtime_installation_abi_surface = manifest.get("runtime_installation_abi_surface")
+    runtime_loader_lifecycle_surface = manifest.get("runtime_loader_lifecycle_surface")
     if not isinstance(publication_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_state_publication_surface")
     if publication_surface.get("contract_id") != RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID:
@@ -726,6 +739,182 @@ def compile_fixture_with_args(
         raise RuntimeError(
             "runtime_multi_image_startup_ordering_source_surface must require real compile output"
         )
+    if not isinstance(runtime_installation_abi_surface, dict):
+        raise RuntimeError("compiled fixture manifest did not publish runtime_installation_abi_surface")
+    if (
+        runtime_installation_abi_surface.get("contract_id")
+        != RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_installation_abi_surface contract"
+        )
+    if runtime_installation_abi_surface.get("public_header_path") != RUNTIME_PUBLIC_HEADER_PATH:
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the public runtime header path"
+        )
+    if (
+        runtime_installation_abi_surface.get("internal_header_path")
+        != RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the bootstrap internal header path"
+        )
+    if (
+        runtime_installation_abi_surface.get("bootstrap_api_contract_id")
+        != bootstrap_api_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the bootstrap API contract"
+        )
+    if (
+        runtime_installation_abi_surface.get("bootstrap_reset_contract_id")
+        != bootstrap_reset_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the bootstrap reset contract"
+        )
+    if (
+        runtime_installation_abi_surface.get("bootstrap_registrar_contract_id")
+        != bootstrap_registrar_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the bootstrap registrar contract"
+        )
+    if (
+        runtime_installation_abi_surface.get("public_installation_abi_boundary")
+        != RUNTIME_INSTALLATION_ABI_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the public installation ABI boundary"
+        )
+    if (
+        runtime_installation_abi_surface.get("private_loader_testing_boundary")
+        != RUNTIME_LOADER_TESTING_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface drifted from the private loader testing boundary"
+        )
+    if (
+        runtime_installation_abi_surface.get(
+            "installation_requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface must require the coupled registration manifest"
+        )
+    if (
+        runtime_installation_abi_surface.get(
+            "register_image_consumes_staged_registration_table_once"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface must preserve single-consumption staged registration"
+        )
+    if (
+        runtime_installation_abi_surface.get("deterministic_reset_replay_supported")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_installation_abi_surface must preserve deterministic reset/replay support"
+        )
+    if not isinstance(runtime_loader_lifecycle_surface, dict):
+        raise RuntimeError("compiled fixture manifest did not publish runtime_loader_lifecycle_surface")
+    if (
+        runtime_loader_lifecycle_surface.get("contract_id")
+        != RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_loader_lifecycle_surface contract"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get(
+            "runtime_installation_abi_surface_contract_id"
+        )
+        != RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the installation ABI contract id"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("bootstrap_semantics_contract_id")
+        != runtime_bootstrap_semantics.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the bootstrap semantics contract"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("bootstrap_reset_contract_id")
+        != bootstrap_reset_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the bootstrap reset contract"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("bootstrap_registrar_contract_id")
+        != bootstrap_registrar_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the bootstrap registrar contract"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("authoritative_probe_path")
+        != INSTALLATION_LIFECYCLE_PROBE
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the authoritative lifecycle probe path"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("loader_testing_boundary_symbols")
+        != RUNTIME_LOADER_TESTING_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the loader testing boundary symbols"
+        )
+    if runtime_loader_lifecycle_surface.get("lifecycle_phases") != [
+        "startup-installed-runtime-state",
+        "duplicate-registration-rejected-without-state-advance",
+        "out-of-order-registration-rejected-without-state-advance",
+        "invalid-anchor-root-rejected-without-state-advance",
+        "invalid-discovery-root-rejected-without-state-advance",
+        "reset-retained-bootstrap-catalog",
+        "replay-restored-installed-runtime-state",
+    ]:
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the lifecycle phase set"
+        )
+    if runtime_loader_lifecycle_surface.get("rejected_registration_status_codes") != {
+        "duplicate_translation_unit_identity_key": -2,
+        "out_of_order_registration": -3,
+        "invalid_registration_roots": -4,
+    }:
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface drifted from the rejected-registration status set"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("retained_bootstrap_catalog_required")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface must require retained bootstrap catalog support"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get("deterministic_replay_required")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface must require deterministic replay"
+        )
+    if (
+        runtime_loader_lifecycle_surface.get(
+            "requires_linked_fixture_or_loader_retained_roots"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_loader_lifecycle_surface must require linked fixture or loader-retained roots"
+        )
 
     if provenance.get("contract_id") != COMPILE_PROVENANCE_CONTRACT_ID:
         raise RuntimeError("compiled fixture did not publish the native compile provenance contract")
@@ -1074,31 +1263,32 @@ def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path)
 def build_runtime_installation_abi_surface() -> dict[str, Any]:
     return {
         "contract_id": RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID,
-        "public_installation_abi_boundary": [
-            "objc3_runtime_register_image",
-            "objc3_runtime_copy_registration_state_for_testing",
-            "objc3_runtime_reset_for_testing",
-        ],
-        "private_loader_testing_boundary": [
-            "objc3_runtime_stage_registration_table_for_bootstrap",
-            "objc3_runtime_copy_image_walk_state_for_testing",
-            "objc3_runtime_replay_registered_images_for_testing",
-            "objc3_runtime_copy_reset_replay_state_for_testing",
-        ],
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "bootstrap_api_contract_id": "objc3c.runtime.bootstrap.api.freeze.v1",
+        "bootstrap_reset_contract_id": "objc3c.runtime.bootstrap.reset.replay.v1",
+        "bootstrap_registrar_contract_id": "objc3c.runtime.bootstrap.registrar.image.walk.v1",
+        "public_installation_abi_boundary": RUNTIME_INSTALLATION_ABI_BOUNDARY,
+        "private_loader_testing_boundary": RUNTIME_LOADER_TESTING_BOUNDARY,
         "installation_requires_coupled_registration_manifest": True,
         "register_image_consumes_staged_registration_table_once": True,
         "deterministic_reset_replay_supported": True,
     }
 
 
-def build_loader_lifecycle_surface(results: list[CaseResult]) -> dict[str, Any]:
+def build_runtime_loader_lifecycle_surface(results: list[CaseResult]) -> dict[str, Any]:
     authoritative_case_ids = [
         result.case_id for result in results if result.case_id == "installation-lifecycle"
     ]
     return {
         "contract_id": RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID,
         "runtime_installation_abi_surface_contract_id": RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID,
+        "bootstrap_semantics_contract_id": "objc3c.runtime.startup.bootstrap.semantics.v1",
+        "bootstrap_reset_contract_id": "objc3c.runtime.bootstrap.reset.replay.v1",
+        "bootstrap_registrar_contract_id": "objc3c.runtime.bootstrap.registrar.image.walk.v1",
+        "authoritative_probe_path": INSTALLATION_LIFECYCLE_PROBE,
         "authoritative_case_ids": authoritative_case_ids,
+        "loader_testing_boundary_symbols": RUNTIME_LOADER_TESTING_BOUNDARY,
         "lifecycle_phases": [
             "startup-installed-runtime-state",
             "duplicate-registration-rejected-without-state-advance",
@@ -2759,7 +2949,7 @@ def main() -> int:
         ),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),
-        "loader_lifecycle_surface": build_loader_lifecycle_surface(results),
+        "runtime_loader_lifecycle_surface": build_runtime_loader_lifecycle_surface(results),
         "dispatch_accessor_runtime_abi_surface": {
             "contract_id": "objc3c.runtime.dispatch_accessor.abi.surface.v1",
             "proof_cases": [

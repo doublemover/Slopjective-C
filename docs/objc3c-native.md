@@ -268,7 +268,7 @@ truth from scattered semantic and runtime-side reports.
   - invalid registration roots / discovery root legality: `-4`
 - machine-readable keys:
   - `runtime_installation_abi_surface`
-  - `loader_lifecycle_surface`
+  - `runtime_loader_lifecycle_surface`
 
 The installation ABI is the stable front door for ingesting emitted runtime
 images and reading installation state. Loader lifecycle proof remains on the
@@ -324,7 +324,7 @@ The integrated runtime architecture proof packet is a generic integration
 artifact over the shared harness, the public workflow report, and the direct
 runtime acceptance report. It only passes when all three agree on the runtime
 claim boundary, runtime state publication surface, acceptance suite surface,
-runtime installation ABI surface, and loader lifecycle surface.
+runtime installation ABI surface, and runtime loader lifecycle surface.
 
 ## Integrated Validation Path
 
