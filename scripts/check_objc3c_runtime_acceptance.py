@@ -4221,6 +4221,55 @@ def build_runtime_error_runtime_abi_cleanup_surface(
     }
 
 
+def build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {"error-runtime-abi-cleanup", "live-error-runtime-integration"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_ERROR_PROPAGATION_CATCH_CLEANUP_RUNTIME_IMPLEMENTATION_SURFACE_CONTRACT_ID
+        ),
+        "error_runtime_abi_cleanup_surface_contract_id": (
+            RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID
+        ),
+        "error_lowering_unwind_bridge_helper_surface_contract_id": (
+            RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_error_runtime_abi_boundary": PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY,
+        "authoritative_code_paths": [
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp",
+            "tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp",
+        ],
+        "runtime_implementation_model": (
+            "lowered-throw-catch-and-status-bridge-paths-execute-through-the-live-"
+            "error-runtime-helpers-and-publish-observable-bridge-state-snapshots"
+        ),
+        "fail_closed_model": (
+            "runtime-integration-remains-private-and-testable-through-runtime-probes-"
+            "until-a-public-error-abi-is-explicitly-claimed"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6876,6 +6925,85 @@ def check_error_runtime_abi_cleanup_case(clangxx: str, run_dir: Path) -> CaseRes
             "status_bridge_symbol": "objc3_runtime_bridge_status_error_i32",
             "nserror_bridge_symbol": "objc3_runtime_bridge_nserror_error_i32",
             "catch_match_symbol": "objc3_runtime_catch_matches_error_i32",
+        },
+    )
+
+
+def check_live_error_runtime_integration_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "live-error-runtime-integration"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_d002_live_error_runtime_integration_positive.objc3"
+    )
+    obj_path, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    probe = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "runtime"
+        / "m267_d002_live_error_runtime_integration_probe.cpp"
+    )
+    exe_path = case_dir / "m267_d002_live_error_runtime_integration_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "live error runtime integration probe")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    throws_abi = manifest.get("lowering_part6_throws_abi_propagation", {})
+    expect(
+        payload.get("status") == 0,
+        "expected live error runtime integration probe to copy the bridge-state snapshot successfully",
+    )
+    expected_integer_fields = {
+        "rc": 54,
+        "store_call_count": 1,
+        "load_call_count": 1,
+        "status_bridge_call_count": 1,
+        "nserror_bridge_call_count": 0,
+        "catch_match_call_count": 1,
+        "last_stored_error_value": 45,
+        "last_loaded_error_value": 45,
+        "last_status_bridge_status_value": 5,
+        "last_status_bridge_error_value": 45,
+        "last_catch_match_kind": 1,
+        "last_catch_match_is_catch_all": 0,
+        "last_catch_match_result": 1,
+    }
+    for field, expected_value in expected_integer_fields.items():
+        expect(
+            payload.get(field) == expected_value,
+            f"expected live error runtime integration probe to preserve {field}",
+        )
+    expect(
+        payload.get("last_catch_kind_name") == "nserror",
+        "expected live error runtime integration probe to preserve the NSError catch-kind label",
+    )
+    expect(
+        isinstance(throws_abi, dict)
+        and throws_abi.get("contract_id")
+        == "objc3c.part6.throws.abi.propagation.lowering.v1",
+        "expected live error runtime integration fixture to preserve the throws ABI propagation contract",
+    )
+    expect(
+        "ready_for_runtime_execution=true"
+        in str(throws_abi.get("replay_key", "")),
+        "expected live error runtime integration fixture to preserve runtime execution readiness in the throws ABI replay packet",
+    )
+    return CaseResult(
+        case_id="live-error-runtime-integration",
+        probe="tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "rc": payload.get("rc"),
+            "status": payload.get("status"),
+            "last_catch_kind_name": payload.get("last_catch_kind_name"),
+            "throws_abi_contract": throws_abi.get("contract_id"),
         },
     )
 
@@ -12027,6 +12155,7 @@ def main() -> int:
         check_executable_throw_catch_cleanup_lowering_case(run_dir),
         check_cross_module_error_metadata_replay_preservation_case(run_dir),
         check_error_runtime_abi_cleanup_case(clangxx, run_dir),
+        check_live_error_runtime_integration_case(clangxx, run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -12096,6 +12225,11 @@ def main() -> int:
         ),
         "runtime_error_runtime_abi_cleanup_surface": (
             build_runtime_error_runtime_abi_cleanup_surface(results)
+        ),
+        "runtime_error_propagation_catch_cleanup_runtime_implementation_surface": (
+            build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface(
+                results
+            )
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

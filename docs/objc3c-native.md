@@ -406,6 +406,31 @@ NSError/status bridging, and catch-match cleanup helpers. It freezes the
 private testable entrypoints the lowered error path actually calls while keeping
 the public runtime header unchanged until a wider ABI commitment is warranted.
 
+## Error Propagation Catch And Cleanup Runtime Implementation Surface
+
+- authoritative compile-manifest key:
+  - `runtime_error_propagation_catch_cleanup_runtime_implementation_surface`
+- authoritative source inputs:
+  - `runtime_error_runtime_abi_cleanup_surface`
+  - `runtime_error_lowering_unwind_bridge_helper_surface`
+- authoritative live code paths:
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp`
+    - `tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp`
+
+This is the authoritative live runtime implementation boundary for the lowered
+throw/catch/status-bridge path. It freezes the observable runtime behavior of
+the real lowered fixture against the private helper ABI so later milestones
+cannot regress executable error propagation while still claiming only source
+surfaces.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:

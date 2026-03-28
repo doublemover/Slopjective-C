@@ -251,6 +251,15 @@ def write_composite_validation_report(
         payload["runtime_error_runtime_abi_cleanup_surface"] = (
             runtime_error_runtime_abi_cleanup_surface
         )
+    runtime_error_propagation_catch_cleanup_runtime_implementation_surface = (
+        load_surface_from_report(
+            steps, "runtime_error_propagation_catch_cleanup_runtime_implementation_surface"
+        )
+    )
+    if runtime_error_propagation_catch_cleanup_runtime_implementation_surface is not None:
+        payload["runtime_error_propagation_catch_cleanup_runtime_implementation_surface"] = (
+            runtime_error_propagation_catch_cleanup_runtime_implementation_surface
+        )
     acceptance_suite_surface = load_surface_from_report(steps, "acceptance_suite_surface")
     if acceptance_suite_surface is not None:
         payload["acceptance_suite_surface"] = acceptance_suite_surface
