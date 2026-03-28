@@ -154,6 +154,21 @@ Dispatch and synthesized-accessor lowering source of truth:
   synthesized accessor truth from sidecar-only metadata, probe-local
   assumptions, or ad hoc IR inspection
 
+Executable accessor-body and ivar-layout lowering source of truth:
+
+- compile publication exposes the emitted executable lowering boundaries
+  through the compile-manifest keys
+  `executable_property_accessor_layout_lowering_surface`,
+  `executable_ivar_layout_emission_surface`, and
+  `executable_synthesized_accessor_property_lowering_surface`
+- those surfaces must point at the live lowering/IR/frontend-artifacts/runtime
+  code paths, the coupled manifest/runtime-registration-manifest/object/LLVM IR
+  artifacts, and the emitted descriptor/layout/helper inventories that the live
+  runtime probes consume
+- later storage/reflection/runtime work must consume those emitted lowering
+  surfaces instead of re-deriving accessor bodies or ivar layouts from
+  sidecars, probe-local assumptions, or ad hoc IR scans
+
 Realization lowering and reflection artifact source of truth:
 
 - compile publication exposes the coupled realization-lowering and reflection-
