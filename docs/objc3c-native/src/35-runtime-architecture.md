@@ -313,6 +313,59 @@ fail-closed semantic rule until later implementation issues land; widening the
 public runtime ABI or inventing a parallel atomic helper surface are explicit
 non-goals.
 
+## Dispatch And Synthesized Accessor Lowering Surface
+
+- authoritative compile-manifest key:
+  - `dispatch_and_synthesized_accessor_lowering_surface`
+- authoritative composed source inputs:
+  - `runtime_property_ivar_storage_accessor_source_surface`
+  - `objc3c.executable.property.accessor.layout.lowering.v1`
+  - `objc3c.executable.ivar.layout.emission.v1`
+  - `objc3c.executable.synthesized.accessor.property.lowering.v1`
+  - `objc3c.runtime.storage.accessor.abi.surface.v1`
+- coupled emitted artifacts:
+  - `<emit-prefix>.obj`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.runtime-registration-manifest.json`
+- authoritative lowering code paths:
+  - `native/objc3c/src/lower/objc3_lowering_contract.h`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- frozen semantic models:
+  - lowering metadata:
+    - `runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path`
+  - helper selection:
+    - `plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
+    - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+    - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+- explicit non-goals:
+  - `no-public-runtime-abi-widening`
+  - `no-milestone-specific-scaffolding`
+  - `no-sidecar-only-lowering-proof`
+
+This is the authoritative accessor-storage lowering and metadata boundary. It
+freezes the fact that the real compiler co-publishes dispatch/accessor helper
+selection, synthesized-accessor counts, property/ivar descriptor counts, and
+the coupled manifest/object/LLVM IR/runtime-registration artifacts on the live
+compiler path. Downstream work must extend this emitted surface instead of
+reconstructing lowering truth from sidecar-only notes, probe-local deductions,
+or ad hoc IR inspection.
+
 ## Realization Lowering And Reflection Artifact Surface
 
 - authoritative compile-manifest key:

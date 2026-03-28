@@ -38,6 +38,9 @@ RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1"
 )
+DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID = (
+    "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
+)
 RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.storage.accessor.abi.surface.v1"
 )
@@ -250,6 +253,9 @@ def compile_fixture_with_args(
     )
     object_model_realization_source_surface = manifest.get(
         "runtime_object_model_realization_source_surface"
+    )
+    dispatch_and_synthesized_accessor_lowering_surface = manifest.get(
+        "dispatch_and_synthesized_accessor_lowering_surface"
     )
     property_ivar_storage_accessor_source_surface = manifest.get(
         "runtime_property_ivar_storage_accessor_source_surface"
@@ -901,6 +907,147 @@ def compile_fixture_with_args(
     if object_model_realization_source_surface.get("requires_linked_runtime_probe") is not True:
         raise RuntimeError(
             "runtime_object_model_realization_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(dispatch_and_synthesized_accessor_lowering_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish dispatch_and_synthesized_accessor_lowering_surface"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get("contract_id")
+        != DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong dispatch_and_synthesized_accessor_lowering_surface contract"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get("object_artifact")
+        != obj_path.name
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from the emitted object artifact path"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get("backend_artifact")
+        != ll_path.name
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_dispatch_and_synthesized_accessor_lowering_fields = {
+        "runtime_property_ivar_storage_accessor_source_surface_contract_id": (
+            RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "storage_accessor_runtime_abi_surface_contract_id": (
+            RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID
+        ),
+        "accessor_storage_lowering_metadata_model": (
+            "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path"
+        ),
+        "accessor_storage_lowering_helper_selection_model": (
+            "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers"
+        ),
+        "lowering_contract_source_path": (
+            "native/objc3c/src/lower/objc3_lowering_contract.h"
+        ),
+        "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        "frontend_artifacts_source_path": (
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+        ),
+        "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+    }
+    for field, expected_value in (
+        expected_dispatch_and_synthesized_accessor_lowering_fields.items()
+    ):
+        if dispatch_and_synthesized_accessor_lowering_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"dispatch_and_synthesized_accessor_lowering_surface drifted from {field}"
+            )
+    expected_dispatch_and_synthesized_accessor_fixture_paths = [
+        "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+        "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+    ]
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get(
+            "authoritative_fixture_paths"
+        )
+        != expected_dispatch_and_synthesized_accessor_fixture_paths
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from authoritative_fixture_paths"
+        )
+    expected_dispatch_and_synthesized_accessor_probe_paths = [
+        "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+    ]
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get(
+            "authoritative_probe_paths"
+        )
+        != expected_dispatch_and_synthesized_accessor_probe_paths
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from authoritative_probe_paths"
+        )
+    expected_dispatch_and_synthesized_accessor_non_goals = [
+        "no-public-runtime-abi-widening",
+        "no-milestone-specific-scaffolding",
+        "no-sidecar-only-lowering-proof",
+    ]
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get("explicit_non_goals")
+        != expected_dispatch_and_synthesized_accessor_non_goals
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface drifted from explicit_non_goals"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get(
+            "requires_real_compile_output"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface must require real compile output"
+        )
+    if (
+        dispatch_and_synthesized_accessor_lowering_surface.get(
+            "requires_linked_runtime_probe"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "dispatch_and_synthesized_accessor_lowering_surface must require a linked runtime probe"
         )
     if not isinstance(property_ivar_storage_accessor_source_surface, dict):
         raise RuntimeError(
@@ -2956,6 +3103,79 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
             "no-public-atomic-property-runtime-abi-widening",
             "no-runtime-managed-atomic-storage-semantics-before-lane-b-and-lane-d-implementation",
             "no-milestone-specific-scaffolding",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_dispatch_and_synthesized_accessor_lowering_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {
+            "accessor-storage-lowering-metadata-surface",
+            "property-synthesis-storage-binding-semantics",
+            "synthesized-accessor-codegen",
+            "synthesized-accessor-runtime",
+            "property-layout",
+            "property-execution",
+            "storage-ownership-reflection",
+            "arc-property-helper-abi",
+        }
+    ]
+    return {
+        "contract_id": DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
+            "objc3c.executable.property.accessor.layout.lowering.v1",
+            "objc3c.executable.ivar.layout.emission.v1",
+            "objc3c.executable.synthesized.accessor.property.lowering.v1",
+            RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/lower/objc3_lowering_contract.h",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "lowering_metadata_model": (
+            "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path"
+        ),
+        "helper_selection_model": (
+            "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-runtime-abi-widening",
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-lowering-proof",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -6752,8 +6972,22 @@ def check_accessor_storage_lowering_metadata_surface_case(
     )
     expect(
         synthesized_lowering_surface.get("contract_id")
-        == "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1",
+        == DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID,
         "expected synthesized accessor lowering metadata fixture to preserve the lowering surface contract id",
+    )
+    expect(
+        synthesized_lowering_surface.get("compile_manifest_artifact") == "module.manifest.json",
+        "expected lowering surface to couple back to the compile manifest artifact",
+    )
+    expect(
+        synthesized_lowering_surface.get("registration_manifest_artifact")
+        == "module.runtime-registration-manifest.json",
+        "expected lowering surface to couple back to the runtime registration manifest artifact",
+    )
+    expect(
+        synthesized_lowering_surface.get("object_artifact") == "module.obj"
+        and synthesized_lowering_surface.get("backend_artifact") == "module.ll",
+        "expected lowering surface to couple back to the emitted object and LLVM IR artifacts",
     )
     expect(
         synthesized_lowering_surface.get(
@@ -6770,6 +7004,26 @@ def check_accessor_storage_lowering_metadata_surface_case(
         "expected lowering surface to point at the storage/accessor runtime ABI surface",
     )
     expect(
+        synthesized_lowering_surface.get("lowering_contract_source_path")
+        == "native/objc3c/src/lower/objc3_lowering_contract.h",
+        "expected lowering surface to publish the lowering contract source path",
+    )
+    expect(
+        synthesized_lowering_surface.get("ir_emitter_source_path")
+        == "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        "expected lowering surface to publish the IR emitter source path",
+    )
+    expect(
+        synthesized_lowering_surface.get("frontend_artifacts_source_path")
+        == "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        "expected lowering surface to publish the frontend artifacts source path",
+    )
+    expect(
+        synthesized_lowering_surface.get("runtime_source_path")
+        == "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "expected lowering surface to publish the runtime source path",
+    )
+    expect(
         synthesized_lowering_surface.get("accessor_storage_lowering_metadata_model")
         == "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path",
         "expected lowering surface to publish the accessor-storage metadata model",
@@ -6780,6 +7034,46 @@ def check_accessor_storage_lowering_metadata_surface_case(
         )
         == "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers",
         "expected lowering surface to publish the helper-selection model",
+    )
+    expect(
+        synthesized_lowering_surface.get("authoritative_fixture_paths")
+        == [
+            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        ],
+        "expected lowering surface to publish the authoritative fixture set",
+    )
+    expect(
+        synthesized_lowering_surface.get("authoritative_probe_paths")
+        == [
+            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        ],
+        "expected lowering surface to publish the authoritative probe set",
+    )
+    expect(
+        synthesized_lowering_surface.get("explicit_non_goals")
+        == [
+            "no-public-runtime-abi-widening",
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-lowering-proof",
+        ],
+        "expected lowering surface to publish explicit non-goals",
+    )
+    expect(
+        synthesized_lowering_surface.get("requires_coupled_registration_manifest")
+        is True
+        and synthesized_lowering_surface.get("requires_real_compile_output") is True
+        and synthesized_lowering_surface.get("requires_linked_runtime_probe") is True,
+        "expected lowering surface to require the coupled registration manifest, real compile output, and linked runtime probes",
     )
     expect(
         synthesized_lowering_surface.get("synthesized_accessor_owner_entries") == 3,
@@ -7557,6 +7851,9 @@ def main() -> int:
         ),
         "runtime_property_atomicity_synthesis_reflection_source_surface": (
             build_runtime_property_atomicity_synthesis_reflection_source_surface(results)
+        ),
+        "dispatch_and_synthesized_accessor_lowering_surface": (
+            build_dispatch_and_synthesized_accessor_lowering_surface(results)
         ),
         "runtime_realization_lowering_reflection_artifact_surface": (
             build_runtime_realization_lowering_reflection_artifact_surface(results)

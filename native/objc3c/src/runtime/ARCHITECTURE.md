@@ -138,6 +138,22 @@ Property atomicity/synthesis/reflection source of truth:
   ad hoc atomic helper path, or bypassing the existing private property query
   boundary
 
+Dispatch and synthesized-accessor lowering source of truth:
+
+- compile publication exposes the coupled accessor-storage lowering and
+  metadata boundary through the emitted compile-manifest key
+  `dispatch_and_synthesized_accessor_lowering_surface`
+- that surface must point at the property/ivar storage source surface, the
+  executable property accessor layout / ivar layout / synthesized accessor
+  lowering contracts, the storage/accessor runtime ABI surface, the live
+  lowering/IR/frontend-artifacts/runtime code paths, and the coupled
+  manifest/runtime-registration-manifest/object/LLVM IR artifacts produced by
+  the real compiler path
+- later storage reflection, runtime helper ABI, and packaged validation work
+  must consume that emitted surface instead of inferring helper selection or
+  synthesized accessor truth from sidecar-only metadata, probe-local
+  assumptions, or ad hoc IR inspection
+
 Realization lowering and reflection artifact source of truth:
 
 - compile publication exposes the coupled realization-lowering and reflection-

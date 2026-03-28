@@ -22471,6 +22471,19 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "},\n";
+  std::string runtime_state_publication_emit_prefix = "module";
+  if (runtime_translation_unit_registration_manifest
+          .manifest_artifact_relative_path.ends_with(
+              kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix)) {
+    runtime_state_publication_emit_prefix =
+        runtime_translation_unit_registration_manifest
+            .manifest_artifact_relative_path.substr(
+                0,
+                runtime_translation_unit_registration_manifest
+                        .manifest_artifact_relative_path.size() -
+                    std::char_traits<char>::length(
+                        kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix));
+  }
   const auto accessor_storage_lowering_metadata_summary =
       BuildAccessorStorageLoweringMetadataSummary(runtime_metadata_source_records);
   const auto executable_accessor_layout_lowering_summary =
@@ -22478,6 +22491,15 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           executable_metadata_source_graph);
   manifest << "  \"dispatch_and_synthesized_accessor_lowering_surface\":{\"contract_id\":"
            << "\"" << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId << "\""
+           << ",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll\""
            << ",\"runtime_dispatch_symbol\":\""
            << runtime_shim_host_link_contract.runtime_dispatch_symbol
            << "\",\"runtime_dispatch_arg_slots\":"
@@ -22521,7 +22543,26 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3AccessorStorageLoweringMetadataModel
            << "\",\"accessor_storage_lowering_helper_selection_model\":\""
            << kObjc3AccessorStorageLoweringHelperSelectionModel
-           << "\",\"current_property_read_symbol\":\""
+           << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
+           << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
+           << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp\""
+           << ",\"runtime_source_path\":\"native/objc3c/src/runtime/objc3_runtime.cpp\""
+           << ",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3\""
+           << ",\"tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3\"]"
+           << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp\""
+           << ",\"tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp\""
+           << ",\"tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp\""
+           << ",\"tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp\""
+           << ",\"tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp\""
+           << ",\"tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp\"]"
+           << ",\"explicit_non_goals\":[\"no-public-runtime-abi-widening\""
+           << ",\"no-milestone-specific-scaffolding\""
+           << ",\"no-sidecar-only-lowering-proof\"]"
+           << ",\"current_property_read_symbol\":\""
            << kObjc3RuntimeReadCurrentPropertyI32Symbol
            << "\",\"current_property_write_symbol\":\""
            << kObjc3RuntimeWriteCurrentPropertyI32Symbol
@@ -22559,6 +22600,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << runtime_metadata_section_publication.property_descriptor_count
            << ",\"ivar_descriptor_count\":"
            << runtime_metadata_section_publication.ivar_descriptor_count
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
            << ",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic &&
                        dispatch_surface_classification_contract.deterministic &&
@@ -22634,19 +22678,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                    ? "true"
                    : "false")
            << "},\n";
-  std::string runtime_state_publication_emit_prefix = "module";
-  if (runtime_translation_unit_registration_manifest
-          .manifest_artifact_relative_path.ends_with(
-              kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix)) {
-    runtime_state_publication_emit_prefix =
-        runtime_translation_unit_registration_manifest
-            .manifest_artifact_relative_path.substr(
-                0,
-                runtime_translation_unit_registration_manifest
-                        .manifest_artifact_relative_path.size() -
-                    std::char_traits<char>::length(
-                        kObjc3RuntimeTranslationUnitRegistrationManifestArtifactSuffix));
-  }
   manifest << "  \"runtime_state_publication_surface\":{\"contract_id\":\""
            << kObjc3RuntimeStatePublicationSurfaceContractId
            << "\",\"publication_surface_kind\":"
