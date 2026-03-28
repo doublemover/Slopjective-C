@@ -615,6 +615,15 @@ inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionAutoreleaseModel 
     "autorelease-values-drain-at-runtime-dispatch-return";
 inline constexpr const char *kObjc3OwnershipRuntimeHookEmissionFailClosedModel =
     "owned-and-weak-runtime-backed-accessors-may-not-fall-back-to-summary-only-lowering";
+inline constexpr const char
+    *kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId =
+        "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1";
+inline constexpr const char
+    *kObjc3AccessorStorageLoweringMetadataModel =
+        "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path";
+inline constexpr const char
+    *kObjc3AccessorStorageLoweringHelperSelectionModel =
+        "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers";
 inline constexpr const char *kObjc3RuntimeReadCurrentPropertyI32Symbol =
     "objc3_runtime_read_current_property_i32";
 inline constexpr const char *kObjc3RuntimeWriteCurrentPropertyI32Symbol =

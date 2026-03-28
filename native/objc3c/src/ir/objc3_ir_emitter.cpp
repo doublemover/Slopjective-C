@@ -473,7 +473,8 @@ class Objc3IREmitter {
       out << "; property_synthesis_ivar_binding_lowering = "
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key << "\n";
       out << "; dispatch_and_synthesized_accessor_lowering_surface = "
-          << "contract_id=objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
+          << "contract_id="
+          << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
           << ";runtime_dispatch_symbol="
           << frontend_metadata_.runtime_shim_host_link_runtime_dispatch_symbol
           << ";runtime_dispatch_arg_slots="

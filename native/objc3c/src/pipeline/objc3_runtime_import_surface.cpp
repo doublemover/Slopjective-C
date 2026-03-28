@@ -567,6 +567,9 @@ bool ParsePropertyRecord(const JsonValue::Object &object,
          ReadOptionalStringMember(object, "effective_getter_selector", record.effective_getter_selector, error) &&
          ReadBoolMember(object, "effective_setter_available", record.effective_setter_available, error) &&
          ReadOptionalStringMember(object, "effective_setter_selector", record.effective_setter_selector, error) &&
+         ReadOptionalBoolMember(object, "synthesizes_executable_accessors", record.synthesizes_executable_accessors, error) &&
+         ReadOptionalStringMember(object, "getter_storage_runtime_helper_symbol", record.getter_storage_runtime_helper_symbol, error) &&
+         ReadOptionalStringMember(object, "setter_storage_runtime_helper_symbol", record.setter_storage_runtime_helper_symbol, error) &&
          ReadOptionalStringMember(object, "ivar_binding_symbol", record.ivar_binding_symbol, error) &&
          ReadOptionalStringMember(object, "executable_synthesized_binding_kind", record.executable_synthesized_binding_kind, error) &&
          ReadOptionalStringMember(object, "executable_synthesized_binding_symbol", record.executable_synthesized_binding_symbol, error) &&

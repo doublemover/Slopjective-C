@@ -2328,6 +2328,9 @@ struct Objc3RuntimeMetadataPropertySourceRecord {
   bool effective_setter_available = false;
   std::string effective_setter_selector;
   std::string accessor_ownership_profile;
+  bool synthesizes_executable_accessors = false;
+  std::string getter_storage_runtime_helper_symbol;
+  std::string setter_storage_runtime_helper_symbol;
   std::string executable_ivar_layout_symbol;
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
@@ -3162,6 +3165,9 @@ struct Objc3ExecutableMetadataPropertyGraphNode {
   bool effective_setter_available = false;
   std::string effective_setter_selector;
   std::string accessor_ownership_profile;
+  bool synthesizes_executable_accessors = false;
+  std::string getter_storage_runtime_helper_symbol;
+  std::string setter_storage_runtime_helper_symbol;
   std::string executable_ivar_layout_symbol;
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;

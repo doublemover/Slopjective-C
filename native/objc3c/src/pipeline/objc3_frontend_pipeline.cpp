@@ -630,9 +630,91 @@ bool IsExecutableMetadataGraphEdgeLess(
                   rhs.line, rhs.column);
 }
 
+std::string BuildExecutablePropertyOwnerKey(const std::string &owner_name,
+                                            const std::string &property_name) {
+  return owner_name + "|" + property_name;
+}
+
+bool UsesWeakCurrentPropertyRuntimeHelper(
+    const std::string &ownership_runtime_hook_profile) {
+  return ownership_runtime_hook_profile == "objc-weak-side-table";
+}
+
+bool UsesStrongOwnedCurrentPropertyExchange(
+    const std::string &ownership_lifetime_profile,
+    const std::string &accessor_ownership_profile) {
+  return ownership_lifetime_profile == "strong-owned" ||
+         accessor_ownership_profile.find("ownership_lifetime=strong-owned") !=
+             std::string::npos;
+}
+
+bool ShouldSynthesizeExecutablePropertyAccessors(
+    const std::string &owner_kind, const std::string &owner_name,
+    const std::string &property_name,
+    const std::unordered_set<std::string> &class_implementation_names,
+    const std::unordered_set<std::string> &implementation_property_keys) {
+  if (owner_kind == "class-implementation" ||
+      owner_kind == "category-implementation") {
+    return true;
+  }
+  if (owner_kind != "class-interface") {
+    return false;
+  }
+  return class_implementation_names.find(owner_name) !=
+             class_implementation_names.end() &&
+         implementation_property_keys.find(
+             BuildExecutablePropertyOwnerKey(owner_name, property_name)) ==
+             implementation_property_keys.end();
+}
+
+std::string BuildGetterStorageRuntimeHelperSymbol(
+    bool synthesizes_executable_accessors,
+    const std::string &ownership_runtime_hook_profile) {
+  if (!synthesizes_executable_accessors) {
+    return {};
+  }
+  return UsesWeakCurrentPropertyRuntimeHelper(ownership_runtime_hook_profile)
+             ? kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+             : kObjc3RuntimeReadCurrentPropertyI32Symbol;
+}
+
+std::string BuildSetterStorageRuntimeHelperSymbol(
+    bool synthesizes_executable_accessors, bool effective_setter_available,
+    const std::string &ownership_lifetime_profile,
+    const std::string &ownership_runtime_hook_profile,
+    const std::string &accessor_ownership_profile) {
+  if (!synthesizes_executable_accessors || !effective_setter_available) {
+    return {};
+  }
+  if (UsesWeakCurrentPropertyRuntimeHelper(ownership_runtime_hook_profile)) {
+    return kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol;
+  }
+  return UsesStrongOwnedCurrentPropertyExchange(ownership_lifetime_profile,
+                                                accessor_ownership_profile)
+             ? kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+             : kObjc3RuntimeWriteCurrentPropertyI32Symbol;
+}
+
 Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
     const Objc3Program &program) {
   Objc3RuntimeMetadataSourceRecordSet records;
+  std::unordered_set<std::string> class_implementation_names;
+  class_implementation_names.reserve(program.implementations.size());
+  std::unordered_set<std::string> implementation_property_keys;
+  for (const auto &implementation_decl : program.implementations) {
+    if (!implementation_decl.has_category) {
+      class_implementation_names.insert(implementation_decl.name);
+    }
+    const std::string owner_name =
+        implementation_decl.has_category
+            ? BuildCategoryOwnerName(implementation_decl.name,
+                                     implementation_decl.category_name)
+            : implementation_decl.name;
+    for (const auto &property : implementation_decl.properties) {
+      implementation_property_keys.insert(
+          BuildExecutablePropertyOwnerKey(owner_name, property.name));
+    }
+  }
 
   const auto apply_arc_property_interaction_metadata =
       [](Objc3RuntimeMetadataPropertySourceRecord &property_record) {
@@ -683,7 +765,8 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
       };
 
   const auto append_property_records =
-      [&records, &apply_arc_property_interaction_metadata](
+      [&records, &apply_arc_property_interaction_metadata,
+       &class_implementation_names, &implementation_property_keys](
           const auto &properties, const std::string &owner_kind,
           const std::string &owner_name) {
         for (const auto &property : properties) {
@@ -716,6 +799,21 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
           property_record.accessor_ownership_profile =
               property.accessor_ownership_profile;
           apply_arc_property_interaction_metadata(property_record);
+          property_record.synthesizes_executable_accessors =
+              ShouldSynthesizeExecutablePropertyAccessors(
+                  owner_kind, owner_name, property.name,
+                  class_implementation_names, implementation_property_keys);
+          property_record.getter_storage_runtime_helper_symbol =
+              BuildGetterStorageRuntimeHelperSymbol(
+                  property_record.synthesizes_executable_accessors,
+                  property_record.ownership_runtime_hook_profile);
+          property_record.setter_storage_runtime_helper_symbol =
+              BuildSetterStorageRuntimeHelperSymbol(
+                  property_record.synthesizes_executable_accessors,
+                  property_record.effective_setter_available,
+                  property_record.ownership_lifetime_profile,
+                  property_record.ownership_runtime_hook_profile,
+                  property_record.accessor_ownership_profile);
           property_record.executable_ivar_layout_symbol =
               property.executable_ivar_layout_symbol;
           property_record.executable_ivar_layout_slot_index =
@@ -1005,6 +1103,23 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     bool is_class_method = false;
   };
   std::vector<MethodEdgeRecord> method_edge_records;
+  std::unordered_set<std::string> class_implementation_names;
+  class_implementation_names.reserve(program.implementations.size());
+  std::unordered_set<std::string> implementation_property_keys;
+  for (const auto &implementation_decl : program.implementations) {
+    if (!implementation_decl.has_category) {
+      class_implementation_names.insert(implementation_decl.name);
+    }
+    const std::string owner_name =
+        implementation_decl.has_category
+            ? BuildCategoryOwnerName(implementation_decl.name,
+                                     implementation_decl.category_name)
+            : implementation_decl.name;
+    for (const auto &property : implementation_decl.properties) {
+      implementation_property_keys.insert(
+          BuildExecutablePropertyOwnerKey(owner_name, property.name));
+    }
+  }
 
   const auto apply_arc_property_interaction_metadata =
       [](Objc3ExecutableMetadataPropertyGraphNode &node) {
@@ -1049,7 +1164,8 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
       };
 
   const auto add_property_nodes =
-      [&graph, &add_owner_edge, &apply_arc_property_interaction_metadata](
+      [&graph, &add_owner_edge, &apply_arc_property_interaction_metadata,
+       &class_implementation_names, &implementation_property_keys](
           const auto &properties, const std::string &owner_kind,
           const std::string &owner_name,
           const std::string &declaration_owner_identity,
@@ -1087,6 +1203,21 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
           node.accessor_ownership_profile =
               property.accessor_ownership_profile;
           apply_arc_property_interaction_metadata(node);
+          node.synthesizes_executable_accessors =
+              ShouldSynthesizeExecutablePropertyAccessors(
+                  owner_kind, owner_name, property.name,
+                  class_implementation_names, implementation_property_keys);
+          node.getter_storage_runtime_helper_symbol =
+              BuildGetterStorageRuntimeHelperSymbol(
+                  node.synthesizes_executable_accessors,
+                  node.ownership_runtime_hook_profile);
+          node.setter_storage_runtime_helper_symbol =
+              BuildSetterStorageRuntimeHelperSymbol(
+                  node.synthesizes_executable_accessors,
+                  node.effective_setter_available,
+                  node.ownership_lifetime_profile,
+                  node.ownership_runtime_hook_profile,
+                  node.accessor_ownership_profile);
           node.executable_ivar_layout_symbol =
               property.executable_ivar_layout_symbol;
           node.executable_ivar_layout_slot_index =

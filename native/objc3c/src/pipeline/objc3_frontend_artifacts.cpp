@@ -7206,6 +7206,55 @@ std::string BuildRuntimeMetadataIvarRecordMergeKey(
          record.property_name + "|" + record.ivar_binding_symbol;
 }
 
+struct Objc3AccessorStorageLoweringMetadataSummary {
+  std::size_t synthesized_accessor_owner_entries = 0;
+  std::size_t synthesized_getter_entries = 0;
+  std::size_t synthesized_setter_entries = 0;
+  std::size_t current_property_read_entries = 0;
+  std::size_t current_property_write_entries = 0;
+  std::size_t current_property_exchange_entries = 0;
+  std::size_t weak_current_property_load_entries = 0;
+  std::size_t weak_current_property_store_entries = 0;
+  bool deterministic = false;
+};
+
+Objc3AccessorStorageLoweringMetadataSummary
+BuildAccessorStorageLoweringMetadataSummary(
+    const Objc3RuntimeMetadataSourceRecordSet &records) {
+  Objc3AccessorStorageLoweringMetadataSummary summary;
+  summary.deterministic = records.deterministic;
+  for (const auto &property_record : records.properties_lexicographic) {
+    if (!property_record.synthesizes_executable_accessors) {
+      continue;
+    }
+    ++summary.synthesized_accessor_owner_entries;
+    if (!property_record.getter_storage_runtime_helper_symbol.empty()) {
+      ++summary.synthesized_getter_entries;
+      if (property_record.getter_storage_runtime_helper_symbol ==
+          kObjc3RuntimeReadCurrentPropertyI32Symbol) {
+        ++summary.current_property_read_entries;
+      } else if (property_record.getter_storage_runtime_helper_symbol ==
+                 kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol) {
+        ++summary.weak_current_property_load_entries;
+      }
+    }
+    if (!property_record.setter_storage_runtime_helper_symbol.empty()) {
+      ++summary.synthesized_setter_entries;
+      if (property_record.setter_storage_runtime_helper_symbol ==
+          kObjc3RuntimeWriteCurrentPropertyI32Symbol) {
+        ++summary.current_property_write_entries;
+      } else if (property_record.setter_storage_runtime_helper_symbol ==
+                 kObjc3RuntimeExchangeCurrentPropertyI32Symbol) {
+        ++summary.current_property_exchange_entries;
+      } else if (property_record.setter_storage_runtime_helper_symbol ==
+                 kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol) {
+        ++summary.weak_current_property_store_entries;
+      }
+    }
+  }
+  return summary;
+}
+
 template <typename RecordT, typename KeyFn>
 std::vector<RecordT> BuildMergedRuntimeMetadataRecordVector(
     const std::vector<const std::vector<RecordT> *> &imported_record_vectors,
@@ -7821,6 +7870,12 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << EscapeJsonString(property_record.ownership_runtime_hook_profile)
         << "\",\"accessor_ownership_profile\":\""
         << EscapeJsonString(property_record.accessor_ownership_profile)
+        << "\",\"synthesizes_executable_accessors\":"
+        << (property_record.synthesizes_executable_accessors ? "true" : "false")
+        << ",\"getter_storage_runtime_helper_symbol\":\""
+        << EscapeJsonString(property_record.getter_storage_runtime_helper_symbol)
+        << "\",\"setter_storage_runtime_helper_symbol\":\""
+        << EscapeJsonString(property_record.setter_storage_runtime_helper_symbol)
         << "\",\"executable_ivar_layout_symbol\":\""
         << EscapeJsonString(property_record.executable_ivar_layout_symbol)
         << "\",\"executable_ivar_layout_slot_index\":"
@@ -9052,6 +9107,12 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << EscapeJsonString(node.effective_setter_selector)
         << "\",\"accessor_ownership_profile\":\""
         << EscapeJsonString(node.accessor_ownership_profile)
+        << "\",\"synthesizes_executable_accessors\":"
+        << (node.synthesizes_executable_accessors ? "true" : "false")
+        << ",\"getter_storage_runtime_helper_symbol\":\""
+        << EscapeJsonString(node.getter_storage_runtime_helper_symbol)
+        << "\",\"setter_storage_runtime_helper_symbol\":\""
+        << EscapeJsonString(node.setter_storage_runtime_helper_symbol)
         << "\",\"executable_ivar_layout_symbol\":\""
         << EscapeJsonString(node.executable_ivar_layout_symbol)
         << "\",\"executable_ivar_layout_slot_index\":"
@@ -22281,8 +22342,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << "\",\"deterministic_handoff\":"
            << (property_synthesis_ivar_binding_contract.deterministic ? "true" : "false")
            << "},\n";
+  const auto accessor_storage_lowering_metadata_summary =
+      BuildAccessorStorageLoweringMetadataSummary(runtime_metadata_source_records);
   manifest << "  \"dispatch_and_synthesized_accessor_lowering_surface\":{\"contract_id\":"
-           << "\"objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1\""
+           << "\"" << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId << "\""
            << ",\"runtime_dispatch_symbol\":\""
            << runtime_shim_host_link_contract.runtime_dispatch_symbol
            << "\",\"runtime_dispatch_arg_slots\":"
@@ -22317,6 +22380,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_synthesis_ivar_binding_contract.implementation_property_redeclaration_sites
            << ",\"ivar_binding_resolved\":"
            << property_synthesis_ivar_binding_contract.ivar_binding_resolved
+           << ",\"runtime_property_ivar_storage_accessor_source_surface_contract_id\":\""
+           << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
+           << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
+           << ",\"accessor_storage_lowering_metadata_model\":\""
+           << kObjc3AccessorStorageLoweringMetadataModel
+           << "\",\"accessor_storage_lowering_helper_selection_model\":\""
+           << kObjc3AccessorStorageLoweringHelperSelectionModel
+           << "\",\"current_property_read_symbol\":\""
+           << kObjc3RuntimeReadCurrentPropertyI32Symbol
+           << "\",\"current_property_write_symbol\":\""
+           << kObjc3RuntimeWriteCurrentPropertyI32Symbol
+           << "\",\"current_property_exchange_symbol\":\""
+           << kObjc3RuntimeExchangeCurrentPropertyI32Symbol
+           << "\",\"weak_current_property_load_symbol\":\""
+           << kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
+           << "\",\"weak_current_property_store_symbol\":\""
+           << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
+           << "\",\"synthesized_accessor_owner_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .synthesized_accessor_owner_entries
+           << ",\"synthesized_getter_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .synthesized_getter_entries
+           << ",\"synthesized_setter_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .synthesized_setter_entries
+           << ",\"current_property_read_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .current_property_read_entries
+           << ",\"current_property_write_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .current_property_write_entries
+           << ",\"current_property_exchange_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .current_property_exchange_entries
+           << ",\"weak_current_property_load_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .weak_current_property_load_entries
+           << ",\"weak_current_property_store_entries\":"
+           << accessor_storage_lowering_metadata_summary
+                  .weak_current_property_store_entries
            << ",\"property_descriptor_count\":"
            << runtime_metadata_section_publication.property_descriptor_count
            << ",\"ivar_descriptor_count\":"
@@ -22696,7 +22800,17 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3ExecutablePropertyStorageSemanticsModel
            << "\",\"layout_init_order_field\":\"Objc3PropertyDecl.executable_ivar_init_order_index\""
            << ",\"layout_destroy_order_field\":\"Objc3PropertyDecl.executable_ivar_destroy_order_index\""
-           << ",\"compatibility_semantics_model\":\""
+           << ",\"synthesizes_accessors_field\":\"Objc3RuntimeMetadataPropertySourceRecord.synthesizes_executable_accessors\""
+           << ",\"getter_runtime_helper_field\":\"Objc3RuntimeMetadataPropertySourceRecord.getter_storage_runtime_helper_symbol\""
+           << ",\"setter_runtime_helper_field\":\"Objc3RuntimeMetadataPropertySourceRecord.setter_storage_runtime_helper_symbol\""
+           << ",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
+           << kObjc3DispatchAndSynthesizedAccessorLoweringSurfaceContractId
+           << "\",\"dispatch_accessor_runtime_abi_surface_contract_id\":\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
+           << ",\"accessor_storage_lowering_metadata_model\":\""
+           << kObjc3AccessorStorageLoweringMetadataModel
+           << "\",\"accessor_storage_lowering_helper_selection_model\":\""
+           << kObjc3AccessorStorageLoweringHelperSelectionModel
+           << "\",\"compatibility_semantics_model\":\""
            << kObjc3ExecutablePropertyCompatibilitySemanticsModel
            << "\",\"ast_source_path\":\"native/objc3c/src/ast/objc3_ast.h\""
            << ",\"sema_source_path\":\"native/objc3c/src/sema/objc3_semantic_passes.cpp\""
@@ -23600,6 +23714,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
              << property_record.effective_setter_selector
              << "\",\"accessor_ownership_profile\":\""
              << property_record.accessor_ownership_profile
+             << "\",\"synthesizes_executable_accessors\":"
+             << (property_record.synthesizes_executable_accessors ? "true"
+                                                                  : "false")
+             << ",\"getter_storage_runtime_helper_symbol\":\""
+             << property_record.getter_storage_runtime_helper_symbol
+             << "\",\"setter_storage_runtime_helper_symbol\":\""
+             << property_record.setter_storage_runtime_helper_symbol
              << "\",\"executable_ivar_layout_symbol\":\""
              << property_record.executable_ivar_layout_symbol
              << "\",\"executable_ivar_layout_slot_index\":"
@@ -25860,13 +25981,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       std::unordered_set<std::string> property_owner_identities;
       property_owner_identities.reserve(
           source_graph.property_nodes_lexicographic.size());
-      std::unordered_set<std::string> implementation_property_keys;
-      implementation_property_keys.reserve(
-          source_graph.property_nodes_lexicographic.size());
-      const auto build_property_key = [](const std::string &owner_name,
-                                         const std::string &property_name) {
-        return owner_name + "|" + property_name;
-      };
       for (const auto &property_node : source_graph.property_nodes_lexicographic) {
         if (property_node.owner_kind.empty() || property_node.owner_name.empty() ||
             property_node.owner_identity.empty() ||
@@ -25917,6 +26031,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             property_node.effective_setter_selector;
         bundle.accessor_ownership_profile =
             property_node.accessor_ownership_profile;
+        bundle.synthesizes_executable_accessors =
+            property_node.synthesizes_executable_accessors;
         bundle.executable_ivar_layout_symbol =
             property_node.executable_ivar_layout_symbol;
         bundle.executable_ivar_layout_slot_index =
@@ -25926,24 +26042,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         bundle.executable_ivar_layout_alignment_bytes =
             property_node.executable_ivar_layout_alignment_bytes;
         property_bundles.push_back(std::move(bundle));
-        if (property_node.owner_kind == "class-implementation" ||
-            property_node.owner_kind == "category-implementation") {
-          implementation_property_keys.insert(build_property_key(
-              property_node.owner_name, property_node.property_name));
-        }
-      }
-      for (auto &bundle : property_bundles) {
-        const bool has_matching_implementation_property =
-            implementation_property_keys.find(
-                build_property_key(bundle.owner_name, bundle.property_name)) !=
-            implementation_property_keys.end();
-        bundle.synthesizes_executable_accessors =
-            bundle.owner_kind == "class-implementation" ||
-            bundle.owner_kind == "category-implementation" ||
-            (bundle.owner_kind == "class-interface" &&
-             !has_matching_implementation_property &&
-             implementation_nodes_by_name.find(bundle.owner_name) !=
-                 implementation_nodes_by_name.end());
       }
       std::sort(
           property_bundles.begin(), property_bundles.end(),
