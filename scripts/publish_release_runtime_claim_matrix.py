@@ -86,7 +86,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
         "--mode",
         "fast",
         "--reason",
-        "release_claims-e002",
+        "release_claims-published-matrix",
         "--summary-out",
         str(ensure_summary),
     ])
@@ -103,7 +103,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
         if not summary_status(case["payload"]):
             raise SystemExit(f"{name} summary is not green: {display_path(case['summary_path'])}")
 
-    native_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "e002" / "native"
+    native_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "published_matrix" / "native"
     native_dir.mkdir(parents=True, exist_ok=True)
     native = run([
         str(NATIVE_EXE),
@@ -123,7 +123,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     if not native_report_path.exists() or not native_publication_path.exists():
         raise SystemExit("native CLI did not publish the expected conformance report/publication sidecars")
 
-    validate_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "e002" / "validate"
+    validate_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "published_matrix" / "validate"
     validate_dir.mkdir(parents=True, exist_ok=True)
     validate = run([
         str(NATIVE_EXE),
@@ -141,7 +141,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     if not validation_path.exists():
         raise SystemExit("native CLI validation artifact missing")
 
-    runner_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "e002" / "frontend-runner"
+    runner_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "published_matrix" / "frontend-runner"
     runner_dir.mkdir(parents=True, exist_ok=True)
     runner = run([
         str(RUNNER_EXE),
@@ -159,7 +159,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     if not runner_report_path.exists() or not runner_publication_path.exists():
         raise SystemExit("frontend runner did not publish the expected conformance sidecars")
 
-    strict_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "e002" / "strict-reject"
+    strict_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "published_matrix" / "strict-reject"
     strict_dir.mkdir(parents=True, exist_ok=True)
     strict_reject = run([
         str(NATIVE_EXE),
@@ -172,7 +172,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
         "strict",
     ])
 
-    yaml_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "e002" / "yaml-reject"
+    yaml_dir = ROOT / "tmp" / "artifacts" / "compilation" / "objc3c-native" / "release_claims" / "published_matrix" / "yaml-reject"
     yaml_dir.mkdir(parents=True, exist_ok=True)
     yaml_reject = run([
         str(NATIVE_EXE),
@@ -193,9 +193,9 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     runner_publication = load_json(runner_publication_path)
 
     matrix = {
-        "contract_id": "objc3c-release-runtime-claim-matrix/release_claims-e002-v1",
+        "contract_id": "objc3c-release-runtime-claim-matrix/release_claims-published-matrix-v1",
         "schema_id": "objc3c-release-runtime-claim-matrix-v1",
-        "publication_model": "derived-from-a002-b003-c002-d002-e001-and-live-native-frontend-probes",
+        "publication_model": "derived-from-source-sema-lowering-runtime-and-integrated-native-frontend-probes",
         "profiles": [
             {"id": "core", "claim_status": "claimed", "selection_status": "supported", "runtime_status": "runnable"},
             {"id": "strict", "claim_status": "not-claimed", "selection_status": "fail-closed", "runtime_status": "unsupported"},

@@ -1,5 +1,5 @@
 param(
-  [string]$ReportRoot = "tmp/reports/parser_build/M226-A025"
+  [string]$ReportRoot = "tmp/reports/parser_build/M226-A032"
 )
 
 $ErrorActionPreference = "Stop"
@@ -12,7 +12,7 @@ function Get-RepoRelativePathCompat {
 
   $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
   $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
-  if ($resolvedRoot.EndsWith('\') -or $resolvedRoot.EndsWith('/')) {
+  if ($resolvedRoot.EndsWith('\\') -or $resolvedRoot.EndsWith('/')) {
     $rootWithSeparator = $resolvedRoot
   } else {
     $rootWithSeparator = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
@@ -28,7 +28,7 @@ function Get-RepoRelativePathCompat {
     $relativeUri = $rootUri.MakeRelativeUri($targetUri)
     $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
   }
-  return $relativePath.Replace('\', '/')
+  return $relativePath.Replace('\\', '/')
 }
 
 function Assert-FileExists {
@@ -48,10 +48,8 @@ $reportDir = Join-Path $repoRoot $ReportRoot
 New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 
 $upstream = @(
-  @{ packet = "A021"; path = "tmp/reports/parser_build/M226-A021/parser_advanced_core_workpack_summary.json" },
-  @{ packet = "A022"; path = "tmp/reports/parser_build/M226-A022/parser_advanced_edge_compat_workpack_summary.json" },
-  @{ packet = "A023"; path = "tmp/reports/parser_build/M226-A023/parser_advanced_diagnostics_workpack_summary.json" },
-  @{ packet = "A024"; path = "tmp/reports/parser_build/M226-A024/parser_conformance_shard2_summary.json" }
+  @{ packet = "A025"; path = "tmp/reports/parser_build/M226-A025/parser_integration_shard2_summary.json" },
+  @{ packet = "A031"; path = "tmp/reports/parser_build/M226-A031/parser_integration_shard3_summary.json" }
 )
 
 $upstreamResults = New-Object System.Collections.Generic.List[object]
@@ -59,39 +57,24 @@ foreach ($entry in $upstream) {
   $absolutePath = Join-Path $repoRoot $entry.path
   Assert-FileExists -Path $absolutePath
   $payload = Read-JsonFile -Path $absolutePath
-  if ($entry.packet -ne "A024") {
-    if ($null -eq $payload.ok -or -not [bool]$payload.ok) {
-      throw "upstream parser packet '$($entry.packet)' summary is not ok: $($entry.path)"
-    }
-  } else {
-    if ($null -eq $payload.fixtures -or @($payload.fixtures).Count -eq 0) {
-      throw "upstream parser packet 'A024' summary has no fixtures: $($entry.path)"
-    }
-    foreach ($fixture in @($payload.fixtures)) {
-      if ($null -eq $fixture.deterministic_match -or -not [bool]$fixture.deterministic_match) {
-        throw "upstream parser packet 'A024' fixture is not deterministic: $($entry.path)"
-      }
-    }
-  }
-
-  $entryOk = $true
-  if ($entry.packet -ne "A024") {
-    $entryOk = [bool]$payload.ok
+  if ($null -eq $payload.integrated_ok -or -not [bool]$payload.integrated_ok) {
+    throw "upstream parser packet '$($entry.packet)' integrated_ok is false: $($entry.path)"
   }
 
   $upstreamResults.Add([ordered]@{
       packet = $entry.packet
       path = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $absolutePath
-      ok = $entryOk
+      integrated_ok = [bool]$payload.integrated_ok
     })
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-parser-advanced-integration-workpack-contract/parser_build-a025-v1"
+  contract_id = "objc3c-parser-integration-closeout-signoff-contract/parser_build-integration-closeout-signoff-v1"
   upstream = $upstreamResults
-  integrated_ok = $true
+  gate_signoff_ready = $true
+  closeout_ready = $true
 }
-$summaryPath = Join-Path $reportDir "parser_integration_shard2_summary.json"
+$summaryPath = Join-Path $reportDir "parser_integration_closeout_signoff_summary.json"
 $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath -Encoding utf8
 
 Write-Output "status: PASS"

@@ -95,7 +95,7 @@ if ($results.Count -gt 0) {
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-parser-advanced-performance-workpack-contract/parser_build-a020-v1"
+  contract_id = "objc3c-parser-advanced-performance-workpack-contract/parser_build-performance-workpack-iteration20-v1"
   non_gating = $true
   fixtures = $results
   aggregate = [ordered]@{

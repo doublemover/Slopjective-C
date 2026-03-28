@@ -82,7 +82,7 @@ foreach ($entry in $upstream) {
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-parser-advanced-integration-workpack-contract/parser_build-a019-v1"
+  contract_id = "objc3c-parser-advanced-integration-workpack-contract/parser_build-integration-workpack-iteration19-v1"
   upstream = $upstreamResults
   integrated_ok = $true
 }

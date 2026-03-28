@@ -1,4 +1,4 @@
-module m267_c003_result_bridge_consumer;
+module m267_result_bridge_consumer;
 
 extern fn risky(value: i32) throws -> i32;
 extern fn mapStatus(status: i32) -> NSError;

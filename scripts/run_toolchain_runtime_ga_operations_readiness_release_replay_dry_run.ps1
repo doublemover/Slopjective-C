@@ -1,6 +1,6 @@
 param(
   [string]$SourcePath = "tests/tooling/fixtures/native/hello.objc3",
-  [string]$ReportRoot = "tmp/reports/sema_pass/M227-A014"
+  [string]$ReportRoot = "tmp/reports/toolchain_ga/M250-D014"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,7 +13,7 @@ function Get-RepoRelativePathCompat {
 
   $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
   $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
-  if ($resolvedRoot.EndsWith('\') -or $resolvedRoot.EndsWith('/')) {
+  if ($resolvedRoot.EndsWith('\\') -or $resolvedRoot.EndsWith('/')) {
     $rootWithSeparator = $resolvedRoot
   } else {
     $rootWithSeparator = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
@@ -29,7 +29,7 @@ function Get-RepoRelativePathCompat {
     $relativeUri = $rootUri.MakeRelativeUri($targetUri)
     $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
   }
-  return $relativePath.Replace('\', '/')
+  return $relativePath.Replace('\\', '/')
 }
 
 function Get-FileSha256Hex {
@@ -106,36 +106,55 @@ foreach ($fileName in $deterministicFiles) {
 }
 
 $manifest = Read-JsonFile -Path (Join-Path $run1 "module.manifest.json")
-$parserStage = $manifest.frontend.pipeline.stages.parser
 $readiness = $manifest.frontend.pipeline.parse_lowering_readiness
 
-if (-not $parserStage.deterministic_handoff) {
-  throw "manifest parser deterministic_handoff is false"
-}
-if (-not $parserStage.recovery_replay_ready) {
-  throw "manifest parser recovery_replay_ready is false"
-}
 if (-not $readiness.ready_for_lowering) {
   throw "manifest parse_lowering_readiness.ready_for_lowering is false"
 }
 if (-not $readiness.parse_artifact_replay_key_deterministic) {
   throw "manifest parse_lowering_readiness.parse_artifact_replay_key_deterministic is false"
 }
+if (-not $readiness.parse_recovery_determinism_hardening_consistent) {
+  throw "manifest parse_lowering_readiness.parse_recovery_determinism_hardening_consistent is false"
+}
+if (-not $readiness.parse_lowering_conformance_matrix_consistent) {
+  throw "manifest parse_lowering_readiness.parse_lowering_conformance_matrix_consistent is false"
+}
+if (-not $readiness.parse_lowering_conformance_corpus_consistent) {
+  throw "manifest parse_lowering_readiness.parse_lowering_conformance_corpus_consistent is false"
+}
+if (-not $readiness.parse_lowering_performance_quality_guardrails_consistent) {
+  throw "manifest parse_lowering_readiness.parse_lowering_performance_quality_guardrails_consistent is false"
+}
+if (-not $readiness.long_tail_grammar_integration_closeout_consistent) {
+  throw "manifest parse_lowering_readiness.long_tail_grammar_integration_closeout_consistent is false"
+}
+if (-not $readiness.long_tail_grammar_gate_signoff_ready) {
+  throw "manifest parse_lowering_readiness.long_tail_grammar_gate_signoff_ready is false"
+}
+if (($readiness.parse_lowering_performance_quality_guardrails_key -as [string]).IndexOf("toolchain_runtime_ga_operations_docs_runbook_sync_key=", [System.StringComparison]::Ordinal) -lt 0) {
+  throw "manifest parse_lowering_performance_quality_guardrails_key missing docs/runbook sync evidence"
+}
+if (($readiness.long_tail_grammar_integration_closeout_key -as [string]).IndexOf("toolchain_runtime_ga_operations_docs_runbook_sync_key=", [System.StringComparison]::Ordinal) -lt 0) {
+  throw "manifest long_tail_grammar_integration_closeout_key missing docs/runbook sync evidence"
+}
 
 $summary = [ordered]@{
-  contract_id = "objc3c-semantic-pass-release-replay-dry-run/sema_pass-a014-v1"
+  contract_id = "objc3c-toolchain-runtime-ga-operations-readiness-release-replay-dry-run/toolchain_ga-release-replay-dry-run-v1"
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   run1 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run1
   run2 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run2
-  parser = [ordered]@{
-    deterministic_handoff = [bool]$parserStage.deterministic_handoff
-    recovery_replay_ready = [bool]$parserStage.recovery_replay_ready
-  }
   parse_lowering_readiness = [ordered]@{
     ready_for_lowering = [bool]$readiness.ready_for_lowering
     parse_artifact_replay_key_deterministic = [bool]$readiness.parse_artifact_replay_key_deterministic
-    parse_artifact_handoff_key = [string]$readiness.parse_artifact_handoff_key
-    parse_artifact_replay_key = [string]$readiness.parse_artifact_replay_key
+    parse_recovery_determinism_hardening_consistent = [bool]$readiness.parse_recovery_determinism_hardening_consistent
+    parse_lowering_conformance_matrix_consistent = [bool]$readiness.parse_lowering_conformance_matrix_consistent
+    parse_lowering_conformance_corpus_consistent = [bool]$readiness.parse_lowering_conformance_corpus_consistent
+    parse_lowering_performance_quality_guardrails_consistent = [bool]$readiness.parse_lowering_performance_quality_guardrails_consistent
+    long_tail_grammar_integration_closeout_consistent = [bool]$readiness.long_tail_grammar_integration_closeout_consistent
+    long_tail_grammar_gate_signoff_ready = [bool]$readiness.long_tail_grammar_gate_signoff_ready
+    parse_lowering_performance_quality_guardrails_key = [string]$readiness.parse_lowering_performance_quality_guardrails_key
+    long_tail_grammar_integration_closeout_key = [string]$readiness.long_tail_grammar_integration_closeout_key
   }
   deterministic_files = $comparisons
 }

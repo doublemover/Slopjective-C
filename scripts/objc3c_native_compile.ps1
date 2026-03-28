@@ -1139,7 +1139,7 @@ function Assert-FrontendModuleScaffold {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-d002-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend modular scaffold contract id mismatch in $scaffoldPath"
     exit 2
@@ -1202,13 +1202,13 @@ function Assert-FrontendInvocationLock {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-manifest-guard/parser_build-d003-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend invocation lock contract id mismatch in $lockPath"
     exit 2
   }
 
-  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-d002-v1"
+  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
   if ([string]$payload.scaffold_contract_id -ne $expectedScaffoldContractId) {
     Write-Error "frontend invocation lock scaffold contract id mismatch in $lockPath"
     exit 2
@@ -1314,15 +1314,15 @@ function Assert-FrontendCoreFeatureExpansion {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-d004-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-core-feature-expansion-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend core feature expansion contract id mismatch in $featurePath"
     exit 2
   }
 
   $expectedDependencyContracts = @(
-    "objc3c-frontend-build-invocation-modular-scaffold/parser_build-d002-v1",
-    "objc3c-frontend-build-invocation-manifest-guard/parser_build-d003-v1"
+    "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1",
+    "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
   )
   $presentDependencyContracts = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -1515,15 +1515,15 @@ function Assert-FrontendEdgeCompatibility {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend edge compatibility contract id mismatch in $compatPath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-d004-v1",
-    "objc3c-frontend-build-invocation-manifest-guard/parser_build-d003-v1"
+    "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-core-feature-expansion-v1",
+    "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -1835,15 +1835,15 @@ function Assert-FrontendEdgeRobustness {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-edge-robustness/parser_build-d006-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-edge-robustness/parser_build-edge-robustness-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend edge robustness contract id mismatch in $robustnessPath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1",
-    "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-d004-v1"
+    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1",
+    "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-core-feature-expansion-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -1938,15 +1938,15 @@ function Assert-FrontendDiagnosticsHardening {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-d007-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-diagnostics-hardening-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend diagnostics hardening contract id mismatch in $diagnosticsPath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-edge-robustness/parser_build-d006-v1",
-    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+    "objc3c-frontend-build-invocation-edge-robustness/parser_build-edge-robustness-v1",
+    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -2021,15 +2021,15 @@ function Assert-FrontendRecoveryDeterminismHardening {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-d008-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-recovery-determinism-hardening-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend recovery determinism hardening contract id mismatch in $recoveryPath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-d007-v1",
-    "objc3c-frontend-build-invocation-edge-robustness/parser_build-d006-v1"
+    "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-diagnostics-hardening-v1",
+    "objc3c-frontend-build-invocation-edge-robustness/parser_build-edge-robustness-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -2054,7 +2054,7 @@ function Assert-FrontendRecoveryDeterminismHardening {
     Write-Error "frontend recovery determinism hardening fail_closed_exit_code must be 2 in $recoveryPath"
     exit 2
   }
-  if ([string]$cacheDeterminism.entry_contract_id -ne "objc3c-native-cache-entry/parser_build-d008-v1") {
+  if ([string]$cacheDeterminism.entry_contract_id -ne "objc3c-native-cache-entry/parser_build-recovery-determinism-hardening-v1") {
     Write-Error "frontend recovery determinism hardening entry_contract_id mismatch in $recoveryPath"
     exit 2
   }
@@ -2138,15 +2138,15 @@ function Assert-FrontendConformanceMatrix {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-conformance-matrix/parser_build-d009-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-conformance-matrix/parser_build-conformance-matrix-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend conformance matrix contract id mismatch in $conformancePath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-d008-v1",
-    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+    "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-recovery-determinism-hardening-v1",
+    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -2378,15 +2378,15 @@ function Assert-FrontendConformanceCorpus {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-conformance-corpus/parser_build-d010-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-conformance-corpus/parser_build-conformance-corpus-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend conformance corpus contract id mismatch in $corpusPath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-conformance-matrix/parser_build-d009-v1",
-    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+    "objc3c-frontend-build-invocation-conformance-matrix/parser_build-conformance-matrix-v1",
+    "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -2524,16 +2524,16 @@ function Assert-FrontendIntegrationCloseout {
     exit 2
   }
 
-  $expectedContractId = "objc3c-frontend-build-invocation-integration-closeout/parser_build-d011-v1"
+  $expectedContractId = "objc3c-frontend-build-invocation-integration-closeout/parser_build-integration-closeout-v1"
   if ([string]$payload.contract_id -ne $expectedContractId) {
     Write-Error "frontend integration closeout contract id mismatch in $closeoutPath"
     exit 2
   }
 
   $expectedDependencies = @(
-    "objc3c-frontend-build-invocation-conformance-corpus/parser_build-d010-v1",
-    "objc3c-frontend-build-invocation-conformance-matrix/parser_build-d009-v1",
-    "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-d008-v1"
+    "objc3c-frontend-build-invocation-conformance-corpus/parser_build-conformance-corpus-v1",
+    "objc3c-frontend-build-invocation-conformance-matrix/parser_build-conformance-matrix-v1",
+    "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-recovery-determinism-hardening-v1"
   )
   $dependencySet = @{}
   foreach ($contractId in @($payload.depends_on_contract_ids)) {
@@ -2622,7 +2622,7 @@ if ($argsWithoutOutDir.Count -gt 0) {
 
 $cacheRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/cache"
 $compilerSourcePath = Join-Path $repoRoot "native/objc3c/src/main.cpp"
-$cacheEntryContractId = "objc3c-native-cache-entry/parser_build-d008-v1"
+$cacheEntryContractId = "objc3c-native-cache-entry/parser_build-recovery-determinism-hardening-v1"
 $cacheKey = Get-CacheKey `
   -InputPath $inputPath `
   -ArgsWithoutOutDir $argsWithoutOutDir `

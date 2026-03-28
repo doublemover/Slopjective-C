@@ -143,14 +143,14 @@ $requiredRelativeFiles = @(
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
-  "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+  "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
   "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-  "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp",
-  "tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp",
+  "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+  "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
   "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
   "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
   "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
-  "tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3"
+  "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -161,7 +161,7 @@ foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles)) {
 }
 
 $manifestPayload = [ordered]@{
-  contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-d002-v1"
+  contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
   schema_version = 1
   package_model = "staged-runnable-toolchain-bundle-with-repo-relative-layout"
   install_model = "local-package-root-not-system-install"
@@ -180,12 +180,12 @@ $manifestPayload = [ordered]@{
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   object_model_probe = "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
   block_arc_fixture = "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
-  block_arc_runtime_abi_probe = "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp"
-  block_arc_byref_forwarding_probe = "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp"
+  block_arc_runtime_abi_probe = "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp"
+  block_arc_byref_forwarding_probe = "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp"
   storage_reflection_fixture = "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
   storage_reflection_probe = "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
-  error_runtime_fixture = "tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3"
-  error_runtime_probe = "tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp"
+  error_runtime_fixture = "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3"
+  error_runtime_probe = "tests/tooling/runtime/live_error_runtime_integration_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",

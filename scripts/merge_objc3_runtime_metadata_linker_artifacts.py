@@ -7,8 +7,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE_CONTRACT_ID = "objc3c-runtime-linker-retention-and-dead-strip-resistance/linker_metadata-d002-v1"
-MERGED_CONTRACT_ID = "objc3c-runtime-metadata-archive-and-static-link-discovery/linker_metadata-d003-v1"
+SOURCE_CONTRACT_ID = "objc3c-runtime-linker-retention-and-dead-strip-resistance/linker_metadata-retention-dead-strip-v1"
+MERGED_CONTRACT_ID = "objc3c-runtime-metadata-archive-and-static-link-discovery/linker_metadata-archive-static-link-discovery-v1"
 TRANSLATION_UNIT_IDENTITY_MODEL = "input-path-plus-parse-and-lowering-replay"
 MERGE_MODEL = "deduplicated-driver-flag-fan-in"
 RESPONSE_SUFFIX = ".merged.runtime-metadata-linker-options.rsp"

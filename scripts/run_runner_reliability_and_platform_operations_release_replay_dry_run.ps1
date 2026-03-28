@@ -1,6 +1,6 @@
 param(
   [string]$SourcePath = "tests/tooling/fixtures/native/hello.objc3",
-  [string]$ReportRoot = "tmp/reports/parser_build/M226-C014"
+  [string]$ReportRoot = "tmp/reports/validation_architecture/M248-D014"
 )
 
 $ErrorActionPreference = "Stop"
@@ -138,8 +138,11 @@ if (-not $readiness.toolchain_runtime_ga_operations_docs_runbook_sync_consistent
 if (-not $readiness.toolchain_runtime_ga_operations_docs_runbook_sync_ready) {
   throw "manifest parse_lowering_readiness.toolchain_runtime_ga_operations_docs_runbook_sync_ready is false"
 }
-if (($readiness.parse_lowering_performance_quality_guardrails_key -as [string]).IndexOf("toolchain_runtime_ga_operations_cross_lane_integration_key=", [System.StringComparison]::Ordinal) -lt 0) {
-  throw "manifest parse_lowering_performance_quality_guardrails_key missing cross-lane integration evidence"
+if (-not $readiness.long_tail_grammar_integration_closeout_consistent) {
+  throw "manifest parse_lowering_readiness.long_tail_grammar_integration_closeout_consistent is false"
+}
+if (-not $readiness.long_tail_grammar_gate_signoff_ready) {
+  throw "manifest parse_lowering_readiness.long_tail_grammar_gate_signoff_ready is false"
 }
 if (($readiness.parse_lowering_performance_quality_guardrails_key -as [string]).IndexOf("toolchain_runtime_ga_operations_docs_runbook_sync_key=", [System.StringComparison]::Ordinal) -lt 0) {
   throw "manifest parse_lowering_performance_quality_guardrails_key missing docs/runbook sync evidence"
@@ -149,7 +152,7 @@ if (($readiness.long_tail_grammar_integration_closeout_key -as [string]).IndexOf
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-parse-lowering-release-replay-dry-run-contract/parser_build-c014-v1"
+  contract_id = "objc3c-runner-reliability-platform-operations-release-candidate-replay-dry-run/validation_architecture-runner-operations-release-replay-dry-run-v1"
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   run1 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run1
   run2 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run2
@@ -164,6 +167,8 @@ $summary = [ordered]@{
     toolchain_runtime_ga_operations_cross_lane_integration_ready = [bool]$readiness.toolchain_runtime_ga_operations_cross_lane_integration_ready
     toolchain_runtime_ga_operations_docs_runbook_sync_consistent = [bool]$readiness.toolchain_runtime_ga_operations_docs_runbook_sync_consistent
     toolchain_runtime_ga_operations_docs_runbook_sync_ready = [bool]$readiness.toolchain_runtime_ga_operations_docs_runbook_sync_ready
+    long_tail_grammar_integration_closeout_consistent = [bool]$readiness.long_tail_grammar_integration_closeout_consistent
+    long_tail_grammar_gate_signoff_ready = [bool]$readiness.long_tail_grammar_gate_signoff_ready
     parse_lowering_performance_quality_guardrails_key = [string]$readiness.parse_lowering_performance_quality_guardrails_key
     long_tail_grammar_integration_closeout_key = [string]$readiness.long_tail_grammar_integration_closeout_key
   }

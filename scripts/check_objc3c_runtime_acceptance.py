@@ -151,28 +151,28 @@ INSTALLATION_LIFECYCLE_PROBE = (
     "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp"
 )
 IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE = (
-    "tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3"
+    "tests/tooling/fixtures/native/runtime_packaging_provider.objc3"
 )
 IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE = (
-    "tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3"
+    "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
 )
 IMPORTED_RUNTIME_PACKAGING_PROBE = (
-    "tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp"
+    "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
 )
 STORAGE_REFLECTION_PRESERVATION_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"
 )
 STORAGE_REFLECTION_PRESERVATION_CONSUMER_FIXTURE = (
-    "tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3"
+    "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
 )
 BLOCK_OWNERSHIP_PRESERVATION_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
 )
 BLOCK_OWNERSHIP_PRESERVATION_CONSUMER_FIXTURE = (
-    "tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3"
+    "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
 )
 BLOCK_ARC_RUNTIME_ABI_PROBE = (
-    "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp"
+    "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp"
 )
 REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE = (
     "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
@@ -1095,7 +1095,7 @@ def compile_fixture_with_args(
     expected_dispatch_and_synthesized_accessor_fixture_paths = [
         "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-        "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
         "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
@@ -1110,12 +1110,12 @@ def compile_fixture_with_args(
             "dispatch_and_synthesized_accessor_lowering_surface drifted from authoritative_fixture_paths"
         )
     expected_dispatch_and_synthesized_accessor_probe_paths = [
-        "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-        "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
     ]
     if (
         dispatch_and_synthesized_accessor_lowering_surface.get(
@@ -1231,11 +1231,11 @@ def compile_fixture_with_args(
             "executable_property_accessor_layout_lowering_surface drifted from authoritative_fixture_paths"
         )
     expected_executable_accessor_layout_probe_paths = [
-        "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-        "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
-        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
     ]
     if (
         executable_property_accessor_layout_lowering_surface.get(
@@ -1331,8 +1331,8 @@ def compile_fixture_with_args(
     if (
         executable_ivar_layout_emission_surface.get("authoritative_probe_paths")
         != [
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         ]
     ):
         raise RuntimeError(
@@ -1598,10 +1598,10 @@ def compile_fixture_with_args(
             )
     expected_authoritative_fixture_paths = [
         "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
-        "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
         "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
-        "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
-        "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
         "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
     ]
@@ -1613,12 +1613,12 @@ def compile_fixture_with_args(
             "runtime_property_ivar_storage_accessor_source_surface drifted from authoritative_fixture_paths"
         )
     expected_authoritative_probe_paths = [
-        "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-        "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/property_layout_runtime_probe.cpp",
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
     ]
     if (
         property_ivar_storage_accessor_source_surface.get("authoritative_probe_paths")
@@ -1808,10 +1808,10 @@ def compile_fixture_with_args(
             "runtime_block_arc_unified_source_surface drifted from authoritative_fixture_paths"
         )
     expected_block_arc_authoritative_probe_paths = [
-        "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
-        "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
-        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
-        "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
     ]
     if (
         block_arc_unified_source_surface.get("authoritative_probe_paths")
@@ -1963,7 +1963,7 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
         "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
         "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
-        "tests/tooling/fixtures/native/b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
+        "tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3",
     ]
     if (
         ownership_transfer_capture_family_source_surface.get(
@@ -1975,9 +1975,9 @@ def compile_fixture_with_args(
             "runtime_ownership_transfer_capture_family_source_surface drifted from authoritative_fixture_paths"
         )
     expected_ownership_transfer_capture_family_probe_paths = [
-        "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
-        "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
-        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
     ]
     if (
         ownership_transfer_capture_family_source_surface.get("authoritative_probe_paths")
@@ -2186,10 +2186,10 @@ def compile_fixture_with_args(
             "runtime_block_arc_lowering_helper_surface drifted from authoritative_fixture_paths"
         )
     expected_block_arc_lowering_helper_probe_paths = [
-        "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
-        "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
-        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
-        "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
     ]
     if (
         block_arc_lowering_helper_surface.get("authoritative_probe_paths")
@@ -2392,10 +2392,10 @@ def compile_fixture_with_args(
             )
     expected_atomicity_authoritative_fixture_paths = [
         "tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3",
-        "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
         "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
-        "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
-        "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
         "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
     ]
     if (
@@ -2409,7 +2409,7 @@ def compile_fixture_with_args(
         )
     expected_atomicity_authoritative_probe_paths = [
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
     ]
     if (
@@ -4158,9 +4158,9 @@ def build_runtime_error_lowering_unwind_bridge_helper_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3",
-            "tests/tooling/fixtures/native/d001_error_runtime_bridge_helper_positive.objc3",
-            "tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp",
+            "tests/tooling/fixtures/native/error_out_abi_positive.objc3",
+            "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+            "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",
@@ -4213,7 +4213,7 @@ def build_runtime_error_runtime_abi_cleanup_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_probe_path": (
-            "tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp"
+            "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp"
         ),
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -4249,11 +4249,11 @@ def build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3",
+            "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp",
-            "tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp",
+            "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+            "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
         ],
         "runtime_implementation_model": (
             "lowered-throw-catch-and-status-bridge-paths-execute-through-the-live-"
@@ -4311,13 +4311,13 @@ def build_runtime_object_model_realization_source_surface(
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -4411,20 +4411,20 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
             "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -4529,9 +4529,9 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
-            "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
             BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],
         "explicit_non_goals": [
@@ -4622,12 +4622,12 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
             "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
             "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
-            "tests/tooling/fixtures/native/b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
+            "tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
-            "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-parallel-semantics-path",
@@ -4734,9 +4734,9 @@ def build_runtime_block_arc_lowering_helper_surface(
             "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
-            "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
             BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],
         "explicit_non_goals": [
@@ -4853,15 +4853,15 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "explicit_non_goals": [
@@ -4924,18 +4924,18 @@ def build_dispatch_and_synthesized_accessor_lowering_surface(
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
             "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
             "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -4999,11 +4999,11 @@ def build_executable_property_accessor_layout_lowering_surface(
             "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -5062,8 +5062,8 @@ def build_executable_ivar_layout_emission_surface(
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -5132,11 +5132,11 @@ def build_executable_synthesized_accessor_property_lowering_surface(
             "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -5195,7 +5195,7 @@ def build_runtime_realization_lowering_reflection_artifact_surface(
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
@@ -5203,7 +5203,7 @@ def build_runtime_realization_lowering_reflection_artifact_surface(
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_descriptor_artifact": True,
@@ -5254,14 +5254,14 @@ def build_runtime_dispatch_table_reflection_record_lowering_surface(
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         ],
         "requires_coupled_registration_descriptor_artifact": True,
         "requires_coupled_registration_manifest": True,
@@ -5372,8 +5372,8 @@ def build_runtime_object_model_abi_query_surface(
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
@@ -5382,9 +5382,9 @@ def build_runtime_object_model_abi_query_surface(
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
-            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
@@ -5456,12 +5456,12 @@ def build_runtime_realization_lookup_reflection_implementation_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5508,7 +5508,7 @@ def build_runtime_reflection_query_surface(results: list[CaseResult]) -> dict[st
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
@@ -5564,12 +5564,12 @@ def build_runtime_realization_lookup_semantics_surface(
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5744,16 +5744,16 @@ def build_runtime_reflection_visibility_coherence_diagnostics_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/property_reflection_attribute_compatibility_negative.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
@@ -6604,7 +6604,7 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
         / "tooling"
         / "fixtures"
         / "native"
-        / "c002_error_out_abi_positive.objc3"
+        / "error_out_abi_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -6642,7 +6642,7 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
     return CaseResult(
         case_id="error-lowering-unwind-bridge-helper-surface",
         probe="compile-manifest-lowering-surface",
-        fixture="tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3",
+        fixture="tests/tooling/fixtures/native/error_out_abi_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6664,7 +6664,7 @@ def check_executable_throw_catch_cleanup_lowering_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "c002_error_out_abi_positive.objc3"
+        / "error_out_abi_positive.objc3"
     )
     obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     ll_text = ll_path.read_text(encoding="utf-8")
@@ -6727,7 +6727,7 @@ def check_executable_throw_catch_cleanup_lowering_case(
     return CaseResult(
         case_id="executable-throw-catch-cleanup-lowering",
         probe="compile-artifact-llvm-helper-lowering",
-        fixture="tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3",
+        fixture="tests/tooling/fixtures/native/error_out_abi_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6755,7 +6755,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "c003_artifact_replay_producer.objc3"
+        / "artifact_replay_producer.objc3"
     )
     consumer_fixture = (
         ROOT
@@ -6763,7 +6763,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "c003_result_bridge_consumer.objc3"
+        / "result_bridge_consumer.objc3"
     )
     provider_dir = case_dir / "provider"
     consumer_dir = case_dir / "consumer"
@@ -6843,14 +6843,14 @@ def check_cross_module_error_metadata_replay_preservation_case(
     )
     local_module = link_plan.get("local_module", {})
     expect(
-        local_module.get("module_name") == "m267_c003_result_bridge_consumer"
+        local_module.get("module_name") == "m267_result_bridge_consumer"
         and local_module.get("translation_unit_registration_order_ordinal") == 2,
         "expected cross-module error consumer to preserve the local module identity and registration ordinal",
     )
     return CaseResult(
         case_id="cross-module-error-metadata-replay-preservation",
         probe="cross-module-runtime-link-plan",
-        fixture="tests/tooling/fixtures/native/c003_result_bridge_consumer.objc3",
+        fixture="tests/tooling/fixtures/native/result_bridge_consumer.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6875,9 +6875,9 @@ def check_error_runtime_abi_cleanup_case(clangxx: str, run_dir: Path) -> CaseRes
         / "tests"
         / "tooling"
         / "runtime"
-        / "d001_error_runtime_bridge_helper_probe.cpp"
+        / "error_runtime_bridge_helper_probe.cpp"
     )
-    exe_path = case_dir / "d001_error_runtime_bridge_helper_probe.exe"
+    exe_path = case_dir / "error_runtime_bridge_helper_probe.exe"
     compile_probe(clangxx, probe, exe_path, [])
     payload = parse_key_value_output(run_probe(exe_path), "error runtime ABI cleanup probe")
     expected_integer_fields = {
@@ -6914,8 +6914,8 @@ def check_error_runtime_abi_cleanup_case(clangxx: str, run_dir: Path) -> CaseRes
     )
     return CaseResult(
         case_id="error-runtime-abi-cleanup",
-        probe="tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp",
-        fixture="tests/tooling/fixtures/native/d001_error_runtime_bridge_helper_positive.objc3",
+        probe="tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+        fixture="tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -6939,7 +6939,7 @@ def check_live_error_runtime_integration_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "d002_live_error_runtime_integration_positive.objc3"
+        / "live_error_runtime_integration_positive.objc3"
     )
     obj_path, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     probe = (
@@ -6947,9 +6947,9 @@ def check_live_error_runtime_integration_case(
         / "tests"
         / "tooling"
         / "runtime"
-        / "d002_live_error_runtime_integration_probe.cpp"
+        / "live_error_runtime_integration_probe.cpp"
     )
-    exe_path = case_dir / "d002_live_error_runtime_integration_probe.exe"
+    exe_path = case_dir / "live_error_runtime_integration_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "live error runtime integration probe")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -6995,8 +6995,8 @@ def check_live_error_runtime_integration_case(
     )
     return CaseResult(
         case_id="live-error-runtime-integration",
-        probe="tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp",
-        fixture="tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3",
+        probe="tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+        fixture="tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -7847,7 +7847,7 @@ def check_imported_runtime_packaging_replay_case(
         "expected cross-module link plan to publish two ordered link objects",
     )
 
-    exe_path = case_dir / "e002_import_module_execution_matrix_probe.exe"
+    exe_path = case_dir / "import_module_execution_matrix_probe.exe"
     probe_link_started = perf_counter()
     compile_probe(clangxx, probe, exe_path, [provider_obj, consumer_obj])
     probe_link_ms = int((perf_counter() - probe_link_started) * 1000)
@@ -8553,11 +8553,11 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
         / "tooling"
         / "fixtures"
         / "native"
-        / "d002_live_dispatch_fast_path_positive.objc3"
+        / "live_dispatch_fast_path_positive.objc3"
     )
     obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "d002_live_dispatch_fast_path_probe.cpp"
-    exe_path = case_dir / "d002_live_dispatch_fast_path_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "live_dispatch_fast_path_probe.cpp"
+    exe_path = case_dir / "live_dispatch_fast_path_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_key_value_output(run_probe(exe_path), "dispatch fast-path probe")
     ll_text = ll_path.read_text(encoding="utf-8")
@@ -8775,8 +8775,8 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
 
     return CaseResult(
         case_id="dispatch-fast-path",
-        probe="tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
-        fixture="tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+        probe="tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+        fixture="tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -8803,7 +8803,7 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
 
 def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-reflection"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "d003_property_metadata_reflection_positive.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "property_metadata_reflection_positive.objc3"
     obj_path = compile_fixture(fixture, case_dir / "compile")
     probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_property_metadata_reflection_probe.cpp"
     exe_path = case_dir / "runtime_property_metadata_reflection_probe.exe"
@@ -8837,7 +8837,7 @@ def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="property-reflection",
         probe="tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        fixture="tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        fixture="tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -8853,8 +8853,8 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-execution"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "property_ivar_execution_matrix_positive.objc3"
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "e002_property_ivar_execution_matrix_probe.cpp"
-    exe_path = case_dir / "e002_property_ivar_execution_matrix_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "property_ivar_execution_matrix_probe.cpp"
+    exe_path = case_dir / "property_ivar_execution_matrix_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "property execution probe")
 
@@ -9054,7 +9054,7 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected tokenValue getter to remain builtin-backed and report zero getter parameters")
     return CaseResult(
         case_id="property-execution",
-        probe="tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        probe="tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
         fixture="tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
@@ -9680,7 +9680,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
 def check_block_arc_runtime_abi_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "block-arc-runtime-abi"
     probe = ROOT / Path(BLOCK_ARC_RUNTIME_ABI_PROBE)
-    exe_path = case_dir / "d001_block_arc_runtime_abi_probe.exe"
+    exe_path = case_dir / "block_arc_runtime_abi_probe.exe"
     compile_probe(clangxx, probe, exe_path, [])
     payload = parse_json_output(run_probe(exe_path), "block ARC runtime ABI probe")
 
@@ -9836,10 +9836,10 @@ def check_block_helper_runtime_execution_case(
         / "tests"
         / "tooling"
         / "runtime"
-        / "d003_block_runtime_byref_forwarding_probe.cpp"
+        / "block_runtime_byref_forwarding_probe.cpp"
     )
     byref_forwarding_exe = (
-        case_dir / "d003_block_runtime_byref_forwarding_probe.exe"
+        case_dir / "block_runtime_byref_forwarding_probe.exe"
     )
     compile_probe(clangxx, byref_forwarding_probe, byref_forwarding_exe, [])
     byref_forwarding_payload = parse_json_output(
@@ -10163,8 +10163,8 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
         / "arc_property_interaction_positive.objc3"
     )
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "d003_arc_debug_instrumentation_probe.cpp"
-    exe_path = case_dir / "d003_arc_debug_instrumentation_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "arc_debug_instrumentation_probe.cpp"
+    exe_path = case_dir / "arc_debug_instrumentation_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "arc property helper probe")
 
@@ -10266,7 +10266,7 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
 
     return CaseResult(
         case_id="arc-property-helper-abi",
-        probe="tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        probe="tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         fixture="tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
@@ -10736,7 +10736,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "b001_property_readonly_setter_negative.objc3",
+        / "property_readonly_setter_negative.objc3",
         case_dir / "negative-readonly-setter",
         expected_snippets=[
             "readonly property 'value' in interface 'Widget' must not declare a setter modifier"
@@ -10944,7 +10944,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "b004_property_accessor_selector_compatibility_negative.objc3",
+        / "property_accessor_selector_compatibility_negative.objc3",
         case_dir / "accessor-selector-mismatch",
         expected_snippets=[
             "type mismatch: effective getter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
@@ -10957,7 +10957,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "b004_property_setter_selector_compatibility_negative.objc3",
+        / "property_setter_selector_compatibility_negative.objc3",
         case_dir / "setter-selector-mismatch",
         expected_snippets=[
             "type mismatch: effective setter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
@@ -10970,7 +10970,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "b004_property_reflection_attribute_compatibility_negative.objc3",
+        / "property_reflection_attribute_compatibility_negative.objc3",
         case_dir / "reflection-attribute-mismatch",
         expected_snippets=[
             "type mismatch: reflected property attribute and ownership profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
@@ -10981,7 +10981,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
     return CaseResult(
         case_id="property-reflection-accessor-compatibility-diagnostics",
         probe="compile-diagnostics",
-        fixture="tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
+        fixture="tests/tooling/fixtures/native/property_accessor_selector_compatibility_negative.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -11160,8 +11160,8 @@ def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> Case
     case_dir = run_dir / "synthesized-accessor-runtime"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "synthesized_accessor_property_lowering_positive.objc3"
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "c003_synthesized_accessor_probe.cpp"
-    exe_path = case_dir / "c003_synthesized_accessor_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "synthesized_accessor_probe.cpp"
+    exe_path = case_dir / "synthesized_accessor_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "synthesized accessor runtime probe")
 
@@ -11204,7 +11204,7 @@ def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> Case
 
     return CaseResult(
         case_id="synthesized-accessor-runtime",
-        probe="tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+        probe="tests/tooling/runtime/synthesized_accessor_probe.cpp",
         fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
@@ -11390,7 +11390,7 @@ def check_accessor_storage_lowering_metadata_surface_case(
         == [
             "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
             "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
             "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
             "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
@@ -11400,12 +11400,12 @@ def check_accessor_storage_lowering_metadata_surface_case(
     expect(
         synthesized_lowering_surface.get("authoritative_probe_paths")
         == [
-            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/property_layout_runtime_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
             "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
         ],
         "expected lowering surface to publish the authoritative probe set",
     )
@@ -11935,8 +11935,8 @@ def check_property_layout_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-layout"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "synthesized_accessor_property_lowering_positive.objc3"
     obj_path, ll_path, _ = compile_fixture_outputs(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "d001_property_layout_runtime_probe.cpp"
-    exe_path = case_dir / "d001_property_layout_runtime_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "property_layout_runtime_probe.cpp"
+    exe_path = case_dir / "property_layout_runtime_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "property layout runtime probe")
 
@@ -12004,7 +12004,7 @@ def check_property_layout_case(clangxx: str, run_dir: Path) -> CaseResult:
     allocation_mode = "shared-instance-freeze" if same_instance_mode else "distinct-instance-forward-compatible"
     return CaseResult(
         case_id="property-layout",
-        probe="tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+        probe="tests/tooling/runtime/property_layout_runtime_probe.cpp",
         fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,

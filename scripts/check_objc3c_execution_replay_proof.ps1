@@ -48,7 +48,7 @@ $proofCases = @(
   },
   [ordered]@{
     case_id = "dispatch-fast-path"
-    fixture = "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3"
+    fixture = "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
     required_ll_tokens = @("@objc3_runtime_dispatch_i32")
     required_runtime_sections = @()
   },

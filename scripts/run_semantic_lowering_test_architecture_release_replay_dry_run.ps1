@@ -146,7 +146,7 @@ if (($readiness.long_tail_grammar_integration_closeout_key -as [string]).IndexOf
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-semantic-lowering-test-architecture-release-candidate-replay-dry-run/validation_architecture-b014-v1"
+  contract_id = "objc3c-semantic-lowering-test-architecture-release-candidate-replay-dry-run/validation_architecture-release-replay-dry-run-v1"
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   run1 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run1
   run2 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run2

@@ -218,7 +218,7 @@ inline constexpr const char
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateContractId =
     "objc3c.runtime.live.dispatch.gate.v1";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateEvidenceModel =
-    "a002-b003-c004-d004-summary-chain";
+    "source-sema-lowering-runtime-abi-summary-chain";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateShimBoundaryModel =
     "live-runtime-dispatch-required-compatibility-shim-evidence-only";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
@@ -707,7 +707,7 @@ inline constexpr const char
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateContractId =
     "objc3c.runnable.block.runtime.gate.v1";
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateEvidenceModel =
-    "a003-b003-c004-d003-summary-chain";
+    "source-sema-lowering-runtime-summary-chain";
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateActiveModel =
     "runnable-block-gate-consumes-source-sema-lowering-and-runtime-proofs-rather-than-metadata-only-summaries";
 inline constexpr const char *kObjc3RunnableBlockRuntimeGateNonGoalModel =
@@ -721,7 +721,7 @@ inline constexpr const char *kObjc3RunnableBlockRuntimeGateFailClosedModel =
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixContractId =
     "objc3c.runnable.block.execution.matrix.v1";
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixEvidenceModel =
-    "a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix";
+    "source-sema-lowering-runtime-integrated-native-block-smoke-matrix";
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixActiveModel =
     "closeout-matrix-runs-owned-nonowning-byref-and-escaping-block-fixtures-against-the-native-runtime";
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
@@ -990,7 +990,7 @@ std::string Objc3RuntimeArcDebugInstrumentationSummary();
 inline constexpr const char *kObjc3RunnableArcRuntimeGateContractId =
     "objc3c.runnable.arc.runtime.gate.v1";
 inline constexpr const char *kObjc3RunnableArcRuntimeGateEvidenceModel =
-    "a002-b003-c004-d003-summary-chain";
+    "source-sema-lowering-runtime-summary-chain";
 inline constexpr const char *kObjc3RunnableArcRuntimeGateActiveModel =
     "runnable-arc-gate-consumes-arc-mode-semantics-lowering-and-runtime-proofs-rather-than-parser-only-or-metadata-only-claims";
 inline constexpr const char *kObjc3RunnableArcRuntimeGateNonGoalModel =
@@ -1001,7 +1001,7 @@ std::string Objc3RunnableArcRuntimeGateSummary();
 inline constexpr const char *kObjc3RunnableArcCloseoutContractId =
     "objc3c.runnable.arc.closeout.v1";
 inline constexpr const char *kObjc3RunnableArcCloseoutMatrixModel =
-    "closeout-matrix-consumes-a002-b003-c004-d003-and-e001-evidence-without-widening-the-supported-runnable-arc-slice";
+    "closeout-matrix-consumes-lowering-runtime-and-integrated-evidence-without-widening-the-supported-runnable-arc-slice";
 inline constexpr const char *kObjc3RunnableArcCloseoutSmokeModel =
     "integrated-arc-fixtures-and-private-property-runtime-probes-prove-supported-cleanup-block-and-property-behavior-through-native-toolchain-and-runtime";
 inline constexpr const char *kObjc3RunnableArcCloseoutFailClosedModel =
@@ -1403,7 +1403,7 @@ inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
 inline constexpr const char *kObjc3RuntimeMetadataEmissionGateContractId =
     "objc3c.runtime.metadata.emission.gate.v1";
 inline constexpr const char *kObjc3RuntimeMetadataEmissionGateEvidenceModel =
-    "a002-b003-c006-d003-summary-chain";
+    "source-sema-ir-runtime-summary-chain";
 inline constexpr const char *kObjc3RuntimeMetadataEmissionGateFailureModel =
     "fail-closed-on-upstream-summary-drift";
 // cross-lane object-emission closeout anchor: lane-E now freezes one
@@ -1413,7 +1413,7 @@ inline constexpr const char *kObjc3RuntimeMetadataEmissionGateFailureModel =
 inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutContractId =
     "objc3c.runtime.cross.lane.object.emission.closeout.v1";
 inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutEvidenceModel =
-    "e001-summary-plus-integrated-native-object-emission-probes";
+    "integrated-summary-plus-native-object-emission-probes";
 inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel =
     "fail-closed-on-summary-or-integrated-probe-drift";
 // normalized layout policy anchor: semantic finalization of runtime

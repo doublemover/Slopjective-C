@@ -215,8 +215,8 @@ void PrintResetReplayState(
   std::printf("}");
 }
 
-constexpr char kManualModuleName[] = "dispatch_runtime-d002-manual-image";
-constexpr char kManualIdentityKey[] = "dispatch_runtime-d002::manual-image";
+constexpr char kManualModuleName[] = "dispatch_runtime-manual-image";
+constexpr char kManualIdentityKey[] = "dispatch_runtime::manual-image";
 constexpr char kManualSelectorTokenValue[] = "tokenValue";
 constexpr char kManualSelectorDebugName[] = "debugName";
 constexpr char kManualStringDebugName[] = "debugName";

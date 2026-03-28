@@ -1,4 +1,4 @@
-module m274_d001_bridge_packaging_toolchain_provider;
+module m274_bridge_packaging_toolchain_provider;
 
 extern fn ffiInbound(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("BridgeProviderKit"))));
 extern fn ffiHeaderBridge(value: i32) -> i32 __attribute__((objc_header_name(named("BridgeProvider.h")), objc_cxx_name(named("BridgeProviderShim"))));

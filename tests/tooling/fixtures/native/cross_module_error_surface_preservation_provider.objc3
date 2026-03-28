@@ -1,4 +1,4 @@
-module m267_d003_cross_module_error_surface_preservation_provider;
+module m267_cross_module_error_surface_preservation_provider;
 
 @interface ReplayBox
 - (i32)tag;

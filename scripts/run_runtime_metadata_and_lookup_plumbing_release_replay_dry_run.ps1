@@ -1,6 +1,6 @@
 param(
   [string]$SourcePath = "tests/tooling/fixtures/native/hello.objc3",
-  [string]$ReportRoot = "tmp/reports/validation_architecture/M248-C014"
+  [string]$ReportRoot = "tmp/reports/runtime_metadata/M233-D014"
 )
 
 $ErrorActionPreference = "Stop"
@@ -144,9 +144,6 @@ if (-not $readiness.long_tail_grammar_integration_closeout_consistent) {
 if (-not $readiness.long_tail_grammar_gate_signoff_ready) {
   throw "manifest parse_lowering_readiness.long_tail_grammar_gate_signoff_ready is false"
 }
-if (($readiness.parse_lowering_performance_quality_guardrails_key -as [string]).IndexOf("toolchain_runtime_ga_operations_cross_lane_integration_key=", [System.StringComparison]::Ordinal) -lt 0) {
-  throw "manifest parse_lowering_performance_quality_guardrails_key missing cross-lane integration evidence"
-}
 if (($readiness.parse_lowering_performance_quality_guardrails_key -as [string]).IndexOf("toolchain_runtime_ga_operations_docs_runbook_sync_key=", [System.StringComparison]::Ordinal) -lt 0) {
   throw "manifest parse_lowering_performance_quality_guardrails_key missing docs/runbook sync evidence"
 }
@@ -155,7 +152,7 @@ if (($readiness.long_tail_grammar_integration_closeout_key -as [string]).IndexOf
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-replay-harness-and-artifact-contracts-release-candidate-and-replay-dry-run/validation_architecture-c014-v1"
+  contract_id = "objc3c-installer-runtime-operations-lookup-plumbing-release-candidate-replay-dry-run/runtime_metadata-release-replay-dry-run-v1"
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   run1 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run1
   run2 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run2

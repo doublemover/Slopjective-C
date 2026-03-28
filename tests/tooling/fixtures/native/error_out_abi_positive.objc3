@@ -1,4 +1,4 @@
-module m267_c002_error_out_abi_positive;
+module m267_error_out_abi_positive;
 
 fn risky(value: i32) throws -> i32 {
   if (value == 1) {

@@ -178,7 +178,7 @@ struct Expr {
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateContractId =
       "objc3c.runnable.block.runtime.gate.v1";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateEvidenceModel =
-      "a003-b003-c004-d003-summary-chain";
+      "source-sema-lowering-runtime-summary-chain";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateActiveModel =
       "runnable-block-gate-consumes-source-sema-lowering-and-runtime-proofs-rather-than-metadata-only-summaries";
   static inline constexpr const char *kObjc3RunnableBlockRuntimeGateNonGoalModel =
@@ -191,7 +191,7 @@ struct Expr {
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixContractId =
       "objc3c.runnable.block.execution.matrix.v1";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixEvidenceModel =
-      "a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix";
+      "source-sema-lowering-runtime-integrated-native-block-smoke-matrix";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixActiveModel =
       "closeout-matrix-runs-owned-nonowning-byref-and-escaping-block-fixtures-against-the-native-runtime";
   static inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =

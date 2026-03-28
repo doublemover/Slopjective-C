@@ -1,4 +1,4 @@
-module m267_d002_live_error_runtime_integration_positive;
+module m267_error_runtime_bridge_helper_positive;
 
 fn risky(value: i32) throws -> i32 {
   if (value == 1) {
@@ -18,13 +18,21 @@ fn bridgeStatus(value: i32, error: NSError*) -> i32 __attribute__((objc_status_c
   return 0;
 }
 
-fn runCase() -> i32 {
+fn bridgeNSError(value: i32, error: NSError*) -> bool __attribute__((objc_nserror)) {
+  if (value == 3) {
+    return false;
+  }
+  return true;
+}
+
+fn main() -> i32 {
   let direct = try! risky(0);
   do {
     let bridged = try bridgeStatus(2, 0);
     return bridged;
   } catch (NSError* error) {
-    return direct + error;
+    let second = try? bridgeNSError(3, 77);
+    return direct + error + second;
   } catch {
     return 0;
   }

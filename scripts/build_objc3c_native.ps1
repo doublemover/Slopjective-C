@@ -714,7 +714,7 @@ function Write-FrontendModuleScaffoldArtifact {
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-d002-v1"
+    contract_id = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
     schema_version = 1
     module_count = $modulePayload.Count
     shared_source_count = $SharedSources.Count
@@ -777,13 +777,13 @@ function Write-FrontendInvocationLockArtifact {
     throw "frontend scaffold is not valid JSON for invocation lock artifact: $FrontendScaffoldPath"
   }
 
-  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-d002-v1"
+  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
   if ([string]$scaffoldPayload.contract_id -ne $expectedScaffoldContractId) {
     throw "frontend scaffold contract id mismatch for invocation lock artifact: $FrontendScaffoldPath"
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-manifest-guard/parser_build-d003-v1"
+    contract_id = "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
     schema_version = 1
     scaffold_contract_id = [string]$scaffoldPayload.contract_id
     scaffold = [ordered]@{
@@ -852,11 +852,11 @@ function Write-FrontendCoreFeatureExpansionArtifact {
     throw "frontend invocation lock is not valid JSON for core feature expansion artifact: $FrontendInvocationLockPath"
   }
 
-  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-d002-v1"
+  $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
   if ([string]$scaffoldPayload.contract_id -ne $expectedScaffoldContractId) {
     throw "frontend scaffold contract id mismatch for core feature expansion artifact: $FrontendScaffoldPath"
   }
-  $expectedInvocationLockContractId = "objc3c-frontend-build-invocation-manifest-guard/parser_build-d003-v1"
+  $expectedInvocationLockContractId = "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
   if ([string]$invocationLockPayload.contract_id -ne $expectedInvocationLockContractId) {
     throw "frontend invocation lock contract id mismatch for core feature expansion artifact: $FrontendInvocationLockPath"
   }
@@ -869,7 +869,7 @@ function Write-FrontendCoreFeatureExpansionArtifact {
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-d004-v1"
+    contract_id = "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-core-feature-expansion-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedScaffoldContractId
@@ -923,7 +923,7 @@ function Write-FrontendEdgeCompatibilityArtifact {
     throw "frontend core feature expansion is not valid JSON for edge compatibility artifact: $FrontendCoreFeatureExpansionPath"
   }
 
-  $expectedCoreFeatureContractId = "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-d004-v1"
+  $expectedCoreFeatureContractId = "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-core-feature-expansion-v1"
   if ([string]$coreFeaturePayload.contract_id -ne $expectedCoreFeatureContractId) {
     throw "frontend core feature contract id mismatch for edge compatibility artifact: $FrontendCoreFeatureExpansionPath"
   }
@@ -940,11 +940,11 @@ function Write-FrontendEdgeCompatibilityArtifact {
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+    contract_id = "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedCoreFeatureContractId
-      "objc3c-frontend-build-invocation-manifest-guard/parser_build-d003-v1"
+      "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
     )
     backend_compat = [ordered]@{
       canonical_allowed_backends = $allowedBackends
@@ -1002,17 +1002,17 @@ function Write-FrontendEdgeRobustnessArtifact {
     throw "frontend edge compatibility artifact is not valid JSON for edge robustness artifact: $FrontendEdgeCompatibilityPath"
   }
 
-  $expectedEdgeCompatContractId = "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+  $expectedEdgeCompatContractId = "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
   if ([string]$edgeCompatPayload.contract_id -ne $expectedEdgeCompatContractId) {
     throw "frontend edge compatibility contract id mismatch for edge robustness artifact: $FrontendEdgeCompatibilityPath"
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-edge-robustness/parser_build-d006-v1"
+    contract_id = "objc3c-frontend-build-invocation-edge-robustness/parser_build-edge-robustness-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedEdgeCompatContractId
-      "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-d004-v1"
+      "objc3c-frontend-build-invocation-core-feature-expansion/parser_build-core-feature-expansion-v1"
     )
     wrapper_guardrails = [ordered]@{
       wrapper_single_value_flags = @(
@@ -1059,17 +1059,17 @@ function Write-FrontendDiagnosticsHardeningArtifact {
     throw "frontend edge robustness artifact is not valid JSON for diagnostics hardening artifact: $FrontendEdgeRobustnessPath"
   }
 
-  $expectedEdgeRobustnessContractId = "objc3c-frontend-build-invocation-edge-robustness/parser_build-d006-v1"
+  $expectedEdgeRobustnessContractId = "objc3c-frontend-build-invocation-edge-robustness/parser_build-edge-robustness-v1"
   if ([string]$edgeRobustnessPayload.contract_id -ne $expectedEdgeRobustnessContractId) {
     throw "frontend edge robustness contract id mismatch for diagnostics hardening artifact: $FrontendEdgeRobustnessPath"
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-d007-v1"
+    contract_id = "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-diagnostics-hardening-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedEdgeRobustnessContractId
-      "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+      "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
     )
     wrapper_diagnostics = [ordered]@{
       fail_closed_exit_code = 2
@@ -1110,21 +1110,21 @@ function Write-FrontendRecoveryDeterminismHardeningArtifact {
     throw "frontend diagnostics hardening artifact is not valid JSON for recovery determinism hardening artifact: $FrontendDiagnosticsHardeningPath"
   }
 
-  $expectedDiagnosticsContractId = "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-d007-v1"
+  $expectedDiagnosticsContractId = "objc3c-frontend-build-invocation-diagnostics-hardening/parser_build-diagnostics-hardening-v1"
   if ([string]$diagnosticsPayload.contract_id -ne $expectedDiagnosticsContractId) {
     throw "frontend diagnostics hardening contract id mismatch for recovery determinism hardening artifact: $FrontendDiagnosticsHardeningPath"
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-d008-v1"
+    contract_id = "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-recovery-determinism-hardening-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedDiagnosticsContractId
-      "objc3c-frontend-build-invocation-edge-robustness/parser_build-d006-v1"
+      "objc3c-frontend-build-invocation-edge-robustness/parser_build-edge-robustness-v1"
     )
     cache_determinism = [ordered]@{
       fail_closed_exit_code = 2
-      entry_contract_id = "objc3c-native-cache-entry/parser_build-d008-v1"
+      entry_contract_id = "objc3c-native-cache-entry/parser_build-recovery-determinism-hardening-v1"
       cache_status_tokens = @(
         "cache_hit=true"
         "cache_hit=false"
@@ -1170,7 +1170,7 @@ function Write-FrontendConformanceMatrixArtifact {
     throw "frontend recovery determinism hardening artifact is not valid JSON for conformance matrix artifact: $FrontendRecoveryDeterminismHardeningPath"
   }
 
-  $expectedRecoveryContractId = "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-d008-v1"
+  $expectedRecoveryContractId = "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-recovery-determinism-hardening-v1"
   if ([string]$recoveryPayload.contract_id -ne $expectedRecoveryContractId) {
     throw "frontend recovery determinism hardening contract id mismatch for conformance matrix artifact: $FrontendRecoveryDeterminismHardeningPath"
   }
@@ -1249,11 +1249,11 @@ function Write-FrontendConformanceMatrixArtifact {
   )
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-conformance-matrix/parser_build-d009-v1"
+    contract_id = "objc3c-frontend-build-invocation-conformance-matrix/parser_build-conformance-matrix-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedRecoveryContractId
-      "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+      "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
     )
     profile_key_fields = @(
       "cache_mode"
@@ -1300,7 +1300,7 @@ function Write-FrontendConformanceCorpusArtifact {
     throw "frontend conformance matrix artifact is not valid JSON for conformance corpus artifact: $FrontendConformanceMatrixPath"
   }
 
-  $expectedMatrixContractId = "objc3c-frontend-build-invocation-conformance-matrix/parser_build-d009-v1"
+  $expectedMatrixContractId = "objc3c-frontend-build-invocation-conformance-matrix/parser_build-conformance-matrix-v1"
   if ([string]$matrixPayload.contract_id -ne $expectedMatrixContractId) {
     throw "frontend conformance matrix contract id mismatch for conformance corpus artifact: $FrontendConformanceMatrixPath"
   }
@@ -1410,11 +1410,11 @@ function Write-FrontendConformanceCorpusArtifact {
   )
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-conformance-corpus/parser_build-d010-v1"
+    contract_id = "objc3c-frontend-build-invocation-conformance-corpus/parser_build-conformance-corpus-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedMatrixContractId
-      "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-d005-v1"
+      "objc3c-frontend-build-invocation-edge-compat-completion/parser_build-edge-compat-completion-v1"
     )
     profile_key_fields = @(
       "cache_mode"
@@ -1456,7 +1456,7 @@ function Write-FrontendIntegrationCloseoutArtifact {
     throw "frontend conformance corpus artifact is not valid JSON for integration closeout artifact: $FrontendConformanceCorpusPath"
   }
 
-  $expectedCorpusContractId = "objc3c-frontend-build-invocation-conformance-corpus/parser_build-d010-v1"
+  $expectedCorpusContractId = "objc3c-frontend-build-invocation-conformance-corpus/parser_build-conformance-corpus-v1"
   if ([string]$corpusPayload.contract_id -ne $expectedCorpusContractId) {
     throw "frontend conformance corpus contract id mismatch for integration closeout artifact: $FrontendConformanceCorpusPath"
   }
@@ -1468,12 +1468,12 @@ function Write-FrontendIntegrationCloseoutArtifact {
   }
 
   $payload = [ordered]@{
-    contract_id = "objc3c-frontend-build-invocation-integration-closeout/parser_build-d011-v1"
+    contract_id = "objc3c-frontend-build-invocation-integration-closeout/parser_build-integration-closeout-v1"
     schema_version = 1
     depends_on_contract_ids = @(
       $expectedCorpusContractId
-      "objc3c-frontend-build-invocation-conformance-matrix/parser_build-d009-v1"
-      "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-d008-v1"
+      "objc3c-frontend-build-invocation-conformance-matrix/parser_build-conformance-matrix-v1"
+      "objc3c-frontend-build-invocation-recovery-determinism-hardening/parser_build-recovery-determinism-hardening-v1"
     )
     closeout_gate = [ordered]@{
       build_integration_gate_signoff = $true

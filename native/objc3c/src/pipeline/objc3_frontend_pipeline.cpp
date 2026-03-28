@@ -2949,7 +2949,7 @@ static std::string BuildExecutableMetadataTypedLoweringHandoffReplayKey(
       << surface.executable_metadata_semantic_consistency_contract_id
       << ";semantic_validation_contract="
       << surface.executable_metadata_semantic_validation_contract_id
-      << ";c001_contract="
+      << ";lowering_handoff_contract="
       << surface.executable_metadata_lowering_handoff_contract_id
       << ";schema_ordering_model=" << surface.manifest_schema_ordering_model
       << ";deterministic=" << (surface.deterministic ? "true" : "false")
@@ -3100,7 +3100,7 @@ BuildExecutableMetadataTypedLoweringHandoff(
         "typed lowering handoff contract id is empty";
   } else if (surface.executable_metadata_lowering_handoff_contract_id.empty()) {
     surface.failure_reason =
-        "typed lowering handoff C001 contract id is empty";
+        "typed lowering handoff contract id is empty";
   } else if (surface.executable_metadata_source_graph_contract_id.empty()) {
     surface.failure_reason =
         "typed lowering handoff source graph contract id is empty";
@@ -3124,47 +3124,47 @@ BuildExecutableMetadataTypedLoweringHandoff(
         "typed lowering handoff semantic validation surface is not ready";
   } else if (!surface.lowering_handoff_surface_ready) {
     surface.failure_reason =
-        "typed lowering handoff C001 freeze surface is not ready";
+        "typed lowering handoff freeze surface is not ready";
   } else if (graph.interface_nodes_lexicographic.size() !=
              lowering_handoff_surface.interface_node_count) {
     surface.failure_reason =
-        "typed lowering handoff interface node count drifted from C001 freeze";
+        "typed lowering handoff interface node count drifted from the freeze surface";
   } else if (graph.implementation_nodes_lexicographic.size() !=
              lowering_handoff_surface.implementation_node_count) {
     surface.failure_reason =
-        "typed lowering handoff implementation node count drifted from C001 freeze";
+        "typed lowering handoff implementation node count drifted from the freeze surface";
   } else if (graph.class_nodes_lexicographic.size() !=
              lowering_handoff_surface.class_node_count) {
     surface.failure_reason =
-        "typed lowering handoff class node count drifted from C001 freeze";
+        "typed lowering handoff class node count drifted from the freeze surface";
   } else if (graph.metaclass_nodes_lexicographic.size() !=
              lowering_handoff_surface.metaclass_node_count) {
     surface.failure_reason =
-        "typed lowering handoff metaclass node count drifted from C001 freeze";
+        "typed lowering handoff metaclass node count drifted from the freeze surface";
   } else if (graph.protocol_nodes_lexicographic.size() !=
              lowering_handoff_surface.protocol_node_count) {
     surface.failure_reason =
-        "typed lowering handoff protocol node count drifted from C001 freeze";
+        "typed lowering handoff protocol node count drifted from the freeze surface";
   } else if (graph.category_nodes_lexicographic.size() !=
              lowering_handoff_surface.category_node_count) {
     surface.failure_reason =
-        "typed lowering handoff category node count drifted from C001 freeze";
+        "typed lowering handoff category node count drifted from the freeze surface";
   } else if (graph.property_nodes_lexicographic.size() !=
              lowering_handoff_surface.property_node_count) {
     surface.failure_reason =
-        "typed lowering handoff property node count drifted from C001 freeze";
+        "typed lowering handoff property node count drifted from the freeze surface";
   } else if (graph.method_nodes_lexicographic.size() !=
              lowering_handoff_surface.method_node_count) {
     surface.failure_reason =
-        "typed lowering handoff method node count drifted from C001 freeze";
+        "typed lowering handoff method node count drifted from the freeze surface";
   } else if (graph.ivar_nodes_lexicographic.size() !=
              lowering_handoff_surface.ivar_node_count) {
     surface.failure_reason =
-        "typed lowering handoff ivar node count drifted from C001 freeze";
+        "typed lowering handoff ivar node count drifted from the freeze surface";
   } else if (graph.owner_edges_lexicographic.size() !=
              lowering_handoff_surface.owner_edge_count) {
     surface.failure_reason =
-        "typed lowering handoff owner edge count drifted from C001 freeze";
+        "typed lowering handoff owner edge count drifted from the freeze surface";
   }
 
   surface.deterministic =

@@ -123,7 +123,7 @@ if (-not $readiness.parse_artifact_replay_key_deterministic) {
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-parser-release-replay-dry-run-contract/parser_build-a014-v1"
+  contract_id = "objc3c-parser-release-replay-dry-run-contract/parser_build-release-replay-dry-run-v1"
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   run1 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run1
   run2 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run2

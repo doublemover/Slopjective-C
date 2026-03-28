@@ -1,6 +1,6 @@
 param(
   [string]$FixtureRoot = "tests/tooling/fixtures/native",
-  [string]$ReportRoot = "tmp/reports/parser_build/M226-A030"
+  [string]$ReportRoot = "tmp/reports/parser_build/M226-A024"
 )
 
 $ErrorActionPreference = "Stop"
@@ -202,13 +202,12 @@ foreach ($fixtureName in $fixtureNames) {
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-parser-advanced-conformance-workpack-contract/parser_build-a030-v1"
+  contract_id = "objc3c-parser-advanced-conformance-workpack-contract/parser_build-conformance-workpack-iteration24-v1"
   fixture_root = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $fixturesDir
   fixtures = $results
 }
-$summaryPath = Join-Path $reportDir "parser_conformance_shard3_summary.json"
+$summaryPath = Join-Path $reportDir "parser_conformance_shard2_summary.json"
 $summary | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $summaryPath -Encoding utf8
 
 Write-Output "status: PASS"
 Write-Output ("summary: " + (Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $summaryPath))
-

@@ -77,8 +77,8 @@ if ($ResolvedLlcPath) {
 New-Item -ItemType Directory -Force -Path $SummaryDir | Out-Null
 
 Invoke-Step -Label "build:objc3c-native" -Command @("npm.cmd", "run", "build:objc3c-native")
-Invoke-Step -Label "bootstrap_matrix-c003" -Command @("python", "scripts/check_m263_c003_archive_and_static_link_bootstrap_replay_corpus_conformance_corpus_expansion.py")
-Invoke-Step -Label "bootstrap_matrix-d003" -Command @("python", "scripts/check_m263_d003_live_restart_hardening_edge_case_and_compatibility_completion.py")
+Invoke-Step -Label "bootstrap_matrix-archive-static-link-replay" -Command @("python", "scripts/check_m263_archive_static_link_bootstrap_replay_corpus.py")
+Invoke-Step -Label "bootstrap_matrix-live-restart-hardening" -Command @("python", "scripts/check_m263_live_restart_hardening.py")
 
 $C003 = Get-Content -LiteralPath $C003SummaryPath -Raw | ConvertFrom-Json
 $D003 = Get-Content -LiteralPath $D003SummaryPath -Raw | ConvertFrom-Json
@@ -148,13 +148,13 @@ $Summary = [ordered]@{
   native_exe = $NativeExe
   runtime_library = $RuntimeLibrary
   llc_source = $ResolvedLlcPath
-  c003_summary = "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
-  d003_summary = "tmp/reports/bootstrap_matrix/M263-D003/live_restart_hardening_summary.json"
+  archive_replay_summary = "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
+  restart_hardening_summary = "tmp/reports/bootstrap_matrix/M263-D003/live_restart_hardening_summary.json"
   cases = $Cases
   commands = [ordered]@{
     build = "npm run build:objc3c-native"
-    c003 = "python scripts/check_m263_c003_archive_and_static_link_bootstrap_replay_corpus_conformance_corpus_expansion.py"
-    d003 = "python scripts/check_m263_d003_live_restart_hardening_edge_case_and_compatibility_completion.py"
+    archive_replay = "python scripts/check_m263_archive_static_link_bootstrap_replay_corpus.py"
+    restart_hardening = "python scripts/check_m263_live_restart_hardening.py"
   }
 }
 

@@ -86,8 +86,8 @@ int main() {
   objc3_runtime_reset_for_testing();
 
   const objc3_runtime_image_descriptor image{
-      "dispatch_runtime-d001-runtime-probe",
-      "dispatch_runtime-d001::translation-unit",
+      "dispatch_runtime-probe",
+      "dispatch_runtime::translation-unit",
       1,
       1,
       0,

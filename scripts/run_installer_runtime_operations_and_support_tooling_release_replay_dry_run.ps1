@@ -152,7 +152,7 @@ if (($readiness.long_tail_grammar_integration_closeout_key -as [string]).IndexOf
 }
 
 $summary = [ordered]@{
-  contract_id = "objc3c-installer-runtime-operations-support-tooling-release-candidate-replay-dry-run/installer_support-d014-v1"
+  contract_id = "objc3c-installer-runtime-operations-support-tooling-release-candidate-replay-dry-run/installer_support-release-replay-dry-run-v1"
   source = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $source
   run1 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run1
   run2 = Get-RepoRelativePathCompat -RootPath $repoRoot -TargetPath $run2
