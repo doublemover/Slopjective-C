@@ -4119,6 +4119,52 @@ def build_runtime_bridging_filter_unwind_diagnostics_surface(
     }
 
 
+def build_runtime_error_lowering_unwind_bridge_helper_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id == "error-lowering-unwind-bridge-helper-surface"
+    ]
+    return {
+        "contract_id": RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.ns.error.bridging.lowering.v1",
+            "objc3c.unwind.cleanup.lowering.v1",
+            "objc3c.part6.throws.abi.propagation.lowering.v1",
+            "objc3c.part6.result.and.bridging.artifact.replay.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/lower/objc3_lowering_contract.h",
+            "native/objc3c/src/ir/objc3_ir_emitter.h",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3",
+            "tests/tooling/fixtures/native/m267_d001_error_runtime_bridge_helper_positive.objc3",
+            "tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-proof",
+            "no-runtime-helper-abi-claims-before-lane-d",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": False,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6441,6 +6487,64 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
                 ),
             },
             "negative_fixtures": negative_summaries,
+        },
+    )
+
+
+def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "error-lowering-unwind-bridge-helper-surface"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_c002_error_out_abi_positive.objc3"
+    )
+    _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ns_error_bridging = manifest.get("lowering_ns_error_bridging", {})
+    unwind_cleanup = manifest.get("lowering_unwind_cleanup", {})
+    throws_abi = manifest.get("lowering_part6_throws_abi_propagation", {})
+    result_replay = manifest.get("lowering_part6_result_and_bridging_artifact_replay", {})
+    expect(
+        isinstance(ns_error_bridging, dict)
+        and isinstance(unwind_cleanup, dict)
+        and isinstance(throws_abi, dict)
+        and isinstance(result_replay, dict),
+        "expected error lowering fixture to publish the part6 lowering and replay surfaces",
+    )
+    expect(
+        ns_error_bridging.get("lane_contract") == "objc3c.ns.error.bridging.lowering.v1"
+        and ns_error_bridging.get("deterministic_handoff") is True,
+        "expected error lowering fixture to preserve the NSError bridging lowering contract",
+    )
+    expect(
+        unwind_cleanup.get("lane_contract") == "objc3c.unwind.cleanup.lowering.v1"
+        and unwind_cleanup.get("deterministic_handoff") is True,
+        "expected error lowering fixture to preserve the unwind cleanup lowering contract",
+    )
+    expect(
+        throws_abi.get("contract_id") == "objc3c.part6.throws.abi.propagation.lowering.v1"
+        and throws_abi.get("deterministic_handoff") is False,
+        "expected error lowering fixture to preserve the throws ABI propagation lowering contract",
+    )
+    expect(
+        result_replay.get("contract_id") == "objc3c.part6.result.and.bridging.artifact.replay.v1"
+        and result_replay.get("deterministic_handoff") is False,
+        "expected error lowering fixture to preserve the result and bridge replay lowering contract",
+    )
+    return CaseResult(
+        case_id="error-lowering-unwind-bridge-helper-surface",
+        probe="compile-manifest-lowering-surface",
+        fixture="tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "ns_error_bridging_contract": ns_error_bridging.get("lane_contract"),
+            "unwind_cleanup_contract": unwind_cleanup.get("lane_contract"),
+            "throws_abi_contract": throws_abi.get("contract_id"),
+            "result_replay_contract": result_replay.get("contract_id"),
         },
     )
 
@@ -11588,6 +11692,7 @@ def main() -> int:
         check_error_propagation_cleanup_semantics_case(run_dir),
         check_executable_try_throw_do_catch_semantics_case(run_dir),
         check_bridging_filter_unwind_compatibility_diagnostics_case(run_dir),
+        check_error_lowering_unwind_bridge_helper_surface_case(run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -11651,6 +11756,9 @@ def main() -> int:
         ),
         "runtime_bridging_filter_unwind_diagnostics_surface": (
             build_runtime_bridging_filter_unwind_diagnostics_surface(results)
+        ),
+        "runtime_error_lowering_unwind_bridge_helper_surface": (
+            build_runtime_error_lowering_unwind_bridge_helper_surface(results)
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

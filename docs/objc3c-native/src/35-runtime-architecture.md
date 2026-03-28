@@ -291,6 +291,34 @@ native fail-closed lowering boundary, and the exact negative diagnostic corpus
 so later lowering and runtime work cannot silently relax or reinterpret the
 compiler contract.
 
+## Error Lowering Unwind And Bridge Helper Surface
+
+- authoritative compile-manifest key:
+  - `runtime_error_lowering_unwind_bridge_helper_surface`
+- authoritative composed source inputs:
+  - `objc3c.ns.error.bridging.lowering.v1`
+  - `objc3c.unwind.cleanup.lowering.v1`
+  - `objc3c.part6.throws.abi.propagation.lowering.v1`
+  - `objc3c.part6.result.and.bridging.artifact.replay.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/lower/objc3_lowering_contract.h`
+  - `native/objc3c/src/ir/objc3_ir_emitter.h`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_d001_error_runtime_bridge_helper_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp`
+
+This is the authoritative lowering boundary for bridged NSError handoff,
+cleanup emission, and the current throws/result replay handoff. It freezes the
+real compile-coupled lowering contracts emitted by the live compiler so the
+runtime ABI and executable catch/cleanup work cannot drift away from the
+artifact surface that packaged builds actually consume.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:

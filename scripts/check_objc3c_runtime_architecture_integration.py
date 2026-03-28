@@ -41,6 +41,7 @@ SURFACE_KEYS = (
     "runtime_catch_filter_finalization_source_surface",
     "runtime_error_propagation_cleanup_semantics_surface",
     "runtime_bridging_filter_unwind_diagnostics_surface",
+    "runtime_error_lowering_unwind_bridge_helper_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",
@@ -280,6 +281,9 @@ def main() -> int:
         ],
         "runtime_bridging_filter_unwind_diagnostics_surface": public_workflow_report[
             "runtime_bridging_filter_unwind_diagnostics_surface"
+        ],
+        "runtime_error_lowering_unwind_bridge_helper_surface": public_workflow_report[
+            "runtime_error_lowering_unwind_bridge_helper_surface"
         ],
         "runtime_object_model_realization_source_surface": public_workflow_report[
             "runtime_object_model_realization_source_surface"
