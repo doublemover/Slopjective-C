@@ -140,6 +140,9 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
   "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
   "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
+  "native/objc3c/src/runtime/objc3_runtime.h",
+  "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+  "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp",
   "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
 )
 
@@ -166,6 +169,9 @@ $manifestPayload = [ordered]@{
   execution_smoke_script = "scripts/check_objc3c_native_execution_smoke.ps1"
   execution_replay_script = "scripts/check_objc3c_execution_replay_proof.ps1"
   canonical_runnable_fixture = "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
+  runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
+  runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+  object_model_probe = "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
