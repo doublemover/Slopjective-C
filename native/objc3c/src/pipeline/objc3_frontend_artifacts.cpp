@@ -8376,6 +8376,72 @@ std::string BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
   return out.str();
 }
 
+std::string BuildRuntimeStorageReflectionArtifactPreservationSummaryJson(
+    const Objc3RuntimeStorageReflectionArtifactPreservationSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(summary.source_contract_id)
+      << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\""
+      << EscapeJsonString(
+             summary.dispatch_and_synthesized_accessor_lowering_surface_contract_id)
+      << "\",\"executable_property_accessor_layout_lowering_contract_id\":\""
+      << EscapeJsonString(
+             summary.executable_property_accessor_layout_lowering_contract_id)
+      << "\",\"executable_ivar_layout_emission_contract_id\":\""
+      << EscapeJsonString(
+             summary.executable_ivar_layout_emission_contract_id)
+      << "\",\"executable_synthesized_accessor_property_lowering_contract_id\":\""
+      << EscapeJsonString(summary
+                              .executable_synthesized_accessor_property_lowering_contract_id)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(summary.surface_path)
+      << "\",\"import_artifact_member_name\":\""
+      << EscapeJsonString(summary.import_artifact_member_name)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"preservation_model\":\""
+      << EscapeJsonString(summary.preservation_model)
+      << "\",\"fail_closed_model\":\""
+      << EscapeJsonString(summary.fail_closed_model)
+      << "\",\"local_property_descriptor_count\":"
+      << summary.local_property_descriptor_count
+      << ",\"local_ivar_descriptor_count\":"
+      << summary.local_ivar_descriptor_count
+      << ",\"implementation_owned_property_entries\":"
+      << summary.implementation_owned_property_entries
+      << ",\"synthesized_accessor_owner_entries\":"
+      << summary.synthesized_accessor_owner_entries
+      << ",\"synthesized_getter_entries\":"
+      << summary.synthesized_getter_entries
+      << ",\"synthesized_setter_entries\":"
+      << summary.synthesized_setter_entries
+      << ",\"synthesized_accessor_entries\":"
+      << summary.synthesized_accessor_entries
+      << ",\"current_property_read_entries\":"
+      << summary.current_property_read_entries
+      << ",\"current_property_write_entries\":"
+      << summary.current_property_write_entries
+      << ",\"current_property_exchange_entries\":"
+      << summary.current_property_exchange_entries
+      << ",\"weak_current_property_load_entries\":"
+      << summary.weak_current_property_load_entries
+      << ",\"weak_current_property_store_entries\":"
+      << summary.weak_current_property_store_entries
+      << ",\"ivar_layout_entries\":" << summary.ivar_layout_entries
+      << ",\"ivar_layout_owner_entries\":"
+      << summary.ivar_layout_owner_entries
+      << ",\"runtime_import_artifact_ready\":"
+      << (summary.runtime_import_artifact_ready ? "true" : "false")
+      << ",\"separate_compilation_preservation_ready\":"
+      << (summary.separate_compilation_preservation_ready ? "true" : "false")
+      << ",\"deterministic\":"
+      << (summary.deterministic ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
@@ -8389,6 +8455,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &part10_module_interface_replay_preservation_json,
     const std::string &part10_macro_host_process_cache_runtime_integration_json,
     const std::string &part9_dispatch_metadata_interface_preservation_json,
+    const std::string &runtime_storage_reflection_artifact_preservation_json,
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary
         &serialized_runtime_metadata_artifact_reuse,
     const Objc3RuntimeMetadataSourceRecordSet
@@ -8485,6 +8552,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << part10_macro_host_process_cache_runtime_integration_json << ",\n"
       << "  \"objc_part9_dispatch_metadata_and_interface_preservation\": "
       << part9_dispatch_metadata_interface_preservation_json << ",\n"
+      << "  \"objc_runtime_storage_reflection_artifact_preservation\": "
+      << runtime_storage_reflection_artifact_preservation_json << ",\n"
       << "  \""
       << kObjc3SerializedRuntimeMetadataArtifactReusePayloadMemberName
       << "\": "
@@ -17090,6 +17159,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
               runtime_aware_import_module_frontend_closure),
           imported_runtime_module_surfaces);
+  const auto runtime_storage_reflection_artifact_preservation_summary =
+      BuildObjc3RuntimeStorageReflectionArtifactPreservationSummary(
+          runtime_metadata_source_records);
   const auto part10_module_interface_replay_preservation_summary =
       BuildPart10ModuleInterfaceReplayPreservationSummary(
           part10_expansion_lowering_contract,
@@ -24027,6 +24099,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 part10_macro_host_process_cache_runtime_integration_summary),
             BuildPart9DispatchMetadataInterfacePreservationSummaryJson(
                 part9_dispatch_metadata_interface_preservation_summary),
+            BuildRuntimeStorageReflectionArtifactPreservationSummaryJson(
+                runtime_storage_reflection_artifact_preservation_summary),
             serialized_runtime_metadata_artifact_reuse,
             serialized_runtime_metadata_reuse_records);
   }
@@ -24070,6 +24144,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       runtime_registration_descriptor_image_root_source_surface;
   bundle.runtime_registration_descriptor_frontend_closure_summary =
       runtime_registration_descriptor_frontend_closure;
+  bundle.runtime_storage_reflection_artifact_preservation_summary =
+      runtime_storage_reflection_artifact_preservation_summary;
   bundle.runtime_translation_unit_registration_manifest_summary =
       runtime_translation_unit_registration_manifest;
   bundle.runtime_bootstrap_legality_semantics_summary =

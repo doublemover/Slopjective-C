@@ -29,6 +29,8 @@ struct Objc3FrontendArtifactBundle {
       runtime_registration_descriptor_image_root_source_surface_summary;
   Objc3RuntimeRegistrationDescriptorFrontendClosureSummary
       runtime_registration_descriptor_frontend_closure_summary;
+  Objc3RuntimeStorageReflectionArtifactPreservationSummary
+      runtime_storage_reflection_artifact_preservation_summary;
   Objc3RuntimeTranslationUnitRegistrationManifestSummary
       runtime_translation_unit_registration_manifest_summary;
   Objc3RuntimeBootstrapLegalityFailureContractSummary

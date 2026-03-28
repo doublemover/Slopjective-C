@@ -267,6 +267,34 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string part10_macro_host_process_cache_replay_key;
   std::string part10_macro_host_process_cache_host_executable_relative_path;
   std::string part10_macro_host_process_cache_root_relative_path;
+  bool storage_reflection_artifact_preservation_present = false;
+  bool storage_reflection_runtime_import_artifact_ready = false;
+  bool storage_reflection_separate_compilation_preservation_ready = false;
+  bool storage_reflection_deterministic = false;
+  std::string storage_reflection_contract_id;
+  std::string storage_reflection_source_contract_id;
+  std::string
+      storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id;
+  std::string
+      storage_reflection_executable_property_accessor_layout_lowering_contract_id;
+  std::string storage_reflection_executable_ivar_layout_emission_contract_id;
+  std::string
+      storage_reflection_executable_synthesized_accessor_property_lowering_contract_id;
+  std::string storage_reflection_replay_key;
+  std::size_t storage_reflection_local_property_descriptor_count = 0;
+  std::size_t storage_reflection_local_ivar_descriptor_count = 0;
+  std::size_t storage_reflection_implementation_owned_property_entries = 0;
+  std::size_t storage_reflection_synthesized_accessor_owner_entries = 0;
+  std::size_t storage_reflection_synthesized_getter_entries = 0;
+  std::size_t storage_reflection_synthesized_setter_entries = 0;
+  std::size_t storage_reflection_synthesized_accessor_entries = 0;
+  std::size_t storage_reflection_current_property_read_entries = 0;
+  std::size_t storage_reflection_current_property_write_entries = 0;
+  std::size_t storage_reflection_current_property_exchange_entries = 0;
+  std::size_t storage_reflection_weak_current_property_load_entries = 0;
+  std::size_t storage_reflection_weak_current_property_store_entries = 0;
+  std::size_t storage_reflection_ivar_layout_entries = 0;
+  std::size_t storage_reflection_ivar_layout_owner_entries = 0;
 };
 
 struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
@@ -296,6 +324,18 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::size_t local_property_descriptor_count = 0;
   std::size_t local_ivar_descriptor_count = 0;
   std::size_t local_total_descriptor_count = 0;
+  std::size_t local_storage_reflection_implementation_owned_property_entries = 0;
+  std::size_t local_storage_reflection_synthesized_accessor_owner_entries = 0;
+  std::size_t local_storage_reflection_synthesized_getter_entries = 0;
+  std::size_t local_storage_reflection_synthesized_setter_entries = 0;
+  std::size_t local_storage_reflection_synthesized_accessor_entries = 0;
+  std::size_t local_storage_reflection_current_property_read_entries = 0;
+  std::size_t local_storage_reflection_current_property_write_entries = 0;
+  std::size_t local_storage_reflection_current_property_exchange_entries = 0;
+  std::size_t local_storage_reflection_weak_current_property_load_entries = 0;
+  std::size_t local_storage_reflection_weak_current_property_store_entries = 0;
+  std::size_t local_storage_reflection_ivar_layout_entries = 0;
+  std::size_t local_storage_reflection_ivar_layout_owner_entries = 0;
   std::vector<std::string> local_driver_linker_flags;
   std::string expected_part6_contract_id;
   std::string expected_part6_source_contract_id;
@@ -314,6 +354,15 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::string expected_part10_host_cache_source_contract_id;
   std::string expected_part10_host_cache_executable_relative_path;
   std::string expected_part10_host_cache_root_relative_path;
+  std::string expected_storage_reflection_contract_id;
+  std::string expected_storage_reflection_source_contract_id;
+  std::string
+      expected_storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id;
+  std::string
+      expected_storage_reflection_executable_property_accessor_layout_lowering_contract_id;
+  std::string expected_storage_reflection_executable_ivar_layout_emission_contract_id;
+  std::string
+      expected_storage_reflection_executable_synthesized_accessor_property_lowering_contract_id;
   std::string expected_bootstrap_live_registration_contract_id;
   std::string expected_bootstrap_live_restart_hardening_contract_id;
   std::string expected_bootstrap_replay_registered_images_symbol;

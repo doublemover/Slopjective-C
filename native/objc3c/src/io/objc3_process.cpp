@@ -1786,6 +1786,20 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.expected_part10_host_cache_source_contract_id.empty() ||
       inputs.expected_part10_host_cache_executable_relative_path.empty() ||
       inputs.expected_part10_host_cache_root_relative_path.empty() ||
+      inputs.expected_storage_reflection_contract_id.empty() ||
+      inputs.expected_storage_reflection_source_contract_id.empty() ||
+      inputs
+          .expected_storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id
+          .empty() ||
+      inputs
+          .expected_storage_reflection_executable_property_accessor_layout_lowering_contract_id
+          .empty() ||
+      inputs
+          .expected_storage_reflection_executable_ivar_layout_emission_contract_id
+          .empty() ||
+      inputs
+          .expected_storage_reflection_executable_synthesized_accessor_property_lowering_contract_id
+          .empty() ||
       inputs.expected_bootstrap_live_registration_contract_id.empty() ||
       inputs.expected_bootstrap_live_restart_hardening_contract_id.empty() ||
       inputs.expected_bootstrap_replay_registered_images_symbol.empty() ||
@@ -1810,6 +1824,15 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     error =
         "cross-module runtime link-plan direct import surface count does not "
         "match imported input count";
+    return false;
+  }
+  if (inputs.local_storage_reflection_synthesized_accessor_entries !=
+          inputs.local_storage_reflection_synthesized_getter_entries +
+              inputs.local_storage_reflection_synthesized_setter_entries ||
+      inputs.local_storage_reflection_ivar_layout_entries !=
+          inputs.local_ivar_descriptor_count) {
+    error =
+        "cross-module runtime link-plan local storage/reflection preservation summary drifted from descriptor counts";
     return false;
   }
 
@@ -1852,6 +1875,22 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::size_t imported_property_descriptor_count = 0;
   std::size_t imported_ivar_descriptor_count = 0;
   std::size_t imported_total_descriptor_count = 0;
+  std::size_t imported_storage_reflection_implementation_owned_property_entries =
+      0;
+  std::size_t imported_storage_reflection_synthesized_accessor_owner_entries =
+      0;
+  std::size_t imported_storage_reflection_synthesized_getter_entries = 0;
+  std::size_t imported_storage_reflection_synthesized_setter_entries = 0;
+  std::size_t imported_storage_reflection_synthesized_accessor_entries = 0;
+  std::size_t imported_storage_reflection_current_property_read_entries = 0;
+  std::size_t imported_storage_reflection_current_property_write_entries = 0;
+  std::size_t imported_storage_reflection_current_property_exchange_entries = 0;
+  std::size_t imported_storage_reflection_weak_current_property_load_entries =
+      0;
+  std::size_t imported_storage_reflection_weak_current_property_store_entries =
+      0;
+  std::size_t imported_storage_reflection_ivar_layout_entries = 0;
+  std::size_t imported_storage_reflection_ivar_layout_owner_entries = 0;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
   std::sort(direct_import_surface_artifact_paths.begin(),
@@ -2252,6 +2291,51 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       }
       imported_part10_host_cache_module_names.push_back(imported_input.module_name);
     }
+    if (!imported_input.storage_reflection_artifact_preservation_present ||
+        imported_input.storage_reflection_contract_id !=
+            inputs.expected_storage_reflection_contract_id ||
+        imported_input.storage_reflection_source_contract_id !=
+            inputs.expected_storage_reflection_source_contract_id ||
+        imported_input
+                .storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id !=
+            inputs
+                .expected_storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id ||
+        imported_input
+                .storage_reflection_executable_property_accessor_layout_lowering_contract_id !=
+            inputs
+                .expected_storage_reflection_executable_property_accessor_layout_lowering_contract_id ||
+        imported_input
+                .storage_reflection_executable_ivar_layout_emission_contract_id !=
+            inputs
+                .expected_storage_reflection_executable_ivar_layout_emission_contract_id ||
+        imported_input
+                .storage_reflection_executable_synthesized_accessor_property_lowering_contract_id !=
+            inputs
+                .expected_storage_reflection_executable_synthesized_accessor_property_lowering_contract_id) {
+      error =
+          "cross-module runtime link-plan storage/reflection preservation contract mismatch for " +
+          imported_input.module_name;
+      return false;
+    }
+    if (!imported_input.storage_reflection_runtime_import_artifact_ready ||
+        !imported_input
+             .storage_reflection_separate_compilation_preservation_ready ||
+        !imported_input.storage_reflection_deterministic ||
+        imported_input.storage_reflection_replay_key.empty() ||
+        imported_input.storage_reflection_local_property_descriptor_count !=
+            imported_input.property_descriptor_count ||
+        imported_input.storage_reflection_local_ivar_descriptor_count !=
+            imported_input.ivar_descriptor_count ||
+        imported_input.storage_reflection_synthesized_accessor_entries !=
+            imported_input.storage_reflection_synthesized_getter_entries +
+                imported_input.storage_reflection_synthesized_setter_entries ||
+        imported_input.storage_reflection_ivar_layout_entries !=
+            imported_input.ivar_descriptor_count) {
+      error =
+          "cross-module runtime link-plan storage/reflection preservation surface incomplete for " +
+          imported_input.module_name;
+      return false;
+    }
     ordered_link_inputs.push_back(
         {imported_input.translation_unit_registration_order_ordinal,
          imported_input.translation_unit_identity_key,
@@ -2267,6 +2351,30 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         imported_input.property_descriptor_count;
     imported_ivar_descriptor_count += imported_input.ivar_descriptor_count;
     imported_total_descriptor_count += imported_input.total_descriptor_count;
+    imported_storage_reflection_implementation_owned_property_entries +=
+        imported_input.storage_reflection_implementation_owned_property_entries;
+    imported_storage_reflection_synthesized_accessor_owner_entries +=
+        imported_input.storage_reflection_synthesized_accessor_owner_entries;
+    imported_storage_reflection_synthesized_getter_entries +=
+        imported_input.storage_reflection_synthesized_getter_entries;
+    imported_storage_reflection_synthesized_setter_entries +=
+        imported_input.storage_reflection_synthesized_setter_entries;
+    imported_storage_reflection_synthesized_accessor_entries +=
+        imported_input.storage_reflection_synthesized_accessor_entries;
+    imported_storage_reflection_current_property_read_entries +=
+        imported_input.storage_reflection_current_property_read_entries;
+    imported_storage_reflection_current_property_write_entries +=
+        imported_input.storage_reflection_current_property_write_entries;
+    imported_storage_reflection_current_property_exchange_entries +=
+        imported_input.storage_reflection_current_property_exchange_entries;
+    imported_storage_reflection_weak_current_property_load_entries +=
+        imported_input.storage_reflection_weak_current_property_load_entries;
+    imported_storage_reflection_weak_current_property_store_entries +=
+        imported_input.storage_reflection_weak_current_property_store_entries;
+    imported_storage_reflection_ivar_layout_entries +=
+        imported_input.storage_reflection_ivar_layout_entries;
+    imported_storage_reflection_ivar_layout_owner_entries +=
+        imported_input.storage_reflection_ivar_layout_owner_entries;
   }
 
   ordered_link_inputs.push_back(
@@ -2595,6 +2703,101 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << "      \"part10_macro_host_process_cache_root_relative_path\": \""
         << EscapeJsonString(imported_input.part10_macro_host_process_cache_root_relative_path)
         << "\",\n"
+        << "      \"storage_reflection_artifact_preservation_present\": "
+        << (imported_input.storage_reflection_artifact_preservation_present
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"storage_reflection_runtime_import_artifact_ready\": "
+        << (imported_input.storage_reflection_runtime_import_artifact_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"storage_reflection_separate_compilation_preservation_ready\": "
+        << (imported_input
+                    .storage_reflection_separate_compilation_preservation_ready
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"storage_reflection_deterministic\": "
+        << (imported_input.storage_reflection_deterministic ? "true"
+                                                            : "false")
+        << ",\n"
+        << "      \"storage_reflection_contract_id\": \""
+        << EscapeJsonString(imported_input.storage_reflection_contract_id)
+        << "\",\n"
+        << "      \"storage_reflection_source_contract_id\": \""
+        << EscapeJsonString(imported_input.storage_reflection_source_contract_id)
+        << "\",\n"
+        << "      \"storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id)
+        << "\",\n"
+        << "      \"storage_reflection_executable_property_accessor_layout_lowering_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .storage_reflection_executable_property_accessor_layout_lowering_contract_id)
+        << "\",\n"
+        << "      \"storage_reflection_executable_ivar_layout_emission_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .storage_reflection_executable_ivar_layout_emission_contract_id)
+        << "\",\n"
+        << "      \"storage_reflection_executable_synthesized_accessor_property_lowering_contract_id\": \""
+        << EscapeJsonString(
+               imported_input
+                   .storage_reflection_executable_synthesized_accessor_property_lowering_contract_id)
+        << "\",\n"
+        << "      \"storage_reflection_replay_key\": \""
+        << EscapeJsonString(imported_input.storage_reflection_replay_key)
+        << "\",\n"
+        << "      \"storage_reflection_local_property_descriptor_count\": "
+        << imported_input.storage_reflection_local_property_descriptor_count
+        << ",\n"
+        << "      \"storage_reflection_local_ivar_descriptor_count\": "
+        << imported_input.storage_reflection_local_ivar_descriptor_count
+        << ",\n"
+        << "      \"storage_reflection_implementation_owned_property_entries\": "
+        << imported_input
+               .storage_reflection_implementation_owned_property_entries
+        << ",\n"
+        << "      \"storage_reflection_synthesized_accessor_owner_entries\": "
+        << imported_input
+               .storage_reflection_synthesized_accessor_owner_entries
+        << ",\n"
+        << "      \"storage_reflection_synthesized_getter_entries\": "
+        << imported_input.storage_reflection_synthesized_getter_entries
+        << ",\n"
+        << "      \"storage_reflection_synthesized_setter_entries\": "
+        << imported_input.storage_reflection_synthesized_setter_entries
+        << ",\n"
+        << "      \"storage_reflection_synthesized_accessor_entries\": "
+        << imported_input.storage_reflection_synthesized_accessor_entries
+        << ",\n"
+        << "      \"storage_reflection_current_property_read_entries\": "
+        << imported_input.storage_reflection_current_property_read_entries
+        << ",\n"
+        << "      \"storage_reflection_current_property_write_entries\": "
+        << imported_input.storage_reflection_current_property_write_entries
+        << ",\n"
+        << "      \"storage_reflection_current_property_exchange_entries\": "
+        << imported_input.storage_reflection_current_property_exchange_entries
+        << ",\n"
+        << "      \"storage_reflection_weak_current_property_load_entries\": "
+        << imported_input
+               .storage_reflection_weak_current_property_load_entries
+        << ",\n"
+        << "      \"storage_reflection_weak_current_property_store_entries\": "
+        << imported_input
+               .storage_reflection_weak_current_property_store_entries
+        << ",\n"
+        << "      \"storage_reflection_ivar_layout_entries\": "
+        << imported_input.storage_reflection_ivar_layout_entries
+        << ",\n"
+        << "      \"storage_reflection_ivar_layout_owner_entries\": "
+        << imported_input.storage_reflection_ivar_layout_owner_entries
+        << ",\n"
         << "      \"driver_linker_flags\": "
         << BuildIndentedStringArrayJson(imported_input.driver_linker_flags,
                                         "        ");
@@ -2776,11 +2979,41 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"runtime_dispatch_table_reflection_record_lowering_surface_contract_id\": \""
       << "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1"
       << "\",\n"
+      << "  \"runtime_cross_module_storage_reflection_artifact_preservation_surface_contract_id\": \""
+      << EscapeJsonString(inputs.expected_storage_reflection_contract_id)
+      << "\",\n"
+      << "  \"runtime_property_ivar_storage_accessor_source_surface_contract_id\": \""
+      << EscapeJsonString(inputs.expected_storage_reflection_source_contract_id)
+      << "\",\n"
+      << "  \"dispatch_and_synthesized_accessor_lowering_surface_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_storage_reflection_dispatch_and_synthesized_accessor_lowering_surface_contract_id)
+      << "\",\n"
+      << "  \"executable_property_accessor_layout_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_storage_reflection_executable_property_accessor_layout_lowering_contract_id)
+      << "\",\n"
+      << "  \"executable_ivar_layout_emission_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_storage_reflection_executable_ivar_layout_emission_contract_id)
+      << "\",\n"
+      << "  \"executable_synthesized_accessor_property_lowering_contract_id\": \""
+      << EscapeJsonString(
+             inputs
+                 .expected_storage_reflection_executable_synthesized_accessor_property_lowering_contract_id)
+      << "\",\n"
       << "  \"realized_metadata_replay_preservation_model\": \""
       << "cross-module-link-plan-preserves-local-and-imported-realized-metadata-descriptor-counts-identities-and-reset-replay-readiness-from-runtime-registration-manifests"
       << "\",\n"
+      << "  \"storage_reflection_artifact_preservation_model\": \""
+      << "provider-and-consumer-runtime-import-surfaces-and-cross-module-link-plans-preserve-property-ivar-accessor-layout-and-runtime-helper-facts-beyond-local-ir-object-emission"
+      << "\",\n"
       << "  \"imported_live_registration_replay_ready\": true,\n"
       << "  \"imported_live_restart_hardening_ready\": true,\n"
+      << "  \"storage_reflection_cross_module_preservation_ready\": true,\n"
       << "  \"module_image_count\": " << imported_inputs.size() + 1 << ",\n"
       << "  \"direct_import_input_count\": " << imported_inputs.size() << ",\n"
       << "  \"local_class_descriptor_count\": "
@@ -2828,6 +3061,117 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"transitive_total_descriptor_count\": "
       << inputs.local_total_descriptor_count + imported_total_descriptor_count
       << ",\n"
+      << "  \"local_storage_reflection_implementation_owned_property_entries\": "
+      << inputs.local_storage_reflection_implementation_owned_property_entries
+      << ",\n"
+      << "  \"local_storage_reflection_synthesized_accessor_owner_entries\": "
+      << inputs.local_storage_reflection_synthesized_accessor_owner_entries
+      << ",\n"
+      << "  \"local_storage_reflection_synthesized_getter_entries\": "
+      << inputs.local_storage_reflection_synthesized_getter_entries
+      << ",\n"
+      << "  \"local_storage_reflection_synthesized_setter_entries\": "
+      << inputs.local_storage_reflection_synthesized_setter_entries
+      << ",\n"
+      << "  \"local_storage_reflection_synthesized_accessor_entries\": "
+      << inputs.local_storage_reflection_synthesized_accessor_entries
+      << ",\n"
+      << "  \"local_storage_reflection_current_property_read_entries\": "
+      << inputs.local_storage_reflection_current_property_read_entries
+      << ",\n"
+      << "  \"local_storage_reflection_current_property_write_entries\": "
+      << inputs.local_storage_reflection_current_property_write_entries
+      << ",\n"
+      << "  \"local_storage_reflection_current_property_exchange_entries\": "
+      << inputs.local_storage_reflection_current_property_exchange_entries
+      << ",\n"
+      << "  \"local_storage_reflection_weak_current_property_load_entries\": "
+      << inputs.local_storage_reflection_weak_current_property_load_entries
+      << ",\n"
+      << "  \"local_storage_reflection_weak_current_property_store_entries\": "
+      << inputs.local_storage_reflection_weak_current_property_store_entries
+      << ",\n"
+      << "  \"local_storage_reflection_ivar_layout_entries\": "
+      << inputs.local_storage_reflection_ivar_layout_entries << ",\n"
+      << "  \"local_storage_reflection_ivar_layout_owner_entries\": "
+      << inputs.local_storage_reflection_ivar_layout_owner_entries << ",\n"
+      << "  \"imported_storage_reflection_implementation_owned_property_entries\": "
+      << imported_storage_reflection_implementation_owned_property_entries
+      << ",\n"
+      << "  \"imported_storage_reflection_synthesized_accessor_owner_entries\": "
+      << imported_storage_reflection_synthesized_accessor_owner_entries
+      << ",\n"
+      << "  \"imported_storage_reflection_synthesized_getter_entries\": "
+      << imported_storage_reflection_synthesized_getter_entries << ",\n"
+      << "  \"imported_storage_reflection_synthesized_setter_entries\": "
+      << imported_storage_reflection_synthesized_setter_entries << ",\n"
+      << "  \"imported_storage_reflection_synthesized_accessor_entries\": "
+      << imported_storage_reflection_synthesized_accessor_entries << ",\n"
+      << "  \"imported_storage_reflection_current_property_read_entries\": "
+      << imported_storage_reflection_current_property_read_entries << ",\n"
+      << "  \"imported_storage_reflection_current_property_write_entries\": "
+      << imported_storage_reflection_current_property_write_entries << ",\n"
+      << "  \"imported_storage_reflection_current_property_exchange_entries\": "
+      << imported_storage_reflection_current_property_exchange_entries
+      << ",\n"
+      << "  \"imported_storage_reflection_weak_current_property_load_entries\": "
+      << imported_storage_reflection_weak_current_property_load_entries
+      << ",\n"
+      << "  \"imported_storage_reflection_weak_current_property_store_entries\": "
+      << imported_storage_reflection_weak_current_property_store_entries
+      << ",\n"
+      << "  \"imported_storage_reflection_ivar_layout_entries\": "
+      << imported_storage_reflection_ivar_layout_entries << ",\n"
+      << "  \"imported_storage_reflection_ivar_layout_owner_entries\": "
+      << imported_storage_reflection_ivar_layout_owner_entries << ",\n"
+      << "  \"transitive_storage_reflection_implementation_owned_property_entries\": "
+      << inputs.local_storage_reflection_implementation_owned_property_entries +
+             imported_storage_reflection_implementation_owned_property_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_synthesized_accessor_owner_entries\": "
+      << inputs.local_storage_reflection_synthesized_accessor_owner_entries +
+             imported_storage_reflection_synthesized_accessor_owner_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_synthesized_getter_entries\": "
+      << inputs.local_storage_reflection_synthesized_getter_entries +
+             imported_storage_reflection_synthesized_getter_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_synthesized_setter_entries\": "
+      << inputs.local_storage_reflection_synthesized_setter_entries +
+             imported_storage_reflection_synthesized_setter_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_synthesized_accessor_entries\": "
+      << inputs.local_storage_reflection_synthesized_accessor_entries +
+             imported_storage_reflection_synthesized_accessor_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_current_property_read_entries\": "
+      << inputs.local_storage_reflection_current_property_read_entries +
+             imported_storage_reflection_current_property_read_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_current_property_write_entries\": "
+      << inputs.local_storage_reflection_current_property_write_entries +
+             imported_storage_reflection_current_property_write_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_current_property_exchange_entries\": "
+      << inputs.local_storage_reflection_current_property_exchange_entries +
+             imported_storage_reflection_current_property_exchange_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_weak_current_property_load_entries\": "
+      << inputs.local_storage_reflection_weak_current_property_load_entries +
+             imported_storage_reflection_weak_current_property_load_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_weak_current_property_store_entries\": "
+      << inputs.local_storage_reflection_weak_current_property_store_entries +
+             imported_storage_reflection_weak_current_property_store_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_ivar_layout_entries\": "
+      << inputs.local_storage_reflection_ivar_layout_entries +
+             imported_storage_reflection_ivar_layout_entries
+      << ",\n"
+      << "  \"transitive_storage_reflection_ivar_layout_owner_entries\": "
+      << inputs.local_storage_reflection_ivar_layout_owner_entries +
+             imported_storage_reflection_ivar_layout_owner_entries
+      << ",\n"
       << "  \"cleanup_unwind_runtime_link_model\": "
       << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"runtime_support_library_archive_relative_path\": \""
@@ -2868,6 +3212,40 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << inputs.local_ivar_descriptor_count << ",\n"
       << "    \"total_descriptor_count\": "
       << inputs.local_total_descriptor_count << ",\n"
+      << "    \"storage_reflection_implementation_owned_property_entries\": "
+      << inputs.local_storage_reflection_implementation_owned_property_entries
+      << ",\n"
+      << "    \"storage_reflection_synthesized_accessor_owner_entries\": "
+      << inputs.local_storage_reflection_synthesized_accessor_owner_entries
+      << ",\n"
+      << "    \"storage_reflection_synthesized_getter_entries\": "
+      << inputs.local_storage_reflection_synthesized_getter_entries
+      << ",\n"
+      << "    \"storage_reflection_synthesized_setter_entries\": "
+      << inputs.local_storage_reflection_synthesized_setter_entries
+      << ",\n"
+      << "    \"storage_reflection_synthesized_accessor_entries\": "
+      << inputs.local_storage_reflection_synthesized_accessor_entries
+      << ",\n"
+      << "    \"storage_reflection_current_property_read_entries\": "
+      << inputs.local_storage_reflection_current_property_read_entries
+      << ",\n"
+      << "    \"storage_reflection_current_property_write_entries\": "
+      << inputs.local_storage_reflection_current_property_write_entries
+      << ",\n"
+      << "    \"storage_reflection_current_property_exchange_entries\": "
+      << inputs.local_storage_reflection_current_property_exchange_entries
+      << ",\n"
+      << "    \"storage_reflection_weak_current_property_load_entries\": "
+      << inputs.local_storage_reflection_weak_current_property_load_entries
+      << ",\n"
+      << "    \"storage_reflection_weak_current_property_store_entries\": "
+      << inputs.local_storage_reflection_weak_current_property_store_entries
+      << ",\n"
+      << "    \"storage_reflection_ivar_layout_entries\": "
+      << inputs.local_storage_reflection_ivar_layout_entries << ",\n"
+      << "    \"storage_reflection_ivar_layout_owner_entries\": "
+      << inputs.local_storage_reflection_ivar_layout_owner_entries << ",\n"
       << "    \"driver_linker_flags\": "
       << BuildIndentedStringArrayJson(inputs.local_driver_linker_flags,
                                       "      ")
