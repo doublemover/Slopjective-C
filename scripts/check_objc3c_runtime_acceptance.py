@@ -216,6 +216,14 @@ PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_copy_arc_debug_state_for_testing",
     "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing",
 ]
+PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY = [
+    "objc3_runtime_store_thrown_error_i32",
+    "objc3_runtime_load_thrown_error_i32",
+    "objc3_runtime_bridge_status_error_i32",
+    "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_catch_matches_error_i32",
+    "objc3_runtime_copy_error_bridge_state_for_testing",
+]
 BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL = (
     "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
 )
@@ -4165,6 +4173,54 @@ def build_runtime_error_lowering_unwind_bridge_helper_surface(
     }
 
 
+def build_runtime_error_runtime_abi_cleanup_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"error-runtime-abi-cleanup"}
+    ]
+    return {
+        "contract_id": RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID,
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "error_lowering_unwind_bridge_helper_surface_contract_id": (
+            RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_error_runtime_abi_boundary": PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY,
+        "error_store_symbol": "objc3_runtime_store_thrown_error_i32",
+        "error_load_symbol": "objc3_runtime_load_thrown_error_i32",
+        "error_status_bridge_symbol": "objc3_runtime_bridge_status_error_i32",
+        "error_nserror_bridge_symbol": "objc3_runtime_bridge_nserror_error_i32",
+        "error_catch_match_symbol": "objc3_runtime_catch_matches_error_i32",
+        "error_bridge_state_snapshot_symbol": (
+            "objc3_runtime_copy_error_bridge_state_for_testing"
+        ),
+        "runtime_abi_boundary_model": (
+            "private-runtime-abi-exposes-thrown-error-storage-status-bridge-"
+            "nserror-bridge-and-catch-match-helpers-through-stable-testable-"
+            "bootstrap-internal-entrypoints"
+        ),
+        "cleanup_runtime_model": (
+            "lowered-throw-and-catch-paths-share-one-runtime-error-bridge-state-"
+            "snapshot-surface-for-store-load-bridge-and-catch-match-observation"
+        ),
+        "fail_closed_model": (
+            "public-header-surface-stays-unchanged-while-private-error-runtime-abi-"
+            "remains-test-only-and-explicitly-versioned-through-the-runtime-probe"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_probe_path": (
+            "tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp"
+        ),
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6759,6 +6815,67 @@ def check_cross_module_error_metadata_replay_preservation_case(
             "local_module_registration_ordinal": local_module.get(
                 "translation_unit_registration_order_ordinal"
             ),
+        },
+    )
+
+
+def check_error_runtime_abi_cleanup_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "error-runtime-abi-cleanup"
+    probe = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "runtime"
+        / "m267_d001_error_runtime_bridge_helper_probe.cpp"
+    )
+    exe_path = case_dir / "m267_d001_error_runtime_bridge_helper_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_key_value_output(run_probe(exe_path), "error runtime ABI cleanup probe")
+    expected_integer_fields = {
+        "status": 0,
+        "loaded": 34,
+        "bridged_status": 45,
+        "bridged_nserror": 77,
+        "match_nserror": 1,
+        "match_protocol": 1,
+        "match_catch_all": 1,
+        "store_call_count": 1,
+        "load_call_count": 1,
+        "status_bridge_call_count": 1,
+        "nserror_bridge_call_count": 1,
+        "catch_match_call_count": 3,
+        "last_stored_error_value": 34,
+        "last_loaded_error_value": 34,
+        "last_status_bridge_status_value": 5,
+        "last_status_bridge_error_value": 45,
+        "last_nserror_bridge_error_value": 77,
+        "last_catch_match_error_value": 77,
+        "last_catch_match_kind": 0,
+        "last_catch_match_is_catch_all": 1,
+        "last_catch_match_result": 1,
+    }
+    for field, expected_value in expected_integer_fields.items():
+        expect(
+            payload.get(field) == expected_value,
+            f"expected error runtime ABI cleanup probe to preserve {field}",
+        )
+    expect(
+        payload.get("last_catch_kind_name") == "unknown",
+        "expected error runtime ABI cleanup probe to preserve the last catch-kind label",
+    )
+    return CaseResult(
+        case_id="error-runtime-abi-cleanup",
+        probe="tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp",
+        fixture="tests/tooling/fixtures/native/m267_d001_error_runtime_bridge_helper_positive.objc3",
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "bridge_state_snapshot_symbol": "objc3_runtime_copy_error_bridge_state_for_testing",
+            "store_symbol": "objc3_runtime_store_thrown_error_i32",
+            "load_symbol": "objc3_runtime_load_thrown_error_i32",
+            "status_bridge_symbol": "objc3_runtime_bridge_status_error_i32",
+            "nserror_bridge_symbol": "objc3_runtime_bridge_nserror_error_i32",
+            "catch_match_symbol": "objc3_runtime_catch_matches_error_i32",
         },
     )
 
@@ -11909,6 +12026,7 @@ def main() -> int:
         check_error_lowering_unwind_bridge_helper_surface_case(run_dir),
         check_executable_throw_catch_cleanup_lowering_case(run_dir),
         check_cross_module_error_metadata_replay_preservation_case(run_dir),
+        check_error_runtime_abi_cleanup_case(clangxx, run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -11975,6 +12093,9 @@ def main() -> int:
         ),
         "runtime_error_lowering_unwind_bridge_helper_surface": (
             build_runtime_error_lowering_unwind_bridge_helper_surface(results)
+        ),
+        "runtime_error_runtime_abi_cleanup_surface": (
+            build_runtime_error_runtime_abi_cleanup_surface(results)
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

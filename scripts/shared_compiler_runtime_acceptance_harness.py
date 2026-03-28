@@ -22,6 +22,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_CATCH_FILTER_FINALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID,
+    RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_PROPAGATION_CLEANUP_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
@@ -135,6 +136,15 @@ COMMON_SURFACES = (
             "source_contract_ids",
             "authoritative_code_paths",
             "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_error_runtime_abi_cleanup_surface",
+        RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID,
+        (
+            "authoritative_case_ids",
+            "authoritative_probe_path",
+            "public_runtime_abi_boundary",
         ),
     ),
     SurfaceRequirement(
@@ -533,6 +543,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_error_lowering_unwind_bridge_helper_surface": surfaces[
             "runtime_error_lowering_unwind_bridge_helper_surface"
+        ],
+        "runtime_error_runtime_abi_cleanup_surface": surfaces[
+            "runtime_error_runtime_abi_cleanup_surface"
         ],
         "runtime_object_model_realization_source_surface": surfaces[
             "runtime_object_model_realization_source_surface"

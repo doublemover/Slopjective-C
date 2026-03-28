@@ -244,6 +244,13 @@ def write_composite_validation_report(
         payload["runtime_error_lowering_unwind_bridge_helper_surface"] = (
             runtime_error_lowering_unwind_bridge_helper_surface
         )
+    runtime_error_runtime_abi_cleanup_surface = load_surface_from_report(
+        steps, "runtime_error_runtime_abi_cleanup_surface"
+    )
+    if runtime_error_runtime_abi_cleanup_surface is not None:
+        payload["runtime_error_runtime_abi_cleanup_surface"] = (
+            runtime_error_runtime_abi_cleanup_surface
+        )
     acceptance_suite_surface = load_surface_from_report(steps, "acceptance_suite_surface")
     if acceptance_suite_surface is not None:
         payload["acceptance_suite_surface"] = acceptance_suite_surface

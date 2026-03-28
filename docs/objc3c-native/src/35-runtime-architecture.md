@@ -319,6 +319,26 @@ real compile-coupled lowering contracts emitted by the live compiler so the
 runtime ABI and executable catch/cleanup work cannot drift away from the
 artifact surface that packaged builds actually consume.
 
+## Error Runtime ABI And Cleanup Surface
+
+- authoritative compile-manifest key:
+  - `runtime_error_runtime_abi_cleanup_surface`
+- authoritative runtime boundary:
+  - public ABI:
+    - `native/objc3c/src/runtime/objc3_runtime.h`
+  - private ABI:
+    - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+    - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative source inputs:
+  - `runtime_error_lowering_unwind_bridge_helper_surface`
+- authoritative probe paths:
+  - `tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp`
+
+This is the authoritative runtime ABI boundary for thrown-error storage,
+NSError/status bridging, and catch-match cleanup helpers. It freezes the
+private testable entrypoints the lowered error path actually calls while keeping
+the public runtime header unchanged until a wider ABI commitment is warranted.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:
