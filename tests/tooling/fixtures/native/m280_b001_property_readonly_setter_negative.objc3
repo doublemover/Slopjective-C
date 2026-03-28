@@ -1,0 +1,12 @@
+module propertyReadonlySetterNegative;
+
+@interface Widget
+@property (readonly, setter=setValue:) id value;
+@end
+
+@implementation Widget
+@end
+
+fn main() -> i32 {
+  return 0;
+}

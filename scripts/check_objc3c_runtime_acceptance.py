@@ -6015,6 +6015,11 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         registration_manifest_path.read_text(encoding="utf-8")
     )
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    sema_pass_manager_manifest = (
+        manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("sema_pass_manager", {})
+    )
     ll_text = ll_path.read_text(encoding="utf-8")
 
     expect(
@@ -6038,6 +6043,34 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         ).get("contract_id")
         == RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
         "expected storage legality positive fixture to publish the property atomicity/synthesis/reflection source surface",
+    )
+    expect(
+        sema_pass_manager_manifest.get("runtime_export_boundary_ready") is True,
+        "expected storage legality positive fixture to publish a ready runtime export legality boundary",
+    )
+    expect(
+        sema_pass_manager_manifest.get("runtime_export_property_attribute_invalid_entries")
+        == 0,
+        "expected storage legality positive fixture to publish zero invalid property-attribute entries",
+    )
+    expect(
+        sema_pass_manager_manifest.get(
+            "runtime_export_property_attribute_contract_violations"
+        )
+        == 0,
+        "expected storage legality positive fixture to publish zero property contract violations",
+    )
+    expect(
+        sema_pass_manager_manifest.get("runtime_export_property_ivar_binding_missing")
+        == 0,
+        "expected storage legality positive fixture to publish zero missing property ivar bindings",
+    )
+    expect(
+        sema_pass_manager_manifest.get(
+            "runtime_export_property_ivar_binding_conflicts"
+        )
+        == 0,
+        "expected storage legality positive fixture to publish zero conflicting property ivar bindings",
     )
     for needle, label in (
         ("runtime_backed_storage_ownership_legality", "runtime-backed storage ownership legality"),
@@ -6088,6 +6121,58 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         ],
         expected_codes=["O3S206"],
     )
+    scalar_ownership_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_property_scalar_ownership_negative.objc3",
+        case_dir / "negative-scalar-ownership",
+        expected_snippets=[
+            "@property ownership modifier 'strong' requires an Objective-C object property"
+        ],
+        expected_codes=["O3S206"],
+    )
+    duplicate_getter_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_accessor_duplicate_getter_negative.objc3",
+        case_dir / "negative-duplicate-getter",
+        expected_snippets=[
+            "duplicate effective getter selector 'value' for properties 'token' and 'alias'"
+        ],
+        expected_codes=["O3S206"],
+    )
+    duplicate_setter_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_accessor_duplicate_setter_negative.objc3",
+        case_dir / "negative-duplicate-setter",
+        expected_snippets=[
+            "duplicate effective setter selector 'setValue:' for properties 'token' and 'alias'"
+        ],
+        expected_codes=["O3S206"],
+    )
+    readonly_setter_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m280_b001_property_readonly_setter_negative.objc3",
+        case_dir / "negative-readonly-setter",
+        expected_snippets=[
+            "readonly property 'value' in interface 'Widget' must not declare a setter modifier"
+        ],
+        expected_codes=["O3S206"],
+    )
 
     return CaseResult(
         case_id="storage-legality-semantics",
@@ -6098,9 +6183,27 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         summary={
             "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
             "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
+            "runtime_export_property_attribute_invalid_entries": sema_pass_manager_manifest.get(
+                "runtime_export_property_attribute_invalid_entries"
+            ),
+            "runtime_export_property_attribute_contract_violations": sema_pass_manager_manifest.get(
+                "runtime_export_property_attribute_contract_violations"
+            ),
             "atomic_negative_diagnostic_count": atomic_negative["diagnostic_count"],
             "weak_mismatch_diagnostic_count": weak_mismatch_negative["diagnostic_count"],
             "unowned_mismatch_diagnostic_count": unowned_mismatch_negative["diagnostic_count"],
+            "scalar_ownership_negative_diagnostic_count": scalar_ownership_negative[
+                "diagnostic_count"
+            ],
+            "duplicate_getter_negative_diagnostic_count": duplicate_getter_negative[
+                "diagnostic_count"
+            ],
+            "duplicate_setter_negative_diagnostic_count": duplicate_setter_negative[
+                "diagnostic_count"
+            ],
+            "readonly_setter_negative_diagnostic_count": readonly_setter_negative[
+                "diagnostic_count"
+            ],
         },
     )
 
