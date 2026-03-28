@@ -279,6 +279,26 @@ typedef struct objc3_runtime_property_entry_snapshot {
   const char *setter_owner_identity;
 } objc3_runtime_property_entry_snapshot;
 
+typedef struct objc3_runtime_storage_accessor_implementation_snapshot {
+  uint64_t property_registry_ready;
+  uint64_t runtime_accessor_dispatch_ready;
+  uint64_t runtime_layout_ready;
+  uint64_t reflection_query_ready;
+  uint64_t deterministic;
+  const char *property_registry_state_snapshot_symbol;
+  const char *property_entry_snapshot_symbol;
+  const char *current_property_read_symbol;
+  const char *current_property_write_symbol;
+  const char *current_property_exchange_symbol;
+  const char *bind_current_property_context_symbol;
+  const char *clear_current_property_context_symbol;
+  const char *weak_current_property_load_symbol;
+  const char *weak_current_property_store_symbol;
+  const char *implementation_model;
+  const char *reflection_model;
+  const char *fail_closed_model;
+} objc3_runtime_storage_accessor_implementation_snapshot;
+
 typedef struct objc3_runtime_protocol_conformance_query_snapshot {
   int class_found;
   int protocol_found;
@@ -544,6 +564,8 @@ int objc3_runtime_copy_property_registry_state_for_testing(
 int objc3_runtime_copy_property_entry_for_testing(
     const char *class_name, const char *property_name,
     objc3_runtime_property_entry_snapshot *snapshot);
+int objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing(
+    objc3_runtime_storage_accessor_implementation_snapshot *snapshot);
 int objc3_runtime_copy_protocol_conformance_query_for_testing(
     const char *class_name, const char *protocol_name,
     objc3_runtime_protocol_conformance_query_snapshot *snapshot);

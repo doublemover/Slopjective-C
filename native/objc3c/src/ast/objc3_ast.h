@@ -708,6 +708,18 @@ inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfa
     "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1";
 inline constexpr const char *kObjc3RuntimeStorageAccessorAbiSurfaceContractId =
     "objc3c.runtime.storage.accessor.abi.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimePropertyIvarAccessorReflectionImplementationSurfaceContractId =
+        "objc3c.runtime.property.ivar.accessor.reflection.implementation.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimePropertyIvarAccessorReflectionImplementationModel =
+        "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation";
+inline constexpr const char
+    *kObjc3RuntimePropertyIvarAccessorReflectionImplementationReflectionModel =
+        "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts";
+inline constexpr const char
+    *kObjc3RuntimePropertyIvarAccessorReflectionImplementationFailClosedModel =
+        "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis";
 inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceModel =
     "property-ivar-storage-accessor-runtime-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion";
 inline constexpr const char *kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId =

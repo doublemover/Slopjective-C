@@ -224,6 +224,47 @@ void PrintRealizedClassEntry(
   std::printf("}");
 }
 
+void PrintStorageAccessorImplementation(
+    const objc3_runtime_storage_accessor_implementation_snapshot &snapshot) {
+  std::printf("{");
+  std::printf("\"property_registry_ready\":%llu,",
+              static_cast<unsigned long long>(snapshot.property_registry_ready));
+  std::printf("\"runtime_accessor_dispatch_ready\":%llu,",
+              static_cast<unsigned long long>(
+                  snapshot.runtime_accessor_dispatch_ready));
+  std::printf("\"runtime_layout_ready\":%llu,",
+              static_cast<unsigned long long>(snapshot.runtime_layout_ready));
+  std::printf("\"reflection_query_ready\":%llu,",
+              static_cast<unsigned long long>(snapshot.reflection_query_ready));
+  std::printf("\"deterministic\":%llu,",
+              static_cast<unsigned long long>(snapshot.deterministic));
+  std::printf("\"property_registry_state_snapshot_symbol\":");
+  PrintJsonStringOrNull(snapshot.property_registry_state_snapshot_symbol);
+  std::printf(",\"property_entry_snapshot_symbol\":");
+  PrintJsonStringOrNull(snapshot.property_entry_snapshot_symbol);
+  std::printf(",\"current_property_read_symbol\":");
+  PrintJsonStringOrNull(snapshot.current_property_read_symbol);
+  std::printf(",\"current_property_write_symbol\":");
+  PrintJsonStringOrNull(snapshot.current_property_write_symbol);
+  std::printf(",\"current_property_exchange_symbol\":");
+  PrintJsonStringOrNull(snapshot.current_property_exchange_symbol);
+  std::printf(",\"bind_current_property_context_symbol\":");
+  PrintJsonStringOrNull(snapshot.bind_current_property_context_symbol);
+  std::printf(",\"clear_current_property_context_symbol\":");
+  PrintJsonStringOrNull(snapshot.clear_current_property_context_symbol);
+  std::printf(",\"weak_current_property_load_symbol\":");
+  PrintJsonStringOrNull(snapshot.weak_current_property_load_symbol);
+  std::printf(",\"weak_current_property_store_symbol\":");
+  PrintJsonStringOrNull(snapshot.weak_current_property_store_symbol);
+  std::printf(",\"implementation_model\":");
+  PrintJsonStringOrNull(snapshot.implementation_model);
+  std::printf(",\"reflection_model\":");
+  PrintJsonStringOrNull(snapshot.reflection_model);
+  std::printf(",\"fail_closed_model\":");
+  PrintJsonStringOrNull(snapshot.fail_closed_model);
+  std::printf("}");
+}
+
 void LoadProperty(const char *class_name, const char *property_name,
                   StablePropertyEntry &entry) {
   (void)objc3_runtime_copy_property_entry_for_testing(class_name, property_name,
@@ -240,6 +281,7 @@ int main() {
   StablePropertyEntry weak_value;
   StablePropertyEntry borrowed_value;
   StablePropertyEntry guarded_value;
+  objc3_runtime_storage_accessor_implementation_snapshot implementation{};
 
   (void)objc3_runtime_copy_realized_class_entry_for_testing("Box",
                                                             &box_entry.snapshot);
@@ -249,10 +291,14 @@ int main() {
   LoadProperty("Box", "weakValue", weak_value);
   LoadProperty("Box", "borrowedValue", borrowed_value);
   LoadProperty("Box", "guardedValue", guarded_value);
+  (void)objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing(
+      &implementation);
 
   std::printf("{");
   std::printf("\"box_entry\":");
   PrintRealizedClassEntry(box_entry.snapshot);
+  std::printf(",\"implementation_surface\":");
+  PrintStorageAccessorImplementation(implementation);
   std::printf(",\"current_value_property\":");
   PrintPropertyEntry(current_value.snapshot);
   std::printf(",\"copied_value_property\":");

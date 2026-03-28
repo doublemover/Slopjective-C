@@ -41,6 +41,9 @@ RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.storage.accessor.abi.surface.v1"
 )
+RUNTIME_PROPERTY_IVAR_ACCESSOR_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.property.ivar.accessor.reflection.implementation.surface.v1"
+)
 RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.property.atomicity.synthesis.reflection.source.surface.v1"
 )
@@ -5642,9 +5645,14 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "storage ownership reflection probe")
 
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     ll_text = ll_path.read_text(encoding="utf-8")
     registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
     box_entry = payload.get("box_entry", {})
+    implementation_surface = payload.get("implementation_surface", {})
+    manifest_implementation_surface = manifest.get(
+        "runtime_property_ivar_accessor_reflection_implementation_surface", {}
+    )
 
     expect(box_entry.get("found") == 1, "expected Box to be realized for storage ownership reflection")
     expect(box_entry.get("runtime_property_accessor_count", 0) >= 5,
@@ -5673,6 +5681,116 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
            "expected LLVM IR ownership surface to publish six runtime hook profiles")
     expect("accessor_ownership_profiles=10" in ll_text,
            "expected LLVM IR ownership surface to publish ten accessor ownership profiles")
+    expected_manifest_implementation_surface = {
+        "contract_id": RUNTIME_PROPERTY_IVAR_ACCESSOR_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        "runtime_property_ivar_storage_accessor_source_surface_contract_id": (
+            RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "storage_accessor_runtime_abi_surface_contract_id": (
+            RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID
+        ),
+        "property_metadata_reflection_contract_id": (
+            "objc3c.runtime.property.metadata.reflection.v1"
+        ),
+        "runtime_backed_object_ownership_attribute_surface_contract_id": (
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1"
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "implementation_snapshot_symbol": (
+            "objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing"
+        ),
+        "property_registry_state_snapshot_symbol": (
+            "objc3_runtime_copy_property_registry_state_for_testing"
+        ),
+        "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+        "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+        "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+        "current_property_exchange_symbol": (
+            "objc3_runtime_exchange_current_property_i32"
+        ),
+        "bind_current_property_context_symbol": (
+            "objc3_runtime_bind_current_property_context_for_testing"
+        ),
+        "clear_current_property_context_symbol": (
+            "objc3_runtime_clear_current_property_context_for_testing"
+        ),
+        "weak_current_property_load_symbol": (
+            "objc3_runtime_load_weak_current_property_i32"
+        ),
+        "weak_current_property_store_symbol": (
+            "objc3_runtime_store_weak_current_property_i32"
+        ),
+        "implementation_model": (
+            "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation"
+        ),
+        "reflection_model": (
+            "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
+        ),
+        "fail_closed_model": (
+            "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis"
+        ),
+    }
+    for field, expected_value in expected_manifest_implementation_surface.items():
+        expect(
+            manifest_implementation_surface.get(field) == expected_value,
+            f"expected property/accessor runtime implementation surface to preserve {field}",
+        )
+    expect(
+        manifest_implementation_surface.get("requires_coupled_registration_manifest")
+        is True,
+        "expected property/accessor runtime implementation surface to require the coupled runtime registration manifest",
+    )
+    expect(
+        manifest_implementation_surface.get("requires_real_compile_output") is True,
+        "expected property/accessor runtime implementation surface to require real compile output",
+    )
+    expect(
+        manifest_implementation_surface.get("requires_linked_runtime_probe") is True,
+        "expected property/accessor runtime implementation surface to require a linked runtime probe",
+    )
+    expected_implementation_surface = {
+        "property_registry_ready": 1,
+        "runtime_accessor_dispatch_ready": 1,
+        "runtime_layout_ready": 1,
+        "reflection_query_ready": 1,
+        "deterministic": 1,
+        "property_registry_state_snapshot_symbol": (
+            "objc3_runtime_copy_property_registry_state_for_testing"
+        ),
+        "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+        "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+        "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+        "current_property_exchange_symbol": (
+            "objc3_runtime_exchange_current_property_i32"
+        ),
+        "bind_current_property_context_symbol": (
+            "objc3_runtime_bind_current_property_context_for_testing"
+        ),
+        "clear_current_property_context_symbol": (
+            "objc3_runtime_clear_current_property_context_for_testing"
+        ),
+        "weak_current_property_load_symbol": (
+            "objc3_runtime_load_weak_current_property_i32"
+        ),
+        "weak_current_property_store_symbol": (
+            "objc3_runtime_store_weak_current_property_i32"
+        ),
+        "implementation_model": (
+            "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation"
+        ),
+        "reflection_model": (
+            "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
+        ),
+        "fail_closed_model": (
+            "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis"
+        ),
+    }
+    for field, expected_value in expected_implementation_surface.items():
+        expect(
+            implementation_surface.get(field) == expected_value,
+            f"expected live storage/accessor implementation snapshot to preserve {field}",
+        )
 
     expected_properties = {
         "current_value_property": {
@@ -5771,6 +5889,12 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
             "runtime_instance_size_bytes": box_entry.get("runtime_instance_size_bytes"),
             "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
             "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
+            "implementation_surface_contract_id": manifest_implementation_surface.get(
+                "contract_id"
+            ),
+            "implementation_snapshot_symbol": manifest_implementation_surface.get(
+                "implementation_snapshot_symbol"
+            ),
             "guarded_runtime_hook_profile": payload.get("guarded_value_property", {}).get("ownership_runtime_hook_profile"),
             "weak_runtime_hook_profile": payload.get("weak_value_property", {}).get("ownership_runtime_hook_profile"),
         },
@@ -7219,6 +7343,48 @@ def main() -> int:
             "weak_current_property_load_symbol": "objc3_runtime_load_weak_current_property_i32",
             "weak_current_property_store_symbol": "objc3_runtime_store_weak_current_property_i32",
             "private_testing_surface_only": True,
+            "deterministic": True,
+        },
+        "runtime_property_ivar_accessor_reflection_implementation_surface": {
+            "contract_id": (
+                RUNTIME_PROPERTY_IVAR_ACCESSOR_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID
+            ),
+            "proof_cases": [
+                "property-execution",
+                "property-layout",
+                "storage-ownership-reflection",
+            ],
+            "implementation_snapshot_symbol": (
+                "objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing"
+            ),
+            "property_registry_state_snapshot_symbol": (
+                "objc3_runtime_copy_property_registry_state_for_testing"
+            ),
+            "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+            "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+            "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+            "current_property_exchange_symbol": "objc3_runtime_exchange_current_property_i32",
+            "bind_current_property_context_symbol": (
+                "objc3_runtime_bind_current_property_context_for_testing"
+            ),
+            "clear_current_property_context_symbol": (
+                "objc3_runtime_clear_current_property_context_for_testing"
+            ),
+            "weak_current_property_load_symbol": (
+                "objc3_runtime_load_weak_current_property_i32"
+            ),
+            "weak_current_property_store_symbol": (
+                "objc3_runtime_store_weak_current_property_i32"
+            ),
+            "implementation_model": (
+                "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation"
+            ),
+            "reflection_model": (
+                "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts"
+            ),
+            "fail_closed_model": (
+                "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis"
+            ),
             "deterministic": True,
         },
     }
