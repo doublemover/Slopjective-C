@@ -35,6 +35,7 @@ RUNTIME_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_a
 RUNNABLE_BOOTSTRAP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bootstrap_end_to_end.py"
 RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_conformance.py"
 RUNNABLE_OBJECT_MODEL_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_end_to_end.py"
+RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_storage_reflection_conformance.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 
 
@@ -232,6 +233,23 @@ def write_composite_validation_report(
         payload["runtime_property_ivar_storage_accessor_source_surface"] = (
             runtime_property_ivar_storage_accessor_source_surface
         )
+    storage_accessor_runtime_abi_surface = load_surface_from_report(
+        steps, "storage_accessor_runtime_abi_surface"
+    )
+    if storage_accessor_runtime_abi_surface is not None:
+        payload["storage_accessor_runtime_abi_surface"] = (
+            storage_accessor_runtime_abi_surface
+        )
+    runtime_property_ivar_accessor_reflection_implementation_surface = (
+        load_surface_from_report(
+            steps,
+            "runtime_property_ivar_accessor_reflection_implementation_surface",
+        )
+    )
+    if runtime_property_ivar_accessor_reflection_implementation_surface is not None:
+        payload["runtime_property_ivar_accessor_reflection_implementation_surface"] = (
+            runtime_property_ivar_accessor_reflection_implementation_surface
+        )
     runtime_property_atomicity_synthesis_reflection_source_surface = load_surface_from_report(
         steps, "runtime_property_atomicity_synthesis_reflection_source_surface"
     )
@@ -398,6 +416,10 @@ def action_validate_runnable_object_model(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_OBJECT_MODEL_E2E_PY)])
 
 
+def action_validate_storage_reflection_conformance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY)])
+
+
 def action_test_fixture_matrix(rest: list[str]) -> int:
     return pwsh_file(MATRIX_PS1, *rest)
 
@@ -460,6 +482,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and proof packet", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture proof packet alignment"),
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", ("test:objc3c:runnable-bootstrap",), validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
     "validate-object-model-conformance": ActionSpec("validate-object-model-conformance", "validate runnable object-model conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_object_model_conformance.py", ("test:objc3c:object-model-conformance",), validation_tier="full", guarantee_owner="integrated object-model conformance over the live runtime architecture workflow"),
+    "validate-storage-reflection-conformance": ActionSpec("validate-storage-reflection-conformance", "validate runnable storage/reflection conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_storage_reflection_conformance.py", ("test:objc3c:storage-reflection-conformance",), validation_tier="full", guarantee_owner="integrated storage/accessor/reflection conformance over the live runtime architecture workflow"),
     "validate-runnable-object-model": ActionSpec("validate-runnable-object-model", "validate runnable object-model execution end to end from the package root", "python:scripts/check_objc3c_runnable_object_model_end_to_end.py", ("test:objc3c:runnable-object-model",), validation_tier="full", guarantee_owner="packaged compile, object-model probe execution, smoke, and replay from the staged runnable toolchain bundle"),
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
@@ -491,6 +514,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runtime-architecture": action_validate_runtime_architecture,
     "validate-runnable-bootstrap": action_validate_runnable_bootstrap,
     "validate-object-model-conformance": action_validate_object_model_conformance,
+    "validate-storage-reflection-conformance": action_validate_storage_reflection_conformance,
     "validate-runnable-object-model": action_validate_runnable_object_model,
     "test-fixture-matrix": action_test_fixture_matrix,
     "test-negative-expectations": action_test_negative_expectations,
