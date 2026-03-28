@@ -38,7 +38,7 @@ SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
     "runtime_installation_abi_surface",
-    "loader_lifecycle_surface",
+    "runtime_loader_lifecycle_surface",
 )
 REQUIRED_STEP_ACTIONS = (
     "test-execution-smoke",
@@ -247,7 +247,9 @@ def main() -> int:
         "runtime_state_publication_surface": public_workflow_report["runtime_state_publication_surface"],
         "acceptance_suite_surface": public_workflow_report["acceptance_suite_surface"],
         "runtime_installation_abi_surface": public_workflow_report["runtime_installation_abi_surface"],
-        "loader_lifecycle_surface": public_workflow_report["loader_lifecycle_surface"],
+        "runtime_loader_lifecycle_surface": public_workflow_report[
+            "runtime_loader_lifecycle_surface"
+        ],
         "full_workflow_step_actions": observed_actions,
         "full_workflow_child_report_paths": child_report_paths,
         "proof_packet_child_report_paths": proof_child_report_paths,

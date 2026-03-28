@@ -31,7 +31,7 @@ SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
     "runtime_installation_abi_surface",
-    "loader_lifecycle_surface",
+    "runtime_loader_lifecycle_surface",
 )
 CLAIM_BOUNDARY_CONTRACT_ID = "objc3c.runtime.execution.claim.boundary.v1"
 
@@ -175,7 +175,9 @@ def main() -> int:
         "runtime_state_publication_surface": runtime_acceptance_report["runtime_state_publication_surface"],
         "acceptance_suite_surface": runtime_acceptance_report["acceptance_suite_surface"],
         "runtime_installation_abi_surface": runtime_acceptance_report["runtime_installation_abi_surface"],
-        "loader_lifecycle_surface": runtime_acceptance_report["loader_lifecycle_surface"],
+        "runtime_loader_lifecycle_surface": runtime_acceptance_report[
+            "runtime_loader_lifecycle_surface"
+        ],
         "proof_chain": [
             {
                 "kind": "runtime-acceptance-report",

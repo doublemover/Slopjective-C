@@ -268,7 +268,7 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
     }
     for optional_surface_key in (
         "runtime_installation_abi_surface",
-        "loader_lifecycle_surface",
+        "runtime_loader_lifecycle_surface",
     ):
         optional_surface = report.get(optional_surface_key)
         if isinstance(optional_surface, dict):
