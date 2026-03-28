@@ -146,9 +146,11 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
   "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
   "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
+  "tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp",
   "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
   "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-  "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
+  "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+  "tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -182,6 +184,8 @@ $manifestPayload = [ordered]@{
   block_arc_byref_forwarding_probe = "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp"
   storage_reflection_fixture = "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
   storage_reflection_probe = "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp"
+  error_runtime_fixture = "tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3"
+  error_runtime_probe = "tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
