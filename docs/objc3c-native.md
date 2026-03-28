@@ -296,7 +296,9 @@ sidecars, stale milestone notes, or synthetic probes.
   - `objc3c.executable.property.ivar.semantics.v1`
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`

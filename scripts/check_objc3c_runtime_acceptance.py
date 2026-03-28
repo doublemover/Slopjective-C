@@ -1019,7 +1019,13 @@ def compile_fixture_with_args(
             "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols"
         ),
         "ast_source_path": "native/objc3c/src/ast/objc3_ast.h",
+        "lowering_contract_source_path": (
+            "native/objc3c/src/lower/objc3_lowering_contract.h"
+        ),
         "sema_source_path": "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+        "frontend_pipeline_source_path": (
+            "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
+        ),
         "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         "frontend_artifacts_source_path": (
             "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
@@ -1031,6 +1037,49 @@ def compile_fixture_with_args(
             raise RuntimeError(
                 f"runtime_property_ivar_storage_accessor_source_surface drifted from {field}"
             )
+    expected_authoritative_fixture_paths = [
+        "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+    ]
+    if (
+        property_ivar_storage_accessor_source_surface.get("authoritative_fixture_paths")
+        != expected_authoritative_fixture_paths
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from authoritative_fixture_paths"
+        )
+    expected_authoritative_probe_paths = [
+        "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+    ]
+    if (
+        property_ivar_storage_accessor_source_surface.get("authoritative_probe_paths")
+        != expected_authoritative_probe_paths
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from authoritative_probe_paths"
+        )
+    expected_explicit_non_goals = [
+        "no-public-runtime-abi-widening",
+        "no-milestone-specific-scaffolding",
+        "no-lowering-owned-storage-or-accessor-semantics-invention",
+    ]
+    if (
+        property_ivar_storage_accessor_source_surface.get("explicit_non_goals")
+        != expected_explicit_non_goals
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from explicit_non_goals"
+        )
     if (
         property_ivar_storage_accessor_source_surface.get(
             "requires_coupled_registration_manifest"
