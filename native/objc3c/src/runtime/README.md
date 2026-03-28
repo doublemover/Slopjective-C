@@ -98,6 +98,25 @@ Realization and lookup semantics surface:
 - explicit non-goal:
   - no public reflection ABI widening beyond the current runtime header
 
+Class/metaclass/protocol realization surface:
+
+- emitted compile-manifest key:
+  - `runtime_class_metaclass_protocol_realization_surface`
+- private realization query boundary:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+- semantic boundary:
+  - registration installs runtime-backed class records before live dispatch and
+    reflection
+  - realized class entries publish stable class, metaclass, superclass, and
+    super-metaclass owner identities
+  - realized class entries plus runtime conformance queries publish direct and
+    attached protocol conformance
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records

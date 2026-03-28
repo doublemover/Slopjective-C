@@ -40,6 +40,7 @@ SURFACE_KEYS = (
     "runtime_object_model_realization_source_surface",
     "runtime_reflection_query_surface",
     "runtime_realization_lookup_semantics_surface",
+    "runtime_class_metaclass_protocol_realization_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
 )
@@ -257,6 +258,9 @@ def main() -> int:
         ],
         "runtime_realization_lookup_semantics_surface": public_workflow_report[
             "runtime_realization_lookup_semantics_surface"
+        ],
+        "runtime_class_metaclass_protocol_realization_surface": public_workflow_report[
+            "runtime_class_metaclass_protocol_realization_surface"
         ],
         "runtime_installation_abi_surface": public_workflow_report["runtime_installation_abi_surface"],
         "runtime_loader_lifecycle_surface": public_workflow_report[

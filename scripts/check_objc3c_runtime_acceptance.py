@@ -41,6 +41,9 @@ RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID = (
 RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.realization.lookup.semantics.v1"
 )
+RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.class.metaclass.protocol.realization.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -206,6 +209,9 @@ def compile_fixture_with_args(
     reflection_query_surface = manifest.get("runtime_reflection_query_surface")
     realization_lookup_semantics_surface = manifest.get(
         "runtime_realization_lookup_semantics_surface"
+    )
+    class_metaclass_protocol_realization_surface = manifest.get(
+        "runtime_class_metaclass_protocol_realization_surface"
     )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
@@ -979,6 +985,86 @@ def compile_fixture_with_args(
         raise RuntimeError(
             "runtime_realization_lookup_semantics_surface must require a linked runtime probe"
         )
+    if not isinstance(class_metaclass_protocol_realization_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_class_metaclass_protocol_realization_surface"
+        )
+    if (
+        class_metaclass_protocol_realization_surface.get("contract_id")
+        != RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_class_metaclass_protocol_realization_surface contract"
+        )
+    if class_metaclass_protocol_realization_surface.get("compile_manifest_artifact") != manifest_path.name:
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        class_metaclass_protocol_realization_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        class_metaclass_protocol_realization_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if class_metaclass_protocol_realization_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface drifted from the emitted object artifact path"
+        )
+    if class_metaclass_protocol_realization_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_class_metaclass_protocol_fields = {
+        "runtime_object_model_realization_source_surface_contract_id": (
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "runtime_reflection_query_surface_contract_id": (
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID
+        ),
+        "runtime_realization_lookup_semantics_surface_contract_id": (
+            RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "registration_entrypoint_symbol": registration_manifest.get("registration_entrypoint_symbol"),
+        "realized_class_graph_snapshot_symbol": "objc3_runtime_copy_realized_class_graph_state_for_testing",
+        "realized_class_entry_snapshot_symbol": "objc3_runtime_copy_realized_class_entry_for_testing",
+        "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        "class_realization_model": (
+            "registration-installs-runtime-backed-class-records-before-live-dispatch-and-reflection"
+        ),
+        "metaclass_lineage_model": (
+            "realized-class-entries-publish-stable-class-metaclass-superclass-and-super-metaclass-owner-identities"
+        ),
+        "protocol_conformance_model": (
+            "realized-class-entries-and-runtime-conformance-queries-publish-direct-and-attached-protocol-conformance"
+        ),
+    }
+    for field, expected_value in expected_class_metaclass_protocol_fields.items():
+        if class_metaclass_protocol_realization_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_class_metaclass_protocol_realization_surface drifted from {field}"
+            )
+    if class_metaclass_protocol_realization_surface.get("requires_coupled_registration_manifest") is not True:
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface must require the coupled runtime registration manifest"
+        )
+    if class_metaclass_protocol_realization_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface must require real compile output"
+        )
+    if class_metaclass_protocol_realization_surface.get("requires_linked_runtime_probe") is not True:
+        raise RuntimeError(
+            "runtime_class_metaclass_protocol_realization_surface must require a linked runtime probe"
+        )
     if not isinstance(runtime_installation_abi_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_installation_abi_surface")
     if (
@@ -1633,6 +1719,62 @@ def build_runtime_realization_lookup_semantics_surface(
     }
 
 
+def build_runtime_class_metaclass_protocol_realization_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {
+            "imported-runtime-packaging-replay",
+            "canonical-dispatch",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
+            RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
+        ],
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_realization_query_boundary": [
+            "objc3_runtime_copy_realized_class_graph_state_for_testing",
+            "objc3_runtime_copy_realized_class_entry_for_testing",
+            "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        ],
+        "class_realization_model": (
+            "registration-installs-runtime-backed-class-records-before-live-dispatch-and-reflection"
+        ),
+        "metaclass_lineage_model": (
+            "realized-class-entries-publish-stable-class-metaclass-superclass-and-super-metaclass-owner-identities"
+        ),
+        "protocol_conformance_model": (
+            "realized-class-entries-and-runtime-conformance-queries-publish-direct-and-attached-protocol-conformance"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
+            IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+            "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+        ],
+        "authoritative_probe_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROBE,
+            "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
 def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path) -> dict[str, Any]:
     compile_coupled_case_ids = [result.case_id for result in results if result.fixture is not None]
     linked_runtime_probe_case_ids = [
@@ -2240,6 +2382,8 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
 
     worker_query = payload.get("worker_query", {})
     tracer_query = payload.get("tracer_query", {})
+    graph_state = payload.get("graph_state", {})
+    widget_entry = payload.get("widget_entry", {})
     method_state = payload.get("method_state", {})
     inherited_state = payload.get("inherited_state", {})
     traced_state = payload.get("traced_state", {})
@@ -2262,6 +2406,30 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
 
     expect(worker_query.get("conforms") == 1, "expected Widget to conform to Worker at runtime")
     expect(tracer_query.get("conforms") == 1, "expected Widget category attachment to satisfy Tracer at runtime")
+    expect(
+        graph_state.get("realized_class_count") == 2
+        and graph_state.get("root_class_count") == 1
+        and graph_state.get("metaclass_edge_count") == 1
+        and graph_state.get("receiver_class_binding_count") == 2
+        and graph_state.get("protocol_conformance_edge_count") == 2
+        and graph_state.get("last_realized_class_name") == "Widget"
+        and graph_state.get("last_realized_class_owner_identity") == "class:Widget"
+        and graph_state.get("last_realized_metaclass_owner_identity") == "metaclass:Widget",
+        "expected canonical dispatch to publish the realized Widget class graph with stable class and metaclass lineage",
+    )
+    expect(
+        widget_entry.get("found") == 1
+        and widget_entry.get("is_root_class") == 0
+        and widget_entry.get("implementation_backed") == 1
+        and widget_entry.get("direct_protocol_count") == 1
+        and widget_entry.get("attached_protocol_count") == 1
+        and widget_entry.get("class_name") == "Widget"
+        and widget_entry.get("class_owner_identity") == "class:Widget"
+        and widget_entry.get("metaclass_owner_identity") == "metaclass:Widget"
+        and widget_entry.get("super_class_owner_identity") == "class:Base"
+        and widget_entry.get("super_metaclass_owner_identity") == "metaclass:Base",
+        "expected canonical dispatch to publish stable Widget class, metaclass, superclass, and protocol realization facts",
+    )
     expect(method_state.get("live_dispatch_count", 0) >= 6, "expected live dispatch count to cover alloc/init/new/traced/inherited/class")
     expect(method_state.get("fallback_dispatch_count", 0) == 2, "expected canonical dispatch workload to publish both unresolved fallback calls")
     expect(method_state.get("last_selector_stable_id", 0) == ignored_entry.get("selector_stable_id", 0),
@@ -3564,6 +3732,9 @@ def main() -> int:
         "runtime_reflection_query_surface": build_runtime_reflection_query_surface(results),
         "runtime_realization_lookup_semantics_surface": (
             build_runtime_realization_lookup_semantics_surface(results)
+        ),
+        "runtime_class_metaclass_protocol_realization_surface": (
+            build_runtime_class_metaclass_protocol_realization_surface(results)
         ),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),

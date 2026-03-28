@@ -296,6 +296,47 @@ protocol-conformance lookup rules against compile-coupled executable probes
 instead of letting later runtime work infer lookup order from individual probe
 payloads or stale planning notes.
 
+## Class/Metaclass/Protocol Realization Surface
+
+- authoritative compile-manifest key:
+  - `runtime_class_metaclass_protocol_realization_surface`
+- authoritative composed source inputs:
+  - `runtime_object_model_realization_source_surface`
+  - `runtime_reflection_query_surface`
+  - `runtime_realization_lookup_semantics_surface`
+- authoritative runtime boundary:
+  - public ABI:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+  - private realization query boundary:
+    - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+    - `objc3_runtime_copy_realized_class_entry_for_testing`
+    - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- frozen semantic models:
+  - class realization:
+    - `registration-installs-runtime-backed-class-records-before-live-dispatch-and-reflection`
+  - metaclass lineage:
+    - `realized-class-entries-publish-stable-class-metaclass-superclass-and-super-metaclass-owner-identities`
+  - protocol conformance:
+    - `realized-class-entries-and-runtime-conformance-queries-publish-direct-and-attached-protocol-conformance`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+  - probes:
+    - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+
+This is the authoritative class/metaclass/protocol realization boundary. It
+freezes the fact that live registration publishes runtime-backed class graphs,
+stable metaclass lineage, and runtime-queryable direct/attached protocol
+conformance through the same compile-coupled executable path used for dispatch
+and reflection. Downstream work must extend this emitted surface instead of
+recovering class lineage or protocol truth from ad hoc sidecars, stale
+milestone notes, or synthetic summaries.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

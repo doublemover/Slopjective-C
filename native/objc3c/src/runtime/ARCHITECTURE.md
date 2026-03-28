@@ -135,6 +135,20 @@ Realization and lookup semantics source of truth:
   emitted surface instead of inferring lookup order from ad hoc probe logic or
   stale milestone notes
 
+Class/metaclass/protocol realization source of truth:
+
+- compile publication exposes the coupled class/metaclass/protocol realization
+  boundary through the emitted compile-manifest key
+  `runtime_class_metaclass_protocol_realization_surface`
+- that surface must point at the realization source surface, reflection query
+  surface, realization/lookup semantics surface, coupled registration
+  artifacts, and the private realized-class graph, realized-class entry, and
+  protocol-conformance query symbols that the live executable probes consume
+- later category attachment, merged dispatch resolution, and runnable
+  conformance work must extend that emitted surface instead of reconstructing
+  class lineage or protocol truth from milestone-local notes or synthetic
+  summaries
+
 Bootstrap legality and installation semantics:
 
 - duplicate translation-unit identity keys must fail closed with
