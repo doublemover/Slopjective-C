@@ -1998,6 +1998,8 @@ struct Objc3PropertySynthesisIvarBindingContract {
   std::size_t property_synthesis_sites = 0;
   std::size_t property_synthesis_explicit_ivar_bindings = 0;
   std::size_t property_synthesis_default_ivar_bindings = 0;
+  std::size_t interface_owned_property_synthesis_sites = 0;
+  std::size_t implementation_property_redeclaration_sites = 0;
   std::size_t ivar_binding_sites = 0;
   std::size_t ivar_binding_resolved = 0;
   std::size_t ivar_binding_missing = 0;

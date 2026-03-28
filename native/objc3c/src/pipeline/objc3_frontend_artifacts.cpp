@@ -10694,6 +10694,10 @@ Objc3PropertySynthesisIvarBindingContract BuildPropertySynthesisIvarBindingContr
       summary.property_synthesis_explicit_ivar_bindings;
   contract.property_synthesis_default_ivar_bindings =
       summary.property_synthesis_default_ivar_bindings;
+  contract.interface_owned_property_synthesis_sites =
+      summary.interface_owned_property_synthesis_sites;
+  contract.implementation_property_redeclaration_sites =
+      summary.implementation_property_redeclaration_sites;
   contract.ivar_binding_sites = summary.ivar_binding_sites;
   contract.ivar_binding_resolved = summary.ivar_binding_resolved;
   contract.ivar_binding_missing = summary.ivar_binding_missing;
@@ -22291,6 +22295,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings
            << ",\"property_synthesis_default_ivar_bindings\":"
            << property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings
+           << ",\"interface_owned_property_synthesis_sites\":"
+           << property_synthesis_ivar_binding_contract.interface_owned_property_synthesis_sites
+           << ",\"implementation_property_redeclaration_sites\":"
+           << property_synthesis_ivar_binding_contract.implementation_property_redeclaration_sites
            << ",\"ivar_binding_resolved\":"
            << property_synthesis_ivar_binding_contract.ivar_binding_resolved
            << ",\"property_descriptor_count\":"
@@ -23824,6 +23832,12 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       property_synthesis_ivar_binding_contract.property_synthesis_explicit_ivar_bindings;
   ir_frontend_metadata.lowering_property_synthesis_default_ivar_bindings =
       property_synthesis_ivar_binding_contract.property_synthesis_default_ivar_bindings;
+  ir_frontend_metadata.lowering_interface_owned_property_synthesis_sites =
+      property_synthesis_ivar_binding_contract
+          .interface_owned_property_synthesis_sites;
+  ir_frontend_metadata.lowering_implementation_property_redeclaration_sites =
+      property_synthesis_ivar_binding_contract
+          .implementation_property_redeclaration_sites;
   ir_frontend_metadata.lowering_property_synthesis_ivar_binding_resolved =
       property_synthesis_ivar_binding_contract.ivar_binding_resolved;
   ir_frontend_metadata.lowering_property_synthesis_deterministic_handoff =
@@ -25820,6 +25834,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       std::unordered_set<std::string> property_owner_identities;
       property_owner_identities.reserve(
           source_graph.property_nodes_lexicographic.size());
+      std::unordered_set<std::string> implementation_property_keys;
+      implementation_property_keys.reserve(
+          source_graph.property_nodes_lexicographic.size());
+      const auto build_property_key = [](const std::string &owner_name,
+                                         const std::string &property_name) {
+        return owner_name + "|" + property_name;
+      };
       for (const auto &property_node : source_graph.property_nodes_lexicographic) {
         if (property_node.owner_kind.empty() || property_node.owner_name.empty() ||
             property_node.owner_identity.empty() ||
@@ -25879,6 +25900,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
         bundle.executable_ivar_layout_alignment_bytes =
             property_node.executable_ivar_layout_alignment_bytes;
         property_bundles.push_back(std::move(bundle));
+        if (property_node.owner_kind == "class-implementation" ||
+            property_node.owner_kind == "category-implementation") {
+          implementation_property_keys.insert(build_property_key(
+              property_node.owner_name, property_node.property_name));
+        }
+      }
+      for (auto &bundle : property_bundles) {
+        const bool has_matching_implementation_property =
+            implementation_property_keys.find(
+                build_property_key(bundle.owner_name, bundle.property_name)) !=
+            implementation_property_keys.end();
+        bundle.synthesizes_executable_accessors =
+            bundle.owner_kind == "class-implementation" ||
+            bundle.owner_kind == "category-implementation" ||
+            (bundle.owner_kind == "class-interface" &&
+             !has_matching_implementation_property &&
+             implementation_nodes_by_name.find(bundle.owner_name) !=
+                 implementation_nodes_by_name.end());
       }
       std::sort(
           property_bundles.begin(), property_bundles.end(),
@@ -26022,11 +26061,6 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           method_owner_identities.insert(method_node.owner_identity);
         }
       }
-      const auto is_implementation_property_owner_kind =
-          [](const std::string &owner_kind) {
-            return owner_kind == "class-implementation" ||
-                   owner_kind == "category-implementation";
-          };
       const auto build_instance_method_owner_identity =
           [](const std::string &declaration_owner_identity,
              const std::string &selector) {
@@ -26034,7 +26068,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           };
       if (member_table_payload_complete) {
         for (const auto &property_bundle : property_bundles) {
-          if (!is_implementation_property_owner_kind(property_bundle.owner_kind) ||
+          if (!property_bundle.synthesizes_executable_accessors ||
               property_bundle.owner_name.empty() ||
               property_bundle.declaration_owner_identity.empty() ||
               property_bundle.export_owner_identity.empty() ||

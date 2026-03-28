@@ -951,7 +951,7 @@ def compile_fixture_with_args(
             "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles"
         ),
         "synthesis_semantics_model": (
-            "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands"
+            "non-category-class-interface-properties-own-authoritative-default-ivar-and-synthesized-binding-identities-across-implementation-redeclaration-boundaries"
         ),
         "default_ivar_binding_resolution_model": (
             "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration"
@@ -2638,6 +2638,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         for result in results
         if result.case_id
         in {
+            "property-synthesis-storage-binding-semantics",
             "storage-legality-semantics",
             "synthesized-accessor-codegen",
             "synthesized-accessor-runtime",
@@ -2689,7 +2690,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         "source_models": [
             "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization",
             "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles",
-            "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands",
+            "non-category-class-interface-properties-own-authoritative-default-ivar-and-synthesized-binding-identities-across-implementation-redeclaration-boundaries",
             "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration",
             "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission",
             "effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding",
@@ -5476,6 +5477,124 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
     )
 
 
+def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "property-synthesis-storage-binding-semantics"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3"
+    )
+    _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "positive")
+    registration_manifest_path = (
+        case_dir / "positive" / "module.runtime-registration-manifest.json"
+    )
+    if not registration_manifest_path.is_file():
+        raise RuntimeError(
+            f"compiled fixture did not publish {registration_manifest_path}"
+        )
+    registration_manifest = json.loads(
+        registration_manifest_path.read_text(encoding="utf-8")
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ll_text = ll_path.read_text(encoding="utf-8")
+    lowering_surface = manifest.get("dispatch_and_synthesized_accessor_lowering_surface", {})
+    expect(
+        isinstance(lowering_surface, dict),
+        "expected property synthesis/storage-binding positive fixture to publish the lowering surface",
+    )
+    expect(
+        lowering_surface.get("property_synthesis_sites") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two synthesis sites",
+    )
+    expect(
+        lowering_surface.get("property_synthesis_default_ivar_bindings") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two default ivar bindings",
+    )
+    expect(
+        lowering_surface.get("interface_owned_property_synthesis_sites") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two interface-owned synthesis sites",
+    )
+    expect(
+        lowering_surface.get("implementation_property_redeclaration_sites") == 0,
+        "expected no-redeclaration property synthesis fixture to publish zero implementation redeclaration sites",
+    )
+    expect(
+        lowering_surface.get("ivar_binding_resolved") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two resolved ivar bindings",
+    )
+    expect(
+        registration_manifest.get("property_descriptor_count") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two property descriptors",
+    )
+    expect(
+        registration_manifest.get("ivar_descriptor_count") == 2,
+        "expected no-redeclaration property synthesis fixture to publish two ivar descriptors",
+    )
+    replay_key = manifest.get("lowering_property_synthesis_ivar_binding", {}).get(
+        "replay_key", ""
+    )
+    for snippet, label in (
+        (
+            "interface_owned_property_synthesis_sites=2",
+            "two interface-owned synthesis sites in the replay key",
+        ),
+        (
+            "implementation_property_redeclaration_sites=0",
+            "zero implementation redeclaration sites in the replay key",
+        ),
+        (
+            "define void @objc3_method_Widget_instance_setCurrentValue_(i32 %arg0)",
+            "the synthesized setter definition",
+        ),
+        (
+            "call i32 @objc3_runtime_exchange_current_property_i32(i32 %objc3_property_retained)",
+            "the runtime-backed setter exchange path",
+        ),
+    ):
+        expect(
+            snippet in (replay_key if "sites=" in snippet else ll_text),
+            f"expected no-redeclaration property synthesis fixture to publish {label}",
+        )
+
+    incompatible_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_property_synthesis_default_ivar_binding_incompatible_redeclaration.objc3",
+        case_dir / "negative-incompatible-redeclaration",
+        expected_snippets=[
+            "type mismatch: property synthesis for 'token' in implementation 'Widget' drifted from the interface default ivar binding",
+            "type mismatch: incompatible property signature for 'token' in implementation 'Widget'",
+        ],
+        expected_codes=["O3S206"],
+    )
+
+    return CaseResult(
+        case_id="property-synthesis-storage-binding-semantics",
+        probe="compile-manifest-and-diagnostics",
+        fixture="tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "property_synthesis_sites": lowering_surface.get("property_synthesis_sites"),
+            "interface_owned_property_synthesis_sites": lowering_surface.get(
+                "interface_owned_property_synthesis_sites"
+            ),
+            "implementation_property_redeclaration_sites": lowering_surface.get(
+                "implementation_property_redeclaration_sites"
+            ),
+            "negative_incompatible_redeclaration_diagnostic_count": incompatible_negative[
+                "diagnostic_count"
+            ],
+        },
+    )
+
+
 def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "synthesized-accessor-runtime"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
@@ -5759,6 +5878,7 @@ def main() -> int:
         check_realization_lookup_reflection_runtime_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_storage_ownership_reflection_case(clangxx, run_dir),
+        check_property_synthesis_storage_binding_semantics_case(run_dir),
         check_storage_legality_semantics_case(run_dir),
         check_synthesized_accessor_codegen_case(run_dir),
         check_synthesized_accessor_runtime_case(clangxx, run_dir),

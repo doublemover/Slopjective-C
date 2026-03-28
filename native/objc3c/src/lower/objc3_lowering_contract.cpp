@@ -2558,6 +2558,8 @@ Objc3PropertySynthesisIvarBindingContract Objc3DefaultPropertySynthesisIvarBindi
   contract.property_synthesis_sites = property_synthesis_sites;
   contract.property_synthesis_explicit_ivar_bindings = 0;
   contract.property_synthesis_default_ivar_bindings = property_synthesis_sites;
+  contract.interface_owned_property_synthesis_sites = property_synthesis_sites;
+  contract.implementation_property_redeclaration_sites = 0;
   contract.ivar_binding_sites = property_synthesis_sites;
   contract.ivar_binding_resolved = property_synthesis_sites;
   contract.ivar_binding_missing = 0;
@@ -2573,6 +2575,12 @@ bool IsValidObjc3PropertySynthesisIvarBindingContract(
           contract.property_synthesis_sites ||
       contract.property_synthesis_explicit_ivar_bindings > contract.property_synthesis_sites ||
       contract.property_synthesis_default_ivar_bindings > contract.property_synthesis_sites) {
+    return false;
+  }
+  if (contract.interface_owned_property_synthesis_sites !=
+          contract.property_synthesis_sites ||
+      contract.implementation_property_redeclaration_sites >
+          contract.property_synthesis_sites) {
     return false;
   }
   if (contract.ivar_binding_sites != contract.property_synthesis_sites) {
@@ -2595,6 +2603,10 @@ std::string Objc3PropertySynthesisIvarBindingReplayKey(
          std::to_string(contract.property_synthesis_explicit_ivar_bindings) +
          ";property_synthesis_default_ivar_bindings=" +
          std::to_string(contract.property_synthesis_default_ivar_bindings) +
+         ";interface_owned_property_synthesis_sites=" +
+         std::to_string(contract.interface_owned_property_synthesis_sites) +
+         ";implementation_property_redeclaration_sites=" +
+         std::to_string(contract.implementation_property_redeclaration_sites) +
          ";ivar_binding_sites=" + std::to_string(contract.ivar_binding_sites) +
          ";ivar_binding_resolved=" + std::to_string(contract.ivar_binding_resolved) +
          ";ivar_binding_missing=" + std::to_string(contract.ivar_binding_missing) +

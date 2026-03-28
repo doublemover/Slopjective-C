@@ -733,7 +733,7 @@ inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
 inline constexpr const char *kObjc3ExecutablePropertyIvarSemanticsContractId =
     "objc3c.executable.property.ivar.semantics.v1";
 inline constexpr const char *kObjc3ExecutablePropertySynthesisSemanticsModel =
-    "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands";
+    "non-category-class-interface-properties-own-authoritative-default-ivar-and-synthesized-binding-identities-across-implementation-redeclaration-boundaries";
 inline constexpr const char *kObjc3ExecutablePropertyDefaultIvarBindingResolutionModel =
     "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration";
 inline constexpr const char *kObjc3ExecutablePropertyAccessorSemanticsModel =

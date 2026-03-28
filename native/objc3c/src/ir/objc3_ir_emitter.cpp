@@ -76,8 +76,7 @@ class Objc3IREmitter {
 
   static bool IsImplementationOwnedPropertyBundle(
       const Objc3IRRuntimeMetadataPropertyBundle &bundle) {
-    return bundle.owner_kind == "class-implementation" ||
-           bundle.owner_kind == "category-implementation";
+    return bundle.synthesizes_executable_accessors;
   }
 
   static std::string BuildSynthesizedInstanceMethodOwnerIdentity(
@@ -500,6 +499,11 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_property_synthesis_default_ivar_bindings
           << ";property_synthesis_explicit_ivar_bindings="
           << frontend_metadata_.lowering_property_synthesis_explicit_ivar_bindings
+          << ";interface_owned_property_synthesis_sites="
+          << frontend_metadata_.lowering_interface_owned_property_synthesis_sites
+          << ";implementation_property_redeclaration_sites="
+          << frontend_metadata_
+                 .lowering_implementation_property_redeclaration_sites
           << ";ivar_binding_resolved="
           << frontend_metadata_.lowering_property_synthesis_ivar_binding_resolved
           << ";property_descriptor_count="
