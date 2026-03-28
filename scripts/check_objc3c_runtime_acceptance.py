@@ -3714,6 +3714,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
         for result in results
         if result.case_id
         in {
+            "block-storage-arc-automation-semantics",
             "arc-property-helper-abi",
         }
     ]
@@ -3812,7 +3813,7 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
     authoritative_case_ids = [
         result.case_id
         for result in results
-        if result.case_id in {"arc-property-helper-abi"}
+        if result.case_id in {"block-storage-arc-automation-semantics", "arc-property-helper-abi"}
     ]
     return {
         "contract_id": (
@@ -6924,6 +6925,276 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
     )
 
 
+def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "block-storage-arc-automation-semantics"
+
+    owned_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_owned_object_capture_helper_positive.objc3"
+    )
+    _, owned_ll_path, owned_manifest_path = compile_fixture_outputs(
+        owned_fixture, case_dir / "owned-positive"
+    )
+    owned_manifest = json.loads(owned_manifest_path.read_text(encoding="utf-8"))
+    owned_semantic_surface = (
+        owned_manifest.get("frontend", {}).get("pipeline", {}).get("semantic_surface", {})
+    )
+    owned_copy_dispose_surface = owned_semantic_surface.get(
+        "objc_block_copy_dispose_lowering_surface", {}
+    )
+    owned_escape_surface = owned_semantic_surface.get(
+        "objc_block_storage_escape_lowering_surface", {}
+    )
+    owned_ll = owned_ll_path.read_text(encoding="utf-8")
+
+    nonowning_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_nonowning_object_capture_helper_elided_positive.objc3"
+    )
+    _, nonowning_ll_path, nonowning_manifest_path = compile_fixture_outputs(
+        nonowning_fixture, case_dir / "nonowning-positive"
+    )
+    nonowning_manifest = json.loads(
+        nonowning_manifest_path.read_text(encoding="utf-8")
+    )
+    nonowning_semantic_surface = (
+        nonowning_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+    )
+    nonowning_copy_dispose_surface = nonowning_semantic_surface.get(
+        "objc_block_copy_dispose_lowering_surface", {}
+    )
+    nonowning_arc_diagnostics_surface = nonowning_semantic_surface.get(
+        "objc_arc_diagnostics_fixit_lowering_surface", {}
+    )
+    nonowning_ll = nonowning_ll_path.read_text(encoding="utf-8")
+
+    arc_mode_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m262_arc_mode_handling_positive.objc3"
+    )
+    compile_fixture_with_args(
+        arc_mode_fixture, case_dir / "arc-mode-positive", extra_args=["-fobjc-arc"]
+    )
+    arc_mode_ll_path = case_dir / "arc-mode-positive" / "module.ll"
+    arc_mode_manifest_path = case_dir / "arc-mode-positive" / "module.manifest.json"
+    arc_mode_manifest = json.loads(arc_mode_manifest_path.read_text(encoding="utf-8"))
+    arc_mode_ll = arc_mode_ll_path.read_text(encoding="utf-8")
+    arc_mode_sema = arc_mode_manifest.get("frontend", {}).get("pipeline", {}).get(
+        "sema_pass_manager", {}
+    )
+    arc_mode_block_copy_dispose_surface = (
+        arc_mode_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_copy_dispose_lowering_surface", {})
+    )
+
+    arc_inference_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m262_arc_inference_lifetime_positive.objc3"
+    )
+    compile_fixture_with_args(
+        arc_inference_fixture,
+        case_dir / "arc-inference-positive",
+        extra_args=["-fobjc-arc"],
+    )
+    arc_inference_ll_path = case_dir / "arc-inference-positive" / "module.ll"
+    arc_inference_manifest_path = (
+        case_dir / "arc-inference-positive" / "module.manifest.json"
+    )
+    arc_inference_manifest = json.loads(
+        arc_inference_manifest_path.read_text(encoding="utf-8")
+    )
+    arc_inference_ll = arc_inference_ll_path.read_text(encoding="utf-8")
+    arc_inference_sema = arc_inference_manifest.get("frontend", {}).get(
+        "pipeline", {}
+    ).get("sema_pass_manager", {})
+
+    weak_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_weak_object_capture_mutation_negative.objc3",
+        case_dir / "weak-mutation-negative",
+        expected_snippets=[
+            "type mismatch: block mutated capture 'weakValue' requires owned runtime-backed storage"
+        ],
+        expected_codes=["O3S206"],
+    )
+    unowned_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m261_unowned_object_capture_mutation_negative.objc3",
+        case_dir / "unowned-mutation-negative",
+        expected_snippets=[
+            "type mismatch: block mutated capture 'borrowedValue' requires owned runtime-backed storage"
+        ],
+        expected_codes=["O3S206"],
+    )
+
+    expect(
+        owned_manifest.get("runtime_block_arc_unified_source_surface", {}).get(
+            "contract_id"
+        )
+        == RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
+        "expected owned-capture helper fixture to publish the block/ARC unified source surface",
+    )
+    expect(
+        owned_manifest.get(
+            "runtime_ownership_transfer_capture_family_source_surface", {}
+        ).get("contract_id")
+        == RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
+        "expected owned-capture helper fixture to publish the ownership-transfer/capture-family source surface",
+    )
+    expect(
+        owned_copy_dispose_surface.get("copy_helper_required_sites") == 1
+        and owned_copy_dispose_surface.get("dispose_helper_required_sites") == 1,
+        "expected owned object capture fixture to require copy/dispose helpers",
+    )
+    expect(
+        owned_copy_dispose_surface.get("copy_helper_symbolized_sites") == 1
+        and owned_copy_dispose_surface.get("dispose_helper_symbolized_sites") == 1,
+        "expected owned object capture fixture to symbolize copy/dispose helpers",
+    )
+    expect(
+        owned_escape_surface.get("escape_to_heap_sites") == 1
+        and owned_escape_surface.get("escape_analysis_enabled_sites") == 1,
+        "expected owned object capture fixture to publish one escaping block path",
+    )
+    expect(
+        "; runtime_block_allocation_copy_dispose_invoke_support = "
+        "contract=objc3c.runtime.block.allocation.copy.dispose.invoke.support.v1"
+        in owned_ll,
+        "expected owned object capture fixture LLVM IR to publish the block allocation/copy/dispose/invoke support surface",
+    )
+
+    expect(
+        nonowning_copy_dispose_surface.get("copy_helper_required_sites") == 0
+        and nonowning_copy_dispose_surface.get("dispose_helper_required_sites") == 0,
+        "expected non-owning object capture fixture to elide copy/dispose helpers",
+    )
+    expect(
+        nonowning_copy_dispose_surface.get("copy_helper_symbolized_sites") == 0
+        and nonowning_copy_dispose_surface.get("dispose_helper_symbolized_sites") == 0,
+        "expected non-owning object capture fixture to publish zero helper symbols",
+    )
+    expect(
+        nonowning_arc_diagnostics_surface.get(
+            "ownership_arc_diagnostic_candidate_sites"
+        )
+        == 1
+        and nonowning_arc_diagnostics_surface.get("ownership_arc_fixit_available_sites")
+        == 1
+        and nonowning_arc_diagnostics_surface.get("ownership_arc_profiled_sites")
+        == 1,
+        "expected non-owning object capture fixture to publish one ARC ownership diagnostic/fixit candidate",
+    )
+    expect(
+        "; block_copy_dispose_lowering = " in nonowning_ll,
+        "expected non-owning object capture fixture LLVM IR to publish the block copy/dispose lowering summary",
+    )
+
+    expect(
+        arc_mode_sema.get("retain_release_operation_lowering_retain_insertion_sites")
+        == 8
+        and arc_mode_sema.get(
+            "retain_release_operation_lowering_release_insertion_sites"
+        )
+        == 8,
+        "expected arc mode handling fixture to publish eight retain and eight release insertions",
+    )
+    expect(
+        arc_mode_block_copy_dispose_surface.get("copy_helper_required_sites") == 1
+        and arc_mode_block_copy_dispose_surface.get("dispose_helper_required_sites")
+        == 1,
+        "expected arc mode handling fixture to keep block copy/dispose helper lowering enabled",
+    )
+    expect(
+        "; arc_cleanup_weak_lifetime_hooks = "
+        "contract=objc3c.arc.cleanup.weak.lifetime.hooks.v1" in arc_mode_ll,
+        "expected arc mode handling fixture LLVM IR to publish the ARC cleanup/weak lifetime hooks surface",
+    )
+
+    expect(
+        arc_inference_sema.get(
+            "retain_release_operation_lowering_retain_insertion_sites"
+        )
+        == 8
+        and arc_inference_sema.get(
+            "retain_release_operation_lowering_release_insertion_sites"
+        )
+        == 8
+        and arc_inference_sema.get(
+            "retain_release_operation_lowering_autorelease_insertion_sites"
+        )
+        == 0,
+        "expected arc inference fixture to publish canonical retain/release insertion counts without autorelease insertion",
+    )
+    expect(
+        arc_inference_sema.get(
+            "weak_unowned_semantics_lowering_ownership_candidate_sites"
+        )
+        == 8
+        and arc_inference_sema.get(
+            "weak_unowned_semantics_lowering_weak_reference_sites"
+        )
+        == 0,
+        "expected arc inference fixture to normalize eight ownership-qualified candidates without weak-reference lowering",
+    )
+    expect(
+        "; arc_cleanup_weak_lifetime_hooks = "
+        "contract=objc3c.arc.cleanup.weak.lifetime.hooks.v1" in arc_inference_ll,
+        "expected arc inference fixture LLVM IR to publish the ARC cleanup/weak lifetime hooks surface",
+    )
+
+    return CaseResult(
+        case_id="block-storage-arc-automation-semantics",
+        probe="compile-manifest-diagnostics-and-llvm-ir",
+        fixture="tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "owned_copy_helper_required_sites": owned_copy_dispose_surface.get(
+                "copy_helper_required_sites"
+            ),
+            "nonowning_copy_helper_required_sites": nonowning_copy_dispose_surface.get(
+                "copy_helper_required_sites"
+            ),
+            "arc_mode_retain_insertions": arc_mode_sema.get(
+                "retain_release_operation_lowering_retain_insertion_sites"
+            ),
+            "arc_inference_retain_insertions": arc_inference_sema.get(
+                "retain_release_operation_lowering_retain_insertion_sites"
+            ),
+            "weak_negative_diagnostic_count": weak_negative["diagnostic_count"],
+            "unowned_negative_diagnostic_count": unowned_negative["diagnostic_count"],
+        },
+    )
+
+
 def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "arc-property-helper-abi"
     fixture = (
@@ -8878,6 +9149,7 @@ def main() -> int:
         check_property_layout_case(clangxx, run_dir),
         check_property_execution_case(clangxx, run_dir),
         check_property_reflection_case(clangxx, run_dir),
+        check_block_storage_arc_automation_semantics_case(run_dir),
         check_arc_property_helper_case(clangxx, run_dir),
     ]
 
