@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3S333.
+module InteropCAndObjcRuntimeParityNegativeO3S333;
+
+@interface RuntimeParityBridge
+- (i32) interfaceForeignCall;
+@end
+
+@implementation RuntimeParityBridge (Debug)
+- (i32) interfaceForeignCall __attribute__((objc_foreign, objc_import_module(named("SampleKit")))) {
+  return 7;
+}
+@end

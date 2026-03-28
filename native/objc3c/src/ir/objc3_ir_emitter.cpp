@@ -18,7 +18,7 @@
 
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 
-static bool ParsePart8ResourceInvalidLiteral(const std::string &text, int &value) {
+static bool ParseOwnershipResourceInvalidLiteral(const std::string &text, int &value) {
   std::string normalized;
   normalized.reserve(text.size());
   for (unsigned char ch : text) {
@@ -50,9 +50,9 @@ class Objc3IREmitter {
     None,
     PropertyGetter,
     PropertySetter,
-    Part10DerivedEquality,
-    Part10DerivedHash,
-    Part10DerivedDebugDescription,
+    MetaprogrammingDerivedEquality,
+    MetaprogrammingDerivedHash,
+    MetaprogrammingDerivedDebugDescription,
   };
 
   struct MethodDefinition {
@@ -69,7 +69,7 @@ class Objc3IREmitter {
     std::string synthesized_accessor_ownership_profile;
   };
 
-  struct Part10GlobalArtifact {
+  struct MetaprogrammingGlobalArtifact {
     std::string symbol;
     std::string payload;
   };
@@ -283,7 +283,7 @@ class Objc3IREmitter {
       }
     }
     for (const auto &bundle :
-         frontend_metadata_.part10_derived_method_bundles_lexicographic) {
+         frontend_metadata_.metaprogramming_derived_method_bundles_lexicographic) {
       if (bundle.implementation_name.empty() ||
           bundle.declaration_owner_identity.empty() || bundle.selector.empty() ||
           bundle.emitted_symbol.empty()) {
@@ -299,11 +299,11 @@ class Objc3IREmitter {
       }
       SyntheticMethodKind synthetic_kind = SyntheticMethodKind::None;
       if (bundle.derive_name == "Equality") {
-        synthetic_kind = SyntheticMethodKind::Part10DerivedEquality;
+        synthetic_kind = SyntheticMethodKind::MetaprogrammingDerivedEquality;
       } else if (bundle.derive_name == "Hash") {
-        synthetic_kind = SyntheticMethodKind::Part10DerivedHash;
+        synthetic_kind = SyntheticMethodKind::MetaprogrammingDerivedHash;
       } else if (bundle.derive_name == "DebugDescription") {
-        synthetic_kind = SyntheticMethodKind::Part10DerivedDebugDescription;
+        synthetic_kind = SyntheticMethodKind::MetaprogrammingDerivedDebugDescription;
       } else {
         boundary_error_ = "unsupported Part 10 derive kind '" +
                           bundle.derive_name + "'";
@@ -322,9 +322,9 @@ class Objc3IREmitter {
           std::string{},
           std::string{},
       });
-      ++part10_derived_method_count_;
-      part10_global_artifacts_.push_back(
-          Part10GlobalArtifact{BuildSynthesizedPropertyStorageSymbol(
+      ++metaprogramming_derived_method_count_;
+      metaprogramming_global_artifacts_.push_back(
+          MetaprogrammingGlobalArtifact{BuildSynthesizedPropertyStorageSymbol(
                                    bundle.emitted_symbol + "_selector"),
                                "derive=" + bundle.derive_name + ";owner=" +
                                    bundle.implementation_name + ";selector=" +
@@ -332,27 +332,27 @@ class Objc3IREmitter {
                                    bundle.emitted_symbol});
     }
     for (const auto &bundle :
-         frontend_metadata_.part10_macro_artifact_bundles_lexicographic) {
+         frontend_metadata_.metaprogramming_macro_artifact_bundles_lexicographic) {
       if (bundle.emitted_symbol.empty()) {
         boundary_error_ = "incomplete Part 10 macro artifact lowering bundle";
         return;
       }
-      part10_global_artifacts_.push_back(
-          Part10GlobalArtifact{bundle.emitted_symbol,
+      metaprogramming_global_artifacts_.push_back(
+          MetaprogrammingGlobalArtifact{bundle.emitted_symbol,
                                "function=" + bundle.function_name +
                                    ";macro=" + bundle.macro_name +
                                    ";package=" + bundle.package_name +
                                    ";provenance=" + bundle.provenance_name});
     }
     for (const auto &bundle :
-         frontend_metadata_.part10_property_behavior_artifact_bundles_lexicographic) {
+         frontend_metadata_.metaprogramming_property_behavior_artifact_bundles_lexicographic) {
       if (bundle.emitted_symbol.empty()) {
         boundary_error_ =
             "incomplete Part 10 property behavior lowering bundle";
         return;
       }
-      part10_global_artifacts_.push_back(
-          Part10GlobalArtifact{bundle.emitted_symbol,
+      metaprogramming_global_artifacts_.push_back(
+          MetaprogrammingGlobalArtifact{bundle.emitted_symbol,
                                "owner_kind=" + bundle.owner_kind + ";owner=" +
                                    bundle.owner_name + ";property=" +
                                    bundle.property_name + ";behavior=" +
@@ -425,14 +425,14 @@ class Objc3IREmitter {
       body << "\n";
     }
 
-    for (const auto &artifact : part10_global_artifacts_) {
+    for (const auto &artifact : metaprogramming_global_artifacts_) {
       std::string payload = artifact.payload;
       payload.push_back('\0');
       body << "@" << artifact.symbol << " = private constant ["
            << payload.size() << " x i8] c\""
            << EscapeCStringLiteral(payload) << "\", align 1\n";
     }
-    if (!part10_global_artifacts_.empty()) {
+    if (!metaprogramming_global_artifacts_.empty()) {
       body << "\n";
     }
 
@@ -766,16 +766,16 @@ class Objc3IREmitter {
       out << "; nil_receiver_semantics_foldability_lowering = "
           << frontend_metadata_.lowering_nil_receiver_semantics_foldability_replay_key << "\n";
     }
-    out << "; part3_optional_keypath_lowering = "
-        << Objc3Part3OptionalKeypathLoweringSummary() << "\n";
+    out << "; type_system_optional_keypath_lowering = "
+        << Objc3TypeSystemOptionalKeypathLoweringSummary() << "\n";
     // control-flow safety lowering freeze anchor: the frontend now
     // publishes one lowering-owned packet for admitted Part 5 control-flow
     // sites while native IR lowering still fails closed on guard/match/defer
     // execution until later lowering/runtime work materializes it.
-    out << "; part5_control_flow_safety_lowering = "
-        << Objc3Part5ControlFlowSafetyLoweringSummary() << "\n";
-    out << "; part3_optional_keypath_runtime_helper_contract = "
-        << Objc3Part3OptionalKeypathRuntimeHelperContractSummary() << "\n";
+    out << "; control_flow_control_flow_safety_lowering = "
+        << Objc3ControlFlowControlFlowSafetyLoweringSummary() << "\n";
+    out << "; type_system_optional_keypath_runtime_helper_contract = "
+        << Objc3TypeSystemOptionalKeypathRuntimeHelperContractSummary() << "\n";
     if (!frontend_metadata_.lowering_super_dispatch_method_family_replay_key.empty()) {
       out << "; super_dispatch_method_family_lowering = "
           << frontend_metadata_.lowering_super_dispatch_method_family_replay_key << "\n";
@@ -916,17 +916,17 @@ class Objc3IREmitter {
           << "\n";
     }
     if (!frontend_metadata_
-             .lowering_part6_throws_abi_propagation_replay_key.empty()) {
-      out << "; part6_throws_abi_propagation_lowering = "
+             .lowering_error_handling_throws_abi_propagation_replay_key.empty()) {
+      out << "; error_handling_throws_abi_propagation_lowering = "
           << frontend_metadata_
-                 .lowering_part6_throws_abi_propagation_replay_key
+                 .lowering_error_handling_throws_abi_propagation_replay_key
           << "\n";
     }
     if (!frontend_metadata_
-             .lowering_part6_result_and_bridging_artifact_replay_key.empty()) {
-      out << "; part6_result_and_bridging_artifact_replay = "
+             .lowering_error_handling_result_and_bridging_artifact_replay_key.empty()) {
+      out << "; error_handling_result_and_bridging_artifact_replay = "
           << frontend_metadata_
-                 .lowering_part6_result_and_bridging_artifact_replay_key
+                 .lowering_error_handling_result_and_bridging_artifact_replay_key
           << "\n";
     }
     // error-runtime/bridge-helper anchor: publish the private
@@ -934,31 +934,31 @@ class Objc3IREmitter {
     // lowering so the emitted IR truthfully advertises helper-backed storage,
     // bridge normalization, and catch dispatch instead of raw local-slot
     // traffic.
-    out << "; part6_error_runtime_bridge_helper = "
-        << Objc3Part6ErrorRuntimeBridgeHelperSummary() << "\n";
+    out << "; error_handling_error_runtime_bridge_helper = "
+        << Objc3ErrorHandlingErrorRuntimeBridgeHelperSummary() << "\n";
     // live catch/bridge/runtime integration anchor: publish the
     // executable Part 6 runtime-support boundary so linked object probes can
     // prove the private helper ABI is live rather than a contract-only marker.
-    out << "; part6_live_error_runtime_integration = "
-        << Objc3Part6LiveErrorRuntimeIntegrationSummary() << "\n";
+    out << "; error_handling_live_error_runtime_integration = "
+        << Objc3ErrorHandlingLiveErrorRuntimeIntegrationSummary() << "\n";
     // continuation/runtime-helper anchor: publish the first private
     // Part 7 helper ABI boundary for logical continuation allocation,
     // scheduler handoff, and resume traffic. The current async lowering slice
     // remains direct-call only, so this line freezes the helper contract
     // without claiming live suspension or executor scheduling yet.
-    out << "; part7_continuation_runtime_helper = "
-        << Objc3Part7ContinuationRuntimeHelperSummary() << "\n";
+    out << "; concurrency_continuation_runtime_helper = "
+        << Objc3ConcurrencyContinuationRuntimeHelperSummary() << "\n";
     // live continuation/runtime integration anchor: publish the
     // runnable Part 7 helper-execution boundary so supported async fixtures can
     // prove the direct-call await path now executes through the helper cluster.
-    out << "; part7_live_continuation_runtime_integration = "
-        << Objc3Part7LiveContinuationRuntimeIntegrationSummary() << "\n";
+    out << "; concurrency_live_continuation_runtime_integration = "
+        << Objc3ConcurrencyLiveContinuationRuntimeIntegrationSummary() << "\n";
     // ABI/artifact completion anchor: publish the dedicated Part 7
     // task-group/runtime ABI packet so later runtime freeze work consumes a
     // stable helper list and scheduler-visible proof surface.
-    out << "; part7_task_runtime_abi_completion = contract="
-        << kObjc3Part7TaskRuntimeAbiCompletionContractId
-        << ";surface=" << kObjc3Part7TaskRuntimeAbiCompletionSurfacePath
+    out << "; concurrency_task_runtime_abi_completion = contract="
+        << kObjc3ConcurrencyTaskRuntimeAbiCompletionContractId
+        << ";surface=" << kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath
         << ";helper_count=8;task_group_helper_count=4;runtime_snapshot="
         << "objc3_runtime_copy_task_runtime_state_for_testing"
         << ";next_issue=M269-D001\n";
@@ -966,19 +966,19 @@ class Objc3IREmitter {
     // task-runtime helper ABI and snapshot boundary as the truthful runtime
     // contract above the C003 ABI packet without claiming broader scheduler
     // execution semantics yet.
-    out << "; part7_scheduler_executor_runtime_contract = "
-        << Objc3Part7SchedulerExecutorRuntimeSummary() << "\n";
+    out << "; concurrency_scheduler_executor_runtime_contract = "
+        << Objc3ConcurrencySchedulerExecutorRuntimeSummary() << "\n";
     // live task runtime anchor: publish the runnable helper-backed
     // execution boundary so supported task-runtime probes can prove that the
     // existing private runtime cluster is live, while broader metadata-export
     // gating remains intentionally deferred.
-    out << "; part7_live_task_runtime_integration = "
-        << Objc3Part7LiveTaskRuntimeIntegrationSummary() << "\n";
+    out << "; concurrency_live_task_runtime_integration = "
+        << Objc3ConcurrencyLiveTaskRuntimeIntegrationSummary() << "\n";
     // hardening anchor: publish the reset/autorelease/cancellation
     // stability packet above the live task runtime boundary so issue-local
     // probes can prove deterministic replay across scope and reset edges.
-    out << "; part7_task_runtime_hardening = "
-        << Objc3Part7TaskRuntimeHardeningSummary() << "\n";
+    out << "; concurrency_task_runtime_hardening = "
+        << Objc3ConcurrencyTaskRuntimeHardeningSummary() << "\n";
     if (!frontend_metadata_.lowering_throws_propagation_replay_key.empty()) {
       out << "; throws_propagation_lowering = "
           << frontend_metadata_.lowering_throws_propagation_replay_key << "\n";
@@ -1022,117 +1022,117 @@ class Objc3IREmitter {
           << frontend_metadata_.lowering_actor_lowering_metadata_replay_key
           << "\n";
     }
-    if (!frontend_metadata_.lowering_part9_dispatch_control_replay_key.empty()) {
+    if (!frontend_metadata_.lowering_dispatch_dispatch_control_replay_key.empty()) {
       out << "; dispatch_control_lowering_contract = "
-          << frontend_metadata_.lowering_part9_dispatch_control_replay_key
+          << frontend_metadata_.lowering_dispatch_dispatch_control_replay_key
           << "\n";
     }
-    if (!frontend_metadata_.lowering_part11_interop_replay_key.empty()) {
-      out << "; part11_interop_lowering_abi_contract = "
-          << frontend_metadata_.lowering_part11_interop_replay_key << "\n";
+    if (!frontend_metadata_.lowering_interop_interop_replay_key.empty()) {
+      out << "; interop_interop_lowering_abi_contract = "
+          << frontend_metadata_.lowering_interop_interop_replay_key << "\n";
     }
-    if (!frontend_metadata_.lowering_part11_foreign_call_lifetime_replay_key
+    if (!frontend_metadata_.lowering_interop_foreign_call_lifetime_replay_key
              .empty()) {
-      out << "; part11_foreign_call_and_lifetime_lowering = "
+      out << "; interop_foreign_call_and_lifetime_lowering = "
           << frontend_metadata_
-                 .lowering_part11_foreign_call_lifetime_replay_key
+                 .lowering_interop_foreign_call_lifetime_replay_key
           << "\n";
     }
     if (!frontend_metadata_
-             .lowering_part11_ffi_metadata_interface_preservation_key.empty()) {
-      out << "; part11_ffi_metadata_interface_preservation = "
+             .lowering_interop_ffi_metadata_interface_preservation_key.empty()) {
+      out << "; interop_ffi_metadata_interface_preservation = "
           << frontend_metadata_
-                 .lowering_part11_ffi_metadata_interface_preservation_key
+                 .lowering_interop_ffi_metadata_interface_preservation_key
           << "\n";
-      out << "; part11_bridge_packaging_toolchain_contract = "
-          << Objc3Part11BridgePackagingToolchainSummary() << "\n";
+      out << "; interop_bridge_packaging_toolchain_contract = "
+          << Objc3InteropBridgePackagingToolchainSummary() << "\n";
     }
     if (!frontend_metadata_
-             .lowering_part11_header_module_bridge_generation_key.empty()) {
-      out << "; part11_header_module_and_bridge_generation = "
+             .lowering_interop_header_module_bridge_generation_key.empty()) {
+      out << "; interop_header_module_and_bridge_generation = "
           << frontend_metadata_
-                 .lowering_part11_header_module_bridge_generation_key
+                 .lowering_interop_header_module_bridge_generation_key
           << "\n";
     }
-    if (!frontend_metadata_.lowering_part10_expansion_replay_key.empty()) {
-      out << "; part10_expansion_lowering_contract = "
-          << frontend_metadata_.lowering_part10_expansion_replay_key << "\n";
+    if (!frontend_metadata_.lowering_metaprogramming_expansion_replay_key.empty()) {
+      out << "; metaprogramming_expansion_lowering_contract = "
+          << frontend_metadata_.lowering_metaprogramming_expansion_replay_key << "\n";
     }
-    if (!frontend_metadata_.lowering_part10_synthesized_emission_replay_key.empty()) {
-      out << "; part10_synthesized_ast_ir_emission = "
-          << frontend_metadata_.lowering_part10_synthesized_emission_replay_key
+    if (!frontend_metadata_.lowering_metaprogramming_synthesized_emission_replay_key.empty()) {
+      out << "; metaprogramming_synthesized_ast_ir_emission = "
+          << frontend_metadata_.lowering_metaprogramming_synthesized_emission_replay_key
           << "\n";
     }
     if (!frontend_metadata_
-             .lowering_part10_module_interface_replay_preservation_key.empty()) {
-      out << "; part10_module_interface_replay_preservation = "
+             .lowering_metaprogramming_module_interface_replay_preservation_key.empty()) {
+      out << "; metaprogramming_module_interface_replay_preservation = "
           << frontend_metadata_
-                 .lowering_part10_module_interface_replay_preservation_key
+                 .lowering_metaprogramming_module_interface_replay_preservation_key
           << "\n";
     }
-    if (!frontend_metadata_.lowering_part10_synthesized_emission_replay_key.empty() ||
+    if (!frontend_metadata_.lowering_metaprogramming_synthesized_emission_replay_key.empty() ||
         !frontend_metadata_
-             .lowering_part10_module_interface_replay_preservation_key.empty()) {
-      out << "; part10_expansion_host_runtime_boundary = "
-          << Objc3Part10ExpansionHostRuntimeBoundarySummary() << "\n";
+             .lowering_metaprogramming_module_interface_replay_preservation_key.empty()) {
+      out << "; metaprogramming_expansion_host_runtime_boundary = "
+          << Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary() << "\n";
     }
     if (!frontend_metadata_
-             .lowering_part9_dispatch_metadata_interface_preservation_key.empty()) {
-      out << "; part9_dispatch_metadata_interface_preservation = "
+             .lowering_dispatch_dispatch_metadata_interface_preservation_key.empty()) {
+      out << "; dispatch_dispatch_metadata_interface_preservation = "
           << frontend_metadata_
-                 .lowering_part9_dispatch_metadata_interface_preservation_key
+                 .lowering_dispatch_dispatch_metadata_interface_preservation_key
           << "\n";
     }
-    if (!frontend_metadata_.lowering_part8_system_extension_replay_key.empty()) {
+    if (!frontend_metadata_.lowering_ownership_system_extension_replay_key.empty()) {
       out << "; system_extension_lowering_contract = "
-          << frontend_metadata_.lowering_part8_system_extension_replay_key
+          << frontend_metadata_.lowering_ownership_system_extension_replay_key
           << "\n";
     }
     if (!frontend_metadata_
-             .part8_borrowed_retainable_abi_completion_replay_key.empty()) {
+             .ownership_borrowed_retainable_abi_completion_replay_key.empty()) {
       // ABI/artifact completion anchor: publish the dedicated Part 8
       // borrowed/retainable ABI packet above the frozen lowering contract so
       // lane-D runtime work consumes stable borrowed-return and family-call
       // inventories instead of rediscovering them from raw IR.
-      out << "; part8_borrowed_retainable_abi_completion = contract="
-          << kObjc3Part8BorrowedRetainableAbiCompletionContractId
+      out << "; ownership_borrowed_retainable_abi_completion = contract="
+          << kObjc3OwnershipBorrowedRetainableAbiCompletionContractId
           << ";surface="
-          << kObjc3Part8BorrowedRetainableAbiCompletionSurfacePath
+          << kObjc3OwnershipBorrowedRetainableAbiCompletionSurfacePath
           << ";replay_key="
-          << frontend_metadata_.part8_borrowed_retainable_abi_completion_replay_key
+          << frontend_metadata_.ownership_borrowed_retainable_abi_completion_replay_key
           << ";returns_borrowed_attribute_sites="
           << frontend_metadata_
-                 .part8_borrowed_retainable_returns_borrowed_attribute_sites
+                 .ownership_borrowed_retainable_returns_borrowed_attribute_sites
           << ";family_retain_sites="
-          << frontend_metadata_.part8_borrowed_retainable_family_retain_sites
+          << frontend_metadata_.ownership_borrowed_retainable_family_retain_sites
           << ";family_release_sites="
-          << frontend_metadata_.part8_borrowed_retainable_family_release_sites
+          << frontend_metadata_.ownership_borrowed_retainable_family_release_sites
           << ";family_autorelease_sites="
           << frontend_metadata_
-                 .part8_borrowed_retainable_family_autorelease_sites
+                 .ownership_borrowed_retainable_family_autorelease_sites
           << ";compatibility_returns_retained_sites="
           << frontend_metadata_
-                 .part8_borrowed_retainable_compatibility_returns_retained_sites
+                 .ownership_borrowed_retainable_compatibility_returns_retained_sites
           << ";compatibility_returns_not_retained_sites="
           << frontend_metadata_
-                 .part8_borrowed_retainable_compatibility_returns_not_retained_sites
+                 .ownership_borrowed_retainable_compatibility_returns_not_retained_sites
           << ";compatibility_consumed_sites="
           << frontend_metadata_
-                 .part8_borrowed_retainable_compatibility_consumed_sites
+                 .ownership_borrowed_retainable_compatibility_consumed_sites
           << ";next_issue=M271-D001\n";
       // runtime/helper-freeze anchor: publish the private Part 8
       // runtime/helper contract above the existing lowering and ABI packets so
       // emitted IR truthfully advertises that cleanup/resource proof and
       // retainable-family interop still reuse the existing ARC/autorelease
       // helper cluster rather than a new runtime subsystem.
-      out << "; part8_system_helper_runtime_contract = "
-          << Objc3Part8SystemHelperRuntimeContractSummary() << "\n";
+      out << "; ownership_system_helper_runtime_contract = "
+          << Objc3OwnershipSystemHelperRuntimeContractSummary() << "\n";
       // live runtime-integration anchor: publish the executable Part
       // 8 runtime boundary so linked probes can prove cleanup/resource and
       // retainable-family helper traffic through the emitted function body
       // rather than stopping at the frozen contract summary.
-      out << "; part8_live_cleanup_retainable_runtime_integration = "
-          << Objc3Part8LiveCleanupRetainableIntegrationSummary() << "\n";
+      out << "; ownership_live_cleanup_retainable_runtime_integration = "
+          << Objc3OwnershipLiveCleanupRetainableIntegrationSummary() << "\n";
     }
     if (!frontend_metadata_
              .lowering_task_runtime_interop_cancellation_replay_key.empty()) {
@@ -2552,221 +2552,221 @@ class Objc3IREmitter {
         << "\n";
     out << "; frontend_objc_dispatch_control_lowering_profile = direct_call_candidate_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_direct_call_candidate_sites
+               .dispatch_dispatch_control_lowering_direct_call_candidate_sites
         << ", direct_members_defaulted_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_direct_members_defaulted_sites
+               .dispatch_dispatch_control_lowering_direct_members_defaulted_sites
         << ", dynamic_opt_out_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_dynamic_opt_out_sites
+               .dispatch_dispatch_control_lowering_dynamic_opt_out_sites
         << ", final_container_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_final_container_sites
+               .dispatch_dispatch_control_lowering_final_container_sites
         << ", sealed_container_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_sealed_container_sites
+               .dispatch_dispatch_control_lowering_sealed_container_sites
         << ", override_legality_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_override_legality_sites
+               .dispatch_dispatch_control_lowering_override_legality_sites
         << ", metadata_preserved_callable_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_metadata_preserved_callable_sites
+               .dispatch_dispatch_control_lowering_metadata_preserved_callable_sites
         << ", metadata_preserved_container_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_metadata_preserved_container_sites
+               .dispatch_dispatch_control_lowering_metadata_preserved_container_sites
         << ", guard_blocked_sites="
-        << frontend_metadata_.part9_dispatch_control_lowering_guard_blocked_sites
+        << frontend_metadata_.dispatch_dispatch_control_lowering_guard_blocked_sites
         << ", contract_violation_sites="
         << frontend_metadata_
-               .part9_dispatch_control_lowering_contract_violation_sites
-        << ", deterministic_part9_dispatch_control_lowering_handoff="
+               .dispatch_dispatch_control_lowering_contract_violation_sites
+        << ", deterministic_dispatch_dispatch_control_lowering_handoff="
         << (frontend_metadata_
-                    .deterministic_part9_dispatch_control_lowering_handoff
+                    .deterministic_dispatch_dispatch_control_lowering_handoff
                 ? "true"
                 : "false")
         << "\n";
-    out << "; frontend_objc_part11_interop_lowering_profile = foreign_callable_sites="
-        << frontend_metadata_.part11_interop_lowering_foreign_callable_sites
+    out << "; frontend_objc_interop_interop_lowering_profile = foreign_callable_sites="
+        << frontend_metadata_.interop_interop_lowering_foreign_callable_sites
         << ", c_foreign_callable_sites="
-        << frontend_metadata_.part11_interop_lowering_c_foreign_callable_sites
+        << frontend_metadata_.interop_interop_lowering_c_foreign_callable_sites
         << ", objc_runtime_parity_callable_sites="
-        << frontend_metadata_.part11_interop_lowering_objc_runtime_parity_callable_sites
+        << frontend_metadata_.interop_interop_lowering_objc_runtime_parity_callable_sites
         << ", ownership_bridge_callable_sites="
-        << frontend_metadata_.part11_interop_lowering_ownership_bridge_callable_sites
+        << frontend_metadata_.interop_interop_lowering_ownership_bridge_callable_sites
         << ", error_surface_sites="
-        << frontend_metadata_.part11_interop_lowering_error_surface_sites
+        << frontend_metadata_.interop_interop_lowering_error_surface_sites
         << ", async_boundary_sites="
-        << frontend_metadata_.part11_interop_lowering_async_boundary_sites
+        << frontend_metadata_.interop_interop_lowering_async_boundary_sites
         << ", swift_concurrency_metadata_sites="
-        << frontend_metadata_.part11_interop_lowering_swift_concurrency_metadata_sites
+        << frontend_metadata_.interop_interop_lowering_swift_concurrency_metadata_sites
         << ", interface_preserved_foreign_callable_sites="
-        << frontend_metadata_.part11_interop_lowering_interface_preserved_foreign_callable_sites
+        << frontend_metadata_.interop_interop_lowering_interface_preserved_foreign_callable_sites
         << ", interface_preserved_metadata_annotation_sites="
-        << frontend_metadata_.part11_interop_lowering_interface_preserved_metadata_annotation_sites
+        << frontend_metadata_.interop_interop_lowering_interface_preserved_metadata_annotation_sites
         << ", guard_blocked_sites="
-        << frontend_metadata_.part11_interop_lowering_guard_blocked_sites
+        << frontend_metadata_.interop_interop_lowering_guard_blocked_sites
         << ", contract_violation_sites="
-        << frontend_metadata_.part11_interop_lowering_contract_violation_sites
-        << ", deterministic_part11_interop_lowering_handoff="
-        << (frontend_metadata_.deterministic_part11_interop_lowering_handoff
+        << frontend_metadata_.interop_interop_lowering_contract_violation_sites
+        << ", deterministic_interop_interop_lowering_handoff="
+        << (frontend_metadata_.deterministic_interop_interop_lowering_handoff
                 ? "true"
                 : "false")
         << "\n";
-    out << "; frontend_objc_part10_expansion_lowering_profile = derive_inventory_sites="
-        << frontend_metadata_.part10_expansion_lowering_derive_inventory_sites
+    out << "; frontend_objc_metaprogramming_expansion_lowering_profile = derive_inventory_sites="
+        << frontend_metadata_.metaprogramming_expansion_lowering_derive_inventory_sites
         << ", derived_selector_artifact_sites="
         << frontend_metadata_
-               .part10_expansion_lowering_derived_selector_artifact_sites
+               .metaprogramming_expansion_lowering_derived_selector_artifact_sites
         << ", macro_replay_visible_sites="
         << frontend_metadata_
-               .part10_expansion_lowering_macro_replay_visible_sites
+               .metaprogramming_expansion_lowering_macro_replay_visible_sites
         << ", property_behavior_sites="
-        << frontend_metadata_.part10_expansion_lowering_property_behavior_sites
+        << frontend_metadata_.metaprogramming_expansion_lowering_property_behavior_sites
         << ", synthesized_binding_sites="
-        << frontend_metadata_.part10_expansion_lowering_synthesized_binding_sites
+        << frontend_metadata_.metaprogramming_expansion_lowering_synthesized_binding_sites
         << ", synthesized_getter_sites="
-        << frontend_metadata_.part10_expansion_lowering_synthesized_getter_sites
+        << frontend_metadata_.metaprogramming_expansion_lowering_synthesized_getter_sites
         << ", synthesized_setter_sites="
-        << frontend_metadata_.part10_expansion_lowering_synthesized_setter_sites
+        << frontend_metadata_.metaprogramming_expansion_lowering_synthesized_setter_sites
         << ", replay_visible_metadata_sites="
         << frontend_metadata_
-               .part10_expansion_lowering_replay_visible_metadata_sites
+               .metaprogramming_expansion_lowering_replay_visible_metadata_sites
         << ", guard_blocked_sites="
-        << frontend_metadata_.part10_expansion_lowering_guard_blocked_sites
+        << frontend_metadata_.metaprogramming_expansion_lowering_guard_blocked_sites
         << ", contract_violation_sites="
         << frontend_metadata_
-               .part10_expansion_lowering_contract_violation_sites
-        << ", deterministic_part10_expansion_lowering_handoff="
-        << (frontend_metadata_.deterministic_part10_expansion_lowering_handoff
+               .metaprogramming_expansion_lowering_contract_violation_sites
+        << ", deterministic_metaprogramming_expansion_lowering_handoff="
+        << (frontend_metadata_.deterministic_metaprogramming_expansion_lowering_handoff
                 ? "true"
                 : "false")
         << "\n";
-    out << "; frontend_objc_part10_synthesized_emission_profile = emitted_derive_method_sites="
-        << frontend_metadata_.part10_synthesized_emitted_derive_method_sites
+    out << "; frontend_objc_metaprogramming_synthesized_emission_profile = emitted_derive_method_sites="
+        << frontend_metadata_.metaprogramming_synthesized_emitted_derive_method_sites
         << ", emitted_macro_artifact_sites="
-        << frontend_metadata_.part10_synthesized_emitted_macro_artifact_sites
+        << frontend_metadata_.metaprogramming_synthesized_emitted_macro_artifact_sites
         << ", emitted_property_behavior_artifact_sites="
         << frontend_metadata_
-               .part10_synthesized_emitted_property_behavior_artifact_sites
+               .metaprogramming_synthesized_emitted_property_behavior_artifact_sites
         << ", emitted_global_artifact_sites="
-        << frontend_metadata_.part10_synthesized_emitted_global_artifact_sites
+        << frontend_metadata_.metaprogramming_synthesized_emitted_global_artifact_sites
         << ", emitted_runtime_method_list_sites="
         << frontend_metadata_
-               .part10_synthesized_emitted_runtime_method_list_sites
+               .metaprogramming_synthesized_emitted_runtime_method_list_sites
         << ", guard_blocked_sites="
-        << frontend_metadata_.part10_synthesized_guard_blocked_sites
+        << frontend_metadata_.metaprogramming_synthesized_guard_blocked_sites
         << ", contract_violation_sites="
-        << frontend_metadata_.part10_synthesized_contract_violation_sites
-        << ", deterministic_part10_synthesized_emission_handoff="
-        << (frontend_metadata_.deterministic_part10_synthesized_emission_handoff
+        << frontend_metadata_.metaprogramming_synthesized_contract_violation_sites
+        << ", deterministic_metaprogramming_synthesized_emission_handoff="
+        << (frontend_metadata_.deterministic_metaprogramming_synthesized_emission_handoff
                 ? "true"
                 : "false")
         << "\n";
     out << "; frontend_objc_dispatch_metadata_interface_profile = local_direct_callable_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_local_direct_callable_record_count
+               .dispatch_dispatch_metadata_local_direct_callable_record_count
         << ", local_final_callable_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_local_final_callable_record_count
+               .dispatch_dispatch_metadata_local_final_callable_record_count
         << ", local_final_container_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_local_final_container_record_count
+               .dispatch_dispatch_metadata_local_final_container_record_count
         << ", local_sealed_container_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_local_sealed_container_record_count
+               .dispatch_dispatch_metadata_local_sealed_container_record_count
         << ", imported_module_count="
-        << frontend_metadata_.part9_dispatch_metadata_imported_module_count
+        << frontend_metadata_.dispatch_dispatch_metadata_imported_module_count
         << ", imported_direct_callable_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_imported_direct_callable_record_count
+               .dispatch_dispatch_metadata_imported_direct_callable_record_count
         << ", imported_final_callable_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_imported_final_callable_record_count
+               .dispatch_dispatch_metadata_imported_final_callable_record_count
         << ", imported_final_container_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_imported_final_container_record_count
+               .dispatch_dispatch_metadata_imported_final_container_record_count
         << ", imported_sealed_container_record_count="
         << frontend_metadata_
-               .part9_dispatch_metadata_imported_sealed_container_record_count
+               .dispatch_dispatch_metadata_imported_sealed_container_record_count
         << ", runtime_import_artifact_ready="
         << (frontend_metadata_
-                    .part9_dispatch_metadata_runtime_import_artifact_ready
+                    .dispatch_dispatch_metadata_runtime_import_artifact_ready
                 ? "true"
                 : "false")
         << ", separate_compilation_preservation_ready="
         << (frontend_metadata_
-                    .part9_dispatch_metadata_separate_compilation_preservation_ready
+                    .dispatch_dispatch_metadata_separate_compilation_preservation_ready
                 ? "true"
                 : "false")
-        << ", deterministic_part9_dispatch_metadata_interface_handoff="
+        << ", deterministic_dispatch_dispatch_metadata_interface_handoff="
         << (frontend_metadata_
-                    .deterministic_part9_dispatch_metadata_interface_handoff
+                    .deterministic_dispatch_dispatch_metadata_interface_handoff
                 ? "true"
                 : "false")
         << "\n";
     out << "; frontend_objc_system_extension_lowering_profile = cleanup_hook_sites="
-        << frontend_metadata_.part8_system_extension_lowering_cleanup_hook_sites
+        << frontend_metadata_.ownership_system_extension_lowering_cleanup_hook_sites
         << ", resource_local_sites="
-        << frontend_metadata_.part8_system_extension_lowering_resource_local_sites
+        << frontend_metadata_.ownership_system_extension_lowering_resource_local_sites
         << ", cleanup_owned_local_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_cleanup_owned_local_sites
+               .ownership_system_extension_lowering_cleanup_owned_local_sites
         << ", resource_move_capture_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_resource_move_capture_sites
+               .ownership_system_extension_lowering_resource_move_capture_sites
         << ", borrowed_parameter_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_borrowed_parameter_sites
+               .ownership_system_extension_lowering_borrowed_parameter_sites
         << ", borrowed_return_callable_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_borrowed_return_callable_sites
+               .ownership_system_extension_lowering_borrowed_return_callable_sites
         << ", borrowed_escape_candidate_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_borrowed_escape_candidate_sites
+               .ownership_system_extension_lowering_borrowed_escape_candidate_sites
         << ", explicit_capture_item_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_explicit_capture_item_sites
+               .ownership_system_extension_lowering_explicit_capture_item_sites
         << ", retainable_family_callable_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_retainable_family_callable_sites
+               .ownership_system_extension_lowering_retainable_family_callable_sites
         << ", retainable_family_operation_callable_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_retainable_family_operation_callable_sites
+               .ownership_system_extension_lowering_retainable_family_operation_callable_sites
         << ", retainable_family_alias_callable_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_retainable_family_alias_callable_sites
+               .ownership_system_extension_lowering_retainable_family_alias_callable_sites
         << ", guard_blocked_sites="
-        << frontend_metadata_.part8_system_extension_lowering_guard_blocked_sites
+        << frontend_metadata_.ownership_system_extension_lowering_guard_blocked_sites
         << ", contract_violation_sites="
         << frontend_metadata_
-               .part8_system_extension_lowering_contract_violation_sites
-        << ", deterministic_part8_system_extension_lowering_handoff="
+               .ownership_system_extension_lowering_contract_violation_sites
+        << ", deterministic_ownership_system_extension_lowering_handoff="
         << (frontend_metadata_
-                    .deterministic_part8_system_extension_lowering_handoff
+                    .deterministic_ownership_system_extension_lowering_handoff
                 ? "true"
                 : "false")
         << "\n";
-    out << "; frontend_objc_part8_borrowed_retainable_abi_profile = returns_borrowed_attribute_sites="
+    out << "; frontend_objc_ownership_borrowed_retainable_abi_profile = returns_borrowed_attribute_sites="
         << frontend_metadata_
-               .part8_borrowed_retainable_returns_borrowed_attribute_sites
+               .ownership_borrowed_retainable_returns_borrowed_attribute_sites
         << ", family_retain_sites="
-        << frontend_metadata_.part8_borrowed_retainable_family_retain_sites
+        << frontend_metadata_.ownership_borrowed_retainable_family_retain_sites
         << ", family_release_sites="
-        << frontend_metadata_.part8_borrowed_retainable_family_release_sites
+        << frontend_metadata_.ownership_borrowed_retainable_family_release_sites
         << ", family_autorelease_sites="
-        << frontend_metadata_.part8_borrowed_retainable_family_autorelease_sites
+        << frontend_metadata_.ownership_borrowed_retainable_family_autorelease_sites
         << ", compatibility_returns_retained_sites="
         << frontend_metadata_
-               .part8_borrowed_retainable_compatibility_returns_retained_sites
+               .ownership_borrowed_retainable_compatibility_returns_retained_sites
         << ", compatibility_returns_not_retained_sites="
         << frontend_metadata_
-               .part8_borrowed_retainable_compatibility_returns_not_retained_sites
+               .ownership_borrowed_retainable_compatibility_returns_not_retained_sites
         << ", compatibility_consumed_sites="
         << frontend_metadata_
-               .part8_borrowed_retainable_compatibility_consumed_sites
-        << ", deterministic_part8_borrowed_retainable_abi_completion_handoff="
+               .ownership_borrowed_retainable_compatibility_consumed_sites
+        << ", deterministic_ownership_borrowed_retainable_abi_completion_handoff="
         << (frontend_metadata_
-                    .deterministic_part8_borrowed_retainable_abi_completion_handoff
+                    .deterministic_ownership_borrowed_retainable_abi_completion_handoff
                 ? "true"
                 : "false")
         << "\n";
@@ -2972,9 +2972,9 @@ class Objc3IREmitter {
           << ";selector_pool_count=" << selector_pool_globals_.size()
           << ";direct_dispatch_candidate_sites="
           << frontend_metadata_
-                 .part9_dispatch_control_lowering_direct_call_candidate_sites
+                 .dispatch_dispatch_control_lowering_direct_call_candidate_sites
           << ";dynamic_opt_out_sites="
-          << frontend_metadata_.part9_dispatch_control_lowering_dynamic_opt_out_sites
+          << frontend_metadata_.dispatch_dispatch_control_lowering_dynamic_opt_out_sites
           << ";selector_pool_symbol="
           << (selector_pool_globals_.empty() ? "null"
                                              : "@__objc3_sec_selector_pool")
@@ -3000,9 +3000,9 @@ class Objc3IREmitter {
     bool return_insert_release = false;
     bool return_insert_autorelease = false;
     bool return_has_lifetime_bridge = false;
-    bool part11_foreign_surface = false;
-    bool part11_c_foreign_callable = false;
-    bool part11_metadata_preservation = false;
+    bool interop_foreign_surface = false;
+    bool interop_c_foreign_callable = false;
+    bool interop_metadata_preservation = false;
     std::size_t ns_error_out_param_index = std::numeric_limits<std::size_t>::max();
     int objc_status_code_success_literal = 0;
     std::string objc_status_code_mapping_symbol;
@@ -3034,7 +3034,7 @@ class Objc3IREmitter {
     std::size_t scope_depth = 0;
     std::size_t autoreleasepool_depth = 0;
     std::size_t pending_block_dispose_depth = 0;
-    std::size_t part8_cleanup_depth = 0;
+    std::size_t ownership_cleanup_depth = 0;
     std::size_t arc_cleanup_depth = 0;
   };
 
@@ -3058,7 +3058,7 @@ class Objc3IREmitter {
     std::string storage_ptr;
   };
 
-  struct PendingPart8CleanupCall {
+  struct PendingOwnershipCleanupCall {
     std::string binding_name;
     std::string storage_ptr;
     std::string cleanup_function_symbol;
@@ -3074,12 +3074,12 @@ class Objc3IREmitter {
     std::vector<std::unordered_map<std::string, std::string>> scopes;
     std::unordered_map<std::string, BlockBinding> block_bindings;
     std::vector<PendingBlockDisposeCall> pending_block_dispose_calls;
-    std::vector<PendingPart8CleanupCall> pending_part8_cleanup_calls;
+    std::vector<PendingOwnershipCleanupCall> pending_ownership_cleanup_calls;
     std::vector<ControlLabels> control_stack;
     std::vector<std::string> autoreleasepool_scope_symbols;
     std::vector<std::vector<const BlockStmt *>> pending_defer_scope_blocks;
     std::vector<std::size_t> pending_block_dispose_scope_depths;
-    std::vector<std::size_t> pending_part8_cleanup_scope_depths;
+    std::vector<std::size_t> pending_ownership_cleanup_scope_depths;
     std::vector<std::size_t> arc_cleanup_scope_depths;
     std::unordered_set<std::string> nil_bound_ptrs;
     std::unordered_set<std::string> nonzero_bound_ptrs;
@@ -3088,14 +3088,14 @@ class Objc3IREmitter {
     std::vector<std::string> arc_owned_cleanup_ptrs;
     std::unordered_set<std::string> arc_owned_cleanup_ptr_set;
     std::unordered_set<std::string> arc_owned_storage_ptrs;
-    std::unordered_map<std::string, std::size_t> part8_cleanup_call_indices;
+    std::unordered_map<std::string, std::size_t> ownership_cleanup_call_indices;
     struct ErrorHandlerFrame {
       std::string error_slot_ptr;
       std::string dispatch_label;
       std::size_t scope_depth = 0;
       std::size_t autoreleasepool_depth = 0;
       std::size_t pending_block_dispose_depth = 0;
-      std::size_t part8_cleanup_depth = 0;
+      std::size_t ownership_cleanup_depth = 0;
       std::size_t arc_cleanup_depth = 0;
     };
     std::vector<ErrorHandlerFrame> error_handler_stack;
@@ -3205,7 +3205,7 @@ class Objc3IREmitter {
     return false;
   }
 
-  bool TryEmitPart7TaskRuntimeLoweringCall(const Expr *expr, FunctionContext &ctx,
+  bool TryEmitConcurrencyTaskRuntimeLoweringCall(const Expr *expr, FunctionContext &ctx,
                                            std::string &result_out) const {
     if (expr == nullptr || !ctx.async_runtime_helper_enabled) {
       return false;
@@ -3279,7 +3279,7 @@ class Objc3IREmitter {
     return false;
   }
 
-  bool TryEmitPart7ActorLoweringCall(const Expr *expr, FunctionContext &ctx,
+  bool TryEmitConcurrencyActorLoweringCall(const Expr *expr, FunctionContext &ctx,
                                      std::string &result_out) const {
     if (expr == nullptr || !ctx.actor_runtime_helper_enabled) {
       return false;
@@ -3441,23 +3441,23 @@ class Objc3IREmitter {
     return method.return_ownership_insert_autorelease;
   }
 
-  static bool HasPart11InteropSurface(const FunctionDecl &fn) {
+  static bool HasInteropInteropSurface(const FunctionDecl &fn) {
     return fn.objc_foreign_declared || fn.objc_import_module_declared ||
            fn.objc_cxx_name_declared || fn.objc_header_name_declared ||
            fn.objc_swift_name_declared || fn.objc_swift_private_declared;
   }
 
-  static bool HasPart11LifetimeBridge(const FuncParam &param) {
+  static bool HasInteropLifetimeBridge(const FuncParam &param) {
     return !param.ownership_lifetime_profile.empty();
   }
 
-  static bool HasPart11LifetimeBridge(const FunctionDecl &fn) {
+  static bool HasInteropLifetimeBridge(const FunctionDecl &fn) {
     if (!fn.return_ownership_lifetime_profile.empty()) {
       return true;
     }
     return std::any_of(fn.params.begin(), fn.params.end(),
                        [](const FuncParam &param) {
-                         return HasPart11LifetimeBridge(param);
+                         return HasInteropLifetimeBridge(param);
                        });
   }
 
@@ -3476,9 +3476,9 @@ class Objc3IREmitter {
           EffectiveArcReturnInsertAutorelease(fn);
       signature.return_has_lifetime_bridge =
           !fn.return_ownership_lifetime_profile.empty();
-      signature.part11_foreign_surface = HasPart11InteropSurface(fn);
-      signature.part11_c_foreign_callable = fn.objc_foreign_declared;
-      signature.part11_metadata_preservation = HasPart11InteropSurface(fn);
+      signature.interop_foreign_surface = HasInteropInteropSurface(fn);
+      signature.interop_c_foreign_callable = fn.objc_foreign_declared;
+      signature.interop_metadata_preservation = HasInteropInteropSurface(fn);
       if (!fn.objc_status_code_success_literal.empty()) {
         try {
           signature.objc_status_code_success_literal =
@@ -3502,7 +3502,7 @@ class Objc3IREmitter {
         signature.param_insert_autorelease.push_back(
             param.ownership_insert_autorelease);
         signature.param_has_lifetime_bridge.push_back(
-            HasPart11LifetimeBridge(param));
+            HasInteropLifetimeBridge(param));
         if (signature.ns_error_out_param_index ==
                 std::numeric_limits<std::size_t>::max() &&
             IsNSErrorOutParameterSite(param)) {
@@ -3923,32 +3923,32 @@ class Objc3IREmitter {
     out << "!objc3.objc_public_private_api_partition_lowering = !{!31}\n";
     out << "!objc3.objc_incremental_module_cache_invalidation_lowering = !{!32}\n";
     out << "!objc3.objc_cross_module_conformance_lowering = !{!33}\n";
-    out << "!objc3.objc_part6_throws_abi_propagation_lowering = !{!87}\n";
-    out << "!objc3.objc_part6_result_and_bridging_artifact_replay = !{!88}\n";
-    out << "!objc3.objc_part6_error_runtime_bridge_helper = !{!89}\n";
-    out << "!objc3.objc_part6_live_error_runtime_integration = !{!90}\n";
-    out << "!objc3.objc_part7_continuation_runtime_helper = !{!91}\n";
-    out << "!objc3.objc_part7_live_continuation_runtime_integration = !{!92}\n";
-    out << "!objc3.objc_part7_task_runtime_abi_completion = !{!93}\n";
-    out << "!objc3.objc_part7_scheduler_executor_runtime_contract = !{!94}\n";
-    out << "!objc3.objc_part7_live_task_runtime_integration = !{!95}\n";
-    out << "!objc3.objc_part7_task_runtime_hardening = !{!96}\n";
-    out << "!objc3.objc_part7_actor_lowering_and_metadata = !{!97}\n";
-    out << "!objc3.objc_part9_dispatch_control_lowering_contract = !{!102}\n";
-    out << "!objc3.objc_part11_interop_lowering_and_abi_contract = !{!108}\n";
-    out << "!objc3.objc_part11_foreign_call_and_lifetime_lowering = !{!109}\n";
-    out << "!objc3.objc_part11_ffi_metadata_and_interface_preservation = !{!110}\n";
-    out << "!objc3.objc_part11_bridge_packaging_and_toolchain_contract = !{!111}\n";
-    out << "!objc3.objc_part11_header_module_and_bridge_generation = !{!112}\n";
-    out << "!objc3.objc_part10_expansion_and_lowering_contract = !{!104}\n";
-    out << "!objc3.objc_part10_synthesized_ast_and_ir_emission = !{!105}\n";
-    out << "!objc3.objc_part10_module_interface_and_replay_preservation = !{!106}\n";
-    out << "!objc3.objc_part10_expansion_host_and_runtime_boundary = !{!107}\n";
-    out << "!objc3.objc_part9_dispatch_metadata_and_interface_preservation = !{!103}\n";
-    out << "!objc3.objc_part8_system_extension_lowering_contract = !{!98}\n";
-    out << "!objc3.objc_part8_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
-    out << "!objc3.objc_part8_system_helper_runtime_contract = !{!100}\n";
-    out << "!objc3.objc_part8_live_cleanup_retainable_runtime_integration = !{!101}\n";
+    out << "!objc3.objc_error_handling_throws_abi_propagation_lowering = !{!87}\n";
+    out << "!objc3.objc_error_handling_result_and_bridging_artifact_replay = !{!88}\n";
+    out << "!objc3.objc_error_handling_error_runtime_bridge_helper = !{!89}\n";
+    out << "!objc3.objc_error_handling_live_error_runtime_integration = !{!90}\n";
+    out << "!objc3.objc_concurrency_continuation_runtime_helper = !{!91}\n";
+    out << "!objc3.objc_concurrency_live_continuation_runtime_integration = !{!92}\n";
+    out << "!objc3.objc_concurrency_task_runtime_abi_completion = !{!93}\n";
+    out << "!objc3.objc_concurrency_scheduler_executor_runtime_contract = !{!94}\n";
+    out << "!objc3.objc_concurrency_live_task_runtime_integration = !{!95}\n";
+    out << "!objc3.objc_concurrency_task_runtime_hardening = !{!96}\n";
+    out << "!objc3.objc_concurrency_actor_lowering_and_metadata = !{!97}\n";
+    out << "!objc3.objc_dispatch_dispatch_control_lowering_contract = !{!102}\n";
+    out << "!objc3.objc_interop_interop_lowering_and_abi_contract = !{!108}\n";
+    out << "!objc3.objc_interop_foreign_call_and_lifetime_lowering = !{!109}\n";
+    out << "!objc3.objc_interop_ffi_metadata_and_interface_preservation = !{!110}\n";
+    out << "!objc3.objc_interop_bridge_packaging_and_toolchain_contract = !{!111}\n";
+    out << "!objc3.objc_interop_header_module_and_bridge_generation = !{!112}\n";
+    out << "!objc3.objc_metaprogramming_expansion_and_lowering_contract = !{!104}\n";
+    out << "!objc3.objc_metaprogramming_synthesized_ast_and_ir_emission = !{!105}\n";
+    out << "!objc3.objc_metaprogramming_module_interface_and_replay_preservation = !{!106}\n";
+    out << "!objc3.objc_metaprogramming_expansion_host_and_runtime_boundary = !{!107}\n";
+    out << "!objc3.objc_dispatch_dispatch_metadata_and_interface_preservation = !{!103}\n";
+    out << "!objc3.objc_ownership_system_extension_lowering_contract = !{!98}\n";
+    out << "!objc3.objc_ownership_borrowed_pointer_and_retainable_family_abi_completion = !{!99}\n";
+    out << "!objc3.objc_ownership_system_helper_runtime_contract = !{!100}\n";
+    out << "!objc3.objc_ownership_live_cleanup_retainable_runtime_integration = !{!101}\n";
     out << "!objc3.objc_throws_propagation_lowering = !{!34}\n";
     out << "!objc3.objc_unwind_cleanup_lowering = !{!35}\n";
     out << "!objc3.objc_ns_error_bridging_lowering = !{!36}\n";
@@ -5474,11 +5474,11 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RunnableArcRuntimeGateFailClosedModel)
         << "\"}\n";
     out << "!87 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part6ThrowsAbiPropagationLoweringContractId)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part6ThrowsAbiPropagationLoweringSourceModel)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingThrowsAbiPropagationLoweringSourceModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part6ThrowsAbiPropagationLoweringAbiModel)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingThrowsAbiPropagationLoweringAbiModel)
         << "\", !\""
         << EscapeCStringLiteral(frontend_metadata_.lowering_throws_propagation_replay_key)
         << "\", !\""
@@ -5504,55 +5504,55 @@ class Objc3IREmitter {
                     : 0)
         << ", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel)
+               kObjc3ErrorHandlingThrowsAbiPropagationLoweringFailClosedModel)
         << "\"}\n";
     out << "!88 = !{!\""
         << EscapeCStringLiteral(
-               kObjc3Part6ResultAndBridgingArtifactReplayContractId)
+               kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6ResultAndBridgingArtifactReplaySourceModel)
+               kObjc3ErrorHandlingResultAndBridgingArtifactReplaySourceModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6ResultAndBridgingArtifactReplayModel)
+               kObjc3ErrorHandlingResultAndBridgingArtifactReplayModel)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_
-                   .lowering_part6_result_and_bridging_artifact_replay_key)
+                   .lowering_error_handling_result_and_bridging_artifact_replay_key)
         << "\", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .imported_part6_result_and_bridging_artifact_modules)
+                   .imported_error_handling_result_and_bridging_artifact_modules)
         << ", i1 "
         << (frontend_metadata_
-                    .part6_result_and_bridging_binary_artifact_replay_ready
+                    .error_handling_result_and_bridging_binary_artifact_replay_ready
                     ? 1
                     : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .part6_result_and_bridging_runtime_import_artifact_ready
+                    .error_handling_result_and_bridging_runtime_import_artifact_ready
                     ? 1
                     : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .part6_result_and_bridging_separate_compilation_replay_ready
+                    .error_handling_result_and_bridging_separate_compilation_replay_ready
                     ? 1
                     : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part6_result_and_bridging_artifact_replay_handoff
+                    .deterministic_error_handling_result_and_bridging_artifact_replay_handoff
                     ? 1
                     : 0)
         << ", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel)
+               kObjc3ErrorHandlingResultAndBridgingArtifactReplayFailClosedModel)
         << "\"}\n";
     out << "!89 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part6ErrorRuntimeBridgeHelperContractId)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingErrorRuntimeBridgeHelperContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part6ErrorRuntimeBridgeHelperSourceModel)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingErrorRuntimeBridgeHelperSourceModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part6ErrorRuntimeBridgeHelperAbiModel)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingErrorRuntimeBridgeHelperAbiModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeStoreThrownErrorI32Symbol)
         << "\", !\""
@@ -5565,19 +5565,19 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeCatchMatchesErrorI32Symbol)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel)
+               kObjc3ErrorHandlingErrorRuntimeBridgeHelperFailClosedModel)
         << "\"}\n";
     out << "!90 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part6LiveErrorRuntimeIntegrationContractId)
+        << EscapeCStringLiteral(kObjc3ErrorHandlingLiveErrorRuntimeIntegrationContractId)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6LiveErrorRuntimeIntegrationSourceModel)
+               kObjc3ErrorHandlingLiveErrorRuntimeIntegrationSourceModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6LiveErrorRuntimeIntegrationExecutionModel)
+               kObjc3ErrorHandlingLiveErrorRuntimeIntegrationExecutionModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6LiveErrorRuntimeIntegrationPackagingModel)
+               kObjc3ErrorHandlingLiveErrorRuntimeIntegrationPackagingModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeStoreThrownErrorI32Symbol)
         << "\", !\""
@@ -5588,17 +5588,17 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeCatchMatchesErrorI32Symbol)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel)
+               kObjc3ErrorHandlingLiveErrorRuntimeIntegrationFailClosedModel)
         << "\"}\n";
     out << "!91 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part7ContinuationRuntimeHelperContractId)
+        << EscapeCStringLiteral(kObjc3ConcurrencyContinuationRuntimeHelperContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7ContinuationRuntimeHelperSourceModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyContinuationRuntimeHelperSourceModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7ContinuationRuntimeHelperAbiModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyContinuationRuntimeHelperAbiModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7ContinuationRuntimeHelperExecutionModel)
+               kObjc3ConcurrencyContinuationRuntimeHelperExecutionModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeAllocateAsyncContinuationI32Symbol)
         << "\", !\""
@@ -5608,20 +5608,20 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeResumeAsyncContinuationI32Symbol)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7ContinuationRuntimeHelperFailClosedModel)
+               kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel)
         << "\"}\n";
     out << "!92 = !{!\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveContinuationRuntimeIntegrationContractId)
+               kObjc3ConcurrencyLiveContinuationRuntimeIntegrationContractId)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveContinuationRuntimeIntegrationSourceModel)
+               kObjc3ConcurrencyLiveContinuationRuntimeIntegrationSourceModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveContinuationRuntimeIntegrationExecutionModel)
+               kObjc3ConcurrencyLiveContinuationRuntimeIntegrationExecutionModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveContinuationRuntimeIntegrationPackagingModel)
+               kObjc3ConcurrencyLiveContinuationRuntimeIntegrationPackagingModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeAllocateAsyncContinuationI32Symbol)
         << "\", !\""
@@ -5631,12 +5631,12 @@ class Objc3IREmitter {
         << EscapeCStringLiteral(kObjc3RuntimeResumeAsyncContinuationI32Symbol)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel)
+               kObjc3ConcurrencyLiveContinuationRuntimeIntegrationFailClosedModel)
         << "\"}\n";
     out << "!93 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeAbiCompletionContractId)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeAbiCompletionContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeAbiCompletionSurfacePath)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeSpawnTaskI32Symbol)
         << "\", !\""
@@ -5658,17 +5658,17 @@ class Objc3IREmitter {
                "objc3_runtime_copy_task_runtime_state_for_testing")
         << "\"}\n";
     out << "!94 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part7SchedulerExecutorRuntimeContractId)
+        << EscapeCStringLiteral(kObjc3ConcurrencySchedulerExecutorRuntimeContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7SchedulerExecutorRuntimeSourceModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencySchedulerExecutorRuntimeSourceModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7SchedulerExecutorRuntimeAbiModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencySchedulerExecutorRuntimeAbiModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7SchedulerExecutorRuntimeExecutionModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencySchedulerExecutorRuntimeExecutionModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7SchedulerExecutorRuntimePackagingModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencySchedulerExecutorRuntimePackagingModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7SchedulerExecutorRuntimeFailClosedModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencySchedulerExecutorRuntimeFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeSpawnTaskI32Symbol)
         << "\", !\""
@@ -5690,18 +5690,18 @@ class Objc3IREmitter {
                "objc3_runtime_copy_task_runtime_state_for_testing")
         << "\"}\n";
     out << "!95 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part7LiveTaskRuntimeIntegrationContractId)
+        << EscapeCStringLiteral(kObjc3ConcurrencyLiveTaskRuntimeIntegrationContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7LiveTaskRuntimeIntegrationSourceModel)
-        << "\", !\""
-        << EscapeCStringLiteral(
-               kObjc3Part7LiveTaskRuntimeIntegrationExecutionModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyLiveTaskRuntimeIntegrationSourceModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveTaskRuntimeIntegrationPackagingModel)
+               kObjc3ConcurrencyLiveTaskRuntimeIntegrationExecutionModel)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part7LiveTaskRuntimeIntegrationFailClosedModel)
+               kObjc3ConcurrencyLiveTaskRuntimeIntegrationPackagingModel)
+        << "\", !\""
+        << EscapeCStringLiteral(
+               kObjc3ConcurrencyLiveTaskRuntimeIntegrationFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral(kObjc3RuntimeSpawnTaskI32Symbol)
         << "\", !\""
@@ -5723,15 +5723,15 @@ class Objc3IREmitter {
                "objc3_runtime_copy_task_runtime_state_for_testing")
         << "\"}\n";
     out << "!96 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningContractId)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeHardeningContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningSourceModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeHardeningSourceModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningExecutionModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeHardeningExecutionModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningPackagingModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeHardeningPackagingModel)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part7TaskRuntimeHardeningFailClosedModel)
+        << EscapeCStringLiteral(kObjc3ConcurrencyTaskRuntimeHardeningFailClosedModel)
         << "\", !\""
         << EscapeCStringLiteral("objc3_runtime_reset_for_testing")
         << "\", !\""
@@ -6765,472 +6765,472 @@ class Objc3IREmitter {
     out << "!102 = !{i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_direct_call_candidate_sites)
+                   .dispatch_dispatch_control_lowering_direct_call_candidate_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_direct_members_defaulted_sites)
+                   .dispatch_dispatch_control_lowering_direct_members_defaulted_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_dynamic_opt_out_sites)
+                   .dispatch_dispatch_control_lowering_dynamic_opt_out_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_final_container_sites)
+                   .dispatch_dispatch_control_lowering_final_container_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_sealed_container_sites)
+                   .dispatch_dispatch_control_lowering_sealed_container_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_override_legality_sites)
+                   .dispatch_dispatch_control_lowering_override_legality_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_metadata_preserved_callable_sites)
+                   .dispatch_dispatch_control_lowering_metadata_preserved_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_metadata_preserved_container_sites)
+                   .dispatch_dispatch_control_lowering_metadata_preserved_container_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_guard_blocked_sites)
+                   .dispatch_dispatch_control_lowering_guard_blocked_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_control_lowering_contract_violation_sites)
+                   .dispatch_dispatch_control_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part9_dispatch_control_lowering_handoff
+                    .deterministic_dispatch_dispatch_control_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!108 = !{!\""
-        << EscapeCStringLiteral(frontend_metadata_.lowering_part11_interop_replay_key)
+        << EscapeCStringLiteral(frontend_metadata_.lowering_interop_interop_replay_key)
         << "\", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part11_interop_lowering_foreign_callable_sites)
+               frontend_metadata_.interop_interop_lowering_foreign_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part11_interop_lowering_c_foreign_callable_sites)
+               frontend_metadata_.interop_interop_lowering_c_foreign_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_interop_lowering_objc_runtime_parity_callable_sites)
+               .interop_interop_lowering_objc_runtime_parity_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_interop_lowering_ownership_bridge_callable_sites)
+               .interop_interop_lowering_ownership_bridge_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part11_interop_lowering_error_surface_sites)
+               frontend_metadata_.interop_interop_lowering_error_surface_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part11_interop_lowering_async_boundary_sites)
+               frontend_metadata_.interop_interop_lowering_async_boundary_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_interop_lowering_swift_concurrency_metadata_sites)
+               .interop_interop_lowering_swift_concurrency_metadata_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_interop_lowering_interface_preserved_foreign_callable_sites)
+               .interop_interop_lowering_interface_preserved_foreign_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_interop_lowering_interface_preserved_metadata_annotation_sites)
+               .interop_interop_lowering_interface_preserved_metadata_annotation_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part11_interop_lowering_guard_blocked_sites)
+               frontend_metadata_.interop_interop_lowering_guard_blocked_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part11_interop_lowering_contract_violation_sites)
+               frontend_metadata_.interop_interop_lowering_contract_violation_sites)
         << ", i1 "
-        << (frontend_metadata_.deterministic_part11_interop_lowering_handoff
+        << (frontend_metadata_.deterministic_interop_interop_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!109 = !{!\""
         << EscapeCStringLiteral(frontend_metadata_
-                                    .lowering_part11_foreign_call_lifetime_replay_key)
+                                    .lowering_interop_foreign_call_lifetime_replay_key)
         << "\", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_foreign_call_lifetime_lowering_foreign_callable_sites)
+               .interop_foreign_call_lifetime_lowering_foreign_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_foreign_call_lifetime_lowering_c_foreign_callable_sites)
+               .interop_foreign_call_lifetime_lowering_c_foreign_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part11_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites)
+                   .interop_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part11_foreign_call_lifetime_lowering_ownership_bridge_sites)
+                   .interop_foreign_call_lifetime_lowering_ownership_bridge_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part11_foreign_call_lifetime_lowering_lifetime_bridge_sites)
+                   .interop_foreign_call_lifetime_lowering_lifetime_bridge_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part11_foreign_call_lifetime_lowering_metadata_preservation_sites)
+                   .interop_foreign_call_lifetime_lowering_metadata_preservation_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part11_foreign_call_lifetime_lowering_guard_blocked_sites)
+                   .interop_foreign_call_lifetime_lowering_guard_blocked_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part11_foreign_call_lifetime_lowering_contract_violation_sites)
+                   .interop_foreign_call_lifetime_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part11_foreign_call_lifetime_lowering_handoff
+                    .deterministic_interop_foreign_call_lifetime_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!110 = !{!\""
         << EscapeCStringLiteral(frontend_metadata_
-                                    .lowering_part11_ffi_metadata_interface_preservation_key)
+                                    .lowering_interop_ffi_metadata_interface_preservation_key)
         << "\", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_local_foreign_callable_count)
+               .interop_ffi_metadata_interface_preservation_local_foreign_callable_count)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_local_metadata_preservation_sites)
+               .interop_ffi_metadata_interface_preservation_local_metadata_preservation_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_local_interface_annotation_sites)
+               .interop_ffi_metadata_interface_preservation_local_interface_annotation_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_imported_module_count)
+               .interop_ffi_metadata_interface_preservation_imported_module_count)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_imported_foreign_callable_count)
+               .interop_ffi_metadata_interface_preservation_imported_foreign_callable_count)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_imported_metadata_preservation_sites)
+               .interop_ffi_metadata_interface_preservation_imported_metadata_preservation_sites)
         << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_
-               .part11_ffi_metadata_interface_preservation_imported_interface_annotation_sites)
+               .interop_ffi_metadata_interface_preservation_imported_interface_annotation_sites)
         << ", i1 "
         << (frontend_metadata_
-                    .part11_ffi_metadata_interface_preservation_runtime_import_artifact_ready
+                    .interop_ffi_metadata_interface_preservation_runtime_import_artifact_ready
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .part11_ffi_metadata_interface_preservation_separate_compilation_preservation_ready
+                    .interop_ffi_metadata_interface_preservation_separate_compilation_preservation_ready
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part11_ffi_metadata_interface_preservation_handoff
+                    .deterministic_interop_ffi_metadata_interface_preservation_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!111 = !{!\""
-        << EscapeCStringLiteral(Objc3Part11BridgePackagingToolchainSummary())
+        << EscapeCStringLiteral(Objc3InteropBridgePackagingToolchainSummary())
         << "\"}\n\n";
     out << "!112 = !{!\""
         << EscapeCStringLiteral(
-               Objc3Part11HeaderModuleBridgeGenerationBoundarySummary())
+               Objc3InteropHeaderModuleBridgeGenerationBoundarySummary())
         << "\"}\n\n";
     out << "!104 = !{i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_derive_inventory_sites)
+                   .metaprogramming_expansion_lowering_derive_inventory_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_derived_selector_artifact_sites)
+                   .metaprogramming_expansion_lowering_derived_selector_artifact_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_macro_replay_visible_sites)
+                   .metaprogramming_expansion_lowering_macro_replay_visible_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_property_behavior_sites)
+                   .metaprogramming_expansion_lowering_property_behavior_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_synthesized_binding_sites)
+                   .metaprogramming_expansion_lowering_synthesized_binding_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_synthesized_getter_sites)
+                   .metaprogramming_expansion_lowering_synthesized_getter_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_synthesized_setter_sites)
+                   .metaprogramming_expansion_lowering_synthesized_setter_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_replay_visible_metadata_sites)
+                   .metaprogramming_expansion_lowering_replay_visible_metadata_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_guard_blocked_sites)
+                   .metaprogramming_expansion_lowering_guard_blocked_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_expansion_lowering_contract_violation_sites)
+                   .metaprogramming_expansion_lowering_contract_violation_sites)
         << ", i1 "
-        << (frontend_metadata_.deterministic_part10_expansion_lowering_handoff
+        << (frontend_metadata_.deterministic_metaprogramming_expansion_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!105 = !{!\""
         << EscapeCStringLiteral(
-               frontend_metadata_.lowering_part10_synthesized_emission_replay_key)
+               frontend_metadata_.lowering_metaprogramming_synthesized_emission_replay_key)
         << "\", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part10_synthesized_emitted_derive_method_sites)
+               frontend_metadata_.metaprogramming_synthesized_emitted_derive_method_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part10_synthesized_emitted_macro_artifact_sites)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_
-                   .part10_synthesized_emitted_property_behavior_artifact_sites)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_.part10_synthesized_emitted_global_artifact_sites)
+               frontend_metadata_.metaprogramming_synthesized_emitted_macro_artifact_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_synthesized_emitted_runtime_method_list_sites)
+                   .metaprogramming_synthesized_emitted_property_behavior_artifact_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part10_synthesized_guard_blocked_sites)
+               frontend_metadata_.metaprogramming_synthesized_emitted_global_artifact_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part10_synthesized_contract_violation_sites)
+               frontend_metadata_
+                   .metaprogramming_synthesized_emitted_runtime_method_list_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.metaprogramming_synthesized_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.metaprogramming_synthesized_contract_violation_sites)
         << ", i1 "
-        << (frontend_metadata_.deterministic_part10_synthesized_emission_handoff
+        << (frontend_metadata_.deterministic_metaprogramming_synthesized_emission_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!106 = !{!\""
         << EscapeCStringLiteral(frontend_metadata_
-                                    .lowering_part10_module_interface_replay_preservation_key)
+                                    .lowering_metaprogramming_module_interface_replay_preservation_key)
         << "\", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part10_module_replay_local_derive_method_count)
+               frontend_metadata_.metaprogramming_module_replay_local_derive_method_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_local_macro_artifact_count)
+                   .metaprogramming_module_replay_local_macro_artifact_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_local_interface_property_behavior_artifact_count)
+                   .metaprogramming_module_replay_local_interface_property_behavior_artifact_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_local_implementation_property_behavior_artifact_count)
+                   .metaprogramming_module_replay_local_implementation_property_behavior_artifact_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_local_runtime_method_list_count)
+                   .metaprogramming_module_replay_local_runtime_method_list_count)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part10_module_replay_imported_module_count)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_
-                   .part10_module_replay_imported_derive_method_count)
+               frontend_metadata_.metaprogramming_module_replay_imported_module_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_imported_macro_artifact_count)
+                   .metaprogramming_module_replay_imported_derive_method_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_imported_interface_property_behavior_artifact_count)
+                   .metaprogramming_module_replay_imported_macro_artifact_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_imported_implementation_property_behavior_artifact_count)
+                   .metaprogramming_module_replay_imported_interface_property_behavior_artifact_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part10_module_replay_imported_runtime_method_list_count)
+                   .metaprogramming_module_replay_imported_implementation_property_behavior_artifact_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .metaprogramming_module_replay_imported_runtime_method_list_count)
         << ", i1 "
         << (frontend_metadata_
-                    .part10_module_replay_runtime_import_artifact_ready
+                    .metaprogramming_module_replay_runtime_import_artifact_ready
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .part10_module_replay_separate_compilation_preservation_ready
+                    .metaprogramming_module_replay_separate_compilation_preservation_ready
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part10_module_interface_replay_handoff
+                    .deterministic_metaprogramming_module_interface_replay_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!107 = !{!\""
-        << EscapeCStringLiteral(Objc3Part10ExpansionHostRuntimeBoundarySummary())
+        << EscapeCStringLiteral(Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary())
         << "\", i1 1, i1 0, i1 0, i1 0, i1 1}\n\n";
     out << "!103 = !{!\""
         << EscapeCStringLiteral(frontend_metadata_
-                                    .lowering_part9_dispatch_metadata_interface_preservation_key)
+                                    .lowering_dispatch_dispatch_metadata_interface_preservation_key)
         << "\", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_local_direct_callable_record_count)
+                   .dispatch_dispatch_metadata_local_direct_callable_record_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_local_final_callable_record_count)
+                   .dispatch_dispatch_metadata_local_final_callable_record_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_local_final_container_record_count)
+                   .dispatch_dispatch_metadata_local_final_container_record_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_local_sealed_container_record_count)
+                   .dispatch_dispatch_metadata_local_sealed_container_record_count)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part9_dispatch_metadata_imported_module_count)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_
-                   .part9_dispatch_metadata_imported_direct_callable_record_count)
+               frontend_metadata_.dispatch_dispatch_metadata_imported_module_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_imported_final_callable_record_count)
+                   .dispatch_dispatch_metadata_imported_direct_callable_record_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_imported_final_container_record_count)
+                   .dispatch_dispatch_metadata_imported_final_callable_record_count)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part9_dispatch_metadata_imported_sealed_container_record_count)
+                   .dispatch_dispatch_metadata_imported_final_container_record_count)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .dispatch_dispatch_metadata_imported_sealed_container_record_count)
         << ", i1 "
         << (frontend_metadata_
-                    .part9_dispatch_metadata_runtime_import_artifact_ready
+                    .dispatch_dispatch_metadata_runtime_import_artifact_ready
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .part9_dispatch_metadata_separate_compilation_preservation_ready
+                    .dispatch_dispatch_metadata_separate_compilation_preservation_ready
                 ? 1
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part9_dispatch_metadata_interface_handoff
+                    .deterministic_dispatch_dispatch_metadata_interface_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!98 = !{i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part8_system_extension_lowering_cleanup_hook_sites)
+               frontend_metadata_.ownership_system_extension_lowering_cleanup_hook_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part8_system_extension_lowering_resource_local_sites)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_
-                   .part8_system_extension_lowering_cleanup_owned_local_sites)
+               frontend_metadata_.ownership_system_extension_lowering_resource_local_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_resource_move_capture_sites)
+                   .ownership_system_extension_lowering_cleanup_owned_local_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_borrowed_parameter_sites)
+                   .ownership_system_extension_lowering_resource_move_capture_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_borrowed_return_callable_sites)
+                   .ownership_system_extension_lowering_borrowed_parameter_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_borrowed_escape_candidate_sites)
+                   .ownership_system_extension_lowering_borrowed_return_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_explicit_capture_item_sites)
+                   .ownership_system_extension_lowering_borrowed_escape_candidate_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_retainable_family_callable_sites)
+                   .ownership_system_extension_lowering_explicit_capture_item_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_retainable_family_operation_callable_sites)
+                   .ownership_system_extension_lowering_retainable_family_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_retainable_family_alias_callable_sites)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_.part8_system_extension_lowering_guard_blocked_sites)
+                   .ownership_system_extension_lowering_retainable_family_operation_callable_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_system_extension_lowering_contract_violation_sites)
+                   .ownership_system_extension_lowering_retainable_family_alias_callable_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_.ownership_system_extension_lowering_guard_blocked_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ownership_system_extension_lowering_contract_violation_sites)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part8_system_extension_lowering_handoff
+                    .deterministic_ownership_system_extension_lowering_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!99 = !{!\""
         << EscapeCStringLiteral(
-               kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+               kObjc3OwnershipBorrowedRetainableAbiCompletionContractId)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part8BorrowedRetainableAbiCompletionSurfacePath)
+               kObjc3OwnershipBorrowedRetainableAbiCompletionSurfacePath)
         << "\", !\""
         << EscapeCStringLiteral(
-               frontend_metadata_.part8_borrowed_retainable_abi_completion_replay_key)
+               frontend_metadata_.ownership_borrowed_retainable_abi_completion_replay_key)
         << "\", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_borrowed_retainable_returns_borrowed_attribute_sites)
+                   .ownership_borrowed_retainable_returns_borrowed_attribute_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part8_borrowed_retainable_family_retain_sites)
+               frontend_metadata_.ownership_borrowed_retainable_family_retain_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
-               frontend_metadata_.part8_borrowed_retainable_family_release_sites)
-        << ", i64 "
-        << static_cast<unsigned long long>(
-               frontend_metadata_
-                   .part8_borrowed_retainable_family_autorelease_sites)
+               frontend_metadata_.ownership_borrowed_retainable_family_release_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_borrowed_retainable_compatibility_returns_retained_sites)
+                   .ownership_borrowed_retainable_family_autorelease_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_borrowed_retainable_compatibility_returns_not_retained_sites)
+                   .ownership_borrowed_retainable_compatibility_returns_retained_sites)
         << ", i64 "
         << static_cast<unsigned long long>(
                frontend_metadata_
-                   .part8_borrowed_retainable_compatibility_consumed_sites)
+                   .ownership_borrowed_retainable_compatibility_returns_not_retained_sites)
+        << ", i64 "
+        << static_cast<unsigned long long>(
+               frontend_metadata_
+                   .ownership_borrowed_retainable_compatibility_consumed_sites)
         << ", i1 "
         << (frontend_metadata_
-                    .deterministic_part8_borrowed_retainable_abi_completion_handoff
+                    .deterministic_ownership_borrowed_retainable_abi_completion_handoff
                 ? 1
                 : 0)
         << "}\n\n";
     out << "!100 = !{!\""
-        << EscapeCStringLiteral(kObjc3Part8SystemHelperRuntimeContractId)
+        << EscapeCStringLiteral(kObjc3OwnershipSystemHelperRuntimeContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part8SystemExtensionLoweringContractId)
+        << EscapeCStringLiteral(kObjc3OwnershipSystemExtensionLoweringContractId)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+               kObjc3OwnershipBorrowedRetainableAbiCompletionContractId)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
@@ -7241,12 +7241,12 @@ class Objc3IREmitter {
         << "\", !\"objc3_runtime_copy_memory_management_state_for_testing\", !\"objc3_runtime_copy_arc_debug_state_for_testing\"}\n\n";
     out << "!101 = !{!\""
         << EscapeCStringLiteral(
-               kObjc3Part8LiveCleanupRetainableIntegrationContractId)
+               kObjc3OwnershipLiveCleanupRetainableIntegrationContractId)
         << "\", !\""
-        << EscapeCStringLiteral(kObjc3Part8SystemHelperRuntimeContractId)
+        << EscapeCStringLiteral(kObjc3OwnershipSystemHelperRuntimeContractId)
         << "\", !\""
         << EscapeCStringLiteral(
-               kObjc3Part8BorrowedRetainableAbiCompletionContractId)
+               kObjc3OwnershipBorrowedRetainableAbiCompletionContractId)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeRetainI32Symbol)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeReleaseI32Symbol)
         << "\", !\"" << EscapeCStringLiteral(kObjc3RuntimeAutoreleaseI32Symbol)
@@ -8207,18 +8207,18 @@ class Objc3IREmitter {
           << ";replay_key="
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
-      out << "; part12_machine_readable_conformance_report_contract = "
-          << Objc3Part12MachineReadableConformanceReportContractLoweringSummary()
+      out << "; tooling_machine_readable_conformance_report_contract = "
+          << Objc3ToolingMachineReadableConformanceReportContractLoweringSummary()
           << ";replay_key="
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
-      out << "; part12_feature_aware_conformance_report_emission = "
-          << Objc3Part12FeatureAwareConformanceReportEmissionLoweringSummary()
+      out << "; tooling_feature_aware_conformance_report_emission = "
+          << Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary()
           << ";replay_key="
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
-      out << "; part12_corpus_sharding_release_evidence_packaging = "
-          << Objc3Part12CorpusShardingReleaseEvidencePackagingLoweringSummary()
+      out << "; tooling_corpus_sharding_release_evidence_packaging = "
+          << Objc3ToolingCorpusShardingReleaseEvidencePackagingLoweringSummary()
           << ";replay_key="
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
@@ -8591,7 +8591,7 @@ class Objc3IREmitter {
       // key-path boundary; full runtime evaluation helpers remain deferred to
       // the next lane-D issue.
       out << "; typed_keypath_artifact_emission = "
-          << "contract=objc3c.part3.typed.keypath.artifact.emission.v1"
+          << "contract=objc3c.type_system.typed.keypath.artifact.emission.v1"
           << ";keypath_count=" << typed_keypath_artifacts_.size()
           << ";section="
           << Objc3RuntimeMetadataHostSectionForLogicalName(
@@ -10578,8 +10578,8 @@ class Objc3IREmitter {
     ctx.pending_defer_scope_blocks.push_back({});
     ctx.pending_block_dispose_scope_depths.push_back(
         ctx.pending_block_dispose_calls.size());
-    ctx.pending_part8_cleanup_scope_depths.push_back(
-        ctx.pending_part8_cleanup_calls.size());
+    ctx.pending_ownership_cleanup_scope_depths.push_back(
+        ctx.pending_ownership_cleanup_calls.size());
     ctx.arc_cleanup_scope_depths.push_back(ctx.arc_owned_cleanup_ptrs.size());
   }
 
@@ -10664,7 +10664,7 @@ class Objc3IREmitter {
     }
   }
 
-  void EmitPart8CleanupCall(const PendingPart8CleanupCall &call,
+  void EmitOwnershipCleanupCall(const PendingOwnershipCleanupCall &call,
                             FunctionContext &ctx) const {
     if (!call.active || call.storage_ptr.empty()) {
       return;
@@ -10676,9 +10676,9 @@ class Objc3IREmitter {
       if (call.has_resource_invalid_value) {
         const std::string resource_live = NewTemp(ctx);
         const std::string resource_close_label =
-            NewLabel(ctx, "part8_resource_close_");
+            NewLabel(ctx, "ownership_resource_close_");
         const std::string resource_skip_label =
-            NewLabel(ctx, "part8_resource_skip_");
+            NewLabel(ctx, "ownership_resource_skip_");
         ctx.code_lines.push_back("  " + resource_live + " = icmp ne i32 " +
                                  loaded_value + ", " +
                                  std::to_string(call.resource_invalid_value));
@@ -10701,7 +10701,7 @@ class Objc3IREmitter {
     }
   }
 
-  void EmitPart8CleanupTerminalCall(const PendingPart8CleanupCall &call,
+  void EmitOwnershipCleanupTerminalCall(const PendingOwnershipCleanupCall &call,
                                     std::vector<std::string> &out_lines,
                                     int &temp_counter) const {
     if (!call.active || call.storage_ptr.empty()) {
@@ -10714,9 +10714,9 @@ class Objc3IREmitter {
       if (call.has_resource_invalid_value) {
         const std::string resource_live = "%t" + std::to_string(temp_counter++);
         const std::string resource_close_label =
-            "part8_resource_close_" + std::to_string(temp_counter++);
+            "ownership_resource_close_" + std::to_string(temp_counter++);
         const std::string resource_skip_label =
-            "part8_resource_skip_" + std::to_string(temp_counter++);
+            "ownership_resource_skip_" + std::to_string(temp_counter++);
         out_lines.push_back("  " + resource_live + " = icmp ne i32 " +
                             loaded_value + ", " +
                             std::to_string(call.resource_invalid_value));
@@ -10739,25 +10739,25 @@ class Objc3IREmitter {
     }
   }
 
-  void EmitPart8CleanupUnwindToDepth(FunctionContext &ctx,
+  void EmitOwnershipCleanupUnwindToDepth(FunctionContext &ctx,
                                      std::size_t target_depth) const {
-    while (ctx.pending_part8_cleanup_calls.size() > target_depth) {
-      const PendingPart8CleanupCall call = ctx.pending_part8_cleanup_calls.back();
+    while (ctx.pending_ownership_cleanup_calls.size() > target_depth) {
+      const PendingOwnershipCleanupCall call = ctx.pending_ownership_cleanup_calls.back();
       if (!call.binding_name.empty()) {
-        ctx.part8_cleanup_call_indices.erase(call.binding_name);
+        ctx.ownership_cleanup_call_indices.erase(call.binding_name);
       }
-      ctx.pending_part8_cleanup_calls.pop_back();
-      EmitPart8CleanupCall(call, ctx);
+      ctx.pending_ownership_cleanup_calls.pop_back();
+      EmitOwnershipCleanupCall(call, ctx);
     }
   }
 
-  void EmitPart8CleanupTerminalCleanupToDepth(const FunctionContext &ctx,
+  void EmitOwnershipCleanupTerminalCleanupToDepth(const FunctionContext &ctx,
                                               std::size_t target_depth,
                                               std::vector<std::string> &out_lines,
                                               int &temp_counter) const {
-    for (std::size_t index = ctx.pending_part8_cleanup_calls.size();
+    for (std::size_t index = ctx.pending_ownership_cleanup_calls.size();
          index > target_depth; --index) {
-      EmitPart8CleanupTerminalCall(ctx.pending_part8_cleanup_calls[index - 1u],
+      EmitOwnershipCleanupTerminalCall(ctx.pending_ownership_cleanup_calls[index - 1u],
                                    out_lines, temp_counter);
     }
   }
@@ -10782,12 +10782,12 @@ class Objc3IREmitter {
     if (!ctx.pending_block_dispose_scope_depths.empty()) {
       ctx.pending_block_dispose_scope_depths.pop_back();
     }
-    const std::size_t target_part8_cleanup_depth =
-        ctx.pending_part8_cleanup_scope_depths.empty()
+    const std::size_t target_ownership_cleanup_depth =
+        ctx.pending_ownership_cleanup_scope_depths.empty()
             ? 0u
-            : ctx.pending_part8_cleanup_scope_depths.back();
-    if (!ctx.pending_part8_cleanup_scope_depths.empty()) {
-      ctx.pending_part8_cleanup_scope_depths.pop_back();
+            : ctx.pending_ownership_cleanup_scope_depths.back();
+    if (!ctx.pending_ownership_cleanup_scope_depths.empty()) {
+      ctx.pending_ownership_cleanup_scope_depths.pop_back();
     }
     const std::size_t target_arc_cleanup_depth =
         ctx.arc_cleanup_scope_depths.empty() ? 0u : ctx.arc_cleanup_scope_depths.back();
@@ -10796,13 +10796,13 @@ class Objc3IREmitter {
     }
     if (emit_cleanup) {
       EmitDeferredCleanupForScopeBucket(deferred_blocks, ctx);
-      EmitPart8CleanupUnwindToDepth(ctx, target_part8_cleanup_depth);
+      EmitOwnershipCleanupUnwindToDepth(ctx, target_ownership_cleanup_depth);
       EmitPendingBlockDisposeUnwindToDepth(ctx, target_block_dispose_depth);
       EmitArcOwnedCleanupUnwindToDepth(ctx, target_arc_cleanup_depth);
     }
     for (const auto &binding : scope_bindings) {
       ctx.block_bindings.erase(binding.first);
-      ctx.part8_cleanup_call_indices.erase(binding.first);
+      ctx.ownership_cleanup_call_indices.erase(binding.first);
     }
   }
 
@@ -11054,11 +11054,11 @@ class Objc3IREmitter {
           });
       const bool moved_capture =
           moved_capture_it != expr.block_explicit_capture_items_source_order.end();
-      const auto cleanup_it = ctx.part8_cleanup_call_indices.find(capture_name);
+      const auto cleanup_it = ctx.ownership_cleanup_call_indices.find(capture_name);
       if (!SortedStringListContains(
               expr.block_runtime_owned_object_capture_names_lexicographic,
               capture_name) &&
-          (!moved_capture || cleanup_it == ctx.part8_cleanup_call_indices.end())) {
+          (!moved_capture || cleanup_it == ctx.ownership_cleanup_call_indices.end())) {
         continue;
       }
       const std::string slot_ptr =
@@ -11082,9 +11082,9 @@ class Objc3IREmitter {
             << kObjc3RuntimeReleaseI32Symbol << "(i32 " << loaded_value
             << ")\n";
       }
-      if (moved_capture && cleanup_it != ctx.part8_cleanup_call_indices.end()) {
-        const PendingPart8CleanupCall &cleanup_call =
-            ctx.pending_part8_cleanup_calls[cleanup_it->second];
+      if (moved_capture && cleanup_it != ctx.ownership_cleanup_call_indices.end()) {
+        const PendingOwnershipCleanupCall &cleanup_call =
+            ctx.pending_ownership_cleanup_calls[cleanup_it->second];
         if (!cleanup_call.resource_close_symbol.empty()) {
           if (cleanup_call.has_resource_invalid_value) {
             const std::string resource_live =
@@ -11291,7 +11291,7 @@ class Objc3IREmitter {
 
     if (!ctx.terminated) {
       EmitAutoreleasepoolUnwindToDepth(ctx, 0u);
-      EmitPart8CleanupUnwindToDepth(ctx, 0u);
+      EmitOwnershipCleanupUnwindToDepth(ctx, 0u);
       EmitPendingBlockDisposeHelpers(ctx);
       EmitArcOwnedCleanupReleases(ctx);
       ctx.code_lines.push_back("  ret i32 0");
@@ -11374,14 +11374,14 @@ class Objc3IREmitter {
               return item.name == capture_name && item.mode == "move";
             });
         if (moved_capture_it != expr.block_explicit_capture_items_source_order.end()) {
-          const auto cleanup_it = ctx.part8_cleanup_call_indices.find(capture_name);
-          if (cleanup_it == ctx.part8_cleanup_call_indices.end()) {
+          const auto cleanup_it = ctx.ownership_cleanup_call_indices.find(capture_name);
+          if (cleanup_it == ctx.ownership_cleanup_call_indices.end()) {
             return EmitUnsupportedI32Value(
                 "move capture '" + capture_name +
                 "' was not registered as a cleanup/resource-backed local");
           }
-          PendingPart8CleanupCall &cleanup_call =
-              ctx.pending_part8_cleanup_calls[cleanup_it->second];
+          PendingOwnershipCleanupCall &cleanup_call =
+              ctx.pending_ownership_cleanup_calls[cleanup_it->second];
           cleanup_call.active = false;
           capture_cell_ptr = cleanup_call.storage_ptr;
         } else if (SortedStringListContains(
@@ -11585,7 +11585,7 @@ class Objc3IREmitter {
       EmitTerminalCleanupToDepth(ctx, handler.scope_depth,
                                  handler.autoreleasepool_depth,
                                  handler.pending_block_dispose_depth,
-                                 handler.part8_cleanup_depth,
+                                 handler.ownership_cleanup_depth,
                                  handler.arc_cleanup_depth);
       ctx.code_lines.push_back("  br label %" + handler.dispatch_label);
       ctx.terminated = true;
@@ -11602,7 +11602,7 @@ class Objc3IREmitter {
     ctx.terminated = true;
   }
 
-  static int Part6CatchKindForTypeSpelling(const std::string &spelling) {
+  static int ErrorHandlingCatchKindForTypeSpelling(const std::string &spelling) {
     std::string normalized;
     normalized.reserve(spelling.size());
     for (unsigned char ch : spelling) {
@@ -11673,11 +11673,11 @@ class Objc3IREmitter {
     const bool call_may_have_global_side_effects =
         FunctionMayHaveGlobalSideEffects(expr->ident);
     std::string out = "0";
-    if (TryEmitPart7ActorLoweringCall(expr, ctx, out)) {
+    if (TryEmitConcurrencyActorLoweringCall(expr, ctx, out)) {
       // lowering anchor: actor helper spellings inside actor methods
       // now lower through the private runtime helper slice rather than staying
       // as ordinary direct-call placeholders.
-    } else if (TryEmitPart7TaskRuntimeLoweringCall(expr, ctx, out)) {
+    } else if (TryEmitConcurrencyTaskRuntimeLoweringCall(expr, ctx, out)) {
       // lowering anchor: supported task/executor/cancellation
       // symbols now route through the private Part 7 runtime helper cluster
       // rather than remaining ordinary extern-call placeholders.
@@ -11840,12 +11840,12 @@ class Objc3IREmitter {
   void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t scope_depth,
                                   std::size_t autoreleasepool_depth,
                                   std::size_t pending_block_dispose_depth,
-                                  std::size_t part8_cleanup_depth,
+                                  std::size_t ownership_cleanup_depth,
                                   std::size_t arc_cleanup_depth) const {
     EmitDeferredCleanupTerminalToDepth(ctx, scope_depth);
     EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
-    EmitPart8CleanupTerminalCleanupToDepth(
-        ctx, part8_cleanup_depth, ctx.code_lines, ctx.temp_counter);
+    EmitOwnershipCleanupTerminalCleanupToDepth(
+        ctx, ownership_cleanup_depth, ctx.code_lines, ctx.temp_counter);
     EmitPendingBlockDisposeTerminalCleanupToDepth(
         ctx, pending_block_dispose_depth, ctx.code_lines);
     EmitArcOwnedTerminalCleanupToDepth(
@@ -11855,7 +11855,7 @@ class Objc3IREmitter {
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
     if (ctx.return_type == ValueType::Void) {
       EmitDeferredCleanupTerminalToDepth(ctx, 0u);
-      EmitPart8CleanupTerminalCleanupToDepth(
+      EmitOwnershipCleanupTerminalCleanupToDepth(
           ctx, 0u, ctx.code_lines, ctx.temp_counter);
       EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
       EmitArcOwnedTerminalCleanupToDepth(
@@ -11879,7 +11879,7 @@ class Objc3IREmitter {
       returned_value = autoreleased_value;
     }
     EmitDeferredCleanupTerminalToDepth(ctx, 0u);
-    EmitPart8CleanupTerminalCleanupToDepth(
+    EmitOwnershipCleanupTerminalCleanupToDepth(
         ctx, 0u, ctx.code_lines, ctx.temp_counter);
     EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
     EmitArcOwnedTerminalCleanupToDepth(
@@ -13240,7 +13240,7 @@ class Objc3IREmitter {
         ctx.code_lines.push_back("  store i32 " + value + ", ptr " + ptr + ", align 4");
         if (let->cleanup_attribute_declared || let->cleanup_sugar_declared ||
             let->resource_attribute_declared || let->resource_sugar_declared) {
-          PendingPart8CleanupCall cleanup_call;
+          PendingOwnershipCleanupCall cleanup_call;
           cleanup_call.binding_name = let->name;
           cleanup_call.storage_ptr = ptr;
           cleanup_call.cleanup_function_symbol = let->cleanup_function_symbol;
@@ -13248,7 +13248,7 @@ class Objc3IREmitter {
           if (!let->resource_close_symbol.empty()) {
             int invalid_value = 0;
             if (!let->resource_invalid_expression.empty() &&
-                !ParsePart8ResourceInvalidLiteral(
+                !ParseOwnershipResourceInvalidLiteral(
                     let->resource_invalid_expression, invalid_value)) {
               (void)EmitUnsupportedI32Value(
                   "resource invalid expression for '" + let->name +
@@ -13259,9 +13259,9 @@ class Objc3IREmitter {
                 !let->resource_invalid_expression.empty();
             cleanup_call.resource_invalid_value = invalid_value;
           }
-          ctx.part8_cleanup_call_indices[let->name] =
-              ctx.pending_part8_cleanup_calls.size();
-          ctx.pending_part8_cleanup_calls.push_back(std::move(cleanup_call));
+          ctx.ownership_cleanup_call_indices[let->name] =
+              ctx.pending_ownership_cleanup_calls.size();
+          ctx.pending_ownership_cleanup_calls.push_back(std::move(cleanup_call));
         }
         return;
       }
@@ -13307,7 +13307,7 @@ class Objc3IREmitter {
               ctx, ctx.control_stack.back().scope_depth,
               ctx.control_stack.back().autoreleasepool_depth,
               ctx.control_stack.back().pending_block_dispose_depth,
-              ctx.control_stack.back().part8_cleanup_depth,
+              ctx.control_stack.back().ownership_cleanup_depth,
               ctx.control_stack.back().arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + ctx.control_stack.back().break_label);
         }
@@ -13337,7 +13337,7 @@ class Objc3IREmitter {
               });
           EmitTerminalCleanupToDepth(
               ctx, target.scope_depth, continue_autoreleasepool_depth,
-              target.pending_block_dispose_depth, target.part8_cleanup_depth,
+              target.pending_block_dispose_depth, target.ownership_cleanup_depth,
               target.arc_cleanup_depth);
           ctx.code_lines.push_back("  br label %" + continue_label);
         }
@@ -13367,7 +13367,7 @@ class Objc3IREmitter {
                                              ctx.scopes.size() - 1u,
                                              ctx.autoreleasepool_scope_symbols.size(),
                                              ctx.pending_block_dispose_calls.size(),
-                                             ctx.pending_part8_cleanup_calls.size(),
+                                             ctx.pending_ownership_cleanup_calls.size(),
                                              ctx.arc_owned_cleanup_ptrs.size()});
           for (const auto &nested_stmt : block_stmt->body) {
             EmitStatement(nested_stmt.get(), ctx);
@@ -13401,7 +13401,7 @@ class Objc3IREmitter {
                 "  " + catches + " = call i32 @" +
                 std::string(kObjc3RuntimeCatchMatchesErrorI32Symbol) + "(i32 " +
                 loaded_error + ", i32 " +
-                std::to_string(Part6CatchKindForTypeSpelling(
+                std::to_string(ErrorHandlingCatchKindForTypeSpelling(
                     clause.binding_type_spelling)) +
                 ", i32 " + (clause.catch_all ? "1" : "0") + ")");
             ctx.code_lines.push_back("  " + catches_bool + " = icmp ne i32 " +
@@ -13499,7 +13499,7 @@ class Objc3IREmitter {
             {cond_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
-             ctx.pending_part8_cleanup_calls.size(),
+             ctx.pending_ownership_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : while_stmt->body) {
@@ -13532,7 +13532,7 @@ class Objc3IREmitter {
             {cond_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
-             ctx.pending_part8_cleanup_calls.size(),
+             ctx.pending_ownership_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : do_while_stmt->body) {
@@ -13586,7 +13586,7 @@ class Objc3IREmitter {
             {step_label, end_label, true, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
-             ctx.pending_part8_cleanup_calls.size(),
+             ctx.pending_ownership_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
         ctx.terminated = false;
         for (const auto &s : for_stmt->body) {
@@ -13688,7 +13688,7 @@ class Objc3IREmitter {
                 {"", end_label, false, ctx.scopes.size() - 1u,
                  ctx.autoreleasepool_scope_symbols.size(),
                  ctx.pending_block_dispose_calls.size(),
-                 ctx.pending_part8_cleanup_calls.size(),
+                 ctx.pending_ownership_cleanup_calls.size(),
                  ctx.arc_owned_cleanup_ptrs.size()});
             ctx.terminated = false;
             for (const auto &case_body_stmt : case_stmt.body) {
@@ -13762,7 +13762,7 @@ class Objc3IREmitter {
             {"", end_label, false, ctx.scopes.size() - 1u,
              ctx.autoreleasepool_scope_symbols.size(),
              ctx.pending_block_dispose_calls.size(),
-             ctx.pending_part8_cleanup_calls.size(),
+             ctx.pending_ownership_cleanup_calls.size(),
              ctx.arc_owned_cleanup_ptrs.size()});
           ctx.terminated = false;
           for (const auto &case_body_stmt : case_stmt.body) {
@@ -13935,7 +13935,7 @@ class Objc3IREmitter {
     }
     if (synthesized_property_accessor_count_ > 0u ||
         requires_arc_helper_declarations() ||
-        !frontend_metadata_.lowering_part6_throws_abi_propagation_replay_key
+        !frontend_metadata_.lowering_error_handling_throws_abi_propagation_replay_key
              .empty() ||
         !frontend_metadata_.lowering_async_continuation_replay_key.empty() ||
         !frontend_metadata_
@@ -14384,7 +14384,7 @@ class Objc3IREmitter {
              profile.find(needle) != std::string::npos;
     };
     if (method_def.synthetic_method_kind ==
-        SyntheticMethodKind::Part10DerivedEquality) {
+        SyntheticMethodKind::MetaprogrammingDerivedEquality) {
       out << "define i32 @" << method_def.symbol << "(i32 %arg0) {\n";
       out << "entry:\n";
       out << "  ret i32 1\n";
@@ -14392,9 +14392,9 @@ class Objc3IREmitter {
       return;
     }
     if (method_def.synthetic_method_kind ==
-            SyntheticMethodKind::Part10DerivedHash ||
+            SyntheticMethodKind::MetaprogrammingDerivedHash ||
         method_def.synthetic_method_kind ==
-            SyntheticMethodKind::Part10DerivedDebugDescription) {
+            SyntheticMethodKind::MetaprogrammingDerivedDebugDescription) {
       std::uint32_t seed = 2166136261u;
       for (unsigned char ch : method_def.symbol) {
         seed ^= static_cast<std::uint32_t>(ch);
@@ -14587,8 +14587,8 @@ class Objc3IREmitter {
   std::vector<const FunctionDecl *> function_definitions_;
   std::vector<MethodDefinition> method_definitions_;
   std::size_t synthesized_property_accessor_count_ = 0;
-  std::vector<Part10GlobalArtifact> part10_global_artifacts_;
-  std::size_t part10_derived_method_count_ = 0;
+  std::vector<MetaprogrammingGlobalArtifact> metaprogramming_global_artifacts_;
+  std::size_t metaprogramming_derived_method_count_ = 0;
   std::unordered_map<std::string, FunctionEffectInfo> function_effects_;
   std::unordered_set<std::string> impure_functions_;
   std::unordered_map<std::string, std::size_t> function_arity_;

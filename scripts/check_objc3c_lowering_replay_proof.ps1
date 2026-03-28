@@ -11,7 +11,7 @@ $loweringScript = Join-Path $repoRoot "scripts/run_objc3c_lowering_regression_su
 $loweringRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-regression"
 $proofRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-replay-proof"
 $configuredProofRunId = $env:OBJC3C_NATIVE_LOWERING_REPLAY_PROOF_RUN_ID
-$defaultProofRunId = "m143-lane-c-lowering-replay-proof-default"
+$defaultProofRunId = "typed_abi-lane-c-lowering-replay-proof-default"
 
 function Resolve-ValidatedRunId {
   param(

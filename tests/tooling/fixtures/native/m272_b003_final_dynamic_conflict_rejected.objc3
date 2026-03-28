@@ -1,9 +1,0 @@
-module Part9B003FinalDynamic;
-
-@interface Box
-- (i32)shared;
-@end
-
-@implementation Box
-- (i32)shared __attribute__((objc_final, objc_dynamic)) { return 1; }
-@end

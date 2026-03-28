@@ -87,18 +87,18 @@ struct SemanticTypeInfo {
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
 
-struct Part8ResourceMoveBindingState {
+struct OwnershipResourceMoveBindingState {
   bool cleanup_owned = false;
   bool moved = false;
   unsigned move_line = 1;
   unsigned move_column = 1;
 };
 
-using Part8ResourceMoveScope =
-    std::unordered_map<std::string, Part8ResourceMoveBindingState>;
+using OwnershipResourceMoveScope =
+    std::unordered_map<std::string, OwnershipResourceMoveBindingState>;
 
-static Part8ResourceMoveBindingState *LookupPart8ResourceMoveBinding(
-    std::vector<Part8ResourceMoveScope> &scopes, const std::string &name) {
+static OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(
+    std::vector<OwnershipResourceMoveScope> &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
     auto found = it->find(name);
     if (found != it->end()) {
@@ -108,8 +108,8 @@ static Part8ResourceMoveBindingState *LookupPart8ResourceMoveBinding(
   return nullptr;
 }
 
-static const Part8ResourceMoveBindingState *LookupPart8ResourceMoveBinding(
-    const std::vector<Part8ResourceMoveScope> &scopes,
+static const OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(
+    const std::vector<OwnershipResourceMoveScope> &scopes,
     const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
     auto found = it->find(name);
@@ -1692,7 +1692,7 @@ struct Objc3MessageSendResolutionContext {
   bool inside_async_context = false;
 };
 
-std::string BuildPart7TaskLowercaseProfileToken(std::string token) {
+std::string BuildConcurrencyTaskLowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
                    return static_cast<char>(std::tolower(value));
@@ -1700,85 +1700,85 @@ std::string BuildPart7TaskLowercaseProfileToken(std::string token) {
   return token;
 }
 
-bool IsPart7TaskCreationSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyTaskCreationSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("task_spawn") != std::string::npos ||
          lowered.find("spawn_task") != std::string::npos ||
          lowered.find("detached_task") != std::string::npos ||
          lowered.find("task_detach") != std::string::npos;
 }
 
-bool IsPart7DetachedTaskCreationSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyDetachedTaskCreationSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("detached_task") != std::string::npos ||
          lowered.find("task_detach") != std::string::npos;
 }
 
-bool IsPart7TaskGroupScopeSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyTaskGroupScopeSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("with_task_group") != std::string::npos ||
          lowered.find("task_group_scope") != std::string::npos;
 }
 
-bool IsPart7TaskGroupAddTaskSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyTaskGroupAddTaskSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("task_group_add_task") != std::string::npos ||
          lowered.find("group_add_task") != std::string::npos;
 }
 
-bool IsPart7TaskGroupWaitNextSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyTaskGroupWaitNextSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("task_group_wait_next") != std::string::npos ||
          lowered.find("group_wait_next") != std::string::npos ||
          lowered.find("wait_next") != std::string::npos;
 }
 
-bool IsPart7TaskGroupCancelAllSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyTaskGroupCancelAllSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("task_group_cancel_all") != std::string::npos ||
          lowered.find("group_cancel_all") != std::string::npos ||
          lowered.find("cancel_all") != std::string::npos;
 }
 
-bool IsPart7CancellationCheckSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyCancellationCheckSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("cancelled") != std::string::npos ||
          lowered.find("is_cancelled") != std::string::npos ||
          lowered.find("cancellation") != std::string::npos;
 }
 
-bool IsPart7CancellationHandlerSymbolForSema(const std::string &symbol) {
+bool IsConcurrencyCancellationHandlerSymbolForSema(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7TaskLowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyTaskLowercaseProfileToken(symbol);
   return lowered.find("on_cancel") != std::string::npos ||
          lowered.find("cancel_handler") != std::string::npos ||
          lowered.find("with_cancellation_handler") != std::string::npos;
 }
 
-struct Objc3Part7TaskCallableLegalityProfile {
+struct Objc3ConcurrencyTaskCallableLegalityProfile {
   std::size_t task_creation_sites = 0;
   std::size_t detached_task_creation_sites = 0;
   std::size_t task_group_scope_sites = 0;
@@ -1805,121 +1805,121 @@ struct Objc3ResolvedMessageSendMethod {
   bool cycle_detected = false;
 };
 
-static void CollectPart7TaskCallableLegalityExprSites(
-    const Expr *expr, Objc3Part7TaskCallableLegalityProfile &profile) {
+static void CollectConcurrencyTaskCallableLegalityExprSites(
+    const Expr *expr, Objc3ConcurrencyTaskCallableLegalityProfile &profile) {
   if (expr == nullptr) {
     return;
   }
   if (expr->kind == Expr::Kind::Call) {
-    if (IsPart7TaskCreationSymbolForSema(expr->ident)) {
+    if (IsConcurrencyTaskCreationSymbolForSema(expr->ident)) {
       ++profile.task_creation_sites;
     }
-    if (IsPart7DetachedTaskCreationSymbolForSema(expr->ident)) {
+    if (IsConcurrencyDetachedTaskCreationSymbolForSema(expr->ident)) {
       ++profile.detached_task_creation_sites;
     }
-    if (IsPart7TaskGroupScopeSymbolForSema(expr->ident)) {
+    if (IsConcurrencyTaskGroupScopeSymbolForSema(expr->ident)) {
       ++profile.task_group_scope_sites;
     }
-    if (IsPart7TaskGroupAddTaskSymbolForSema(expr->ident)) {
+    if (IsConcurrencyTaskGroupAddTaskSymbolForSema(expr->ident)) {
       ++profile.task_group_add_task_sites;
     }
-    if (IsPart7TaskGroupWaitNextSymbolForSema(expr->ident)) {
+    if (IsConcurrencyTaskGroupWaitNextSymbolForSema(expr->ident)) {
       ++profile.task_group_wait_next_sites;
     }
-    if (IsPart7TaskGroupCancelAllSymbolForSema(expr->ident)) {
+    if (IsConcurrencyTaskGroupCancelAllSymbolForSema(expr->ident)) {
       ++profile.task_group_cancel_all_sites;
     }
-    if (IsPart7CancellationCheckSymbolForSema(expr->ident)) {
+    if (IsConcurrencyCancellationCheckSymbolForSema(expr->ident)) {
       ++profile.cancellation_check_sites;
     }
-    if (IsPart7CancellationHandlerSymbolForSema(expr->ident)) {
+    if (IsConcurrencyCancellationHandlerSymbolForSema(expr->ident)) {
       ++profile.cancellation_handler_sites;
     }
   }
-  CollectPart7TaskCallableLegalityExprSites(expr->receiver.get(), profile);
-  CollectPart7TaskCallableLegalityExprSites(expr->left.get(), profile);
-  CollectPart7TaskCallableLegalityExprSites(expr->right.get(), profile);
-  CollectPart7TaskCallableLegalityExprSites(expr->third.get(), profile);
+  CollectConcurrencyTaskCallableLegalityExprSites(expr->receiver.get(), profile);
+  CollectConcurrencyTaskCallableLegalityExprSites(expr->left.get(), profile);
+  CollectConcurrencyTaskCallableLegalityExprSites(expr->right.get(), profile);
+  CollectConcurrencyTaskCallableLegalityExprSites(expr->third.get(), profile);
   for (const auto &arg : expr->args) {
-    CollectPart7TaskCallableLegalityExprSites(arg.get(), profile);
+    CollectConcurrencyTaskCallableLegalityExprSites(arg.get(), profile);
   }
 }
 
-static void CollectPart7TaskCallableLegalityStmtSites(
-    const Stmt *stmt, Objc3Part7TaskCallableLegalityProfile &profile) {
+static void CollectConcurrencyTaskCallableLegalityStmtSites(
+    const Stmt *stmt, Objc3ConcurrencyTaskCallableLegalityProfile &profile) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(stmt->let_stmt->value.get(),
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->let_stmt->value.get(),
                                                 profile);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(
+      CollectConcurrencyTaskCallableLegalityExprSites(
           stmt->assign_stmt->value.get(), profile);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(stmt->return_stmt->value.get(),
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->return_stmt->value.get(),
                                                 profile);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(
+      CollectConcurrencyTaskCallableLegalityExprSites(
           stmt->if_stmt->condition.get(), profile);
       for (const auto &then_stmt : stmt->if_stmt->then_body) {
-        CollectPart7TaskCallableLegalityStmtSites(then_stmt.get(), profile);
+        CollectConcurrencyTaskCallableLegalityStmtSites(then_stmt.get(), profile);
       }
       for (const auto &else_stmt : stmt->if_stmt->else_body) {
-        CollectPart7TaskCallableLegalityStmtSites(else_stmt.get(), profile);
+        CollectConcurrencyTaskCallableLegalityStmtSites(else_stmt.get(), profile);
       }
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+        CollectConcurrencyTaskCallableLegalityStmtSites(body_stmt.get(), profile);
       }
-      CollectPart7TaskCallableLegalityExprSites(
+      CollectConcurrencyTaskCallableLegalityExprSites(
           stmt->do_while_stmt->condition.get(), profile);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(stmt->for_stmt->init.value.get(),
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->for_stmt->init.value.get(),
                                                 profile);
-      CollectPart7TaskCallableLegalityExprSites(
+      CollectConcurrencyTaskCallableLegalityExprSites(
           stmt->for_stmt->condition.get(), profile);
-      CollectPart7TaskCallableLegalityExprSites(stmt->for_stmt->step.value.get(),
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->for_stmt->step.value.get(),
                                                 profile);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+        CollectConcurrencyTaskCallableLegalityStmtSites(body_stmt.get(), profile);
       }
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(
+      CollectConcurrencyTaskCallableLegalityExprSites(
           stmt->switch_stmt->condition.get(), profile);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &case_stmt : switch_case.body) {
-          CollectPart7TaskCallableLegalityStmtSites(case_stmt.get(), profile);
+          CollectConcurrencyTaskCallableLegalityStmtSites(case_stmt.get(), profile);
         }
       }
     }
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(
+      CollectConcurrencyTaskCallableLegalityExprSites(
           stmt->while_stmt->condition.get(), profile);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+        CollectConcurrencyTaskCallableLegalityStmtSites(body_stmt.get(), profile);
       }
     }
     return;
@@ -1927,13 +1927,13 @@ static void CollectPart7TaskCallableLegalityStmtSites(
   case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        CollectPart7TaskCallableLegalityStmtSites(body_stmt.get(), profile);
+        CollectConcurrencyTaskCallableLegalityStmtSites(body_stmt.get(), profile);
       }
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart7TaskCallableLegalityExprSites(stmt->expr_stmt->value.get(),
+      CollectConcurrencyTaskCallableLegalityExprSites(stmt->expr_stmt->value.get(),
                                                 profile);
     }
     return;
@@ -1944,28 +1944,28 @@ static void CollectPart7TaskCallableLegalityStmtSites(
   }
 }
 
-static void DiagnosePart7TaskCallableLegalityExpr(
-    const Expr *expr, const Objc3Part7TaskCallableLegalityProfile &profile,
+static void DiagnoseConcurrencyTaskCallableLegalityExpr(
+    const Expr *expr, const Objc3ConcurrencyTaskCallableLegalityProfile &profile,
     bool inside_async_context, std::vector<std::string> &diagnostics) {
   if (expr == nullptr) {
     return;
   }
   if (expr->kind == Expr::Kind::Call) {
-    const bool task_creation = IsPart7TaskCreationSymbolForSema(expr->ident);
+    const bool task_creation = IsConcurrencyTaskCreationSymbolForSema(expr->ident);
     const bool detached_task_creation =
-        IsPart7DetachedTaskCreationSymbolForSema(expr->ident);
+        IsConcurrencyDetachedTaskCreationSymbolForSema(expr->ident);
     const bool task_group_scope =
-        IsPart7TaskGroupScopeSymbolForSema(expr->ident);
+        IsConcurrencyTaskGroupScopeSymbolForSema(expr->ident);
     const bool task_group_add =
-        IsPart7TaskGroupAddTaskSymbolForSema(expr->ident);
+        IsConcurrencyTaskGroupAddTaskSymbolForSema(expr->ident);
     const bool task_group_wait =
-        IsPart7TaskGroupWaitNextSymbolForSema(expr->ident);
+        IsConcurrencyTaskGroupWaitNextSymbolForSema(expr->ident);
     const bool task_group_cancel =
-        IsPart7TaskGroupCancelAllSymbolForSema(expr->ident);
+        IsConcurrencyTaskGroupCancelAllSymbolForSema(expr->ident);
     const bool cancellation_check =
-        IsPart7CancellationCheckSymbolForSema(expr->ident);
+        IsConcurrencyCancellationCheckSymbolForSema(expr->ident);
     const bool cancellation_handler =
-        IsPart7CancellationHandlerSymbolForSema(expr->ident);
+        IsConcurrencyCancellationHandlerSymbolForSema(expr->ident);
     const bool task_related = task_creation || task_group_scope || task_group_add ||
                               task_group_wait || task_group_cancel ||
                               cancellation_check || cancellation_handler;
@@ -2001,22 +2001,22 @@ static void DiagnosePart7TaskCallableLegalityExpr(
     }
   }
 
-  DiagnosePart7TaskCallableLegalityExpr(expr->receiver.get(), profile,
+  DiagnoseConcurrencyTaskCallableLegalityExpr(expr->receiver.get(), profile,
                                         inside_async_context, diagnostics);
-  DiagnosePart7TaskCallableLegalityExpr(expr->left.get(), profile,
+  DiagnoseConcurrencyTaskCallableLegalityExpr(expr->left.get(), profile,
                                         inside_async_context, diagnostics);
-  DiagnosePart7TaskCallableLegalityExpr(expr->right.get(), profile,
+  DiagnoseConcurrencyTaskCallableLegalityExpr(expr->right.get(), profile,
                                         inside_async_context, diagnostics);
-  DiagnosePart7TaskCallableLegalityExpr(expr->third.get(), profile,
+  DiagnoseConcurrencyTaskCallableLegalityExpr(expr->third.get(), profile,
                                         inside_async_context, diagnostics);
   for (const auto &arg : expr->args) {
-    DiagnosePart7TaskCallableLegalityExpr(arg.get(), profile,
+    DiagnoseConcurrencyTaskCallableLegalityExpr(arg.get(), profile,
                                           inside_async_context, diagnostics);
   }
 }
 
-static void DiagnosePart7TaskCallableLegalityStmt(
-    const Stmt *stmt, const Objc3Part7TaskCallableLegalityProfile &profile,
+static void DiagnoseConcurrencyTaskCallableLegalityStmt(
+    const Stmt *stmt, const Objc3ConcurrencyTaskCallableLegalityProfile &profile,
     bool inside_async_context, std::vector<std::string> &diagnostics) {
   if (stmt == nullptr) {
     return;
@@ -2024,35 +2024,35 @@ static void DiagnosePart7TaskCallableLegalityStmt(
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(stmt->let_stmt->value.get(), profile,
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->let_stmt->value.get(), profile,
                                             inside_async_context, diagnostics);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(
+      DiagnoseConcurrencyTaskCallableLegalityExpr(
           stmt->assign_stmt->value.get(), profile, inside_async_context,
           diagnostics);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(
+      DiagnoseConcurrencyTaskCallableLegalityExpr(
           stmt->return_stmt->value.get(), profile, inside_async_context,
           diagnostics);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(
+      DiagnoseConcurrencyTaskCallableLegalityExpr(
           stmt->if_stmt->condition.get(), profile, inside_async_context,
           diagnostics);
       for (const auto &then_stmt : stmt->if_stmt->then_body) {
-        DiagnosePart7TaskCallableLegalityStmt(then_stmt.get(), profile,
+        DiagnoseConcurrencyTaskCallableLegalityStmt(then_stmt.get(), profile,
                                               inside_async_context, diagnostics);
       }
       for (const auto &else_stmt : stmt->if_stmt->else_body) {
-        DiagnosePart7TaskCallableLegalityStmt(else_stmt.get(), profile,
+        DiagnoseConcurrencyTaskCallableLegalityStmt(else_stmt.get(), profile,
                                               inside_async_context, diagnostics);
       }
     }
@@ -2060,39 +2060,39 @@ static void DiagnosePart7TaskCallableLegalityStmt(
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+        DiagnoseConcurrencyTaskCallableLegalityStmt(body_stmt.get(), profile,
                                               inside_async_context, diagnostics);
       }
-      DiagnosePart7TaskCallableLegalityExpr(
+      DiagnoseConcurrencyTaskCallableLegalityExpr(
           stmt->do_while_stmt->condition.get(), profile, inside_async_context,
           diagnostics);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(stmt->for_stmt->init.value.get(),
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->for_stmt->init.value.get(),
                                             profile, inside_async_context,
                                             diagnostics);
-      DiagnosePart7TaskCallableLegalityExpr(stmt->for_stmt->condition.get(),
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->for_stmt->condition.get(),
                                             profile, inside_async_context,
                                             diagnostics);
-      DiagnosePart7TaskCallableLegalityExpr(stmt->for_stmt->step.value.get(),
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->for_stmt->step.value.get(),
                                             profile, inside_async_context,
                                             diagnostics);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+        DiagnoseConcurrencyTaskCallableLegalityStmt(body_stmt.get(), profile,
                                               inside_async_context, diagnostics);
       }
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(
+      DiagnoseConcurrencyTaskCallableLegalityExpr(
           stmt->switch_stmt->condition.get(), profile, inside_async_context,
           diagnostics);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &case_stmt : switch_case.body) {
-          DiagnosePart7TaskCallableLegalityStmt(case_stmt.get(), profile,
+          DiagnoseConcurrencyTaskCallableLegalityStmt(case_stmt.get(), profile,
                                                 inside_async_context,
                                                 diagnostics);
         }
@@ -2101,11 +2101,11 @@ static void DiagnosePart7TaskCallableLegalityStmt(
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(
+      DiagnoseConcurrencyTaskCallableLegalityExpr(
           stmt->while_stmt->condition.get(), profile, inside_async_context,
           diagnostics);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+        DiagnoseConcurrencyTaskCallableLegalityStmt(body_stmt.get(), profile,
                                               inside_async_context, diagnostics);
       }
     }
@@ -2114,14 +2114,14 @@ static void DiagnosePart7TaskCallableLegalityStmt(
   case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        DiagnosePart7TaskCallableLegalityStmt(body_stmt.get(), profile,
+        DiagnoseConcurrencyTaskCallableLegalityStmt(body_stmt.get(), profile,
                                               inside_async_context, diagnostics);
       }
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      DiagnosePart7TaskCallableLegalityExpr(stmt->expr_stmt->value.get(), profile,
+      DiagnoseConcurrencyTaskCallableLegalityExpr(stmt->expr_stmt->value.get(), profile,
                                             inside_async_context, diagnostics);
     }
     return;
@@ -2132,31 +2132,31 @@ static void DiagnosePart7TaskCallableLegalityStmt(
   }
 }
 
-static void DiagnosePart7TaskCallableLegality(
+static void DiagnoseConcurrencyTaskCallableLegality(
     const std::vector<std::unique_ptr<Stmt>> &body, bool inside_async_context,
     std::vector<std::string> &diagnostics) {
-  Objc3Part7TaskCallableLegalityProfile profile;
+  Objc3ConcurrencyTaskCallableLegalityProfile profile;
   for (const auto &stmt : body) {
-    CollectPart7TaskCallableLegalityStmtSites(stmt.get(), profile);
+    CollectConcurrencyTaskCallableLegalityStmtSites(stmt.get(), profile);
   }
   for (const auto &stmt : body) {
-    DiagnosePart7TaskCallableLegalityStmt(stmt.get(), profile,
+    DiagnoseConcurrencyTaskCallableLegalityStmt(stmt.get(), profile,
                                           inside_async_context, diagnostics);
   }
 }
 
-static Objc3Part7TaskCallableLegalityProfile
-BuildPart7TaskCallableLegalityProfile(
+static Objc3ConcurrencyTaskCallableLegalityProfile
+BuildConcurrencyTaskCallableLegalityProfile(
     const std::vector<std::unique_ptr<Stmt>> &body) {
-  Objc3Part7TaskCallableLegalityProfile profile;
+  Objc3ConcurrencyTaskCallableLegalityProfile profile;
   for (const auto &stmt : body) {
-    CollectPart7TaskCallableLegalityStmtSites(stmt.get(), profile);
+    CollectConcurrencyTaskCallableLegalityStmtSites(stmt.get(), profile);
   }
   return profile;
 }
 
-static void DiagnosePart7ExecutorAffinityCompletion(
-    const Objc3Part7TaskCallableLegalityProfile &profile,
+static void DiagnoseConcurrencyExecutorAffinityCompletion(
+    const Objc3ConcurrencyTaskCallableLegalityProfile &profile,
     bool async_declared, bool executor_affinity_declared,
     const std::string &executor_affinity_kind, int line, int column,
     std::vector<std::string> &diagnostics) {
@@ -2187,7 +2187,7 @@ static bool IsActorInterfaceOwner(
   return actors.find(name) != actors.end();
 }
 
-struct Objc3Part7ActorMethodBodyProfile {
+struct Objc3ConcurrencyActorMethodBodyProfile {
   std::size_t replay_proof_sites = 0;
   std::size_t race_guard_sites = 0;
   std::size_t task_handoff_sites = 0;
@@ -2197,19 +2197,19 @@ struct Objc3Part7ActorMethodBodyProfile {
   std::size_t escaping_block_literal_sites = 0;
 };
 
-static std::string BuildPart7LowercaseProfileToken(const std::string &symbol) {
+static std::string BuildConcurrencyLowercaseProfileToken(const std::string &symbol) {
   std::string lowered(symbol);
   std::transform(lowered.begin(), lowered.end(), lowered.begin(),
                  [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
   return lowered;
 }
 
-static void CollectPart7ActorMethodBodyProfileFromSymbol(
-    const std::string &symbol, Objc3Part7ActorMethodBodyProfile &profile) {
+static void CollectConcurrencyActorMethodBodyProfileFromSymbol(
+    const std::string &symbol, Objc3ConcurrencyActorMethodBodyProfile &profile) {
   if (symbol.empty()) {
     return;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   if (lowered.find("replay") != std::string::npos ||
       lowered.find("proof") != std::string::npos) {
     ++profile.replay_proof_sites;
@@ -2242,19 +2242,19 @@ static void CollectPart7ActorMethodBodyProfileFromSymbol(
   }
 }
 
-static void CollectPart7ActorMethodBodyProfileStmt(
-    const Stmt *stmt, Objc3Part7ActorMethodBodyProfile &profile);
+static void CollectConcurrencyActorMethodBodyProfileStmt(
+    const Stmt *stmt, Objc3ConcurrencyActorMethodBodyProfile &profile);
 
-static void CollectPart7ActorMethodBodyProfileExpr(
-    const Expr *expr, Objc3Part7ActorMethodBodyProfile &profile) {
+static void CollectConcurrencyActorMethodBodyProfileExpr(
+    const Expr *expr, Objc3ConcurrencyActorMethodBodyProfile &profile) {
   if (expr == nullptr) {
     return;
   }
   switch (expr->kind) {
   case Expr::Kind::Call:
-    CollectPart7ActorMethodBodyProfileFromSymbol(expr->ident, profile);
+    CollectConcurrencyActorMethodBodyProfileFromSymbol(expr->ident, profile);
     for (const auto &arg : expr->args) {
-      CollectPart7ActorMethodBodyProfileExpr(arg.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileExpr(arg.get(), profile);
     }
     return;
   case Expr::Kind::BlockLiteral:
@@ -2263,51 +2263,51 @@ static void CollectPart7ActorMethodBodyProfileExpr(
       ++profile.escaping_block_literal_sites;
     }
     for (const auto &stmt : expr->block_body) {
-      CollectPart7ActorMethodBodyProfileStmt(stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(stmt.get(), profile);
     }
     return;
   case Expr::Kind::MessageSend:
-    CollectPart7ActorMethodBodyProfileFromSymbol(expr->selector, profile);
-    CollectPart7ActorMethodBodyProfileExpr(expr->receiver.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileFromSymbol(expr->selector, profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->receiver.get(), profile);
     for (const auto &arg : expr->args) {
-      CollectPart7ActorMethodBodyProfileExpr(arg.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileExpr(arg.get(), profile);
     }
     return;
   case Expr::Kind::Binary:
-    CollectPart7ActorMethodBodyProfileExpr(expr->left.get(), profile);
-    CollectPart7ActorMethodBodyProfileExpr(expr->right.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->left.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->right.get(), profile);
     return;
   case Expr::Kind::Conditional:
-    CollectPart7ActorMethodBodyProfileExpr(expr->left.get(), profile);
-    CollectPart7ActorMethodBodyProfileExpr(expr->right.get(), profile);
-    CollectPart7ActorMethodBodyProfileExpr(expr->third.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->left.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->right.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileExpr(expr->third.get(), profile);
     return;
   default:
     return;
   }
 }
 
-static void CollectPart7ActorMethodBodyProfileStmt(
-    const Stmt *stmt, Objc3Part7ActorMethodBodyProfile &profile) {
+static void CollectConcurrencyActorMethodBodyProfileStmt(
+    const Stmt *stmt, Objc3ConcurrencyActorMethodBodyProfile &profile) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      CollectPart7ActorMethodBodyProfileExpr(stmt->let_stmt->value.get(),
+      CollectConcurrencyActorMethodBodyProfileExpr(stmt->let_stmt->value.get(),
                                              profile);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      CollectPart7ActorMethodBodyProfileExpr(stmt->assign_stmt->value.get(),
+      CollectConcurrencyActorMethodBodyProfileExpr(stmt->assign_stmt->value.get(),
                                              profile);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart7ActorMethodBodyProfileExpr(stmt->return_stmt->value.get(),
+      CollectConcurrencyActorMethodBodyProfileExpr(stmt->return_stmt->value.get(),
                                              profile);
     }
     return;
@@ -2315,13 +2315,13 @@ static void CollectPart7ActorMethodBodyProfileStmt(
     if (stmt->if_stmt == nullptr) {
       return;
     }
-    CollectPart7ActorMethodBodyProfileExpr(stmt->if_stmt->condition.get(),
+    CollectConcurrencyActorMethodBodyProfileExpr(stmt->if_stmt->condition.get(),
                                            profile);
     for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      CollectPart7ActorMethodBodyProfileStmt(then_stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(then_stmt.get(), profile);
     }
     for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      CollectPart7ActorMethodBodyProfileStmt(else_stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(else_stmt.get(), profile);
     }
     return;
   case Stmt::Kind::DoWhile:
@@ -2329,34 +2329,34 @@ static void CollectPart7ActorMethodBodyProfileStmt(
       return;
     }
     for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(body_stmt.get(), profile);
     }
-    CollectPart7ActorMethodBodyProfileExpr(
+    CollectConcurrencyActorMethodBodyProfileExpr(
         stmt->do_while_stmt->condition.get(), profile);
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt == nullptr) {
       return;
     }
-    CollectPart7ActorMethodBodyProfileExpr(stmt->for_stmt->init.value.get(),
+    CollectConcurrencyActorMethodBodyProfileExpr(stmt->for_stmt->init.value.get(),
                                            profile);
-    CollectPart7ActorMethodBodyProfileExpr(stmt->for_stmt->condition.get(),
+    CollectConcurrencyActorMethodBodyProfileExpr(stmt->for_stmt->condition.get(),
                                            profile);
-    CollectPart7ActorMethodBodyProfileExpr(stmt->for_stmt->step.value.get(),
+    CollectConcurrencyActorMethodBodyProfileExpr(stmt->for_stmt->step.value.get(),
                                            profile);
     for (const auto &body_stmt : stmt->for_stmt->body) {
-      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(body_stmt.get(), profile);
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt == nullptr) {
       return;
     }
-    CollectPart7ActorMethodBodyProfileExpr(stmt->switch_stmt->condition.get(),
+    CollectConcurrencyActorMethodBodyProfileExpr(stmt->switch_stmt->condition.get(),
                                            profile);
     for (const auto &switch_case : stmt->switch_stmt->cases) {
       for (const auto &case_stmt : switch_case.body) {
-        CollectPart7ActorMethodBodyProfileStmt(case_stmt.get(), profile);
+        CollectConcurrencyActorMethodBodyProfileStmt(case_stmt.get(), profile);
       }
     }
     return;
@@ -2364,10 +2364,10 @@ static void CollectPart7ActorMethodBodyProfileStmt(
     if (stmt->while_stmt == nullptr) {
       return;
     }
-    CollectPart7ActorMethodBodyProfileExpr(stmt->while_stmt->condition.get(),
+    CollectConcurrencyActorMethodBodyProfileExpr(stmt->while_stmt->condition.get(),
                                            profile);
     for (const auto &body_stmt : stmt->while_stmt->body) {
-      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(body_stmt.get(), profile);
     }
     return;
   case Stmt::Kind::Block:
@@ -2376,12 +2376,12 @@ static void CollectPart7ActorMethodBodyProfileStmt(
       return;
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
-      CollectPart7ActorMethodBodyProfileStmt(body_stmt.get(), profile);
+      CollectConcurrencyActorMethodBodyProfileStmt(body_stmt.get(), profile);
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart7ActorMethodBodyProfileExpr(stmt->expr_stmt->value.get(),
+      CollectConcurrencyActorMethodBodyProfileExpr(stmt->expr_stmt->value.get(),
                                              profile);
     }
     return;
@@ -2390,16 +2390,16 @@ static void CollectPart7ActorMethodBodyProfileStmt(
   }
 }
 
-static Objc3Part7ActorMethodBodyProfile BuildPart7ActorMethodBodyProfile(
+static Objc3ConcurrencyActorMethodBodyProfile BuildConcurrencyActorMethodBodyProfile(
     const Objc3MethodDecl &method) {
-  Objc3Part7ActorMethodBodyProfile profile;
+  Objc3ConcurrencyActorMethodBodyProfile profile;
   for (const auto &stmt : method.body) {
-    CollectPart7ActorMethodBodyProfileStmt(stmt.get(), profile);
+    CollectConcurrencyActorMethodBodyProfileStmt(stmt.get(), profile);
   }
   return profile;
 }
 
-static void DiagnosePart7ActorMethodIsolationRules(
+static void DiagnoseConcurrencyActorMethodIsolationRules(
     const Objc3MethodDecl &method, bool owner_is_actor, unsigned line,
     unsigned column, std::vector<std::string> &diagnostics) {
   if (method.objc_nonisolated_declared && !owner_is_actor) {
@@ -2410,8 +2410,8 @@ static void DiagnosePart7ActorMethodIsolationRules(
   if (!owner_is_actor) {
     return;
   }
-  const Objc3Part7ActorMethodBodyProfile body_profile =
-      BuildPart7ActorMethodBodyProfile(method);
+  const Objc3ConcurrencyActorMethodBodyProfile body_profile =
+      BuildConcurrencyActorMethodBodyProfile(method);
   if (method.objc_nonisolated_declared && method.async_declared) {
     diagnostics.push_back(MakeDiag(
         line, column, "O3S287",
@@ -2434,14 +2434,14 @@ static void DiagnosePart7ActorMethodIsolationRules(
   }
 }
 
-static void DiagnosePart7ActorRaceHazardRules(
+static void DiagnoseConcurrencyActorRaceHazardRules(
     const Objc3MethodDecl &method, bool owner_is_actor, unsigned line,
     unsigned column, std::vector<std::string> &diagnostics) {
   if (!owner_is_actor) {
     return;
   }
-  const Objc3Part7ActorMethodBodyProfile body_profile =
-      BuildPart7ActorMethodBodyProfile(method);
+  const Objc3ConcurrencyActorMethodBodyProfile body_profile =
+      BuildConcurrencyActorMethodBodyProfile(method);
   if (body_profile.task_handoff_sites == 0u) {
     return;
   }
@@ -2467,14 +2467,14 @@ static void DiagnosePart7ActorRaceHazardRules(
   }
 }
 
-static bool IsPart8CleanupOwnedLocal(const LetStmt &stmt) {
+static bool IsOwnershipCleanupOwnedLocal(const LetStmt &stmt) {
   return stmt.cleanup_attribute_declared || stmt.cleanup_sugar_declared ||
          stmt.resource_attribute_declared || stmt.resource_sugar_declared;
 }
 
-static void MergePart8ResourceMoveState(
-    std::vector<Part8ResourceMoveScope> &target_scopes,
-    const std::vector<Part8ResourceMoveScope> &branch_scopes) {
+static void MergeOwnershipResourceMoveState(
+    std::vector<OwnershipResourceMoveScope> &target_scopes,
+    const std::vector<OwnershipResourceMoveScope> &branch_scopes) {
   const std::size_t scope_count =
       std::min(target_scopes.size(), branch_scopes.size());
   for (std::size_t scope_index = 0; scope_index < scope_count; ++scope_index) {
@@ -2494,24 +2494,24 @@ static void MergePart8ResourceMoveState(
   }
 }
 
-static void DiagnosePart8ResourceMoveExpr(
-    const Expr *expr, std::vector<Part8ResourceMoveScope> &scopes,
+static void DiagnoseOwnershipResourceMoveExpr(
+    const Expr *expr, std::vector<OwnershipResourceMoveScope> &scopes,
     std::vector<std::string> &diagnostics);
 
-static void DiagnosePart8ResourceMoveStatements(
+static void DiagnoseOwnershipResourceMoveStatements(
     const std::vector<std::unique_ptr<Stmt>> &statements,
-    std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<OwnershipResourceMoveScope> &scopes,
     std::vector<std::string> &diagnostics);
 
-static void DiagnosePart8ResourceMoveExpr(
-    const Expr *expr, std::vector<Part8ResourceMoveScope> &scopes,
+static void DiagnoseOwnershipResourceMoveExpr(
+    const Expr *expr, std::vector<OwnershipResourceMoveScope> &scopes,
     std::vector<std::string> &diagnostics) {
   if (expr == nullptr) {
     return;
   }
   switch (expr->kind) {
     case Expr::Kind::Identifier: {
-      const auto *binding = LookupPart8ResourceMoveBinding(scopes, expr->ident);
+      const auto *binding = LookupOwnershipResourceMoveBinding(scopes, expr->ident);
       if (binding != nullptr && binding->cleanup_owned && binding->moved) {
         diagnostics.push_back(MakeDiag(
             expr->line, expr->column, "O3S296",
@@ -2524,7 +2524,7 @@ static void DiagnosePart8ResourceMoveExpr(
     case Expr::Kind::BlockLiteral: {
       std::unordered_set<std::string> moved_here;
       for (const auto &item : expr->block_explicit_capture_items_source_order) {
-        auto *binding = LookupPart8ResourceMoveBinding(scopes, item.name);
+        auto *binding = LookupOwnershipResourceMoveBinding(scopes, item.name);
         if (item.mode == "move") {
           if (binding == nullptr) {
             continue;
@@ -2559,7 +2559,7 @@ static void DiagnosePart8ResourceMoveExpr(
         if (moved_here.count(capture_name) != 0u) {
           continue;
         }
-        const auto *binding = LookupPart8ResourceMoveBinding(scopes, capture_name);
+        const auto *binding = LookupOwnershipResourceMoveBinding(scopes, capture_name);
         if (binding != nullptr && binding->cleanup_owned && binding->moved) {
           diagnostics.push_back(MakeDiag(
               expr->line, expr->column, "O3S296",
@@ -2569,7 +2569,7 @@ static void DiagnosePart8ResourceMoveExpr(
         }
       }
       for (const auto &capture_name : moved_here) {
-        if (auto *binding = LookupPart8ResourceMoveBinding(scopes, capture_name)) {
+        if (auto *binding = LookupOwnershipResourceMoveBinding(scopes, capture_name)) {
           binding->moved = true;
           binding->move_line = expr->line;
           binding->move_column = expr->column;
@@ -2578,19 +2578,19 @@ static void DiagnosePart8ResourceMoveExpr(
       return;
     }
     case Expr::Kind::Binary:
-      DiagnosePart8ResourceMoveExpr(expr->left.get(), scopes, diagnostics);
-      DiagnosePart8ResourceMoveExpr(expr->right.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->left.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->right.get(), scopes, diagnostics);
       return;
     case Expr::Kind::Conditional:
-      DiagnosePart8ResourceMoveExpr(expr->left.get(), scopes, diagnostics);
-      DiagnosePart8ResourceMoveExpr(expr->right.get(), scopes, diagnostics);
-      DiagnosePart8ResourceMoveExpr(expr->third.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->left.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->right.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->third.get(), scopes, diagnostics);
       return;
     case Expr::Kind::Call:
     case Expr::Kind::MessageSend:
-      DiagnosePart8ResourceMoveExpr(expr->receiver.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(expr->receiver.get(), scopes, diagnostics);
       for (const auto &arg : expr->args) {
-        DiagnosePart8ResourceMoveExpr(arg.get(), scopes, diagnostics);
+        DiagnoseOwnershipResourceMoveExpr(arg.get(), scopes, diagnostics);
       }
       return;
     case Expr::Kind::Number:
@@ -2600,23 +2600,23 @@ static void DiagnosePart8ResourceMoveExpr(
   }
 }
 
-static void DiagnosePart8ResourceMoveForClause(
-    const ForClause &clause, std::vector<Part8ResourceMoveScope> &scopes,
+static void DiagnoseOwnershipResourceMoveForClause(
+    const ForClause &clause, std::vector<OwnershipResourceMoveScope> &scopes,
     std::vector<std::string> &diagnostics) {
   switch (clause.kind) {
     case ForClause::Kind::None:
       return;
     case ForClause::Kind::Expr:
-      DiagnosePart8ResourceMoveExpr(clause.value.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(clause.value.get(), scopes, diagnostics);
       return;
     case ForClause::Kind::Let:
-      DiagnosePart8ResourceMoveExpr(clause.value.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(clause.value.get(), scopes, diagnostics);
       if (!scopes.empty()) {
         scopes.back()[clause.name] = {};
       }
       return;
     case ForClause::Kind::Assign: {
-      auto *binding = LookupPart8ResourceMoveBinding(scopes, clause.name);
+      auto *binding = LookupOwnershipResourceMoveBinding(scopes, clause.name);
       if (binding != nullptr && binding->cleanup_owned && binding->moved) {
         diagnostics.push_back(MakeDiag(
             clause.line, clause.column, "O3S296",
@@ -2624,14 +2624,14 @@ static void DiagnosePart8ResourceMoveForClause(
                 clause.name +
                 "' is used after move capture transferred cleanup ownership"));
       }
-      DiagnosePart8ResourceMoveExpr(clause.value.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(clause.value.get(), scopes, diagnostics);
       return;
     }
   }
 }
 
-static void DiagnosePart8ResourceMoveStatement(
-    const Stmt *stmt, std::vector<Part8ResourceMoveScope> &scopes,
+static void DiagnoseOwnershipResourceMoveStatement(
+    const Stmt *stmt, std::vector<OwnershipResourceMoveScope> &scopes,
     std::vector<std::string> &diagnostics) {
   if (stmt == nullptr) {
     return;
@@ -2642,9 +2642,9 @@ static void DiagnosePart8ResourceMoveStatement(
       if (let == nullptr || scopes.empty()) {
         return;
       }
-      DiagnosePart8ResourceMoveExpr(let->value.get(), scopes, diagnostics);
-      Part8ResourceMoveBindingState state;
-      state.cleanup_owned = IsPart8CleanupOwnedLocal(*let);
+      DiagnoseOwnershipResourceMoveExpr(let->value.get(), scopes, diagnostics);
+      OwnershipResourceMoveBindingState state;
+      state.cleanup_owned = IsOwnershipCleanupOwnedLocal(*let);
       scopes.back()[let->name] = state;
       return;
     }
@@ -2653,7 +2653,7 @@ static void DiagnosePart8ResourceMoveStatement(
       if (assign == nullptr) {
         return;
       }
-      auto *binding = LookupPart8ResourceMoveBinding(scopes, assign->name);
+      auto *binding = LookupOwnershipResourceMoveBinding(scopes, assign->name);
       if (binding != nullptr && binding->cleanup_owned && binding->moved) {
         diagnostics.push_back(MakeDiag(
             assign->line, assign->column, "O3S296",
@@ -2661,18 +2661,18 @@ static void DiagnosePart8ResourceMoveStatement(
                 assign->name +
                 "' is used after move capture transferred cleanup ownership"));
       }
-      DiagnosePart8ResourceMoveExpr(assign->value.get(), scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveExpr(assign->value.get(), scopes, diagnostics);
       return;
     }
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
-        DiagnosePart8ResourceMoveExpr(stmt->return_stmt->value.get(), scopes,
+        DiagnoseOwnershipResourceMoveExpr(stmt->return_stmt->value.get(), scopes,
                                       diagnostics);
       }
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        DiagnosePart8ResourceMoveExpr(stmt->expr_stmt->value.get(), scopes,
+        DiagnoseOwnershipResourceMoveExpr(stmt->expr_stmt->value.get(), scopes,
                                       diagnostics);
       }
       return;
@@ -2681,18 +2681,18 @@ static void DiagnosePart8ResourceMoveStatement(
       if (if_stmt == nullptr) {
         return;
       }
-      DiagnosePart8ResourceMoveExpr(if_stmt->condition.get(), scopes,
+      DiagnoseOwnershipResourceMoveExpr(if_stmt->condition.get(), scopes,
                                     diagnostics);
       auto then_scopes = scopes;
       then_scopes.push_back({});
-      DiagnosePart8ResourceMoveStatements(if_stmt->then_body, then_scopes,
+      DiagnoseOwnershipResourceMoveStatements(if_stmt->then_body, then_scopes,
                                           diagnostics);
       auto else_scopes = scopes;
       else_scopes.push_back({});
-      DiagnosePart8ResourceMoveStatements(if_stmt->else_body, else_scopes,
+      DiagnoseOwnershipResourceMoveStatements(if_stmt->else_body, else_scopes,
                                           diagnostics);
-      MergePart8ResourceMoveState(scopes, then_scopes);
-      MergePart8ResourceMoveState(scopes, else_scopes);
+      MergeOwnershipResourceMoveState(scopes, then_scopes);
+      MergeOwnershipResourceMoveState(scopes, else_scopes);
       return;
     }
     case Stmt::Kind::DoWhile: {
@@ -2702,10 +2702,10 @@ static void DiagnosePart8ResourceMoveStatement(
       }
       auto body_scopes = scopes;
       body_scopes.push_back({});
-      DiagnosePart8ResourceMoveStatements(do_while_stmt->body, body_scopes,
+      DiagnoseOwnershipResourceMoveStatements(do_while_stmt->body, body_scopes,
                                           diagnostics);
-      MergePart8ResourceMoveState(scopes, body_scopes);
-      DiagnosePart8ResourceMoveExpr(do_while_stmt->condition.get(), scopes,
+      MergeOwnershipResourceMoveState(scopes, body_scopes);
+      DiagnoseOwnershipResourceMoveExpr(do_while_stmt->condition.get(), scopes,
                                     diagnostics);
       return;
     }
@@ -2716,16 +2716,16 @@ static void DiagnosePart8ResourceMoveStatement(
       }
       auto loop_scopes = scopes;
       loop_scopes.push_back({});
-      DiagnosePart8ResourceMoveForClause(for_stmt->init, loop_scopes,
+      DiagnoseOwnershipResourceMoveForClause(for_stmt->init, loop_scopes,
                                          diagnostics);
-      DiagnosePart8ResourceMoveExpr(for_stmt->condition.get(), loop_scopes,
+      DiagnoseOwnershipResourceMoveExpr(for_stmt->condition.get(), loop_scopes,
                                     diagnostics);
-      DiagnosePart8ResourceMoveForClause(for_stmt->step, loop_scopes,
+      DiagnoseOwnershipResourceMoveForClause(for_stmt->step, loop_scopes,
                                          diagnostics);
       loop_scopes.push_back({});
-      DiagnosePart8ResourceMoveStatements(for_stmt->body, loop_scopes,
+      DiagnoseOwnershipResourceMoveStatements(for_stmt->body, loop_scopes,
                                           diagnostics);
-      MergePart8ResourceMoveState(scopes, loop_scopes);
+      MergeOwnershipResourceMoveState(scopes, loop_scopes);
       return;
     }
     case Stmt::Kind::Switch: {
@@ -2733,14 +2733,14 @@ static void DiagnosePart8ResourceMoveStatement(
       if (switch_stmt == nullptr) {
         return;
       }
-      DiagnosePart8ResourceMoveExpr(switch_stmt->condition.get(), scopes,
+      DiagnoseOwnershipResourceMoveExpr(switch_stmt->condition.get(), scopes,
                                     diagnostics);
       for (const auto &case_stmt : switch_stmt->cases) {
         auto case_scopes = scopes;
         case_scopes.push_back({});
-        DiagnosePart8ResourceMoveStatements(case_stmt.body, case_scopes,
+        DiagnoseOwnershipResourceMoveStatements(case_stmt.body, case_scopes,
                                             diagnostics);
-        MergePart8ResourceMoveState(scopes, case_scopes);
+        MergeOwnershipResourceMoveState(scopes, case_scopes);
       }
       return;
     }
@@ -2749,29 +2749,29 @@ static void DiagnosePart8ResourceMoveStatement(
       if (while_stmt == nullptr) {
         return;
       }
-      DiagnosePart8ResourceMoveExpr(while_stmt->condition.get(), scopes,
+      DiagnoseOwnershipResourceMoveExpr(while_stmt->condition.get(), scopes,
                                     diagnostics);
       auto body_scopes = scopes;
       body_scopes.push_back({});
-      DiagnosePart8ResourceMoveStatements(while_stmt->body, body_scopes,
+      DiagnoseOwnershipResourceMoveStatements(while_stmt->body, body_scopes,
                                           diagnostics);
-      MergePart8ResourceMoveState(scopes, body_scopes);
+      MergeOwnershipResourceMoveState(scopes, body_scopes);
       return;
     }
     case Stmt::Kind::Block:
       if (stmt->block_stmt != nullptr) {
         auto block_scopes = scopes;
         block_scopes.push_back({});
-        DiagnosePart8ResourceMoveStatements(stmt->block_stmt->body, block_scopes,
+        DiagnoseOwnershipResourceMoveStatements(stmt->block_stmt->body, block_scopes,
                                             diagnostics);
-        MergePart8ResourceMoveState(scopes, block_scopes);
+        MergeOwnershipResourceMoveState(scopes, block_scopes);
       }
       return;
     case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         auto defer_scopes = scopes;
         defer_scopes.push_back({});
-        DiagnosePart8ResourceMoveStatements(stmt->block_stmt->body, defer_scopes,
+        DiagnoseOwnershipResourceMoveStatements(stmt->block_stmt->body, defer_scopes,
                                             diagnostics);
       }
       return;
@@ -2782,107 +2782,107 @@ static void DiagnosePart8ResourceMoveStatement(
   }
 }
 
-static void DiagnosePart8ResourceMoveStatements(
+static void DiagnoseOwnershipResourceMoveStatements(
     const std::vector<std::unique_ptr<Stmt>> &statements,
-    std::vector<Part8ResourceMoveScope> &scopes,
+    std::vector<OwnershipResourceMoveScope> &scopes,
     std::vector<std::string> &diagnostics) {
   for (const auto &stmt : statements) {
-    DiagnosePart8ResourceMoveStatement(stmt.get(), scopes, diagnostics);
+    DiagnoseOwnershipResourceMoveStatement(stmt.get(), scopes, diagnostics);
   }
 }
 
-static void DiagnosePart8ResourceMoveSemantics(
+static void DiagnoseOwnershipResourceMoveSemantics(
     const std::vector<std::unique_ptr<Stmt>> &statements,
     const std::vector<SemanticScope> &semantic_scopes,
     std::vector<std::string> &diagnostics) {
-  std::vector<Part8ResourceMoveScope> scopes;
+  std::vector<OwnershipResourceMoveScope> scopes;
   scopes.reserve(semantic_scopes.size());
   for (const auto &semantic_scope : semantic_scopes) {
-    Part8ResourceMoveScope scope;
+    OwnershipResourceMoveScope scope;
     for (const auto &[name, _] : semantic_scope) {
       scope[name] = {};
     }
     scopes.push_back(std::move(scope));
   }
-  DiagnosePart8ResourceMoveStatements(statements, scopes, diagnostics);
+  DiagnoseOwnershipResourceMoveStatements(statements, scopes, diagnostics);
 }
 
-struct Part8ResourceMoveSiteProfile {
+struct OwnershipResourceMoveSiteProfile {
   std::size_t cleanup_owned_local_sites = 0;
   std::size_t resource_move_capture_sites = 0;
 };
 
-static void CollectPart8ResourceMoveExprSites(const Expr *expr,
-                                              Part8ResourceMoveSiteProfile &profile);
+static void CollectOwnershipResourceMoveExprSites(const Expr *expr,
+                                              OwnershipResourceMoveSiteProfile &profile);
 
-static void CollectPart8ResourceMoveStmtSites(const Stmt *stmt,
-                                              Part8ResourceMoveSiteProfile &profile) {
+static void CollectOwnershipResourceMoveStmtSites(const Stmt *stmt,
+                                              OwnershipResourceMoveSiteProfile &profile) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
     case Stmt::Kind::Let:
       if (stmt->let_stmt != nullptr) {
-        if (IsPart8CleanupOwnedLocal(*stmt->let_stmt)) {
+        if (IsOwnershipCleanupOwnedLocal(*stmt->let_stmt)) {
           ++profile.cleanup_owned_local_sites;
         }
-        CollectPart8ResourceMoveExprSites(stmt->let_stmt->value.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->let_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::Assign:
       if (stmt->assign_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->assign_stmt->value.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->assign_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->return_stmt->value.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->return_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::If:
       if (stmt->if_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->if_stmt->condition.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->if_stmt->condition.get(), profile);
         for (const auto &body_stmt : stmt->if_stmt->then_body) {
-          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
         }
         for (const auto &body_stmt : stmt->if_stmt->else_body) {
-          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
         }
       }
       return;
     case Stmt::Kind::DoWhile:
       if (stmt->do_while_stmt != nullptr) {
         for (const auto &body_stmt : stmt->do_while_stmt->body) {
-          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
         }
-        CollectPart8ResourceMoveExprSites(stmt->do_while_stmt->condition.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->do_while_stmt->condition.get(), profile);
       }
       return;
     case Stmt::Kind::For:
       if (stmt->for_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->for_stmt->init.value.get(), profile);
-        CollectPart8ResourceMoveExprSites(stmt->for_stmt->condition.get(), profile);
-        CollectPart8ResourceMoveExprSites(stmt->for_stmt->step.value.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->for_stmt->init.value.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->for_stmt->condition.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->for_stmt->step.value.get(), profile);
         for (const auto &body_stmt : stmt->for_stmt->body) {
-          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
         }
       }
       return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->switch_stmt->condition.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->switch_stmt->condition.get(), profile);
         for (const auto &case_stmt : stmt->switch_stmt->cases) {
           for (const auto &body_stmt : case_stmt.body) {
-            CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+            CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
           }
         }
       }
       return;
     case Stmt::Kind::While:
       if (stmt->while_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->while_stmt->condition.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->while_stmt->condition.get(), profile);
         for (const auto &body_stmt : stmt->while_stmt->body) {
-          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
         }
       }
       return;
@@ -2890,13 +2890,13 @@ static void CollectPart8ResourceMoveStmtSites(const Stmt *stmt,
     case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         for (const auto &body_stmt : stmt->block_stmt->body) {
-          CollectPart8ResourceMoveStmtSites(body_stmt.get(), profile);
+          CollectOwnershipResourceMoveStmtSites(body_stmt.get(), profile);
         }
       }
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        CollectPart8ResourceMoveExprSites(stmt->expr_stmt->value.get(), profile);
+        CollectOwnershipResourceMoveExprSites(stmt->expr_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::Break:
@@ -2906,8 +2906,8 @@ static void CollectPart8ResourceMoveStmtSites(const Stmt *stmt,
   }
 }
 
-static void CollectPart8ResourceMoveExprSites(const Expr *expr,
-                                              Part8ResourceMoveSiteProfile &profile) {
+static void CollectOwnershipResourceMoveExprSites(const Expr *expr,
+                                              OwnershipResourceMoveSiteProfile &profile) {
   if (expr == nullptr) {
     return;
   }
@@ -2918,33 +2918,33 @@ static void CollectPart8ResourceMoveExprSites(const Expr *expr,
       }
     }
   }
-  CollectPart8ResourceMoveExprSites(expr->receiver.get(), profile);
-  CollectPart8ResourceMoveExprSites(expr->left.get(), profile);
-  CollectPart8ResourceMoveExprSites(expr->right.get(), profile);
-  CollectPart8ResourceMoveExprSites(expr->third.get(), profile);
+  CollectOwnershipResourceMoveExprSites(expr->receiver.get(), profile);
+  CollectOwnershipResourceMoveExprSites(expr->left.get(), profile);
+  CollectOwnershipResourceMoveExprSites(expr->right.get(), profile);
+  CollectOwnershipResourceMoveExprSites(expr->third.get(), profile);
   for (const auto &arg : expr->args) {
-    CollectPart8ResourceMoveExprSites(arg.get(), profile);
+    CollectOwnershipResourceMoveExprSites(arg.get(), profile);
   }
 }
 
-struct Part8BorrowedBindingState {
+struct OwnershipBorrowedBindingState {
   bool borrowed = false;
 };
 
-using Part8BorrowedScope =
-    std::unordered_map<std::string, Part8BorrowedBindingState>;
+using OwnershipBorrowedScope =
+    std::unordered_map<std::string, OwnershipBorrowedBindingState>;
 
-struct Part8BorrowedCallableContract {
+struct OwnershipBorrowedCallableContract {
   std::vector<bool> param_borrowed;
   bool return_borrowed = false;
 };
 
-struct Part8BorrowedReturnContract {
+struct OwnershipBorrowedReturnContract {
   bool valid = false;
 };
 
-static Part8BorrowedBindingState *LookupPart8BorrowedBinding(
-    std::vector<Part8BorrowedScope> &scopes, const std::string &name) {
+static OwnershipBorrowedBindingState *LookupOwnershipBorrowedBinding(
+    std::vector<OwnershipBorrowedScope> &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
     auto found = it->find(name);
     if (found != it->end()) {
@@ -2954,8 +2954,8 @@ static Part8BorrowedBindingState *LookupPart8BorrowedBinding(
   return nullptr;
 }
 
-static const Part8BorrowedBindingState *LookupPart8BorrowedBinding(
-    const std::vector<Part8BorrowedScope> &scopes, const std::string &name) {
+static const OwnershipBorrowedBindingState *LookupOwnershipBorrowedBinding(
+    const std::vector<OwnershipBorrowedScope> &scopes, const std::string &name) {
   for (auto it = scopes.rbegin(); it != scopes.rend(); ++it) {
     auto found = it->find(name);
     if (found != it->end()) {
@@ -2965,9 +2965,9 @@ static const Part8BorrowedBindingState *LookupPart8BorrowedBinding(
   return nullptr;
 }
 
-static void MergePart8BorrowedState(
-    std::vector<Part8BorrowedScope> &target_scopes,
-    const std::vector<Part8BorrowedScope> &branch_scopes) {
+static void MergeOwnershipBorrowedState(
+    std::vector<OwnershipBorrowedScope> &target_scopes,
+    const std::vector<OwnershipBorrowedScope> &branch_scopes) {
   const std::size_t scope_count =
       std::min(target_scopes.size(), branch_scopes.size());
   for (std::size_t scope_index = 0; scope_index < scope_count; ++scope_index) {
@@ -2981,9 +2981,9 @@ static void MergePart8BorrowedState(
   }
 }
 
-static Part8BorrowedCallableContract BuildPart8BorrowedCallableContract(
+static OwnershipBorrowedCallableContract BuildOwnershipBorrowedCallableContract(
     const FunctionDecl &fn) {
-  Part8BorrowedCallableContract contract;
+  OwnershipBorrowedCallableContract contract;
   contract.param_borrowed.reserve(fn.params.size());
   for (const auto &param : fn.params) {
     contract.param_borrowed.push_back(param.borrowed_pointer_qualified);
@@ -2993,27 +2993,27 @@ static Part8BorrowedCallableContract BuildPart8BorrowedCallableContract(
   return contract;
 }
 
-static std::unordered_map<std::string, Part8BorrowedCallableContract>
-BuildPart8BorrowedCallableContracts(const Objc3Program &program) {
-  std::unordered_map<std::string, Part8BorrowedCallableContract> contracts;
+static std::unordered_map<std::string, OwnershipBorrowedCallableContract>
+BuildOwnershipBorrowedCallableContracts(const Objc3Program &program) {
+  std::unordered_map<std::string, OwnershipBorrowedCallableContract> contracts;
   for (const auto &fn : program.functions) {
-    contracts.emplace(fn.name, BuildPart8BorrowedCallableContract(fn));
+    contracts.emplace(fn.name, BuildOwnershipBorrowedCallableContract(fn));
   }
   return contracts;
 }
 
-static Part8BorrowedReturnContract BuildPart8BorrowedReturnContract(
+static OwnershipBorrowedReturnContract BuildOwnershipBorrowedReturnContract(
     const FunctionDecl &fn) {
-  Part8BorrowedReturnContract contract;
+  OwnershipBorrowedReturnContract contract;
   contract.valid = fn.return_borrowed_pointer_qualified &&
                    fn.objc_returns_borrowed_declared &&
                    fn.objc_returns_borrowed_owner_index < fn.params.size();
   return contract;
 }
 
-static Part8BorrowedReturnContract BuildPart8BorrowedReturnContract(
+static OwnershipBorrowedReturnContract BuildOwnershipBorrowedReturnContract(
     const Objc3MethodDecl &method) {
-  Part8BorrowedReturnContract contract;
+  OwnershipBorrowedReturnContract contract;
   contract.valid = method.return_borrowed_pointer_qualified &&
                    method.objc_returns_borrowed_declared &&
                    method.objc_returns_borrowed_owner_index < method.params.size();
@@ -3071,7 +3071,7 @@ static bool ReturnsVoid(const TCallableDecl &decl) {
 }
 
 template <typename TCallableDecl>
-static void DiagnosePart8RetainableFamilyCallableLegality(
+static void DiagnoseOwnershipRetainableFamilyCallableLegality(
     const TCallableDecl &decl, const std::string &callable_label,
     std::vector<std::string> &diagnostics) {
   std::size_t canonical_operation_count = 0;
@@ -3147,16 +3147,16 @@ static void DiagnosePart8RetainableFamilyCallableLegality(
   }
 }
 
-static bool IsPart8BorrowedExpr(
-    const Expr *expr, const std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+static bool IsOwnershipBorrowedExpr(
+    const Expr *expr, const std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts) {
   if (expr == nullptr) {
     return false;
   }
   switch (expr->kind) {
     case Expr::Kind::Identifier: {
-      const auto *binding = LookupPart8BorrowedBinding(scopes, expr->ident);
+      const auto *binding = LookupOwnershipBorrowedBinding(scopes, expr->ident);
       return binding != nullptr && binding->borrowed;
     }
     case Expr::Kind::Call: {
@@ -3165,30 +3165,30 @@ static bool IsPart8BorrowedExpr(
              contract_it->second.return_borrowed;
     }
     case Expr::Kind::Conditional:
-      return IsPart8BorrowedExpr(expr->right.get(), scopes, callable_contracts) ||
-             IsPart8BorrowedExpr(expr->third.get(), scopes, callable_contracts);
+      return IsOwnershipBorrowedExpr(expr->right.get(), scopes, callable_contracts) ||
+             IsOwnershipBorrowedExpr(expr->third.get(), scopes, callable_contracts);
     default:
       return false;
   }
 }
 
-static void DiagnosePart8BorrowedEscapeExpr(
-    const Expr *expr, std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+static void DiagnoseOwnershipBorrowedEscapeExpr(
+    const Expr *expr, std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
     std::vector<std::string> &diagnostics);
 
-static void DiagnosePart8BorrowedEscapeStatements(
+static void DiagnoseOwnershipBorrowedEscapeStatements(
     const std::vector<std::unique_ptr<Stmt>> &statements,
-    std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+    std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
-    const Part8BorrowedReturnContract &return_contract,
+    const OwnershipBorrowedReturnContract &return_contract,
     std::vector<std::string> &diagnostics);
 
-static void DiagnosePart8BorrowedEscapeExpr(
-    const Expr *expr, std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+static void DiagnoseOwnershipBorrowedEscapeExpr(
+    const Expr *expr, std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
     std::vector<std::string> &diagnostics) {
   if (expr == nullptr) {
@@ -3197,7 +3197,7 @@ static void DiagnosePart8BorrowedEscapeExpr(
   switch (expr->kind) {
     case Expr::Kind::BlockLiteral: {
       for (const auto &arg : expr->args) {
-        DiagnosePart8BorrowedEscapeExpr(arg.get(), scopes, callable_contracts,
+        DiagnoseOwnershipBorrowedEscapeExpr(arg.get(), scopes, callable_contracts,
                                         diagnostics);
       }
       const bool escaping_block =
@@ -3207,7 +3207,7 @@ static void DiagnosePart8BorrowedEscapeExpr(
         return;
       }
       for (const auto &capture_name : expr->block_capture_names_lexicographic) {
-        const auto *binding = LookupPart8BorrowedBinding(scopes, capture_name);
+        const auto *binding = LookupOwnershipBorrowedBinding(scopes, capture_name);
         if (binding != nullptr && binding->borrowed) {
           diagnostics.push_back(MakeDiag(
               expr->line, expr->column, "O3S299",
@@ -3218,14 +3218,14 @@ static void DiagnosePart8BorrowedEscapeExpr(
       return;
     }
     case Expr::Kind::Call: {
-      DiagnosePart8BorrowedEscapeExpr(expr->receiver.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->receiver.get(), scopes,
                                       callable_contracts, diagnostics);
       auto contract_it = callable_contracts.find(expr->ident);
       for (std::size_t index = 0; index < expr->args.size(); ++index) {
         const Expr *arg = expr->args[index].get();
-        DiagnosePart8BorrowedEscapeExpr(arg, scopes, callable_contracts,
+        DiagnoseOwnershipBorrowedEscapeExpr(arg, scopes, callable_contracts,
                                         diagnostics);
-        if (!IsPart8BorrowedExpr(arg, scopes, callable_contracts)) {
+        if (!IsOwnershipBorrowedExpr(arg, scopes, callable_contracts)) {
           continue;
         }
         const bool borrowed_boundary_proven =
@@ -3241,25 +3241,25 @@ static void DiagnosePart8BorrowedEscapeExpr(
       return;
     }
     case Expr::Kind::MessageSend:
-      DiagnosePart8BorrowedEscapeExpr(expr->receiver.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->receiver.get(), scopes,
                                       callable_contracts, diagnostics);
       for (const auto &arg : expr->args) {
-        DiagnosePart8BorrowedEscapeExpr(arg.get(), scopes, callable_contracts,
+        DiagnoseOwnershipBorrowedEscapeExpr(arg.get(), scopes, callable_contracts,
                                         diagnostics);
       }
       return;
     case Expr::Kind::Binary:
-      DiagnosePart8BorrowedEscapeExpr(expr->left.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->left.get(), scopes,
                                       callable_contracts, diagnostics);
-      DiagnosePart8BorrowedEscapeExpr(expr->right.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->right.get(), scopes,
                                       callable_contracts, diagnostics);
       return;
     case Expr::Kind::Conditional:
-      DiagnosePart8BorrowedEscapeExpr(expr->left.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->left.get(), scopes,
                                       callable_contracts, diagnostics);
-      DiagnosePart8BorrowedEscapeExpr(expr->right.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->right.get(), scopes,
                                       callable_contracts, diagnostics);
-      DiagnosePart8BorrowedEscapeExpr(expr->third.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(expr->third.get(), scopes,
                                       callable_contracts, diagnostics);
       return;
     case Expr::Kind::Identifier:
@@ -3270,33 +3270,33 @@ static void DiagnosePart8BorrowedEscapeExpr(
   }
 }
 
-static void DiagnosePart8BorrowedEscapeForClause(
-    const ForClause &clause, std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+static void DiagnoseOwnershipBorrowedEscapeForClause(
+    const ForClause &clause, std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
     std::vector<std::string> &diagnostics) {
   switch (clause.kind) {
     case ForClause::Kind::None:
       return;
     case ForClause::Kind::Expr:
-      DiagnosePart8BorrowedEscapeExpr(clause.value.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(clause.value.get(), scopes,
                                       callable_contracts, diagnostics);
       return;
     case ForClause::Kind::Let: {
-      DiagnosePart8BorrowedEscapeExpr(clause.value.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(clause.value.get(), scopes,
                                       callable_contracts, diagnostics);
       if (!scopes.empty()) {
-        scopes.back()[clause.name] = {IsPart8BorrowedExpr(
+        scopes.back()[clause.name] = {IsOwnershipBorrowedExpr(
             clause.value.get(), scopes, callable_contracts)};
       }
       return;
     }
     case ForClause::Kind::Assign: {
       const bool value_is_borrowed =
-          IsPart8BorrowedExpr(clause.value.get(), scopes, callable_contracts);
-      DiagnosePart8BorrowedEscapeExpr(clause.value.get(), scopes,
+          IsOwnershipBorrowedExpr(clause.value.get(), scopes, callable_contracts);
+      DiagnoseOwnershipBorrowedEscapeExpr(clause.value.get(), scopes,
                                       callable_contracts, diagnostics);
-      if (auto *binding = LookupPart8BorrowedBinding(scopes, clause.name)) {
+      if (auto *binding = LookupOwnershipBorrowedBinding(scopes, clause.name)) {
         binding->borrowed = value_is_borrowed;
       }
       return;
@@ -3304,11 +3304,11 @@ static void DiagnosePart8BorrowedEscapeForClause(
   }
 }
 
-static void DiagnosePart8BorrowedEscapeStatement(
-    const Stmt *stmt, std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+static void DiagnoseOwnershipBorrowedEscapeStatement(
+    const Stmt *stmt, std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
-    const Part8BorrowedReturnContract &return_contract,
+    const OwnershipBorrowedReturnContract &return_contract,
     std::vector<std::string> &diagnostics) {
   if (stmt == nullptr) {
     return;
@@ -3320,8 +3320,8 @@ static void DiagnosePart8BorrowedEscapeStatement(
         return;
       }
       const bool borrowed =
-          IsPart8BorrowedExpr(let->value.get(), scopes, callable_contracts);
-      DiagnosePart8BorrowedEscapeExpr(let->value.get(), scopes,
+          IsOwnershipBorrowedExpr(let->value.get(), scopes, callable_contracts);
+      DiagnoseOwnershipBorrowedEscapeExpr(let->value.get(), scopes,
                                       callable_contracts, diagnostics);
       scopes.back()[let->name] = {borrowed};
       return;
@@ -3332,10 +3332,10 @@ static void DiagnosePart8BorrowedEscapeStatement(
         return;
       }
       const bool borrowed =
-          IsPart8BorrowedExpr(assign->value.get(), scopes, callable_contracts);
-      DiagnosePart8BorrowedEscapeExpr(assign->value.get(), scopes,
+          IsOwnershipBorrowedExpr(assign->value.get(), scopes, callable_contracts);
+      DiagnoseOwnershipBorrowedEscapeExpr(assign->value.get(), scopes,
                                       callable_contracts, diagnostics);
-      if (auto *binding = LookupPart8BorrowedBinding(scopes, assign->name)) {
+      if (auto *binding = LookupOwnershipBorrowedBinding(scopes, assign->name)) {
         binding->borrowed = borrowed;
       }
       return;
@@ -3344,8 +3344,8 @@ static void DiagnosePart8BorrowedEscapeStatement(
       if (stmt->return_stmt != nullptr) {
         const Expr *value = stmt->return_stmt->value.get();
         const bool borrowed =
-            IsPart8BorrowedExpr(value, scopes, callable_contracts);
-        DiagnosePart8BorrowedEscapeExpr(value, scopes, callable_contracts,
+            IsOwnershipBorrowedExpr(value, scopes, callable_contracts);
+        DiagnoseOwnershipBorrowedEscapeExpr(value, scopes, callable_contracts,
                                         diagnostics);
         if (borrowed && !return_contract.valid) {
           diagnostics.push_back(MakeDiag(
@@ -3356,7 +3356,7 @@ static void DiagnosePart8BorrowedEscapeStatement(
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        DiagnosePart8BorrowedEscapeExpr(stmt->expr_stmt->value.get(), scopes,
+        DiagnoseOwnershipBorrowedEscapeExpr(stmt->expr_stmt->value.get(), scopes,
                                         callable_contracts, diagnostics);
       }
       return;
@@ -3365,20 +3365,20 @@ static void DiagnosePart8BorrowedEscapeStatement(
       if (if_stmt == nullptr) {
         return;
       }
-      DiagnosePart8BorrowedEscapeExpr(if_stmt->condition.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(if_stmt->condition.get(), scopes,
                                       callable_contracts, diagnostics);
       auto then_scopes = scopes;
       then_scopes.push_back({});
-      DiagnosePart8BorrowedEscapeStatements(if_stmt->then_body, then_scopes,
+      DiagnoseOwnershipBorrowedEscapeStatements(if_stmt->then_body, then_scopes,
                                             callable_contracts,
                                             return_contract, diagnostics);
       auto else_scopes = scopes;
       else_scopes.push_back({});
-      DiagnosePart8BorrowedEscapeStatements(if_stmt->else_body, else_scopes,
+      DiagnoseOwnershipBorrowedEscapeStatements(if_stmt->else_body, else_scopes,
                                             callable_contracts,
                                             return_contract, diagnostics);
-      MergePart8BorrowedState(scopes, then_scopes);
-      MergePart8BorrowedState(scopes, else_scopes);
+      MergeOwnershipBorrowedState(scopes, then_scopes);
+      MergeOwnershipBorrowedState(scopes, else_scopes);
       return;
     }
     case Stmt::Kind::DoWhile: {
@@ -3388,11 +3388,11 @@ static void DiagnosePart8BorrowedEscapeStatement(
       }
       auto body_scopes = scopes;
       body_scopes.push_back({});
-      DiagnosePart8BorrowedEscapeStatements(do_while_stmt->body, body_scopes,
+      DiagnoseOwnershipBorrowedEscapeStatements(do_while_stmt->body, body_scopes,
                                             callable_contracts,
                                             return_contract, diagnostics);
-      MergePart8BorrowedState(scopes, body_scopes);
-      DiagnosePart8BorrowedEscapeExpr(do_while_stmt->condition.get(), scopes,
+      MergeOwnershipBorrowedState(scopes, body_scopes);
+      DiagnoseOwnershipBorrowedEscapeExpr(do_while_stmt->condition.get(), scopes,
                                       callable_contracts, diagnostics);
       return;
     }
@@ -3403,17 +3403,17 @@ static void DiagnosePart8BorrowedEscapeStatement(
       }
       auto loop_scopes = scopes;
       loop_scopes.push_back({});
-      DiagnosePart8BorrowedEscapeForClause(for_stmt->init, loop_scopes,
+      DiagnoseOwnershipBorrowedEscapeForClause(for_stmt->init, loop_scopes,
                                            callable_contracts, diagnostics);
-      DiagnosePart8BorrowedEscapeExpr(for_stmt->condition.get(), loop_scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(for_stmt->condition.get(), loop_scopes,
                                       callable_contracts, diagnostics);
-      DiagnosePart8BorrowedEscapeForClause(for_stmt->step, loop_scopes,
+      DiagnoseOwnershipBorrowedEscapeForClause(for_stmt->step, loop_scopes,
                                            callable_contracts, diagnostics);
       loop_scopes.push_back({});
-      DiagnosePart8BorrowedEscapeStatements(for_stmt->body, loop_scopes,
+      DiagnoseOwnershipBorrowedEscapeStatements(for_stmt->body, loop_scopes,
                                             callable_contracts,
                                             return_contract, diagnostics);
-      MergePart8BorrowedState(scopes, loop_scopes);
+      MergeOwnershipBorrowedState(scopes, loop_scopes);
       return;
     }
     case Stmt::Kind::Switch: {
@@ -3421,15 +3421,15 @@ static void DiagnosePart8BorrowedEscapeStatement(
       if (switch_stmt == nullptr) {
         return;
       }
-      DiagnosePart8BorrowedEscapeExpr(switch_stmt->condition.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(switch_stmt->condition.get(), scopes,
                                       callable_contracts, diagnostics);
       for (const auto &case_stmt : switch_stmt->cases) {
         auto case_scopes = scopes;
         case_scopes.push_back({});
-        DiagnosePart8BorrowedEscapeStatements(case_stmt.body, case_scopes,
+        DiagnoseOwnershipBorrowedEscapeStatements(case_stmt.body, case_scopes,
                                               callable_contracts,
                                               return_contract, diagnostics);
-        MergePart8BorrowedState(scopes, case_scopes);
+        MergeOwnershipBorrowedState(scopes, case_scopes);
       }
       return;
     }
@@ -3438,31 +3438,31 @@ static void DiagnosePart8BorrowedEscapeStatement(
       if (while_stmt == nullptr) {
         return;
       }
-      DiagnosePart8BorrowedEscapeExpr(while_stmt->condition.get(), scopes,
+      DiagnoseOwnershipBorrowedEscapeExpr(while_stmt->condition.get(), scopes,
                                       callable_contracts, diagnostics);
       auto body_scopes = scopes;
       body_scopes.push_back({});
-      DiagnosePart8BorrowedEscapeStatements(while_stmt->body, body_scopes,
+      DiagnoseOwnershipBorrowedEscapeStatements(while_stmt->body, body_scopes,
                                             callable_contracts,
                                             return_contract, diagnostics);
-      MergePart8BorrowedState(scopes, body_scopes);
+      MergeOwnershipBorrowedState(scopes, body_scopes);
       return;
     }
     case Stmt::Kind::Block:
       if (stmt->block_stmt != nullptr) {
         auto block_scopes = scopes;
         block_scopes.push_back({});
-        DiagnosePart8BorrowedEscapeStatements(stmt->block_stmt->body,
+        DiagnoseOwnershipBorrowedEscapeStatements(stmt->block_stmt->body,
                                               block_scopes, callable_contracts,
                                               return_contract, diagnostics);
-        MergePart8BorrowedState(scopes, block_scopes);
+        MergeOwnershipBorrowedState(scopes, block_scopes);
       }
       return;
     case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         auto defer_scopes = scopes;
         defer_scopes.push_back({});
-        DiagnosePart8BorrowedEscapeStatements(stmt->block_stmt->body,
+        DiagnoseOwnershipBorrowedEscapeStatements(stmt->block_stmt->body,
                                               defer_scopes, callable_contracts,
                                               return_contract, diagnostics);
       }
@@ -3474,49 +3474,49 @@ static void DiagnosePart8BorrowedEscapeStatement(
   }
 }
 
-static void DiagnosePart8BorrowedEscapeStatements(
+static void DiagnoseOwnershipBorrowedEscapeStatements(
     const std::vector<std::unique_ptr<Stmt>> &statements,
-    std::vector<Part8BorrowedScope> &scopes,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+    std::vector<OwnershipBorrowedScope> &scopes,
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
-    const Part8BorrowedReturnContract &return_contract,
+    const OwnershipBorrowedReturnContract &return_contract,
     std::vector<std::string> &diagnostics) {
   for (const auto &stmt : statements) {
-    DiagnosePart8BorrowedEscapeStatement(stmt.get(), scopes, callable_contracts,
+    DiagnoseOwnershipBorrowedEscapeStatement(stmt.get(), scopes, callable_contracts,
                                          return_contract, diagnostics);
   }
 }
 
-static void DiagnosePart8BorrowedPointerEscapeSemantics(
+static void DiagnoseOwnershipBorrowedPointerEscapeSemantics(
     const std::vector<std::unique_ptr<Stmt>> &statements,
     const std::vector<SemanticScope> &semantic_scopes,
     const std::unordered_set<std::string> &borrowed_parameter_names,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
-    const Part8BorrowedReturnContract &return_contract,
+    const OwnershipBorrowedReturnContract &return_contract,
     std::vector<std::string> &diagnostics) {
-  std::vector<Part8BorrowedScope> scopes;
+  std::vector<OwnershipBorrowedScope> scopes;
   scopes.reserve(semantic_scopes.size());
   for (const auto &semantic_scope : semantic_scopes) {
-    Part8BorrowedScope scope;
+    OwnershipBorrowedScope scope;
     for (const auto &[name, _] : semantic_scope) {
-      Part8BorrowedBindingState state;
+      OwnershipBorrowedBindingState state;
       state.borrowed = borrowed_parameter_names.find(name) !=
                        borrowed_parameter_names.end();
       scope[name] = state;
     }
     scopes.push_back(std::move(scope));
   }
-  DiagnosePart8BorrowedEscapeStatements(statements, scopes, callable_contracts,
+  DiagnoseOwnershipBorrowedEscapeStatements(statements, scopes, callable_contracts,
                                         return_contract, diagnostics);
 }
 
-struct Part8BorrowedEscapeSiteProfile {
+struct OwnershipBorrowedEscapeSiteProfile {
   std::size_t borrowed_parameter_sites = 0;
   std::size_t borrowed_return_callable_sites = 0;
 };
 
-struct Part8CaptureListRetainableFamilySiteProfile {
+struct OwnershipCaptureListRetainableFamilySiteProfile {
   std::size_t explicit_capture_list_sites = 0;
   std::size_t explicit_capture_item_sites = 0;
   std::size_t explicit_capture_ownership_mode_sites = 0;
@@ -3525,9 +3525,9 @@ struct Part8CaptureListRetainableFamilySiteProfile {
   std::size_t retainable_family_alias_callable_sites = 0;
 };
 
-static void CollectPart8BorrowedEscapeExprSites(
-    const Expr *expr, const std::unordered_map<std::string, Part8BorrowedCallableContract> &callable_contracts,
-    Part8BorrowedEscapeSiteProfile &profile) {
+static void CollectOwnershipBorrowedEscapeExprSites(
+    const Expr *expr, const std::unordered_map<std::string, OwnershipBorrowedCallableContract> &callable_contracts,
+    OwnershipBorrowedEscapeSiteProfile &profile) {
   if (expr == nullptr) {
     return;
   }
@@ -3538,56 +3538,56 @@ static void CollectPart8BorrowedEscapeExprSites(
       ++profile.borrowed_return_callable_sites;
     }
   }
-  CollectPart8BorrowedEscapeExprSites(expr->receiver.get(), callable_contracts,
+  CollectOwnershipBorrowedEscapeExprSites(expr->receiver.get(), callable_contracts,
                                       profile);
-  CollectPart8BorrowedEscapeExprSites(expr->left.get(), callable_contracts,
+  CollectOwnershipBorrowedEscapeExprSites(expr->left.get(), callable_contracts,
                                       profile);
-  CollectPart8BorrowedEscapeExprSites(expr->right.get(), callable_contracts,
+  CollectOwnershipBorrowedEscapeExprSites(expr->right.get(), callable_contracts,
                                       profile);
-  CollectPart8BorrowedEscapeExprSites(expr->third.get(), callable_contracts,
+  CollectOwnershipBorrowedEscapeExprSites(expr->third.get(), callable_contracts,
                                       profile);
   for (const auto &arg : expr->args) {
-    CollectPart8BorrowedEscapeExprSites(arg.get(), callable_contracts, profile);
+    CollectOwnershipBorrowedEscapeExprSites(arg.get(), callable_contracts, profile);
   }
 }
 
-static void CollectPart8BorrowedEscapeStmtSites(
+static void CollectOwnershipBorrowedEscapeStmtSites(
     const Stmt *stmt,
-    const std::unordered_map<std::string, Part8BorrowedCallableContract>
+    const std::unordered_map<std::string, OwnershipBorrowedCallableContract>
         &callable_contracts,
-    Part8BorrowedEscapeSiteProfile &profile) {
+    OwnershipBorrowedEscapeSiteProfile &profile) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
     case Stmt::Kind::Let:
       if (stmt->let_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->let_stmt->value.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->let_stmt->value.get(),
                                             callable_contracts, profile);
       }
       return;
     case Stmt::Kind::Assign:
       if (stmt->assign_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->assign_stmt->value.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->assign_stmt->value.get(),
                                             callable_contracts, profile);
       }
       return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->return_stmt->value.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->return_stmt->value.get(),
                                             callable_contracts, profile);
       }
       return;
     case Stmt::Kind::If:
       if (stmt->if_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->if_stmt->condition.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->if_stmt->condition.get(),
                                             callable_contracts, profile);
         for (const auto &body_stmt : stmt->if_stmt->then_body) {
-          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(), callable_contracts,
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(), callable_contracts,
                                               profile);
         }
         for (const auto &body_stmt : stmt->if_stmt->else_body) {
-          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(), callable_contracts,
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(), callable_contracts,
                                               profile);
         }
       }
@@ -3595,34 +3595,34 @@ static void CollectPart8BorrowedEscapeStmtSites(
     case Stmt::Kind::DoWhile:
       if (stmt->do_while_stmt != nullptr) {
         for (const auto &body_stmt : stmt->do_while_stmt->body) {
-          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(),
                                               callable_contracts, profile);
         }
-        CollectPart8BorrowedEscapeExprSites(stmt->do_while_stmt->condition.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->do_while_stmt->condition.get(),
                                             callable_contracts, profile);
       }
       return;
     case Stmt::Kind::For:
       if (stmt->for_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->for_stmt->init.value.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->for_stmt->init.value.get(),
                                             callable_contracts, profile);
-        CollectPart8BorrowedEscapeExprSites(stmt->for_stmt->condition.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->for_stmt->condition.get(),
                                             callable_contracts, profile);
-        CollectPart8BorrowedEscapeExprSites(stmt->for_stmt->step.value.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->for_stmt->step.value.get(),
                                             callable_contracts, profile);
         for (const auto &body_stmt : stmt->for_stmt->body) {
-          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(),
                                               callable_contracts, profile);
         }
       }
       return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->switch_stmt->condition.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->switch_stmt->condition.get(),
                                             callable_contracts, profile);
         for (const auto &case_stmt : stmt->switch_stmt->cases) {
           for (const auto &body_stmt : case_stmt.body) {
-            CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+            CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(),
                                                 callable_contracts, profile);
           }
         }
@@ -3630,10 +3630,10 @@ static void CollectPart8BorrowedEscapeStmtSites(
       return;
     case Stmt::Kind::While:
       if (stmt->while_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->while_stmt->condition.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->while_stmt->condition.get(),
                                             callable_contracts, profile);
         for (const auto &body_stmt : stmt->while_stmt->body) {
-          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(),
                                               callable_contracts, profile);
         }
       }
@@ -3642,14 +3642,14 @@ static void CollectPart8BorrowedEscapeStmtSites(
     case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         for (const auto &body_stmt : stmt->block_stmt->body) {
-          CollectPart8BorrowedEscapeStmtSites(body_stmt.get(),
+          CollectOwnershipBorrowedEscapeStmtSites(body_stmt.get(),
                                               callable_contracts, profile);
         }
       }
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        CollectPart8BorrowedEscapeExprSites(stmt->expr_stmt->value.get(),
+        CollectOwnershipBorrowedEscapeExprSites(stmt->expr_stmt->value.get(),
                                             callable_contracts, profile);
       }
       return;
@@ -3660,43 +3660,43 @@ static void CollectPart8BorrowedEscapeStmtSites(
   }
 }
 
-static void CollectPart8CaptureListRetainableFamilyExprSites(
-    const Expr *expr, Part8CaptureListRetainableFamilySiteProfile &profile);
+static void CollectOwnershipCaptureListRetainableFamilyExprSites(
+    const Expr *expr, OwnershipCaptureListRetainableFamilySiteProfile &profile);
 
-static void CollectPart8CaptureListRetainableFamilyStmtSites(
-    const Stmt *stmt, Part8CaptureListRetainableFamilySiteProfile &profile) {
+static void CollectOwnershipCaptureListRetainableFamilyStmtSites(
+    const Stmt *stmt, OwnershipCaptureListRetainableFamilySiteProfile &profile) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
     case Stmt::Kind::Let:
       if (stmt->let_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->let_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::Assign:
       if (stmt->assign_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->assign_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->return_stmt->value.get(), profile);
       }
       return;
     case Stmt::Kind::If:
       if (stmt->if_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->if_stmt->condition.get(), profile);
         for (const auto &body_stmt : stmt->if_stmt->then_body) {
-          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                            profile);
         }
         for (const auto &body_stmt : stmt->if_stmt->else_body) {
-          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                            profile);
         }
       }
@@ -3704,34 +3704,34 @@ static void CollectPart8CaptureListRetainableFamilyStmtSites(
     case Stmt::Kind::DoWhile:
       if (stmt->do_while_stmt != nullptr) {
         for (const auto &body_stmt : stmt->do_while_stmt->body) {
-          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                            profile);
         }
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->do_while_stmt->condition.get(), profile);
       }
       return;
     case Stmt::Kind::For:
       if (stmt->for_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->for_stmt->init.value.get(), profile);
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->for_stmt->condition.get(), profile);
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->for_stmt->step.value.get(), profile);
         for (const auto &body_stmt : stmt->for_stmt->body) {
-          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                            profile);
         }
       }
       return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->switch_stmt->condition.get(), profile);
         for (const auto &switch_case : stmt->switch_stmt->cases) {
           for (const auto &body_stmt : switch_case.body) {
-            CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+            CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                              profile);
           }
         }
@@ -3739,10 +3739,10 @@ static void CollectPart8CaptureListRetainableFamilyStmtSites(
       return;
     case Stmt::Kind::While:
       if (stmt->while_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->while_stmt->condition.get(), profile);
         for (const auto &body_stmt : stmt->while_stmt->body) {
-          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                            profile);
         }
       }
@@ -3751,14 +3751,14 @@ static void CollectPart8CaptureListRetainableFamilyStmtSites(
     case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         for (const auto &body_stmt : stmt->block_stmt->body) {
-          CollectPart8CaptureListRetainableFamilyStmtSites(body_stmt.get(),
+          CollectOwnershipCaptureListRetainableFamilyStmtSites(body_stmt.get(),
                                                            profile);
         }
       }
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        CollectPart8CaptureListRetainableFamilyExprSites(
+        CollectOwnershipCaptureListRetainableFamilyExprSites(
             stmt->expr_stmt->value.get(), profile);
       }
       return;
@@ -3769,8 +3769,8 @@ static void CollectPart8CaptureListRetainableFamilyStmtSites(
   }
 }
 
-static void CollectPart8CaptureListRetainableFamilyExprSites(
-    const Expr *expr, Part8CaptureListRetainableFamilySiteProfile &profile) {
+static void CollectOwnershipCaptureListRetainableFamilyExprSites(
+    const Expr *expr, OwnershipCaptureListRetainableFamilySiteProfile &profile) {
   if (expr == nullptr) {
     return;
   }
@@ -3783,23 +3783,23 @@ static void CollectPart8CaptureListRetainableFamilyExprSites(
           expr->block_explicit_capture_unowned_count;
     }
     for (const auto &stmt : expr->block_body) {
-      CollectPart8CaptureListRetainableFamilyStmtSites(stmt.get(), profile);
+      CollectOwnershipCaptureListRetainableFamilyStmtSites(stmt.get(), profile);
     }
     return;
   }
-  CollectPart8CaptureListRetainableFamilyExprSites(expr->receiver.get(), profile);
-  CollectPart8CaptureListRetainableFamilyExprSites(expr->left.get(), profile);
-  CollectPart8CaptureListRetainableFamilyExprSites(expr->right.get(), profile);
-  CollectPart8CaptureListRetainableFamilyExprSites(expr->third.get(), profile);
+  CollectOwnershipCaptureListRetainableFamilyExprSites(expr->receiver.get(), profile);
+  CollectOwnershipCaptureListRetainableFamilyExprSites(expr->left.get(), profile);
+  CollectOwnershipCaptureListRetainableFamilyExprSites(expr->right.get(), profile);
+  CollectOwnershipCaptureListRetainableFamilyExprSites(expr->third.get(), profile);
   for (const auto &arg : expr->args) {
-    CollectPart8CaptureListRetainableFamilyExprSites(arg.get(), profile);
+    CollectOwnershipCaptureListRetainableFamilyExprSites(arg.get(), profile);
   }
 }
 
 template <typename TCallableDecl>
-static void CollectPart8RetainableFamilyCallableSites(
+static void CollectOwnershipRetainableFamilyCallableSites(
     const TCallableDecl &decl,
-    Part8CaptureListRetainableFamilySiteProfile &profile) {
+    OwnershipCaptureListRetainableFamilySiteProfile &profile) {
   bool has_callable_attributes = false;
   bool has_canonical_operation = false;
   bool has_compatibility_alias = false;
@@ -3968,7 +3968,7 @@ static std::string TrimAsciiWhitespace(const std::string &text) {
   return text.substr(start, end - start);
 }
 
-static std::string NormalizePart10RawDeriveToken(std::string token) {
+static std::string NormalizeMetaprogrammingRawDeriveToken(std::string token) {
   token = TrimAsciiWhitespace(token);
   if (token.size() >= 2u &&
       ((token.front() == '"' && token.back() == '"') ||
@@ -3978,7 +3978,7 @@ static std::string NormalizePart10RawDeriveToken(std::string token) {
   return token;
 }
 
-static std::string NormalizePart10RawMacroToken(std::string token) {
+static std::string NormalizeMetaprogrammingRawMacroToken(std::string token) {
   token = TrimAsciiWhitespace(token);
   if (token.size() >= 2u &&
       ((token.front() == '"' && token.back() == '"') ||
@@ -3988,7 +3988,7 @@ static std::string NormalizePart10RawMacroToken(std::string token) {
   return token;
 }
 
-static std::string NormalizePart10RawPropertyBehaviorToken(std::string token) {
+static std::string NormalizeMetaprogrammingRawPropertyBehaviorToken(std::string token) {
   token = TrimAsciiWhitespace(token);
   if (token.size() >= 2u &&
       ((token.front() == '"' && token.back() == '"') ||
@@ -3998,8 +3998,8 @@ static std::string NormalizePart10RawPropertyBehaviorToken(std::string token) {
   return token;
 }
 
-static std::string BuildPart10LowercaseDeriveToken(std::string token) {
-  token = NormalizePart10RawDeriveToken(std::move(token));
+static std::string BuildMetaprogrammingLowercaseDeriveToken(std::string token) {
+  token = NormalizeMetaprogrammingRawDeriveToken(std::move(token));
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char c) {
                    return static_cast<char>(std::tolower(c));
@@ -4007,9 +4007,9 @@ static std::string BuildPart10LowercaseDeriveToken(std::string token) {
   return token;
 }
 
-static std::string NormalizePart10SupportedDeriveName(
+static std::string NormalizeMetaprogrammingSupportedDeriveName(
     const std::string &derive_name) {
-  const std::string lowered = BuildPart10LowercaseDeriveToken(derive_name);
+  const std::string lowered = BuildMetaprogrammingLowercaseDeriveToken(derive_name);
   if (lowered == "equatable" || lowered == "equality") {
     return "Equality";
   }
@@ -4022,8 +4022,8 @@ static std::string NormalizePart10SupportedDeriveName(
   return "";
 }
 
-static std::string BuildPart10LowercasePropertyBehaviorToken(std::string token) {
-  token = NormalizePart10RawPropertyBehaviorToken(std::move(token));
+static std::string BuildMetaprogrammingLowercasePropertyBehaviorToken(std::string token) {
+  token = NormalizeMetaprogrammingRawPropertyBehaviorToken(std::move(token));
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char c) {
                    return static_cast<char>(std::tolower(c));
@@ -4031,10 +4031,10 @@ static std::string BuildPart10LowercasePropertyBehaviorToken(std::string token) 
   return token;
 }
 
-static std::string NormalizePart10SupportedPropertyBehaviorName(
+static std::string NormalizeMetaprogrammingSupportedPropertyBehaviorName(
     const std::string &behavior_name) {
   const std::string lowered =
-      BuildPart10LowercasePropertyBehaviorToken(behavior_name);
+      BuildMetaprogrammingLowercasePropertyBehaviorToken(behavior_name);
   if (lowered == "observed") {
     return "Observed";
   }
@@ -4044,8 +4044,8 @@ static std::string NormalizePart10SupportedPropertyBehaviorName(
   return "";
 }
 
-static std::string BuildPart10LowercaseMacroToken(std::string token) {
-  token = NormalizePart10RawMacroToken(std::move(token));
+static std::string BuildMetaprogrammingLowercaseMacroToken(std::string token) {
+  token = NormalizeMetaprogrammingRawMacroToken(std::move(token));
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char c) {
                    return static_cast<char>(std::tolower(c));
@@ -4053,17 +4053,17 @@ static std::string BuildPart10LowercaseMacroToken(std::string token) {
   return token;
 }
 
-static bool IsSupportedPart10MacroPackageName(const std::string &package_name) {
-  const std::string lowered = BuildPart10LowercaseMacroToken(package_name);
+static bool IsSupportedMetaprogrammingMacroPackageName(const std::string &package_name) {
+  const std::string lowered = BuildMetaprogrammingLowercaseMacroToken(package_name);
   return lowered == "std.metaprogramming" ||
          lowered.rfind("std.metaprogramming.", 0) == 0u;
 }
 
-static bool IsSupportedPart10MacroProvenanceToken(
+static bool IsSupportedMetaprogrammingMacroProvenanceToken(
     const std::string &provenance_name) {
   const std::string normalized =
-      NormalizePart10RawMacroToken(provenance_name);
-  const std::string lowered = BuildPart10LowercaseMacroToken(provenance_name);
+      NormalizeMetaprogrammingRawMacroToken(provenance_name);
+  const std::string lowered = BuildMetaprogrammingLowercaseMacroToken(provenance_name);
   if (normalized != lowered) {
     return false;
   }
@@ -4080,7 +4080,7 @@ static bool IsSupportedPart10MacroProvenanceToken(
   });
 }
 
-static std::string BuildPart10DerivedSelectorForInventoryRow(
+static std::string BuildMetaprogrammingDerivedSelectorForInventoryRow(
     const std::string &canonical_derive_name) {
   if (canonical_derive_name == "Equality") {
     return "isEqual:";
@@ -5508,7 +5508,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   }
   if (property.property_behavior_declared) {
     const std::string canonical_behavior =
-        NormalizePart10SupportedPropertyBehaviorName(
+        NormalizeMetaprogrammingSupportedPropertyBehaviorName(
             property.property_behavior_name);
     const auto emit_property_behavior_violation =
         [&](std::string_view code, const std::string &message) {
@@ -5520,7 +5520,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       emit_property_behavior_violation(
           "O3S326",
           "unsupported property behavior '" +
-              NormalizePart10RawPropertyBehaviorToken(
+              NormalizeMetaprogrammingRawPropertyBehaviorToken(
                   property.property_behavior_name) +
               "' for property '" + property.name + "' in " + owner_kind +
               " '" + owner_name + "'");
@@ -8177,13 +8177,13 @@ static void ValidateStatements(const std::vector<std::unique_ptr<Stmt>> &stateme
   }
 }
 
-static void CollectPart3TypeSemanticExprSites(
+static void CollectTypeSystemTypeSemanticExprSites(
     const Expr *expr, const std::vector<SemanticScope> &scopes,
     const std::unordered_map<std::string, ValueType> &globals,
     const std::unordered_map<std::string, FunctionInfo> &functions,
     std::size_t max_message_send_args,
     const Objc3MessageSendResolutionContext &message_send_context,
-    Objc3Part3TypeSemanticModelSummary &summary) {
+    Objc3TypeSystemTypeSemanticModelSummary &summary) {
   if (expr == nullptr) {
     return;
   }
@@ -8231,55 +8231,55 @@ static void CollectPart3TypeSemanticExprSites(
     }
   }
 
-  CollectPart3TypeSemanticExprSites(expr->receiver.get(), scopes, globals, functions,
+  CollectTypeSystemTypeSemanticExprSites(expr->receiver.get(), scopes, globals, functions,
                                     max_message_send_args, message_send_context,
                                     summary);
-  CollectPart3TypeSemanticExprSites(expr->left.get(), scopes, globals, functions,
+  CollectTypeSystemTypeSemanticExprSites(expr->left.get(), scopes, globals, functions,
                                     max_message_send_args, message_send_context,
                                     summary);
-  CollectPart3TypeSemanticExprSites(expr->right.get(), scopes, globals, functions,
+  CollectTypeSystemTypeSemanticExprSites(expr->right.get(), scopes, globals, functions,
                                     max_message_send_args, message_send_context,
                                     summary);
-  CollectPart3TypeSemanticExprSites(expr->third.get(), scopes, globals, functions,
+  CollectTypeSystemTypeSemanticExprSites(expr->third.get(), scopes, globals, functions,
                                     max_message_send_args, message_send_context,
                                     summary);
   for (const auto &arg : expr->args) {
-    CollectPart3TypeSemanticExprSites(arg.get(), scopes, globals, functions,
+    CollectTypeSystemTypeSemanticExprSites(arg.get(), scopes, globals, functions,
                                       max_message_send_args,
                                       message_send_context, summary);
   }
 }
 
-static void CollectPart3TypeSemanticStmtSites(
+static void CollectTypeSystemTypeSemanticStmtSites(
     const Stmt *stmt, std::vector<SemanticScope> &scopes,
     const std::unordered_map<std::string, ValueType> &globals,
     const std::unordered_map<std::string, FunctionInfo> &functions,
     std::size_t max_message_send_args,
     const Objc3MessageSendResolutionContext &message_send_context,
-    Objc3Part3TypeSemanticModelSummary &summary);
+    Objc3TypeSystemTypeSemanticModelSummary &summary);
 
-static void CollectPart3TypeSemanticStmtSitesFromList(
+static void CollectTypeSystemTypeSemanticStmtSitesFromList(
     const std::vector<std::unique_ptr<Stmt>> &statements,
     std::vector<SemanticScope> &scopes,
     const std::unordered_map<std::string, ValueType> &globals,
     const std::unordered_map<std::string, FunctionInfo> &functions,
     std::size_t max_message_send_args,
     const Objc3MessageSendResolutionContext &message_send_context,
-    Objc3Part3TypeSemanticModelSummary &summary) {
+    Objc3TypeSystemTypeSemanticModelSummary &summary) {
   for (const auto &stmt : statements) {
-    CollectPart3TypeSemanticStmtSites(stmt.get(), scopes, globals, functions,
+    CollectTypeSystemTypeSemanticStmtSites(stmt.get(), scopes, globals, functions,
                                       max_message_send_args,
                                       message_send_context, summary);
   }
 }
 
-static void CollectPart3TypeSemanticStmtSites(
+static void CollectTypeSystemTypeSemanticStmtSites(
     const Stmt *stmt, std::vector<SemanticScope> &scopes,
     const std::unordered_map<std::string, ValueType> &globals,
     const std::unordered_map<std::string, FunctionInfo> &functions,
     std::size_t max_message_send_args,
     const Objc3MessageSendResolutionContext &message_send_context,
-    Objc3Part3TypeSemanticModelSummary &summary) {
+    Objc3TypeSystemTypeSemanticModelSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
@@ -8289,14 +8289,14 @@ static void CollectPart3TypeSemanticStmtSites(
       if (stmt->let_stmt == nullptr || scopes.empty()) {
         return;
       }
-      CollectPart3TypeSemanticExprSites(stmt->let_stmt->value.get(), scopes, globals,
+      CollectTypeSystemTypeSemanticExprSites(stmt->let_stmt->value.get(), scopes, globals,
                                         functions, max_message_send_args,
                                         message_send_context, summary);
       return;
     }
     case Stmt::Kind::Assign:
       if (stmt->assign_stmt != nullptr) {
-        CollectPart3TypeSemanticExprSites(stmt->assign_stmt->value.get(), scopes,
+        CollectTypeSystemTypeSemanticExprSites(stmt->assign_stmt->value.get(), scopes,
                                           globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
@@ -8304,7 +8304,7 @@ static void CollectPart3TypeSemanticStmtSites(
       return;
     case Stmt::Kind::Return:
       if (stmt->return_stmt != nullptr) {
-        CollectPart3TypeSemanticExprSites(stmt->return_stmt->value.get(), scopes,
+        CollectTypeSystemTypeSemanticExprSites(stmt->return_stmt->value.get(), scopes,
                                           globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
@@ -8312,7 +8312,7 @@ static void CollectPart3TypeSemanticStmtSites(
       return;
     case Stmt::Kind::Expr:
       if (stmt->expr_stmt != nullptr) {
-        CollectPart3TypeSemanticExprSites(stmt->expr_stmt->value.get(), scopes,
+        CollectTypeSystemTypeSemanticExprSites(stmt->expr_stmt->value.get(), scopes,
                                           globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
@@ -8345,13 +8345,13 @@ static void CollectPart3TypeSemanticStmtSites(
             ++summary.optional_binding_contract_violation_sites;
             continue;
           }
-          CollectPart3TypeSemanticExprSites(binding_stmt->let_stmt->value.get(),
+          CollectTypeSystemTypeSemanticExprSites(binding_stmt->let_stmt->value.get(),
                                             scopes, globals, functions,
                                             max_message_send_args,
                                             message_send_context, summary);
         }
       } else {
-        CollectPart3TypeSemanticExprSites(if_stmt->condition.get(), scopes, globals,
+        CollectTypeSystemTypeSemanticExprSites(if_stmt->condition.get(), scopes, globals,
                                           functions, max_message_send_args,
                                           message_send_context, summary);
         const BranchNonnullRefinement refinement =
@@ -8361,13 +8361,13 @@ static void CollectPart3TypeSemanticStmtSites(
         }
       }
       scopes.push_back({});
-      CollectPart3TypeSemanticStmtSitesFromList(if_stmt->then_body, scopes, globals,
+      CollectTypeSystemTypeSemanticStmtSitesFromList(if_stmt->then_body, scopes, globals,
                                                 functions,
                                                 max_message_send_args,
                                                 message_send_context, summary);
       scopes.pop_back();
       scopes.push_back({});
-      CollectPart3TypeSemanticStmtSitesFromList(if_stmt->else_body, scopes, globals,
+      CollectTypeSystemTypeSemanticStmtSitesFromList(if_stmt->else_body, scopes, globals,
                                                 functions,
                                                 max_message_send_args,
                                                 message_send_context, summary);
@@ -8377,12 +8377,12 @@ static void CollectPart3TypeSemanticStmtSites(
     case Stmt::Kind::DoWhile:
       if (stmt->do_while_stmt != nullptr) {
         scopes.push_back({});
-        CollectPart3TypeSemanticStmtSitesFromList(stmt->do_while_stmt->body, scopes,
+        CollectTypeSystemTypeSemanticStmtSitesFromList(stmt->do_while_stmt->body, scopes,
                                                   globals, functions,
                                                   max_message_send_args,
                                                   message_send_context, summary);
         scopes.pop_back();
-        CollectPart3TypeSemanticExprSites(stmt->do_while_stmt->condition.get(),
+        CollectTypeSystemTypeSemanticExprSites(stmt->do_while_stmt->condition.get(),
                                           scopes, globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
@@ -8395,7 +8395,7 @@ static void CollectPart3TypeSemanticStmtSites(
           case ForClause::Kind::Expr:
           case ForClause::Kind::Let:
           case ForClause::Kind::Assign:
-            CollectPart3TypeSemanticExprSites(stmt->for_stmt->init.value.get(), scopes,
+            CollectTypeSystemTypeSemanticExprSites(stmt->for_stmt->init.value.get(), scopes,
                                               globals, functions,
                                               max_message_send_args,
                                               message_send_context, summary);
@@ -8403,7 +8403,7 @@ static void CollectPart3TypeSemanticStmtSites(
           case ForClause::Kind::None:
             break;
         }
-        CollectPart3TypeSemanticExprSites(stmt->for_stmt->condition.get(), scopes,
+        CollectTypeSystemTypeSemanticExprSites(stmt->for_stmt->condition.get(), scopes,
                                           globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
@@ -8411,7 +8411,7 @@ static void CollectPart3TypeSemanticStmtSites(
           case ForClause::Kind::Expr:
           case ForClause::Kind::Let:
           case ForClause::Kind::Assign:
-            CollectPart3TypeSemanticExprSites(stmt->for_stmt->step.value.get(), scopes,
+            CollectTypeSystemTypeSemanticExprSites(stmt->for_stmt->step.value.get(), scopes,
                                               globals, functions,
                                               max_message_send_args,
                                               message_send_context, summary);
@@ -8420,7 +8420,7 @@ static void CollectPart3TypeSemanticStmtSites(
             break;
         }
         scopes.push_back({});
-        CollectPart3TypeSemanticStmtSitesFromList(stmt->for_stmt->body, scopes, globals,
+        CollectTypeSystemTypeSemanticStmtSitesFromList(stmt->for_stmt->body, scopes, globals,
                                                   functions,
                                                   max_message_send_args,
                                                   message_send_context, summary);
@@ -8430,13 +8430,13 @@ static void CollectPart3TypeSemanticStmtSites(
       return;
     case Stmt::Kind::Switch:
       if (stmt->switch_stmt != nullptr) {
-        CollectPart3TypeSemanticExprSites(stmt->switch_stmt->condition.get(), scopes,
+        CollectTypeSystemTypeSemanticExprSites(stmt->switch_stmt->condition.get(), scopes,
                                           globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
         for (const auto &case_stmt : stmt->switch_stmt->cases) {
           scopes.push_back({});
-          CollectPart3TypeSemanticStmtSitesFromList(case_stmt.body, scopes, globals,
+          CollectTypeSystemTypeSemanticStmtSitesFromList(case_stmt.body, scopes, globals,
                                                     functions,
                                                     max_message_send_args,
                                                     message_send_context, summary);
@@ -8446,12 +8446,12 @@ static void CollectPart3TypeSemanticStmtSites(
       return;
     case Stmt::Kind::While:
       if (stmt->while_stmt != nullptr) {
-        CollectPart3TypeSemanticExprSites(stmt->while_stmt->condition.get(), scopes,
+        CollectTypeSystemTypeSemanticExprSites(stmt->while_stmt->condition.get(), scopes,
                                           globals, functions,
                                           max_message_send_args,
                                           message_send_context, summary);
         scopes.push_back({});
-        CollectPart3TypeSemanticStmtSitesFromList(stmt->while_stmt->body, scopes,
+        CollectTypeSystemTypeSemanticStmtSitesFromList(stmt->while_stmt->body, scopes,
                                                   globals, functions,
                                                   max_message_send_args,
                                                   message_send_context, summary);
@@ -8462,7 +8462,7 @@ static void CollectPart3TypeSemanticStmtSites(
   case Stmt::Kind::Defer:
       if (stmt->block_stmt != nullptr) {
         scopes.push_back({});
-        CollectPart3TypeSemanticStmtSitesFromList(stmt->block_stmt->body, scopes,
+        CollectTypeSystemTypeSemanticStmtSitesFromList(stmt->block_stmt->body, scopes,
                                                   globals, functions,
                                                   max_message_send_args,
                                                   message_send_context, summary);
@@ -8476,10 +8476,10 @@ static void CollectPart3TypeSemanticStmtSites(
   }
 }
 
-Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
+Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
     const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
     std::size_t max_message_send_args) {
-  Objc3Part3TypeSemanticModelSummary summary;
+  Objc3TypeSystemTypeSemanticModelSummary summary;
   summary.generic_erasure_semantic_sites =
       surface.generic_metadata_abi_summary.generic_metadata_abi_sites;
   summary.nullability_semantic_sites =
@@ -8499,7 +8499,7 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
     }
     Objc3MessageSendResolutionContext context;
     context.surface = &surface;
-    CollectPart3TypeSemanticStmtSitesFromList(function.body, scopes, body_globals,
+    CollectTypeSystemTypeSemanticStmtSitesFromList(function.body, scopes, body_globals,
                                               surface.functions,
                                               max_message_send_args, context,
                                               summary);
@@ -8527,7 +8527,7 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
       context.surface = &surface;
       context.current_implementation_name = implementation.name;
       context.current_super_name = super_name;
-      CollectPart3TypeSemanticStmtSitesFromList(method.body, scopes, body_globals,
+      CollectTypeSystemTypeSemanticStmtSitesFromList(method.body, scopes, body_globals,
                                                 surface.functions,
                                                 max_message_send_args, context,
                                                 summary);
@@ -8578,17 +8578,17 @@ Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
   return summary;
 }
 
-static void CollectPart5ControlFlowSemanticStmtSitesFromList(
+static void CollectControlFlowControlFlowSemanticStmtSitesFromList(
     const std::vector<std::unique_ptr<Stmt>> &statements, int loop_depth,
     int switch_depth, int defer_loop_base_depth, int defer_switch_base_depth,
     bool inside_defer_body,
-    Objc3Part5ControlFlowSemanticModelSummary &summary);
+    Objc3ControlFlowControlFlowSemanticModelSummary &summary);
 
-static void CollectPart5ControlFlowSemanticStmtSites(
+static void CollectControlFlowControlFlowSemanticStmtSites(
     const Stmt *stmt, int loop_depth, int switch_depth,
     int defer_loop_base_depth, int defer_switch_base_depth,
     bool inside_defer_body,
-    Objc3Part5ControlFlowSemanticModelSummary &summary) {
+    Objc3ControlFlowControlFlowSemanticModelSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
@@ -8611,17 +8611,17 @@ static void CollectPart5ControlFlowSemanticStmtSites(
             if_stmt->guard_boolean_condition_clause_count;
         ++summary.guard_exit_enforcement_sites;
       }
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           if_stmt->then_body, loop_depth, switch_depth, defer_loop_base_depth,
           defer_switch_base_depth, inside_defer_body, summary);
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           if_stmt->else_body, loop_depth, switch_depth, defer_loop_base_depth,
           defer_switch_base_depth, inside_defer_body, summary);
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           stmt->do_while_stmt->body, loop_depth + 1, switch_depth,
           defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
           summary);
@@ -8629,7 +8629,7 @@ static void CollectPart5ControlFlowSemanticStmtSites(
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           stmt->for_stmt->body, loop_depth + 1, switch_depth,
           defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
           summary);
@@ -8680,7 +8680,7 @@ static void CollectPart5ControlFlowSemanticStmtSites(
               break;
             }
           }
-          CollectPart5ControlFlowSemanticStmtSitesFromList(
+          CollectControlFlowControlFlowSemanticStmtSitesFromList(
               case_stmt.body, loop_depth, switch_depth + 1,
               defer_loop_base_depth, defer_switch_base_depth,
               inside_defer_body, summary);
@@ -8688,7 +8688,7 @@ static void CollectPart5ControlFlowSemanticStmtSites(
         return;
       }
       for (const auto &case_stmt : switch_stmt->cases) {
-        CollectPart5ControlFlowSemanticStmtSitesFromList(
+        CollectControlFlowControlFlowSemanticStmtSitesFromList(
             case_stmt.body, loop_depth, switch_depth + 1,
             defer_loop_base_depth, defer_switch_base_depth,
             inside_defer_body, summary);
@@ -8697,7 +8697,7 @@ static void CollectPart5ControlFlowSemanticStmtSites(
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           stmt->while_stmt->body, loop_depth + 1, switch_depth,
           defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
           summary);
@@ -8705,7 +8705,7 @@ static void CollectPart5ControlFlowSemanticStmtSites(
     return;
   case Stmt::Kind::Block:
     if (stmt->block_stmt != nullptr) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           stmt->block_stmt->body, loop_depth, switch_depth,
           defer_loop_base_depth, defer_switch_base_depth, inside_defer_body,
           summary);
@@ -8715,7 +8715,7 @@ static void CollectPart5ControlFlowSemanticStmtSites(
     ++summary.defer_statement_semantic_sites;
     ++summary.defer_scope_cleanup_order_sites;
     if (stmt->block_stmt != nullptr) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(
           stmt->block_stmt->body, loop_depth, switch_depth, loop_depth,
           switch_depth, true, summary);
     }
@@ -8750,13 +8750,13 @@ static void CollectPart5ControlFlowSemanticStmtSites(
   }
 }
 
-static void CollectPart5ControlFlowSemanticStmtSitesFromList(
+static void CollectControlFlowControlFlowSemanticStmtSitesFromList(
     const std::vector<std::unique_ptr<Stmt>> &statements, int loop_depth,
     int switch_depth, int defer_loop_base_depth, int defer_switch_base_depth,
     bool inside_defer_body,
-    Objc3Part5ControlFlowSemanticModelSummary &summary) {
+    Objc3ControlFlowControlFlowSemanticModelSummary &summary) {
   for (const auto &stmt : statements) {
-    CollectPart5ControlFlowSemanticStmtSites(stmt.get(), loop_depth,
+    CollectControlFlowControlFlowSemanticStmtSites(stmt.get(), loop_depth,
                                              switch_depth,
                                              defer_loop_base_depth,
                                              defer_switch_base_depth,
@@ -8764,16 +8764,16 @@ static void CollectPart5ControlFlowSemanticStmtSitesFromList(
   }
 }
 
-Objc3Part5ControlFlowSemanticModelSummary
-BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
-  Objc3Part5ControlFlowSemanticModelSummary summary;
+Objc3ControlFlowControlFlowSemanticModelSummary
+BuildControlFlowControlFlowSemanticModelSummary(const Objc3Program &ast) {
+  Objc3ControlFlowControlFlowSemanticModelSummary summary;
   for (const auto &function : ast.functions) {
-    CollectPart5ControlFlowSemanticStmtSitesFromList(function.body, 0, 0, 0, 0,
+    CollectControlFlowControlFlowSemanticStmtSitesFromList(function.body, 0, 0, 0, 0,
                                                      false, summary);
   }
   for (const auto &implementation : ast.implementations) {
     for (const auto &method : implementation.methods) {
-      CollectPart5ControlFlowSemanticStmtSitesFromList(method.body, 0, 0, 0, 0,
+      CollectControlFlowControlFlowSemanticStmtSitesFromList(method.body, 0, 0, 0, 0,
                                                        false, summary);
     }
   }
@@ -8891,10 +8891,10 @@ BuildPart5ControlFlowSemanticModelSummary(const Objc3Program &ast) {
   return summary;
 }
 
-Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
-    const Objc3FrontendPart6ErrorSourceClosureSummary &source_summary,
+Objc3ErrorHandlingErrorSemanticModelSummary BuildErrorHandlingErrorSemanticModelSummary(
+    const Objc3FrontendErrorHandlingErrorSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface) {
-  Objc3Part6ErrorSemanticModelSummary summary;
+  Objc3ErrorHandlingErrorSemanticModelSummary summary;
   summary.function_throws_declaration_sites =
       source_summary.function_throws_declaration_sites;
   summary.method_throws_declaration_sites =
@@ -9012,11 +9012,11 @@ Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
   return summary;
 }
 
-Objc3Part7AsyncEffectSuspensionSemanticModelSummary
-BuildPart7AsyncEffectSuspensionSemanticModelSummary(
-    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary
+BuildConcurrencyAsyncEffectSuspensionSemanticModelSummary(
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface) {
-  Objc3Part7AsyncEffectSuspensionSemanticModelSummary summary;
+  Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary summary;
   const Objc3AsyncContinuationSummary &async_summary =
       surface.async_continuation_summary;
   const Objc3AwaitLoweringSuspensionStateSummary &await_summary =
@@ -9173,12 +9173,12 @@ BuildPart7AsyncEffectSuspensionSemanticModelSummary(
   return summary;
 }
 
-Objc3Part7TaskExecutorCancellationSemanticModelSummary
-BuildPart7TaskExecutorCancellationSemanticModelSummary(
-    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary
+BuildConcurrencyTaskExecutorCancellationSemanticModelSummary(
+    const Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface) {
-  Objc3Part7TaskExecutorCancellationSemanticModelSummary summary;
+  Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary summary;
   const Objc3TaskRuntimeCancellationSummary &task_summary =
       surface.task_runtime_cancellation_summary;
 
@@ -9257,12 +9257,12 @@ BuildPart7TaskExecutorCancellationSemanticModelSummary(
   return summary;
 }
 
-Objc3Part7ActorIsolationSendableSemanticModelSummary
-BuildPart7ActorIsolationSendableSemanticModelSummary(
-    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+Objc3ConcurrencyActorIsolationSendableSemanticModelSummary
+BuildConcurrencyActorIsolationSendableSemanticModelSummary(
+    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface) {
-  Objc3Part7ActorIsolationSendableSemanticModelSummary summary;
+  Objc3ConcurrencyActorIsolationSendableSemanticModelSummary summary;
   const Objc3ActorIsolationSendabilitySummary &actor_summary =
       surface.actor_isolation_sendability_summary;
 
@@ -9342,13 +9342,13 @@ BuildPart7ActorIsolationSendableSemanticModelSummary(
   return summary;
 }
 
-Objc3Part7ActorIsolationSendabilityEnforcementSummary
-BuildPart7ActorIsolationSendabilityEnforcementSummary(
+Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
+BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
     const Objc3Program &ast,
-    const Objc3Part7ActorIsolationSendableSemanticModelSummary
+    const Objc3ConcurrencyActorIsolationSendableSemanticModelSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part7ActorIsolationSendabilityEnforcementSummary summary;
+  Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary summary;
   const auto count_diagnostic_code = [&](const char *code) {
     return static_cast<std::size_t>(std::count_if(
         diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
@@ -9376,8 +9376,8 @@ BuildPart7ActorIsolationSendabilityEnforcementSummary(
       if (method.objc_nonisolated_declared) {
         ++summary.total_nonisolated_method_sites;
       }
-      const Objc3Part7ActorMethodBodyProfile body_profile =
-          BuildPart7ActorMethodBodyProfile(method);
+      const Objc3ConcurrencyActorMethodBodyProfile body_profile =
+          BuildConcurrencyActorMethodBodyProfile(method);
       summary.actor_hop_sites += body_profile.actor_hop_sites;
       summary.non_sendable_crossing_sites +=
           body_profile.non_sendable_crossing_sites;
@@ -9437,13 +9437,13 @@ BuildPart7ActorIsolationSendabilityEnforcementSummary(
   return summary;
 }
 
-Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
-BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
+Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary
+BuildConcurrencyActorRaceHazardEscapeDiagnosticsSummary(
     const Objc3Program &ast,
-    const Objc3Part7ActorIsolationSendabilityEnforcementSummary
+    const Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary summary;
+  Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary summary;
   const auto count_diagnostic_code = [&](const char *code) {
     return static_cast<std::size_t>(std::count_if(
         diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
@@ -9463,8 +9463,8 @@ BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
       continue;
     }
     for (const auto &method : implementation_decl.methods) {
-      const Objc3Part7ActorMethodBodyProfile body_profile =
-          BuildPart7ActorMethodBodyProfile(method);
+      const Objc3ConcurrencyActorMethodBodyProfile body_profile =
+          BuildConcurrencyActorMethodBodyProfile(method);
       summary.replay_proof_sites += body_profile.replay_proof_sites;
       summary.race_guard_sites += body_profile.race_guard_sites;
       summary.task_handoff_sites += body_profile.task_handoff_sites;
@@ -9522,15 +9522,15 @@ BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
   return summary;
 }
 
-Objc3Part8SystemExtensionSemanticModelSummary
-BuildPart8SystemExtensionSemanticModelSummary(
-    const Objc3FrontendPart8SystemExtensionSourceClosureSummary
+Objc3OwnershipSystemExtensionSemanticModelSummary
+BuildOwnershipSystemExtensionSemanticModelSummary(
+    const Objc3FrontendOwnershipSystemExtensionSourceClosureSummary
         &source_summary,
-    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+    const Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
         &completion_summary,
-    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+    const Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
         &retainable_summary) {
-  Objc3Part8SystemExtensionSemanticModelSummary summary;
+  Objc3OwnershipSystemExtensionSemanticModelSummary summary;
   summary.cleanup_attribute_sites = completion_summary.cleanup_attribute_sites;
   summary.cleanup_sugar_sites = completion_summary.cleanup_sugar_sites;
   summary.resource_attribute_sites = completion_summary.resource_attribute_sites;
@@ -9600,21 +9600,21 @@ BuildPart8SystemExtensionSemanticModelSummary(
   return summary;
 }
 
-Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
-    const Objc3FrontendPart11ForeignImportSourceClosureSummary
+Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
+    const Objc3FrontendInteropForeignImportSourceClosureSummary
         &foreign_source_summary,
-    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
         &interop_source_summary,
-    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+    const Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
         &ownership_summary,
-    const Objc3Part6ErrorBridgeLegalitySummary &error_summary,
-    const Objc3Part7AsyncDiagnosticsCompatibilitySummary &async_summary,
-    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &actor_summary) {
+    const Objc3ErrorHandlingErrorBridgeLegalitySummary &error_summary,
+    const Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary &async_summary,
+    const Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary &actor_summary) {
   // semantic freeze anchor: Part 11 interop legality is modeled as a
   // single summary over already-landed Part 6/7/8 semantic surfaces plus the
   // new foreign/import and Swift/C++ annotation source state, while ABI
   // lowering and runnable bridge generation remain later work.
-  Objc3Part11InteropSemanticModelSummary summary;
+  Objc3InteropInteropSemanticModelSummary summary;
   summary.foreign_callable_sites = foreign_source_summary.foreign_callable_sites;
   summary.import_module_annotation_sites =
       foreign_source_summary.import_module_annotation_sites;
@@ -9650,7 +9650,7 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
       foreign_source_summary.deterministic_handoff &&
       interop_source_summary.deterministic_handoff;
   summary.ownership_interaction_profile_frozen =
-      IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
+      IsReadyObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary(
           ownership_summary) &&
       summary.retainable_family_callable_sites >=
           ownership_summary.retainable_family_operation_callable_sites;
@@ -9665,11 +9665,11 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
       summary.bridge_callable_sites >=
           error_summary.try_eligible_bridge_callable_sites;
   summary.async_affinity_profile_reused =
-      IsReadyObjc3Part7AsyncDiagnosticsCompatibilitySummary(async_summary) &&
+      IsReadyObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummary(async_summary) &&
       summary.async_executor_affinity_sites >=
           async_summary.supported_async_callable_sites;
   summary.actor_hazard_profile_reused =
-      IsReadyObjc3Part7ActorRaceHazardEscapeDiagnosticsSummary(actor_summary) &&
+      IsReadyObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary(actor_summary) &&
       summary.actor_hazard_sites >=
           actor_summary.illegal_missing_actor_isolation_sites;
   summary.metadata_payload_profile_frozen =
@@ -9691,7 +9691,7 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
   summary.ready_for_semantic_expansion = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part11 interop source, ownership, error, async, actor, and metadata profiles must remain deterministic";
+        "interop interop source, ownership, error, async, actor, and metadata profiles must remain deterministic";
   }
 
   std::ostringstream out;
@@ -9716,7 +9716,7 @@ Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
 }
 
 template <typename CallableDeclT>
-static bool HasPart11ObjcRuntimeTypeSurface(const CallableDeclT &decl) {
+static bool HasInteropObjcRuntimeTypeSurface(const CallableDeclT &decl) {
   if (decl.return_id_spelling || decl.return_class_spelling ||
       decl.return_sel_spelling || decl.return_instancetype_spelling ||
       decl.return_object_pointer_type_spelling) {
@@ -9731,22 +9731,22 @@ static bool HasPart11ObjcRuntimeTypeSurface(const CallableDeclT &decl) {
 }
 
 template <typename CallableDeclT>
-static bool HasPart11ForeignOrImportAnnotations(const CallableDeclT &decl) {
+static bool HasInteropForeignOrImportAnnotations(const CallableDeclT &decl) {
   return decl.objc_foreign_declared || decl.objc_import_module_declared;
 }
 
 template <typename CallableDeclT>
-static bool HasPart11CppInteropAnnotations(const CallableDeclT &decl) {
+static bool HasInteropCppInteropAnnotations(const CallableDeclT &decl) {
   return decl.objc_cxx_name_declared || decl.objc_header_name_declared;
 }
 
 template <typename CallableDeclT>
-static bool HasPart11SwiftInteropAnnotations(const CallableDeclT &decl) {
+static bool HasInteropSwiftInteropAnnotations(const CallableDeclT &decl) {
   return decl.objc_swift_name_declared || decl.objc_swift_private_declared;
 }
 
 template <typename CallableDeclT>
-static bool HasPart11OwnershipInteractionSurface(const CallableDeclT &decl) {
+static bool HasInteropOwnershipInteractionSurface(const CallableDeclT &decl) {
   if (decl.has_return_ownership_qualifier ||
       decl.objc_returns_borrowed_declared ||
       decl.return_borrowed_pointer_qualified ||
@@ -9759,16 +9759,16 @@ static bool HasPart11OwnershipInteractionSurface(const CallableDeclT &decl) {
 }
 
 template <typename CallableDeclT>
-static bool HasPart11AsyncInteractionSurface(const CallableDeclT &decl) {
+static bool HasInteropAsyncInteractionSurface(const CallableDeclT &decl) {
   return decl.async_declared || decl.executor_affinity_declared;
 }
 
-Objc3Part11InteropRuntimeParitySummary
-BuildPart11InteropRuntimeParitySummary(
+Objc3InteropInteropRuntimeParitySummary
+BuildInteropInteropRuntimeParitySummary(
     const Objc3Program &program,
-    const Objc3Part11InteropSemanticModelSummary &dependency_summary,
+    const Objc3InteropInteropSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part11InteropRuntimeParitySummary summary;
+  Objc3InteropInteropRuntimeParitySummary summary;
 
   const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
     return std::count_if(
@@ -9785,7 +9785,7 @@ BuildPart11InteropRuntimeParitySummary(
   for (const auto &fn : program.functions) {
     if (fn.objc_foreign_declared) {
       ++summary.c_foreign_callable_sites;
-      if (HasPart11ObjcRuntimeTypeSurface(fn)) {
+      if (HasInteropObjcRuntimeTypeSurface(fn)) {
         ++summary.objc_runtime_parity_callable_sites;
       }
     }
@@ -9798,7 +9798,7 @@ BuildPart11InteropRuntimeParitySummary(
       [&summary](const auto &method_decl) {
         if (method_decl.objc_foreign_declared) {
           ++summary.objc_method_foreign_callable_sites;
-          if (HasPart11ObjcRuntimeTypeSurface(method_decl)) {
+          if (HasInteropObjcRuntimeTypeSurface(method_decl)) {
             ++summary.objc_runtime_parity_callable_sites;
           }
         }
@@ -9826,7 +9826,7 @@ BuildPart11InteropRuntimeParitySummary(
       count_diagnostic_code("O3S333");
 
   const bool dependency_surface_present =
-      IsReadyObjc3Part11InteropSemanticModelSummary(dependency_summary);
+      IsReadyObjc3InteropInteropSemanticModelSummary(dependency_summary);
   summary.dependency_required = true;
   summary.declaration_only_foreign_c_enforced =
       dependency_surface_present &&
@@ -9860,7 +9860,7 @@ BuildPart11InteropRuntimeParitySummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part11 c and objective-c runtime parity diagnostics must remain deterministic";
+        "interop c and objective-c runtime parity diagnostics must remain deterministic";
   }
 
   std::ostringstream out;
@@ -9880,11 +9880,11 @@ BuildPart11InteropRuntimeParitySummary(
   return summary;
 }
 
-Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
+Objc3InteropCppInteropInteractionSummary BuildInteropCppInteropInteractionSummary(
     const Objc3Program &program,
-    const Objc3Part11InteropRuntimeParitySummary &dependency_summary,
+    const Objc3InteropInteropRuntimeParitySummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part11CppInteropInteractionSummary summary;
+  Objc3InteropCppInteropInteractionSummary summary;
 
   const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
     return std::count_if(
@@ -9895,7 +9895,7 @@ Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
   };
 
   const auto accumulate_callable = [&summary](const auto &decl) {
-    if (!HasPart11CppInteropAnnotations(decl)) {
+    if (!HasInteropCppInteropAnnotations(decl)) {
       return;
     }
     ++summary.cpp_interop_callable_sites;
@@ -9905,13 +9905,13 @@ Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
     if (decl.objc_header_name_declared) {
       ++summary.header_named_callable_sites;
     }
-    if (HasPart11OwnershipInteractionSurface(decl)) {
+    if (HasInteropOwnershipInteractionSurface(decl)) {
       ++summary.ownership_interaction_sites;
     }
     if (decl.throws_declared) {
       ++summary.throws_interaction_sites;
     }
-    if (HasPart11AsyncInteractionSurface(decl)) {
+    if (HasInteropAsyncInteractionSurface(decl)) {
       ++summary.async_interaction_sites;
     }
   };
@@ -9940,7 +9940,7 @@ Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
   summary.async_rejection_sites = count_diagnostic_code("O3S336");
 
   const bool dependency_surface_present =
-      IsReadyObjc3Part11InteropRuntimeParitySummary(dependency_summary);
+      IsReadyObjc3InteropInteropRuntimeParitySummary(dependency_summary);
   summary.dependency_required = true;
   summary.cpp_annotation_profile_reused =
       dependency_surface_present &&
@@ -9966,7 +9966,7 @@ Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part11 cxx-facing ownership, throws, and async diagnostics must remain deterministic";
+        "interop cxx-facing ownership, throws, and async diagnostics must remain deterministic";
   }
 
   std::ostringstream out;
@@ -9986,12 +9986,12 @@ Objc3Part11CppInteropInteractionSummary BuildPart11CppInteropInteractionSummary(
   return summary;
 }
 
-Objc3Part11SwiftInteropIsolationSummary
-BuildPart11SwiftInteropIsolationSummary(
+Objc3InteropSwiftInteropIsolationSummary
+BuildInteropSwiftInteropIsolationSummary(
     const Objc3Program &program,
-    const Objc3Part11CppInteropInteractionSummary &dependency_summary,
+    const Objc3InteropCppInteropInteractionSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part11SwiftInteropIsolationSummary summary;
+  Objc3InteropSwiftInteropIsolationSummary summary;
 
   const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
     return std::count_if(
@@ -10014,7 +10014,7 @@ BuildPart11SwiftInteropIsolationSummary(
   const auto accumulate_callable =
       [&summary](const auto &decl, bool actor_owned,
                  bool implementation_surface) {
-        if (!HasPart11SwiftInteropAnnotations(decl)) {
+        if (!HasInteropSwiftInteropAnnotations(decl)) {
           return;
         }
         ++summary.swift_interop_callable_sites;
@@ -10070,7 +10070,7 @@ BuildPart11SwiftInteropIsolationSummary(
       count_diagnostic_code("O3S340");
 
   const bool dependency_surface_present =
-      IsReadyObjc3Part11CppInteropInteractionSummary(dependency_summary);
+      IsReadyObjc3InteropCppInteropInteractionSummary(dependency_summary);
   summary.dependency_required = true;
   summary.swift_metadata_profile_reused =
       dependency_surface_present &&
@@ -10104,7 +10104,7 @@ BuildPart11SwiftInteropIsolationSummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part11 swift metadata and isolation diagnostics must remain deterministic";
+        "interop swift metadata and isolation diagnostics must remain deterministic";
   }
 
   std::ostringstream out;
@@ -10127,17 +10127,17 @@ BuildPart11SwiftInteropIsolationSummary(
 }
 
 template <typename CallableDeclT>
-static bool HasPart9CallableDispatchIntentAttributes(
+static bool HasDispatchCallableDispatchIntentAttributes(
     const CallableDeclT &decl);
-static bool HasPart9ContainerDispatchIntentAttributes(
+static bool HasDispatchContainerDispatchIntentAttributes(
     const Objc3InterfaceDecl &decl);
 
-Objc3Part9DispatchIntentSemanticModelSummary
-BuildPart9DispatchIntentSemanticModelSummary(
-    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+Objc3DispatchDispatchIntentSemanticModelSummary
+BuildDispatchDispatchIntentSemanticModelSummary(
+    const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface) {
-  Objc3Part9DispatchIntentSemanticModelSummary summary;
+  Objc3DispatchDispatchIntentSemanticModelSummary summary;
   const Objc3MethodLookupOverrideConflictSummary &override_summary =
       surface.method_lookup_override_conflict_summary;
 
@@ -10207,16 +10207,16 @@ BuildPart9DispatchIntentSemanticModelSummary(
   return summary;
 }
 
-Objc3Part10ExpansionBehaviorSemanticModelSummary
-BuildPart10ExpansionBehaviorSemanticModelSummary(
-    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary
+Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
+BuildMetaprogrammingExpansionBehaviorSemanticModelSummary(
+    const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
         &source_summary,
-    const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
+    const Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
         &macro_summary,
-    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
         &property_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part10ExpansionBehaviorSemanticModelSummary summary;
+  Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary summary;
 
   const auto count_diagnostic = [&diagnostics](std::string_view code,
                                                std::string_view needle) {
@@ -10293,7 +10293,7 @@ BuildPart10ExpansionBehaviorSemanticModelSummary(
   summary.ready_for_core_implementation = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part10 metaprogramming source and property-behavior semantic surfaces must remain deterministic";
+        "metaprogramming metaprogramming source and property-behavior semantic surfaces must remain deterministic";
   }
 
   std::ostringstream out;
@@ -10319,12 +10319,12 @@ BuildPart10ExpansionBehaviorSemanticModelSummary(
   return summary;
 }
 
-Objc3Part9DispatchIntentLegalitySummary
-BuildPart9DispatchIntentLegalitySummary(
+Objc3DispatchDispatchIntentLegalitySummary
+BuildDispatchDispatchIntentLegalitySummary(
     const Objc3Program &program,
-    const Objc3Part9DispatchIntentSemanticModelSummary &dependency_summary,
+    const Objc3DispatchDispatchIntentSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part9DispatchIntentLegalitySummary summary;
+  Objc3DispatchDispatchIntentLegalitySummary summary;
 
   const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
     return std::count_if(
@@ -10389,12 +10389,12 @@ BuildPart9DispatchIntentLegalitySummary(
   return summary;
 }
 
-Objc3Part9DispatchIntentCompatibilitySummary
-BuildPart9DispatchIntentCompatibilitySummary(
+Objc3DispatchDispatchIntentCompatibilitySummary
+BuildDispatchDispatchIntentCompatibilitySummary(
     const Objc3Program &program,
-    const Objc3Part9DispatchIntentLegalitySummary &dependency_summary,
+    const Objc3DispatchDispatchIntentLegalitySummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part9DispatchIntentCompatibilitySummary summary;
+  Objc3DispatchDispatchIntentCompatibilitySummary summary;
 
   const auto count_diagnostic_code = [&diagnostics](std::string_view code) {
     return std::count_if(
@@ -10405,30 +10405,30 @@ BuildPart9DispatchIntentCompatibilitySummary(
   };
 
   for (const auto &fn : program.functions) {
-    if (HasPart9CallableDispatchIntentAttributes(fn)) {
+    if (HasDispatchCallableDispatchIntentAttributes(fn)) {
       ++summary.callable_dispatch_intent_sites;
     }
   }
   for (const auto &protocol_decl : program.protocols) {
     for (const auto &method : protocol_decl.methods) {
-      if (HasPart9CallableDispatchIntentAttributes(method)) {
+      if (HasDispatchCallableDispatchIntentAttributes(method)) {
         ++summary.callable_dispatch_intent_sites;
       }
     }
   }
   for (const auto &interface_decl : program.interfaces) {
-    if (HasPart9ContainerDispatchIntentAttributes(interface_decl)) {
+    if (HasDispatchContainerDispatchIntentAttributes(interface_decl)) {
       ++summary.container_dispatch_intent_sites;
     }
     for (const auto &method : interface_decl.methods) {
-      if (HasPart9CallableDispatchIntentAttributes(method)) {
+      if (HasDispatchCallableDispatchIntentAttributes(method)) {
         ++summary.callable_dispatch_intent_sites;
       }
     }
   }
   for (const auto &implementation_decl : program.implementations) {
     for (const auto &method : implementation_decl.methods) {
-      if (HasPart9CallableDispatchIntentAttributes(method)) {
+      if (HasDispatchCallableDispatchIntentAttributes(method)) {
         ++summary.callable_dispatch_intent_sites;
       }
     }
@@ -10497,16 +10497,16 @@ BuildPart9DispatchIntentCompatibilitySummary(
   return summary;
 }
 
-Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
-BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
+Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary
+BuildOwnershipResourceMoveUseAfterMoveSemanticsSummary(
     const Objc3Program &program,
-    const Objc3Part8SystemExtensionSemanticModelSummary &dependency_summary,
+    const Objc3OwnershipSystemExtensionSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary summary;
-  Part8ResourceMoveSiteProfile profile;
+  Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary summary;
+  OwnershipResourceMoveSiteProfile profile;
   for (const auto &fn : program.functions) {
     for (const auto &stmt : fn.body) {
-      CollectPart8ResourceMoveStmtSites(stmt.get(), profile);
+      CollectOwnershipResourceMoveStmtSites(stmt.get(), profile);
     }
   }
   for (const auto &implementation_decl : program.implementations) {
@@ -10515,7 +10515,7 @@ BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
         continue;
       }
       for (const auto &stmt : method.body) {
-        CollectPart8ResourceMoveStmtSites(stmt.get(), profile);
+        CollectOwnershipResourceMoveStmtSites(stmt.get(), profile);
       }
     }
   }
@@ -10576,15 +10576,15 @@ BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
   return summary;
 }
 
-Objc3Part8BorrowedPointerEscapeAnalysisSummary
-BuildPart8BorrowedPointerEscapeAnalysisSummary(
+Objc3OwnershipBorrowedPointerEscapeAnalysisSummary
+BuildOwnershipBorrowedPointerEscapeAnalysisSummary(
     const Objc3Program &program,
-    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+    const Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part8BorrowedPointerEscapeAnalysisSummary summary;
-  Part8BorrowedEscapeSiteProfile profile;
-  const auto callable_contracts = BuildPart8BorrowedCallableContracts(program);
+  Objc3OwnershipBorrowedPointerEscapeAnalysisSummary summary;
+  OwnershipBorrowedEscapeSiteProfile profile;
+  const auto callable_contracts = BuildOwnershipBorrowedCallableContracts(program);
 
   for (const auto &fn : program.functions) {
     for (const auto &param : fn.params) {
@@ -10593,7 +10593,7 @@ BuildPart8BorrowedPointerEscapeAnalysisSummary(
       }
     }
     for (const auto &stmt : fn.body) {
-      CollectPart8BorrowedEscapeStmtSites(stmt.get(), callable_contracts,
+      CollectOwnershipBorrowedEscapeStmtSites(stmt.get(), callable_contracts,
                                           profile);
     }
   }
@@ -10608,7 +10608,7 @@ BuildPart8BorrowedPointerEscapeAnalysisSummary(
         continue;
       }
       for (const auto &stmt : method.body) {
-        CollectPart8BorrowedEscapeStmtSites(stmt.get(), callable_contracts,
+        CollectOwnershipBorrowedEscapeStmtSites(stmt.get(), callable_contracts,
                                             profile);
       }
     }
@@ -10667,38 +10667,38 @@ BuildPart8BorrowedPointerEscapeAnalysisSummary(
   return summary;
 }
 
-Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
-BuildPart8CaptureListRetainableFamilyLegalityCompletionSummary(
+Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
+BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummary(
     const Objc3Program &program,
-    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &dependency_summary,
+    const Objc3OwnershipBorrowedPointerEscapeAnalysisSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary summary;
-  Part8CaptureListRetainableFamilySiteProfile profile;
+  Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary summary;
+  OwnershipCaptureListRetainableFamilySiteProfile profile;
 
   for (const auto &fn : program.functions) {
-    CollectPart8RetainableFamilyCallableSites(fn, profile);
+    CollectOwnershipRetainableFamilyCallableSites(fn, profile);
     for (const auto &stmt : fn.body) {
-      CollectPart8CaptureListRetainableFamilyStmtSites(stmt.get(), profile);
+      CollectOwnershipCaptureListRetainableFamilyStmtSites(stmt.get(), profile);
     }
   }
   for (const auto &protocol_decl : program.protocols) {
     for (const auto &method : protocol_decl.methods) {
-      CollectPart8RetainableFamilyCallableSites(method, profile);
+      CollectOwnershipRetainableFamilyCallableSites(method, profile);
     }
   }
   for (const auto &interface_decl : program.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      CollectPart8RetainableFamilyCallableSites(method, profile);
+      CollectOwnershipRetainableFamilyCallableSites(method, profile);
     }
   }
   for (const auto &implementation_decl : program.implementations) {
     for (const auto &method : implementation_decl.methods) {
-      CollectPart8RetainableFamilyCallableSites(method, profile);
+      CollectOwnershipRetainableFamilyCallableSites(method, profile);
       if (!method.has_body) {
         continue;
       }
       for (const auto &stmt : method.body) {
-        CollectPart8CaptureListRetainableFamilyStmtSites(stmt.get(), profile);
+        CollectOwnershipCaptureListRetainableFamilyStmtSites(stmt.get(), profile);
       }
     }
   }
@@ -10795,12 +10795,12 @@ BuildPart8CaptureListRetainableFamilyLegalityCompletionSummary(
   return summary;
 }
 
-Objc3Part7StructuredTaskCancellationSemanticSummary
-BuildPart7StructuredTaskCancellationSemanticSummary(
-    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
+BuildConcurrencyStructuredTaskCancellationSemanticSummary(
+    const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part7StructuredTaskCancellationSemanticSummary summary;
+  Objc3ConcurrencyStructuredTaskCancellationSemanticSummary summary;
   const auto count_diagnostic_code = [&](const char *code) {
     return static_cast<std::size_t>(std::count_if(
         diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
@@ -10883,13 +10883,13 @@ BuildPart7StructuredTaskCancellationSemanticSummary(
   return summary;
 }
 
-Objc3Part7ExecutorHopAffinityCompatibilitySummary
-BuildPart7ExecutorHopAffinityCompatibilitySummary(
-    const Objc3Part7StructuredTaskCancellationSemanticSummary
+Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary
+BuildConcurrencyExecutorHopAffinityCompatibilitySummary(
+    const Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
         &dependency_summary,
-    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part7ExecutorHopAffinityCompatibilitySummary summary;
+  Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary summary;
   const auto count_diagnostic_code = [&](const char *code) {
     return static_cast<std::size_t>(std::count_if(
         diagnostics.begin(), diagnostics.end(), [&](const std::string &diag) {
@@ -10949,11 +10949,11 @@ BuildPart7ExecutorHopAffinityCompatibilitySummary(
   return summary;
 }
 
-Objc3Part7AwaitSuspensionResumeSemanticSummary
-BuildPart7AwaitSuspensionResumeSemanticSummary(
-    const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,
+Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary
+BuildConcurrencyAwaitSuspensionResumeSemanticSummary(
+    const Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part7AwaitSuspensionResumeSemanticSummary summary;
+  Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary summary;
   const auto count_diagnostic_code = [&](const char *code) {
     return static_cast<std::size_t>(std::count_if(
         diagnostics.begin(), diagnostics.end(),
@@ -11016,13 +11016,13 @@ BuildPart7AwaitSuspensionResumeSemanticSummary(
   return summary;
 }
 
-Objc3Part7AsyncDiagnosticsCompatibilitySummary
-BuildPart7AsyncDiagnosticsCompatibilitySummary(
-    const Objc3Part7AwaitSuspensionResumeSemanticSummary &dependency_summary,
-    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary
+BuildConcurrencyAsyncDiagnosticsCompatibilitySummary(
+    const Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary &dependency_summary,
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
     const Objc3Program &ast,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part7AsyncDiagnosticsCompatibilitySummary summary;
+  Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary summary;
   const auto count_diagnostic_code = [&](const char *code) {
     return static_cast<std::size_t>(std::count_if(
         diagnostics.begin(), diagnostics.end(),
@@ -11089,13 +11089,13 @@ BuildPart7AsyncDiagnosticsCompatibilitySummary(
 
 namespace {
 
-struct Objc3Part6SemanticWalkContext {
+struct Objc3ErrorHandlingSemanticWalkContext {
   bool in_throws_callable = false;
   bool local_handler_active = false;
   bool in_catch_body = false;
 };
 
-static void RecordPart6SemanticDiagnostic(
+static void RecordErrorHandlingSemanticDiagnostic(
     std::size_t &contract_violation_sites,
     unsigned line,
     unsigned column,
@@ -11116,7 +11116,7 @@ static const FunctionDecl *FindFunctionDeclByName(const Objc3Program &program,
   return nullptr;
 }
 
-static std::string BuildPart6BridgeLowercaseToken(std::string token) {
+static std::string BuildErrorHandlingBridgeLowercaseToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char c) {
                    return static_cast<char>(std::tolower(c));
@@ -11124,27 +11124,27 @@ static std::string BuildPart6BridgeLowercaseToken(std::string token) {
   return token;
 }
 
-static bool IsNSErrorTypeSpellingForPart6(const FuncParam &param) {
+static bool IsNSErrorTypeSpellingForErrorHandling(const FuncParam &param) {
   if (!param.object_pointer_type_spelling) {
     return false;
   }
-  return BuildPart6BridgeLowercaseToken(param.object_pointer_type_name) ==
+  return BuildErrorHandlingBridgeLowercaseToken(param.object_pointer_type_name) ==
          "nserror";
 }
 
-static bool IsNSErrorOutParameterSiteForPart6(const FuncParam &param) {
-  if (!IsNSErrorTypeSpellingForPart6(param)) {
+static bool IsNSErrorOutParameterSiteForErrorHandling(const FuncParam &param) {
+  if (!IsNSErrorTypeSpellingForErrorHandling(param)) {
     return false;
   }
-  const std::string lowered_name = BuildPart6BridgeLowercaseToken(param.name);
+  const std::string lowered_name = BuildErrorHandlingBridgeLowercaseToken(param.name);
   return param.has_pointer_declarator ||
          lowered_name.find("error") != std::string::npos;
 }
 
 template <typename CallableDecl>
-static bool CallableHasNSErrorOutParameterForPart6(const CallableDecl &decl) {
+static bool CallableHasNSErrorOutParameterForErrorHandling(const CallableDecl &decl) {
   for (const auto &param : decl.params) {
-    if (IsNSErrorOutParameterSiteForPart6(param)) {
+    if (IsNSErrorOutParameterSiteForErrorHandling(param)) {
       return true;
     }
   }
@@ -11152,20 +11152,20 @@ static bool CallableHasNSErrorOutParameterForPart6(const CallableDecl &decl) {
 }
 
 template <typename CallableDecl>
-static bool CallableReturnsNSErrorObjectForPart6(const CallableDecl &decl) {
+static bool CallableReturnsNSErrorObjectForErrorHandling(const CallableDecl &decl) {
   return decl.return_object_pointer_type_spelling &&
-         BuildPart6BridgeLowercaseToken(decl.return_object_pointer_type_name) ==
+         BuildErrorHandlingBridgeLowercaseToken(decl.return_object_pointer_type_name) ==
              "nserror";
 }
 
 template <typename CallableDecl>
-static bool CallableReturnsSupportedNSErrorBoolForPart6(
+static bool CallableReturnsSupportedNSErrorBoolForErrorHandling(
     const CallableDecl &decl) {
   return decl.return_type == ValueType::Bool;
 }
 
 template <typename CallableDecl>
-static bool CallableReturnsSupportedStatusCodeForPart6(
+static bool CallableReturnsSupportedStatusCodeForErrorHandling(
     const CallableDecl &decl) {
   return decl.return_type == ValueType::Bool ||
          decl.return_type == ValueType::I32;
@@ -11188,13 +11188,13 @@ static bool CallableHasSemanticallyValidNSErrorStatusBridge(
     return false;
   }
   if (decl.objc_nserror_declared) {
-    return CallableHasNSErrorOutParameterForPart6(decl) &&
-           CallableReturnsSupportedNSErrorBoolForPart6(decl);
+    return CallableHasNSErrorOutParameterForErrorHandling(decl) &&
+           CallableReturnsSupportedNSErrorBoolForErrorHandling(decl);
   }
   if (decl.objc_status_code_declared) {
-    if (!CallableHasNSErrorOutParameterForPart6(decl) ||
-        !CallableReturnsSupportedStatusCodeForPart6(decl) ||
-        BuildPart6BridgeLowercaseToken(decl.objc_status_code_error_type_spelling) !=
+    if (!CallableHasNSErrorOutParameterForErrorHandling(decl) ||
+        !CallableReturnsSupportedStatusCodeForErrorHandling(decl) ||
+        BuildErrorHandlingBridgeLowercaseToken(decl.objc_status_code_error_type_spelling) !=
             "nserror") {
       return false;
     }
@@ -11202,7 +11202,7 @@ static bool CallableHasSemanticallyValidNSErrorStatusBridge(
         FindFunctionDeclByName(program, decl.objc_status_code_mapping_symbol);
     return mapping != nullptr && mapping->params.size() == 1u &&
            mapping->params.front().type == decl.return_type &&
-           CallableReturnsNSErrorObjectForPart6(*mapping);
+           CallableReturnsNSErrorObjectForErrorHandling(*mapping);
   }
   return has_profile_bridge_sites;
 }
@@ -11257,39 +11257,39 @@ static void ResolveTryOperandSurface(const Expr *operand,
   }
 }
 
-static void WalkPart6TryDoCatchExpr(
+static void WalkErrorHandlingTryDoCatchExpr(
     const Expr *expr,
     const Objc3Program &program,
-    Objc3Part6TryDoCatchSemanticSummary &summary,
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
     std::vector<std::string> &diagnostics,
     bool allow_source_only_error_runtime_surface,
-    const Objc3Part6SemanticWalkContext &context);
+    const Objc3ErrorHandlingSemanticWalkContext &context);
 
-static void WalkPart6TryDoCatchStmt(
+static void WalkErrorHandlingTryDoCatchStmt(
     const Stmt *stmt,
     const Objc3Program &program,
-    Objc3Part6TryDoCatchSemanticSummary &summary,
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
     std::vector<std::string> &diagnostics,
     bool allow_source_only_error_runtime_surface,
-    const Objc3Part6SemanticWalkContext &context) {
+    const Objc3ErrorHandlingSemanticWalkContext &context) {
   if (stmt == nullptr) {
     return;
   }
 
   switch (stmt->kind) {
   case Stmt::Kind::Let:
-    WalkPart6TryDoCatchExpr(stmt->let_stmt != nullptr ? stmt->let_stmt->value.get() : nullptr,
+    WalkErrorHandlingTryDoCatchExpr(stmt->let_stmt != nullptr ? stmt->let_stmt->value.get() : nullptr,
                             program, summary, diagnostics,
                             allow_source_only_error_runtime_surface, context);
     return;
   case Stmt::Kind::Assign:
-    WalkPart6TryDoCatchExpr(
+    WalkErrorHandlingTryDoCatchExpr(
         stmt->assign_stmt != nullptr ? stmt->assign_stmt->value.get() : nullptr,
         program, summary, diagnostics, allow_source_only_error_runtime_surface,
         context);
     return;
   case Stmt::Kind::Return:
-    WalkPart6TryDoCatchExpr(
+    WalkErrorHandlingTryDoCatchExpr(
         stmt->return_stmt != nullptr ? stmt->return_stmt->value.get() : nullptr,
         program, summary, diagnostics, allow_source_only_error_runtime_surface,
         context);
@@ -11298,15 +11298,15 @@ static void WalkPart6TryDoCatchStmt(
     if (stmt->if_stmt == nullptr) {
       return;
     }
-    WalkPart6TryDoCatchExpr(stmt->if_stmt->condition.get(), program, summary,
+    WalkErrorHandlingTryDoCatchExpr(stmt->if_stmt->condition.get(), program, summary,
                             diagnostics, allow_source_only_error_runtime_surface,
                             context);
     for (const auto &then_stmt : stmt->if_stmt->then_body) {
-      WalkPart6TryDoCatchStmt(then_stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(then_stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
     for (const auto &else_stmt : stmt->if_stmt->else_body) {
-      WalkPart6TryDoCatchStmt(else_stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(else_stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
     return;
@@ -11315,10 +11315,10 @@ static void WalkPart6TryDoCatchStmt(
       return;
     }
     for (const auto &body_stmt : stmt->do_while_stmt->body) {
-      WalkPart6TryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
-    WalkPart6TryDoCatchExpr(stmt->do_while_stmt->condition.get(), program,
+    WalkErrorHandlingTryDoCatchExpr(stmt->do_while_stmt->condition.get(), program,
                             summary, diagnostics,
                             allow_source_only_error_runtime_surface, context);
     return;
@@ -11326,17 +11326,17 @@ static void WalkPart6TryDoCatchStmt(
     if (stmt->for_stmt == nullptr) {
       return;
     }
-    WalkPart6TryDoCatchExpr(stmt->for_stmt->init.value.get(), program, summary,
+    WalkErrorHandlingTryDoCatchExpr(stmt->for_stmt->init.value.get(), program, summary,
                             diagnostics, allow_source_only_error_runtime_surface,
                             context);
-    WalkPart6TryDoCatchExpr(stmt->for_stmt->condition.get(), program, summary,
+    WalkErrorHandlingTryDoCatchExpr(stmt->for_stmt->condition.get(), program, summary,
                             diagnostics, allow_source_only_error_runtime_surface,
                             context);
-    WalkPart6TryDoCatchExpr(stmt->for_stmt->step.value.get(), program, summary,
+    WalkErrorHandlingTryDoCatchExpr(stmt->for_stmt->step.value.get(), program, summary,
                             diagnostics, allow_source_only_error_runtime_surface,
                             context);
     for (const auto &body_stmt : stmt->for_stmt->body) {
-      WalkPart6TryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
     return;
@@ -11344,12 +11344,12 @@ static void WalkPart6TryDoCatchStmt(
     if (stmt->switch_stmt == nullptr) {
       return;
     }
-    WalkPart6TryDoCatchExpr(stmt->switch_stmt->condition.get(), program, summary,
+    WalkErrorHandlingTryDoCatchExpr(stmt->switch_stmt->condition.get(), program, summary,
                             diagnostics, allow_source_only_error_runtime_surface,
                             context);
     for (const auto &switch_case : stmt->switch_stmt->cases) {
       for (const auto &case_stmt : switch_case.body) {
-        WalkPart6TryDoCatchStmt(case_stmt.get(), program, summary, diagnostics,
+        WalkErrorHandlingTryDoCatchStmt(case_stmt.get(), program, summary, diagnostics,
                                 allow_source_only_error_runtime_surface, context);
       }
     }
@@ -11358,11 +11358,11 @@ static void WalkPart6TryDoCatchStmt(
     if (stmt->while_stmt == nullptr) {
       return;
     }
-    WalkPart6TryDoCatchExpr(stmt->while_stmt->condition.get(), program, summary,
+    WalkErrorHandlingTryDoCatchExpr(stmt->while_stmt->condition.get(), program, summary,
                             diagnostics, allow_source_only_error_runtime_surface,
                             context);
     for (const auto &body_stmt : stmt->while_stmt->body) {
-      WalkPart6TryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
     return;
@@ -11383,14 +11383,14 @@ static void WalkPart6TryDoCatchStmt(
         }
       }
       if (!allow_source_only_error_runtime_surface) {
-        RecordPart6SemanticDiagnostic(
+        RecordErrorHandlingSemanticDiagnostic(
             summary.contract_violation_sites, stmt->line, stmt->column,
             "O3S267",
             "unsupported feature claim: do/catch statements are not yet runnable in Objective-C 3 native mode",
             diagnostics);
       }
       if (stmt->block_stmt->catch_clauses.empty()) {
-        RecordPart6SemanticDiagnostic(
+        RecordErrorHandlingSemanticDiagnostic(
             summary.contract_violation_sites, stmt->line, stmt->column,
             "O3S268", "do/catch requires at least one catch clause",
             diagnostics);
@@ -11400,7 +11400,7 @@ static void WalkPart6TryDoCatchStmt(
            ++index) {
         const auto &clause = stmt->block_stmt->catch_clauses[index];
         if (saw_catch_all) {
-          RecordPart6SemanticDiagnostic(
+          RecordErrorHandlingSemanticDiagnostic(
               summary.contract_violation_sites, clause.line, clause.column,
               "O3S269",
               "catch clauses after a catch-all are unreachable",
@@ -11411,19 +11411,19 @@ static void WalkPart6TryDoCatchStmt(
         }
       }
 
-      Objc3Part6SemanticWalkContext body_context = context;
+      Objc3ErrorHandlingSemanticWalkContext body_context = context;
       body_context.local_handler_active = true;
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        WalkPart6TryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
+        WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
                                 allow_source_only_error_runtime_surface,
                                 body_context);
       }
       for (const auto &clause : stmt->block_stmt->catch_clauses) {
-        Objc3Part6SemanticWalkContext catch_context = context;
+        Objc3ErrorHandlingSemanticWalkContext catch_context = context;
         catch_context.local_handler_active = false;
         catch_context.in_catch_body = true;
         for (const auto &body_stmt : clause.body) {
-          WalkPart6TryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
+          WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
                                   allow_source_only_error_runtime_surface,
                                   catch_context);
         }
@@ -11431,12 +11431,12 @@ static void WalkPart6TryDoCatchStmt(
       return;
     }
     for (const auto &body_stmt : stmt->block_stmt->body) {
-      WalkPart6TryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(body_stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
     return;
   case Stmt::Kind::Expr:
-    WalkPart6TryDoCatchExpr(
+    WalkErrorHandlingTryDoCatchExpr(
         stmt->expr_stmt != nullptr ? stmt->expr_stmt->value.get() : nullptr,
         program, summary, diagnostics, allow_source_only_error_runtime_surface,
         context);
@@ -11448,13 +11448,13 @@ static void WalkPart6TryDoCatchStmt(
   }
 }
 
-static void WalkPart6TryDoCatchExpr(
+static void WalkErrorHandlingTryDoCatchExpr(
     const Expr *expr,
     const Objc3Program &program,
-    Objc3Part6TryDoCatchSemanticSummary &summary,
+    Objc3ErrorHandlingTryDoCatchSemanticSummary &summary,
     std::vector<std::string> &diagnostics,
     bool allow_source_only_error_runtime_surface,
-    const Objc3Part6SemanticWalkContext &context) {
+    const Objc3ErrorHandlingSemanticWalkContext &context) {
   if (expr == nullptr) {
     return;
   }
@@ -11476,7 +11476,7 @@ static void WalkPart6TryDoCatchExpr(
     }
 
     if (!allow_source_only_error_runtime_surface) {
-      RecordPart6SemanticDiagnostic(
+      RecordErrorHandlingSemanticDiagnostic(
           summary.contract_violation_sites, expr->line, expr->column, "O3S270",
           "unsupported feature claim: try expressions are not yet runnable in Objective-C 3 native mode",
           diagnostics);
@@ -11495,7 +11495,7 @@ static void WalkPart6TryDoCatchExpr(
       ++summary.bridged_callable_try_sites;
     }
     if (!throwing_callable && !bridged_callable) {
-      RecordPart6SemanticDiagnostic(
+      RecordErrorHandlingSemanticDiagnostic(
           summary.contract_violation_sites, expr->line, expr->column, "O3S271",
           "try operand must be a throwing or NSError-bridged call surface",
           diagnostics);
@@ -11506,7 +11506,7 @@ static void WalkPart6TryDoCatchExpr(
       } else if (context.in_throws_callable) {
         ++summary.caller_propagation_sites;
       } else {
-        RecordPart6SemanticDiagnostic(
+        RecordErrorHandlingSemanticDiagnostic(
             summary.contract_violation_sites, expr->line, expr->column,
             "O3S272",
             "propagating try requires a throws function or an enclosing do/catch",
@@ -11521,13 +11521,13 @@ static void WalkPart6TryDoCatchExpr(
       ++summary.rethrow_sites;
     }
     if (!allow_source_only_error_runtime_surface) {
-      RecordPart6SemanticDiagnostic(
+      RecordErrorHandlingSemanticDiagnostic(
           summary.contract_violation_sites, expr->line, expr->column, "O3S273",
           "unsupported feature claim: throw statements are not yet runnable in Objective-C 3 native mode",
           diagnostics);
     }
     if (!(context.in_throws_callable || context.in_catch_body)) {
-      RecordPart6SemanticDiagnostic(
+      RecordErrorHandlingSemanticDiagnostic(
           summary.contract_violation_sites, expr->line, expr->column,
           "O3S274",
           "throw statements require a throws function or a catch body",
@@ -11535,43 +11535,43 @@ static void WalkPart6TryDoCatchExpr(
     }
   }
 
-  WalkPart6TryDoCatchExpr(expr->receiver.get(), program, summary, diagnostics,
+  WalkErrorHandlingTryDoCatchExpr(expr->receiver.get(), program, summary, diagnostics,
                           allow_source_only_error_runtime_surface, context);
-  WalkPart6TryDoCatchExpr(expr->left.get(), program, summary, diagnostics,
+  WalkErrorHandlingTryDoCatchExpr(expr->left.get(), program, summary, diagnostics,
                           allow_source_only_error_runtime_surface, context);
-  WalkPart6TryDoCatchExpr(expr->right.get(), program, summary, diagnostics,
+  WalkErrorHandlingTryDoCatchExpr(expr->right.get(), program, summary, diagnostics,
                           allow_source_only_error_runtime_surface, context);
-  WalkPart6TryDoCatchExpr(expr->third.get(), program, summary, diagnostics,
+  WalkErrorHandlingTryDoCatchExpr(expr->third.get(), program, summary, diagnostics,
                           allow_source_only_error_runtime_surface, context);
   for (const auto &arg : expr->args) {
-    WalkPart6TryDoCatchExpr(arg.get(), program, summary, diagnostics,
+    WalkErrorHandlingTryDoCatchExpr(arg.get(), program, summary, diagnostics,
                             allow_source_only_error_runtime_surface, context);
   }
 }
 
 } // namespace
 
-Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
+Objc3ErrorHandlingTryDoCatchSemanticSummary BuildErrorHandlingTryDoCatchSemanticSummary(
     const Objc3Program &program,
     const Objc3SemanticIntegrationSurface &surface,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics) {
   (void)surface;
-  Objc3Part6TryDoCatchSemanticSummary summary;
+  Objc3ErrorHandlingTryDoCatchSemanticSummary summary;
   for (const auto &fn : program.functions) {
-    Objc3Part6SemanticWalkContext context;
+    Objc3ErrorHandlingSemanticWalkContext context;
     context.in_throws_callable = fn.throws_declared;
     for (const auto &stmt : fn.body) {
-      WalkPart6TryDoCatchStmt(stmt.get(), program, summary, diagnostics,
+      WalkErrorHandlingTryDoCatchStmt(stmt.get(), program, summary, diagnostics,
                               allow_source_only_error_runtime_surface, context);
     }
   }
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
-      Objc3Part6SemanticWalkContext context;
+      Objc3ErrorHandlingSemanticWalkContext context;
       context.in_throws_callable = method.throws_declared;
       for (const auto &stmt : method.body) {
-        WalkPart6TryDoCatchStmt(stmt.get(), program, summary, diagnostics,
+        WalkErrorHandlingTryDoCatchStmt(stmt.get(), program, summary, diagnostics,
                                 allow_source_only_error_runtime_surface,
                                 context);
       }
@@ -11610,12 +11610,12 @@ Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
   return summary;
 }
 
-Objc3Part10DeriveExpansionInventorySummary
-BuildPart10DeriveExpansionInventorySummary(
+Objc3MetaprogrammingDeriveExpansionInventorySummary
+BuildMetaprogrammingDeriveExpansionInventorySummary(
     const Objc3Program &program,
-    const Objc3Part10ExpansionBehaviorSemanticModelSummary &dependency_summary,
+    const Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part10DeriveExpansionInventorySummary summary;
+  Objc3MetaprogrammingDeriveExpansionInventorySummary summary;
 
   const auto count_diagnostic = [&diagnostics](std::string_view code,
                                                std::string_view needle) {
@@ -11634,7 +11634,7 @@ BuildPart10DeriveExpansionInventorySummary(
     ++summary.derive_request_sites;
 
     const std::string canonical_derive_name =
-        NormalizePart10SupportedDeriveName(interface_decl.objc_derive_name);
+        NormalizeMetaprogrammingSupportedDeriveName(interface_decl.objc_derive_name);
     if (interface_decl.has_category) {
       ++summary.unsupported_topology_sites;
       continue;
@@ -11646,7 +11646,7 @@ BuildPart10DeriveExpansionInventorySummary(
 
     ++summary.supported_derive_request_sites;
     const std::string lowered =
-        BuildPart10LowercaseDeriveToken(interface_decl.objc_derive_name);
+        BuildMetaprogrammingLowercaseDeriveToken(interface_decl.objc_derive_name);
     if (lowered == "equatable") {
       ++summary.equatable_alias_sites;
     }
@@ -11659,7 +11659,7 @@ BuildPart10DeriveExpansionInventorySummary(
     }
 
     const std::string derived_selector =
-        BuildPart10DerivedSelectorForInventoryRow(canonical_derive_name);
+        BuildMetaprogrammingDerivedSelectorForInventoryRow(canonical_derive_name);
     const bool selector_conflict =
         !derived_selector.empty() &&
         std::any_of(interface_decl.methods.begin(), interface_decl.methods.end(),
@@ -11683,7 +11683,7 @@ BuildPart10DeriveExpansionInventorySummary(
             summary.expansion_inventory_rows_lexicographic.end());
 
   summary.semantic_dependency_required =
-      IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
+      IsReadyObjc3MetaprogrammingExpansionBehaviorSemanticModelSummary(
           dependency_summary);
   summary.supported_derive_inventory_landed =
       summary.generated_method_entry_count + summary.selector_conflict_sites ==
@@ -11711,7 +11711,7 @@ BuildPart10DeriveExpansionInventorySummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part10 derive expansion inventory must remain deterministic and fail closed";
+        "metaprogramming derive expansion inventory must remain deterministic and fail closed";
   }
 
   std::ostringstream out;
@@ -11732,12 +11732,12 @@ BuildPart10DeriveExpansionInventorySummary(
   return summary;
 }
 
-Objc3Part10MacroSafetySandboxDeterminismSummary
-BuildPart10MacroSafetySandboxDeterminismSummary(
+Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary
+BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
     const Objc3Program &program,
-    const Objc3Part10DeriveExpansionInventorySummary &dependency_summary,
+    const Objc3MetaprogrammingDeriveExpansionInventorySummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part10MacroSafetySandboxDeterminismSummary summary;
+  Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary summary;
 
   const auto count_diagnostic = [&diagnostics](std::string_view code,
                                                std::string_view needle) {
@@ -11777,11 +11777,11 @@ BuildPart10MacroSafetySandboxDeterminismSummary(
       ++summary.incomplete_macro_metadata_sites;
       return;
     }
-    if (!IsSupportedPart10MacroPackageName(fn.objc_macro_package_name)) {
+    if (!IsSupportedMetaprogrammingMacroPackageName(fn.objc_macro_package_name)) {
       ++summary.invalid_package_sites;
       return;
     }
-    if (!IsSupportedPart10MacroProvenanceToken(fn.objc_macro_provenance_name)) {
+    if (!IsSupportedMetaprogrammingMacroProvenanceToken(fn.objc_macro_provenance_name)) {
       ++summary.invalid_provenance_sites;
       return;
     }
@@ -11833,7 +11833,7 @@ BuildPart10MacroSafetySandboxDeterminismSummary(
   }
 
   summary.semantic_dependency_required =
-      IsReadyObjc3Part10DeriveExpansionInventorySummary(dependency_summary);
+      IsReadyObjc3MetaprogrammingDeriveExpansionInventorySummary(dependency_summary);
   summary.metadata_completeness_enforced =
       summary.incomplete_macro_metadata_sites ==
           count_diagnostic("O3S320", "requires both objc_macro_package and objc_macro_provenance") &&
@@ -11861,7 +11861,7 @@ BuildPart10MacroSafetySandboxDeterminismSummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part10 macro safety/sandbox/determinism semantics must remain deterministic and fail closed";
+        "metaprogramming macro safety/sandbox/determinism semantics must remain deterministic and fail closed";
   }
 
   std::ostringstream out;
@@ -11882,12 +11882,12 @@ BuildPart10MacroSafetySandboxDeterminismSummary(
   return summary;
 }
 
-Objc3Part10PropertyBehaviorLegalityCompatibilitySummary
-BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
+Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
+BuildMetaprogrammingPropertyBehaviorLegalityCompatibilitySummary(
     const Objc3Program &program,
-    const Objc3Part10MacroSafetySandboxDeterminismSummary &dependency_summary,
+    const Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary &dependency_summary,
     const std::vector<std::string> &diagnostics) {
-  Objc3Part10PropertyBehaviorLegalityCompatibilitySummary summary;
+  Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary summary;
 
   const auto count_diagnostic = [&diagnostics](std::string_view code,
                                                std::string_view needle) {
@@ -11914,7 +11914,7 @@ BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
         }
         ++summary.property_behavior_sites;
         const std::string canonical_behavior =
-            NormalizePart10SupportedPropertyBehaviorName(
+            NormalizeMetaprogrammingSupportedPropertyBehaviorName(
                 property_decl.property_behavior_name);
         if (canonical_behavior.empty()) {
           ++summary.unsupported_behavior_sites;
@@ -11961,7 +11961,7 @@ BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
   }
 
   summary.semantic_dependency_required =
-      IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
+      IsReadyObjc3MetaprogrammingMacroSafetySandboxDeterminismSummary(
           dependency_summary);
   summary.supported_behavior_inventory_landed =
       summary.supported_behavior_sites ==
@@ -11997,7 +11997,7 @@ BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic;
   if (!summary.deterministic) {
     summary.failure_reason =
-        "part10 property behavior legality and interaction semantics must remain deterministic and fail closed";
+        "metaprogramming property behavior legality and interaction semantics must remain deterministic and fail closed";
   }
 
   std::ostringstream out;
@@ -12018,9 +12018,9 @@ BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
 }
 
 template <typename CallableDecl>
-static void AccumulatePart6ErrorBridgeLegalityForCallable(
+static void AccumulateErrorHandlingErrorBridgeLegalityForCallable(
     const CallableDecl &decl, const Objc3Program &program,
-    Objc3Part6ErrorBridgeLegalitySummary &summary,
+    Objc3ErrorHandlingErrorBridgeLegalitySummary &summary,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics) {
   const bool has_nserror = decl.objc_nserror_declared;
@@ -12043,16 +12043,16 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
     ++summary.objc_status_code_callable_sites;
   }
 
-  const bool has_error_out = CallableHasNSErrorOutParameterForPart6(decl);
+  const bool has_error_out = CallableHasNSErrorOutParameterForErrorHandling(decl);
   const bool valid_nserror_return =
-      CallableReturnsSupportedNSErrorBoolForPart6(decl);
+      CallableReturnsSupportedNSErrorBoolForErrorHandling(decl);
   const bool valid_status_return =
-      CallableReturnsSupportedStatusCodeForPart6(decl);
+      CallableReturnsSupportedStatusCodeForErrorHandling(decl);
   const bool throws_conflict = has_marker && decl.throws_declared;
   const bool marker_conflict = has_nserror && has_status_code;
   const bool valid_error_type =
       !has_status_code ||
-      BuildPart6BridgeLowercaseToken(decl.objc_status_code_error_type_spelling) ==
+      BuildErrorHandlingBridgeLowercaseToken(decl.objc_status_code_error_type_spelling) ==
           "nserror";
   const FunctionDecl *mapping =
       has_status_code
@@ -12063,10 +12063,10 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
       !has_status_code ||
       (mapping != nullptr && mapping->params.size() == 1u &&
        mapping->params.front().type == decl.return_type &&
-       CallableReturnsNSErrorObjectForPart6(*mapping));
+       CallableReturnsNSErrorObjectForErrorHandling(*mapping));
 
   if (!allow_source_only_error_runtime_surface && has_marker) {
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S285",
         "unsupported feature claim: NSError/status bridge legality is not yet runnable in Objective-C 3 native mode",
         diagnostics);
@@ -12074,14 +12074,14 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
   }
   if (has_nserror && !has_error_out) {
     ++summary.missing_error_out_parameter_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S275",
         "objc_nserror requires an NSError out parameter",
         diagnostics);
   }
   if (has_nserror && !valid_nserror_return) {
     ++summary.invalid_nserror_return_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S276",
         "objc_nserror currently requires a BOOL-like success return",
         diagnostics);
@@ -12089,7 +12089,7 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
   if (throws_conflict) {
     ++summary.throws_bridge_conflict_sites;
     ++summary.unsupported_combination_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S277",
         "NSError/status bridge markers cannot currently be combined with throws",
         diagnostics);
@@ -12097,14 +12097,14 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
   if (marker_conflict) {
     ++summary.marker_conflict_sites;
     ++summary.unsupported_combination_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S278",
         "objc_nserror and objc_status_code cannot appear on the same callable",
         diagnostics);
   }
   if (has_status_code && !has_error_out) {
     ++summary.missing_error_out_parameter_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S279",
         "objc_status_code requires an NSError out parameter",
         diagnostics);
@@ -12112,28 +12112,28 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
   if (has_status_code && !valid_error_type) {
     ++summary.invalid_error_type_sites;
     ++summary.unsupported_combination_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S280",
         "objc_status_code currently requires error_type: NSError",
         diagnostics);
   }
   if (has_status_code && !valid_status_return) {
     ++summary.invalid_status_return_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S281",
         "objc_status_code requires a BOOL-like or integer status return",
         diagnostics);
   }
   if (has_status_code && !mapping_exists) {
     ++summary.missing_mapping_symbol_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S282",
         "objc_status_code mapping symbol must resolve to a declared function",
         diagnostics);
   }
   if (has_status_code && mapping_exists && !mapping_signature_valid) {
     ++summary.invalid_mapping_signature_sites;
-    RecordPart6SemanticDiagnostic(
+    RecordErrorHandlingSemanticDiagnostic(
         summary.contract_violation_sites, decl.line, decl.column, "O3S283",
         "objc_status_code mapping function must accept one matching status parameter and return NSError",
         diagnostics);
@@ -12145,33 +12145,33 @@ static void AccumulatePart6ErrorBridgeLegalityForCallable(
   }
 }
 
-Objc3Part6ErrorBridgeLegalitySummary BuildPart6ErrorBridgeLegalitySummary(
+Objc3ErrorHandlingErrorBridgeLegalitySummary BuildErrorHandlingErrorBridgeLegalitySummary(
     const Objc3Program &program,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics) {
-  Objc3Part6ErrorBridgeLegalitySummary summary;
+  Objc3ErrorHandlingErrorBridgeLegalitySummary summary;
   for (const auto &fn : program.functions) {
-    AccumulatePart6ErrorBridgeLegalityForCallable(
+    AccumulateErrorHandlingErrorBridgeLegalityForCallable(
         fn, program, summary, allow_source_only_error_runtime_surface,
         diagnostics);
   }
   for (const auto &protocol_decl : program.protocols) {
     for (const auto &method : protocol_decl.methods) {
-      AccumulatePart6ErrorBridgeLegalityForCallable(
+      AccumulateErrorHandlingErrorBridgeLegalityForCallable(
           method, program, summary, allow_source_only_error_runtime_surface,
           diagnostics);
     }
   }
   for (const auto &interface_decl : program.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      AccumulatePart6ErrorBridgeLegalityForCallable(
+      AccumulateErrorHandlingErrorBridgeLegalityForCallable(
           method, program, summary, allow_source_only_error_runtime_surface,
           diagnostics);
     }
   }
   for (const auto &implementation_decl : program.implementations) {
     for (const auto &method : implementation_decl.methods) {
-      AccumulatePart6ErrorBridgeLegalityForCallable(
+      AccumulateErrorHandlingErrorBridgeLegalityForCallable(
           method, program, summary, allow_source_only_error_runtime_surface,
           diagnostics);
     }
@@ -14713,27 +14713,27 @@ static Objc3SuperclassRealizationClosure ResolveSuperclassRealizationClosure(
   return closure;
 }
 
-static bool IsPart9EffectivelyDirectMethod(const Objc3MethodInfo &method,
+static bool IsDispatchEffectivelyDirectMethod(const Objc3MethodInfo &method,
                                            const Objc3InterfaceInfo &owner) {
   return method.objc_direct_declared ||
          (owner.objc_direct_members_declared && !method.objc_dynamic_declared);
 }
 
 template <typename CallableDeclT>
-static bool HasPart9CallableDispatchIntentAttributes(
+static bool HasDispatchCallableDispatchIntentAttributes(
     const CallableDeclT &decl) {
   return decl.objc_direct_declared || decl.objc_final_declared ||
          decl.objc_dynamic_declared;
 }
 
-static bool HasPart9ContainerDispatchIntentAttributes(
+static bool HasDispatchContainerDispatchIntentAttributes(
     const Objc3InterfaceDecl &decl) {
   return decl.objc_direct_members_declared || decl.objc_final_declared ||
          decl.objc_sealed_declared;
 }
 
 template <typename CallableDeclT>
-static void DiagnosePart9CallableDispatchIntentConflicts(
+static void DiagnoseDispatchCallableDispatchIntentConflicts(
     const CallableDeclT &decl, const std::string &callable_label,
     std::vector<std::string> &diagnostics) {
   if (decl.objc_direct_declared && decl.objc_dynamic_declared) {
@@ -14750,7 +14750,7 @@ static void DiagnosePart9CallableDispatchIntentConflicts(
   }
 }
 
-static void ValidatePart9DispatchIntentCompatibility(
+static void ValidateDispatchDispatchIntentCompatibility(
     const Objc3Program &ast, std::vector<std::string> &diagnostics) {
   auto format_method_label =
       [](const Objc3MethodDecl &method, const std::string &owner_kind,
@@ -14764,10 +14764,10 @@ static void ValidatePart9DispatchIntentCompatibility(
       };
 
   for (const auto &fn : ast.functions) {
-    if (!HasPart9CallableDispatchIntentAttributes(fn)) {
+    if (!HasDispatchCallableDispatchIntentAttributes(fn)) {
       continue;
     }
-    DiagnosePart9CallableDispatchIntentConflicts(
+    DiagnoseDispatchCallableDispatchIntentConflicts(
         fn, "function '" + fn.name + "'", diagnostics);
     diagnostics.push_back(MakeDiag(
         fn.line, fn.column, "O3S313",
@@ -14777,12 +14777,12 @@ static void ValidatePart9DispatchIntentCompatibility(
 
   for (const auto &protocol_decl : ast.protocols) {
     for (const auto &method : protocol_decl.methods) {
-      if (!HasPart9CallableDispatchIntentAttributes(method)) {
+      if (!HasDispatchCallableDispatchIntentAttributes(method)) {
         continue;
       }
       const std::string method_label =
           format_method_label(method, "protocol", protocol_decl.name);
-      DiagnosePart9CallableDispatchIntentConflicts(method, method_label,
+      DiagnoseDispatchCallableDispatchIntentConflicts(method, method_label,
                                                    diagnostics);
       diagnostics.push_back(MakeDiag(
           method.line, method.column, "O3S314",
@@ -14795,7 +14795,7 @@ static void ValidatePart9DispatchIntentCompatibility(
     const std::string category_identity = interface_decl.name + "(" +
                                           interface_decl.category_name + ")";
     if (interface_decl.has_category &&
-        HasPart9ContainerDispatchIntentAttributes(interface_decl)) {
+        HasDispatchContainerDispatchIntentAttributes(interface_decl)) {
       diagnostics.push_back(MakeDiag(
           interface_decl.line, interface_decl.column, "O3S316",
           "dispatch-control semantics failed: category '" +
@@ -14807,12 +14807,12 @@ static void ValidatePart9DispatchIntentCompatibility(
       continue;
     }
     for (const auto &method : interface_decl.methods) {
-      if (!HasPart9CallableDispatchIntentAttributes(method)) {
+      if (!HasDispatchCallableDispatchIntentAttributes(method)) {
         continue;
       }
       const std::string method_label =
           format_method_label(method, "category", category_identity);
-      DiagnosePart9CallableDispatchIntentConflicts(method, method_label,
+      DiagnoseDispatchCallableDispatchIntentConflicts(method, method_label,
                                                    diagnostics);
       diagnostics.push_back(MakeDiag(
           method.line, method.column, "O3S315",
@@ -14824,10 +14824,10 @@ static void ValidatePart9DispatchIntentCompatibility(
   for (const auto &implementation_decl : ast.implementations) {
     if (!implementation_decl.has_category) {
       for (const auto &method : implementation_decl.methods) {
-        if (!HasPart9CallableDispatchIntentAttributes(method)) {
+        if (!HasDispatchCallableDispatchIntentAttributes(method)) {
           continue;
         }
-        DiagnosePart9CallableDispatchIntentConflicts(
+        DiagnoseDispatchCallableDispatchIntentConflicts(
             method,
             format_method_label(method, "implementation",
                                 implementation_decl.name),
@@ -14839,12 +14839,12 @@ static void ValidatePart9DispatchIntentCompatibility(
     const std::string category_identity = implementation_decl.name + "(" +
                                           implementation_decl.category_name + ")";
     for (const auto &method : implementation_decl.methods) {
-      if (!HasPart9CallableDispatchIntentAttributes(method)) {
+      if (!HasDispatchCallableDispatchIntentAttributes(method)) {
         continue;
       }
       const std::string method_label =
           format_method_label(method, "category", category_identity);
-      DiagnosePart9CallableDispatchIntentConflicts(method, method_label,
+      DiagnoseDispatchCallableDispatchIntentConflicts(method, method_label,
                                                    diagnostics);
       diagnostics.push_back(MakeDiag(
           method.line, method.column, "O3S315",
@@ -14854,7 +14854,7 @@ static void ValidatePart9DispatchIntentCompatibility(
   }
 }
 
-static void ValidatePart11InteropRuntimeParity(
+static void ValidateInteropInteropRuntimeParity(
     const Objc3Program &ast, std::vector<std::string> &diagnostics) {
   const auto format_function_label = [](const FunctionDecl &fn) {
     return "function '" + fn.name + "'";
@@ -14930,7 +14930,7 @@ static void ValidatePart11InteropRuntimeParity(
         implementation_decl.has_category ? "category implementation"
                                          : "implementation";
     for (const auto &method_decl : implementation_decl.methods) {
-      if (!HasPart11ForeignOrImportAnnotations(method_decl)) {
+      if (!HasInteropForeignOrImportAnnotations(method_decl)) {
         continue;
       }
       diagnostics.push_back(MakeDiag(
@@ -14942,7 +14942,7 @@ static void ValidatePart11InteropRuntimeParity(
   }
 }
 
-static void ValidatePart11CppInteropInteractions(
+static void ValidateInteropCppInteropInteractions(
     const Objc3Program &ast, std::vector<std::string> &diagnostics) {
   const auto format_function_label = [](const FunctionDecl &fn) {
     return "function '" + fn.name + "'";
@@ -14969,10 +14969,10 @@ static void ValidatePart11CppInteropInteractions(
                                                              unsigned line,
                                                              unsigned column,
                                                              const std::string &callable_label) {
-    if (!HasPart11CppInteropAnnotations(decl)) {
+    if (!HasInteropCppInteropAnnotations(decl)) {
       return;
     }
-    if (HasPart11OwnershipInteractionSurface(decl)) {
+    if (HasInteropOwnershipInteractionSurface(decl)) {
       diagnose_cpp_interaction(
           line, column, callable_label, "O3S334",
           "cannot currently combine C++-facing interop annotations with ownership-managed callable surfaces");
@@ -14982,7 +14982,7 @@ static void ValidatePart11CppInteropInteractions(
           line, column, callable_label, "O3S335",
           "cannot currently combine C++-facing interop annotations with throws");
     }
-    if (HasPart11AsyncInteractionSurface(decl)) {
+    if (HasInteropAsyncInteractionSurface(decl)) {
       diagnose_cpp_interaction(
           line, column, callable_label, "O3S336",
           "cannot currently combine C++-facing interop annotations with async or objc_executor affinity");
@@ -15031,7 +15031,7 @@ static void ValidatePart11CppInteropInteractions(
   }
 }
 
-static void ValidatePart11SwiftInteropIsolation(
+static void ValidateInteropSwiftInteropIsolation(
     const Objc3Program &ast, std::vector<std::string> &diagnostics) {
   const auto format_function_label = [](const FunctionDecl &fn) {
     return "function '" + fn.name + "'";
@@ -15058,7 +15058,7 @@ static void ValidatePart11SwiftInteropIsolation(
                                     bool implementation_surface,
                                     unsigned line, unsigned column,
                                     const std::string &callable_label) {
-        if (!HasPart11SwiftInteropAnnotations(decl)) {
+        if (!HasInteropSwiftInteropAnnotations(decl)) {
           return;
         }
         if (decl.objc_swift_private_declared && !decl.objc_swift_name_declared) {
@@ -15303,7 +15303,7 @@ static void ValidateInheritanceOverrideAndRealizationLegality(
                     inherited_method.owner_name + "'"));
           }
           if (method_it->second.effective_direct_dispatch ||
-              IsPart9EffectivelyDirectMethod(*inherited_method.method,
+              IsDispatchEffectivelyDirectMethod(*inherited_method.method,
                                              inherited_owner_it->second)) {
             diagnostics.push_back(MakeDiag(
                 method_decl.line, method_decl.column, "O3S310",
@@ -20340,15 +20340,15 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                   "' requires both objc_macro_package and objc_macro_provenance"));
         }
         if (has_macro_package &&
-            !IsSupportedPart10MacroPackageName(fn.objc_macro_package_name)) {
+            !IsSupportedMetaprogrammingMacroPackageName(fn.objc_macro_package_name)) {
           diagnostics.push_back(MakeDiag(
               fn.line, fn.column, "O3S322",
               "macro sandbox rejected package '" +
-                  NormalizePart10RawMacroToken(fn.objc_macro_package_name) +
+                  NormalizeMetaprogrammingRawMacroToken(fn.objc_macro_package_name) +
                   "' on function '" + fn.name + "'"));
         }
         if (has_macro_provenance &&
-            !IsSupportedPart10MacroProvenanceToken(
+            !IsSupportedMetaprogrammingMacroProvenanceToken(
                 fn.objc_macro_provenance_name)) {
           diagnostics.push_back(MakeDiag(
               fn.line, fn.column, "O3S323",
@@ -20729,9 +20729,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     interface_info.objc_sealed_declared = interface_decl.objc_sealed_declared;
     if (interface_decl.objc_derive_declared) {
       const std::string derive_spelling =
-          NormalizePart10RawDeriveToken(interface_decl.objc_derive_name);
+          NormalizeMetaprogrammingRawDeriveToken(interface_decl.objc_derive_name);
       const std::string canonical_derive_name =
-          NormalizePart10SupportedDeriveName(derive_spelling);
+          NormalizeMetaprogrammingSupportedDeriveName(derive_spelling);
       if (is_category_interface) {
         diagnostics.push_back(MakeDiag(
             interface_decl.line, interface_decl.column, "O3S318",
@@ -20744,7 +20744,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                 "' on interface '" + container_name + "'"));
       } else {
         const std::string derived_selector =
-            BuildPart10DerivedSelectorForInventoryRow(canonical_derive_name);
+            BuildMetaprogrammingDerivedSelectorForInventoryRow(canonical_derive_name);
         if (!derived_selector.empty()) {
           const bool selector_conflict = std::any_of(
               interface_decl.methods.begin(), interface_decl.methods.end(),
@@ -20839,7 +20839,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       }
 
       method_insert.first->second.effective_direct_dispatch =
-          IsPart9EffectivelyDirectMethod(method_insert.first->second,
+          IsDispatchEffectivelyDirectMethod(method_insert.first->second,
                                          interface_info);
 
       if (!is_category_interface) {
@@ -21110,11 +21110,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                       surface.category_interfaces,
                                       surface.category_implementations,
                                       diagnostics);
-  ValidatePart11InteropRuntimeParity(ast, diagnostics);
-  ValidatePart11CppInteropInteractions(ast, diagnostics);
-  ValidatePart11SwiftInteropIsolation(ast, diagnostics);
+  ValidateInteropInteropRuntimeParity(ast, diagnostics);
+  ValidateInteropCppInteropInteractions(ast, diagnostics);
+  ValidateInteropSwiftInteropIsolation(ast, diagnostics);
   ValidateInheritanceOverrideAndRealizationLegality(ast, surface, diagnostics);
-  ValidatePart9DispatchIntentCompatibility(ast, diagnostics);
+  ValidateDispatchDispatchIntentCompatibility(ast, diagnostics);
 
   interface_implementation_summary.resolved_interfaces = surface.interfaces.size();
   interface_implementation_summary.resolved_implementations = surface.implementations.size();
@@ -25340,7 +25340,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
                             std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
   const auto borrowed_callable_contracts =
-      BuildPart8BorrowedCallableContracts(ast);
+      BuildOwnershipBorrowedCallableContracts(ast);
   std::unordered_map<std::string, const Objc3InterfaceDecl *> actor_interfaces;
   for (const auto &interface_decl : ast.interfaces) {
     if (interface_decl.is_actor) {
@@ -25382,7 +25382,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   for (const auto &fn : ast.functions) {
     ValidateReturnTypeSuffixes(fn, diagnostics);
     ValidateParameterTypeSuffixes(fn, diagnostics);
-    DiagnosePart8RetainableFamilyCallableLegality(
+    DiagnoseOwnershipRetainableFamilyCallableLegality(
         fn, "function '" + fn.name + "'", diagnostics);
     if (fn.executor_affinity_declared && !fn.async_declared) {
       diagnostics.push_back(MakeDiag(
@@ -25411,23 +25411,23 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
     }
 
     if (!fn.is_prototype) {
-      const Objc3Part7TaskCallableLegalityProfile task_legality_profile =
-          BuildPart7TaskCallableLegalityProfile(fn.body);
-      DiagnosePart7TaskCallableLegality(fn.body, fn.async_declared, diagnostics);
-      DiagnosePart7ExecutorAffinityCompletion(
+      const Objc3ConcurrencyTaskCallableLegalityProfile task_legality_profile =
+          BuildConcurrencyTaskCallableLegalityProfile(fn.body);
+      DiagnoseConcurrencyTaskCallableLegality(fn.body, fn.async_declared, diagnostics);
+      DiagnoseConcurrencyExecutorAffinityCompletion(
           task_legality_profile, fn.async_declared,
           fn.executor_affinity_declared, fn.executor_affinity_kind, fn.line,
           fn.column, diagnostics);
-      DiagnosePart8ResourceMoveSemantics(fn.body, scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveSemantics(fn.body, scopes, diagnostics);
       std::unordered_set<std::string> borrowed_parameter_names;
       for (const auto &param : fn.params) {
         if (param.borrowed_pointer_qualified) {
           borrowed_parameter_names.insert(param.name);
         }
       }
-      DiagnosePart8BorrowedPointerEscapeSemantics(
+      DiagnoseOwnershipBorrowedPointerEscapeSemantics(
           fn.body, scopes, borrowed_parameter_names, borrowed_callable_contracts,
-          BuildPart8BorrowedReturnContract(fn), diagnostics);
+          BuildOwnershipBorrowedReturnContract(fn), diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromFunctionReturn(fn);
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
@@ -25448,7 +25448,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &protocol_decl : ast.protocols) {
     for (const auto &method : protocol_decl.methods) {
-      DiagnosePart8RetainableFamilyCallableLegality(
+      DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in protocol '" +
               protocol_decl.name + "'",
@@ -25458,7 +25458,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      DiagnosePart8RetainableFamilyCallableLegality(
+      DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in interface '" +
               interface_decl.name + "'",
@@ -25468,15 +25468,15 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &implementation_decl : ast.implementations) {
     for (const auto &method : implementation_decl.methods) {
-      DiagnosePart8RetainableFamilyCallableLegality(
+      DiagnoseOwnershipRetainableFamilyCallableLegality(
           method,
           "method '" + MethodSelectorName(method) + "' in implementation '" +
               implementation_decl.name + "'",
           diagnostics);
-      DiagnosePart7ActorMethodIsolationRules(
+      DiagnoseConcurrencyActorMethodIsolationRules(
           method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
           method.line, method.column, diagnostics);
-      DiagnosePart7ActorRaceHazardRules(
+      DiagnoseConcurrencyActorRaceHazardRules(
           method, IsActorInterfaceOwner(actor_interfaces, implementation_decl.name),
           method.line, method.column, diagnostics);
       if (method.executor_affinity_declared && !method.async_declared) {
@@ -25511,25 +25511,25 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
         }
       }
 
-      const Objc3Part7TaskCallableLegalityProfile task_legality_profile =
-          BuildPart7TaskCallableLegalityProfile(method.body);
-      DiagnosePart7TaskCallableLegality(method.body, method.async_declared,
+      const Objc3ConcurrencyTaskCallableLegalityProfile task_legality_profile =
+          BuildConcurrencyTaskCallableLegalityProfile(method.body);
+      DiagnoseConcurrencyTaskCallableLegality(method.body, method.async_declared,
                                         diagnostics);
-      DiagnosePart7ExecutorAffinityCompletion(
+      DiagnoseConcurrencyExecutorAffinityCompletion(
           task_legality_profile, method.async_declared,
           method.executor_affinity_declared, method.executor_affinity_kind,
           method.line, method.column, diagnostics);
-      DiagnosePart8ResourceMoveSemantics(method.body, scopes, diagnostics);
+      DiagnoseOwnershipResourceMoveSemantics(method.body, scopes, diagnostics);
       std::unordered_set<std::string> borrowed_parameter_names;
       for (const auto &param : method.params) {
         if (param.borrowed_pointer_qualified) {
           borrowed_parameter_names.insert(param.name);
         }
       }
-      DiagnosePart8BorrowedPointerEscapeSemantics(
+      DiagnoseOwnershipBorrowedPointerEscapeSemantics(
           method.body, scopes, borrowed_parameter_names,
           borrowed_callable_contracts,
-          BuildPart8BorrowedReturnContract(method), diagnostics);
+          BuildOwnershipBorrowedReturnContract(method), diagnostics);
       const SemanticTypeInfo expected_return_type = MakeSemanticTypeFromMethodReturn(method);
       const std::string method_context =
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";
@@ -25557,7 +25557,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
 
   for (const auto &interface_decl : ast.interfaces) {
     for (const auto &method : interface_decl.methods) {
-      DiagnosePart7ActorMethodIsolationRules(method, interface_decl.is_actor,
+      DiagnoseConcurrencyActorMethodIsolationRules(method, interface_decl.is_actor,
                                              method.line, method.column,
                                              diagnostics);
     }

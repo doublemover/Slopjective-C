@@ -45,7 +45,7 @@ Representative live proof paths:
   - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 - integrated runtime architecture packet:
   - `scripts/check_objc3c_runtime_architecture_proof_packet.py`

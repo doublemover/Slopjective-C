@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3S340.
+module InteropSwiftImplementationSurfaceRejected;
+
+@interface SwiftMetadataBridge
+- (i32)visible;
+@end
+
+@implementation SwiftMetadataBridge
+- (i32)visible __attribute__((objc_swift_name(named("VisibleBridge")))) {
+  return 0;
+}
+@end

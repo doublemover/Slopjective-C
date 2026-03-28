@@ -163,4 +163,4 @@ def test_package_wires_llvm_capability_probe_script() -> None:
     assert "check:objc3c:llvm-capabilities" in scripts
     command = scripts["check:objc3c:llvm-capabilities"]
     assert "scripts/probe_objc3c_llvm_capabilities.py" in command
-    assert "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json" in command
+    assert "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json" in command

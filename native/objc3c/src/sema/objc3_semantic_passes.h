@@ -4,19 +4,19 @@
 
 #include "sema/objc3_sema_contract.h"
 
-struct Objc3FrontendPart6ErrorSourceClosureSummary;
-struct Objc3FrontendPart7AsyncSourceClosureSummary;
-struct Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary;
-struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary;
-struct Objc3FrontendPart8SystemExtensionSourceClosureSummary;
-struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary;
-struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary;
-struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary;
-struct Objc3FrontendPart10MetaprogrammingSourceClosureSummary;
-struct Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary;
-struct Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary;
-struct Objc3FrontendPart11ForeignImportSourceClosureSummary;
-struct Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary;
+struct Objc3FrontendErrorHandlingErrorSourceClosureSummary;
+struct Objc3FrontendConcurrencyAsyncSourceClosureSummary;
+struct Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary;
+struct Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary;
+struct Objc3FrontendOwnershipSystemExtensionSourceClosureSummary;
+struct Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary;
+struct Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary;
+struct Objc3FrontendDispatchDispatchIntentSourceCompletionSummary;
+struct Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary;
+struct Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary;
+struct Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary;
+struct Objc3FrontendInteropForeignImportSourceClosureSummary;
+struct Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
                                                                 bool legacy_compatibility_mode,
@@ -28,155 +28,155 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                                                 std::vector<std::string> &diagnostics);
 Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface);
 bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);
-Objc3Part3TypeSemanticModelSummary BuildPart3TypeSemanticModelSummary(
+Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
     const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
     std::size_t max_message_send_args);
-Objc3Part5ControlFlowSemanticModelSummary BuildPart5ControlFlowSemanticModelSummary(
+Objc3ControlFlowControlFlowSemanticModelSummary BuildControlFlowControlFlowSemanticModelSummary(
     const Objc3Program &ast);
-Objc3Part6ErrorSemanticModelSummary BuildPart6ErrorSemanticModelSummary(
-    const Objc3FrontendPart6ErrorSourceClosureSummary &source_summary,
+Objc3ErrorHandlingErrorSemanticModelSummary BuildErrorHandlingErrorSemanticModelSummary(
+    const Objc3FrontendErrorHandlingErrorSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
-Objc3Part7AsyncEffectSuspensionSemanticModelSummary
-BuildPart7AsyncEffectSuspensionSemanticModelSummary(
-    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary
+BuildConcurrencyAsyncEffectSuspensionSemanticModelSummary(
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
-Objc3Part7ActorIsolationSendableSemanticModelSummary
-BuildPart7ActorIsolationSendableSemanticModelSummary(
-    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
+Objc3ConcurrencyActorIsolationSendableSemanticModelSummary
+BuildConcurrencyActorIsolationSendableSemanticModelSummary(
+    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
-Objc3Part7ActorIsolationSendabilityEnforcementSummary
-BuildPart7ActorIsolationSendabilityEnforcementSummary(
+Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
+BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
     const Objc3Program &ast,
-    const Objc3Part7ActorIsolationSendableSemanticModelSummary
+    const Objc3ConcurrencyActorIsolationSendableSemanticModelSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
-BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
+Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary
+BuildConcurrencyActorRaceHazardEscapeDiagnosticsSummary(
     const Objc3Program &ast,
-    const Objc3Part7ActorIsolationSendabilityEnforcementSummary
+    const Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part7TaskExecutorCancellationSemanticModelSummary
-BuildPart7TaskExecutorCancellationSemanticModelSummary(
-    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
+Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary
+BuildConcurrencyTaskExecutorCancellationSemanticModelSummary(
+    const Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
-Objc3Part8SystemExtensionSemanticModelSummary
-BuildPart8SystemExtensionSemanticModelSummary(
-    const Objc3FrontendPart8SystemExtensionSourceClosureSummary
+Objc3OwnershipSystemExtensionSemanticModelSummary
+BuildOwnershipSystemExtensionSemanticModelSummary(
+    const Objc3FrontendOwnershipSystemExtensionSourceClosureSummary
         &source_summary,
-    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+    const Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
         &completion_summary,
-    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
+    const Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
         &retainable_summary);
-Objc3Part11InteropSemanticModelSummary BuildPart11InteropSemanticModelSummary(
-    const Objc3FrontendPart11ForeignImportSourceClosureSummary
+Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
+    const Objc3FrontendInteropForeignImportSourceClosureSummary
         &foreign_source_summary,
-    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
         &interop_source_summary,
-    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+    const Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
         &ownership_summary,
-    const Objc3Part6ErrorBridgeLegalitySummary &error_summary,
-    const Objc3Part7AsyncDiagnosticsCompatibilitySummary &async_summary,
-    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &actor_summary);
-Objc3Part11InteropRuntimeParitySummary
-BuildPart11InteropRuntimeParitySummary(
+    const Objc3ErrorHandlingErrorBridgeLegalitySummary &error_summary,
+    const Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary &async_summary,
+    const Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary &actor_summary);
+Objc3InteropInteropRuntimeParitySummary
+BuildInteropInteropRuntimeParitySummary(
     const Objc3Program &program,
-    const Objc3Part11InteropSemanticModelSummary &dependency_summary,
+    const Objc3InteropInteropSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part11CppInteropInteractionSummary
-BuildPart11CppInteropInteractionSummary(
+Objc3InteropCppInteropInteractionSummary
+BuildInteropCppInteropInteractionSummary(
     const Objc3Program &program,
-    const Objc3Part11InteropRuntimeParitySummary &dependency_summary,
+    const Objc3InteropInteropRuntimeParitySummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part11SwiftInteropIsolationSummary
-BuildPart11SwiftInteropIsolationSummary(
+Objc3InteropSwiftInteropIsolationSummary
+BuildInteropSwiftInteropIsolationSummary(
     const Objc3Program &program,
-    const Objc3Part11CppInteropInteractionSummary &dependency_summary,
+    const Objc3InteropCppInteropInteractionSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part9DispatchIntentSemanticModelSummary
-BuildPart9DispatchIntentSemanticModelSummary(
-    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
+Objc3DispatchDispatchIntentSemanticModelSummary
+BuildDispatchDispatchIntentSemanticModelSummary(
+    const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary
         &source_summary,
     const Objc3SemanticIntegrationSurface &surface);
-Objc3Part10ExpansionBehaviorSemanticModelSummary
-BuildPart10ExpansionBehaviorSemanticModelSummary(
-    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary
+Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
+BuildMetaprogrammingExpansionBehaviorSemanticModelSummary(
+    const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
         &source_summary,
-    const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
+    const Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
         &macro_summary,
-    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
         &property_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part10DeriveExpansionInventorySummary
-BuildPart10DeriveExpansionInventorySummary(
+Objc3MetaprogrammingDeriveExpansionInventorySummary
+BuildMetaprogrammingDeriveExpansionInventorySummary(
     const Objc3Program &program,
-    const Objc3Part10ExpansionBehaviorSemanticModelSummary &dependency_summary,
+    const Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part10MacroSafetySandboxDeterminismSummary
-BuildPart10MacroSafetySandboxDeterminismSummary(
+Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary
+BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
     const Objc3Program &program,
-    const Objc3Part10DeriveExpansionInventorySummary &dependency_summary,
+    const Objc3MetaprogrammingDeriveExpansionInventorySummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part10PropertyBehaviorLegalityCompatibilitySummary
-BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
+Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
+BuildMetaprogrammingPropertyBehaviorLegalityCompatibilitySummary(
     const Objc3Program &program,
-    const Objc3Part10MacroSafetySandboxDeterminismSummary &dependency_summary,
+    const Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-  Objc3Part9DispatchIntentLegalitySummary
-  BuildPart9DispatchIntentLegalitySummary(
+  Objc3DispatchDispatchIntentLegalitySummary
+  BuildDispatchDispatchIntentLegalitySummary(
       const Objc3Program &program,
-      const Objc3Part9DispatchIntentSemanticModelSummary &dependency_summary,
+      const Objc3DispatchDispatchIntentSemanticModelSummary &dependency_summary,
       const std::vector<std::string> &diagnostics);
-  Objc3Part9DispatchIntentCompatibilitySummary
-  BuildPart9DispatchIntentCompatibilitySummary(
+  Objc3DispatchDispatchIntentCompatibilitySummary
+  BuildDispatchDispatchIntentCompatibilitySummary(
       const Objc3Program &program,
-      const Objc3Part9DispatchIntentLegalitySummary &dependency_summary,
+      const Objc3DispatchDispatchIntentLegalitySummary &dependency_summary,
       const std::vector<std::string> &diagnostics);
-  Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
-  BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
+  Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary
+  BuildOwnershipResourceMoveUseAfterMoveSemanticsSummary(
       const Objc3Program &program,
-    const Objc3Part8SystemExtensionSemanticModelSummary &dependency_summary,
+    const Objc3OwnershipSystemExtensionSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part8BorrowedPointerEscapeAnalysisSummary
-BuildPart8BorrowedPointerEscapeAnalysisSummary(
+Objc3OwnershipBorrowedPointerEscapeAnalysisSummary
+BuildOwnershipBorrowedPointerEscapeAnalysisSummary(
     const Objc3Program &program,
-    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
+    const Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
-BuildPart8CaptureListRetainableFamilyLegalityCompletionSummary(
+Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
+BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummary(
     const Objc3Program &program,
-    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &dependency_summary,
+    const Objc3OwnershipBorrowedPointerEscapeAnalysisSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part7StructuredTaskCancellationSemanticSummary
-BuildPart7StructuredTaskCancellationSemanticSummary(
-    const Objc3Part7TaskExecutorCancellationSemanticModelSummary
+Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
+BuildConcurrencyStructuredTaskCancellationSemanticSummary(
+    const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary
         &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part7ExecutorHopAffinityCompatibilitySummary
-BuildPart7ExecutorHopAffinityCompatibilitySummary(
-    const Objc3Part7StructuredTaskCancellationSemanticSummary
+Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary
+BuildConcurrencyExecutorHopAffinityCompatibilitySummary(
+    const Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
         &dependency_summary,
-    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part7AwaitSuspensionResumeSemanticSummary
-BuildPart7AwaitSuspensionResumeSemanticSummary(
-    const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &dependency_summary,
+Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary
+BuildConcurrencyAwaitSuspensionResumeSemanticSummary(
+    const Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary &dependency_summary,
     const std::vector<std::string> &diagnostics);
-Objc3Part7AsyncDiagnosticsCompatibilitySummary
-BuildPart7AsyncDiagnosticsCompatibilitySummary(
-    const Objc3Part7AwaitSuspensionResumeSemanticSummary &dependency_summary,
-    const Objc3FrontendPart7AsyncSourceClosureSummary &source_summary,
+Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary
+BuildConcurrencyAsyncDiagnosticsCompatibilitySummary(
+    const Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary &dependency_summary,
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &source_summary,
     const Objc3Program &ast,
     const std::vector<std::string> &diagnostics);
-Objc3Part6TryDoCatchSemanticSummary BuildPart6TryDoCatchSemanticSummary(
+Objc3ErrorHandlingTryDoCatchSemanticSummary BuildErrorHandlingTryDoCatchSemanticSummary(
     const Objc3Program &program,
     const Objc3SemanticIntegrationSurface &surface,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics);
-Objc3Part6ErrorBridgeLegalitySummary BuildPart6ErrorBridgeLegalitySummary(
+Objc3ErrorHandlingErrorBridgeLegalitySummary BuildErrorHandlingErrorBridgeLegalitySummary(
     const Objc3Program &program,
     bool allow_source_only_error_runtime_surface,
     std::vector<std::string> &diagnostics);

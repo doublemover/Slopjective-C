@@ -88,9 +88,9 @@ inline constexpr const char *kObjc3ToolchainConformanceClaimConsumptionModel =
 inline constexpr const char *kObjc3AdvancedFeatureOpsContractId =
     "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1";
 inline constexpr const char *kObjc3AdvancedFeatureReportingContractId =
-    "objc3c.part12.feature.aware.conformance.report.emission.v1";
+    "objc3c.tooling.feature.aware.conformance.report.emission.v1";
 inline constexpr const char *kObjc3AdvancedFeatureReleaseEvidenceContractId =
-    "objc3c.part12.corpus.sharding.release.evidence.packaging.v1";
+    "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1";
 inline constexpr const char *kObjc3AdvancedFeatureEvidenceGateScriptPath =
     "scripts/check_release_evidence.py";
 inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
@@ -98,21 +98,21 @@ inline constexpr const char *kObjc3AdvancedFeatureEvidenceRunbookPath =
 inline constexpr const char *kObjc3AdvancedFeatureDashboardSchemaPath =
     "schemas/objc3-conformance-dashboard-status-v1.schema.json";
 inline constexpr const char *kObjc3ReleaseEvidenceOperationContractId =
-    "objc3c.part12.release.evidence.toolchain.operations.v1";
+    "objc3c.tooling.release.evidence.toolchain.operations.v1";
 inline constexpr const char *kObjc3ReleaseEvidenceOperationSchemaId =
-    "objc3c-part12-release-evidence-operation-v1";
+    "objc3c-tooling-release-evidence-operation-v1";
 inline constexpr const char *kObjc3DashboardStatusPublicationContractId =
-    "objc3c.part12.dashboard.status.publication.v1";
+    "objc3c.tooling.dashboard.status.publication.v1";
 inline constexpr const char *kObjc3DashboardStatusPublicationSchemaId =
-    "objc3c-part12-dashboard-status-publication-v1";
+    "objc3c-tooling-dashboard-status-publication-v1";
 inline constexpr const char *kObjc3AdvancedFeatureGateContractId =
-    "objc3c.part12.integrated.advanced.feature.gate.v1";
+    "objc3c.tooling.integrated.advanced.feature.gate.v1";
 inline constexpr const char *kObjc3AdvancedFeatureGateSchemaId =
-    "objc3c-part12-integrated-advanced-feature-gate-v1";
+    "objc3c-tooling-integrated-advanced-feature-gate-v1";
 inline constexpr const char *kObjc3ReleaseCandidateMatrixContractId =
-    "objc3c.part12.release.candidate.execution.matrix.v1";
+    "objc3c.tooling.release.candidate.execution.matrix.v1";
 inline constexpr const char *kObjc3ReleaseCandidateMatrixSchemaId =
-    "objc3c-part12-release-candidate-execution-matrix-v1";
+    "objc3c-tooling-release-candidate-execution-matrix-v1";
 inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
 inline constexpr const char *kObjc3DeterministicReplayTimestamp =
     "1970-01-01T00:00:00Z";
@@ -1656,8 +1656,8 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
   return true;
 }
 
-bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
-    const Objc3Part10MacroHostProcessCacheArtifactInputs &inputs,
+bool TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact(
+    const Objc3MetaprogrammingMacroHostProcessCacheArtifactInputs &inputs,
     const std::filesystem::path &source_input_path,
     std::string &artifact_json,
     std::string &error) {
@@ -1670,11 +1670,11 @@ bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
       inputs.cache_root_relative_path.empty() || inputs.host_model.empty() ||
       inputs.toolchain_model.empty() || inputs.cache_model.empty() ||
       inputs.fail_closed_model.empty() || inputs.replay_key.empty()) {
-    error = "part10 macro host process/cache artifact inputs are incomplete";
+    error = "metaprogramming macro host process/cache artifact inputs are incomplete";
     return false;
   }
   if (!std::filesystem::exists(source_input_path)) {
-    error = "part10 macro host process/cache source input not found: " +
+    error = "metaprogramming macro host process/cache source input not found: " +
             source_input_path.generic_string();
     return false;
   }
@@ -1682,7 +1682,7 @@ bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
   const std::filesystem::path host_executable =
       std::filesystem::path(inputs.host_executable_relative_path);
   if (!std::filesystem::exists(host_executable)) {
-    error = "part10 macro host process/cache host executable not found: " +
+    error = "metaprogramming macro host process/cache host executable not found: " +
             host_executable.generic_string();
     return false;
   }
@@ -1725,7 +1725,7 @@ bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
         "--no-emit-object"};
     host_process_exit_code = RunProcess(host_executable.generic_string(), args);
     if (host_process_exit_code != 0) {
-      error = "part10 macro host process launch failed with exit code " +
+      error = "metaprogramming macro host process launch failed with exit code " +
               std::to_string(host_process_exit_code);
       return false;
     }
@@ -1734,7 +1734,7 @@ bool TryBuildObjc3Part10MacroHostProcessCacheArtifact(
                 std::filesystem::exists(cache_manifest_path);
     if (!cache_hit) {
       error =
-          "part10 macro host process launch completed but cache artifacts are incomplete";
+          "metaprogramming macro host process launch completed but cache artifacts are incomplete";
       return false;
     }
   }
@@ -1821,24 +1821,24 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
               inputs.local_category_descriptor_count +
               inputs.local_property_descriptor_count +
               inputs.local_ivar_descriptor_count ||
-      inputs.expected_part6_contract_id.empty() ||
-      inputs.expected_part6_source_contract_id.empty() ||
-      inputs.expected_part7_actor_contract_id.empty() ||
-      inputs.expected_part7_actor_source_contract_id.empty() ||
-      inputs.expected_part11_ffi_contract_id.empty() ||
-      inputs.expected_part11_ffi_source_contract_id.empty() ||
-      inputs.expected_part11_ffi_preservation_contract_id.empty() ||
-      inputs.expected_part11_header_module_bridge_contract_id.empty() ||
-      inputs.expected_part11_header_module_bridge_source_contract_id.empty() ||
-      inputs.expected_part11_header_module_bridge_preservation_contract_id
+      inputs.expected_error_handling_contract_id.empty() ||
+      inputs.expected_error_handling_source_contract_id.empty() ||
+      inputs.expected_concurrency_actor_contract_id.empty() ||
+      inputs.expected_concurrency_actor_source_contract_id.empty() ||
+      inputs.expected_interop_ffi_contract_id.empty() ||
+      inputs.expected_interop_ffi_source_contract_id.empty() ||
+      inputs.expected_interop_ffi_preservation_contract_id.empty() ||
+      inputs.expected_interop_header_module_bridge_contract_id.empty() ||
+      inputs.expected_interop_header_module_bridge_source_contract_id.empty() ||
+      inputs.expected_interop_header_module_bridge_preservation_contract_id
           .empty() ||
-      inputs.expected_part11_bridge_header_artifact_relative_path.empty() ||
-      inputs.expected_part11_bridge_module_artifact_relative_path.empty() ||
-      inputs.expected_part11_bridge_artifact_relative_path.empty() ||
-      inputs.expected_part10_host_cache_contract_id.empty() ||
-      inputs.expected_part10_host_cache_source_contract_id.empty() ||
-      inputs.expected_part10_host_cache_executable_relative_path.empty() ||
-      inputs.expected_part10_host_cache_root_relative_path.empty() ||
+      inputs.expected_interop_bridge_header_artifact_relative_path.empty() ||
+      inputs.expected_interop_bridge_module_artifact_relative_path.empty() ||
+      inputs.expected_interop_bridge_artifact_relative_path.empty() ||
+      inputs.expected_metaprogramming_host_cache_contract_id.empty() ||
+      inputs.expected_metaprogramming_host_cache_source_contract_id.empty() ||
+      inputs.expected_metaprogramming_host_cache_executable_relative_path.empty() ||
+      inputs.expected_metaprogramming_host_cache_root_relative_path.empty() ||
       inputs.expected_block_ownership_contract_id.empty() ||
       inputs.expected_block_ownership_source_contract_id.empty() ||
       inputs
@@ -1934,18 +1934,18 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::unordered_set<std::uint64_t> seen_registration_ordinals;
   std::unordered_set<std::string> seen_driver_linker_flags;
   std::unordered_set<std::string> seen_direct_import_surface_paths;
-  std::unordered_set<std::string> seen_part6_replay_keys;
-  std::unordered_set<std::string> seen_part7_actor_replay_keys;
-  std::unordered_set<std::string> seen_part11_ffi_replay_keys;
-  std::unordered_set<std::string> seen_part11_header_module_bridge_replay_keys;
-  std::unordered_set<std::string> seen_part10_host_cache_replay_keys;
+  std::unordered_set<std::string> seen_error_handling_replay_keys;
+  std::unordered_set<std::string> seen_concurrency_actor_replay_keys;
+  std::unordered_set<std::string> seen_interop_ffi_replay_keys;
+  std::unordered_set<std::string> seen_interop_header_module_bridge_replay_keys;
+  std::unordered_set<std::string> seen_metaprogramming_host_cache_replay_keys;
   std::vector<std::string> ordered_link_object_artifacts;
   std::vector<std::string> merged_driver_linker_flags;
-  std::vector<std::string> imported_part6_module_names;
-  std::vector<std::string> imported_part7_actor_module_names;
-  std::vector<std::string> imported_part11_ffi_module_names;
-  std::vector<std::string> imported_part11_header_module_bridge_module_names;
-  std::vector<std::string> imported_part10_host_cache_module_names;
+  std::vector<std::string> imported_error_handling_module_names;
+  std::vector<std::string> imported_concurrency_actor_module_names;
+  std::vector<std::string> imported_interop_ffi_module_names;
+  std::vector<std::string> imported_interop_header_module_bridge_module_names;
+  std::vector<std::string> imported_metaprogramming_host_cache_module_names;
   std::size_t imported_class_descriptor_count = 0;
   std::size_t imported_protocol_descriptor_count = 0;
   std::size_t imported_category_descriptor_count = 0;
@@ -2144,237 +2144,237 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
               imported_input.translation_unit_registration_order_ordinal);
       return false;
     }
-    if (imported_input.part6_result_and_bridging_artifact_replay_present) {
-      if (imported_input.part6_contract_id != inputs.expected_part6_contract_id) {
+    if (imported_input.error_handling_result_and_bridging_artifact_replay_present) {
+      if (imported_input.error_handling_contract_id != inputs.expected_error_handling_contract_id) {
         error =
             "cross-module runtime link-plan Part 6 contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part6_source_contract_id !=
-          inputs.expected_part6_source_contract_id) {
+      if (imported_input.error_handling_source_contract_id !=
+          inputs.expected_error_handling_source_contract_id) {
         error =
             "cross-module runtime link-plan Part 6 source contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!imported_input.part6_binary_artifact_replay_ready ||
-          !imported_input.part6_runtime_import_artifact_ready ||
-          !imported_input.part6_separate_compilation_replay_ready ||
-          imported_input.part6_result_and_bridging_artifact_replay_key.empty() ||
-          imported_input.part6_part6_replay_key.empty() ||
-          imported_input.part6_throws_replay_key.empty() ||
-          imported_input.part6_result_like_replay_key.empty() ||
-          imported_input.part6_ns_error_replay_key.empty() ||
-          imported_input.part6_unwind_replay_key.empty()) {
+      if (!imported_input.error_handling_binary_artifact_replay_ready ||
+          !imported_input.error_handling_runtime_import_artifact_ready ||
+          !imported_input.error_handling_separate_compilation_replay_ready ||
+          imported_input.error_handling_result_and_bridging_artifact_replay_key.empty() ||
+          imported_input.error_handling_error_handling_replay_key.empty() ||
+          imported_input.error_handling_throws_replay_key.empty() ||
+          imported_input.error_handling_result_like_replay_key.empty() ||
+          imported_input.error_handling_ns_error_replay_key.empty() ||
+          imported_input.error_handling_unwind_replay_key.empty()) {
         error =
             "cross-module runtime link-plan Part 6 replay surface incomplete for " +
             imported_input.module_name;
         return false;
       }
-      if (!seen_part6_replay_keys.insert(imported_input.part6_part6_replay_key)
+      if (!seen_error_handling_replay_keys.insert(imported_input.error_handling_error_handling_replay_key)
                .second) {
         error =
             "cross-module runtime link-plan duplicate imported Part 6 replay key: " +
-            imported_input.part6_part6_replay_key;
+            imported_input.error_handling_error_handling_replay_key;
         return false;
       }
-      imported_part6_module_names.push_back(imported_input.module_name);
+      imported_error_handling_module_names.push_back(imported_input.module_name);
     }
-    if (imported_input.part7_actor_mailbox_runtime_import_present) {
+    if (imported_input.concurrency_actor_mailbox_runtime_import_present) {
       // actor cross-module isolation-metadata hardening anchor:
       // imported actor-runtime surfaces must preserve one canonical private
       // mailbox/isolation replay contract and may not drift on contract ids or
       // replay keys across mixed-module link plans.
-      if (imported_input.part7_actor_contract_id !=
-          inputs.expected_part7_actor_contract_id) {
+      if (imported_input.concurrency_actor_contract_id !=
+          inputs.expected_concurrency_actor_contract_id) {
         error =
             "cross-module runtime link-plan Part 7 actor contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part7_actor_source_contract_id !=
-          inputs.expected_part7_actor_source_contract_id) {
+      if (imported_input.concurrency_actor_source_contract_id !=
+          inputs.expected_concurrency_actor_source_contract_id) {
         error =
             "cross-module runtime link-plan Part 7 actor source contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!imported_input.part7_actor_mailbox_runtime_ready ||
-          !imported_input.part7_actor_mailbox_runtime_deterministic ||
-          imported_input.part7_actor_mailbox_runtime_replay_key.empty() ||
-          imported_input.part7_actor_lowering_replay_key.empty() ||
-          imported_input.part7_actor_isolation_lowering_replay_key.empty()) {
+      if (!imported_input.concurrency_actor_mailbox_runtime_ready ||
+          !imported_input.concurrency_actor_mailbox_runtime_deterministic ||
+          imported_input.concurrency_actor_mailbox_runtime_replay_key.empty() ||
+          imported_input.concurrency_actor_lowering_replay_key.empty() ||
+          imported_input.concurrency_actor_isolation_lowering_replay_key.empty()) {
         error =
             "cross-module runtime link-plan Part 7 actor replay surface incomplete for " +
             imported_input.module_name;
         return false;
       }
-      if (!seen_part7_actor_replay_keys
-               .insert(imported_input.part7_actor_mailbox_runtime_replay_key)
+      if (!seen_concurrency_actor_replay_keys
+               .insert(imported_input.concurrency_actor_mailbox_runtime_replay_key)
                .second) {
         error =
             "cross-module runtime link-plan duplicate imported Part 7 actor replay key: " +
-            imported_input.part7_actor_mailbox_runtime_replay_key;
+            imported_input.concurrency_actor_mailbox_runtime_replay_key;
         return false;
       }
-      imported_part7_actor_module_names.push_back(imported_input.module_name);
+      imported_concurrency_actor_module_names.push_back(imported_input.module_name);
     }
-    if (imported_input.part11_ffi_metadata_interface_preservation_present) {
+    if (imported_input.interop_ffi_metadata_interface_preservation_present) {
       // bridge-packaging/toolchain anchor: imported Part 11 runtime-
       // import surfaces must preserve one canonical metadata/interface packet
       // across mixed-module link plans before D002 claims live header/module/
       // bridge generation from that packaging topology.
-      if (imported_input.part11_ffi_contract_id !=
-          inputs.expected_part11_ffi_contract_id) {
+      if (imported_input.interop_ffi_contract_id !=
+          inputs.expected_interop_ffi_contract_id) {
         error =
             "cross-module runtime link-plan Part 11 ffi contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part11_ffi_source_contract_id !=
-          inputs.expected_part11_ffi_source_contract_id) {
+      if (imported_input.interop_ffi_source_contract_id !=
+          inputs.expected_interop_ffi_source_contract_id) {
         error =
             "cross-module runtime link-plan Part 11 ffi source contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part11_ffi_preservation_contract_id !=
-          inputs.expected_part11_ffi_preservation_contract_id) {
+      if (imported_input.interop_ffi_preservation_contract_id !=
+          inputs.expected_interop_ffi_preservation_contract_id) {
         error =
             "cross-module runtime link-plan Part 11 ffi preservation contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!imported_input.part11_ffi_runtime_import_artifact_ready ||
-          !imported_input.part11_ffi_separate_compilation_preservation_ready ||
-          !imported_input.part11_ffi_deterministic ||
-          imported_input.part11_ffi_replay_key.empty() ||
-          imported_input.part11_ffi_lowering_replay_key.empty() ||
-          imported_input.part11_ffi_preservation_replay_key.empty()) {
+      if (!imported_input.interop_ffi_runtime_import_artifact_ready ||
+          !imported_input.interop_ffi_separate_compilation_preservation_ready ||
+          !imported_input.interop_ffi_deterministic ||
+          imported_input.interop_ffi_replay_key.empty() ||
+          imported_input.interop_ffi_lowering_replay_key.empty() ||
+          imported_input.interop_ffi_preservation_replay_key.empty()) {
         error =
             "cross-module runtime link-plan Part 11 ffi preservation surface incomplete for " +
             imported_input.module_name;
         return false;
       }
-      if (!seen_part11_ffi_replay_keys
-               .insert(imported_input.part11_ffi_replay_key)
+      if (!seen_interop_ffi_replay_keys
+               .insert(imported_input.interop_ffi_replay_key)
                .second) {
         error =
             "cross-module runtime link-plan duplicate imported Part 11 ffi replay key: " +
-            imported_input.part11_ffi_replay_key;
+            imported_input.interop_ffi_replay_key;
         return false;
       }
-      imported_part11_ffi_module_names.push_back(imported_input.module_name);
+      imported_interop_ffi_module_names.push_back(imported_input.module_name);
     }
-    if (imported_input.part11_header_module_bridge_generation_present) {
-      if (imported_input.part11_header_module_bridge_contract_id !=
-          inputs.expected_part11_header_module_bridge_contract_id) {
+    if (imported_input.interop_header_module_bridge_generation_present) {
+      if (imported_input.interop_header_module_bridge_contract_id !=
+          inputs.expected_interop_header_module_bridge_contract_id) {
         error =
             "cross-module runtime link-plan Part 11 bridge-generation contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part11_header_module_bridge_source_contract_id !=
-          inputs.expected_part11_header_module_bridge_source_contract_id) {
+      if (imported_input.interop_header_module_bridge_source_contract_id !=
+          inputs.expected_interop_header_module_bridge_source_contract_id) {
         error =
             "cross-module runtime link-plan Part 11 bridge-generation source contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part11_header_module_bridge_preservation_contract_id !=
-          inputs.expected_part11_header_module_bridge_preservation_contract_id) {
+      if (imported_input.interop_header_module_bridge_preservation_contract_id !=
+          inputs.expected_interop_header_module_bridge_preservation_contract_id) {
         error =
             "cross-module runtime link-plan Part 11 bridge-generation preservation contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!imported_input.part11_header_module_bridge_runtime_generation_ready ||
+      if (!imported_input.interop_header_module_bridge_runtime_generation_ready ||
           !imported_input
-               .part11_header_module_bridge_cross_module_packaging_ready ||
-          !imported_input.part11_header_module_bridge_deterministic ||
-          imported_input.part11_header_module_bridge_replay_key.empty() ||
-          imported_input.part11_header_module_bridge_preservation_replay_key
+               .interop_header_module_bridge_cross_module_packaging_ready ||
+          !imported_input.interop_header_module_bridge_deterministic ||
+          imported_input.interop_header_module_bridge_replay_key.empty() ||
+          imported_input.interop_header_module_bridge_preservation_replay_key
               .empty() ||
-          imported_input.part11_bridge_header_artifact_relative_path.empty() ||
-          imported_input.part11_bridge_module_artifact_relative_path.empty() ||
-          imported_input.part11_bridge_artifact_relative_path.empty()) {
+          imported_input.interop_bridge_header_artifact_relative_path.empty() ||
+          imported_input.interop_bridge_module_artifact_relative_path.empty() ||
+          imported_input.interop_bridge_artifact_relative_path.empty()) {
         error =
             "cross-module runtime link-plan Part 11 bridge-generation surface incomplete for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part11_bridge_header_artifact_relative_path !=
-              inputs.expected_part11_bridge_header_artifact_relative_path ||
-          imported_input.part11_bridge_module_artifact_relative_path !=
-              inputs.expected_part11_bridge_module_artifact_relative_path ||
-          imported_input.part11_bridge_artifact_relative_path !=
-              inputs.expected_part11_bridge_artifact_relative_path) {
+      if (imported_input.interop_bridge_header_artifact_relative_path !=
+              inputs.expected_interop_bridge_header_artifact_relative_path ||
+          imported_input.interop_bridge_module_artifact_relative_path !=
+              inputs.expected_interop_bridge_module_artifact_relative_path ||
+          imported_input.interop_bridge_artifact_relative_path !=
+              inputs.expected_interop_bridge_artifact_relative_path) {
         error =
             "cross-module runtime link-plan Part 11 bridge-generation artifact path mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!seen_part11_header_module_bridge_replay_keys
-               .insert(imported_input.part11_header_module_bridge_replay_key)
+      if (!seen_interop_header_module_bridge_replay_keys
+               .insert(imported_input.interop_header_module_bridge_replay_key)
                .second) {
         error =
             "cross-module runtime link-plan duplicate imported Part 11 bridge-generation replay key: " +
-            imported_input.part11_header_module_bridge_replay_key;
+            imported_input.interop_header_module_bridge_replay_key;
         return false;
       }
-      imported_part11_header_module_bridge_module_names.push_back(
+      imported_interop_header_module_bridge_module_names.push_back(
           imported_input.module_name);
     }
-    if (imported_input.part10_macro_host_process_cache_runtime_integration_present) {
-      if (imported_input.part10_macro_host_process_cache_contract_id !=
-          inputs.expected_part10_host_cache_contract_id) {
+    if (imported_input.metaprogramming_macro_host_process_cache_runtime_integration_present) {
+      if (imported_input.metaprogramming_macro_host_process_cache_contract_id !=
+          inputs.expected_metaprogramming_host_cache_contract_id) {
         error =
             "cross-module runtime link-plan Part 10 host/cache contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part10_macro_host_process_cache_source_contract_id !=
-          inputs.expected_part10_host_cache_source_contract_id) {
+      if (imported_input.metaprogramming_macro_host_process_cache_source_contract_id !=
+          inputs.expected_metaprogramming_host_cache_source_contract_id) {
         error =
             "cross-module runtime link-plan Part 10 host/cache source contract mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!imported_input.part10_macro_host_process_cache_runtime_ready ||
-          !imported_input.part10_macro_host_process_cache_separate_compilation_ready ||
-          !imported_input.part10_macro_host_process_cache_deterministic ||
-          imported_input.part10_macro_host_process_cache_replay_key.empty() ||
-          imported_input.part10_macro_host_process_cache_host_executable_relative_path.empty() ||
-          imported_input.part10_macro_host_process_cache_root_relative_path.empty()) {
+      if (!imported_input.metaprogramming_macro_host_process_cache_runtime_ready ||
+          !imported_input.metaprogramming_macro_host_process_cache_separate_compilation_ready ||
+          !imported_input.metaprogramming_macro_host_process_cache_deterministic ||
+          imported_input.metaprogramming_macro_host_process_cache_replay_key.empty() ||
+          imported_input.metaprogramming_macro_host_process_cache_host_executable_relative_path.empty() ||
+          imported_input.metaprogramming_macro_host_process_cache_root_relative_path.empty()) {
         error =
             "cross-module runtime link-plan Part 10 host/cache surface incomplete for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part10_macro_host_process_cache_host_executable_relative_path !=
-          inputs.expected_part10_host_cache_executable_relative_path) {
+      if (imported_input.metaprogramming_macro_host_process_cache_host_executable_relative_path !=
+          inputs.expected_metaprogramming_host_cache_executable_relative_path) {
         error =
             "cross-module runtime link-plan Part 10 host/cache executable path mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (imported_input.part10_macro_host_process_cache_root_relative_path !=
-          inputs.expected_part10_host_cache_root_relative_path) {
+      if (imported_input.metaprogramming_macro_host_process_cache_root_relative_path !=
+          inputs.expected_metaprogramming_host_cache_root_relative_path) {
         error =
             "cross-module runtime link-plan Part 10 host/cache root path mismatch for " +
             imported_input.module_name;
         return false;
       }
-      if (!seen_part10_host_cache_replay_keys
-               .insert(imported_input.part10_macro_host_process_cache_replay_key)
+      if (!seen_metaprogramming_host_cache_replay_keys
+               .insert(imported_input.metaprogramming_macro_host_process_cache_replay_key)
                .second) {
         error =
             "cross-module runtime link-plan duplicate imported Part 10 host/cache replay key: " +
-            imported_input.part10_macro_host_process_cache_replay_key;
+            imported_input.metaprogramming_macro_host_process_cache_replay_key;
         return false;
       }
-      imported_part10_host_cache_module_names.push_back(imported_input.module_name);
+      imported_metaprogramming_host_cache_module_names.push_back(imported_input.module_name);
     }
     if (!imported_input.block_ownership_artifact_preservation_present ||
         imported_input.block_ownership_contract_id !=
@@ -2647,206 +2647,206 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
                imported_input
                    .bootstrap_live_restart_reset_replay_state_snapshot_symbol)
         << "\",\n"
-        << "      \"part6_result_and_bridging_artifact_replay_present\": "
-        << (imported_input.part6_result_and_bridging_artifact_replay_present
+        << "      \"error_handling_result_and_bridging_artifact_replay_present\": "
+        << (imported_input.error_handling_result_and_bridging_artifact_replay_present
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part6_binary_artifact_replay_ready\": "
-        << (imported_input.part6_binary_artifact_replay_ready ? "true"
+        << "      \"error_handling_binary_artifact_replay_ready\": "
+        << (imported_input.error_handling_binary_artifact_replay_ready ? "true"
                                                               : "false")
         << ",\n"
-        << "      \"part6_runtime_import_artifact_ready\": "
-        << (imported_input.part6_runtime_import_artifact_ready ? "true"
+        << "      \"error_handling_runtime_import_artifact_ready\": "
+        << (imported_input.error_handling_runtime_import_artifact_ready ? "true"
                                                                : "false")
         << ",\n"
-        << "      \"part6_separate_compilation_replay_ready\": "
-        << (imported_input.part6_separate_compilation_replay_ready ? "true"
+        << "      \"error_handling_separate_compilation_replay_ready\": "
+        << (imported_input.error_handling_separate_compilation_replay_ready ? "true"
                                                                    : "false")
         << ",\n"
-        << "      \"part6_deterministic\": "
-        << (imported_input.part6_deterministic ? "true" : "false")
+        << "      \"error_handling_deterministic\": "
+        << (imported_input.error_handling_deterministic ? "true" : "false")
         << ",\n"
-        << "      \"part6_contract_id\": \""
-        << EscapeJsonString(imported_input.part6_contract_id) << "\",\n"
-        << "      \"part6_source_contract_id\": \""
-        << EscapeJsonString(imported_input.part6_source_contract_id)
+        << "      \"error_handling_contract_id\": \""
+        << EscapeJsonString(imported_input.error_handling_contract_id) << "\",\n"
+        << "      \"error_handling_source_contract_id\": \""
+        << EscapeJsonString(imported_input.error_handling_source_contract_id)
         << "\",\n"
-        << "      \"part6_result_and_bridging_artifact_replay_key\": \""
+        << "      \"error_handling_result_and_bridging_artifact_replay_key\": \""
         << EscapeJsonString(
-               imported_input.part6_result_and_bridging_artifact_replay_key)
+               imported_input.error_handling_result_and_bridging_artifact_replay_key)
         << "\",\n"
-        << "      \"part6_replay_key\": \""
-        << EscapeJsonString(imported_input.part6_part6_replay_key) << "\",\n"
+        << "      \"error_handling_replay_key\": \""
+        << EscapeJsonString(imported_input.error_handling_error_handling_replay_key) << "\",\n"
         << "      \"throws_replay_key\": \""
-        << EscapeJsonString(imported_input.part6_throws_replay_key)
+        << EscapeJsonString(imported_input.error_handling_throws_replay_key)
         << "\",\n"
         << "      \"result_like_replay_key\": \""
-        << EscapeJsonString(imported_input.part6_result_like_replay_key)
+        << EscapeJsonString(imported_input.error_handling_result_like_replay_key)
         << "\",\n"
         << "      \"ns_error_replay_key\": \""
-        << EscapeJsonString(imported_input.part6_ns_error_replay_key)
+        << EscapeJsonString(imported_input.error_handling_ns_error_replay_key)
         << "\",\n"
         << "      \"unwind_replay_key\": \""
-        << EscapeJsonString(imported_input.part6_unwind_replay_key)
+        << EscapeJsonString(imported_input.error_handling_unwind_replay_key)
         << "\",\n"
-        << "      \"part7_actor_mailbox_runtime_import_present\": "
-        << (imported_input.part7_actor_mailbox_runtime_import_present ? "true"
+        << "      \"concurrency_actor_mailbox_runtime_import_present\": "
+        << (imported_input.concurrency_actor_mailbox_runtime_import_present ? "true"
                                                                       : "false")
         << ",\n"
-        << "      \"part7_actor_mailbox_runtime_ready\": "
-        << (imported_input.part7_actor_mailbox_runtime_ready ? "true"
+        << "      \"concurrency_actor_mailbox_runtime_ready\": "
+        << (imported_input.concurrency_actor_mailbox_runtime_ready ? "true"
                                                              : "false")
         << ",\n"
-        << "      \"part7_actor_mailbox_runtime_deterministic\": "
-        << (imported_input.part7_actor_mailbox_runtime_deterministic ? "true"
+        << "      \"concurrency_actor_mailbox_runtime_deterministic\": "
+        << (imported_input.concurrency_actor_mailbox_runtime_deterministic ? "true"
                                                                      : "false")
         << ",\n"
-        << "      \"part7_actor_contract_id\": \""
-        << EscapeJsonString(imported_input.part7_actor_contract_id)
+        << "      \"concurrency_actor_contract_id\": \""
+        << EscapeJsonString(imported_input.concurrency_actor_contract_id)
         << "\",\n"
-        << "      \"part7_actor_source_contract_id\": \""
-        << EscapeJsonString(imported_input.part7_actor_source_contract_id)
+        << "      \"concurrency_actor_source_contract_id\": \""
+        << EscapeJsonString(imported_input.concurrency_actor_source_contract_id)
         << "\",\n"
-        << "      \"part7_actor_mailbox_runtime_replay_key\": \""
-        << EscapeJsonString(imported_input.part7_actor_mailbox_runtime_replay_key)
+        << "      \"concurrency_actor_mailbox_runtime_replay_key\": \""
+        << EscapeJsonString(imported_input.concurrency_actor_mailbox_runtime_replay_key)
         << "\",\n"
-        << "      \"part7_actor_lowering_replay_key\": \""
-        << EscapeJsonString(imported_input.part7_actor_lowering_replay_key)
+        << "      \"concurrency_actor_lowering_replay_key\": \""
+        << EscapeJsonString(imported_input.concurrency_actor_lowering_replay_key)
         << "\",\n"
-        << "      \"part7_actor_isolation_lowering_replay_key\": \""
+        << "      \"concurrency_actor_isolation_lowering_replay_key\": \""
         << EscapeJsonString(
-               imported_input.part7_actor_isolation_lowering_replay_key)
+               imported_input.concurrency_actor_isolation_lowering_replay_key)
         << "\",\n"
-        << "      \"part11_ffi_metadata_interface_preservation_present\": "
-        << (imported_input.part11_ffi_metadata_interface_preservation_present
+        << "      \"interop_ffi_metadata_interface_preservation_present\": "
+        << (imported_input.interop_ffi_metadata_interface_preservation_present
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part11_ffi_runtime_import_artifact_ready\": "
-        << (imported_input.part11_ffi_runtime_import_artifact_ready ? "true"
+        << "      \"interop_ffi_runtime_import_artifact_ready\": "
+        << (imported_input.interop_ffi_runtime_import_artifact_ready ? "true"
                                                                     : "false")
         << ",\n"
-        << "      \"part11_ffi_separate_compilation_preservation_ready\": "
-        << (imported_input.part11_ffi_separate_compilation_preservation_ready
+        << "      \"interop_ffi_separate_compilation_preservation_ready\": "
+        << (imported_input.interop_ffi_separate_compilation_preservation_ready
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part11_ffi_deterministic\": "
-        << (imported_input.part11_ffi_deterministic ? "true" : "false")
+        << "      \"interop_ffi_deterministic\": "
+        << (imported_input.interop_ffi_deterministic ? "true" : "false")
         << ",\n"
-        << "      \"part11_ffi_contract_id\": \""
-        << EscapeJsonString(imported_input.part11_ffi_contract_id)
+        << "      \"interop_ffi_contract_id\": \""
+        << EscapeJsonString(imported_input.interop_ffi_contract_id)
         << "\",\n"
-        << "      \"part11_ffi_source_contract_id\": \""
-        << EscapeJsonString(imported_input.part11_ffi_source_contract_id)
+        << "      \"interop_ffi_source_contract_id\": \""
+        << EscapeJsonString(imported_input.interop_ffi_source_contract_id)
         << "\",\n"
-        << "      \"part11_ffi_preservation_contract_id\": \""
-        << EscapeJsonString(imported_input.part11_ffi_preservation_contract_id)
+        << "      \"interop_ffi_preservation_contract_id\": \""
+        << EscapeJsonString(imported_input.interop_ffi_preservation_contract_id)
         << "\",\n"
-        << "      \"part11_ffi_replay_key\": \""
-        << EscapeJsonString(imported_input.part11_ffi_replay_key)
+        << "      \"interop_ffi_replay_key\": \""
+        << EscapeJsonString(imported_input.interop_ffi_replay_key)
         << "\",\n"
-        << "      \"part11_ffi_lowering_replay_key\": \""
-        << EscapeJsonString(imported_input.part11_ffi_lowering_replay_key)
+        << "      \"interop_ffi_lowering_replay_key\": \""
+        << EscapeJsonString(imported_input.interop_ffi_lowering_replay_key)
         << "\",\n"
-        << "      \"part11_ffi_preservation_replay_key\": \""
-        << EscapeJsonString(imported_input.part11_ffi_preservation_replay_key)
+        << "      \"interop_ffi_preservation_replay_key\": \""
+        << EscapeJsonString(imported_input.interop_ffi_preservation_replay_key)
         << "\",\n"
-        << "      \"part11_ffi_local_foreign_callable_count\": "
-        << imported_input.part11_ffi_local_foreign_callable_count << ",\n"
-        << "      \"part11_ffi_local_metadata_preservation_sites\": "
-        << imported_input.part11_ffi_local_metadata_preservation_sites
+        << "      \"interop_ffi_local_foreign_callable_count\": "
+        << imported_input.interop_ffi_local_foreign_callable_count << ",\n"
+        << "      \"interop_ffi_local_metadata_preservation_sites\": "
+        << imported_input.interop_ffi_local_metadata_preservation_sites
         << ",\n"
-        << "      \"part11_ffi_local_interface_annotation_sites\": "
-        << imported_input.part11_ffi_local_interface_annotation_sites
+        << "      \"interop_ffi_local_interface_annotation_sites\": "
+        << imported_input.interop_ffi_local_interface_annotation_sites
         << ",\n"
-        << "      \"part11_header_module_bridge_generation_present\": "
-        << (imported_input.part11_header_module_bridge_generation_present
+        << "      \"interop_header_module_bridge_generation_present\": "
+        << (imported_input.interop_header_module_bridge_generation_present
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part11_header_module_bridge_runtime_generation_ready\": "
-        << (imported_input.part11_header_module_bridge_runtime_generation_ready
+        << "      \"interop_header_module_bridge_runtime_generation_ready\": "
+        << (imported_input.interop_header_module_bridge_runtime_generation_ready
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part11_header_module_bridge_cross_module_packaging_ready\": "
+        << "      \"interop_header_module_bridge_cross_module_packaging_ready\": "
         << (imported_input
-                    .part11_header_module_bridge_cross_module_packaging_ready
+                    .interop_header_module_bridge_cross_module_packaging_ready
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part11_header_module_bridge_deterministic\": "
-        << (imported_input.part11_header_module_bridge_deterministic ? "true"
+        << "      \"interop_header_module_bridge_deterministic\": "
+        << (imported_input.interop_header_module_bridge_deterministic ? "true"
                                                                      : "false")
         << ",\n"
-        << "      \"part11_header_module_bridge_contract_id\": \""
+        << "      \"interop_header_module_bridge_contract_id\": \""
         << EscapeJsonString(
-               imported_input.part11_header_module_bridge_contract_id)
+               imported_input.interop_header_module_bridge_contract_id)
         << "\",\n"
-        << "      \"part11_header_module_bridge_source_contract_id\": \""
+        << "      \"interop_header_module_bridge_source_contract_id\": \""
         << EscapeJsonString(
-               imported_input.part11_header_module_bridge_source_contract_id)
+               imported_input.interop_header_module_bridge_source_contract_id)
         << "\",\n"
-        << "      \"part11_header_module_bridge_preservation_contract_id\": \""
+        << "      \"interop_header_module_bridge_preservation_contract_id\": \""
         << EscapeJsonString(imported_input
-                                .part11_header_module_bridge_preservation_contract_id)
+                                .interop_header_module_bridge_preservation_contract_id)
         << "\",\n"
-        << "      \"part11_header_module_bridge_replay_key\": \""
-        << EscapeJsonString(imported_input.part11_header_module_bridge_replay_key)
+        << "      \"interop_header_module_bridge_replay_key\": \""
+        << EscapeJsonString(imported_input.interop_header_module_bridge_replay_key)
         << "\",\n"
-        << "      \"part11_header_module_bridge_preservation_replay_key\": \""
+        << "      \"interop_header_module_bridge_preservation_replay_key\": \""
         << EscapeJsonString(
                imported_input
-                   .part11_header_module_bridge_preservation_replay_key)
+                   .interop_header_module_bridge_preservation_replay_key)
         << "\",\n"
-        << "      \"part11_bridge_header_artifact_relative_path\": \""
+        << "      \"interop_bridge_header_artifact_relative_path\": \""
         << EscapeJsonString(
-               imported_input.part11_bridge_header_artifact_relative_path)
+               imported_input.interop_bridge_header_artifact_relative_path)
         << "\",\n"
-        << "      \"part11_bridge_module_artifact_relative_path\": \""
+        << "      \"interop_bridge_module_artifact_relative_path\": \""
         << EscapeJsonString(
-               imported_input.part11_bridge_module_artifact_relative_path)
+               imported_input.interop_bridge_module_artifact_relative_path)
         << "\",\n"
-        << "      \"part11_bridge_artifact_relative_path\": \""
-        << EscapeJsonString(imported_input.part11_bridge_artifact_relative_path)
+        << "      \"interop_bridge_artifact_relative_path\": \""
+        << EscapeJsonString(imported_input.interop_bridge_artifact_relative_path)
         << "\",\n"
-        << "      \"part11_header_module_bridge_local_foreign_callable_count\": "
-        << imported_input.part11_header_module_bridge_local_foreign_callable_count
+        << "      \"interop_header_module_bridge_local_foreign_callable_count\": "
+        << imported_input.interop_header_module_bridge_local_foreign_callable_count
         << ",\n"
-        << "      \"part10_macro_host_process_cache_runtime_integration_present\": "
-        << (imported_input.part10_macro_host_process_cache_runtime_integration_present
+        << "      \"metaprogramming_macro_host_process_cache_runtime_integration_present\": "
+        << (imported_input.metaprogramming_macro_host_process_cache_runtime_integration_present
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part10_macro_host_process_cache_runtime_ready\": "
-        << (imported_input.part10_macro_host_process_cache_runtime_ready ? "true"
+        << "      \"metaprogramming_macro_host_process_cache_runtime_ready\": "
+        << (imported_input.metaprogramming_macro_host_process_cache_runtime_ready ? "true"
                                                                          : "false")
         << ",\n"
-        << "      \"part10_macro_host_process_cache_separate_compilation_ready\": "
-        << (imported_input.part10_macro_host_process_cache_separate_compilation_ready
+        << "      \"metaprogramming_macro_host_process_cache_separate_compilation_ready\": "
+        << (imported_input.metaprogramming_macro_host_process_cache_separate_compilation_ready
                 ? "true"
                 : "false")
         << ",\n"
-        << "      \"part10_macro_host_process_cache_deterministic\": "
-        << (imported_input.part10_macro_host_process_cache_deterministic ? "true"
+        << "      \"metaprogramming_macro_host_process_cache_deterministic\": "
+        << (imported_input.metaprogramming_macro_host_process_cache_deterministic ? "true"
                                                                          : "false")
         << ",\n"
-        << "      \"part10_macro_host_process_cache_contract_id\": \""
-        << EscapeJsonString(imported_input.part10_macro_host_process_cache_contract_id)
+        << "      \"metaprogramming_macro_host_process_cache_contract_id\": \""
+        << EscapeJsonString(imported_input.metaprogramming_macro_host_process_cache_contract_id)
         << "\",\n"
-        << "      \"part10_macro_host_process_cache_source_contract_id\": \""
-        << EscapeJsonString(imported_input.part10_macro_host_process_cache_source_contract_id)
+        << "      \"metaprogramming_macro_host_process_cache_source_contract_id\": \""
+        << EscapeJsonString(imported_input.metaprogramming_macro_host_process_cache_source_contract_id)
         << "\",\n"
-        << "      \"part10_macro_host_process_cache_replay_key\": \""
-        << EscapeJsonString(imported_input.part10_macro_host_process_cache_replay_key)
+        << "      \"metaprogramming_macro_host_process_cache_replay_key\": \""
+        << EscapeJsonString(imported_input.metaprogramming_macro_host_process_cache_replay_key)
         << "\",\n"
-        << "      \"part10_macro_host_process_cache_host_executable_relative_path\": \""
-        << EscapeJsonString(imported_input.part10_macro_host_process_cache_host_executable_relative_path)
+        << "      \"metaprogramming_macro_host_process_cache_host_executable_relative_path\": \""
+        << EscapeJsonString(imported_input.metaprogramming_macro_host_process_cache_host_executable_relative_path)
         << "\",\n"
-        << "      \"part10_macro_host_process_cache_root_relative_path\": \""
-        << EscapeJsonString(imported_input.part10_macro_host_process_cache_root_relative_path)
+        << "      \"metaprogramming_macro_host_process_cache_root_relative_path\": \""
+        << EscapeJsonString(imported_input.metaprogramming_macro_host_process_cache_root_relative_path)
         << "\",\n"
         << "      \"block_ownership_artifact_preservation_present\": "
         << (imported_input.block_ownership_artifact_preservation_present
@@ -3031,15 +3031,15 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     imported_modules_json << "\n";
   }
   imported_modules_json << "  ]";
-  std::sort(imported_part6_module_names.begin(), imported_part6_module_names.end());
-  std::sort(imported_part7_actor_module_names.begin(),
-            imported_part7_actor_module_names.end());
-  std::sort(imported_part11_ffi_module_names.begin(),
-            imported_part11_ffi_module_names.end());
-  std::sort(imported_part11_header_module_bridge_module_names.begin(),
-            imported_part11_header_module_bridge_module_names.end());
-  std::sort(imported_part10_host_cache_module_names.begin(),
-            imported_part10_host_cache_module_names.end());
+  std::sort(imported_error_handling_module_names.begin(), imported_error_handling_module_names.end());
+  std::sort(imported_concurrency_actor_module_names.begin(),
+            imported_concurrency_actor_module_names.end());
+  std::sort(imported_interop_ffi_module_names.begin(),
+            imported_interop_ffi_module_names.end());
+  std::sort(imported_interop_header_module_bridge_module_names.begin(),
+            imported_interop_header_module_bridge_module_names.end());
+  std::sort(imported_metaprogramming_host_cache_module_names.begin(),
+            imported_metaprogramming_host_cache_module_names.end());
 
   std::ostringstream out;
   out << "{\n"
@@ -3067,58 +3067,58 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << EscapeJsonString(inputs.registration_scope_model) << "\",\n"
       << "  \"link_object_order_model\": \""
       << EscapeJsonString(inputs.link_object_order_model) << "\",\n"
-      << "  \"expected_part6_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part6_contract_id) << "\",\n"
-      << "  \"expected_part6_source_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part6_source_contract_id) << "\",\n"
-      << "  \"expected_part7_actor_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part7_actor_contract_id) << "\",\n"
-      << "  \"expected_part7_actor_source_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part7_actor_source_contract_id)
+      << "  \"expected_error_handling_contract_id\": \""
+      << EscapeJsonString(inputs.expected_error_handling_contract_id) << "\",\n"
+      << "  \"expected_error_handling_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_error_handling_source_contract_id) << "\",\n"
+      << "  \"expected_concurrency_actor_contract_id\": \""
+      << EscapeJsonString(inputs.expected_concurrency_actor_contract_id) << "\",\n"
+      << "  \"expected_concurrency_actor_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_concurrency_actor_source_contract_id)
       << "\",\n"
-      << "  \"expected_part11_ffi_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part11_ffi_contract_id) << "\",\n"
-      << "  \"expected_part11_ffi_source_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part11_ffi_source_contract_id)
+      << "  \"expected_interop_ffi_contract_id\": \""
+      << EscapeJsonString(inputs.expected_interop_ffi_contract_id) << "\",\n"
+      << "  \"expected_interop_ffi_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_interop_ffi_source_contract_id)
       << "\",\n"
-      << "  \"expected_part11_ffi_preservation_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part11_ffi_preservation_contract_id)
+      << "  \"expected_interop_ffi_preservation_contract_id\": \""
+      << EscapeJsonString(inputs.expected_interop_ffi_preservation_contract_id)
       << "\",\n"
-      << "  \"expected_part11_header_module_bridge_contract_id\": \""
+      << "  \"expected_interop_header_module_bridge_contract_id\": \""
       << EscapeJsonString(
-             inputs.expected_part11_header_module_bridge_contract_id)
+             inputs.expected_interop_header_module_bridge_contract_id)
       << "\",\n"
-      << "  \"expected_part11_header_module_bridge_source_contract_id\": \""
+      << "  \"expected_interop_header_module_bridge_source_contract_id\": \""
       << EscapeJsonString(
-             inputs.expected_part11_header_module_bridge_source_contract_id)
+             inputs.expected_interop_header_module_bridge_source_contract_id)
       << "\",\n"
-      << "  \"expected_part11_header_module_bridge_preservation_contract_id\": \""
+      << "  \"expected_interop_header_module_bridge_preservation_contract_id\": \""
       << EscapeJsonString(
-             inputs.expected_part11_header_module_bridge_preservation_contract_id)
+             inputs.expected_interop_header_module_bridge_preservation_contract_id)
       << "\",\n"
-      << "  \"expected_part11_bridge_header_artifact_relative_path\": \""
+      << "  \"expected_interop_bridge_header_artifact_relative_path\": \""
       << EscapeJsonString(
-             inputs.expected_part11_bridge_header_artifact_relative_path)
+             inputs.expected_interop_bridge_header_artifact_relative_path)
       << "\",\n"
-      << "  \"expected_part11_bridge_module_artifact_relative_path\": \""
+      << "  \"expected_interop_bridge_module_artifact_relative_path\": \""
       << EscapeJsonString(
-             inputs.expected_part11_bridge_module_artifact_relative_path)
+             inputs.expected_interop_bridge_module_artifact_relative_path)
       << "\",\n"
-      << "  \"expected_part11_bridge_artifact_relative_path\": \""
-      << EscapeJsonString(inputs.expected_part11_bridge_artifact_relative_path)
+      << "  \"expected_interop_bridge_artifact_relative_path\": \""
+      << EscapeJsonString(inputs.expected_interop_bridge_artifact_relative_path)
       << "\",\n"
-      << "  \"expected_part10_host_cache_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part10_host_cache_contract_id)
+      << "  \"expected_metaprogramming_host_cache_contract_id\": \""
+      << EscapeJsonString(inputs.expected_metaprogramming_host_cache_contract_id)
       << "\",\n"
-      << "  \"expected_part10_host_cache_source_contract_id\": \""
-      << EscapeJsonString(inputs.expected_part10_host_cache_source_contract_id)
+      << "  \"expected_metaprogramming_host_cache_source_contract_id\": \""
+      << EscapeJsonString(inputs.expected_metaprogramming_host_cache_source_contract_id)
       << "\",\n"
-      << "  \"expected_part10_host_cache_executable_relative_path\": \""
+      << "  \"expected_metaprogramming_host_cache_executable_relative_path\": \""
       << EscapeJsonString(
-             inputs.expected_part10_host_cache_executable_relative_path)
+             inputs.expected_metaprogramming_host_cache_executable_relative_path)
       << "\",\n"
-      << "  \"expected_part10_host_cache_root_relative_path\": \""
-      << EscapeJsonString(inputs.expected_part10_host_cache_root_relative_path)
+      << "  \"expected_metaprogramming_host_cache_root_relative_path\": \""
+      << EscapeJsonString(inputs.expected_metaprogramming_host_cache_root_relative_path)
       << "\",\n"
       << "  \"expected_block_ownership_contract_id\": \""
       << EscapeJsonString(inputs.expected_block_ownership_contract_id)
@@ -3152,51 +3152,51 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << ",\n"
       << "  \"direct_import_input_count\": "
       << direct_import_surface_artifact_paths.size() << ",\n"
-      << "  \"part6_imported_module_count\": "
-      << imported_part6_module_names.size() << ",\n"
-      << "  \"part7_actor_imported_module_count\": "
-      << imported_part7_actor_module_names.size() << ",\n"
-      << "  \"part11_ffi_imported_module_count\": "
-      << imported_part11_ffi_module_names.size() << ",\n"
-      << "  \"part11_header_module_bridge_imported_module_count\": "
-      << imported_part11_header_module_bridge_module_names.size() << ",\n"
-      << "  \"part10_host_cache_imported_module_count\": "
-      << imported_part10_host_cache_module_names.size() << ",\n"
+      << "  \"error_handling_imported_module_count\": "
+      << imported_error_handling_module_names.size() << ",\n"
+      << "  \"concurrency_actor_imported_module_count\": "
+      << imported_concurrency_actor_module_names.size() << ",\n"
+      << "  \"interop_ffi_imported_module_count\": "
+      << imported_interop_ffi_module_names.size() << ",\n"
+      << "  \"interop_header_module_bridge_imported_module_count\": "
+      << imported_interop_header_module_bridge_module_names.size() << ",\n"
+      << "  \"metaprogramming_host_cache_imported_module_count\": "
+      << imported_metaprogramming_host_cache_module_names.size() << ",\n"
       << "  \"direct_import_surface_artifact_paths\": "
       << BuildIndentedStringArrayJson(direct_import_surface_artifact_paths,
                                       "    ")
       << ",\n"
-      << "  \"part6_imported_module_names_lexicographic\": "
-      << BuildIndentedStringArrayJson(imported_part6_module_names, "    ")
+      << "  \"error_handling_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_error_handling_module_names, "    ")
       << ",\n"
-      << "  \"part7_actor_imported_module_names_lexicographic\": "
-      << BuildIndentedStringArrayJson(imported_part7_actor_module_names, "    ")
+      << "  \"concurrency_actor_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_concurrency_actor_module_names, "    ")
       << ",\n"
-      << "  \"part11_ffi_imported_module_names_lexicographic\": "
-      << BuildIndentedStringArrayJson(imported_part11_ffi_module_names, "    ")
+      << "  \"interop_ffi_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_interop_ffi_module_names, "    ")
       << ",\n"
-      << "  \"part11_header_module_bridge_imported_module_names_lexicographic\": "
+      << "  \"interop_header_module_bridge_imported_module_names_lexicographic\": "
       << BuildIndentedStringArrayJson(
-             imported_part11_header_module_bridge_module_names, "    ")
+             imported_interop_header_module_bridge_module_names, "    ")
       << ",\n"
-      << "  \"part10_host_cache_imported_module_names_lexicographic\": "
-      << BuildIndentedStringArrayJson(imported_part10_host_cache_module_names,
+      << "  \"metaprogramming_host_cache_imported_module_names_lexicographic\": "
+      << BuildIndentedStringArrayJson(imported_metaprogramming_host_cache_module_names,
                                       "    ")
       << ",\n"
-      << "  \"part6_cross_module_preservation_ready\": "
-      << (!imported_part6_module_names.empty() ? "true" : "false") << ",\n"
-      << "  \"part7_actor_cross_module_isolation_ready\": "
-      << (!imported_part7_actor_module_names.empty() ? "true" : "false")
+      << "  \"error_handling_cross_module_preservation_ready\": "
+      << (!imported_error_handling_module_names.empty() ? "true" : "false") << ",\n"
+      << "  \"concurrency_actor_cross_module_isolation_ready\": "
+      << (!imported_concurrency_actor_module_names.empty() ? "true" : "false")
       << ",\n"
-      << "  \"part11_ffi_cross_module_packaging_ready\": "
-      << (!imported_part11_ffi_module_names.empty() ? "true" : "false")
+      << "  \"interop_ffi_cross_module_packaging_ready\": "
+      << (!imported_interop_ffi_module_names.empty() ? "true" : "false")
       << ",\n"
-      << "  \"part11_header_module_bridge_cross_module_packaging_ready\": "
-      << (!imported_part11_header_module_bridge_module_names.empty() ? "true"
+      << "  \"interop_header_module_bridge_cross_module_packaging_ready\": "
+      << (!imported_interop_header_module_bridge_module_names.empty() ? "true"
                                                                      : "false")
       << ",\n"
-      << "  \"part10_host_cache_cross_module_preservation_ready\": "
-      << (!imported_part10_host_cache_module_names.empty() ? "true" : "false")
+      << "  \"metaprogramming_host_cache_cross_module_preservation_ready\": "
+      << (!imported_metaprogramming_host_cache_module_names.empty() ? "true" : "false")
       << ",\n"
       << "  \"bootstrap_live_registration_contract_id\": \""
       << EscapeJsonString(inputs.expected_bootstrap_live_registration_contract_id)
@@ -4195,8 +4195,8 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
       << EscapeJsonString(kObjc3AdvancedFeatureGateSchemaId) << "\",\n"
       << "  \"dependency_contract_ids\": "
       << BuildIndentedStringArrayJson(
-             {"objc3c.part12.frontend.migration.canonicalization.source.completion.v1",
-              "objc3c.part12.legacy.canonical.migration.semantics.v1",
+             {"objc3c.tooling.frontend.migration.canonicalization.source.completion.v1",
+              "objc3c.tooling.legacy.canonical.migration.semantics.v1",
               kObjc3AdvancedFeatureReleaseEvidenceContractId,
               kObjc3ReleaseEvidenceOperationContractId},
              "    ")
@@ -4288,11 +4288,11 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
              {"strict", "strict-concurrency", "strict-system"}, "    ")
       << ",\n"
       << "  \"matrix_rows\": [\n"
-      << "    {\"lane\":\"A\",\"contract_id\":\"objc3c.part12.migration.canonicalization.source.completion.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"B\",\"contract_id\":\"objc3c.part12.legacy.canonical.migration.semantics.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"C\",\"contract_id\":\"objc3c.part12.corpus.sharding.release.evidence.packaging.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"D\",\"contract_id\":\"objc3c.part12.release.evidence.toolchain.operations.v1\",\"status\":\"pass\"},\n"
-      << "    {\"lane\":\"E\",\"contract_id\":\"objc3c.part12.integrated.advanced.feature.gate.v1\",\"status\":\"pass\"}\n"
+      << "    {\"lane\":\"A\",\"contract_id\":\"objc3c.tooling.migration.canonicalization.source.completion.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"B\",\"contract_id\":\"objc3c.tooling.legacy.canonical.migration.semantics.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"C\",\"contract_id\":\"objc3c.tooling.corpus.sharding.release.evidence.packaging.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"D\",\"contract_id\":\"objc3c.tooling.release.evidence.toolchain.operations.v1\",\"status\":\"pass\"},\n"
+      << "    {\"lane\":\"E\",\"contract_id\":\"objc3c.tooling.integrated.advanced.feature.gate.v1\",\"status\":\"pass\"}\n"
       << "  ],\n"
       << "  \"matrix_model\": \""
       << "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-emitted-sidecars"

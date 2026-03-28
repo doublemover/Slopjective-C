@@ -5688,7 +5688,7 @@ semantic, and lowering handoff for the current native path:
 - lowering handoff `lowering_dispatch_surface_classification` must replay the
   same contract state into IR emission
 - the canonical proof fixture
-  `tests/tooling/fixtures/native/m255_dispatch_surface_modeling.objc3` must
+  `tests/tooling/fixtures/native/dispatch_surface_modeling.objc3` must
   produce instance `2`, class `2`, super `1`, direct `0`, dynamic `1`
 - `objc3c-native` must emit the textual profile line
   `frontend_objc_dispatch_surface_classification_profile` and named metadata
@@ -6106,8 +6106,8 @@ fail-closed executable binding capability:
     `objc3_runtime_dispatch_i32`
   - no runtime-side body rediscovery from source or manifests
 - proof surface:
-  - `tests/tooling/fixtures/native/m256_c002_method_body_binding.objc3`
-  - `tests/tooling/runtime/m256_c002_method_binding_probe.cpp`
+  - `tests/tooling/fixtures/native/c002_method_body_binding.objc3`
+  - `tests/tooling/runtime/c002_method_binding_probe.cpp`
   - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
 
 ## M256 executable realization records (C003)
@@ -6128,9 +6128,9 @@ consume directly:
 - emitted IR publishes:
   - `; executable_realization_records = ...`
 - proof surface:
-  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
-  - `tests/tooling/fixtures/native/m256_protocol_conformance_positive.objc3`
-  - `tests/tooling/fixtures/native/m256_category_merge_positive.objc3`
+  - `tests/tooling/fixtures/native/inheritance_override_realization_positive.objc3`
+  - `tests/tooling/fixtures/native/protocol_conformance_positive.objc3`
+  - `tests/tooling/fixtures/native/category_merge_positive.objc3`
   - `tmp/reports/m256/M256-C003/realization_records_summary.json`
 
 ## M256 class realization runtime freeze (D001)
@@ -6272,7 +6272,7 @@ execution matrix for executable classes, protocols, and categories.
   - `tmp/reports/m256/M256-D004/canonical_runnable_object_sample_support_summary.json`
   - `tmp/reports/m256/M256-E001/class_protocol_category_conformance_gate_summary.json`
 - live matrix case:
-  - `tests/tooling/fixtures/native/m256_inheritance_override_realization_positive.objc3`
+  - `tests/tooling/fixtures/native/inheritance_override_realization_positive.objc3`
   - `artifacts/lib/objc3_runtime.lib`
   - expected exit code `4`
 - the next implementation issue is `M257-A001`
@@ -6872,8 +6872,8 @@ for executable properties and ivars.
 - failure model
   `fail-closed-on-runnable-property-ivar-matrix-drift-or-missing-live-runtime-proof`
 - canonical live proof assets:
-  - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
+  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
 - the next implementation issue is `M258-A001`
 
 ## M258 runtime-aware import/module surface freeze (A001)

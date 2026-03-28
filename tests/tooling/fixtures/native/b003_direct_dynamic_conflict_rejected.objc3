@@ -1,0 +1,9 @@
+module DispatchB003DirectDynamic;
+
+@interface Box
+- (i32)shared;
+@end
+
+@implementation Box
+- (i32)shared __attribute__((objc_direct, objc_dynamic)) { return 1; }
+@end

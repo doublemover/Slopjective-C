@@ -1,0 +1,43 @@
+module m267_c003_error_handling_artifact_replay_producer;
+
+@interface ReplayBox
+- (i32)tag;
+@end
+
+@implementation ReplayBox
+- (i32)tag {
+  return 7;
+}
+@end
+
+fn risky(value: i32) throws -> i32 {
+  if (value == 1) {
+    throw 34;
+  }
+  return value + 10;
+}
+
+fn bridgeMapping(status: i32) -> NSError {
+  return status + 40;
+}
+
+fn bridge(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: bridgeMapping))) {
+  if (value == 2) {
+    return 5;
+  }
+  return 0;
+}
+
+fn recover() throws -> i32 {
+  let direct = try risky(0);
+  let maybeValue = try? bridge(2, 0);
+  let forced = try! risky(3);
+  do {
+    let bridged = try bridge(2, 0);
+    return bridged;
+  } catch (NSError* error) {
+    return direct + maybeValue + forced + error;
+  } catch {
+    return 999;
+  }
+}

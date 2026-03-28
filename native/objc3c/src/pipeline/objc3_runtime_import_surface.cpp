@@ -714,14 +714,14 @@ bool PopulateFrontendClosureSummary(const JsonValue::Object &root,
   return true;
 }
 
-bool PopulateImportedPart3OptionalKeypathSurface(
+bool PopulateImportedTypeSystemOptionalKeypathSurface(
     const JsonValue::Object &root,
     Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *lowering_value =
-      FindMember(root, "objc_part3_optional_keypath_lowering_contract");
+      FindMember(root, "objc_type_system_optional_keypath_lowering_contract");
   const JsonValue *runtime_value =
-      FindMember(root, "objc_part3_optional_keypath_runtime_helper_contract");
+      FindMember(root, "objc_type_system_optional_keypath_runtime_helper_contract");
   if (lowering_value == nullptr && runtime_value == nullptr) {
     return true;
   }
@@ -746,57 +746,57 @@ bool PopulateImportedPart3OptionalKeypathSurface(
   if (!ReadStringMember(*lowering_object, "contract_id", lowering_contract_id,
                         error) ||
       !ReadSizeMember(*lowering_object, "optional_send_sites",
-                      surface.part3_optional_send_sites, error) ||
+                      surface.type_system_optional_send_sites, error) ||
       !ReadSizeMember(*lowering_object, "typed_keypath_literal_sites",
-                      surface.part3_typed_keypath_literal_sites, error) ||
+                      surface.type_system_typed_keypath_literal_sites, error) ||
       !ReadSizeMember(*lowering_object, "live_optional_lowering_sites",
-                      surface.part3_live_optional_lowering_sites, error) ||
+                      surface.type_system_live_optional_lowering_sites, error) ||
       !ReadSizeMember(*lowering_object, "live_typed_keypath_artifact_sites",
-                      surface.part3_live_typed_keypath_artifact_sites, error) ||
+                      surface.type_system_live_typed_keypath_artifact_sites, error) ||
       !ReadBoolMember(*lowering_object, "ready_for_native_optional_lowering",
-                      surface.part3_ready_for_native_optional_lowering, error) ||
+                      surface.type_system_ready_for_native_optional_lowering, error) ||
       !ReadStringMember(*lowering_object, "replay_key", lowering_replay_key,
                         error) ||
       !ReadStringMember(*runtime_object, "contract_id", runtime_contract_id,
                         error) ||
       !ReadBoolMember(*runtime_object, "optional_send_runtime_ready",
-                      surface.part3_optional_send_runtime_ready, error) ||
+                      surface.type_system_optional_send_runtime_ready, error) ||
       !ReadBoolMember(*runtime_object, "typed_keypath_descriptor_handles_ready",
-                      surface.part3_typed_keypath_descriptor_handles_ready,
+                      surface.type_system_typed_keypath_descriptor_handles_ready,
                       error) ||
       !ReadBoolMember(*runtime_object,
                       "typed_keypath_runtime_execution_helper_landed",
-                      surface.part3_typed_keypath_runtime_execution_helper_landed,
+                      surface.type_system_typed_keypath_runtime_execution_helper_landed,
                       error) ||
       !ReadStringMember(*runtime_object, "replay_key", runtime_replay_key,
                         error)) {
     return false;
   }
 
-  if (lowering_contract_id != kObjc3Part3OptionalKeypathLoweringContractId) {
+  if (lowering_contract_id != kObjc3TypeSystemOptionalKeypathLoweringContractId) {
     error = "unexpected optional/keypath lowering contract id in import surface";
     return false;
   }
-  if (runtime_contract_id != kObjc3Part3OptionalKeypathRuntimeHelperContractId) {
+  if (runtime_contract_id != kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId) {
     error =
         "unexpected optional/keypath runtime helper contract id in import surface";
     return false;
   }
 
-  surface.part3_optional_keypath_lowering_contract_present = true;
-  surface.part3_optional_keypath_lowering_replay_key =
+  surface.type_system_optional_keypath_lowering_contract_present = true;
+  surface.type_system_optional_keypath_lowering_replay_key =
       std::move(lowering_replay_key);
-  surface.part3_optional_keypath_runtime_helper_replay_key =
+  surface.type_system_optional_keypath_runtime_helper_replay_key =
       std::move(runtime_replay_key);
   return true;
 }
 
-bool PopulateImportedPart6ResultAndBridgingArtifactReplay(
+bool PopulateImportedErrorHandlingResultAndBridgingArtifactReplay(
     const JsonValue::Object &root,
     Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *replay_value =
-      FindMember(root, "objc_part6_result_and_bridging_artifact_replay");
+      FindMember(root, "objc_error_handling_result_and_bridging_artifact_replay");
   if (replay_value == nullptr) {
     return true;
   }
@@ -804,7 +804,7 @@ bool PopulateImportedPart6ResultAndBridgingArtifactReplay(
   const JsonValue::Object *replay_object = AsObject(*replay_value);
   if (replay_object == nullptr) {
     error =
-        "part6 result/bridging imported replay contract must be a JSON object";
+        "error_handling result/bridging imported replay contract must be a JSON object";
     return false;
   }
 
@@ -814,58 +814,58 @@ bool PopulateImportedPart6ResultAndBridgingArtifactReplay(
       !ReadStringMember(*replay_object, "source_contract_id",
                         source_contract_id, error) ||
       !ReadBoolMember(*replay_object, "binary_artifact_replay_ready",
-                      surface.part6_binary_artifact_replay_ready, error) ||
+                      surface.error_handling_binary_artifact_replay_ready, error) ||
       !ReadBoolMember(*replay_object, "runtime_import_artifact_ready",
-                      surface.part6_runtime_import_artifact_ready, error) ||
+                      surface.error_handling_runtime_import_artifact_ready, error) ||
       !ReadBoolMember(*replay_object, "separate_compilation_replay_ready",
-                      surface.part6_separate_compilation_replay_ready, error) ||
+                      surface.error_handling_separate_compilation_replay_ready, error) ||
       !ReadBoolMember(*replay_object, "deterministic",
-                      surface.part6_deterministic, error) ||
+                      surface.error_handling_deterministic, error) ||
       !ReadStringMember(*replay_object, "replay_key",
-                        surface.part6_result_and_bridging_artifact_replay_key,
+                        surface.error_handling_result_and_bridging_artifact_replay_key,
                         error) ||
-      !ReadStringMember(*replay_object, "part6_replay_key",
-                        surface.part6_part6_replay_key, error) ||
+      !ReadStringMember(*replay_object, "error_handling_replay_key",
+                        surface.error_handling_error_handling_replay_key, error) ||
       !ReadStringMember(*replay_object, "throws_replay_key",
-                        surface.part6_throws_replay_key, error) ||
+                        surface.error_handling_throws_replay_key, error) ||
       !ReadStringMember(*replay_object, "result_like_replay_key",
-                        surface.part6_result_like_replay_key, error) ||
+                        surface.error_handling_result_like_replay_key, error) ||
       !ReadStringMember(*replay_object, "ns_error_replay_key",
-                        surface.part6_ns_error_replay_key, error) ||
+                        surface.error_handling_ns_error_replay_key, error) ||
       !ReadStringMember(*replay_object, "unwind_replay_key",
-                        surface.part6_unwind_replay_key, error)) {
+                        surface.error_handling_unwind_replay_key, error)) {
     return false;
   }
 
-  if (contract_id != kObjc3Part6ResultAndBridgingArtifactReplayContractId) {
+  if (contract_id != kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId) {
     error =
         "unexpected Part 6 result/bridging artifact replay contract id in import surface";
     return false;
   }
-  if (source_contract_id != kObjc3Part6ThrowsAbiPropagationLoweringContractId) {
+  if (source_contract_id != kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId) {
     error =
         "unexpected Part 6 throws ABI propagation source contract id in import surface";
     return false;
   }
 
-  surface.part6_result_and_bridging_artifact_replay_present = true;
-  surface.part6_contract_id = std::move(contract_id);
-  surface.part6_source_contract_id = std::move(source_contract_id);
+  surface.error_handling_result_and_bridging_artifact_replay_present = true;
+  surface.error_handling_contract_id = std::move(contract_id);
+  surface.error_handling_source_contract_id = std::move(source_contract_id);
   return true;
 }
 
-bool PopulateImportedPart7ActorMailboxRuntimeImport(
+bool PopulateImportedConcurrencyActorMailboxRuntimeImport(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *runtime_value = FindMember(
-      root, "objc_part7_actor_mailbox_and_isolation_runtime_import_surface");
+      root, "objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface");
   if (runtime_value == nullptr) {
     return true;
   }
 
   const JsonValue::Object *runtime_object = AsObject(*runtime_value);
   if (runtime_object == nullptr) {
-    error = "part7 actor mailbox runtime import surface must be a JSON object";
+    error = "concurrency actor mailbox runtime import surface must be a JSON object";
     return false;
   }
 
@@ -875,48 +875,48 @@ bool PopulateImportedPart7ActorMailboxRuntimeImport(
       !ReadStringMember(*runtime_object, "source_contract_id",
                         source_contract_id, error) ||
       !ReadBoolMember(*runtime_object, "actor_mailbox_runtime_ready",
-                      surface.part7_actor_mailbox_runtime_ready, error) ||
+                      surface.concurrency_actor_mailbox_runtime_ready, error) ||
       !ReadBoolMember(*runtime_object, "deterministic",
-                      surface.part7_actor_mailbox_runtime_deterministic,
+                      surface.concurrency_actor_mailbox_runtime_deterministic,
                       error) ||
       !ReadStringMember(*runtime_object, "replay_key",
-                        surface.part7_actor_mailbox_runtime_replay_key,
+                        surface.concurrency_actor_mailbox_runtime_replay_key,
                         error) ||
       !ReadStringMember(*runtime_object, "actor_lowering_replay_key",
-                        surface.part7_actor_lowering_replay_key, error) ||
+                        surface.concurrency_actor_lowering_replay_key, error) ||
       !ReadStringMember(*runtime_object, "actor_isolation_lowering_replay_key",
-                        surface.part7_actor_isolation_lowering_replay_key,
+                        surface.concurrency_actor_isolation_lowering_replay_key,
                         error)) {
     return false;
   }
 
   if (contract_id !=
-      "objc3c.part7.actor.mailbox.isolation.import.surface.v1") {
+      "objc3c.concurrency.actor.mailbox.isolation.import.surface.v1") {
     error = "unexpected Part 7 actor mailbox runtime import contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      "objc3c.part7.actor.lowering.and.metadata.contract.v1") {
+      "objc3c.concurrency.actor.lowering.and.metadata.contract.v1") {
     error = "unexpected Part 7 actor mailbox runtime source contract id in import surface";
     return false;
   }
 
-  if (!surface.part7_actor_mailbox_runtime_ready) {
+  if (!surface.concurrency_actor_mailbox_runtime_ready) {
     return true;
   }
 
-  surface.part7_actor_mailbox_runtime_import_present = true;
-  surface.part7_actor_mailbox_runtime_contract_id = std::move(contract_id);
-  surface.part7_actor_mailbox_runtime_source_contract_id =
+  surface.concurrency_actor_mailbox_runtime_import_present = true;
+  surface.concurrency_actor_mailbox_runtime_contract_id = std::move(contract_id);
+  surface.concurrency_actor_mailbox_runtime_source_contract_id =
       std::move(source_contract_id);
   return true;
 }
 
-bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
+bool PopulateImportedMetaprogrammingModuleInterfaceReplayPreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *preservation_value = FindMember(
-      root, kObjc3Part10ModuleInterfaceReplayPreservationImportArtifactMemberName);
+      root, kObjc3MetaprogrammingModuleInterfaceReplayPreservationImportArtifactMemberName);
   if (preservation_value == nullptr) {
     return true;
   }
@@ -924,7 +924,7 @@ bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
   const JsonValue::Object *preservation_object = AsObject(*preservation_value);
   if (preservation_object == nullptr) {
     error =
-        "part10 module/interface replay preservation surface must be a JSON object";
+        "metaprogramming module/interface replay preservation surface must be a JSON object";
     return false;
   }
 
@@ -935,60 +935,60 @@ bool PopulateImportedPart10ModuleInterfaceReplayPreservation(
       !ReadStringMember(*preservation_object, "source_contract_id",
                         source_contract_id, error) ||
       !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
-                      surface.part10_runtime_import_artifact_ready, error) ||
+                      surface.metaprogramming_runtime_import_artifact_ready, error) ||
       !ReadBoolMember(*preservation_object,
                       "separate_compilation_preservation_ready",
-                      surface.part10_separate_compilation_preservation_ready,
+                      surface.metaprogramming_separate_compilation_preservation_ready,
                       error) ||
       !ReadBoolMember(*preservation_object, "deterministic",
-                      surface.part10_deterministic, error) ||
+                      surface.metaprogramming_deterministic, error) ||
       !ReadStringMember(*preservation_object, "replay_key",
-                        surface.part10_replay_key, error) ||
+                        surface.metaprogramming_replay_key, error) ||
       !ReadStringMember(*preservation_object, "expansion_lowering_replay_key",
-                        surface.part10_expansion_lowering_replay_key, error) ||
+                        surface.metaprogramming_expansion_lowering_replay_key, error) ||
       !ReadStringMember(*preservation_object,
                         "synthesized_emission_replay_key",
-                        surface.part10_synthesized_emission_replay_key,
+                        surface.metaprogramming_synthesized_emission_replay_key,
                         error) ||
       !ReadSizeMember(*preservation_object, "local_derive_method_count",
-                      surface.part10_local_derive_method_count, error) ||
+                      surface.metaprogramming_local_derive_method_count, error) ||
       !ReadSizeMember(*preservation_object, "local_macro_artifact_count",
-                      surface.part10_local_macro_artifact_count, error) ||
+                      surface.metaprogramming_local_macro_artifact_count, error) ||
       !ReadSizeMember(
           *preservation_object,
           "local_interface_property_behavior_artifact_count",
-          surface.part10_local_interface_property_behavior_artifact_count,
+          surface.metaprogramming_local_interface_property_behavior_artifact_count,
           error) ||
       !ReadSizeMember(
           *preservation_object,
           "local_implementation_property_behavior_artifact_count",
-          surface.part10_local_implementation_property_behavior_artifact_count,
+          surface.metaprogramming_local_implementation_property_behavior_artifact_count,
           error) ||
       !ReadSizeMember(*preservation_object, "local_runtime_method_list_count",
-                      surface.part10_local_runtime_method_list_count, error)) {
+                      surface.metaprogramming_local_runtime_method_list_count, error)) {
     return false;
   }
 
   if (contract_id !=
-      kObjc3Part10ModuleInterfaceReplayPreservationContractId) {
+      kObjc3MetaprogrammingModuleInterfaceReplayPreservationContractId) {
     error =
         "unexpected Part 10 module/interface replay preservation contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      kObjc3Part10SynthesizedArtifactEmissionContractId) {
+      kObjc3MetaprogrammingSynthesizedArtifactEmissionContractId) {
     error =
         "unexpected Part 10 module/interface replay preservation source contract id in import surface";
     return false;
   }
 
-  surface.part10_module_interface_replay_preservation_present = true;
-  surface.part10_contract_id = std::move(contract_id);
-  surface.part10_source_contract_id = std::move(source_contract_id);
+  surface.metaprogramming_module_interface_replay_preservation_present = true;
+  surface.metaprogramming_contract_id = std::move(contract_id);
+  surface.metaprogramming_source_contract_id = std::move(source_contract_id);
   return true;
 }
 
-bool PopulateImportedPart11ForeignSurfaceInterfacePreservation(
+bool PopulateImportedInteropForeignSurfaceInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   // import-surface anchor: Part 11 preservation stays at the
@@ -996,7 +996,7 @@ bool PopulateImportedPart11ForeignSurfaceInterfacePreservation(
   // C++/Swift-facing annotation facts survive separate compilation before any
   // ABI lowering or runnable bridge generation claims land.
   const JsonValue *preservation_value = FindMember(
-      root, kObjc3Part11ForeignSurfaceInterfacePreservationImportArtifactMemberName);
+      root, kObjc3InteropForeignSurfaceInterfacePreservationImportArtifactMemberName);
   if (preservation_value == nullptr) {
     return true;
   }
@@ -1004,7 +1004,7 @@ bool PopulateImportedPart11ForeignSurfaceInterfacePreservation(
   const JsonValue::Object *preservation_object = AsObject(*preservation_value);
   if (preservation_object == nullptr) {
     error =
-        "part11 foreign surface interface preservation surface must be a JSON object";
+        "interop foreign surface interface preservation surface must be a JSON object";
     return false;
   }
 
@@ -1013,84 +1013,84 @@ bool PopulateImportedPart11ForeignSurfaceInterfacePreservation(
                         error) ||
       !ReadStringMember(*preservation_object,
                         "foreign_import_source_contract_id",
-                        surface.part11_foreign_import_source_contract_id,
+                        surface.interop_foreign_import_source_contract_id,
                         error) ||
       !ReadStringMember(*preservation_object, "cpp_swift_source_contract_id",
-                        surface.part11_cpp_swift_source_contract_id, error) ||
+                        surface.interop_cpp_swift_source_contract_id, error) ||
       !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
-                      surface.part11_runtime_import_artifact_ready, error) ||
+                      surface.interop_runtime_import_artifact_ready, error) ||
       !ReadBoolMember(*preservation_object,
                       "separate_compilation_preservation_ready",
-                      surface.part11_separate_compilation_preservation_ready,
+                      surface.interop_separate_compilation_preservation_ready,
                       error) ||
       !ReadBoolMember(*preservation_object, "deterministic",
-                      surface.part11_deterministic, error) ||
+                      surface.interop_deterministic, error) ||
       !ReadStringMember(*preservation_object, "replay_key",
-                        surface.part11_replay_key, error) ||
+                        surface.interop_replay_key, error) ||
       !ReadStringMember(*preservation_object,
                         "foreign_import_source_replay_key",
-                        surface.part11_foreign_import_source_replay_key,
+                        surface.interop_foreign_import_source_replay_key,
                         error) ||
       !ReadStringMember(*preservation_object, "cpp_swift_source_replay_key",
-                        surface.part11_cpp_swift_source_replay_key, error) ||
+                        surface.interop_cpp_swift_source_replay_key, error) ||
       !ReadSizeMember(*preservation_object, "local_foreign_callable_count",
-                      surface.part11_local_foreign_callable_count, error) ||
+                      surface.interop_local_foreign_callable_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_import_module_annotation_count",
-                      surface.part11_local_import_module_annotation_count,
+                      surface.interop_local_import_module_annotation_count,
                       error) ||
       !ReadSizeMember(*preservation_object, "local_imported_module_name_count",
-                      surface.part11_local_imported_module_name_count, error) ||
+                      surface.interop_local_imported_module_name_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_swift_name_annotation_count",
-                      surface.part11_local_swift_name_annotation_count,
+                      surface.interop_local_swift_name_annotation_count,
                       error) ||
       !ReadSizeMember(*preservation_object,
                       "local_swift_private_annotation_count",
-                      surface.part11_local_swift_private_annotation_count,
+                      surface.interop_local_swift_private_annotation_count,
                       error) ||
       !ReadSizeMember(*preservation_object, "local_cpp_name_annotation_count",
-                      surface.part11_local_cpp_name_annotation_count, error) ||
+                      surface.interop_local_cpp_name_annotation_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_header_name_annotation_count",
-                      surface.part11_local_header_name_annotation_count,
+                      surface.interop_local_header_name_annotation_count,
                       error) ||
       !ReadSizeMember(*preservation_object,
                       "local_named_annotation_payload_count",
-                      surface.part11_local_named_annotation_payload_count,
+                      surface.interop_local_named_annotation_payload_count,
                       error)) {
     return false;
   }
 
-  if (contract_id != kObjc3Part11ForeignSurfaceInterfacePreservationContractId) {
+  if (contract_id != kObjc3InteropForeignSurfaceInterfacePreservationContractId) {
     error =
         "unexpected Part 11 foreign surface interface preservation contract id in import surface";
     return false;
   }
-  if (surface.part11_foreign_import_source_contract_id !=
-      kObjc3Part11ForeignImportSourceClosureContractId) {
+  if (surface.interop_foreign_import_source_contract_id !=
+      kObjc3InteropForeignImportSourceClosureContractId) {
     error =
         "unexpected Part 11 foreign/import source contract id in import surface";
     return false;
   }
-  if (surface.part11_cpp_swift_source_contract_id !=
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId) {
+  if (surface.interop_cpp_swift_source_contract_id !=
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionContractId) {
     error =
         "unexpected Part 11 C++/Swift annotation source contract id in import surface";
     return false;
   }
 
-  surface.part11_foreign_surface_interface_preservation_present = true;
-  surface.part11_contract_id = std::move(contract_id);
+  surface.interop_foreign_surface_interface_preservation_present = true;
+  surface.interop_contract_id = std::move(contract_id);
   return true;
 }
 
-bool PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(
+bool PopulateImportedMetaprogrammingMacroHostProcessCacheRuntimeIntegration(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *integration_value = FindMember(
       root,
-      kObjc3Part10MacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName);
+      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName);
   if (integration_value == nullptr) {
     return true;
   }
@@ -1098,7 +1098,7 @@ bool PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(
   const JsonValue::Object *integration_object = AsObject(*integration_value);
   if (integration_object == nullptr) {
     error =
-        "part10 macro host process/cache runtime integration surface must be a JSON object";
+        "metaprogramming macro host process/cache runtime integration surface must be a JSON object";
     return false;
   }
 
@@ -1109,52 +1109,52 @@ bool PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(
       !ReadStringMember(*integration_object, "source_contract_id",
                         source_contract_id, error) ||
       !ReadBoolMember(*integration_object, "runtime_import_artifact_ready",
-                      surface.part10_macro_host_process_cache_runtime_ready,
+                      surface.metaprogramming_macro_host_process_cache_runtime_ready,
                       error) ||
       !ReadBoolMember(*integration_object, "separate_compilation_ready",
-                      surface.part10_macro_host_process_cache_separate_compilation_ready,
+                      surface.metaprogramming_macro_host_process_cache_separate_compilation_ready,
                       error) ||
       !ReadBoolMember(*integration_object, "deterministic",
-                      surface.part10_macro_host_process_cache_deterministic,
+                      surface.metaprogramming_macro_host_process_cache_deterministic,
                       error) ||
       !ReadStringMember(
           *integration_object, "replay_key",
-          surface.part10_macro_host_process_cache_replay_key, error) ||
+          surface.metaprogramming_macro_host_process_cache_replay_key, error) ||
       !ReadStringMember(*integration_object, "host_executable_relative_path",
                         surface
-                            .part10_macro_host_process_cache_host_executable_relative_path,
+                            .metaprogramming_macro_host_process_cache_host_executable_relative_path,
                         error) ||
       !ReadStringMember(*integration_object, "cache_root_relative_path",
-                        surface.part10_macro_host_process_cache_root_relative_path,
+                        surface.metaprogramming_macro_host_process_cache_root_relative_path,
                         error)) {
     return false;
   }
 
   if (contract_id !=
-      kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId) {
+      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId) {
     error =
         "unexpected Part 10 macro host process/cache runtime integration contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId) {
+      kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId) {
     error =
         "unexpected Part 10 macro host process/cache runtime integration source contract id in import surface";
     return false;
   }
 
-  surface.part10_macro_host_process_cache_runtime_integration_present = true;
-  surface.part10_macro_host_process_cache_contract_id = std::move(contract_id);
-  surface.part10_macro_host_process_cache_source_contract_id =
+  surface.metaprogramming_macro_host_process_cache_runtime_integration_present = true;
+  surface.metaprogramming_macro_host_process_cache_contract_id = std::move(contract_id);
+  surface.metaprogramming_macro_host_process_cache_source_contract_id =
       std::move(source_contract_id);
   return true;
 }
 
-bool PopulateImportedPart11FfiMetadataInterfacePreservation(
+bool PopulateImportedInteropFfiMetadataInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *preservation_value = FindMember(
-      root, kObjc3Part11FfiMetadataInterfacePreservationImportArtifactMemberName);
+      root, kObjc3InteropFfiMetadataInterfacePreservationImportArtifactMemberName);
   if (preservation_value == nullptr) {
     return true;
   }
@@ -1162,7 +1162,7 @@ bool PopulateImportedPart11FfiMetadataInterfacePreservation(
   const JsonValue::Object *preservation_object = AsObject(*preservation_value);
   if (preservation_object == nullptr) {
     error =
-        "part11 ffi metadata/interface preservation surface must be a JSON object";
+        "interop ffi metadata/interface preservation surface must be a JSON object";
     return false;
   }
 
@@ -1176,63 +1176,63 @@ bool PopulateImportedPart11FfiMetadataInterfacePreservation(
       !ReadStringMember(*preservation_object, "preservation_contract_id",
                         preservation_contract_id, error) ||
       !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
-                      surface.part11_ffi_runtime_import_artifact_ready, error) ||
+                      surface.interop_ffi_runtime_import_artifact_ready, error) ||
       !ReadBoolMember(*preservation_object,
                       "separate_compilation_preservation_ready",
-                      surface.part11_ffi_separate_compilation_preservation_ready,
+                      surface.interop_ffi_separate_compilation_preservation_ready,
                       error) ||
       !ReadBoolMember(*preservation_object, "deterministic",
-                      surface.part11_ffi_deterministic, error) ||
+                      surface.interop_ffi_deterministic, error) ||
       !ReadStringMember(*preservation_object, "replay_key",
-                        surface.part11_ffi_replay_key, error) ||
+                        surface.interop_ffi_replay_key, error) ||
       !ReadStringMember(*preservation_object, "lowering_replay_key",
-                        surface.part11_ffi_lowering_replay_key, error) ||
+                        surface.interop_ffi_lowering_replay_key, error) ||
       !ReadStringMember(*preservation_object, "preservation_replay_key",
-                        surface.part11_ffi_preservation_replay_key, error) ||
+                        surface.interop_ffi_preservation_replay_key, error) ||
       !ReadSizeMember(*preservation_object, "local_foreign_callable_count",
-                      surface.part11_ffi_local_foreign_callable_count, error) ||
+                      surface.interop_ffi_local_foreign_callable_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_metadata_preservation_sites",
-                      surface.part11_ffi_local_metadata_preservation_sites,
+                      surface.interop_ffi_local_metadata_preservation_sites,
                       error) ||
       !ReadSizeMember(*preservation_object,
                       "local_interface_annotation_sites",
-                      surface.part11_ffi_local_interface_annotation_sites,
+                      surface.interop_ffi_local_interface_annotation_sites,
                       error)) {
     return false;
   }
 
-  if (contract_id != kObjc3Part11FfiMetadataInterfacePreservationContractId) {
+  if (contract_id != kObjc3InteropFfiMetadataInterfacePreservationContractId) {
     error =
         "unexpected Part 11 ffi metadata/interface preservation contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      kObjc3Part11FfiMetadataInterfacePreservationSourceContractId) {
+      kObjc3InteropFfiMetadataInterfacePreservationSourceContractId) {
     error =
         "unexpected Part 11 ffi metadata/interface preservation source contract id in import surface";
     return false;
   }
   if (preservation_contract_id !=
-      kObjc3Part11ForeignSurfaceInterfacePreservationContractId) {
+      kObjc3InteropForeignSurfaceInterfacePreservationContractId) {
     error =
         "unexpected Part 11 ffi metadata/interface preservation dependency contract id in import surface";
     return false;
   }
 
-  surface.part11_ffi_metadata_interface_preservation_present = true;
-  surface.part11_ffi_contract_id = std::move(contract_id);
-  surface.part11_ffi_source_contract_id = std::move(source_contract_id);
-  surface.part11_ffi_preservation_contract_id =
+  surface.interop_ffi_metadata_interface_preservation_present = true;
+  surface.interop_ffi_contract_id = std::move(contract_id);
+  surface.interop_ffi_source_contract_id = std::move(source_contract_id);
+  surface.interop_ffi_preservation_contract_id =
       std::move(preservation_contract_id);
   return true;
 }
 
-bool PopulateImportedPart11HeaderModuleBridgeGeneration(
+bool PopulateImportedInteropHeaderModuleBridgeGeneration(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *generation_value = FindMember(
-      root, kObjc3Part11HeaderModuleBridgeGenerationImportArtifactMemberName);
+      root, kObjc3InteropHeaderModuleBridgeGenerationImportArtifactMemberName);
   if (generation_value == nullptr) {
     return true;
   }
@@ -1240,7 +1240,7 @@ bool PopulateImportedPart11HeaderModuleBridgeGeneration(
   const JsonValue::Object *generation_object = AsObject(*generation_value);
   if (generation_object == nullptr) {
     error =
-        "part11 header/module/bridge generation surface must be a JSON object";
+        "interop header/module/bridge generation surface must be a JSON object";
     return false;
   }
 
@@ -1254,47 +1254,47 @@ bool PopulateImportedPart11HeaderModuleBridgeGeneration(
       !ReadStringMember(*generation_object, "preservation_contract_id",
                         preservation_contract_id, error) ||
       !ReadStringMember(*generation_object, "header_artifact_relative_path",
-                        surface.part11_bridge_header_artifact_relative_path,
+                        surface.interop_bridge_header_artifact_relative_path,
                         error) ||
       !ReadStringMember(*generation_object, "module_artifact_relative_path",
-                        surface.part11_bridge_module_artifact_relative_path,
+                        surface.interop_bridge_module_artifact_relative_path,
                         error) ||
       !ReadStringMember(*generation_object, "bridge_artifact_relative_path",
-                        surface.part11_bridge_artifact_relative_path, error) ||
+                        surface.interop_bridge_artifact_relative_path, error) ||
       !ReadBoolMember(*generation_object, "runtime_generation_ready",
-                      surface.part11_header_module_bridge_runtime_generation_ready,
+                      surface.interop_header_module_bridge_runtime_generation_ready,
                       error) ||
       !ReadBoolMember(
           *generation_object, "cross_module_packaging_ready",
-          surface.part11_header_module_bridge_cross_module_packaging_ready,
+          surface.interop_header_module_bridge_cross_module_packaging_ready,
           error) ||
       !ReadBoolMember(*generation_object, "deterministic",
-                      surface.part11_header_module_bridge_deterministic,
+                      surface.interop_header_module_bridge_deterministic,
                       error) ||
       !ReadStringMember(*generation_object, "replay_key",
-                        surface.part11_header_module_bridge_replay_key, error) ||
+                        surface.interop_header_module_bridge_replay_key, error) ||
       !ReadStringMember(*generation_object, "preservation_replay_key",
-                        surface.part11_header_module_bridge_preservation_replay_key,
+                        surface.interop_header_module_bridge_preservation_replay_key,
                         error) ||
       !ReadSizeMember(*generation_object, "local_foreign_callable_count",
-                      surface.part11_header_module_bridge_local_foreign_callable_count,
+                      surface.interop_header_module_bridge_local_foreign_callable_count,
                       error)) {
     return false;
   }
 
-  if (contract_id != kObjc3Part11HeaderModuleBridgeGenerationContractId) {
+  if (contract_id != kObjc3InteropHeaderModuleBridgeGenerationContractId) {
     error =
         "unexpected Part 11 header/module/bridge generation contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      kObjc3Part11HeaderModuleBridgeGenerationSourceContractId) {
+      kObjc3InteropHeaderModuleBridgeGenerationSourceContractId) {
     error =
         "unexpected Part 11 header/module/bridge generation source contract id in import surface";
     return false;
   }
   if (preservation_contract_id !=
-      kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId) {
+      kObjc3InteropHeaderModuleBridgeGenerationPreservationContractId) {
     error =
         "unexpected Part 11 header/module/bridge generation preservation contract id in import surface";
     return false;
@@ -1303,25 +1303,25 @@ bool PopulateImportedPart11HeaderModuleBridgeGeneration(
   // Deferred Part 11 bridge packets are still emitted into the import surface
   // for documentation/provenance, but cross-module runtime link planning should
   // only treat them as active when the bridge path itself is live.
-  if (!surface.part11_header_module_bridge_runtime_generation_ready ||
-      !surface.part11_header_module_bridge_cross_module_packaging_ready) {
+  if (!surface.interop_header_module_bridge_runtime_generation_ready ||
+      !surface.interop_header_module_bridge_cross_module_packaging_ready) {
     return true;
   }
 
-  surface.part11_header_module_bridge_generation_present = true;
-  surface.part11_header_module_bridge_contract_id = std::move(contract_id);
-  surface.part11_header_module_bridge_source_contract_id =
+  surface.interop_header_module_bridge_generation_present = true;
+  surface.interop_header_module_bridge_contract_id = std::move(contract_id);
+  surface.interop_header_module_bridge_source_contract_id =
       std::move(source_contract_id);
-  surface.part11_header_module_bridge_preservation_contract_id =
+  surface.interop_header_module_bridge_preservation_contract_id =
       std::move(preservation_contract_id);
   return true;
 }
 
-bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
+bool PopulateImportedDispatchDispatchMetadataInterfacePreservation(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   const JsonValue *preservation_value = FindMember(
-      root, "objc_part9_dispatch_metadata_and_interface_preservation");
+      root, "objc_dispatch_dispatch_metadata_and_interface_preservation");
   if (preservation_value == nullptr) {
     return true;
   }
@@ -1329,7 +1329,7 @@ bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
   const JsonValue::Object *preservation_object = AsObject(*preservation_value);
   if (preservation_object == nullptr) {
     error =
-        "part9 dispatch metadata/interface preservation surface must be a JSON object";
+        "dispatch dispatch metadata/interface preservation surface must be a JSON object";
     return false;
   }
 
@@ -1340,49 +1340,49 @@ bool PopulateImportedPart9DispatchMetadataInterfacePreservation(
       !ReadStringMember(*preservation_object, "source_contract_id",
                         source_contract_id, error) ||
       !ReadBoolMember(*preservation_object, "runtime_import_artifact_ready",
-                      surface.part9_runtime_import_artifact_ready, error) ||
+                      surface.dispatch_runtime_import_artifact_ready, error) ||
       !ReadBoolMember(*preservation_object,
                       "separate_compilation_preservation_ready",
-                      surface.part9_separate_compilation_preservation_ready,
+                      surface.dispatch_separate_compilation_preservation_ready,
                       error) ||
       !ReadBoolMember(*preservation_object, "deterministic",
-                      surface.part9_deterministic, error) ||
+                      surface.dispatch_deterministic, error) ||
       !ReadStringMember(*preservation_object, "replay_key",
-                        surface.part9_replay_key, error) ||
+                        surface.dispatch_replay_key, error) ||
       !ReadStringMember(*preservation_object, "lowering_replay_key",
-                        surface.part9_lowering_replay_key, error) ||
+                        surface.dispatch_lowering_replay_key, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_direct_callable_record_count",
-                      surface.part9_local_direct_callable_record_count, error) ||
+                      surface.dispatch_local_direct_callable_record_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_final_callable_record_count",
-                      surface.part9_local_final_callable_record_count, error) ||
+                      surface.dispatch_local_final_callable_record_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_final_container_record_count",
-                      surface.part9_local_final_container_record_count, error) ||
+                      surface.dispatch_local_final_container_record_count, error) ||
       !ReadSizeMember(*preservation_object,
                       "local_sealed_container_record_count",
-                      surface.part9_local_sealed_container_record_count,
+                      surface.dispatch_local_sealed_container_record_count,
                       error)) {
     return false;
   }
 
   if (contract_id !=
-      "objc3c.part9.dispatch.metadata.interface.preservation.v1") {
+      "objc3c.dispatch.dispatch.metadata.interface.preservation.v1") {
     error =
         "unexpected Part 9 dispatch metadata/interface preservation contract id in import surface";
     return false;
   }
   if (source_contract_id !=
-      "objc3c.part9.dispatch.control.lowering.contract.v1") {
+      "objc3c.dispatch.dispatch.control.lowering.contract.v1") {
     error =
         "unexpected Part 9 dispatch metadata/interface preservation source contract id in import surface";
     return false;
   }
 
-  surface.part9_dispatch_metadata_interface_preservation_present = true;
-  surface.part9_contract_id = std::move(contract_id);
-  surface.part9_source_contract_id = std::move(source_contract_id);
+  surface.dispatch_dispatch_metadata_interface_preservation_present = true;
+  surface.dispatch_contract_id = std::move(contract_id);
+  surface.dispatch_source_contract_id = std::move(source_contract_id);
   return true;
 }
 
@@ -1853,38 +1853,38 @@ bool ParseImportedRuntimeModuleSurface(const JsonValue::Object &root,
                                       error)) {
     return false;
   }
-  if (!PopulateImportedPart3OptionalKeypathSurface(root, surface, error)) {
+  if (!PopulateImportedTypeSystemOptionalKeypathSurface(root, surface, error)) {
     return false;
   }
-  if (!PopulateImportedPart6ResultAndBridgingArtifactReplay(root, surface,
+  if (!PopulateImportedErrorHandlingResultAndBridgingArtifactReplay(root, surface,
                                                             error)) {
     return false;
   }
-  if (!PopulateImportedPart7ActorMailboxRuntimeImport(root, surface, error)) {
+  if (!PopulateImportedConcurrencyActorMailboxRuntimeImport(root, surface, error)) {
     return false;
   }
-  if (!PopulateImportedPart11ForeignSurfaceInterfacePreservation(root, surface,
+  if (!PopulateImportedInteropForeignSurfaceInterfacePreservation(root, surface,
                                                                  error)) {
     return false;
   }
-  if (!PopulateImportedPart11FfiMetadataInterfacePreservation(root, surface,
+  if (!PopulateImportedInteropFfiMetadataInterfacePreservation(root, surface,
                                                               error)) {
     return false;
   }
-  if (!PopulateImportedPart11HeaderModuleBridgeGeneration(root, surface,
+  if (!PopulateImportedInteropHeaderModuleBridgeGeneration(root, surface,
                                                           error)) {
     return false;
   }
-  if (!PopulateImportedPart10ModuleInterfaceReplayPreservation(root, surface,
+  if (!PopulateImportedMetaprogrammingModuleInterfaceReplayPreservation(root, surface,
                                                                error)) {
     return false;
   }
-  if (!PopulateImportedPart10MacroHostProcessCacheRuntimeIntegration(root,
+  if (!PopulateImportedMetaprogrammingMacroHostProcessCacheRuntimeIntegration(root,
                                                                      surface,
                                                                      error)) {
     return false;
   }
-  if (!PopulateImportedPart9DispatchMetadataInterfacePreservation(root, surface,
+  if (!PopulateImportedDispatchDispatchMetadataInterfacePreservation(root, surface,
                                                                   error)) {
     return false;
   }

@@ -1,0 +1,5 @@
+module MetaprogrammingHostProcessConsumer;
+
+fn main() -> i32 {
+  return 0;
+}

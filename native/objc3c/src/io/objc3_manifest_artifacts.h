@@ -18,7 +18,7 @@ std::filesystem::path BuildRuntimeMetadataDiscoveryArtifactPath(
 std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
-std::filesystem::path BuildPart6ResultBridgeArtifactReplayPath(
+std::filesystem::path BuildErrorHandlingResultBridgeArtifactReplayPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
 std::filesystem::path BuildVersionedConformanceReportArtifactPath(
@@ -54,16 +54,16 @@ std::filesystem::path BuildCrossModuleRuntimeLinkPlanArtifactPath(
 std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
-std::filesystem::path BuildPart10MacroHostProcessCacheArtifactPath(
+std::filesystem::path BuildMetaprogrammingMacroHostProcessCacheArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
-std::filesystem::path BuildPart11BridgeHeaderArtifactPath(
+std::filesystem::path BuildInteropBridgeHeaderArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
-std::filesystem::path BuildPart11BridgeModuleArtifactPath(
+std::filesystem::path BuildInteropBridgeModuleArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
-std::filesystem::path BuildPart11BridgeArtifactPath(
+std::filesystem::path BuildInteropBridgeArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
 
@@ -85,7 +85,7 @@ void WriteRuntimeAwareImportModuleArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);
-void WritePart6ResultBridgeArtifactReplay(
+void WriteErrorHandlingResultBridgeArtifactReplay(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);
@@ -132,19 +132,19 @@ void WriteCrossModuleRuntimeLinkerResponseArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &response_payload);
-void WritePart10MacroHostProcessCacheArtifact(
+void WriteMetaprogrammingMacroHostProcessCacheArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);
-void WritePart11BridgeHeaderArtifact(
+void WriteInteropBridgeHeaderArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_text);
-void WritePart11BridgeModuleArtifact(
+void WriteInteropBridgeModuleArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_text);
-void WritePart11BridgeArtifact(
+void WriteInteropBridgeArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json);

@@ -117,7 +117,7 @@ struct Objc3IRRuntimeMetadataIvarBundle {
   std::size_t executable_ivar_layout_alignment_bytes = 0;
 };
 
-struct Objc3IRPart10DerivedMethodBundle {
+struct Objc3IRMetaprogrammingDerivedMethodBundle {
   std::string implementation_name;
   std::string declaration_owner_identity;
   std::string export_owner_identity;
@@ -129,7 +129,7 @@ struct Objc3IRPart10DerivedMethodBundle {
   unsigned column = 1;
 };
 
-struct Objc3IRPart10MacroArtifactBundle {
+struct Objc3IRMetaprogrammingMacroArtifactBundle {
   std::string function_name;
   std::string macro_name;
   std::string package_name;
@@ -139,7 +139,7 @@ struct Objc3IRPart10MacroArtifactBundle {
   unsigned column = 1;
 };
 
-struct Objc3IRPart10PropertyBehaviorArtifactBundle {
+struct Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle {
   std::string owner_kind;
   std::string owner_name;
   std::string declaration_owner_identity;
@@ -800,7 +800,7 @@ struct Objc3IRFrontendMetadata {
   std::size_t cross_module_conformance_lowering_cache_invalidation_candidate_sites = 0;
   std::size_t cross_module_conformance_lowering_contract_violation_sites = 0;
   bool deterministic_cross_module_conformance_lowering_handoff = false;
-  std::string lowering_part6_throws_abi_propagation_replay_key;
+  std::string lowering_error_handling_throws_abi_propagation_replay_key;
   std::string lowering_throws_propagation_replay_key;
   std::string lowering_result_like_replay_key;
   bool deterministic_result_like_lowering_handoff = false;
@@ -834,12 +834,12 @@ struct Objc3IRFrontendMetadata {
   std::size_t unwind_cleanup_lowering_guard_blocked_sites = 0;
   std::size_t unwind_cleanup_lowering_contract_violation_sites = 0;
   bool deterministic_unwind_cleanup_lowering_handoff = false;
-  std::string lowering_part6_result_and_bridging_artifact_replay_key;
-  std::size_t imported_part6_result_and_bridging_artifact_modules = 0;
-  bool part6_result_and_bridging_binary_artifact_replay_ready = false;
-  bool part6_result_and_bridging_runtime_import_artifact_ready = false;
-  bool part6_result_and_bridging_separate_compilation_replay_ready = false;
-  bool deterministic_part6_result_and_bridging_artifact_replay_handoff = false;
+  std::string lowering_error_handling_result_and_bridging_artifact_replay_key;
+  std::size_t imported_error_handling_result_and_bridging_artifact_modules = 0;
+  bool error_handling_result_and_bridging_binary_artifact_replay_ready = false;
+  bool error_handling_result_and_bridging_runtime_import_artifact_ready = false;
+  bool error_handling_result_and_bridging_separate_compilation_replay_ready = false;
+  bool deterministic_error_handling_result_and_bridging_artifact_replay_handoff = false;
   std::string lowering_error_diagnostics_recovery_replay_key;
   std::size_t error_diagnostics_recovery_lowering_sites = 0;
   std::size_t
@@ -910,173 +910,173 @@ struct Objc3IRFrontendMetadata {
   std::size_t actor_lowering_metadata_guard_blocked_sites = 0;
   std::size_t actor_lowering_metadata_contract_violation_sites = 0;
   bool deterministic_actor_lowering_metadata_handoff = false;
-  std::string lowering_part9_dispatch_control_replay_key;
-  std::size_t part9_dispatch_control_lowering_direct_call_candidate_sites = 0;
-  std::size_t part9_dispatch_control_lowering_direct_members_defaulted_sites =
+  std::string lowering_dispatch_dispatch_control_replay_key;
+  std::size_t dispatch_dispatch_control_lowering_direct_call_candidate_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_direct_members_defaulted_sites =
       0;
-  std::size_t part9_dispatch_control_lowering_dynamic_opt_out_sites = 0;
-  std::size_t part9_dispatch_control_lowering_final_container_sites = 0;
-  std::size_t part9_dispatch_control_lowering_sealed_container_sites = 0;
-  std::size_t part9_dispatch_control_lowering_override_legality_sites = 0;
-  std::size_t part9_dispatch_control_lowering_metadata_preserved_callable_sites =
-      0;
-  std::size_t
-      part9_dispatch_control_lowering_metadata_preserved_container_sites = 0;
-  std::size_t part9_dispatch_control_lowering_guard_blocked_sites = 0;
-  std::size_t part9_dispatch_control_lowering_contract_violation_sites = 0;
-  bool deterministic_part9_dispatch_control_lowering_handoff = false;
-  std::string lowering_part11_interop_replay_key;
-  std::size_t part11_interop_lowering_foreign_callable_sites = 0;
-  std::size_t part11_interop_lowering_c_foreign_callable_sites = 0;
-  std::size_t part11_interop_lowering_objc_runtime_parity_callable_sites = 0;
-  std::size_t part11_interop_lowering_ownership_bridge_callable_sites = 0;
-  std::size_t part11_interop_lowering_error_surface_sites = 0;
-  std::size_t part11_interop_lowering_async_boundary_sites = 0;
-  std::size_t part11_interop_lowering_swift_concurrency_metadata_sites = 0;
-  std::size_t part11_interop_lowering_interface_preserved_foreign_callable_sites =
+  std::size_t dispatch_dispatch_control_lowering_dynamic_opt_out_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_final_container_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_sealed_container_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_override_legality_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_metadata_preserved_callable_sites =
       0;
   std::size_t
-      part11_interop_lowering_interface_preserved_metadata_annotation_sites = 0;
-  std::size_t part11_interop_lowering_guard_blocked_sites = 0;
-  std::size_t part11_interop_lowering_contract_violation_sites = 0;
-  bool deterministic_part11_interop_lowering_handoff = false;
-  std::string lowering_part11_foreign_call_lifetime_replay_key;
-  std::size_t part11_foreign_call_lifetime_lowering_foreign_callable_sites = 0;
-  std::size_t
-      part11_foreign_call_lifetime_lowering_c_foreign_callable_sites = 0;
-  std::size_t
-      part11_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites =
-          0;
-  std::size_t part11_foreign_call_lifetime_lowering_ownership_bridge_sites = 0;
-  std::size_t part11_foreign_call_lifetime_lowering_lifetime_bridge_sites = 0;
-  std::size_t
-      part11_foreign_call_lifetime_lowering_metadata_preservation_sites = 0;
-  std::size_t part11_foreign_call_lifetime_lowering_guard_blocked_sites = 0;
-  std::size_t
-      part11_foreign_call_lifetime_lowering_contract_violation_sites = 0;
-  bool deterministic_part11_foreign_call_lifetime_lowering_handoff = false;
-  std::string lowering_part11_ffi_metadata_interface_preservation_key;
-  std::size_t part11_ffi_metadata_interface_preservation_local_foreign_callable_count =
+      dispatch_dispatch_control_lowering_metadata_preserved_container_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_guard_blocked_sites = 0;
+  std::size_t dispatch_dispatch_control_lowering_contract_violation_sites = 0;
+  bool deterministic_dispatch_dispatch_control_lowering_handoff = false;
+  std::string lowering_interop_interop_replay_key;
+  std::size_t interop_interop_lowering_foreign_callable_sites = 0;
+  std::size_t interop_interop_lowering_c_foreign_callable_sites = 0;
+  std::size_t interop_interop_lowering_objc_runtime_parity_callable_sites = 0;
+  std::size_t interop_interop_lowering_ownership_bridge_callable_sites = 0;
+  std::size_t interop_interop_lowering_error_surface_sites = 0;
+  std::size_t interop_interop_lowering_async_boundary_sites = 0;
+  std::size_t interop_interop_lowering_swift_concurrency_metadata_sites = 0;
+  std::size_t interop_interop_lowering_interface_preserved_foreign_callable_sites =
       0;
   std::size_t
-      part11_ffi_metadata_interface_preservation_local_metadata_preservation_sites =
-          0;
+      interop_interop_lowering_interface_preserved_metadata_annotation_sites = 0;
+  std::size_t interop_interop_lowering_guard_blocked_sites = 0;
+  std::size_t interop_interop_lowering_contract_violation_sites = 0;
+  bool deterministic_interop_interop_lowering_handoff = false;
+  std::string lowering_interop_foreign_call_lifetime_replay_key;
+  std::size_t interop_foreign_call_lifetime_lowering_foreign_callable_sites = 0;
   std::size_t
-      part11_ffi_metadata_interface_preservation_local_interface_annotation_sites =
+      interop_foreign_call_lifetime_lowering_c_foreign_callable_sites = 0;
+  std::size_t
+      interop_foreign_call_lifetime_lowering_objc_runtime_parity_callable_sites =
           0;
-  std::size_t part11_ffi_metadata_interface_preservation_imported_module_count =
+  std::size_t interop_foreign_call_lifetime_lowering_ownership_bridge_sites = 0;
+  std::size_t interop_foreign_call_lifetime_lowering_lifetime_bridge_sites = 0;
+  std::size_t
+      interop_foreign_call_lifetime_lowering_metadata_preservation_sites = 0;
+  std::size_t interop_foreign_call_lifetime_lowering_guard_blocked_sites = 0;
+  std::size_t
+      interop_foreign_call_lifetime_lowering_contract_violation_sites = 0;
+  bool deterministic_interop_foreign_call_lifetime_lowering_handoff = false;
+  std::string lowering_interop_ffi_metadata_interface_preservation_key;
+  std::size_t interop_ffi_metadata_interface_preservation_local_foreign_callable_count =
       0;
   std::size_t
-      part11_ffi_metadata_interface_preservation_imported_foreign_callable_count =
+      interop_ffi_metadata_interface_preservation_local_metadata_preservation_sites =
           0;
   std::size_t
-      part11_ffi_metadata_interface_preservation_imported_metadata_preservation_sites =
+      interop_ffi_metadata_interface_preservation_local_interface_annotation_sites =
+          0;
+  std::size_t interop_ffi_metadata_interface_preservation_imported_module_count =
+      0;
+  std::size_t
+      interop_ffi_metadata_interface_preservation_imported_foreign_callable_count =
           0;
   std::size_t
-      part11_ffi_metadata_interface_preservation_imported_interface_annotation_sites =
+      interop_ffi_metadata_interface_preservation_imported_metadata_preservation_sites =
           0;
-  bool part11_ffi_metadata_interface_preservation_runtime_import_artifact_ready =
+  std::size_t
+      interop_ffi_metadata_interface_preservation_imported_interface_annotation_sites =
+          0;
+  bool interop_ffi_metadata_interface_preservation_runtime_import_artifact_ready =
       false;
-  bool part11_ffi_metadata_interface_preservation_separate_compilation_preservation_ready =
+  bool interop_ffi_metadata_interface_preservation_separate_compilation_preservation_ready =
       false;
-  bool deterministic_part11_ffi_metadata_interface_preservation_handoff =
+  bool deterministic_interop_ffi_metadata_interface_preservation_handoff =
       false;
-  std::string lowering_part11_header_module_bridge_generation_key;
-  std::string lowering_part10_expansion_replay_key;
-  std::size_t part10_expansion_lowering_derive_inventory_sites = 0;
-  std::size_t part10_expansion_lowering_derived_selector_artifact_sites = 0;
-  std::size_t part10_expansion_lowering_macro_replay_visible_sites = 0;
-  std::size_t part10_expansion_lowering_property_behavior_sites = 0;
-  std::size_t part10_expansion_lowering_synthesized_binding_sites = 0;
-  std::size_t part10_expansion_lowering_synthesized_getter_sites = 0;
-  std::size_t part10_expansion_lowering_synthesized_setter_sites = 0;
-  std::size_t part10_expansion_lowering_replay_visible_metadata_sites = 0;
-  std::size_t part10_expansion_lowering_guard_blocked_sites = 0;
-  std::size_t part10_expansion_lowering_contract_violation_sites = 0;
-  bool deterministic_part10_expansion_lowering_handoff = false;
-  std::string lowering_part10_synthesized_emission_replay_key;
-  std::size_t part10_synthesized_emitted_derive_method_sites = 0;
-  std::size_t part10_synthesized_emitted_macro_artifact_sites = 0;
-  std::size_t part10_synthesized_emitted_property_behavior_artifact_sites = 0;
-  std::size_t part10_synthesized_emitted_global_artifact_sites = 0;
-  std::size_t part10_synthesized_emitted_runtime_method_list_sites = 0;
-  std::size_t part10_synthesized_guard_blocked_sites = 0;
-  std::size_t part10_synthesized_contract_violation_sites = 0;
-  bool deterministic_part10_synthesized_emission_handoff = false;
-  std::vector<Objc3IRPart10DerivedMethodBundle>
-      part10_derived_method_bundles_lexicographic;
-  std::vector<Objc3IRPart10MacroArtifactBundle>
-      part10_macro_artifact_bundles_lexicographic;
-  std::vector<Objc3IRPart10PropertyBehaviorArtifactBundle>
-      part10_property_behavior_artifact_bundles_lexicographic;
-  std::string lowering_part10_module_interface_replay_preservation_key;
-  std::size_t part10_module_replay_local_derive_method_count = 0;
-  std::size_t part10_module_replay_local_macro_artifact_count = 0;
+  std::string lowering_interop_header_module_bridge_generation_key;
+  std::string lowering_metaprogramming_expansion_replay_key;
+  std::size_t metaprogramming_expansion_lowering_derive_inventory_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_derived_selector_artifact_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_macro_replay_visible_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_property_behavior_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_synthesized_binding_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_synthesized_getter_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_synthesized_setter_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_replay_visible_metadata_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_guard_blocked_sites = 0;
+  std::size_t metaprogramming_expansion_lowering_contract_violation_sites = 0;
+  bool deterministic_metaprogramming_expansion_lowering_handoff = false;
+  std::string lowering_metaprogramming_synthesized_emission_replay_key;
+  std::size_t metaprogramming_synthesized_emitted_derive_method_sites = 0;
+  std::size_t metaprogramming_synthesized_emitted_macro_artifact_sites = 0;
+  std::size_t metaprogramming_synthesized_emitted_property_behavior_artifact_sites = 0;
+  std::size_t metaprogramming_synthesized_emitted_global_artifact_sites = 0;
+  std::size_t metaprogramming_synthesized_emitted_runtime_method_list_sites = 0;
+  std::size_t metaprogramming_synthesized_guard_blocked_sites = 0;
+  std::size_t metaprogramming_synthesized_contract_violation_sites = 0;
+  bool deterministic_metaprogramming_synthesized_emission_handoff = false;
+  std::vector<Objc3IRMetaprogrammingDerivedMethodBundle>
+      metaprogramming_derived_method_bundles_lexicographic;
+  std::vector<Objc3IRMetaprogrammingMacroArtifactBundle>
+      metaprogramming_macro_artifact_bundles_lexicographic;
+  std::vector<Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle>
+      metaprogramming_property_behavior_artifact_bundles_lexicographic;
+  std::string lowering_metaprogramming_module_interface_replay_preservation_key;
+  std::size_t metaprogramming_module_replay_local_derive_method_count = 0;
+  std::size_t metaprogramming_module_replay_local_macro_artifact_count = 0;
   std::size_t
-      part10_module_replay_local_interface_property_behavior_artifact_count = 0;
+      metaprogramming_module_replay_local_interface_property_behavior_artifact_count = 0;
   std::size_t
-      part10_module_replay_local_implementation_property_behavior_artifact_count =
+      metaprogramming_module_replay_local_implementation_property_behavior_artifact_count =
           0;
-  std::size_t part10_module_replay_local_runtime_method_list_count = 0;
-  std::size_t part10_module_replay_imported_module_count = 0;
-  std::size_t part10_module_replay_imported_derive_method_count = 0;
-  std::size_t part10_module_replay_imported_macro_artifact_count = 0;
+  std::size_t metaprogramming_module_replay_local_runtime_method_list_count = 0;
+  std::size_t metaprogramming_module_replay_imported_module_count = 0;
+  std::size_t metaprogramming_module_replay_imported_derive_method_count = 0;
+  std::size_t metaprogramming_module_replay_imported_macro_artifact_count = 0;
   std::size_t
-      part10_module_replay_imported_interface_property_behavior_artifact_count =
+      metaprogramming_module_replay_imported_interface_property_behavior_artifact_count =
           0;
   std::size_t
-      part10_module_replay_imported_implementation_property_behavior_artifact_count =
+      metaprogramming_module_replay_imported_implementation_property_behavior_artifact_count =
           0;
-  std::size_t part10_module_replay_imported_runtime_method_list_count = 0;
-  bool part10_module_replay_runtime_import_artifact_ready = false;
-  bool part10_module_replay_separate_compilation_preservation_ready = false;
-  bool deterministic_part10_module_interface_replay_handoff = false;
-  std::string lowering_part9_dispatch_metadata_interface_preservation_key;
-  std::size_t part9_dispatch_metadata_local_direct_callable_record_count = 0;
-  std::size_t part9_dispatch_metadata_local_final_callable_record_count = 0;
-  std::size_t part9_dispatch_metadata_local_final_container_record_count = 0;
-  std::size_t part9_dispatch_metadata_local_sealed_container_record_count = 0;
-  std::size_t part9_dispatch_metadata_imported_module_count = 0;
-  std::size_t part9_dispatch_metadata_imported_direct_callable_record_count = 0;
-  std::size_t part9_dispatch_metadata_imported_final_callable_record_count = 0;
-  std::size_t part9_dispatch_metadata_imported_final_container_record_count = 0;
-  std::size_t part9_dispatch_metadata_imported_sealed_container_record_count = 0;
-  bool part9_dispatch_metadata_runtime_import_artifact_ready = false;
-  bool part9_dispatch_metadata_separate_compilation_preservation_ready = false;
-  bool deterministic_part9_dispatch_metadata_interface_handoff = false;
-  std::string lowering_part8_system_extension_replay_key;
-  std::size_t part8_system_extension_lowering_cleanup_hook_sites = 0;
-  std::size_t part8_system_extension_lowering_resource_local_sites = 0;
-  std::size_t part8_system_extension_lowering_cleanup_owned_local_sites = 0;
-  std::size_t part8_system_extension_lowering_resource_move_capture_sites = 0;
-  std::size_t part8_system_extension_lowering_borrowed_parameter_sites = 0;
+  std::size_t metaprogramming_module_replay_imported_runtime_method_list_count = 0;
+  bool metaprogramming_module_replay_runtime_import_artifact_ready = false;
+  bool metaprogramming_module_replay_separate_compilation_preservation_ready = false;
+  bool deterministic_metaprogramming_module_interface_replay_handoff = false;
+  std::string lowering_dispatch_dispatch_metadata_interface_preservation_key;
+  std::size_t dispatch_dispatch_metadata_local_direct_callable_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_local_final_callable_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_local_final_container_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_local_sealed_container_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_imported_module_count = 0;
+  std::size_t dispatch_dispatch_metadata_imported_direct_callable_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_imported_final_callable_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_imported_final_container_record_count = 0;
+  std::size_t dispatch_dispatch_metadata_imported_sealed_container_record_count = 0;
+  bool dispatch_dispatch_metadata_runtime_import_artifact_ready = false;
+  bool dispatch_dispatch_metadata_separate_compilation_preservation_ready = false;
+  bool deterministic_dispatch_dispatch_metadata_interface_handoff = false;
+  std::string lowering_ownership_system_extension_replay_key;
+  std::size_t ownership_system_extension_lowering_cleanup_hook_sites = 0;
+  std::size_t ownership_system_extension_lowering_resource_local_sites = 0;
+  std::size_t ownership_system_extension_lowering_cleanup_owned_local_sites = 0;
+  std::size_t ownership_system_extension_lowering_resource_move_capture_sites = 0;
+  std::size_t ownership_system_extension_lowering_borrowed_parameter_sites = 0;
   std::size_t
-      part8_system_extension_lowering_borrowed_return_callable_sites = 0;
+      ownership_system_extension_lowering_borrowed_return_callable_sites = 0;
   std::size_t
-      part8_system_extension_lowering_borrowed_escape_candidate_sites = 0;
-  std::size_t part8_system_extension_lowering_explicit_capture_item_sites = 0;
-  std::size_t part8_system_extension_lowering_retainable_family_callable_sites =
+      ownership_system_extension_lowering_borrowed_escape_candidate_sites = 0;
+  std::size_t ownership_system_extension_lowering_explicit_capture_item_sites = 0;
+  std::size_t ownership_system_extension_lowering_retainable_family_callable_sites =
       0;
   std::size_t
-      part8_system_extension_lowering_retainable_family_operation_callable_sites =
+      ownership_system_extension_lowering_retainable_family_operation_callable_sites =
           0;
   std::size_t
-      part8_system_extension_lowering_retainable_family_alias_callable_sites =
+      ownership_system_extension_lowering_retainable_family_alias_callable_sites =
           0;
-  std::size_t part8_system_extension_lowering_guard_blocked_sites = 0;
-  std::size_t part8_system_extension_lowering_contract_violation_sites = 0;
-  bool deterministic_part8_system_extension_lowering_handoff = false;
-  std::string part8_borrowed_retainable_abi_completion_replay_key;
-  std::size_t part8_borrowed_retainable_returns_borrowed_attribute_sites = 0;
-  std::size_t part8_borrowed_retainable_family_retain_sites = 0;
-  std::size_t part8_borrowed_retainable_family_release_sites = 0;
-  std::size_t part8_borrowed_retainable_family_autorelease_sites = 0;
+  std::size_t ownership_system_extension_lowering_guard_blocked_sites = 0;
+  std::size_t ownership_system_extension_lowering_contract_violation_sites = 0;
+  bool deterministic_ownership_system_extension_lowering_handoff = false;
+  std::string ownership_borrowed_retainable_abi_completion_replay_key;
+  std::size_t ownership_borrowed_retainable_returns_borrowed_attribute_sites = 0;
+  std::size_t ownership_borrowed_retainable_family_retain_sites = 0;
+  std::size_t ownership_borrowed_retainable_family_release_sites = 0;
+  std::size_t ownership_borrowed_retainable_family_autorelease_sites = 0;
   std::size_t
-      part8_borrowed_retainable_compatibility_returns_retained_sites = 0;
+      ownership_borrowed_retainable_compatibility_returns_retained_sites = 0;
   std::size_t
-      part8_borrowed_retainable_compatibility_returns_not_retained_sites = 0;
-  std::size_t part8_borrowed_retainable_compatibility_consumed_sites = 0;
-  bool deterministic_part8_borrowed_retainable_abi_completion_handoff = false;
+      ownership_borrowed_retainable_compatibility_returns_not_retained_sites = 0;
+  std::size_t ownership_borrowed_retainable_compatibility_consumed_sites = 0;
+  bool deterministic_ownership_borrowed_retainable_abi_completion_handoff = false;
   std::string lowering_task_runtime_interop_cancellation_replay_key;
   std::size_t task_runtime_interop_cancellation_lowering_sites = 0;
   std::size_t task_runtime_interop_cancellation_lowering_runtime_interop_sites =

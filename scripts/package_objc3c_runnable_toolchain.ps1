@@ -142,15 +142,15 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-  "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp",
-  "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-  "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-  "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
-  "tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp",
-  "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-  "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-  "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-  "tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3"
+  "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+  "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+  "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+  "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp",
+  "tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp",
+  "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+  "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+  "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+  "tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -161,7 +161,7 @@ foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles)) {
 }
 
 $manifestPayload = [ordered]@{
-  contract_id = "objc3c-runnable-build-install-run-package/m259-d002-v1"
+  contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-d002-v1"
   schema_version = 1
   package_model = "staged-runnable-toolchain-bundle-with-repo-relative-layout"
   install_model = "local-package-root-not-system-install"
@@ -175,17 +175,17 @@ $manifestPayload = [ordered]@{
   compile_proof_script = "scripts/run_objc3c_native_compile_proof.ps1"
   execution_smoke_script = "scripts/check_objc3c_native_execution_smoke.ps1"
   execution_replay_script = "scripts/check_objc3c_execution_replay_proof.ps1"
-  canonical_runnable_fixture = "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
+  canonical_runnable_fixture = "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3"
   runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
-  object_model_probe = "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp"
-  block_arc_fixture = "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3"
-  block_arc_runtime_abi_probe = "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp"
-  block_arc_byref_forwarding_probe = "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp"
-  storage_reflection_fixture = "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
-  storage_reflection_probe = "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp"
-  error_runtime_fixture = "tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3"
-  error_runtime_probe = "tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp"
+  object_model_probe = "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
+  block_arc_fixture = "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
+  block_arc_runtime_abi_probe = "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp"
+  block_arc_byref_forwarding_probe = "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp"
+  storage_reflection_fixture = "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
+  storage_reflection_probe = "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+  error_runtime_fixture = "tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3"
+  error_runtime_probe = "tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",

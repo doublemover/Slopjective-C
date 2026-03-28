@@ -5,8 +5,8 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$suiteRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract"
-$defaultRunId = "m143-sema-type-system-default"
+$suiteRoot = Join-Path $repoRoot "tmp/artifacts/compilation/objc3c-native/typed_abi/sema-pass-manager-diagnostics-bus-contract"
+$defaultRunId = "typed_abi-sema-type-system-default"
 $configuredRunId = $env:OBJC3C_SEMA_PASS_MANAGER_DIAG_BUS_CONTRACT_RUN_ID
 
 function Resolve-ValidatedRunId {
@@ -32,7 +32,7 @@ function Resolve-ValidatedRunId {
 $runId = Resolve-ValidatedRunId -ConfiguredRunId $configuredRunId -DefaultRunId $defaultRunId
 $runDir = Join-Path $suiteRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
-$runDirRel = "tmp/artifacts/compilation/objc3c-native/m143/sema-pass-manager-diagnostics-bus-contract/$runId"
+$runDirRel = "tmp/artifacts/compilation/objc3c-native/typed_abi/sema-pass-manager-diagnostics-bus-contract/$runId"
 $summaryRel = "$runDirRel/summary.json"
 
 $buildScriptPath = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"

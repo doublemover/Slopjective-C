@@ -1,4 +1,0 @@
-// Expected diagnostic code(s): O3S334.
-module Part11CppInteropOwnershipRejected;
-
-extern fn ownedBridge() -> id __attribute__((objc_cxx_name(named("OwnedBridge")), objc_header_name(named("OwnedBridge.hpp")), objc_family_retain(CoreThing), cf_returns_retained));

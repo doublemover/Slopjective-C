@@ -1188,7 +1188,7 @@ std::string Objc3RunnableBlockExecutionMatrixSummary() {
   return out.str();
 }
 
-std::string Objc3Part3OptionalKeypathLoweringSummary() {
+std::string Objc3TypeSystemOptionalKeypathLoweringSummary() {
   std::ostringstream out;
   // optional chaining lowering anchor: `?.member` now desugars onto
   // the same optional-send ABI and nil-short-circuit path already used by
@@ -1196,52 +1196,52 @@ std::string Objc3Part3OptionalKeypathLoweringSummary() {
   // optional-member access. The later lowering step now widens the same packet to cover
   // validated typed key-path descriptor emission and stable runtime handles
   // without claiming full key-path application/runtime evaluation yet.
-  out << "contract_id=" << kObjc3Part3OptionalKeypathLoweringContractId
+  out << "contract_id=" << kObjc3TypeSystemOptionalKeypathLoweringContractId
       << ";optional_model="
-      << kObjc3Part3OptionalKeypathLoweringOptionalModel
+      << kObjc3TypeSystemOptionalKeypathLoweringOptionalModel
       << ";typed_keypath_model="
-      << kObjc3Part3OptionalKeypathLoweringTypedKeypathModel
+      << kObjc3TypeSystemOptionalKeypathLoweringTypedKeypathModel
       << ";authority_model="
-      << kObjc3Part3OptionalKeypathLoweringAuthorityModel
+      << kObjc3TypeSystemOptionalKeypathLoweringAuthorityModel
       << ";fail_closed_model="
-      << kObjc3Part3OptionalKeypathLoweringFailClosedModel
+      << kObjc3TypeSystemOptionalKeypathLoweringFailClosedModel
       << ";lane_contract="
-      << kObjc3Part3OptionalKeypathLoweringLaneContract;
+      << kObjc3TypeSystemOptionalKeypathLoweringLaneContract;
   return out.str();
 }
 
-std::string Objc3Part5ControlFlowSafetyLoweringSummary() {
+std::string Objc3ControlFlowControlFlowSafetyLoweringSummary() {
   std::ostringstream out;
-  out << "contract_id=" << kObjc3Part5ControlFlowSafetyLoweringContractId
+  out << "contract_id=" << kObjc3ControlFlowControlFlowSafetyLoweringContractId
       << ";surface_path="
-      << kObjc3Part5ControlFlowSafetyLoweringSurfacePath
-      << ";guard_model=" << kObjc3Part5ControlFlowSafetyLoweringGuardModel
-      << ";match_model=" << kObjc3Part5ControlFlowSafetyLoweringMatchModel
-      << ";defer_model=" << kObjc3Part5ControlFlowSafetyLoweringDeferModel
+      << kObjc3ControlFlowControlFlowSafetyLoweringSurfacePath
+      << ";guard_model=" << kObjc3ControlFlowControlFlowSafetyLoweringGuardModel
+      << ";match_model=" << kObjc3ControlFlowControlFlowSafetyLoweringMatchModel
+      << ";defer_model=" << kObjc3ControlFlowControlFlowSafetyLoweringDeferModel
       << ";authority_model="
-      << kObjc3Part5ControlFlowSafetyLoweringAuthorityModel
+      << kObjc3ControlFlowControlFlowSafetyLoweringAuthorityModel
       << ";fail_closed_model="
-      << kObjc3Part5ControlFlowSafetyLoweringFailClosedModel
+      << kObjc3ControlFlowControlFlowSafetyLoweringFailClosedModel
       << ";lane_contract="
-      << kObjc3Part5ControlFlowSafetyLoweringLaneContract;
+      << kObjc3ControlFlowControlFlowSafetyLoweringLaneContract;
   return out.str();
 }
 
-std::string Objc3Part3OptionalKeypathRuntimeHelperContractSummary() {
+std::string Objc3TypeSystemOptionalKeypathRuntimeHelperContractSummary() {
   std::ostringstream out;
   // live-optional-send-and-keypath-runtime-support anchor: optional
   // sends stay on the public selector lookup/dispatch ABI while validated
   // single-component typed key-path handles now feed the private runtime
   // registry/testing helper surface without falsely claiming full
   // multi-component key-path evaluation.
-  out << "contract_id=" << kObjc3Part3OptionalKeypathRuntimeHelperContractId
-      << ";surface_path=" << kObjc3Part3OptionalKeypathRuntimeHelperSurfacePath
+  out << "contract_id=" << kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId
+      << ";surface_path=" << kObjc3TypeSystemOptionalKeypathRuntimeHelperSurfacePath
       << ";optional_model="
-      << kObjc3Part3OptionalKeypathRuntimeHelperOptionalModel
+      << kObjc3TypeSystemOptionalKeypathRuntimeHelperOptionalModel
       << ";typed_keypath_model="
-      << kObjc3Part3OptionalKeypathRuntimeHelperTypedKeypathModel
+      << kObjc3TypeSystemOptionalKeypathRuntimeHelperTypedKeypathModel
       << ";diagnostic_model="
-      << kObjc3Part3OptionalKeypathRuntimeHelperDiagnosticModel
+      << kObjc3TypeSystemOptionalKeypathRuntimeHelperDiagnosticModel
       << ";lookup_selector_symbol="
       << kObjc3RuntimeSupportLibraryLookupSelectorSymbol
       << ";dispatch_i32_symbol="
@@ -1412,7 +1412,7 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
   return out.str();
 }
 
-std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
+std::string Objc3ErrorHandlingThrowsAbiPropagationLoweringSummary() {
   std::ostringstream out;
   // Part 6 lowering freeze anchor: lane-C first froze the combined
   // throws ABI and propagation packet before the runnable implementation
@@ -1421,106 +1421,106 @@ std::string Objc3Part6ThrowsAbiPropagationLoweringSummary() {
   // the runnable hidden error-out ABI, propagation operators, status/NSError
   // bridge propagation, and do/catch control-flow in real native IR/object
   // artifacts while deferring the D001 runtime-helper contract tranche.
-  out << "contract=" << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+  out << "contract=" << kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId
       << ";source_model="
-      << kObjc3Part6ThrowsAbiPropagationLoweringSourceModel
-      << ";abi_model=" << kObjc3Part6ThrowsAbiPropagationLoweringAbiModel
-      << ";part6_semantic_contract="
-      << kObjc3Part6ErrorSemanticModelContractId
-      << ";part6_try_semantic_contract="
-      << kObjc3Part6TryDoCatchSemanticSummaryContractId
-      << ";part6_bridge_legality_contract="
-      << kObjc3Part6ErrorBridgeLegalitySummaryContractId
+      << kObjc3ErrorHandlingThrowsAbiPropagationLoweringSourceModel
+      << ";abi_model=" << kObjc3ErrorHandlingThrowsAbiPropagationLoweringAbiModel
+      << ";error_handling_semantic_contract="
+      << kObjc3ErrorHandlingErrorSemanticModelContractId
+      << ";error_handling_try_semantic_contract="
+      << kObjc3ErrorHandlingTryDoCatchSemanticSummaryContractId
+      << ";error_handling_bridge_legality_contract="
+      << kObjc3ErrorHandlingErrorBridgeLegalitySummaryContractId
       << ";throws_lane=" << kObjc3ThrowsPropagationLoweringLaneContract
       << ";result_like_lane=" << kObjc3ResultLikeLoweringLaneContract
       << ";ns_error_lane=" << kObjc3NSErrorBridgingLoweringLaneContract
       << ";unwind_lane=" << kObjc3UnwindCleanupLoweringLaneContract
       << ";fail_closed_model="
-      << kObjc3Part6ThrowsAbiPropagationLoweringFailClosedModel
+      << kObjc3ErrorHandlingThrowsAbiPropagationLoweringFailClosedModel
       << ";non_goal_model="
-      << kObjc3Part6ThrowsAbiPropagationLoweringNonGoalModel
+      << kObjc3ErrorHandlingThrowsAbiPropagationLoweringNonGoalModel
       << ";next_issue=M267-C003";
   return out.str();
 }
 
-std::string Objc3Part6ResultAndBridgingArtifactReplaySummary() {
+std::string Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary() {
   std::ostringstream out;
   // Part 6 replay-completion anchor: lane-C now extends the live
   // C002 lowering surface with deterministic replay artifacts that survive
   // object emission, manifest emission, and emitted sidecar publication so
   // separate provider/consumer compilation can prove preserved result/bridge
   // metadata without claiming import-surface ingestion yet.
-  out << "contract=" << kObjc3Part6ResultAndBridgingArtifactReplayContractId
+  out << "contract=" << kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId
       << ";source_contract="
-      << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+      << kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId
       << ";source_model="
-      << kObjc3Part6ResultAndBridgingArtifactReplaySourceModel
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplaySourceModel
       << ";replay_model="
-      << kObjc3Part6ResultAndBridgingArtifactReplayModel
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayModel
       << ";surface_path="
-      << kObjc3Part6ResultAndBridgingArtifactReplaySurfacePath
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplaySurfacePath
       << ";artifact_member="
-      << kObjc3Part6ResultAndBridgingArtifactReplayImportArtifactMemberName
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayImportArtifactMemberName
       << ";artifact_suffix="
-      << kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayArtifactSuffix
       << ";fail_closed_model="
-      << kObjc3Part6ResultAndBridgingArtifactReplayFailClosedModel
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayFailClosedModel
       << ";next_issue=M267-D001";
   return out.str();
 }
 
-std::string Objc3Part6ErrorRuntimeBridgeHelperSummary() {
+std::string Objc3ErrorHandlingErrorRuntimeBridgeHelperSummary() {
   std::ostringstream out;
   // error-runtime/bridge-helper anchor: lane-D freezes the first
   // real private runtime helper ABI consumed by the runnable Part 6 lowering
   // so thrown-error storage, bridge normalization, and do/catch dispatch stop
   // pretending raw local slots are the runtime boundary.
-  out << "contract=" << kObjc3Part6ErrorRuntimeBridgeHelperContractId
-      << ";source_contract=" << kObjc3Part6ThrowsAbiPropagationLoweringContractId
+  out << "contract=" << kObjc3ErrorHandlingErrorRuntimeBridgeHelperContractId
+      << ";source_contract=" << kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId
       << ";replay_contract="
-      << kObjc3Part6ResultAndBridgingArtifactReplayContractId
-      << ";source_model=" << kObjc3Part6ErrorRuntimeBridgeHelperSourceModel
-      << ";abi_model=" << kObjc3Part6ErrorRuntimeBridgeHelperAbiModel
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId
+      << ";source_model=" << kObjc3ErrorHandlingErrorRuntimeBridgeHelperSourceModel
+      << ";abi_model=" << kObjc3ErrorHandlingErrorRuntimeBridgeHelperAbiModel
       << ";store_symbol=" << kObjc3RuntimeStoreThrownErrorI32Symbol
       << ";load_symbol=" << kObjc3RuntimeLoadThrownErrorI32Symbol
       << ";status_bridge_symbol=" << kObjc3RuntimeBridgeStatusErrorI32Symbol
       << ";nserror_bridge_symbol=" << kObjc3RuntimeBridgeNSErrorErrorI32Symbol
       << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
       << ";fail_closed_model="
-      << kObjc3Part6ErrorRuntimeBridgeHelperFailClosedModel
+      << kObjc3ErrorHandlingErrorRuntimeBridgeHelperFailClosedModel
       << ";next_issue=M267-D002";
   return out.str();
 }
 
-std::string Objc3Part6LiveErrorRuntimeIntegrationSummary() {
+std::string Objc3ErrorHandlingLiveErrorRuntimeIntegrationSummary() {
   std::ostringstream out;
   // live catch/bridge/runtime integration anchor: lane-D now proves
   // the runnable Part 6 lowering does not just mention the private helper ABI;
   // linked native object code executes through that helper cluster and the
   // existing runtime-library packaging path remains sufficient for the current
   // supported error/bridge slice.
-  out << "contract=" << kObjc3Part6LiveErrorRuntimeIntegrationContractId
-      << ";helper_contract=" << kObjc3Part6ErrorRuntimeBridgeHelperContractId
+  out << "contract=" << kObjc3ErrorHandlingLiveErrorRuntimeIntegrationContractId
+      << ";helper_contract=" << kObjc3ErrorHandlingErrorRuntimeBridgeHelperContractId
       << ";replay_contract="
-      << kObjc3Part6ResultAndBridgingArtifactReplayContractId
+      << kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId
       << ";source_model="
-      << kObjc3Part6LiveErrorRuntimeIntegrationSourceModel
+      << kObjc3ErrorHandlingLiveErrorRuntimeIntegrationSourceModel
       << ";execution_model="
-      << kObjc3Part6LiveErrorRuntimeIntegrationExecutionModel
+      << kObjc3ErrorHandlingLiveErrorRuntimeIntegrationExecutionModel
       << ";packaging_model="
-      << kObjc3Part6LiveErrorRuntimeIntegrationPackagingModel
+      << kObjc3ErrorHandlingLiveErrorRuntimeIntegrationPackagingModel
       << ";store_symbol=" << kObjc3RuntimeStoreThrownErrorI32Symbol
       << ";load_symbol=" << kObjc3RuntimeLoadThrownErrorI32Symbol
       << ";status_bridge_symbol=" << kObjc3RuntimeBridgeStatusErrorI32Symbol
       << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_error_bridge_state_for_testing"
       << ";fail_closed_model="
-      << kObjc3Part6LiveErrorRuntimeIntegrationFailClosedModel
+      << kObjc3ErrorHandlingLiveErrorRuntimeIntegrationFailClosedModel
       << ";next_issue=M267-D003";
   return out.str();
 }
 
-std::string Objc3Part8SystemHelperRuntimeContractSummary() {
+std::string Objc3OwnershipSystemHelperRuntimeContractSummary() {
   std::ostringstream out;
   // runtime/helper-freeze anchor: lane-D freezes the currently
   // supported Part 8 runtime/helper proof as a reuse boundary over the private
@@ -1529,13 +1529,13 @@ std::string Objc3Part8SystemHelperRuntimeContractSummary() {
   // autoreleasepool state; retainable-family helper integration rides the same
   // retain/release/autorelease entrypoints; no public runtime ABI widening or
   // new Part 8 import surface is claimed here.
-  out << "contract=" << kObjc3Part8SystemHelperRuntimeContractId
-      << ";source_contract=" << kObjc3Part8SystemExtensionLoweringContractId
+  out << "contract=" << kObjc3OwnershipSystemHelperRuntimeContractId
+      << ";source_contract=" << kObjc3OwnershipSystemExtensionLoweringContractId
       << ";abi_completion_contract="
-      << kObjc3Part8BorrowedRetainableAbiCompletionContractId
-      << ";source_model=" << kObjc3Part8SystemHelperRuntimeSourceModel
-      << ";abi_model=" << kObjc3Part8SystemHelperRuntimeAbiModel
-      << ";packaging_model=" << kObjc3Part8SystemHelperRuntimePackagingModel
+      << kObjc3OwnershipBorrowedRetainableAbiCompletionContractId
+      << ";source_model=" << kObjc3OwnershipSystemHelperRuntimeSourceModel
+      << ";abi_model=" << kObjc3OwnershipSystemHelperRuntimeAbiModel
+      << ";packaging_model=" << kObjc3OwnershipSystemHelperRuntimePackagingModel
       << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
       << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
       << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
@@ -1547,28 +1547,28 @@ std::string Objc3Part8SystemHelperRuntimeContractSummary() {
       << "objc3_runtime_copy_memory_management_state_for_testing"
       << ";arc_debug_snapshot_symbol="
       << "objc3_runtime_copy_arc_debug_state_for_testing"
-      << ";fail_closed_model=" << kObjc3Part8SystemHelperRuntimeFailClosedModel
+      << ";fail_closed_model=" << kObjc3OwnershipSystemHelperRuntimeFailClosedModel
       << ";next_issue=M271-D002";
   return out.str();
 }
 
-std::string Objc3Part8LiveCleanupRetainableIntegrationSummary() {
+std::string Objc3OwnershipLiveCleanupRetainableIntegrationSummary() {
   std::ostringstream out;
   // live runtime-integration anchor: the supported Part 8 cleanup /
   // retainable-family slice now proves linked execution through emitted
   // scope-exit cleanup calls and the private ARC/autorelease helper cluster
   // frozen in D001. This remains a narrow executable slice, not a broader
   // borrowed-lifetime or escaping-ownership runtime claim.
-  out << "contract=" << kObjc3Part8LiveCleanupRetainableIntegrationContractId
-      << ";helper_contract=" << kObjc3Part8SystemHelperRuntimeContractId
+  out << "contract=" << kObjc3OwnershipLiveCleanupRetainableIntegrationContractId
+      << ";helper_contract=" << kObjc3OwnershipSystemHelperRuntimeContractId
       << ";abi_completion_contract="
-      << kObjc3Part8BorrowedRetainableAbiCompletionContractId
+      << kObjc3OwnershipBorrowedRetainableAbiCompletionContractId
       << ";source_model="
-      << kObjc3Part8LiveCleanupRetainableIntegrationSourceModel
+      << kObjc3OwnershipLiveCleanupRetainableIntegrationSourceModel
       << ";execution_model="
-      << kObjc3Part8LiveCleanupRetainableIntegrationExecutionModel
+      << kObjc3OwnershipLiveCleanupRetainableIntegrationExecutionModel
       << ";packaging_model="
-      << kObjc3Part8LiveCleanupRetainableIntegrationPackagingModel
+      << kObjc3OwnershipLiveCleanupRetainableIntegrationPackagingModel
       << ";retain_symbol=" << kObjc3RuntimeRetainI32Symbol
       << ";release_symbol=" << kObjc3RuntimeReleaseI32Symbol
       << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
@@ -1581,29 +1581,29 @@ std::string Objc3Part8LiveCleanupRetainableIntegrationSummary() {
       << ";arc_debug_snapshot_symbol="
       << "objc3_runtime_copy_arc_debug_state_for_testing"
       << ";fail_closed_model="
-      << kObjc3Part8LiveCleanupRetainableIntegrationFailClosedModel
+      << kObjc3OwnershipLiveCleanupRetainableIntegrationFailClosedModel
       << ";next_issue=M271-D003";
   return out.str();
 }
 
-std::string Objc3Part7ContinuationRuntimeHelperSummary() {
+std::string Objc3ConcurrencyContinuationRuntimeHelperSummary() {
   std::ostringstream out;
   // continuation/runtime-helper anchor: lane-D freezes the first
   // real private Part 7 helper ABI. The helper cluster now allocates logical
   // continuation handles and supports deterministic handoff/resume probes even
   // though the current direct-call async lowering slice still does not consume
   // those helpers for live suspension.
-  out << "contract=" << kObjc3Part7ContinuationRuntimeHelperContractId
+  out << "contract=" << kObjc3ConcurrencyContinuationRuntimeHelperContractId
       << ";source_contract="
-      << "objc3c.part7.continuation.abi.async.lowering.contract.v1"
+      << "objc3c.concurrency.continuation.abi.async.lowering.contract.v1"
       << ";direct_call_contract="
-      << "objc3c.part7.async.direct.call.lowering.v1"
+      << "objc3c.concurrency.async.direct.call.lowering.v1"
       << ";cleanup_contract="
-      << "objc3c.part7.suspension.autorelease.cleanup.integration.v1"
-      << ";source_model=" << kObjc3Part7ContinuationRuntimeHelperSourceModel
-      << ";abi_model=" << kObjc3Part7ContinuationRuntimeHelperAbiModel
+      << "objc3c.concurrency.suspension.autorelease.cleanup.integration.v1"
+      << ";source_model=" << kObjc3ConcurrencyContinuationRuntimeHelperSourceModel
+      << ";abi_model=" << kObjc3ConcurrencyContinuationRuntimeHelperAbiModel
       << ";execution_model="
-      << kObjc3Part7ContinuationRuntimeHelperExecutionModel
+      << kObjc3ConcurrencyContinuationRuntimeHelperExecutionModel
       << ";allocate_symbol="
       << kObjc3RuntimeAllocateAsyncContinuationI32Symbol
       << ";handoff_symbol="
@@ -1611,28 +1611,28 @@ std::string Objc3Part7ContinuationRuntimeHelperSummary() {
       << ";resume_symbol=" << kObjc3RuntimeResumeAsyncContinuationI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
       << ";fail_closed_model="
-      << kObjc3Part7ContinuationRuntimeHelperFailClosedModel
+      << kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel
       << ";next_issue=M268-D002";
   return out.str();
 }
 
-std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary() {
+std::string Objc3ConcurrencyLiveContinuationRuntimeIntegrationSummary() {
   std::ostringstream out;
   // live continuation/runtime integration anchor: the supported
   // non-suspending async slice now executes through the private continuation
   // helper cluster rather than merely advertising its ABI boundary in IR.
-  out << "contract=" << kObjc3Part7LiveContinuationRuntimeIntegrationContractId
-      << ";helper_contract=" << kObjc3Part7ContinuationRuntimeHelperContractId
+  out << "contract=" << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationContractId
+      << ";helper_contract=" << kObjc3ConcurrencyContinuationRuntimeHelperContractId
       << ";direct_call_contract="
-      << "objc3c.part7.async.direct.call.lowering.v1"
+      << "objc3c.concurrency.async.direct.call.lowering.v1"
       << ";cleanup_contract="
-      << "objc3c.part7.suspension.autorelease.cleanup.integration.v1"
+      << "objc3c.concurrency.suspension.autorelease.cleanup.integration.v1"
       << ";source_model="
-      << kObjc3Part7LiveContinuationRuntimeIntegrationSourceModel
+      << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationSourceModel
       << ";execution_model="
-      << kObjc3Part7LiveContinuationRuntimeIntegrationExecutionModel
+      << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationExecutionModel
       << ";packaging_model="
-      << kObjc3Part7LiveContinuationRuntimeIntegrationPackagingModel
+      << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationPackagingModel
       << ";allocate_symbol="
       << kObjc3RuntimeAllocateAsyncContinuationI32Symbol
       << ";handoff_symbol="
@@ -1640,48 +1640,48 @@ std::string Objc3Part7LiveContinuationRuntimeIntegrationSummary() {
       << ";resume_symbol=" << kObjc3RuntimeResumeAsyncContinuationI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
       << ";fail_closed_model="
-      << kObjc3Part7LiveContinuationRuntimeIntegrationFailClosedModel
+      << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationFailClosedModel
       << ";next_issue=M268-D003";
   return out.str();
 }
 
-std::string Objc3Part7SchedulerExecutorRuntimeSummary() {
+std::string Objc3ConcurrencySchedulerExecutorRuntimeSummary() {
   std::ostringstream out;
-  out << "contract=" << kObjc3Part7SchedulerExecutorRuntimeContractId
-      << ";source_model=" << kObjc3Part7SchedulerExecutorRuntimeSourceModel
-      << ";abi_model=" << kObjc3Part7SchedulerExecutorRuntimeAbiModel
+  out << "contract=" << kObjc3ConcurrencySchedulerExecutorRuntimeContractId
+      << ";source_model=" << kObjc3ConcurrencySchedulerExecutorRuntimeSourceModel
+      << ";abi_model=" << kObjc3ConcurrencySchedulerExecutorRuntimeAbiModel
       << ";execution_model="
-      << kObjc3Part7SchedulerExecutorRuntimeExecutionModel
+      << kObjc3ConcurrencySchedulerExecutorRuntimeExecutionModel
       << ";packaging_model="
-      << kObjc3Part7SchedulerExecutorRuntimePackagingModel
+      << kObjc3ConcurrencySchedulerExecutorRuntimePackagingModel
       << ";helper_cluster="
       << "spawn_task,enter_task_group_scope,add_task_group_task,"
          "wait_task_group_next,cancel_task_group,task_is_cancelled,"
          "task_on_cancel,executor_hop"
       << ";snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
       << ";fail_closed_model="
-      << kObjc3Part7SchedulerExecutorRuntimeFailClosedModel
+      << kObjc3ConcurrencySchedulerExecutorRuntimeFailClosedModel
       << ";next_issue=M269-D002";
   return out.str();
 }
 
-std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
+std::string Objc3ConcurrencyLiveTaskRuntimeIntegrationSummary() {
   std::ostringstream out;
   // live task runtime anchor: the private helper cluster frozen in
   // D001 now serves as a live execution surface for the supported task spawn,
   // task-group, cancellation, and executor-hop slice rather than only an ABI
   // contract. Front-door metadata export gates remain deferred outside D002.
-  out << "contract=" << kObjc3Part7LiveTaskRuntimeIntegrationContractId
-      << ";helper_contract=" << kObjc3Part7SchedulerExecutorRuntimeContractId
+  out << "contract=" << kObjc3ConcurrencyLiveTaskRuntimeIntegrationContractId
+      << ";helper_contract=" << kObjc3ConcurrencySchedulerExecutorRuntimeContractId
       << ";lowering_contract="
-      << "objc3c.part7.task.runtime.lowering.implementation.v1"
+      << "objc3c.concurrency.task.runtime.lowering.implementation.v1"
       << ";abi_contract="
-      << "objc3c.part7.task.runtime.abi.completion.v1"
-      << ";source_model=" << kObjc3Part7LiveTaskRuntimeIntegrationSourceModel
+      << "objc3c.concurrency.task.runtime.abi.completion.v1"
+      << ";source_model=" << kObjc3ConcurrencyLiveTaskRuntimeIntegrationSourceModel
       << ";execution_model="
-      << kObjc3Part7LiveTaskRuntimeIntegrationExecutionModel
+      << kObjc3ConcurrencyLiveTaskRuntimeIntegrationExecutionModel
       << ";packaging_model="
-      << kObjc3Part7LiveTaskRuntimeIntegrationPackagingModel
+      << kObjc3ConcurrencyLiveTaskRuntimeIntegrationPackagingModel
       << ";spawn_symbol=" << kObjc3RuntimeSpawnTaskI32Symbol
       << ";scope_symbol=" << kObjc3RuntimeEnterTaskGroupScopeI32Symbol
       << ";add_symbol=" << kObjc3RuntimeAddTaskGroupTaskI32Symbol
@@ -1692,29 +1692,29 @@ std::string Objc3Part7LiveTaskRuntimeIntegrationSummary() {
       << ";executor_hop_symbol=" << kObjc3RuntimeExecutorHopI32Symbol
       << ";snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
       << ";fail_closed_model="
-      << kObjc3Part7LiveTaskRuntimeIntegrationFailClosedModel
+      << kObjc3ConcurrencyLiveTaskRuntimeIntegrationFailClosedModel
       << ";next_issue=M269-D003";
   return out.str();
 }
 
-std::string Objc3Part7TaskRuntimeHardeningSummary() {
+std::string Objc3ConcurrencyTaskRuntimeHardeningSummary() {
   std::ostringstream out;
   // hardening anchor: live task helper execution now carries one
   // explicit edge-case/runtime-stability packet for cancellation cleanup,
   // autorelease scopes, and reset-stable replay proof.
-  out << "contract=" << kObjc3Part7TaskRuntimeHardeningContractId
+  out << "contract=" << kObjc3ConcurrencyTaskRuntimeHardeningContractId
       << ";live_runtime_contract="
-      << kObjc3Part7LiveTaskRuntimeIntegrationContractId
-      << ";source_model=" << kObjc3Part7TaskRuntimeHardeningSourceModel
-      << ";execution_model=" << kObjc3Part7TaskRuntimeHardeningExecutionModel
-      << ";packaging_model=" << kObjc3Part7TaskRuntimeHardeningPackagingModel
+      << kObjc3ConcurrencyLiveTaskRuntimeIntegrationContractId
+      << ";source_model=" << kObjc3ConcurrencyTaskRuntimeHardeningSourceModel
+      << ";execution_model=" << kObjc3ConcurrencyTaskRuntimeHardeningExecutionModel
+      << ";packaging_model=" << kObjc3ConcurrencyTaskRuntimeHardeningPackagingModel
       << ";reset_symbol=objc3_runtime_reset_for_testing"
       << ";task_snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
       << ";memory_snapshot_symbol=objc3_runtime_copy_memory_management_state_for_testing"
       << ";arc_snapshot_symbol=objc3_runtime_copy_arc_debug_state_for_testing"
       << ";push_scope_symbol=" << kObjc3RuntimePushAutoreleasepoolScopeSymbol
       << ";pop_scope_symbol=" << kObjc3RuntimePopAutoreleasepoolScopeSymbol
-      << ";fail_closed_model=" << kObjc3Part7TaskRuntimeHardeningFailClosedModel
+      << ";fail_closed_model=" << kObjc3ConcurrencyTaskRuntimeHardeningFailClosedModel
       << ";next_issue=M269-E001";
   return out.str();
 }
@@ -2277,17 +2277,17 @@ std::string Objc3VersionedConformanceReportLoweringContractSummary() {
   return out.str();
 }
 
-std::string Objc3Part12MachineReadableConformanceReportContractLoweringSummary() {
+std::string Objc3ToolingMachineReadableConformanceReportContractLoweringSummary() {
   std::ostringstream out;
-  out << "contract=" << kObjc3Part12MachineReadableConformanceReportContractId
+  out << "contract=" << kObjc3ToolingMachineReadableConformanceReportContractId
       << ";dependency_contract_id="
-      << kObjc3Part12MachineReadableConformanceReportDependencyContractId
+      << kObjc3ToolingMachineReadableConformanceReportDependencyContractId
       << ";surface_path="
-      << kObjc3Part12MachineReadableConformanceReportSurfacePath
+      << kObjc3ToolingMachineReadableConformanceReportSurfacePath
       << ";payload_model="
-      << kObjc3Part12MachineReadableConformanceReportPayloadModel
+      << kObjc3ToolingMachineReadableConformanceReportPayloadModel
       << ";authority_model="
-      << kObjc3Part12MachineReadableConformanceReportAuthorityModel
+      << kObjc3ToolingMachineReadableConformanceReportAuthorityModel
       << ";artifact_suffix="
       << kObjc3VersionedConformanceReportLoweringArtifactSuffix
       << ";artifact_schema_id="
@@ -2298,35 +2298,35 @@ std::string Objc3Part12MachineReadableConformanceReportContractLoweringSummary()
   return out.str();
 }
 
-std::string Objc3Part12FeatureAwareConformanceReportEmissionLoweringSummary() {
+std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary() {
   std::ostringstream out;
-  out << "contract=" << kObjc3Part12FeatureAwareConformanceReportEmissionContractId
+  out << "contract=" << kObjc3ToolingFeatureAwareConformanceReportEmissionContractId
       << ";dependency_contract_id="
-      << kObjc3Part12FeatureAwareConformanceReportEmissionDependencyContractId
+      << kObjc3ToolingFeatureAwareConformanceReportEmissionDependencyContractId
       << ";surface_path="
-      << kObjc3Part12FeatureAwareConformanceReportEmissionSurfacePath
+      << kObjc3ToolingFeatureAwareConformanceReportEmissionSurfacePath
       << ";payload_model="
-      << kObjc3Part12FeatureAwareConformanceReportEmissionPayloadModel
+      << kObjc3ToolingFeatureAwareConformanceReportEmissionPayloadModel
       << ";authority_model="
-      << kObjc3Part12FeatureAwareConformanceReportEmissionAuthorityModel
+      << kObjc3ToolingFeatureAwareConformanceReportEmissionAuthorityModel
       << ";artifact_suffix="
       << kObjc3VersionedConformanceReportLoweringArtifactSuffix
       << ";non_goals=no-second-report-sidecar-or-report-authority";
   return out.str();
 }
 
-std::string Objc3Part12CorpusShardingReleaseEvidencePackagingLoweringSummary() {
+std::string Objc3ToolingCorpusShardingReleaseEvidencePackagingLoweringSummary() {
   std::ostringstream out;
   out << "contract="
-      << kObjc3Part12CorpusShardingReleaseEvidencePackagingContractId
+      << kObjc3ToolingCorpusShardingReleaseEvidencePackagingContractId
       << ";dependency_contract_id="
-      << kObjc3Part12CorpusShardingReleaseEvidencePackagingDependencyContractId
+      << kObjc3ToolingCorpusShardingReleaseEvidencePackagingDependencyContractId
       << ";surface_path="
-      << kObjc3Part12CorpusShardingReleaseEvidencePackagingSurfacePath
+      << kObjc3ToolingCorpusShardingReleaseEvidencePackagingSurfacePath
       << ";payload_model="
-      << kObjc3Part12CorpusShardingReleaseEvidencePackagingPayloadModel
+      << kObjc3ToolingCorpusShardingReleaseEvidencePackagingPayloadModel
       << ";authority_model="
-      << kObjc3Part12CorpusShardingReleaseEvidencePackagingAuthorityModel
+      << kObjc3ToolingCorpusShardingReleaseEvidencePackagingAuthorityModel
       << ";artifact_suffix="
       << kObjc3VersionedConformanceReportLoweringArtifactSuffix
       << ";non_goals=no-second-release-evidence-sidecar-or-driver-only-shard-truth";
@@ -3435,8 +3435,8 @@ std::string Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
          ";lane_contract=" + kObjc3BlockDeterminismPerfBaselineLoweringLaneContract;
 }
 
-bool IsValidObjc3Part3OptionalKeypathLoweringContract(
-    const Objc3Part3OptionalKeypathLoweringContract &contract) {
+bool IsValidObjc3TypeSystemOptionalKeypathLoweringContract(
+    const Objc3TypeSystemOptionalKeypathLoweringContract &contract) {
   if (contract.optional_binding_clause_sites > contract.optional_binding_sites ||
       contract.typed_keypath_self_root_sites >
           contract.typed_keypath_literal_sites ||
@@ -3471,8 +3471,8 @@ bool IsValidObjc3Part3OptionalKeypathLoweringContract(
   return true;
 }
 
-std::string Objc3Part3OptionalKeypathLoweringReplayKey(
-    const Objc3Part3OptionalKeypathLoweringContract &contract) {
+std::string Objc3TypeSystemOptionalKeypathLoweringReplayKey(
+    const Objc3TypeSystemOptionalKeypathLoweringContract &contract) {
   return std::string("optional_binding_sites=") +
          std::to_string(contract.optional_binding_sites) +
          ";optional_binding_clause_sites=" +
@@ -3499,11 +3499,11 @@ std::string Objc3Part3OptionalKeypathLoweringReplayKey(
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" +
-         kObjc3Part3OptionalKeypathLoweringLaneContract;
+         kObjc3TypeSystemOptionalKeypathLoweringLaneContract;
 }
 
-bool IsValidObjc3Part5ControlFlowSafetyLoweringContract(
-    const Objc3Part5ControlFlowSafetyLoweringContract &contract) {
+bool IsValidObjc3ControlFlowControlFlowSafetyLoweringContract(
+    const Objc3ControlFlowControlFlowSafetyLoweringContract &contract) {
   if (contract.guard_clause_sites < contract.guard_statement_sites) {
     return false;
   }
@@ -3541,8 +3541,8 @@ bool IsValidObjc3Part5ControlFlowSafetyLoweringContract(
   return true;
 }
 
-std::string Objc3Part5ControlFlowSafetyLoweringReplayKey(
-    const Objc3Part5ControlFlowSafetyLoweringContract &contract) {
+std::string Objc3ControlFlowControlFlowSafetyLoweringReplayKey(
+    const Objc3ControlFlowControlFlowSafetyLoweringContract &contract) {
   return std::string("guard_statement_sites=") +
          std::to_string(contract.guard_statement_sites) +
          ";guard_clause_sites=" +
@@ -3569,7 +3569,7 @@ std::string Objc3Part5ControlFlowSafetyLoweringReplayKey(
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" +
-         kObjc3Part5ControlFlowSafetyLoweringLaneContract;
+         kObjc3ControlFlowControlFlowSafetyLoweringLaneContract;
 }
 
 bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
@@ -4344,11 +4344,11 @@ std::string Objc3ActorLoweringMetadataReplayKey(
          ";contract_violation_sites=" +
              std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
-          ";lane_contract=" + kObjc3Part7ActorLoweringMetadataLaneContract;
+          ";lane_contract=" + kObjc3ConcurrencyActorLoweringMetadataLaneContract;
 }
 
-bool IsValidObjc3Part8SystemExtensionLoweringContract(
-    const Objc3Part8SystemExtensionLoweringContract &contract) {
+bool IsValidObjc3OwnershipSystemExtensionLoweringContract(
+    const Objc3OwnershipSystemExtensionLoweringContract &contract) {
   if (contract.cleanup_hook_sites > contract.cleanup_owned_local_sites ||
       contract.resource_local_sites > contract.cleanup_owned_local_sites ||
       contract.resource_move_capture_sites > contract.cleanup_owned_local_sites ||
@@ -4368,8 +4368,8 @@ bool IsValidObjc3Part8SystemExtensionLoweringContract(
   return true;
 }
 
-std::string Objc3Part8SystemExtensionLoweringReplayKey(
-    const Objc3Part8SystemExtensionLoweringContract &contract) {
+std::string Objc3OwnershipSystemExtensionLoweringReplayKey(
+    const Objc3OwnershipSystemExtensionLoweringContract &contract) {
   return std::string("cleanup_hook_sites=") +
              std::to_string(contract.cleanup_hook_sites) +
          ";resource_local_sites=" +
@@ -4397,11 +4397,11 @@ std::string Objc3Part8SystemExtensionLoweringReplayKey(
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
-         ";lane_contract=" + kObjc3Part8SystemExtensionLoweringLaneContract;
+         ";lane_contract=" + kObjc3OwnershipSystemExtensionLoweringLaneContract;
 }
 
-bool IsValidObjc3Part9DispatchControlLoweringContract(
-    const Objc3Part9DispatchControlLoweringContract &contract) {
+bool IsValidObjc3DispatchDispatchControlLoweringContract(
+    const Objc3DispatchDispatchControlLoweringContract &contract) {
   if (contract.direct_members_defaulted_sites >
           contract.direct_call_candidate_sites ||
       contract.dynamic_opt_out_sites >
@@ -4427,8 +4427,8 @@ bool IsValidObjc3Part9DispatchControlLoweringContract(
   return true;
 }
 
-std::string Objc3Part9DispatchControlLoweringReplayKey(
-    const Objc3Part9DispatchControlLoweringContract &contract) {
+std::string Objc3DispatchDispatchControlLoweringReplayKey(
+    const Objc3DispatchDispatchControlLoweringContract &contract) {
   return std::string("direct_call_candidate_sites=") +
              std::to_string(contract.direct_call_candidate_sites) +
          ";direct_members_defaulted_sites=" +
@@ -4450,11 +4450,11 @@ std::string Objc3Part9DispatchControlLoweringReplayKey(
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
-         ";lane_contract=" + kObjc3Part9DispatchControlLoweringLaneContract;
+         ";lane_contract=" + kObjc3DispatchDispatchControlLoweringLaneContract;
 }
 
-bool IsValidObjc3Part10ExpansionLoweringContract(
-    const Objc3Part10ExpansionLoweringContract &contract) {
+bool IsValidObjc3MetaprogrammingExpansionLoweringContract(
+    const Objc3MetaprogrammingExpansionLoweringContract &contract) {
   if (contract.derived_selector_artifact_sites > contract.derive_inventory_sites ||
       contract.synthesized_binding_sites > contract.property_behavior_sites ||
       contract.synthesized_getter_sites > contract.property_behavior_sites ||
@@ -4478,8 +4478,8 @@ bool IsValidObjc3Part10ExpansionLoweringContract(
   return true;
 }
 
-std::string Objc3Part10ExpansionLoweringReplayKey(
-    const Objc3Part10ExpansionLoweringContract &contract) {
+std::string Objc3MetaprogrammingExpansionLoweringReplayKey(
+    const Objc3MetaprogrammingExpansionLoweringContract &contract) {
   return std::string("derive_inventory_sites=") +
              std::to_string(contract.derive_inventory_sites) +
          ";derived_selector_artifact_sites=" +
@@ -4501,11 +4501,11 @@ std::string Objc3Part10ExpansionLoweringReplayKey(
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
-         ";lane_contract=" + kObjc3Part10ExpansionLoweringLaneContract;
+         ";lane_contract=" + kObjc3MetaprogrammingExpansionLoweringLaneContract;
 }
 
-bool IsValidObjc3Part11InteropLoweringContract(
-    const Objc3Part11InteropLoweringContract &contract) {
+bool IsValidObjc3InteropInteropLoweringContract(
+    const Objc3InteropInteropLoweringContract &contract) {
   if (contract.c_foreign_callable_sites > contract.foreign_callable_sites ||
       contract.objc_runtime_parity_callable_sites >
           contract.foreign_callable_sites ||
@@ -4522,8 +4522,8 @@ bool IsValidObjc3Part11InteropLoweringContract(
   return true;
 }
 
-std::string Objc3Part11InteropLoweringReplayKey(
-    const Objc3Part11InteropLoweringContract &contract) {
+std::string Objc3InteropInteropLoweringReplayKey(
+    const Objc3InteropInteropLoweringContract &contract) {
   return std::string("foreign_callable_sites=") +
              std::to_string(contract.foreign_callable_sites) +
          ";c_foreign_callable_sites=" +
@@ -4547,11 +4547,11 @@ std::string Objc3Part11InteropLoweringReplayKey(
          ";contract_violation_sites=" +
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
-         ";lane_contract=" + kObjc3Part11InteropLoweringLaneContract;
+         ";lane_contract=" + kObjc3InteropInteropLoweringLaneContract;
 }
 
-bool IsValidObjc3Part11ForeignCallLifetimeLoweringContract(
-    const Objc3Part11ForeignCallLifetimeLoweringContract &contract) {
+bool IsValidObjc3InteropForeignCallLifetimeLoweringContract(
+    const Objc3InteropForeignCallLifetimeLoweringContract &contract) {
   if (contract.c_foreign_callable_sites > contract.foreign_callable_sites ||
       contract.objc_runtime_parity_callable_sites >
           contract.foreign_callable_sites) {
@@ -4570,8 +4570,8 @@ bool IsValidObjc3Part11ForeignCallLifetimeLoweringContract(
   return true;
 }
 
-std::string Objc3Part11ForeignCallLifetimeLoweringReplayKey(
-    const Objc3Part11ForeignCallLifetimeLoweringContract &contract) {
+std::string Objc3InteropForeignCallLifetimeLoweringReplayKey(
+    const Objc3InteropForeignCallLifetimeLoweringContract &contract) {
   return std::string("foreign_callable_sites=") +
              std::to_string(contract.foreign_callable_sites) +
          ";c_foreign_callable_sites=" +
@@ -4590,11 +4590,11 @@ std::string Objc3Part11ForeignCallLifetimeLoweringReplayKey(
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";dependency_contract=" +
-         kObjc3Part11ForeignCallLifetimeLoweringDependencyContractId;
+         kObjc3InteropForeignCallLifetimeLoweringDependencyContractId;
 }
 
-bool IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
-    const Objc3Part11FfiMetadataInterfacePreservationContract &contract) {
+bool IsValidObjc3InteropFfiMetadataInterfacePreservationContract(
+    const Objc3InteropFfiMetadataInterfacePreservationContract &contract) {
   if (contract.imported_module_count == 0 &&
       (contract.imported_foreign_callable_count != 0 ||
        contract.imported_metadata_preservation_sites != 0 ||
@@ -4612,8 +4612,8 @@ bool IsValidObjc3Part11FfiMetadataInterfacePreservationContract(
   return true;
 }
 
-std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
-    const Objc3Part11FfiMetadataInterfacePreservationContract &contract) {
+std::string Objc3InteropFfiMetadataInterfacePreservationReplayKey(
+    const Objc3InteropFfiMetadataInterfacePreservationContract &contract) {
   return std::string("local_foreign_callable_count=") +
              std::to_string(contract.local_foreign_callable_count) +
          ";local_metadata_preservation_sites=" +
@@ -4634,26 +4634,26 @@ std::string Objc3Part11FfiMetadataInterfacePreservationReplayKey(
          BoolToken(contract.separate_compilation_preservation_ready) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";source_contract=" +
-         kObjc3Part11FfiMetadataInterfacePreservationSourceContractId;
+         kObjc3InteropFfiMetadataInterfacePreservationSourceContractId;
 }
 
-std::string Objc3Part11BridgePackagingToolchainSummary() {
+std::string Objc3InteropBridgePackagingToolchainSummary() {
   std::ostringstream out;
   // packaging/toolchain anchor: lane-D freezes one truthful Part 11
   // packaging boundary over the already-landed runtime-import-surface and
   // cross-module link-plan topology without claiming live header/module/bridge
   // generation yet.
-  out << "contract=" << kObjc3Part11BridgePackagingToolchainContractId
+  out << "contract=" << kObjc3InteropBridgePackagingToolchainContractId
       << ";source_contract="
-      << kObjc3Part11BridgePackagingToolchainSourceContractId
+      << kObjc3InteropBridgePackagingToolchainSourceContractId
       << ";preservation_contract="
-      << kObjc3Part11BridgePackagingToolchainPreservationContractId
+      << kObjc3InteropBridgePackagingToolchainPreservationContractId
       << ";packaging_model="
-      << kObjc3Part11BridgePackagingToolchainPackagingModel
+      << kObjc3InteropBridgePackagingToolchainPackagingModel
       << ";operator_evidence_model="
-      << kObjc3Part11BridgePackagingToolchainEvidenceModel
+      << kObjc3InteropBridgePackagingToolchainEvidenceModel
       << ";fail_closed_model="
-      << kObjc3Part11BridgePackagingToolchainFailClosedModel
+      << kObjc3InteropBridgePackagingToolchainFailClosedModel
       << ";packaging_topology_ready=true"
       << ";operator_visible_evidence_ready=true"
       << ";header_generation_ready=false"
@@ -4664,18 +4664,18 @@ std::string Objc3Part11BridgePackagingToolchainSummary() {
   return out.str();
 }
 
-std::string Objc3Part11HeaderModuleBridgeGenerationBoundarySummary() {
+std::string Objc3InteropHeaderModuleBridgeGenerationBoundarySummary() {
   std::ostringstream out;
   out << "contract="
-      << kObjc3Part11HeaderModuleBridgeGenerationLoweringContractId
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringContractId
       << ";source_contract="
-      << kObjc3Part11HeaderModuleBridgeGenerationLoweringSourceContractId
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringSourceContractId
       << ";preservation_contract="
-      << kObjc3Part11HeaderModuleBridgeGenerationLoweringPreservationContractId
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringPreservationContractId
       << ";packaging_model="
-      << kObjc3Part11HeaderModuleBridgeGenerationLoweringPackagingModel
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringPackagingModel
       << ";fail_closed_model="
-      << kObjc3Part11HeaderModuleBridgeGenerationLoweringFailClosedModel
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringFailClosedModel
       << ";header_generation_ready=true"
       << ";module_generation_ready=true"
       << ";bridge_generation_ready=true"
@@ -4684,8 +4684,8 @@ std::string Objc3Part11HeaderModuleBridgeGenerationBoundarySummary() {
   return out.str();
 }
 
-bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
-    const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
+bool IsValidObjc3MetaprogrammingSynthesizedArtifactEmissionContract(
+    const Objc3MetaprogrammingSynthesizedArtifactEmissionContract &contract) {
   if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {
     return false;
   }
@@ -4707,8 +4707,8 @@ bool IsValidObjc3Part10SynthesizedArtifactEmissionContract(
   return true;
 }
 
-std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
-    const Objc3Part10SynthesizedArtifactEmissionContract &contract) {
+std::string Objc3MetaprogrammingSynthesizedArtifactEmissionReplayKey(
+    const Objc3MetaprogrammingSynthesizedArtifactEmissionContract &contract) {
   return std::string("derive_inventory_sites=") +
              std::to_string(contract.derive_inventory_sites) +
          ";emitted_derive_method_sites=" +
@@ -4727,44 +4727,44 @@ std::string Objc3Part10SynthesizedArtifactEmissionReplayKey(
          std::to_string(contract.contract_violation_sites) +
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" +
-         kObjc3Part10SynthesizedArtifactEmissionLaneContract;
+         kObjc3MetaprogrammingSynthesizedArtifactEmissionLaneContract;
 }
 
-std::string Objc3Part10ModuleInterfaceReplayPreservationSummary() {
+std::string Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary() {
   std::ostringstream out;
   out << "contract="
-      << kObjc3Part10ModuleInterfaceReplayPreservationContractId
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationContractId
       << ";source_contract="
-      << kObjc3Part10SynthesizedArtifactEmissionContractId
+      << kObjc3MetaprogrammingSynthesizedArtifactEmissionContractId
       << ";surface_path="
-      << kObjc3Part10ModuleInterfaceReplayPreservationSurfacePath
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationSurfacePath
       << ";artifact_member="
-      << kObjc3Part10ModuleInterfaceReplayPreservationImportArtifactMemberName
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationImportArtifactMemberName
       << ";source_model="
-      << kObjc3Part10ModuleInterfaceReplayPreservationSourceModel
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationSourceModel
       << ";preservation_model="
-      << kObjc3Part10ModuleInterfaceReplayPreservationModel
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationModel
       << ";fail_closed_model="
-      << kObjc3Part10ModuleInterfaceReplayPreservationFailClosedModel
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationFailClosedModel
       << ";next_issue=M273-D001";
   return out.str();
 }
 
-std::string Objc3Part10ExpansionHostRuntimeBoundarySummary() {
+std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary() {
   std::ostringstream out;
   // host/runtime-boundary anchor: lane-D freezes one truthful Part 10
   // boundary over the already-landed synthesized/property runtime slice without
   // claiming live macro host execution or runtime package loading.
-  out << "contract=" << kObjc3Part10ExpansionHostRuntimeBoundaryContractId
+  out << "contract=" << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryContractId
       << ";source_contract="
-      << kObjc3Part10ExpansionHostRuntimeBoundarySourceContractId
-      << ";host_model=" << kObjc3Part10ExpansionHostRuntimeBoundaryHostModel
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundarySourceContractId
+      << ";host_model=" << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryHostModel
       << ";property_runtime_model="
-      << kObjc3Part10ExpansionHostRuntimeBoundaryPropertyRuntimeModel
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPropertyRuntimeModel
       << ";packaging_model="
-      << kObjc3Part10ExpansionHostRuntimeBoundaryPackagingModel
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPackagingModel
       << ";fail_closed_model="
-      << kObjc3Part10ExpansionHostRuntimeBoundaryFailClosedModel
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryFailClosedModel
       << ";property_runtime_ready=true"
       << ";macro_host_execution_ready=false"
       << ";macro_host_process_launch_ready=false"
@@ -4774,28 +4774,28 @@ std::string Objc3Part10ExpansionHostRuntimeBoundarySummary() {
   return out.str();
 }
 
-std::string Objc3Part10MacroHostProcessCacheRuntimeIntegrationSummary() {
+std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary() {
   std::ostringstream out;
   out << "contract="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId
       << ";source_contract="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId
       << ";surface_path="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSurfacePath
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfacePath
       << ";artifact_member="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName
       << ";host_executable_relative_path="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath
       << ";cache_root_relative_path="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath
       << ";host_model="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostModel
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostModel
       << ";toolchain_model="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationToolchainModel
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel
       << ";cache_model="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheModel
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel
       << ";fail_closed_model="
-      << kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel
       << ";macro_host_execution_ready=true"
       << ";macro_host_process_launch_ready=true"
       << ";runtime_package_loader_ready=false"
@@ -4804,25 +4804,25 @@ std::string Objc3Part10MacroHostProcessCacheRuntimeIntegrationSummary() {
   return out.str();
 }
 
-std::string Objc3Part9DispatchMetadataInterfacePreservationSummary() {
+std::string Objc3DispatchDispatchMetadataInterfacePreservationSummary() {
   std::ostringstream out;
   // preservation anchor: lane-C extends the local C002 lowering win
   // by preserving direct/final/sealed intent through runtime metadata source
   // records, emitted runtime-import-surface artifacts, and imported replay
   // summaries before lane-D runtime boundary work begins.
   out << "contract="
-      << kObjc3Part9DispatchMetadataInterfacePreservationContractId
-      << ";source_contract=" << kObjc3Part9DispatchControlLoweringContractId
+      << kObjc3DispatchDispatchMetadataInterfacePreservationContractId
+      << ";source_contract=" << kObjc3DispatchDispatchControlLoweringContractId
       << ";surface_path="
-      << kObjc3Part9DispatchMetadataInterfacePreservationSurfacePath
+      << kObjc3DispatchDispatchMetadataInterfacePreservationSurfacePath
       << ";artifact_member="
-      << kObjc3Part9DispatchMetadataInterfacePreservationImportArtifactMemberName
+      << kObjc3DispatchDispatchMetadataInterfacePreservationImportArtifactMemberName
       << ";source_model="
-      << kObjc3Part9DispatchMetadataInterfacePreservationSourceModel
+      << kObjc3DispatchDispatchMetadataInterfacePreservationSourceModel
       << ";preservation_model="
-      << kObjc3Part9DispatchMetadataInterfacePreservationModel
+      << kObjc3DispatchDispatchMetadataInterfacePreservationModel
       << ";fail_closed_model="
-      << kObjc3Part9DispatchMetadataInterfacePreservationFailClosedModel
+      << kObjc3DispatchDispatchMetadataInterfacePreservationFailClosedModel
       << ";next_issue=M272-D001";
   return out.str();
 }

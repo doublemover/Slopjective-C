@@ -1,4 +1,0 @@
-// Expected diagnostic code(s): O3S335.
-module Part11CppInteropThrowsRejected;
-
-extern fn throwingBridge(value: i32) throws -> i32 __attribute__((objc_cxx_name(named("ThrowingBridge")), objc_header_name(named("ThrowingBridge.hpp"))));

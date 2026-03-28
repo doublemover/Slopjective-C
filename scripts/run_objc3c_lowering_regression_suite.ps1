@@ -13,7 +13,7 @@ $optionalDispatchFixtureDirs = @(
 $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery/negative"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/lowering-regression"
 $configuredRunId = $env:OBJC3C_NATIVE_LOWERING_RUN_ID
-$defaultRunId = "m143-lane-c-lowering-regression-default"
+$defaultRunId = "typed_abi-lane-c-lowering-regression-default"
 
 function Resolve-ValidatedRunId {
   param(

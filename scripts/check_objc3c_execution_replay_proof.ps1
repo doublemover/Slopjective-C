@@ -42,19 +42,19 @@ $requiredRuntimeSections = @(
 $proofCases = @(
   [ordered]@{
     case_id = "canonical-runnable"
-    fixture = "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3"
+    fixture = "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3"
     required_ll_tokens = @()
     required_runtime_sections = @($requiredRuntimeSections)
   },
   [ordered]@{
     case_id = "dispatch-fast-path"
-    fixture = "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3"
+    fixture = "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3"
     required_ll_tokens = @("@objc3_runtime_dispatch_i32")
     required_runtime_sections = @()
   },
   [ordered]@{
     case_id = "synthesized-accessor"
-    fixture = "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3"
+    fixture = "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"
     required_ll_tokens = @(
       "define i32 @objc3_method_Widget_instance_count()",
       "define void @objc3_method_Widget_instance_setCount_(i32 %arg0)",

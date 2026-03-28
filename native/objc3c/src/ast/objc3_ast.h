@@ -1019,25 +1019,25 @@ inline constexpr const char
     *kObjc3CrossModuleRuntimeLinkerResponseArtifactRelativePath =
         "module.cross-module-runtime-linker-options.rsp";
 inline constexpr const char
-    *kObjc3Part10MacroHostProcessCacheArtifactSuffix =
-        ".part10-macro-host-cache.json";
+    *kObjc3MetaprogrammingMacroHostProcessCacheArtifactSuffix =
+        ".metaprogramming-macro-host-cache.json";
 inline constexpr const char
-    *kObjc3Part10MacroHostProcessCacheArtifactRelativePath =
-        "module.part10-macro-host-cache.json";
+    *kObjc3MetaprogrammingMacroHostProcessCacheArtifactRelativePath =
+        "module.metaprogramming-macro-host-cache.json";
 inline constexpr const char
-    *kObjc3Part11BridgeHeaderArtifactSuffix = ".part11-bridge.h";
+    *kObjc3InteropBridgeHeaderArtifactSuffix = ".interop-bridge.h";
 inline constexpr const char
-    *kObjc3Part11BridgeHeaderArtifactRelativePath =
-        "module.part11-bridge.h";
+    *kObjc3InteropBridgeHeaderArtifactRelativePath =
+        "module.interop-bridge.h";
 inline constexpr const char
-    *kObjc3Part11BridgeModuleArtifactSuffix = ".part11-bridge.modulemap";
+    *kObjc3InteropBridgeModuleArtifactSuffix = ".interop-bridge.modulemap";
 inline constexpr const char
-    *kObjc3Part11BridgeModuleArtifactRelativePath =
-        "module.part11-bridge.modulemap";
+    *kObjc3InteropBridgeModuleArtifactRelativePath =
+        "module.interop-bridge.modulemap";
 inline constexpr const char
-    *kObjc3Part11BridgeArtifactSuffix = ".part11-bridge.json";
+    *kObjc3InteropBridgeArtifactSuffix = ".interop-bridge.json";
 inline constexpr const char
-    *kObjc3Part11BridgeArtifactRelativePath = "module.part11-bridge.json";
+    *kObjc3InteropBridgeArtifactRelativePath = "module.interop-bridge.json";
 inline constexpr const char
     *kObjc3CrossModuleRuntimeLinkPlanAuthorityModel =
         "runtime-import-surface-plus-imported-registration-manifest-peer-artifacts-drive-cross-module-link-plan";

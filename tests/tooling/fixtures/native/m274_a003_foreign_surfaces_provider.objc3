@@ -1,7 +1,0 @@
-module Part11ForeignSurfacesProvider;
-
-extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
-extern pure fn externForeignEntry() -> i32 __attribute__((objc_foreign));
-fn annotatedBridge() -> i32 __attribute__((objc_swift_name(named("SwiftBridge")), objc_swift_private, objc_cxx_name(named("CppBridge")), objc_header_name(named("HeaderBridge")))) {
-  return 7;
-}

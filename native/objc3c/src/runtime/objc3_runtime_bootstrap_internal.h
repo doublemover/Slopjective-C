@@ -659,7 +659,7 @@ void objc3_runtime_clear_current_property_context_for_testing(void);
 // accessor/current-property helper slice now defines the truthful Part 10
 // property-behavior runtime boundary while macro host execution and runtime
 // package loading remain explicitly disabled.
-typedef struct objc3_runtime_part10_expansion_host_boundary_snapshot {
+typedef struct objc3_runtime_metaprogramming_expansion_host_boundary_snapshot {
   uint64_t property_runtime_ready;
   uint64_t macro_host_execution_ready;
   uint64_t macro_host_process_launch_ready;
@@ -670,10 +670,10 @@ typedef struct objc3_runtime_part10_expansion_host_boundary_snapshot {
   const char *macro_expansion_host_model;
   const char *packaging_model;
   const char *fail_closed_model;
-} objc3_runtime_part10_expansion_host_boundary_snapshot;
-int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
-    objc3_runtime_part10_expansion_host_boundary_snapshot *snapshot);
-typedef struct objc3_runtime_part10_macro_host_process_cache_integration_snapshot {
+} objc3_runtime_metaprogramming_expansion_host_boundary_snapshot;
+int objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing(
+    objc3_runtime_metaprogramming_expansion_host_boundary_snapshot *snapshot);
+typedef struct objc3_runtime_metaprogramming_macro_host_process_cache_integration_snapshot {
   uint64_t property_runtime_ready;
   uint64_t macro_host_execution_ready;
   uint64_t macro_host_process_launch_ready;
@@ -685,10 +685,10 @@ typedef struct objc3_runtime_part10_macro_host_process_cache_integration_snapsho
   const char *toolchain_model;
   const char *cache_model;
   const char *fail_closed_model;
-} objc3_runtime_part10_macro_host_process_cache_integration_snapshot;
-int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_testing(
-    objc3_runtime_part10_macro_host_process_cache_integration_snapshot *snapshot);
-typedef struct objc3_runtime_part11_bridge_packaging_toolchain_snapshot {
+} objc3_runtime_metaprogramming_macro_host_process_cache_integration_snapshot;
+int objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing(
+    objc3_runtime_metaprogramming_macro_host_process_cache_integration_snapshot *snapshot);
+typedef struct objc3_runtime_interop_bridge_packaging_toolchain_snapshot {
   uint64_t packaging_topology_ready;
   uint64_t operator_visible_evidence_ready;
   uint64_t header_generation_ready;
@@ -700,10 +700,10 @@ typedef struct objc3_runtime_part11_bridge_packaging_toolchain_snapshot {
   const char *cross_module_link_plan_model;
   const char *operator_visible_evidence_model;
   const char *fail_closed_model;
-} objc3_runtime_part11_bridge_packaging_toolchain_snapshot;
-int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
-    objc3_runtime_part11_bridge_packaging_toolchain_snapshot *snapshot);
-typedef struct objc3_runtime_part11_bridge_generation_snapshot {
+} objc3_runtime_interop_bridge_packaging_toolchain_snapshot;
+int objc3_runtime_copy_interop_bridge_packaging_toolchain_snapshot_for_testing(
+    objc3_runtime_interop_bridge_packaging_toolchain_snapshot *snapshot);
+typedef struct objc3_runtime_interop_bridge_generation_snapshot {
   uint64_t runtime_generation_ready;
   uint64_t cross_module_packaging_ready;
   uint64_t header_generation_ready;
@@ -716,9 +716,9 @@ typedef struct objc3_runtime_part11_bridge_generation_snapshot {
   const char *generation_model;
   const char *packaging_model;
   const char *fail_closed_model;
-} objc3_runtime_part11_bridge_generation_snapshot;
-int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
-    objc3_runtime_part11_bridge_generation_snapshot *snapshot);
+} objc3_runtime_interop_bridge_generation_snapshot;
+int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing(
+    objc3_runtime_interop_bridge_generation_snapshot *snapshot);
 // runtime ARC helper implementation anchor: these helpers are not
 // just a frozen private ABI surface anymore; they are the live runtime-owned
 // entrypoints that the supported ARC property/weak/autorelease-return slice

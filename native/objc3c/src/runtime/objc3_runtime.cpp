@@ -30,10 +30,10 @@ constexpr std::uint64_t kReceiverIdentityStride = 17;
         "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureReportingContractId =
-        "objc3c.part12.feature.aware.conformance.report.emission.v1";
+        "objc3c.tooling.feature.aware.conformance.report.emission.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureReleaseEvidenceContractId =
-        "objc3c.part12.corpus.sharding.release.evidence.packaging.v1";
+        "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureEvidenceGateScriptPath =
         "scripts/check_release_evidence.py";
@@ -45,10 +45,10 @@ constexpr std::uint64_t kReceiverIdentityStride = 17;
         "schemas/objc3-conformance-dashboard-status-v1.schema.json";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureReleaseEvidenceOperationContractId =
-        "objc3c.part12.release.evidence.toolchain.operations.v1";
+        "objc3c.tooling.release.evidence.toolchain.operations.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureDashboardStatusPublicationContractId =
-        "objc3c.part12.dashboard.status.publication.v1";
+        "objc3c.tooling.dashboard.status.publication.v1";
 
 struct SelectorSlot {
   std::string spelling_storage;
@@ -4957,8 +4957,8 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
-    objc3_runtime_part10_expansion_host_boundary_snapshot *snapshot) {
+int objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing(
+    objc3_runtime_metaprogramming_expansion_host_boundary_snapshot *snapshot) {
   // expansion-host/runtime-boundary anchor: lane-D freezes the
   // truthful Part 10 boundary on one private snapshot backed by the existing
   // packaged runtime archive and property-accessor helper slice without
@@ -4979,14 +4979,14 @@ int objc3_runtime_copy_part10_expansion_host_boundary_snapshot_for_testing(
   snapshot->macro_expansion_host_model =
       "macro-host-execution-process-launch-and-runtime-package-loading-remain-disabled-and-fail-closed";
   snapshot->packaging_model =
-      "native-driver-packaging-still-hands-off-part10-runtime-support-through-artifacts-lib-objc3_runtime-lib-and-runtime-registration-manifests";
+      "native-driver-packaging-still-hands-off-metaprogramming-runtime-support-through-artifacts-lib-objc3_runtime-lib-and-runtime-registration-manifests";
   snapshot->fail_closed_model =
       "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_testing(
-    objc3_runtime_part10_macro_host_process_cache_integration_snapshot *snapshot) {
+int objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing(
+    objc3_runtime_metaprogramming_macro_host_process_cache_integration_snapshot *snapshot) {
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
@@ -4999,20 +4999,20 @@ int objc3_runtime_copy_part10_macro_host_process_cache_integration_snapshot_for_
   snapshot->host_executable_relative_path =
       "artifacts/bin/objc3c-frontend-c-api-runner.exe";
   snapshot->cache_root_relative_path =
-      "tmp/artifacts/objc3c-native/cache/part10";
+      "tmp/artifacts/objc3c-native/cache/metaprogramming";
   snapshot->host_model =
-      "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-part10-expansion-cache-materialization";
+      "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-metaprogramming-expansion-cache-materialization";
   snapshot->toolchain_model =
       "frontend-runner-executes-with-manifest-enabled-and-ir-object-emission-disabled-for-deterministic-cache-materialization";
   snapshot->cache_model =
-      "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-part10-replay-surface-and-reused-on-subsequent-runs";
+      "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-metaprogramming-replay-surface-and-reused-on-subsequent-runs";
   snapshot->fail_closed_model =
-      "missing-runner-corrupt-cache-or-import-surface-drift-disables-part10-host-process-cache-claims";
+      "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
-    objc3_runtime_part11_bridge_packaging_toolchain_snapshot *snapshot) {
+int objc3_runtime_copy_interop_bridge_packaging_toolchain_snapshot_for_testing(
+    objc3_runtime_interop_bridge_packaging_toolchain_snapshot *snapshot) {
   // bridge-packaging/toolchain anchor: lane-D freezes the truthful
   // Part 11 packaging/runtime boundary on one private snapshot backed by the
   // existing runtime archive path and cross-module link-plan topology without
@@ -5040,8 +5040,8 @@ int objc3_runtime_copy_part11_bridge_packaging_toolchain_snapshot_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
-int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
-    objc3_runtime_part11_bridge_generation_snapshot *snapshot) {
+int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing(
+    objc3_runtime_interop_bridge_generation_snapshot *snapshot) {
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }
@@ -5052,15 +5052,15 @@ int objc3_runtime_copy_part11_bridge_generation_snapshot_for_testing(
   snapshot->module_generation_ready = 1;
   snapshot->bridge_generation_ready = 1;
   snapshot->deterministic = 1;
-  snapshot->header_artifact_relative_path = "module.part11-bridge.h";
-  snapshot->module_artifact_relative_path = "module.part11-bridge.modulemap";
-  snapshot->bridge_artifact_relative_path = "module.part11-bridge.json";
+  snapshot->header_artifact_relative_path = "module.interop-bridge.h";
+  snapshot->module_artifact_relative_path = "module.interop-bridge.modulemap";
+  snapshot->bridge_artifact_relative_path = "module.interop-bridge.json";
   snapshot->generation_model =
-      "compiler-emits-deterministic-part11-bridge-header-modulemap-and-bridge-json-artifacts-for-supported-foreign-callable-surfaces";
+      "compiler-emits-deterministic-interop-bridge-header-modulemap-and-bridge-json-artifacts-for-supported-foreign-callable-surfaces";
   snapshot->packaging_model =
-      "runtime-import-surfaces-and-cross-module-link-plans-preserve-part11-bridge-artifact-paths-for-mixed-module-consumption";
+      "runtime-import-surfaces-and-cross-module-link-plans-preserve-interop-bridge-artifact-paths-for-mixed-module-consumption";
   snapshot->fail_closed_model =
-      "missing-generated-artifacts-or-drifted-import-surface-paths-disable-live-part11-bridge-generation-claims";
+      "missing-generated-artifacts-or-drifted-import-surface-paths-disable-live-interop-bridge-generation-claims";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

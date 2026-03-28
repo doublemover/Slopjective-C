@@ -918,7 +918,7 @@ Current implementation status (`M268-E001`):
 - the gate consumes the same emitted manifest/IR/object artifact triplet from
   the native CLI/frontend publication path
 - the canonical gate fixture remains
-  `tests/tooling/fixtures/native/m268_d002_live_continuation_runtime_integration_positive.objc3`
+  `tests/tooling/fixtures/native/d002_live_continuation_runtime_integration_positive.objc3`
 - matrix expansion and broader runnable async claims remain deferred to
   `M268-E002`
 

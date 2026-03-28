@@ -1,0 +1,16 @@
+module DispatchC003Consumer;
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface LocalPolicy
++ (i32)localDirect;
+@end
+
+@implementation LocalPolicy
++ (i32)localDirect {
+  return 7;
+}
+@end
+
+fn main() -> i32 {
+  return [LocalPolicy localDirect];
+}

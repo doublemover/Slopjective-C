@@ -135,13 +135,13 @@ inline constexpr const char *kObjc3BootstrapImageRootPragmaName =
 // canonical `objc_executor(...)` attributes, and parser-owned task-runtime /
 // cancellation symbol profiling.
 inline constexpr const char *kObjc3TaskExecutorCancellationSourceClosureContractId =
-    "objc3c.part7.task.executor.cancellation.source.closure.v1";
+    "objc3c.concurrency.task.executor.cancellation.source.closure.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskExecutorCancellationProfiles =
     "source-only:task-executor-cancellation-profiles";
 inline constexpr const char *kObjc3ActorIsolationSendableSourceClosureContractId =
-    "objc3c.part7.actor.isolation.sendable.source.closure.v1";
+    "objc3c.concurrency.actor.isolation.sendable.source.closure.v1";
 inline constexpr const char *kObjc3ActorMemberIsolationSourceClosureContractId =
-    "objc3c.part7.actor.member.isolation.source.closure.v1";
+    "objc3c.concurrency.actor.member.isolation.source.closure.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimActorDeclarationMarkers =
     "source-only:actor-declaration-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimIsolationAnnotationMarkers =
@@ -152,14 +152,14 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimActorMetadataSurfaces =
     "source-only:actor-metadata-surfaces";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimSendableMarkers =
     "source-only:sendable-markers";
-inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureContractId =
-    "objc3c.part7.task.group.cancellation.source.closure.v1";
+inline constexpr const char *kObjc3ConcurrencyTaskGroupCancellationSourceClosureContractId =
+    "objc3c.concurrency.task.group.cancellation.source.closure.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimTaskCreationSites =
     "source-only:task-creation-sites";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimSupportedTaskGroupSurface =
     "source-only:supported-task-group-surface";
-inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureContractId =
-    "objc3c.part8.resource.borrowed.capture.source.closure.v1";
+inline constexpr const char *kObjc3OwnershipSystemExtensionSourceClosureContractId =
+    "objc3c.ownership.resource.borrowed.capture.source.closure.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimResourceHandleAnnotations =
     "source-only:resource-handle-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimBorrowedPointerAnnotations =
@@ -168,35 +168,35 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimBorrowedReturnRelations
     "source-only:borrowed-return-relations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimExplicitBlockCaptureLists =
     "source-only:explicit-block-capture-lists";
-inline constexpr const char *kObjc3Part8CleanupResourceCaptureSurfaceCompletionContractId =
-    "objc3c.part8.cleanup.resource.capture.source.closure.v1";
+inline constexpr const char *kObjc3OwnershipCleanupResourceCaptureSurfaceCompletionContractId =
+    "objc3c.ownership.cleanup.resource.capture.source.closure.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimCleanupHookAnnotations =
     "source-only:cleanup-hook-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimCleanupResourceSugar =
     "source-only:cleanup-resource-sugar";
-inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionContractId =
-    "objc3c.part8.retainable.c.family.source.completion.v1";
+inline constexpr const char *kObjc3OwnershipRetainableCFamilySourceCompletionContractId =
+    "objc3c.ownership.retainable.c.family.source.completion.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCallableAnnotations =
     "source-only:retainable-c-family-callable-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimRetainableCFamilyCompatibilityAliases =
     "source-only:retainable-c-family-compatibility-aliases";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureContractId =
-    "objc3c.part9.dispatch.intent.source.closure.v1";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionContractId =
-    "objc3c.part9.dispatch.intent.source.completion.v1";
-inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureContractId =
-    "objc3c.part10.metaprogramming.source.closure.v1";
-inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionContractId =
-    "objc3c.part10.macro.package.provenance.source.completion.v1";
-inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionContractId =
-    "objc3c.part10.property.behavior.source.completion.v1";
-inline constexpr const char *kObjc3Part11ForeignImportSourceClosureContractId =
-    "objc3c.part11.foreign.declaration.import.source.closure.v1";
-inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId =
-    "objc3c.part11.cpp.swift.interop.annotation.source.completion.v1";
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceClosureContractId =
+    "objc3c.dispatch.dispatch.intent.source.closure.v1";
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceCompletionContractId =
+    "objc3c.dispatch.dispatch.intent.source.completion.v1";
+inline constexpr const char *kObjc3MetaprogrammingMetaprogrammingSourceClosureContractId =
+    "objc3c.metaprogramming.metaprogramming.source.closure.v1";
+inline constexpr const char *kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionContractId =
+    "objc3c.metaprogramming.macro.package.provenance.source.completion.v1";
+inline constexpr const char *kObjc3MetaprogrammingPropertyBehaviorSourceCompletionContractId =
+    "objc3c.metaprogramming.property.behavior.source.completion.v1";
+inline constexpr const char *kObjc3InteropForeignImportSourceClosureContractId =
+    "objc3c.interop.foreign.declaration.import.source.closure.v1";
+inline constexpr const char *kObjc3InteropCppSwiftInteropAnnotationSourceCompletionContractId =
+    "objc3c.interop.cpp.swift.interop.annotation.source.completion.v1";
 inline constexpr const char
-    *kObjc3Part11ForeignSurfaceInterfacePreservationContractId =
-        "objc3c.part11.foreign.surface.interface.preservation.v1";
+    *kObjc3InteropForeignSurfaceInterfacePreservationContractId =
+        "objc3c.interop.foreign.surface.interface.preservation.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDeriveMarkers =
     "source-only:derive-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroMarkers =
@@ -225,10 +225,10 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropMetadataAnnotati
     "source-only:interop-metadata-annotation-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimInteropNamedMetadataPayloads =
     "source-only:interop-named-metadata-payloads";
-inline constexpr const char *kObjc3Part12DiagnosticsMigratorSourceInventoryContractId =
-    "objc3c.part12.diagnostics.fixit.migrator.source.inventory.v1";
-inline constexpr const char *kObjc3Part12MigrationCanonicalizationSourceCompletionContractId =
-    "objc3c.part12.migration.canonicalization.source.completion.v1";
+inline constexpr const char *kObjc3ToolingDiagnosticsMigratorSourceInventoryContractId =
+    "objc3c.tooling.diagnostics.fixit.migrator.source.inventory.v1";
+inline constexpr const char *kObjc3ToolingMigrationCanonicalizationSourceCompletionContractId =
+    "objc3c.tooling.migration.canonicalization.source.completion.v1";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedDiagnosticInventory =
     "source-only:advanced-diagnostic-inventory";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedFixItInventory =
@@ -328,42 +328,42 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimResultCarrierProfiles =
     "source-only:result-carrier-profiles";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles =
     "source-only:nserror-bridging-profiles";
-inline constexpr const char *kObjc3Part6FailClosedConstructTryExpressions =
-    "part6-fail-closed:try-expressions";
-inline constexpr const char *kObjc3Part6FailClosedConstructThrowStatements =
-    "part6-fail-closed:throw-statements";
-inline constexpr const char *kObjc3Part6FailClosedConstructDoCatchStatements =
-    "part6-fail-closed:do-catch-statements";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructTryExpressions =
+    "error_handling-fail-closed:try-expressions";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructThrowStatements =
+    "error_handling-fail-closed:throw-statements";
+inline constexpr const char *kObjc3ErrorHandlingFailClosedConstructDoCatchStatements =
+    "error_handling-fail-closed:do-catch-statements";
 
 // control-flow source+semantic surface anchor: the frontend now
 // owns the Part 5 keyword classification boundary directly. Guard bindings,
 // defer statements, and statement-form match stay explicit parser-owned
 // surfaces while match-expression / guarded-pattern / type-test-pattern
 // families remain fail-closed instead of drifting as ordinary identifiers.
-inline constexpr const char *kObjc3Part5SourceSurfaceGuardBindings =
-    "part5-source:guard-bindings";
-inline constexpr const char *kObjc3Part5SourceSurfaceGuardConditionLists =
-    "part5-source:guard-condition-lists";
-inline constexpr const char *kObjc3Part5SourceSurfaceSwitchCasePatterns =
-    "part5-source:switch-case-patterns";
-inline constexpr const char *kObjc3Part5SourceSurfaceDeferStatements =
-    "part5-source:defer-statements";
-inline constexpr const char *kObjc3Part5SourceSurfaceMatchStatement =
-    "part5-source:match-statement";
-inline constexpr const char *kObjc3Part5SourceSurfaceMatchWildcardPatterns =
-    "part5-source:match-wildcard-patterns";
-inline constexpr const char *kObjc3Part5SourceSurfaceMatchLiteralPatterns =
-    "part5-source:match-literal-patterns";
-inline constexpr const char *kObjc3Part5SourceSurfaceMatchBindingPatterns =
-    "part5-source:match-binding-patterns";
-inline constexpr const char *kObjc3Part5SourceSurfaceMatchResultCasePatterns =
-    "part5-source:match-result-case-patterns";
-inline constexpr const char *kObjc3Part5FailClosedConstructMatchExpression =
-    "part5-fail-closed:match-expression";
-inline constexpr const char *kObjc3Part5FailClosedConstructGuardedPatterns =
-    "part5-fail-closed:guarded-match-patterns";
-inline constexpr const char *kObjc3Part5FailClosedConstructMatchTypeTestPatterns =
-    "part5-fail-closed:match-type-test-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardBindings =
+    "control_flow-source:guard-bindings";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceGuardConditionLists =
+    "control_flow-source:guard-condition-lists";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceSwitchCasePatterns =
+    "control_flow-source:switch-case-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceDeferStatements =
+    "control_flow-source:defer-statements";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchStatement =
+    "control_flow-source:match-statement";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchWildcardPatterns =
+    "control_flow-source:match-wildcard-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchLiteralPatterns =
+    "control_flow-source:match-literal-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchBindingPatterns =
+    "control_flow-source:match-binding-patterns";
+inline constexpr const char *kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns =
+    "control_flow-source:match-result-case-patterns";
+inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchExpression =
+    "control_flow-fail-closed:match-expression";
+inline constexpr const char *kObjc3ControlFlowFailClosedConstructGuardedPatterns =
+    "control_flow-fail-closed:guarded-match-patterns";
+inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns =
+    "control_flow-fail-closed:match-type-test-patterns";
 
 // runnable-core compatibility guard anchor: later advanced surfaces
 // remain explicitly non-runnable claim families until dedicated runtime-backed

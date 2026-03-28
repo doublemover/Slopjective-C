@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S339.
+module InteropSwiftNonisolatedRejected;
+
+fn token() -> i32 __attribute__((objc_nonisolated, objc_swift_name(named("TokenBridge")))) {
+  return 0;
+}

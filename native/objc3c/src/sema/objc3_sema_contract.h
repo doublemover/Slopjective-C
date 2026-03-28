@@ -280,10 +280,10 @@ struct Objc3GenericMetadataAbiSummary {
   bool deterministic = true;
 };
 
-struct Objc3Part3TypeSemanticModelSummary {
-  std::string contract_id = "objc3c.part3.type.semantic.model.v1";
+struct Objc3TypeSystemTypeSemanticModelSummary {
+  std::string contract_id = "objc3c.type_system.type.semantic.model.v1";
   std::string surface_path =
-      "frontend.pipeline.semantic_surface.objc_part3_type_semantic_model";
+      "frontend.pipeline.semantic_surface.objc_type_system_type_semantic_model";
   std::string semantic_model =
       "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
   std::size_t optional_binding_sites = 0;
@@ -311,30 +311,30 @@ struct Objc3Part3TypeSemanticModelSummary {
 };
 
 inline constexpr const char
-    *kObjc3Part5ControlFlowSemanticModelFrontendDependencyContractId =
-        "objc3c.part5.control.flow.source.closure.v1";
-inline constexpr const char *kObjc3Part5ControlFlowSemanticModelContractId =
-    "objc3c.part5.control.flow.semantic.model.v1";
-inline constexpr const char *kObjc3Part5ControlFlowSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part5_control_flow_semantic_model";
-inline constexpr const char *kObjc3Part5ControlFlowSemanticModelRule =
+    *kObjc3ControlFlowControlFlowSemanticModelFrontendDependencyContractId =
+        "objc3c.control_flow.control.flow.source.closure.v1";
+inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelContractId =
+    "objc3c.control_flow.control.flow.semantic.model.v1";
+inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_control_flow_control_flow_semantic_model";
+inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelRule =
     "guard-refinement-plus-statement-match-exhaustiveness-and-defer-legality-semantics-are-live-while-defer-cleanup-lowering-remains-a-later-lane-c-runtime-step";
-inline constexpr const char *kObjc3Part5ControlFlowSemanticModelDeferRule =
+inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelDeferRule =
     "defer-statement-lifo-cleanup-order-and-defer-mediated-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred-to-later-lowering-and-runtime-work";
-inline constexpr const char *kObjc3Part5ControlFlowSemanticModelMatchRule =
+inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelMatchRule =
     "statement-match-enforces-catch-all-bool-and-result-case-exhaustiveness-with-case-local-binding-scopes-while-result-payload-typing-remains-deferred";
-inline constexpr const char *kObjc3Part5ControlFlowSemanticModelExitRule =
+inline constexpr const char *kObjc3ControlFlowControlFlowSemanticModelExitRule =
     "break-and-continue-restrictions-plus-defer-body-nonlocal-exit-legality-are-live-in-sema-while-runtime-cleanup-execution-remains-deferred";
 
-struct Objc3Part5ControlFlowSemanticModelSummary {
-  std::string contract_id = kObjc3Part5ControlFlowSemanticModelContractId;
+struct Objc3ControlFlowControlFlowSemanticModelSummary {
+  std::string contract_id = kObjc3ControlFlowControlFlowSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part5ControlFlowSemanticModelFrontendDependencyContractId;
-  std::string surface_path = kObjc3Part5ControlFlowSemanticModelSurfacePath;
-  std::string semantic_model = kObjc3Part5ControlFlowSemanticModelRule;
-  std::string defer_model = kObjc3Part5ControlFlowSemanticModelDeferRule;
-  std::string match_model = kObjc3Part5ControlFlowSemanticModelMatchRule;
-  std::string non_local_exit_model = kObjc3Part5ControlFlowSemanticModelExitRule;
+      kObjc3ControlFlowControlFlowSemanticModelFrontendDependencyContractId;
+  std::string surface_path = kObjc3ControlFlowControlFlowSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3ControlFlowControlFlowSemanticModelRule;
+  std::string defer_model = kObjc3ControlFlowControlFlowSemanticModelDeferRule;
+  std::string match_model = kObjc3ControlFlowControlFlowSemanticModelMatchRule;
+  std::string non_local_exit_model = kObjc3ControlFlowControlFlowSemanticModelExitRule;
   std::size_t guard_binding_semantic_sites = 0;
   std::size_t guard_binding_clause_semantic_sites = 0;
   std::size_t guard_condition_statement_sites = 0;
@@ -377,8 +377,8 @@ struct Objc3Part5ControlFlowSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part5ControlFlowSemanticModelSummary(
-    const Objc3Part5ControlFlowSemanticModelSummary &summary) {
+inline bool IsReadyObjc3ControlFlowControlFlowSemanticModelSummary(
+    const Objc3ControlFlowControlFlowSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.frontend_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -400,24 +400,24 @@ inline bool IsReadyObjc3Part5ControlFlowSemanticModelSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline constexpr const char *kObjc3Part6ErrorSemanticModelFrontendDependencyContractId =
-    "objc3c.part6.error.source.closure.v1";
-inline constexpr const char *kObjc3Part6ErrorSemanticModelContractId =
-    "objc3c.part6.error.semantic.model.v1";
-inline constexpr const char *kObjc3Part6ErrorSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part6_error_semantic_model";
-inline constexpr const char *kObjc3Part6ErrorSemanticModelRule =
+inline constexpr const char *kObjc3ErrorHandlingErrorSemanticModelFrontendDependencyContractId =
+    "objc3c.error_handling.error.source.closure.v1";
+inline constexpr const char *kObjc3ErrorHandlingErrorSemanticModelContractId =
+    "objc3c.error_handling.error.semantic.model.v1";
+inline constexpr const char *kObjc3ErrorHandlingErrorSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_error_handling_error_semantic_model";
+inline constexpr const char *kObjc3ErrorHandlingErrorSemanticModelRule =
     "throws-declaration-semantics-plus-deterministic-result-and-nserror-profile-carriage-are-live-while-try-throw-do-catch-propagation-and-native-error-runtime-behavior-remain-deferred";
-inline constexpr const char *kObjc3Part6ErrorSemanticModelDeferredRule =
+inline constexpr const char *kObjc3ErrorHandlingErrorSemanticModelDeferredRule =
     "try-throw-do-catch-postfix-propagation-status-to-error-execution-bridge-temporaries-and-native-thrown-error-abi-remain-fail-closed-or-later-lane-work";
 
-struct Objc3Part6ErrorSemanticModelSummary {
-  std::string contract_id = kObjc3Part6ErrorSemanticModelContractId;
+struct Objc3ErrorHandlingErrorSemanticModelSummary {
+  std::string contract_id = kObjc3ErrorHandlingErrorSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part6ErrorSemanticModelFrontendDependencyContractId;
-  std::string surface_path = kObjc3Part6ErrorSemanticModelSurfacePath;
-  std::string semantic_model = kObjc3Part6ErrorSemanticModelRule;
-  std::string deferred_model = kObjc3Part6ErrorSemanticModelDeferredRule;
+      kObjc3ErrorHandlingErrorSemanticModelFrontendDependencyContractId;
+  std::string surface_path = kObjc3ErrorHandlingErrorSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3ErrorHandlingErrorSemanticModelRule;
+  std::string deferred_model = kObjc3ErrorHandlingErrorSemanticModelDeferredRule;
   std::size_t throws_declaration_sites = 0;
   std::size_t function_throws_declaration_sites = 0;
   std::size_t method_throws_declaration_sites = 0;
@@ -453,28 +453,28 @@ struct Objc3Part6ErrorSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelFrontendDependencyContractId =
-    "objc3c.part7.async.source.closure.v1";
-inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelContractId =
-    "objc3c.part7.async.effect.suspension.semantic.model.v1";
-inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_async_effect_and_suspension_semantic_model";
-inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelRule =
+inline constexpr const char *kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelFrontendDependencyContractId =
+    "objc3c.concurrency.async.source.closure.v1";
+inline constexpr const char *kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelContractId =
+    "objc3c.concurrency.async.effect.suspension.semantic.model.v1";
+inline constexpr const char *kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_async_effect_and_suspension_semantic_model";
+inline constexpr const char *kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelRule =
     "async-effect-and-await-legality-semantics-plus-deterministic-continuation-suspension-and-concurrency-profile-carriage-are-live-while-runnable-frame-lowering-cleanup-and-executor-runtime-integration-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7AsyncEffectSuspensionSemanticModelDeferredRule =
+inline constexpr const char *kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelDeferredRule =
     "async-frame-abi-resume-lowering-suspension-cleanup-task-runtime-execution-and-executor-dispatch-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7AsyncEffectSuspensionSemanticModelSummary {
+struct Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary {
   std::string contract_id =
-      kObjc3Part7AsyncEffectSuspensionSemanticModelContractId;
+      kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part7AsyncEffectSuspensionSemanticModelFrontendDependencyContractId;
+      kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelFrontendDependencyContractId;
   std::string surface_path =
-      kObjc3Part7AsyncEffectSuspensionSemanticModelSurfacePath;
+      kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelSurfacePath;
   std::string semantic_model =
-      kObjc3Part7AsyncEffectSuspensionSemanticModelRule;
+      kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelRule;
   std::string deferred_model =
-      kObjc3Part7AsyncEffectSuspensionSemanticModelDeferredRule;
+      kObjc3ConcurrencyAsyncEffectSuspensionSemanticModelDeferredRule;
   std::size_t async_continuation_sites = 0;
   std::size_t async_keyword_sites = 0;
   std::size_t async_function_sites = 0;
@@ -530,8 +530,8 @@ struct Objc3Part7AsyncEffectSuspensionSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part7AsyncEffectSuspensionSemanticModelSummary(
-    const Objc3Part7AsyncEffectSuspensionSemanticModelSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary(
+    const Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.frontend_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -551,28 +551,28 @@ inline bool IsReadyObjc3Part7AsyncEffectSuspensionSemanticModelSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelDependencyContractId =
-    "objc3c.part7.task.group.cancellation.source.closure.v1";
-inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelContractId =
-    "objc3c.part7.task.executor.cancellation.semantic.model.v1";
-inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_task_executor_and_cancellation_semantic_model";
-inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelRule =
+inline constexpr const char *kObjc3ConcurrencyTaskExecutorCancellationSemanticModelDependencyContractId =
+    "objc3c.concurrency.task.group.cancellation.source.closure.v1";
+inline constexpr const char *kObjc3ConcurrencyTaskExecutorCancellationSemanticModelContractId =
+    "objc3c.concurrency.task.executor.cancellation.semantic.model.v1";
+inline constexpr const char *kObjc3ConcurrencyTaskExecutorCancellationSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_task_executor_and_cancellation_semantic_model";
+inline constexpr const char *kObjc3ConcurrencyTaskExecutorCancellationSemanticModelRule =
     "task-lifetime-executor-affinity-cancellation-observation-and-structured-task-legality-are-live-in-sema-while-runnable-task-allocation-and-scheduler-execution-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7TaskExecutorCancellationSemanticModelDeferredRule =
+inline constexpr const char *kObjc3ConcurrencyTaskExecutorCancellationSemanticModelDeferredRule =
     "task-allocation-executor-hop-runtime-task-group-execution-and-scheduler-backed-cancellation-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7TaskExecutorCancellationSemanticModelSummary {
+struct Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary {
   std::string contract_id =
-      kObjc3Part7TaskExecutorCancellationSemanticModelContractId;
+      kObjc3ConcurrencyTaskExecutorCancellationSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part7TaskExecutorCancellationSemanticModelDependencyContractId;
+      kObjc3ConcurrencyTaskExecutorCancellationSemanticModelDependencyContractId;
   std::string surface_path =
-      kObjc3Part7TaskExecutorCancellationSemanticModelSurfacePath;
+      kObjc3ConcurrencyTaskExecutorCancellationSemanticModelSurfacePath;
   std::string semantic_model =
-      kObjc3Part7TaskExecutorCancellationSemanticModelRule;
+      kObjc3ConcurrencyTaskExecutorCancellationSemanticModelRule;
   std::string deferred_model =
-      kObjc3Part7TaskExecutorCancellationSemanticModelDeferredRule;
+      kObjc3ConcurrencyTaskExecutorCancellationSemanticModelDeferredRule;
   std::size_t async_callable_sites = 0;
   std::size_t executor_attribute_sites = 0;
   std::size_t task_creation_sites = 0;
@@ -600,8 +600,8 @@ struct Objc3Part7TaskExecutorCancellationSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part7TaskExecutorCancellationSemanticModelSummary(
-    const Objc3Part7TaskExecutorCancellationSemanticModelSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyTaskExecutorCancellationSemanticModelSummary(
+    const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.frontend_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -618,24 +618,24 @@ inline bool IsReadyObjc3Part7TaskExecutorCancellationSemanticModelSummary(
          summary.failure_reason.empty();
 }
 
-inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelDependencyContractId =
-    "objc3c.part8.retainable.c.family.source.completion.v1";
-inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelContractId =
-    "objc3c.part8.system.extension.semantic.model.v1";
-inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part8_system_extension_semantic_model";
-inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelRule =
+inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelDependencyContractId =
+    "objc3c.ownership.retainable.c.family.source.completion.v1";
+inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelContractId =
+    "objc3c.ownership.system.extension.semantic.model.v1";
+inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_ownership_system_extension_semantic_model";
+inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelRule =
     "cleanup-resource-borrowed-capture-and-retainable-family-source-surfaces-now-share-one-truthful-sema-model-while-resource-move-borrowed-escape-and-runtime-interop-work-remain-later-runtime-lanes";
-inline constexpr const char *kObjc3Part8SystemExtensionSemanticModelDeferredRule =
+inline constexpr const char *kObjc3OwnershipSystemExtensionSemanticModelDeferredRule =
     "resource-move-use-after-move-borrowed-escape-retainable-family-legality-and-runtime-interop-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part8SystemExtensionSemanticModelSummary {
-  std::string contract_id = kObjc3Part8SystemExtensionSemanticModelContractId;
+struct Objc3OwnershipSystemExtensionSemanticModelSummary {
+  std::string contract_id = kObjc3OwnershipSystemExtensionSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part8SystemExtensionSemanticModelDependencyContractId;
-  std::string surface_path = kObjc3Part8SystemExtensionSemanticModelSurfacePath;
-  std::string semantic_model = kObjc3Part8SystemExtensionSemanticModelRule;
-  std::string deferred_model = kObjc3Part8SystemExtensionSemanticModelDeferredRule;
+      kObjc3OwnershipSystemExtensionSemanticModelDependencyContractId;
+  std::string surface_path = kObjc3OwnershipSystemExtensionSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3OwnershipSystemExtensionSemanticModelRule;
+  std::string deferred_model = kObjc3OwnershipSystemExtensionSemanticModelDeferredRule;
   std::size_t cleanup_attribute_sites = 0;
   std::size_t cleanup_sugar_sites = 0;
   std::size_t resource_attribute_sites = 0;
@@ -660,8 +660,8 @@ struct Objc3Part8SystemExtensionSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part8SystemExtensionSemanticModelSummary(
-    const Objc3Part8SystemExtensionSemanticModelSummary &summary) {
+inline bool IsReadyObjc3OwnershipSystemExtensionSemanticModelSummary(
+    const Objc3OwnershipSystemExtensionSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.frontend_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -679,32 +679,32 @@ inline bool IsReadyObjc3Part8SystemExtensionSemanticModelSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsDependencyContractId =
-        "objc3c.part8.system.extension.semantic.model.v1";
+    *kObjc3OwnershipResourceMoveUseAfterMoveSemanticsDependencyContractId =
+        "objc3c.ownership.system.extension.semantic.model.v1";
 inline constexpr const char
-    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsContractId =
-        "objc3c.part8.resource.move.use.after.move.semantics.v1";
+    *kObjc3OwnershipResourceMoveUseAfterMoveSemanticsContractId =
+        "objc3c.ownership.resource.move.use.after.move.semantics.v1";
 inline constexpr const char
-    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics";
+    *kObjc3OwnershipResourceMoveUseAfterMoveSemanticsSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_ownership_resource_move_and_use_after_move_semantics";
 inline constexpr const char
-    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsRule =
+    *kObjc3OwnershipResourceMoveUseAfterMoveSemanticsRule =
         "cleanup-owned-resource-locals-now-transfer-cleanup-ownership-through-explicit-move-captures-and-fail-closed-on-use-after-move-while-borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part8ResourceMoveUseAfterMoveSemanticsDeferredRule =
+    *kObjc3OwnershipResourceMoveUseAfterMoveSemanticsDeferredRule =
         "borrowed-escape-retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary {
+struct Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary {
   std::string contract_id =
-      kObjc3Part8ResourceMoveUseAfterMoveSemanticsContractId;
+      kObjc3OwnershipResourceMoveUseAfterMoveSemanticsContractId;
   std::string dependency_contract_id =
-      kObjc3Part8ResourceMoveUseAfterMoveSemanticsDependencyContractId;
+      kObjc3OwnershipResourceMoveUseAfterMoveSemanticsDependencyContractId;
   std::string surface_path =
-      kObjc3Part8ResourceMoveUseAfterMoveSemanticsSurfacePath;
+      kObjc3OwnershipResourceMoveUseAfterMoveSemanticsSurfacePath;
   std::string semantic_model =
-      kObjc3Part8ResourceMoveUseAfterMoveSemanticsRule;
+      kObjc3OwnershipResourceMoveUseAfterMoveSemanticsRule;
   std::string deferred_model =
-      kObjc3Part8ResourceMoveUseAfterMoveSemanticsDeferredRule;
+      kObjc3OwnershipResourceMoveUseAfterMoveSemanticsDeferredRule;
   std::size_t cleanup_owned_local_sites = 0;
   std::size_t resource_move_capture_sites = 0;
   std::size_t illegal_non_resource_move_sites = 0;
@@ -723,8 +723,8 @@ struct Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part8ResourceMoveUseAfterMoveSemanticsSummary(
-    const Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary &summary) {
+inline bool IsReadyObjc3OwnershipResourceMoveUseAfterMoveSemanticsSummary(
+    const Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -740,32 +740,32 @@ inline bool IsReadyObjc3Part8ResourceMoveUseAfterMoveSemanticsSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part8BorrowedPointerEscapeAnalysisDependencyContractId =
-        "objc3c.part8.resource.move.use.after.move.semantics.v1";
+    *kObjc3OwnershipBorrowedPointerEscapeAnalysisDependencyContractId =
+        "objc3c.ownership.resource.move.use.after.move.semantics.v1";
 inline constexpr const char
-    *kObjc3Part8BorrowedPointerEscapeAnalysisContractId =
-        "objc3c.part8.borrowed.pointer.escape.analysis.v1";
+    *kObjc3OwnershipBorrowedPointerEscapeAnalysisContractId =
+        "objc3c.ownership.borrowed.pointer.escape.analysis.v1";
 inline constexpr const char
-    *kObjc3Part8BorrowedPointerEscapeAnalysisSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part8_borrowed_pointer_escape_analysis";
+    *kObjc3OwnershipBorrowedPointerEscapeAnalysisSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_ownership_borrowed_pointer_escape_analysis";
 inline constexpr const char
-    *kObjc3Part8BorrowedPointerEscapeAnalysisRule =
+    *kObjc3OwnershipBorrowedPointerEscapeAnalysisRule =
         "borrowed-pointer-bindings-now-fail-closed-on-unproven-call-boundaries-escaping-block-capture-and-invalid-borrowed-return-contracts-while-retainable-family-legality-lowering-and-runtime-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part8BorrowedPointerEscapeAnalysisDeferredRule =
+    *kObjc3OwnershipBorrowedPointerEscapeAnalysisDeferredRule =
         "retainable-family-legality-lowering-and-runtime-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part8BorrowedPointerEscapeAnalysisSummary {
+struct Objc3OwnershipBorrowedPointerEscapeAnalysisSummary {
   std::string contract_id =
-      kObjc3Part8BorrowedPointerEscapeAnalysisContractId;
+      kObjc3OwnershipBorrowedPointerEscapeAnalysisContractId;
   std::string dependency_contract_id =
-      kObjc3Part8BorrowedPointerEscapeAnalysisDependencyContractId;
+      kObjc3OwnershipBorrowedPointerEscapeAnalysisDependencyContractId;
   std::string surface_path =
-      kObjc3Part8BorrowedPointerEscapeAnalysisSurfacePath;
+      kObjc3OwnershipBorrowedPointerEscapeAnalysisSurfacePath;
   std::string semantic_model =
-      kObjc3Part8BorrowedPointerEscapeAnalysisRule;
+      kObjc3OwnershipBorrowedPointerEscapeAnalysisRule;
   std::string deferred_model =
-      kObjc3Part8BorrowedPointerEscapeAnalysisDeferredRule;
+      kObjc3OwnershipBorrowedPointerEscapeAnalysisDeferredRule;
   std::size_t borrowed_parameter_sites = 0;
   std::size_t borrowed_return_callable_sites = 0;
   std::size_t borrowed_escape_candidate_sites = 0;
@@ -784,8 +784,8 @@ struct Objc3Part8BorrowedPointerEscapeAnalysisSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part8BorrowedPointerEscapeAnalysisSummary(
-    const Objc3Part8BorrowedPointerEscapeAnalysisSummary &summary) {
+inline bool IsReadyObjc3OwnershipBorrowedPointerEscapeAnalysisSummary(
+    const Objc3OwnershipBorrowedPointerEscapeAnalysisSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -800,32 +800,32 @@ inline bool IsReadyObjc3Part8BorrowedPointerEscapeAnalysisSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDependencyContractId =
-        "objc3c.part8.borrowed.pointer.escape.analysis.v1";
+    *kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionDependencyContractId =
+        "objc3c.ownership.borrowed.pointer.escape.analysis.v1";
 inline constexpr const char
-    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionContractId =
-        "objc3c.part8.capture.list.retainable.family.legality.v1";
+    *kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionContractId =
+        "objc3c.ownership.capture.list.retainable.family.legality.v1";
 inline constexpr const char
-    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion";
+    *kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_ownership_capture_list_and_retainable_family_legality_completion";
 inline constexpr const char
-    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionRule =
+    *kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionRule =
         "explicit-capture-lists-now-fail-closed-on-duplicate-unused-and-non-object-ownership-modes-while-retainable-family-callables-fail-closed-on-conflicting-and-shape-invalid-annotations-before-lowering-and-runtime-integration";
 inline constexpr const char
-    *kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDeferredRule =
+    *kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionDeferredRule =
         "lowering-runtime-interop-and-runnable-retainable-family-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary {
+struct Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary {
   std::string contract_id =
-      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionContractId;
+      kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionContractId;
   std::string dependency_contract_id =
-      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDependencyContractId;
+      kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionDependencyContractId;
   std::string surface_path =
-      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionSurfacePath;
+      kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionSurfacePath;
   std::string semantic_model =
-      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionRule;
+      kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionRule;
   std::string deferred_model =
-      kObjc3Part8CaptureListRetainableFamilyLegalityCompletionDeferredRule;
+      kObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionDeferredRule;
   std::size_t explicit_capture_list_sites = 0;
   std::size_t explicit_capture_item_sites = 0;
   std::size_t explicit_capture_ownership_mode_sites = 0;
@@ -853,8 +853,8 @@ struct Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary {
 };
 
 inline bool
-IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
-    const Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
+IsReadyObjc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary(
+    const Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
         &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
@@ -872,24 +872,24 @@ IsReadyObjc3Part8CaptureListRetainableFamilyLegalityCompletionSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part11InteropSemanticModelDependencyContractId =
-        "objc3c.part11.foreign.surface.interface.preservation.v1";
-inline constexpr const char *kObjc3Part11InteropSemanticModelContractId =
-    "objc3c.part11.interop.semantic.model.v1";
-inline constexpr const char *kObjc3Part11InteropSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part11_interop_semantic_model";
-inline constexpr const char *kObjc3Part11InteropSemanticModelRule =
+    *kObjc3InteropInteropSemanticModelDependencyContractId =
+        "objc3c.interop.foreign.surface.interface.preservation.v1";
+inline constexpr const char *kObjc3InteropInteropSemanticModelContractId =
+    "objc3c.interop.interop.semantic.model.v1";
+inline constexpr const char *kObjc3InteropInteropSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_interop_interop_semantic_model";
+inline constexpr const char *kObjc3InteropInteropSemanticModelRule =
     "foreign-import-swift-cpp-facing-annotation-surfaces-now-freeze-one-deterministic-sema-model-over-existing-ownership-error-async-and-actor-interaction-profiles-while-ffi-lowering-and-runnable-bridge-generation-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part11InteropSemanticModelDeferredRule =
+inline constexpr const char *kObjc3InteropInteropSemanticModelDeferredRule =
     "ffi-abi-lowering-runtime-bridge-shims-cross-language-object-ownership-and-runnable-call-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part11InteropSemanticModelSummary {
-  std::string contract_id = kObjc3Part11InteropSemanticModelContractId;
+struct Objc3InteropInteropSemanticModelSummary {
+  std::string contract_id = kObjc3InteropInteropSemanticModelContractId;
   std::string dependency_contract_id =
-      kObjc3Part11InteropSemanticModelDependencyContractId;
-  std::string surface_path = kObjc3Part11InteropSemanticModelSurfacePath;
-  std::string semantic_model = kObjc3Part11InteropSemanticModelRule;
-  std::string deferred_model = kObjc3Part11InteropSemanticModelDeferredRule;
+      kObjc3InteropInteropSemanticModelDependencyContractId;
+  std::string surface_path = kObjc3InteropInteropSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3InteropInteropSemanticModelRule;
+  std::string deferred_model = kObjc3InteropInteropSemanticModelDeferredRule;
   std::size_t foreign_callable_sites = 0;
   std::size_t import_module_annotation_sites = 0;
   std::size_t imported_module_name_sites = 0;
@@ -918,8 +918,8 @@ struct Objc3Part11InteropSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part11InteropSemanticModelSummary(
-    const Objc3Part11InteropSemanticModelSummary &summary) {
+inline bool IsReadyObjc3InteropInteropSemanticModelSummary(
+    const Objc3InteropInteropSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -937,30 +937,30 @@ inline bool IsReadyObjc3Part11InteropSemanticModelSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part11InteropRuntimeParitySummaryDependencyContractId =
-        kObjc3Part11InteropSemanticModelContractId;
+    *kObjc3InteropInteropRuntimeParitySummaryDependencyContractId =
+        kObjc3InteropInteropSemanticModelContractId;
 inline constexpr const char
-    *kObjc3Part11InteropRuntimeParitySummaryContractId =
-        "objc3c.part11.c.and.objc.runtime.parity.semantics.v1";
+    *kObjc3InteropInteropRuntimeParitySummaryContractId =
+        "objc3c.interop.c.and.objc.runtime.parity.semantics.v1";
 inline constexpr const char
-    *kObjc3Part11InteropRuntimeParitySummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part11_c_and_objc_runtime_parity_semantics";
+    *kObjc3InteropInteropRuntimeParitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_interop_c_and_objc_runtime_parity_semantics";
 inline constexpr const char
-    *kObjc3Part11InteropRuntimeParitySummaryRule =
+    *kObjc3InteropInteropRuntimeParitySummaryRule =
         "declaration-only-foreign-c-surfaces-import-module-requires-foreign-and-implementation-annotation-rejections-are-now-live-fail-closed-sema-rules-while-ffi-abi-lowering-and-runnable-bridge-generation-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part11InteropRuntimeParitySummaryDeferredRule =
+    *kObjc3InteropInteropRuntimeParitySummaryDeferredRule =
         "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-and-runnable-foreign-call-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part11InteropRuntimeParitySummary {
-  std::string contract_id = kObjc3Part11InteropRuntimeParitySummaryContractId;
+struct Objc3InteropInteropRuntimeParitySummary {
+  std::string contract_id = kObjc3InteropInteropRuntimeParitySummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part11InteropRuntimeParitySummaryDependencyContractId;
+      kObjc3InteropInteropRuntimeParitySummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part11InteropRuntimeParitySummarySurfacePath;
-  std::string semantic_model = kObjc3Part11InteropRuntimeParitySummaryRule;
+      kObjc3InteropInteropRuntimeParitySummarySurfacePath;
+  std::string semantic_model = kObjc3InteropInteropRuntimeParitySummaryRule;
   std::string deferred_model =
-      kObjc3Part11InteropRuntimeParitySummaryDeferredRule;
+      kObjc3InteropInteropRuntimeParitySummaryDeferredRule;
   std::size_t foreign_callable_sites = 0;
   std::size_t c_foreign_callable_sites = 0;
   std::size_t objc_method_foreign_callable_sites = 0;
@@ -983,8 +983,8 @@ struct Objc3Part11InteropRuntimeParitySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part11InteropRuntimeParitySummary(
-    const Objc3Part11InteropRuntimeParitySummary &summary) {
+inline bool IsReadyObjc3InteropInteropRuntimeParitySummary(
+    const Objc3InteropInteropRuntimeParitySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1000,30 +1000,30 @@ inline bool IsReadyObjc3Part11InteropRuntimeParitySummary(
 }
 
 inline constexpr const char
-    *kObjc3Part11CppInteropInteractionSummaryDependencyContractId =
-        kObjc3Part11InteropRuntimeParitySummaryContractId;
+    *kObjc3InteropCppInteropInteractionSummaryDependencyContractId =
+        kObjc3InteropInteropRuntimeParitySummaryContractId;
 inline constexpr const char
-    *kObjc3Part11CppInteropInteractionSummaryContractId =
-        "objc3c.part11.cpp.ownership.throws.and.async.interaction.completion.v1";
+    *kObjc3InteropCppInteropInteractionSummaryContractId =
+        "objc3c.interop.cpp.ownership.throws.and.async.interaction.completion.v1";
 inline constexpr const char
-    *kObjc3Part11CppInteropInteractionSummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part11_cpp_ownership_throws_and_async_interactions";
+    *kObjc3InteropCppInteropInteractionSummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_interop_cpp_ownership_throws_and_async_interactions";
 inline constexpr const char
-    *kObjc3Part11CppInteropInteractionSummaryRule =
+    *kObjc3InteropCppInteropInteractionSummaryRule =
         "cxx-facing-interop-callables-now-fail-closed-on-ownership-managed-throws-and-async-combinations-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part11CppInteropInteractionSummaryDeferredRule =
+    *kObjc3InteropCppInteropInteractionSummaryDeferredRule =
         "ffi-abi-lowering-runtime-bridge-shims-cross-language-ownership-async-propagation-and-runnable-cxx-interop-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part11CppInteropInteractionSummary {
-  std::string contract_id = kObjc3Part11CppInteropInteractionSummaryContractId;
+struct Objc3InteropCppInteropInteractionSummary {
+  std::string contract_id = kObjc3InteropCppInteropInteractionSummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part11CppInteropInteractionSummaryDependencyContractId;
+      kObjc3InteropCppInteropInteractionSummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part11CppInteropInteractionSummarySurfacePath;
-  std::string semantic_model = kObjc3Part11CppInteropInteractionSummaryRule;
+      kObjc3InteropCppInteropInteractionSummarySurfacePath;
+  std::string semantic_model = kObjc3InteropCppInteropInteractionSummaryRule;
   std::string deferred_model =
-      kObjc3Part11CppInteropInteractionSummaryDeferredRule;
+      kObjc3InteropCppInteropInteractionSummaryDeferredRule;
   std::size_t cpp_interop_callable_sites = 0;
   std::size_t cpp_named_callable_sites = 0;
   std::size_t header_named_callable_sites = 0;
@@ -1046,8 +1046,8 @@ struct Objc3Part11CppInteropInteractionSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part11CppInteropInteractionSummary(
-    const Objc3Part11CppInteropInteractionSummary &summary) {
+inline bool IsReadyObjc3InteropCppInteropInteractionSummary(
+    const Objc3InteropCppInteropInteractionSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1063,30 +1063,30 @@ inline bool IsReadyObjc3Part11CppInteropInteractionSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part11SwiftInteropIsolationSummaryDependencyContractId =
-        kObjc3Part11CppInteropInteractionSummaryContractId;
+    *kObjc3InteropSwiftInteropIsolationSummaryDependencyContractId =
+        kObjc3InteropCppInteropInteractionSummaryContractId;
 inline constexpr const char
-    *kObjc3Part11SwiftInteropIsolationSummaryContractId =
-        "objc3c.part11.swift.metadata.and.isolation.mapping.completion.v1";
+    *kObjc3InteropSwiftInteropIsolationSummaryContractId =
+        "objc3c.interop.swift.metadata.and.isolation.mapping.completion.v1";
 inline constexpr const char
-    *kObjc3Part11SwiftInteropIsolationSummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part11_swift_metadata_and_isolation_mapping";
+    *kObjc3InteropSwiftInteropIsolationSummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_interop_swift_metadata_and_isolation_mapping";
 inline constexpr const char
-    *kObjc3Part11SwiftInteropIsolationSummaryRule =
+    *kObjc3InteropSwiftInteropIsolationSummaryRule =
         "swift-facing-metadata-now-fails-closed-on-missing-name-pairing-actor-owned-surfaces-and-objc-nonisolated-isolation-mapping-gaps-while-ffi-abi-lowering-runtime-bridge-shims-and-runnable-cross-language-behavior-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part11SwiftInteropIsolationSummaryDeferredRule =
+    *kObjc3InteropSwiftInteropIsolationSummaryDeferredRule =
         "ffi-abi-lowering-runtime-bridge-shims-swift-facing-isolation-export-and-runnable-cross-language-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part11SwiftInteropIsolationSummary {
-  std::string contract_id = kObjc3Part11SwiftInteropIsolationSummaryContractId;
+struct Objc3InteropSwiftInteropIsolationSummary {
+  std::string contract_id = kObjc3InteropSwiftInteropIsolationSummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part11SwiftInteropIsolationSummaryDependencyContractId;
+      kObjc3InteropSwiftInteropIsolationSummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part11SwiftInteropIsolationSummarySurfacePath;
-  std::string semantic_model = kObjc3Part11SwiftInteropIsolationSummaryRule;
+      kObjc3InteropSwiftInteropIsolationSummarySurfacePath;
+  std::string semantic_model = kObjc3InteropSwiftInteropIsolationSummaryRule;
   std::string deferred_model =
-      kObjc3Part11SwiftInteropIsolationSummaryDeferredRule;
+      kObjc3InteropSwiftInteropIsolationSummaryDeferredRule;
   std::size_t swift_interop_callable_sites = 0;
   std::size_t swift_named_callable_sites = 0;
   std::size_t swift_private_callable_sites = 0;
@@ -1112,8 +1112,8 @@ struct Objc3Part11SwiftInteropIsolationSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part11SwiftInteropIsolationSummary(
-    const Objc3Part11SwiftInteropIsolationSummary &summary) {
+inline bool IsReadyObjc3InteropSwiftInteropIsolationSummary(
+    const Objc3InteropSwiftInteropIsolationSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1130,26 +1130,26 @@ inline bool IsReadyObjc3Part11SwiftInteropIsolationSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part9DispatchIntentSemanticModelDependencyContractId =
-        "objc3c.part9.dispatch.intent.source.completion.v1";
-inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelContractId =
-    "objc3c.part9.dynamism.dispatch.control.semantic.model.v1";
-inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part9_dynamism_and_dispatch_control_semantic_model";
-inline constexpr const char *kObjc3Part9DispatchIntentSemanticModelRule =
+    *kObjc3DispatchDispatchIntentSemanticModelDependencyContractId =
+        "objc3c.dispatch.dispatch.intent.source.completion.v1";
+inline constexpr const char *kObjc3DispatchDispatchIntentSemanticModelContractId =
+    "objc3c.dispatch.dynamism.dispatch.control.semantic.model.v1";
+inline constexpr const char *kObjc3DispatchDispatchIntentSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_dispatch_dynamism_and_dispatch_control_semantic_model";
+inline constexpr const char *kObjc3DispatchDispatchIntentSemanticModelRule =
     "direct-members-defaulting-final-sealed-and-override-accounting-now-share-one-truthful-sema-packet-while-direct-dispatch-legality-final-sealed-enforcement-and-runnable-dispatch-boundary-realization-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part9DispatchIntentSemanticModelDeferredRule =
+    *kObjc3DispatchDispatchIntentSemanticModelDeferredRule =
         "direct-call-lowering-final-sealed-diagnostics-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part9DispatchIntentSemanticModelSummary {
-  std::string contract_id = kObjc3Part9DispatchIntentSemanticModelContractId;
+struct Objc3DispatchDispatchIntentSemanticModelSummary {
+  std::string contract_id = kObjc3DispatchDispatchIntentSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part9DispatchIntentSemanticModelDependencyContractId;
-  std::string surface_path = kObjc3Part9DispatchIntentSemanticModelSurfacePath;
-  std::string semantic_model = kObjc3Part9DispatchIntentSemanticModelRule;
+      kObjc3DispatchDispatchIntentSemanticModelDependencyContractId;
+  std::string surface_path = kObjc3DispatchDispatchIntentSemanticModelSurfacePath;
+  std::string semantic_model = kObjc3DispatchDispatchIntentSemanticModelRule;
   std::string deferred_model =
-      kObjc3Part9DispatchIntentSemanticModelDeferredRule;
+      kObjc3DispatchDispatchIntentSemanticModelDeferredRule;
   std::size_t prefixed_container_attribute_sites = 0;
   std::size_t direct_members_container_sites = 0;
   std::size_t final_container_sites = 0;
@@ -1174,8 +1174,8 @@ struct Objc3Part9DispatchIntentSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part9DispatchIntentSemanticModelSummary(
-    const Objc3Part9DispatchIntentSemanticModelSummary &summary) {
+inline bool IsReadyObjc3DispatchDispatchIntentSemanticModelSummary(
+    const Objc3DispatchDispatchIntentSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.frontend_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1191,30 +1191,30 @@ inline bool IsReadyObjc3Part9DispatchIntentSemanticModelSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part9DispatchIntentLegalitySummaryDependencyContractId =
-        "objc3c.part9.dynamism.dispatch.control.semantic.model.v1";
+    *kObjc3DispatchDispatchIntentLegalitySummaryDependencyContractId =
+        "objc3c.dispatch.dynamism.dispatch.control.semantic.model.v1";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentLegalitySummaryContractId =
-        "objc3c.part9.override.finality.sealing.legality.v1";
+    kObjc3DispatchDispatchIntentLegalitySummaryContractId =
+        "objc3c.dispatch.override.finality.sealing.legality.v1";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentLegalitySummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part9_override_finality_and_sealing_legality";
+    kObjc3DispatchDispatchIntentLegalitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_dispatch_override_finality_and_sealing_legality";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentLegalitySummaryRule =
+    kObjc3DispatchDispatchIntentLegalitySummaryRule =
         "superclass-finality-superclass-sealing-and-direct-final-override-restrictions-are-now-live-fail-closed-sema-rules-while-direct-call-lowering-and-runnable-dispatch-boundary-realization-remain-later-runtime-work";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentLegalitySummaryDeferredRule =
+    kObjc3DispatchDispatchIntentLegalitySummaryDeferredRule =
         "direct-call-lowering-selector-dispatch-bypass-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part9DispatchIntentLegalitySummary {
-  std::string contract_id = kObjc3Part9DispatchIntentLegalitySummaryContractId;
+struct Objc3DispatchDispatchIntentLegalitySummary {
+  std::string contract_id = kObjc3DispatchDispatchIntentLegalitySummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part9DispatchIntentLegalitySummaryDependencyContractId;
+      kObjc3DispatchDispatchIntentLegalitySummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part9DispatchIntentLegalitySummarySurfacePath;
-  std::string semantic_model = kObjc3Part9DispatchIntentLegalitySummaryRule;
+      kObjc3DispatchDispatchIntentLegalitySummarySurfacePath;
+  std::string semantic_model = kObjc3DispatchDispatchIntentLegalitySummaryRule;
   std::string deferred_model =
-      kObjc3Part9DispatchIntentLegalitySummaryDeferredRule;
+      kObjc3DispatchDispatchIntentLegalitySummaryDeferredRule;
   std::size_t subclass_sites = 0;
   std::size_t override_sites = 0;
   std::size_t illegal_final_superclass_sites = 0;
@@ -1233,8 +1233,8 @@ struct Objc3Part9DispatchIntentLegalitySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part9DispatchIntentLegalitySummary(
-    const Objc3Part9DispatchIntentLegalitySummary &summary) {
+inline bool IsReadyObjc3DispatchDispatchIntentLegalitySummary(
+    const Objc3DispatchDispatchIntentLegalitySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1249,32 +1249,32 @@ inline bool IsReadyObjc3Part9DispatchIntentLegalitySummary(
 }
 
 inline constexpr const char
-    *kObjc3Part9DispatchIntentCompatibilitySummaryDependencyContractId =
-        "objc3c.part9.override.finality.sealing.legality.v1";
+    *kObjc3DispatchDispatchIntentCompatibilitySummaryDependencyContractId =
+        "objc3c.dispatch.override.finality.sealing.legality.v1";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentCompatibilitySummaryContractId =
-        "objc3c.part9.dynamism.control.compatibility.diagnostics.v1";
+    kObjc3DispatchDispatchIntentCompatibilitySummaryContractId =
+        "objc3c.dispatch.dynamism.control.compatibility.diagnostics.v1";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentCompatibilitySummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part9_dynamism_control_compatibility_diagnostics";
+    kObjc3DispatchDispatchIntentCompatibilitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_dispatch_dynamism_control_compatibility_diagnostics";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentCompatibilitySummaryRule =
-        "part9-dispatch-intent-now-fails-closed-on-conflicting-direct-dynamic-final-dynamic-callable-markers-plus-unsupported-function-protocol-and-category-topologies-before-lowering-and-runtime-dispatch-boundary-realization";
+    kObjc3DispatchDispatchIntentCompatibilitySummaryRule =
+        "dispatch-dispatch-intent-now-fails-closed-on-conflicting-direct-dynamic-final-dynamic-callable-markers-plus-unsupported-function-protocol-and-category-topologies-before-lowering-and-runtime-dispatch-boundary-realization";
 inline constexpr const char *
-    kObjc3Part9DispatchIntentCompatibilitySummaryDeferredRule =
+    kObjc3DispatchDispatchIntentCompatibilitySummaryDeferredRule =
         "direct-call-lowering-metadata-realization-and-runnable-dispatch-boundary-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part9DispatchIntentCompatibilitySummary {
+struct Objc3DispatchDispatchIntentCompatibilitySummary {
   std::string contract_id =
-      kObjc3Part9DispatchIntentCompatibilitySummaryContractId;
+      kObjc3DispatchDispatchIntentCompatibilitySummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part9DispatchIntentCompatibilitySummaryDependencyContractId;
+      kObjc3DispatchDispatchIntentCompatibilitySummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part9DispatchIntentCompatibilitySummarySurfacePath;
+      kObjc3DispatchDispatchIntentCompatibilitySummarySurfacePath;
   std::string semantic_model =
-      kObjc3Part9DispatchIntentCompatibilitySummaryRule;
+      kObjc3DispatchDispatchIntentCompatibilitySummaryRule;
   std::string deferred_model =
-      kObjc3Part9DispatchIntentCompatibilitySummaryDeferredRule;
+      kObjc3DispatchDispatchIntentCompatibilitySummaryDeferredRule;
   std::size_t callable_dispatch_intent_sites = 0;
   std::size_t container_dispatch_intent_sites = 0;
   std::size_t illegal_direct_dynamic_conflict_sites = 0;
@@ -1294,8 +1294,8 @@ struct Objc3Part9DispatchIntentCompatibilitySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part9DispatchIntentCompatibilitySummary(
-    const Objc3Part9DispatchIntentCompatibilitySummary &summary) {
+inline bool IsReadyObjc3DispatchDispatchIntentCompatibilitySummary(
+    const Objc3DispatchDispatchIntentCompatibilitySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1309,32 +1309,32 @@ inline bool IsReadyObjc3Part9DispatchIntentCompatibilitySummary(
 }
 
 inline constexpr const char
-    *kObjc3Part10ExpansionBehaviorSemanticModelDependencyContractId =
-        "objc3c.part10.property.behavior.source.completion.v1";
+    *kObjc3MetaprogrammingExpansionBehaviorSemanticModelDependencyContractId =
+        "objc3c.metaprogramming.property.behavior.source.completion.v1";
 inline constexpr const char
-    *kObjc3Part10ExpansionBehaviorSemanticModelContractId =
-        "objc3c.part10.expansion.behavior.semantic.model.v1";
+    *kObjc3MetaprogrammingExpansionBehaviorSemanticModelContractId =
+        "objc3c.metaprogramming.expansion.behavior.semantic.model.v1";
 inline constexpr const char
-    *kObjc3Part10ExpansionBehaviorSemanticModelSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part10_expansion_and_behavior_semantic_model";
+    *kObjc3MetaprogrammingExpansionBehaviorSemanticModelSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_metaprogramming_expansion_and_behavior_semantic_model";
 inline constexpr const char
-    *kObjc3Part10ExpansionBehaviorSemanticModelRule =
+    *kObjc3MetaprogrammingExpansionBehaviorSemanticModelRule =
         "derive-macro-package-provenance-and-property-behavior-source-surfaces-now-share-one-truthful-sema-packet-while-real-derive-expansion-macro-execution-and-property-behavior-runtime-materialization-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part10ExpansionBehaviorSemanticModelDeferredRule =
+    *kObjc3MetaprogrammingExpansionBehaviorSemanticModelDeferredRule =
         "derive-body-expansion-macro-sandbox-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part10ExpansionBehaviorSemanticModelSummary {
+struct Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary {
   std::string contract_id =
-      kObjc3Part10ExpansionBehaviorSemanticModelContractId;
+      kObjc3MetaprogrammingExpansionBehaviorSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part10ExpansionBehaviorSemanticModelDependencyContractId;
+      kObjc3MetaprogrammingExpansionBehaviorSemanticModelDependencyContractId;
   std::string surface_path =
-      kObjc3Part10ExpansionBehaviorSemanticModelSurfacePath;
+      kObjc3MetaprogrammingExpansionBehaviorSemanticModelSurfacePath;
   std::string semantic_model =
-      kObjc3Part10ExpansionBehaviorSemanticModelRule;
+      kObjc3MetaprogrammingExpansionBehaviorSemanticModelRule;
   std::string deferred_model =
-      kObjc3Part10ExpansionBehaviorSemanticModelDeferredRule;
+      kObjc3MetaprogrammingExpansionBehaviorSemanticModelDeferredRule;
   std::size_t derive_marker_sites = 0;
   std::size_t macro_marker_sites = 0;
   std::size_t macro_package_sites = 0;
@@ -1362,8 +1362,8 @@ struct Objc3Part10ExpansionBehaviorSemanticModelSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
-    const Objc3Part10ExpansionBehaviorSemanticModelSummary &summary) {
+inline bool IsReadyObjc3MetaprogrammingExpansionBehaviorSemanticModelSummary(
+    const Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.frontend_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1381,28 +1381,28 @@ inline bool IsReadyObjc3Part10ExpansionBehaviorSemanticModelSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part10DeriveExpansionInventoryDependencyContractId =
-        "objc3c.part10.expansion.behavior.semantic.model.v1";
+    *kObjc3MetaprogrammingDeriveExpansionInventoryDependencyContractId =
+        "objc3c.metaprogramming.expansion.behavior.semantic.model.v1";
 inline constexpr const char
-    *kObjc3Part10DeriveExpansionInventoryContractId =
-        "objc3c.part10.derive.expansion.inventory.v1";
+    *kObjc3MetaprogrammingDeriveExpansionInventoryContractId =
+        "objc3c.metaprogramming.derive.expansion.inventory.v1";
 inline constexpr const char
-    *kObjc3Part10DeriveExpansionInventorySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part10_derive_expansion_inventory";
+    *kObjc3MetaprogrammingDeriveExpansionInventorySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_metaprogramming_derive_expansion_inventory";
 inline constexpr const char
-    *kObjc3Part10DeriveExpansionInventoryRule =
+    *kObjc3MetaprogrammingDeriveExpansionInventoryRule =
         "supported-derive-requests-now-expand-into-a-deterministic-selector-inventory-while-unsupported-derive-names-category-topologies-and-selector-collisions-fail-closed-in-sema";
 inline constexpr const char
-    *kObjc3Part10DeriveExpansionInventoryDeferredRule =
+    *kObjc3MetaprogrammingDeriveExpansionInventoryDeferredRule =
         "runtime-backed-derived-method-body-materialization-macro-execution-and-property-behavior-runtime-hooks-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part10DeriveExpansionInventorySummary {
-  std::string contract_id = kObjc3Part10DeriveExpansionInventoryContractId;
+struct Objc3MetaprogrammingDeriveExpansionInventorySummary {
+  std::string contract_id = kObjc3MetaprogrammingDeriveExpansionInventoryContractId;
   std::string semantic_dependency_contract_id =
-      kObjc3Part10DeriveExpansionInventoryDependencyContractId;
-  std::string surface_path = kObjc3Part10DeriveExpansionInventorySurfacePath;
-  std::string semantic_model = kObjc3Part10DeriveExpansionInventoryRule;
-  std::string deferred_model = kObjc3Part10DeriveExpansionInventoryDeferredRule;
+      kObjc3MetaprogrammingDeriveExpansionInventoryDependencyContractId;
+  std::string surface_path = kObjc3MetaprogrammingDeriveExpansionInventorySurfacePath;
+  std::string semantic_model = kObjc3MetaprogrammingDeriveExpansionInventoryRule;
+  std::string deferred_model = kObjc3MetaprogrammingDeriveExpansionInventoryDeferredRule;
   std::size_t derive_request_sites = 0;
   std::size_t supported_derive_request_sites = 0;
   std::size_t unsupported_derive_request_sites = 0;
@@ -1426,8 +1426,8 @@ struct Objc3Part10DeriveExpansionInventorySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part10DeriveExpansionInventorySummary(
-    const Objc3Part10DeriveExpansionInventorySummary &summary) {
+inline bool IsReadyObjc3MetaprogrammingDeriveExpansionInventorySummary(
+    const Objc3MetaprogrammingDeriveExpansionInventorySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.semantic_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1443,32 +1443,32 @@ inline bool IsReadyObjc3Part10DeriveExpansionInventorySummary(
 }
 
 inline constexpr const char
-    *kObjc3Part10MacroSafetySandboxDeterminismDependencyContractId =
-        "objc3c.part10.derive.expansion.inventory.v1";
+    *kObjc3MetaprogrammingMacroSafetySandboxDeterminismDependencyContractId =
+        "objc3c.metaprogramming.derive.expansion.inventory.v1";
 inline constexpr const char
-    *kObjc3Part10MacroSafetySandboxDeterminismContractId =
-        "objc3c.part10.macro.safety.sandbox.determinism.semantics.v1";
+    *kObjc3MetaprogrammingMacroSafetySandboxDeterminismContractId =
+        "objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1";
 inline constexpr const char
-    *kObjc3Part10MacroSafetySandboxDeterminismSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part10_macro_safety_sandbox_and_determinism_semantics";
+    *kObjc3MetaprogrammingMacroSafetySandboxDeterminismSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_metaprogramming_macro_safety_sandbox_and_determinism_semantics";
 inline constexpr const char
-    *kObjc3Part10MacroSafetySandboxDeterminismRule =
+    *kObjc3MetaprogrammingMacroSafetySandboxDeterminismRule =
         "macro-callable-safety-sandbox-namespace-and-deterministic-provenance-semantics-are-live-in-sema-while-runnable-macro-execution-remains-deferred";
 inline constexpr const char
-    *kObjc3Part10MacroSafetySandboxDeterminismDeferredRule =
+    *kObjc3MetaprogrammingMacroSafetySandboxDeterminismDeferredRule =
         "runnable-macro-execution-runtime-package-loading-and-expanded-body-materialization-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part10MacroSafetySandboxDeterminismSummary {
+struct Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary {
   std::string contract_id =
-      kObjc3Part10MacroSafetySandboxDeterminismContractId;
+      kObjc3MetaprogrammingMacroSafetySandboxDeterminismContractId;
   std::string semantic_dependency_contract_id =
-      kObjc3Part10MacroSafetySandboxDeterminismDependencyContractId;
+      kObjc3MetaprogrammingMacroSafetySandboxDeterminismDependencyContractId;
   std::string surface_path =
-      kObjc3Part10MacroSafetySandboxDeterminismSurfacePath;
+      kObjc3MetaprogrammingMacroSafetySandboxDeterminismSurfacePath;
   std::string semantic_model =
-      kObjc3Part10MacroSafetySandboxDeterminismRule;
+      kObjc3MetaprogrammingMacroSafetySandboxDeterminismRule;
   std::string deferred_model =
-      kObjc3Part10MacroSafetySandboxDeterminismDeferredRule;
+      kObjc3MetaprogrammingMacroSafetySandboxDeterminismDeferredRule;
   std::size_t macro_marker_sites = 0;
   std::size_t macro_package_sites = 0;
   std::size_t macro_provenance_sites = 0;
@@ -1492,8 +1492,8 @@ struct Objc3Part10MacroSafetySandboxDeterminismSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
-    const Objc3Part10MacroSafetySandboxDeterminismSummary &summary) {
+inline bool IsReadyObjc3MetaprogrammingMacroSafetySandboxDeterminismSummary(
+    const Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.semantic_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1509,32 +1509,32 @@ inline bool IsReadyObjc3Part10MacroSafetySandboxDeterminismSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part10PropertyBehaviorLegalityCompatibilityDependencyContractId =
-        "objc3c.part10.macro.safety.sandbox.determinism.semantics.v1";
+    *kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityDependencyContractId =
+        "objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1";
 inline constexpr const char
-    *kObjc3Part10PropertyBehaviorLegalityCompatibilityContractId =
-        "objc3c.part10.property.behavior.legality.interaction.completion.v1";
+    *kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityContractId =
+        "objc3c.metaprogramming.property.behavior.legality.interaction.completion.v1";
 inline constexpr const char
-    *kObjc3Part10PropertyBehaviorLegalityCompatibilitySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part10_property_behavior_legality_and_interaction_completion";
+    *kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_metaprogramming_property_behavior_legality_and_interaction_completion";
 inline constexpr const char
-    *kObjc3Part10PropertyBehaviorLegalityCompatibilityRule =
+    *kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityRule =
         "supported-property-behavior-names-and-owner-interaction-legality-now-fail-closed-in-sema-while-runtime-backed-behavior-materialization-remains-deferred";
 inline constexpr const char
-    *kObjc3Part10PropertyBehaviorLegalityCompatibilityDeferredRule =
+    *kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityDeferredRule =
         "runnable-property-behavior-hooks-observation-materialization-and-projection-runtime-support-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part10PropertyBehaviorLegalityCompatibilitySummary {
+struct Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary {
   std::string contract_id =
-      kObjc3Part10PropertyBehaviorLegalityCompatibilityContractId;
+      kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityContractId;
   std::string semantic_dependency_contract_id =
-      kObjc3Part10PropertyBehaviorLegalityCompatibilityDependencyContractId;
+      kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityDependencyContractId;
   std::string surface_path =
-      kObjc3Part10PropertyBehaviorLegalityCompatibilitySurfacePath;
+      kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySurfacePath;
   std::string semantic_model =
-      kObjc3Part10PropertyBehaviorLegalityCompatibilityRule;
+      kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityRule;
   std::string deferred_model =
-      kObjc3Part10PropertyBehaviorLegalityCompatibilityDeferredRule;
+      kObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilityDeferredRule;
   std::size_t property_behavior_sites = 0;
   std::size_t supported_behavior_sites = 0;
   std::size_t unsupported_behavior_sites = 0;
@@ -1557,8 +1557,8 @@ struct Objc3Part10PropertyBehaviorLegalityCompatibilitySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part10PropertyBehaviorLegalityCompatibilitySummary(
-    const Objc3Part10PropertyBehaviorLegalityCompatibilitySummary &summary) {
+inline bool IsReadyObjc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary(
+    const Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.semantic_dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1576,32 +1576,32 @@ inline bool IsReadyObjc3Part10PropertyBehaviorLegalityCompatibilitySummary(
 }
 
 inline constexpr const char
-    *kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId =
-        "objc3c.part7.task.executor.cancellation.semantic.model.v1";
+    *kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryDependencyContractId =
+        "objc3c.concurrency.task.executor.cancellation.semantic.model.v1";
 inline constexpr const char
-    *kObjc3Part7StructuredTaskCancellationSemanticSummaryContractId =
-        "objc3c.part7.structured.task.cancellation.semantics.v1";
+    *kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryContractId =
+        "objc3c.concurrency.structured.task.cancellation.semantics.v1";
 inline constexpr const char
-    *kObjc3Part7StructuredTaskCancellationSemanticSummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part7_structured_task_and_cancellation_semantics";
+    *kObjc3ConcurrencyStructuredTaskCancellationSemanticSummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_concurrency_structured_task_and_cancellation_semantics";
 inline constexpr const char
-    *kObjc3Part7StructuredTaskCancellationSemanticSummaryRule =
+    *kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryRule =
         "structured-task-scope-task-hierarchy-and-cancellation-usage-semantics-are-live-in-sema-while-runnable-task-lowering-and-scheduler-execution-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part7StructuredTaskCancellationSemanticSummaryDeferredRule =
+    *kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryDeferredRule =
         "task-allocation-executor-hop-task-group-runtime-and-scheduler-backed-cancellation-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7StructuredTaskCancellationSemanticSummary {
+struct Objc3ConcurrencyStructuredTaskCancellationSemanticSummary {
   std::string contract_id =
-      kObjc3Part7StructuredTaskCancellationSemanticSummaryContractId;
+      kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part7StructuredTaskCancellationSemanticSummaryDependencyContractId;
+      kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part7StructuredTaskCancellationSemanticSummarySurfacePath;
+      kObjc3ConcurrencyStructuredTaskCancellationSemanticSummarySurfacePath;
   std::string semantic_model =
-      kObjc3Part7StructuredTaskCancellationSemanticSummaryRule;
+      kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryRule;
   std::string deferred_model =
-      kObjc3Part7StructuredTaskCancellationSemanticSummaryDeferredRule;
+      kObjc3ConcurrencyStructuredTaskCancellationSemanticSummaryDeferredRule;
   std::size_t async_callable_sites = 0;
   std::size_t task_creation_sites = 0;
   std::size_t task_group_scope_sites = 0;
@@ -1628,8 +1628,8 @@ struct Objc3Part7StructuredTaskCancellationSemanticSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part7StructuredTaskCancellationSemanticSummary(
-    const Objc3Part7StructuredTaskCancellationSemanticSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyStructuredTaskCancellationSemanticSummary(
+    const Objc3ConcurrencyStructuredTaskCancellationSemanticSummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1647,32 +1647,32 @@ inline bool IsReadyObjc3Part7StructuredTaskCancellationSemanticSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDependencyContractId =
-        "objc3c.part7.structured.task.cancellation.semantics.v1";
+    *kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryDependencyContractId =
+        "objc3c.concurrency.structured.task.cancellation.semantics.v1";
 inline constexpr const char
-    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryContractId =
-        "objc3c.part7.executor.hop.affinity.compatibility.v1";
+    *kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryContractId =
+        "objc3c.concurrency.executor.hop.affinity.compatibility.v1";
 inline constexpr const char
-    *kObjc3Part7ExecutorHopAffinityCompatibilitySummarySurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part7_executor_hop_and_affinity_compatibility_completion";
+    *kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummarySurfacePath =
+        "frontend.pipeline.semantic_surface.objc_concurrency_executor_hop_and_affinity_compatibility_completion";
 inline constexpr const char
-    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryRule =
+    *kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryRule =
         "executor-affinity-and-detached-task-hop-boundaries-are-live-in-sema-while-runnable-hop-lowering-and-scheduler-runtime-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDeferredRule =
+    *kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryDeferredRule =
         "executor-hop-lowering-task-spawn-runtime-and-scheduler-visible-execution-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7ExecutorHopAffinityCompatibilitySummary {
+struct Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary {
   std::string contract_id =
-      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryContractId;
+      kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDependencyContractId;
+      kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part7ExecutorHopAffinityCompatibilitySummarySurfacePath;
+      kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummarySurfacePath;
   std::string semantic_model =
-      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryRule;
+      kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryRule;
   std::string deferred_model =
-      kObjc3Part7ExecutorHopAffinityCompatibilitySummaryDeferredRule;
+      kObjc3ConcurrencyExecutorHopAffinityCompatibilitySummaryDeferredRule;
   std::size_t async_callable_sites = 0;
   std::size_t executor_affinity_sites = 0;
   std::size_t executor_main_sites = 0;
@@ -1694,8 +1694,8 @@ struct Objc3Part7ExecutorHopAffinityCompatibilitySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part7ExecutorHopAffinityCompatibilitySummary(
-    const Objc3Part7ExecutorHopAffinityCompatibilitySummary &summary) {
+inline bool IsReadyObjc3ConcurrencyExecutorHopAffinityCompatibilitySummary(
+    const Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
@@ -1709,28 +1709,28 @@ inline bool IsReadyObjc3Part7ExecutorHopAffinityCompatibilitySummary(
          summary.failure_reason.empty();
 }
 
-inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId =
-    "objc3c.part7.async.effect.suspension.semantic.model.v1";
-inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId =
-    "objc3c.part7.await.suspension.resume.semantics.v1";
-inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummarySurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_await_suspension_and_resume_semantics";
-inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryRule =
+inline constexpr const char *kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryDependencyContractId =
+    "objc3c.concurrency.async.effect.suspension.semantic.model.v1";
+inline constexpr const char *kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryContractId =
+    "objc3c.concurrency.await.suspension.resume.semantics.v1";
+inline constexpr const char *kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_await_suspension_and_resume_semantics";
+inline constexpr const char *kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryRule =
     "await-placement-suspension-and-resume-semantics-are-live-in-sema-while-runnable-async-frame-lowering-and-executor-runtime-execution-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7AwaitSuspensionResumeSemanticSummaryDeferredRule =
+inline constexpr const char *kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryDeferredRule =
     "async-frame-layout-resume-lowering-suspension-cleanup-and-runtime-executor-scheduling-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7AwaitSuspensionResumeSemanticSummary {
+struct Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary {
   std::string contract_id =
-      kObjc3Part7AwaitSuspensionResumeSemanticSummaryContractId;
+      kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part7AwaitSuspensionResumeSemanticSummaryDependencyContractId;
+      kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part7AwaitSuspensionResumeSemanticSummarySurfacePath;
+      kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummarySurfacePath;
   std::string semantic_model =
-      kObjc3Part7AwaitSuspensionResumeSemanticSummaryRule;
+      kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryRule;
   std::string deferred_model =
-      kObjc3Part7AwaitSuspensionResumeSemanticSummaryDeferredRule;
+      kObjc3ConcurrencyAwaitSuspensionResumeSemanticSummaryDeferredRule;
   std::size_t async_callable_sites = 0;
   std::size_t await_expression_sites = 0;
   std::size_t await_in_async_callable_sites = 0;
@@ -1750,8 +1750,8 @@ struct Objc3Part7AwaitSuspensionResumeSemanticSummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part7AwaitSuspensionResumeSemanticSummary(
-    const Objc3Part7AwaitSuspensionResumeSemanticSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyAwaitSuspensionResumeSemanticSummary(
+    const Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary &summary) {
   return !summary.contract_id.empty() && !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&
          !summary.deferred_model.empty() &&
@@ -1764,24 +1764,24 @@ inline bool IsReadyObjc3Part7AwaitSuspensionResumeSemanticSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryDependencyContractId =
-    "objc3c.part6.error.semantic.model.v1";
-inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryContractId =
-    "objc3c.part6.try.throw.do.catch.semantics.v1";
-inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummarySurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics";
-inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryRule =
+inline constexpr const char *kObjc3ErrorHandlingTryDoCatchSemanticSummaryDependencyContractId =
+    "objc3c.error_handling.error.semantic.model.v1";
+inline constexpr const char *kObjc3ErrorHandlingTryDoCatchSemanticSummaryContractId =
+    "objc3c.error_handling.try.throw.do.catch.semantics.v1";
+inline constexpr const char *kObjc3ErrorHandlingTryDoCatchSemanticSummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_error_handling_try_do_catch_semantics";
+inline constexpr const char *kObjc3ErrorHandlingTryDoCatchSemanticSummaryRule =
     "try-throw-and-do-catch-parse-and-undergo-deterministic-legality-checking-in-source-only-native-validation-while-lowering-and-runtime-integration-remain-later-lane-work";
-inline constexpr const char *kObjc3Part6TryDoCatchSemanticSummaryDeferredRule =
+inline constexpr const char *kObjc3ErrorHandlingTryDoCatchSemanticSummaryDeferredRule =
     "native-ir-object-execution-lowering-catch-transfer-and-thrown-error-abi-remain-deferred-to-lanes-c-and-d";
 
-struct Objc3Part6TryDoCatchSemanticSummary {
-  std::string contract_id = kObjc3Part6TryDoCatchSemanticSummaryContractId;
+struct Objc3ErrorHandlingTryDoCatchSemanticSummary {
+  std::string contract_id = kObjc3ErrorHandlingTryDoCatchSemanticSummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part6TryDoCatchSemanticSummaryDependencyContractId;
-  std::string surface_path = kObjc3Part6TryDoCatchSemanticSummarySurfacePath;
-  std::string semantic_model = kObjc3Part6TryDoCatchSemanticSummaryRule;
-  std::string deferred_model = kObjc3Part6TryDoCatchSemanticSummaryDeferredRule;
+      kObjc3ErrorHandlingTryDoCatchSemanticSummaryDependencyContractId;
+  std::string surface_path = kObjc3ErrorHandlingTryDoCatchSemanticSummarySurfacePath;
+  std::string semantic_model = kObjc3ErrorHandlingTryDoCatchSemanticSummaryRule;
+  std::string deferred_model = kObjc3ErrorHandlingTryDoCatchSemanticSummaryDeferredRule;
   std::size_t try_expression_sites = 0;
   std::size_t try_propagating_sites = 0;
   std::size_t try_optional_sites = 0;
@@ -1809,24 +1809,24 @@ struct Objc3Part6TryDoCatchSemanticSummary {
   std::string failure_reason;
 };
 
-inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryDependencyContractId =
-    "objc3c.part6.try.throw.do.catch.semantics.v1";
-inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryContractId =
-    "objc3c.part6.error.bridge.legality.v1";
-inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummarySurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality";
-inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryRule =
+inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummaryDependencyContractId =
+    "objc3c.error_handling.try.throw.do.catch.semantics.v1";
+inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummaryContractId =
+    "objc3c.error_handling.error.bridge.legality.v1";
+inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_error_handling_error_bridge_legality";
+inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummaryRule =
     "nserror-and-status-bridge-markers-undergo-deterministic-semantic-legality-checking-before-lowering-and-only-semantically-valid-bridge-surfaces-qualify-for-try";
-inline constexpr const char *kObjc3Part6ErrorBridgeLegalitySummaryDeferredRule =
+inline constexpr const char *kObjc3ErrorHandlingErrorBridgeLegalitySummaryDeferredRule =
     "status-to-error-execution-bridge-temporaries-native-error-abi-and-runnable-bridge-lowering-remain-deferred-to-lanes-c-and-d";
 
-struct Objc3Part6ErrorBridgeLegalitySummary {
-  std::string contract_id = kObjc3Part6ErrorBridgeLegalitySummaryContractId;
+struct Objc3ErrorHandlingErrorBridgeLegalitySummary {
+  std::string contract_id = kObjc3ErrorHandlingErrorBridgeLegalitySummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part6ErrorBridgeLegalitySummaryDependencyContractId;
-  std::string surface_path = kObjc3Part6ErrorBridgeLegalitySummarySurfacePath;
-  std::string semantic_model = kObjc3Part6ErrorBridgeLegalitySummaryRule;
-  std::string deferred_model = kObjc3Part6ErrorBridgeLegalitySummaryDeferredRule;
+      kObjc3ErrorHandlingErrorBridgeLegalitySummaryDependencyContractId;
+  std::string surface_path = kObjc3ErrorHandlingErrorBridgeLegalitySummarySurfacePath;
+  std::string semantic_model = kObjc3ErrorHandlingErrorBridgeLegalitySummaryRule;
+  std::string deferred_model = kObjc3ErrorHandlingErrorBridgeLegalitySummaryDeferredRule;
   std::size_t bridge_callable_sites = 0;
   std::size_t objc_nserror_callable_sites = 0;
   std::size_t objc_status_code_callable_sites = 0;
@@ -1975,32 +1975,32 @@ struct Objc3ActorIsolationSendabilitySummary {
 };
 
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendableSemanticModelDependencyContractId =
+    *kObjc3ConcurrencyActorIsolationSendableSemanticModelDependencyContractId =
         kObjc3ActorMemberIsolationSourceClosureContractId;
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendableSemanticModelContractId =
-        "objc3c.part7.actor.isolation.sendable.semantic.model.v1";
+    *kObjc3ConcurrencyActorIsolationSendableSemanticModelContractId =
+        "objc3c.concurrency.actor.isolation.sendable.semantic.model.v1";
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendableSemanticModelSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendable_semantic_model";
+    *kObjc3ConcurrencyActorIsolationSendableSemanticModelSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendable_semantic_model";
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendableSemanticModelRule =
+    *kObjc3ConcurrencyActorIsolationSendableSemanticModelRule =
         "actor-member-source-closure-and-parser-owned-actor-sendability-profiles-now-publish-one-deterministic-sema-packet-while-cross-actor-legality-sendable-enforcement-and-runnable-actor-runtime-behavior-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendableSemanticModelDeferredRule =
+    *kObjc3ConcurrencyActorIsolationSendableSemanticModelDeferredRule =
         "dedicated-actor-isolation-diagnostics-cross-actor-sendable-enforcement-executor-scheduling-and-runnable-actor-runtime-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7ActorIsolationSendableSemanticModelSummary {
+struct Objc3ConcurrencyActorIsolationSendableSemanticModelSummary {
   std::string contract_id =
-      kObjc3Part7ActorIsolationSendableSemanticModelContractId;
+      kObjc3ConcurrencyActorIsolationSendableSemanticModelContractId;
   std::string frontend_dependency_contract_id =
-      kObjc3Part7ActorIsolationSendableSemanticModelDependencyContractId;
+      kObjc3ConcurrencyActorIsolationSendableSemanticModelDependencyContractId;
   std::string surface_path =
-      kObjc3Part7ActorIsolationSendableSemanticModelSurfacePath;
+      kObjc3ConcurrencyActorIsolationSendableSemanticModelSurfacePath;
   std::string semantic_model =
-      kObjc3Part7ActorIsolationSendableSemanticModelRule;
+      kObjc3ConcurrencyActorIsolationSendableSemanticModelRule;
   std::string deferred_model =
-      kObjc3Part7ActorIsolationSendableSemanticModelDeferredRule;
+      kObjc3ConcurrencyActorIsolationSendableSemanticModelDeferredRule;
   std::size_t actor_interface_sites = 0;
   std::size_t actor_method_sites = 0;
   std::size_t actor_property_sites = 0;
@@ -2030,8 +2030,8 @@ struct Objc3Part7ActorIsolationSendableSemanticModelSummary {
   std::string replay_key;
 };
 
-inline bool IsReadyObjc3Part7ActorIsolationSendableSemanticModelSummary(
-    const Objc3Part7ActorIsolationSendableSemanticModelSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyActorIsolationSendableSemanticModelSummary(
+    const Objc3ConcurrencyActorIsolationSendableSemanticModelSummary &summary) {
   return summary.source_dependency_required &&
          summary.actor_member_source_supported &&
          summary.actor_isolation_sendability_profile_normalized &&
@@ -2044,32 +2044,32 @@ inline bool IsReadyObjc3Part7ActorIsolationSendableSemanticModelSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendabilityEnforcementDependencyContractId =
-        kObjc3Part7ActorIsolationSendableSemanticModelContractId;
+    *kObjc3ConcurrencyActorIsolationSendabilityEnforcementDependencyContractId =
+        kObjc3ConcurrencyActorIsolationSendableSemanticModelContractId;
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendabilityEnforcementContractId =
-        "objc3c.part7.actor.isolation.sendability.enforcement.v1";
+    *kObjc3ConcurrencyActorIsolationSendabilityEnforcementContractId =
+        "objc3c.concurrency.actor.isolation.sendability.enforcement.v1";
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendabilityEnforcementSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part7_actor_isolation_and_sendability_enforcement";
+    *kObjc3ConcurrencyActorIsolationSendabilityEnforcementSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendability_enforcement";
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendabilityEnforcementRule =
+    *kObjc3ConcurrencyActorIsolationSendabilityEnforcementRule =
         "actor-method-semantics-now-fail-closed-for-non-actor-objc-nonisolated-usage-invalid-nonisolated-combinations-non-async-actor-hops-and-non-sendable-crossings-while-runnable-actor-mailbox-runtime-remains-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part7ActorIsolationSendabilityEnforcementDeferredRule =
+    *kObjc3ConcurrencyActorIsolationSendabilityEnforcementDeferredRule =
         "full-cross-module-actor-runtime-mailboxes-race-hazard-closure-and-runnable-strict-concurrency-scheduling-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7ActorIsolationSendabilityEnforcementSummary {
+struct Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary {
   std::string contract_id =
-      kObjc3Part7ActorIsolationSendabilityEnforcementContractId;
+      kObjc3ConcurrencyActorIsolationSendabilityEnforcementContractId;
   std::string dependency_contract_id =
-      kObjc3Part7ActorIsolationSendabilityEnforcementDependencyContractId;
+      kObjc3ConcurrencyActorIsolationSendabilityEnforcementDependencyContractId;
   std::string surface_path =
-      kObjc3Part7ActorIsolationSendabilityEnforcementSurfacePath;
+      kObjc3ConcurrencyActorIsolationSendabilityEnforcementSurfacePath;
   std::string semantic_model =
-      kObjc3Part7ActorIsolationSendabilityEnforcementRule;
+      kObjc3ConcurrencyActorIsolationSendabilityEnforcementRule;
   std::string deferred_model =
-      kObjc3Part7ActorIsolationSendabilityEnforcementDeferredRule;
+      kObjc3ConcurrencyActorIsolationSendabilityEnforcementDeferredRule;
   std::size_t actor_interface_sites = 0;
   std::size_t actor_method_sites = 0;
   std::size_t objc_nonisolated_annotation_sites = 0;
@@ -2097,8 +2097,8 @@ struct Objc3Part7ActorIsolationSendabilityEnforcementSummary {
   std::string replay_key;
 };
 
-inline bool IsReadyObjc3Part7ActorIsolationSendabilityEnforcementSummary(
-    const Objc3Part7ActorIsolationSendabilityEnforcementSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyActorIsolationSendabilityEnforcementSummary(
+    const Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary &summary) {
   return summary.dependency_required &&
          summary.non_actor_nonisolated_fail_closed &&
          summary.nonisolated_combination_fail_closed &&
@@ -2111,32 +2111,32 @@ inline bool IsReadyObjc3Part7ActorIsolationSendabilityEnforcementSummary(
 }
 
 inline constexpr const char
-    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsDependencyContractId =
-        kObjc3Part7ActorIsolationSendabilityEnforcementContractId;
+    *kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsDependencyContractId =
+        kObjc3ConcurrencyActorIsolationSendabilityEnforcementContractId;
 inline constexpr const char
-    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsContractId =
-        "objc3c.part7.actor.race.hazard.escape.diagnostics.v1";
+    *kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsContractId =
+        "objc3c.concurrency.actor.race.hazard.escape.diagnostics.v1";
 inline constexpr const char
-    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsSurfacePath =
-        "frontend.pipeline.semantic_surface.objc_part7_actor_race_hazard_and_escape_diagnostics";
+    *kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsSurfacePath =
+        "frontend.pipeline.semantic_surface.objc_concurrency_actor_race_hazard_and_escape_diagnostics";
 inline constexpr const char
-    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsRule =
+    *kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsRule =
         "actor-method-task-handoff-now-fails-closed-without-race-guard-replay-proof-and-actor-isolation-coverage-while-escaping-block-literals-in-that-hazard-slice-remain-unsupported";
 inline constexpr const char
-    *kObjc3Part7ActorRaceHazardEscapeDiagnosticsDeferredRule =
+    *kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsDeferredRule =
         "runnable-actor-mailboxes-cross-module-isolation-runtime-and-full-strict-concurrency-escape-analysis-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary {
+struct Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary {
   std::string contract_id =
-      kObjc3Part7ActorRaceHazardEscapeDiagnosticsContractId;
+      kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsContractId;
   std::string dependency_contract_id =
-      kObjc3Part7ActorRaceHazardEscapeDiagnosticsDependencyContractId;
+      kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsDependencyContractId;
   std::string surface_path =
-      kObjc3Part7ActorRaceHazardEscapeDiagnosticsSurfacePath;
+      kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsSurfacePath;
   std::string semantic_model =
-      kObjc3Part7ActorRaceHazardEscapeDiagnosticsRule;
+      kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsRule;
   std::string deferred_model =
-      kObjc3Part7ActorRaceHazardEscapeDiagnosticsDeferredRule;
+      kObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsDeferredRule;
   std::size_t actor_method_sites = 0;
   std::size_t replay_proof_sites = 0;
   std::size_t race_guard_sites = 0;
@@ -2160,8 +2160,8 @@ struct Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary {
   std::string replay_key;
 };
 
-inline bool IsReadyObjc3Part7ActorRaceHazardEscapeDiagnosticsSummary(
-    const Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary &summary) {
+inline bool IsReadyObjc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary(
+    const Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary &summary) {
   return summary.dependency_required && summary.race_guard_fail_closed &&
          summary.replay_proof_fail_closed &&
          summary.actor_isolation_boundary_fail_closed &&
@@ -2525,17 +2525,17 @@ struct Objc3ArcDiagnosticsFixitSummary {
   bool deterministic = true;
 };
 
-inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityContractId =
-    "objc3c.part12.diagnostic.taxonomy.portability.contract.v1";
-inline constexpr const char *kObjc3Part12DiagnosticTaxonomyPortabilityDiagnosticNamespace =
+inline constexpr const char *kObjc3ToolingDiagnosticTaxonomyPortabilityContractId =
+    "objc3c.tooling.diagnostic.taxonomy.portability.contract.v1";
+inline constexpr const char *kObjc3ToolingDiagnosticTaxonomyPortabilityDiagnosticNamespace =
     "O3S";
-inline constexpr const char *kObjc3Part12FeatureSpecificFixitSynthesisContractId =
-    "objc3c.part12.feature.specific.fixit.synthesis.v1";
+inline constexpr const char *kObjc3ToolingFeatureSpecificFixitSynthesisContractId =
+    "objc3c.tooling.feature.specific.fixit.synthesis.v1";
 inline constexpr const char
-    *kObjc3Part12LegacyCanonicalMigrationSemanticsContractId =
-        "objc3c.part12.legacy.canonical.migration.semantics.v1";
+    *kObjc3ToolingLegacyCanonicalMigrationSemanticsContractId =
+        "objc3c.tooling.legacy.canonical.migration.semantics.v1";
 inline constexpr const char
-    *kObjc3Part12LegacyCanonicalMigrationDiagnosticCode = "O3S216";
+    *kObjc3ToolingLegacyCanonicalMigrationDiagnosticCode = "O3S216";
 
 struct Objc3BlockLiteralCaptureSiteMetadata {
   std::size_t parameter_count = 0;
@@ -3138,28 +3138,28 @@ inline bool IsReadyObjc3BootstrapLegalityFailureContractSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryDependencyContractId =
-    "objc3c.part7.await.suspension.resume.semantics.v1";
-inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryContractId =
-    "objc3c.part7.async.diagnostics.compatibility.completion.v1";
-inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummarySurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_async_diagnostics_and_compatibility_completion";
-inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryRule =
+inline constexpr const char *kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryDependencyContractId =
+    "objc3c.concurrency.await.suspension.resume.semantics.v1";
+inline constexpr const char *kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryContractId =
+    "objc3c.concurrency.async.diagnostics.compatibility.completion.v1";
+inline constexpr const char *kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummarySurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_async_diagnostics_and_compatibility_completion";
+inline constexpr const char *kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryRule =
     "async-topology-diagnostics-now-fail-closed-for-non-async-executor-affinity-async-function-prototypes-and-async-throws-while-runnable-frame-and-runtime-integration-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7AsyncDiagnosticsCompatibilitySummaryDeferredRule =
+inline constexpr const char *kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryDeferredRule =
     "async-prototype-import-surfaces-async-error-propagation-abi-and-runnable-executor-runtime-behavior-remain-deferred-to-later-runtime-lanes";
 
-struct Objc3Part7AsyncDiagnosticsCompatibilitySummary {
+struct Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary {
   std::string contract_id =
-      kObjc3Part7AsyncDiagnosticsCompatibilitySummaryContractId;
+      kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryContractId;
   std::string dependency_contract_id =
-      kObjc3Part7AsyncDiagnosticsCompatibilitySummaryDependencyContractId;
+      kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryDependencyContractId;
   std::string surface_path =
-      kObjc3Part7AsyncDiagnosticsCompatibilitySummarySurfacePath;
+      kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummarySurfacePath;
   std::string semantic_model =
-      kObjc3Part7AsyncDiagnosticsCompatibilitySummaryRule;
+      kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryRule;
   std::string deferred_model =
-      kObjc3Part7AsyncDiagnosticsCompatibilitySummaryDeferredRule;
+      kObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummaryDeferredRule;
   std::size_t async_callable_sites = 0;
   std::size_t executor_affinity_sites = 0;
   std::size_t illegal_non_async_executor_sites = 0;
@@ -3178,8 +3178,8 @@ struct Objc3Part7AsyncDiagnosticsCompatibilitySummary {
   std::string failure_reason;
 };
 
-inline bool IsReadyObjc3Part7AsyncDiagnosticsCompatibilitySummary(
-    const Objc3Part7AsyncDiagnosticsCompatibilitySummary &summary) {
+inline bool IsReadyObjc3ConcurrencyAsyncDiagnosticsCompatibilitySummary(
+    const Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary &summary) {
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.surface_path.empty() && !summary.semantic_model.empty() &&

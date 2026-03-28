@@ -61,9 +61,9 @@ Object-model realization surface:
   - `objc3_runtime_copy_realized_class_entry_for_testing`
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - authoritative executable probes:
-  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
-  - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+  - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
 
 Property/ivar/storage/accessor source surface:
 
@@ -93,12 +93,12 @@ Property/ivar/storage/accessor source surface:
   - `Objc3PropertyDecl.executable_ivar_layout_size_bytes`
   - `Objc3PropertyDecl.executable_ivar_layout_alignment_bytes`
 - authoritative executable probes:
-  - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
-  - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+  - `tests/tooling/runtime/c003_synthesized_accessor_probe.cpp`
+  - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
-  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
-  - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
 - semantic boundary:
   - later storage legality, synthesis, lowering, runtime realization, and
     property/reflection conformance work must consume the AST/sema-approved
@@ -134,8 +134,8 @@ Property atomicity/synthesis/reflection source surface:
   - `objc3_runtime_property_entry_snapshot.property_attribute_profile`
 - authoritative executable probes:
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
-  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 - semantic boundary:
   - runtime-managed atomic ownership combinations remain fail-closed until the
     later storage-semantics implementation lands
@@ -161,10 +161,10 @@ Realization lowering and reflection artifact surface:
   - `objc3_runtime_copy_property_entry_for_testing`
 - authoritative executable probes:
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
-  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 - semantic boundary:
   - compile manifest, registration descriptor, object, LLVM IR, and compile
     provenance co-publish realization lowering and reflection artifacts
@@ -191,9 +191,9 @@ Dispatch-table and reflection-record lowering surface:
   - `__objc3_sec_ivar_descriptors`
 - authoritative executable probes:
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
-  - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
+  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
 - semantic boundary:
   - selector-pool-backed dispatch thunks and runtime dispatch sites co-publish
     stable selector table roots in LLVM IR and manifest artifacts
@@ -212,7 +212,7 @@ Cross-module realized-metadata replay preservation surface:
   - `<emit-prefix>.cross-module-runtime-link-plan.json`
   - `<emit-prefix>.cross-module-runtime-linker-options.rsp`
 - authoritative executable probe:
-  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
 - semantic boundary:
   - the cross-module link plan preserves local and imported descriptor-count,
     translation-unit-identity, and registration-ordinal facts from the emitted
@@ -264,7 +264,7 @@ Realization lookup and reflection implementation surface:
   - `objc3_runtime_copy_method_cache_entry_for_testing`
   - `objc3_runtime_copy_dispatch_state_for_testing`
 - authoritative executable probe:
-  - `tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp`
+  - `tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp`
 
 Reflection query surface:
 
@@ -277,9 +277,9 @@ Reflection query surface:
   - `objc3_runtime_copy_property_entry_for_testing`
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - authoritative executable probes:
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 Realization and lookup semantics surface:
 
@@ -294,8 +294,8 @@ Realization and lookup semantics surface:
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - authoritative executable probes:
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
-  - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
 - explicit non-goal:
   - no public reflection ABI widening beyond the current runtime header
 
@@ -308,7 +308,7 @@ Class/metaclass/protocol realization surface:
   - `objc3_runtime_copy_realized_class_entry_for_testing`
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - authoritative executable probes:
-  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
 - semantic boundary:
   - registration installs runtime-backed class records before live dispatch and
@@ -329,9 +329,9 @@ Category attachment and merged dispatch surface:
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
 - authoritative executable probes:
-  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
   - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
 - semantic boundary:
   - registration attaches category-owned instance and protocol members onto live
     realized classes before dispatch
@@ -351,10 +351,10 @@ Reflection visibility and runtime coherence diagnostics surface:
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
   - `objc3_runtime_copy_method_cache_state_for_testing`
 - authoritative executable probes:
-  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
-  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 - semantic boundary:
   - private testing snapshots remain the only reflection visibility surface over
     runtime-owned class, property, and protocol state

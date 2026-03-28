@@ -1,0 +1,4 @@
+// Expected diagnostic code(s): O3S332.
+module InteropCAndObjcRuntimeParityNegativeO3S332;
+
+fn importedWithoutForeign() -> i32 __attribute__((objc_import_module(named("SampleKit"))));

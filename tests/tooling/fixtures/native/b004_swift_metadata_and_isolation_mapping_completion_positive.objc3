@@ -1,0 +1,19 @@
+module InteropSwiftMetadataIsolationPositive;
+
+fn swiftBridge() -> i32 __attribute__((objc_swift_name(named("SwiftBridge")), objc_swift_private)) {
+  return 7;
+}
+
+@interface SwiftMetadataBridge
+- (i32)visible __attribute__((objc_swift_name(named("VisibleBridge"))));
+@end
+
+@implementation SwiftMetadataBridge
+- (i32)visible {
+  return 3;
+}
+@end
+
+fn main() -> i32 {
+  return swiftBridge();
+}

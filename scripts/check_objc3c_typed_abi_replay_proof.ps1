@@ -7,7 +7,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/typed-abi-replay-proof"
 $configuredRunId = $env:OBJC3C_TYPED_ABI_REPLAY_PROOF_RUN_ID
-$defaultRunId = "m143-lane-c-typed-abi-default"
+$defaultRunId = "typed_abi-lane-c-typed-abi-default"
 
 function Resolve-ValidatedRunId {
   param(

@@ -1,0 +1,14 @@
+module DispatchB003CategoryContainer;
+
+@interface Box
+@end
+
+@implementation Box
+@end
+
+__attribute__((objc_direct_members, objc_final, objc_sealed))
+@interface Box(Ext)
+@end
+
+@implementation Box(Ext)
+@end

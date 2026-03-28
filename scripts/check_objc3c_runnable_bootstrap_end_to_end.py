@@ -18,7 +18,7 @@ PWSH = shutil.which("pwsh") or "pwsh"
 PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
 REPORT_PATH = ROOT / "tmp" / "reports" / "runtime" / "runnable-bootstrap-e2e" / "summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.runtime.runnable.bootstrap.e2e.summary.v1"
-PACKAGE_CONTRACT_ID = "objc3c-runnable-build-install-run-package/m259-d002-v1"
+PACKAGE_CONTRACT_ID = "objc3c-runnable-build-install-run-package/runnable_suite-d002-v1"
 
 
 def expect(condition: bool, message: str) -> None:

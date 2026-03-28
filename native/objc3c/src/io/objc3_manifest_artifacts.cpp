@@ -96,13 +96,13 @@ std::filesystem::path BuildRuntimeAwareImportModuleArtifactPath(
           kObjc3RuntimeAwareImportModuleFrontendClosureArtifactSuffix);
 }
 
-std::filesystem::path BuildPart6ResultBridgeArtifactReplayPath(
+std::filesystem::path BuildErrorHandlingResultBridgeArtifactReplayPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
 
   return out_dir /
          (emit_prefix +
-          kObjc3Part6ResultAndBridgingArtifactReplayArtifactSuffix);
+          kObjc3ErrorHandlingResultAndBridgingArtifactReplayArtifactSuffix);
 }
 
 std::filesystem::path BuildVersionedConformanceReportArtifactPath(
@@ -193,28 +193,28 @@ std::filesystem::path BuildCrossModuleRuntimeLinkerResponseArtifactPath(
          (emit_prefix + kObjc3CrossModuleRuntimeLinkerResponseArtifactSuffix);
 }
 
-std::filesystem::path BuildPart10MacroHostProcessCacheArtifactPath(
+std::filesystem::path BuildMetaprogrammingMacroHostProcessCacheArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  return out_dir / (emit_prefix + kObjc3Part10MacroHostProcessCacheArtifactSuffix);
+  return out_dir / (emit_prefix + kObjc3MetaprogrammingMacroHostProcessCacheArtifactSuffix);
 }
 
-std::filesystem::path BuildPart11BridgeHeaderArtifactPath(
+std::filesystem::path BuildInteropBridgeHeaderArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  return out_dir / (emit_prefix + kObjc3Part11BridgeHeaderArtifactSuffix);
+  return out_dir / (emit_prefix + kObjc3InteropBridgeHeaderArtifactSuffix);
 }
 
-std::filesystem::path BuildPart11BridgeModuleArtifactPath(
+std::filesystem::path BuildInteropBridgeModuleArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  return out_dir / (emit_prefix + kObjc3Part11BridgeModuleArtifactSuffix);
+  return out_dir / (emit_prefix + kObjc3InteropBridgeModuleArtifactSuffix);
 }
 
-std::filesystem::path BuildPart11BridgeArtifactPath(
+std::filesystem::path BuildInteropBridgeArtifactPath(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
-  return out_dir / (emit_prefix + kObjc3Part11BridgeArtifactSuffix);
+  return out_dir / (emit_prefix + kObjc3InteropBridgeArtifactSuffix);
 }
 
 void WriteManifestArtifact(const std::filesystem::path &out_dir,
@@ -254,11 +254,11 @@ void WriteRuntimeAwareImportModuleArtifact(
             artifact_json);
 }
 
-void WritePart6ResultBridgeArtifactReplay(
+void WriteErrorHandlingResultBridgeArtifactReplay(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json) {
-  WriteText(BuildPart6ResultBridgeArtifactReplayPath(out_dir, emit_prefix),
+  WriteText(BuildErrorHandlingResultBridgeArtifactReplayPath(out_dir, emit_prefix),
             artifact_json);
 }
 
@@ -350,38 +350,38 @@ void WriteCrossModuleRuntimeLinkerResponseArtifact(
       response_payload);
 }
 
-void WritePart10MacroHostProcessCacheArtifact(
+void WriteMetaprogrammingMacroHostProcessCacheArtifact(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     const std::string &artifact_json) {
-  WriteText(BuildPart10MacroHostProcessCacheArtifactPath(out_dir, emit_prefix),
+  WriteText(BuildMetaprogrammingMacroHostProcessCacheArtifactPath(out_dir, emit_prefix),
             artifact_json);
 }
 
-void WritePart11BridgeHeaderArtifact(const std::filesystem::path &out_dir,
+void WriteInteropBridgeHeaderArtifact(const std::filesystem::path &out_dir,
                                      const std::string &emit_prefix,
                                      const std::string &artifact_text) {
   // interop conformance gate anchor: deterministic bridge header
   // emission is part of the canonical lane-E evidence chain.
   // Part 11 lane-E anchors: deterministic bridge header
   // emission is part of the canonical gate and closeout evidence chain.
-  WriteText(BuildPart11BridgeHeaderArtifactPath(out_dir, emit_prefix),
+  WriteText(BuildInteropBridgeHeaderArtifactPath(out_dir, emit_prefix),
             artifact_text);
 }
 
-void WritePart11BridgeModuleArtifact(const std::filesystem::path &out_dir,
+void WriteInteropBridgeModuleArtifact(const std::filesystem::path &out_dir,
                                      const std::string &emit_prefix,
                                      const std::string &artifact_text) {
-  WriteText(BuildPart11BridgeModuleArtifactPath(out_dir, emit_prefix),
+  WriteText(BuildInteropBridgeModuleArtifactPath(out_dir, emit_prefix),
             artifact_text);
 }
 
-void WritePart11BridgeArtifact(const std::filesystem::path &out_dir,
+void WriteInteropBridgeArtifact(const std::filesystem::path &out_dir,
                                const std::string &emit_prefix,
                                const std::string &artifact_json) {
   // interop conformance gate anchor: the bridge JSON remains part of
   // the canonical lane-E evidence chain for the supported Part 11 slice.
   // Part 11 lane-E anchors: the bridge JSON remains
   // operator-visible evidence for the supported Part 11 slice.
-  WriteText(BuildPart11BridgeArtifactPath(out_dir, emit_prefix), artifact_json);
+  WriteText(BuildInteropBridgeArtifactPath(out_dir, emit_prefix), artifact_json);
 }

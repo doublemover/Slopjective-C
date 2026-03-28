@@ -4479,8 +4479,8 @@ Objc3FrontendObjectPointerNullabilityGenericsSummary BuildObjectPointerNullabili
   return summary;
 }
 
-std::string BuildPart3TypeSourceClosureReplayKey(
-    const Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+std::string BuildTypeSystemTypeSourceClosureReplayKey(
+    const Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";protocol_required_methods=" << summary.protocol_required_method_count
@@ -4500,8 +4500,8 @@ std::string BuildPart3TypeSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart5ControlFlowSourceClosureReplayKey(
-    const Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
+std::string BuildControlFlowControlFlowSourceClosureReplayKey(
+    const Objc3FrontendControlFlowControlFlowSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";guard_binding_sites=" << summary.guard_binding_sites
@@ -4521,8 +4521,8 @@ std::string BuildPart5ControlFlowSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart6ErrorSourceClosureReplayKey(
-    const Objc3FrontendPart6ErrorSourceClosureSummary &summary) {
+std::string BuildErrorHandlingErrorSourceClosureReplayKey(
+    const Objc3FrontendErrorHandlingErrorSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";throws_sites=" << summary.function_throws_declaration_sites << ":"
@@ -4545,8 +4545,8 @@ std::string BuildPart6ErrorSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart7AsyncSourceClosureReplayKey(
-    const Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+std::string BuildConcurrencyAsyncSourceClosureReplayKey(
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";async_sites=" << summary.async_keyword_sites << ":"
@@ -4560,8 +4560,8 @@ std::string BuildPart7AsyncSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart7ActorMemberIsolationSourceClosureReplayKey(
-    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary &summary) {
+std::string BuildConcurrencyActorMemberIsolationSourceClosureReplayKey(
+    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";actor_sites=" << summary.actor_interface_sites << ":"
@@ -4574,8 +4574,8 @@ std::string BuildPart7ActorMemberIsolationSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart7TaskGroupCancellationSourceClosureReplayKey(
-    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+std::string BuildConcurrencyTaskGroupCancellationSourceClosureReplayKey(
+    const Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";async_callable_sites=" << summary.async_callable_sites
@@ -4591,8 +4591,8 @@ std::string BuildPart7TaskGroupCancellationSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart8SystemExtensionSourceClosureReplayKey(
-    const Objc3FrontendPart8SystemExtensionSourceClosureSummary &summary) {
+std::string BuildOwnershipSystemExtensionSourceClosureReplayKey(
+    const Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";resource_sites=" << summary.resource_attribute_sites << ":"
@@ -4610,8 +4610,8 @@ std::string BuildPart8SystemExtensionSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart8CleanupResourceCaptureSourceCompletionReplayKey(
-    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
+std::string BuildOwnershipCleanupResourceCaptureSourceCompletionReplayKey(
+    const Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
         &summary) {
   std::ostringstream out;
   out << summary.contract_id
@@ -4631,8 +4631,8 @@ std::string BuildPart8CleanupResourceCaptureSourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart8RetainableCFamilySourceCompletionReplayKey(
-    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary &summary) {
+std::string BuildOwnershipRetainableCFamilySourceCompletionReplayKey(
+    const Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";family_sites=" << summary.family_retain_sites << ":"
@@ -4645,8 +4645,8 @@ std::string BuildPart8RetainableCFamilySourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart9DispatchIntentSourceClosureReplayKey(
-    const Objc3FrontendPart9DispatchIntentSourceClosureSummary &summary) {
+std::string BuildDispatchDispatchIntentSourceClosureReplayKey(
+    const Objc3FrontendDispatchDispatchIntentSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";callable_sites=" << summary.direct_callable_sites << ":"
@@ -4659,8 +4659,8 @@ std::string BuildPart9DispatchIntentSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart9DispatchIntentSourceCompletionReplayKey(
-    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary &summary) {
+std::string BuildDispatchDispatchIntentSourceCompletionReplayKey(
+    const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";prefixed_container_sites="
@@ -4675,8 +4675,8 @@ std::string BuildPart9DispatchIntentSourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart10MetaprogrammingSourceClosureReplayKey(
-    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary &summary) {
+std::string BuildMetaprogrammingMetaprogrammingSourceClosureReplayKey(
+    const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";sites=" << summary.derive_marker_sites << ":"
@@ -4687,8 +4687,8 @@ std::string BuildPart10MetaprogrammingSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart10MacroPackageProvenanceSourceCompletionReplayKey(
-    const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
+std::string BuildMetaprogrammingMacroPackageProvenanceSourceCompletionReplayKey(
+    const Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
         &summary) {
   std::ostringstream out;
   out << summary.contract_id
@@ -4701,8 +4701,8 @@ std::string BuildPart10MacroPackageProvenanceSourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart10PropertyBehaviorSourceCompletionReplayKey(
-    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
+std::string BuildMetaprogrammingPropertyBehaviorSourceCompletionReplayKey(
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
         &summary) {
   std::ostringstream out;
   out << summary.contract_id
@@ -4718,8 +4718,8 @@ std::string BuildPart10PropertyBehaviorSourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart11ForeignImportSourceClosureReplayKey(
-    const Objc3FrontendPart11ForeignImportSourceClosureSummary &summary) {
+std::string BuildInteropForeignImportSourceClosureReplayKey(
+    const Objc3FrontendInteropForeignImportSourceClosureSummary &summary) {
   std::ostringstream out;
   out << summary.contract_id
       << ";sites=" << summary.foreign_callable_sites << ":"
@@ -4732,8 +4732,8 @@ std::string BuildPart11ForeignImportSourceClosureReplayKey(
   return out.str();
 }
 
-std::string BuildPart11CppSwiftInteropAnnotationSourceCompletionReplayKey(
-    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
+std::string BuildInteropCppSwiftInteropAnnotationSourceCompletionReplayKey(
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
         &summary) {
   std::ostringstream out;
   out << summary.contract_id
@@ -4748,8 +4748,8 @@ std::string BuildPart11CppSwiftInteropAnnotationSourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart12DiagnosticsMigratorSourceInventoryReplayKey(
-    const Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
+std::string BuildToolingDiagnosticsMigratorSourceInventoryReplayKey(
+    const Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
         &summary) {
   std::ostringstream out;
   out << "families=" << summary.advanced_feature_family_count
@@ -4773,8 +4773,8 @@ std::string BuildPart12DiagnosticsMigratorSourceInventoryReplayKey(
   return out.str();
 }
 
-std::string BuildPart12MigrationCanonicalizationSourceCompletionReplayKey(
-    const Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+std::string BuildToolingMigrationCanonicalizationSourceCompletionReplayKey(
+    const Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary
         &summary) {
   std::ostringstream out;
   out << "compat=" << summary.compatibility_mode
@@ -4795,8 +4795,8 @@ std::string BuildPart12MigrationCanonicalizationSourceCompletionReplayKey(
   return out.str();
 }
 
-std::string BuildPart12DiagnosticTaxonomyPortabilityContractReplayKey(
-    const Objc3Part12DiagnosticTaxonomyPortabilityContractSummary &summary) {
+std::string BuildToolingDiagnosticTaxonomyPortabilityContractReplayKey(
+    const Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary &summary) {
   std::ostringstream out;
   out << "portability-dependencies=" << summary.portability_dependency_count
       << ";diagnostics=" << summary.diagnostics_total << ":"
@@ -4817,8 +4817,8 @@ std::string BuildPart12DiagnosticTaxonomyPortabilityContractReplayKey(
   return out.str();
 }
 
-std::string BuildPart12FeatureSpecificFixitSynthesisReplayKey(
-    const Objc3Part12FeatureSpecificFixitSynthesisSummary &summary) {
+std::string BuildToolingFeatureSpecificFixitSynthesisReplayKey(
+    const Objc3ToolingFeatureSpecificFixitSynthesisSummary &summary) {
   std::ostringstream out;
   out << "families=" << summary.fixit_family_count
       << ";migration=" << summary.migration_fixit_candidate_sites << ":"
@@ -4832,7 +4832,7 @@ std::string BuildPart12FeatureSpecificFixitSynthesisReplayKey(
   return out.str();
 }
 
-std::string BuildPart7LowercaseProfileToken(std::string token) {
+std::string BuildConcurrencyLowercaseProfileToken(std::string token) {
   std::transform(token.begin(), token.end(), token.begin(),
                  [](unsigned char value) {
                    return static_cast<char>(std::tolower(value));
@@ -4840,152 +4840,152 @@ std::string BuildPart7LowercaseProfileToken(std::string token) {
   return token;
 }
 
-bool IsPart7TaskCreationSymbol(const std::string &symbol) {
+bool IsConcurrencyTaskCreationSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("task_spawn") != std::string::npos ||
          lowered.find("spawn_task") != std::string::npos ||
          lowered.find("detached_task") != std::string::npos ||
          lowered.find("task_detach") != std::string::npos;
 }
 
-bool IsPart7TaskGroupScopeSymbol(const std::string &symbol) {
+bool IsConcurrencyTaskGroupScopeSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("with_task_group") != std::string::npos ||
          lowered.find("task_group_scope") != std::string::npos;
 }
 
-bool IsPart7TaskGroupAddTaskSymbol(const std::string &symbol) {
+bool IsConcurrencyTaskGroupAddTaskSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("task_group_add_task") != std::string::npos ||
          lowered.find("group_add_task") != std::string::npos;
 }
 
-bool IsPart7TaskGroupWaitNextSymbol(const std::string &symbol) {
+bool IsConcurrencyTaskGroupWaitNextSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("task_group_wait_next") != std::string::npos ||
          lowered.find("group_wait_next") != std::string::npos ||
          lowered.find("wait_next") != std::string::npos;
 }
 
-bool IsPart7TaskGroupCancelAllSymbol(const std::string &symbol) {
+bool IsConcurrencyTaskGroupCancelAllSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("task_group_cancel_all") != std::string::npos ||
          lowered.find("group_cancel_all") != std::string::npos ||
          lowered.find("cancel_all") != std::string::npos;
 }
 
-bool IsPart7CancellationCheckSymbol(const std::string &symbol) {
+bool IsConcurrencyCancellationCheckSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("cancelled") != std::string::npos ||
          lowered.find("is_cancelled") != std::string::npos ||
          lowered.find("cancellation") != std::string::npos;
 }
 
-bool IsPart7CancellationHandlerSymbol(const std::string &symbol) {
+bool IsConcurrencyCancellationHandlerSymbol(const std::string &symbol) {
   if (symbol.empty()) {
     return false;
   }
-  const std::string lowered = BuildPart7LowercaseProfileToken(symbol);
+  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
   return lowered.find("on_cancel") != std::string::npos ||
          lowered.find("cancel_handler") != std::string::npos ||
          lowered.find("with_cancellation_handler") != std::string::npos;
 }
 
-void CollectPart7AsyncSourceClosureExprSites(
-    const Expr *expr, Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+void CollectConcurrencyAsyncSourceClosureExprSites(
+    const Expr *expr, Objc3FrontendConcurrencyAsyncSourceClosureSummary &summary) {
   if (expr == nullptr) {
     return;
   }
   if (expr->await_expression_enabled) {
     ++summary.await_expression_sites;
   }
-  CollectPart7AsyncSourceClosureExprSites(expr->receiver.get(), summary);
-  CollectPart7AsyncSourceClosureExprSites(expr->left.get(), summary);
-  CollectPart7AsyncSourceClosureExprSites(expr->right.get(), summary);
-  CollectPart7AsyncSourceClosureExprSites(expr->third.get(), summary);
+  CollectConcurrencyAsyncSourceClosureExprSites(expr->receiver.get(), summary);
+  CollectConcurrencyAsyncSourceClosureExprSites(expr->left.get(), summary);
+  CollectConcurrencyAsyncSourceClosureExprSites(expr->right.get(), summary);
+  CollectConcurrencyAsyncSourceClosureExprSites(expr->third.get(), summary);
   for (const auto &arg : expr->args) {
-    CollectPart7AsyncSourceClosureExprSites(arg.get(), summary);
+    CollectConcurrencyAsyncSourceClosureExprSites(arg.get(), summary);
   }
 }
 
-void CollectPart7AsyncSourceClosureStmtSites(
-    const Stmt *stmt, Objc3FrontendPart7AsyncSourceClosureSummary &summary) {
+void CollectConcurrencyAsyncSourceClosureStmtSites(
+    const Stmt *stmt, Objc3FrontendConcurrencyAsyncSourceClosureSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->let_stmt->value.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->let_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->return_stmt->value.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->return_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->if_stmt->condition.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->if_stmt->condition.get(), summary);
       for (const auto &then_stmt : stmt->if_stmt->then_body) {
-        CollectPart7AsyncSourceClosureStmtSites(then_stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(then_stmt.get(), summary);
       }
       for (const auto &else_stmt : stmt->if_stmt->else_body) {
-        CollectPart7AsyncSourceClosureStmtSites(else_stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(else_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(body_stmt.get(), summary);
       }
-      CollectPart7AsyncSourceClosureExprSites(stmt->do_while_stmt->condition.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->do_while_stmt->condition.get(), summary);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->for_stmt->init.value.get(), summary);
-      CollectPart7AsyncSourceClosureExprSites(stmt->for_stmt->condition.get(), summary);
-      CollectPart7AsyncSourceClosureExprSites(stmt->for_stmt->step.value.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->for_stmt->init.value.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->for_stmt->condition.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->switch_stmt->condition.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->switch_stmt->condition.get(), summary);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &case_stmt : switch_case.body) {
-          CollectPart7AsyncSourceClosureStmtSites(case_stmt.get(), summary);
+          CollectConcurrencyAsyncSourceClosureStmtSites(case_stmt.get(), summary);
         }
       }
     }
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->while_stmt->condition.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->while_stmt->condition.get(), summary);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
@@ -4993,13 +4993,13 @@ void CollectPart7AsyncSourceClosureStmtSites(
   case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        CollectPart7AsyncSourceClosureStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart7AsyncSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
+      CollectConcurrencyAsyncSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Break:
@@ -5009,32 +5009,32 @@ void CollectPart7AsyncSourceClosureStmtSites(
   }
 }
 
-void CollectPart7TaskGroupCancellationExprSites(
+void CollectConcurrencyTaskGroupCancellationExprSites(
     const Expr *expr,
-    Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+    Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary &summary) {
   if (expr == nullptr) {
     return;
   }
   const auto collect_symbol = [&summary](const std::string &symbol) {
-    if (IsPart7TaskCreationSymbol(symbol)) {
+    if (IsConcurrencyTaskCreationSymbol(symbol)) {
       ++summary.task_creation_sites;
     }
-    if (IsPart7TaskGroupScopeSymbol(symbol)) {
+    if (IsConcurrencyTaskGroupScopeSymbol(symbol)) {
       ++summary.task_group_scope_sites;
     }
-    if (IsPart7TaskGroupAddTaskSymbol(symbol)) {
+    if (IsConcurrencyTaskGroupAddTaskSymbol(symbol)) {
       ++summary.task_group_add_task_sites;
     }
-    if (IsPart7TaskGroupWaitNextSymbol(symbol)) {
+    if (IsConcurrencyTaskGroupWaitNextSymbol(symbol)) {
       ++summary.task_group_wait_next_sites;
     }
-    if (IsPart7TaskGroupCancelAllSymbol(symbol)) {
+    if (IsConcurrencyTaskGroupCancelAllSymbol(symbol)) {
       ++summary.task_group_cancel_all_sites;
     }
-    if (IsPart7CancellationCheckSymbol(symbol)) {
+    if (IsConcurrencyCancellationCheckSymbol(symbol)) {
       ++summary.cancellation_check_sites;
     }
-    if (IsPart7CancellationHandlerSymbol(symbol)) {
+    if (IsConcurrencyCancellationHandlerSymbol(symbol)) {
       ++summary.cancellation_handler_sites;
     }
   };
@@ -5050,85 +5050,85 @@ void CollectPart7TaskGroupCancellationExprSites(
     break;
   }
 
-  CollectPart7TaskGroupCancellationExprSites(expr->receiver.get(), summary);
-  CollectPart7TaskGroupCancellationExprSites(expr->left.get(), summary);
-  CollectPart7TaskGroupCancellationExprSites(expr->right.get(), summary);
-  CollectPart7TaskGroupCancellationExprSites(expr->third.get(), summary);
+  CollectConcurrencyTaskGroupCancellationExprSites(expr->receiver.get(), summary);
+  CollectConcurrencyTaskGroupCancellationExprSites(expr->left.get(), summary);
+  CollectConcurrencyTaskGroupCancellationExprSites(expr->right.get(), summary);
+  CollectConcurrencyTaskGroupCancellationExprSites(expr->third.get(), summary);
   for (const auto &arg : expr->args) {
-    CollectPart7TaskGroupCancellationExprSites(arg.get(), summary);
+    CollectConcurrencyTaskGroupCancellationExprSites(arg.get(), summary);
   }
 }
 
-void CollectPart7TaskGroupCancellationStmtSites(
+void CollectConcurrencyTaskGroupCancellationStmtSites(
     const Stmt *stmt,
-    Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary &summary) {
+    Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->let_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->return_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->if_stmt->condition.get(), summary);
       for (const auto &then_stmt : stmt->if_stmt->then_body) {
-        CollectPart7TaskGroupCancellationStmtSites(then_stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(then_stmt.get(), summary);
       }
       for (const auto &else_stmt : stmt->if_stmt->else_body) {
-        CollectPart7TaskGroupCancellationStmtSites(else_stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(else_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(body_stmt.get(), summary);
       }
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->do_while_stmt->condition.get(), summary);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->for_stmt->init.value.get(), summary);
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->for_stmt->condition.get(), summary);
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->switch_stmt->condition.get(), summary);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &case_stmt : switch_case.body) {
-          CollectPart7TaskGroupCancellationStmtSites(case_stmt.get(), summary);
+          CollectConcurrencyTaskGroupCancellationStmtSites(case_stmt.get(), summary);
         }
       }
     }
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->while_stmt->condition.get(), summary);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(body_stmt.get(), summary);
       }
     }
     return;
@@ -5136,13 +5136,13 @@ void CollectPart7TaskGroupCancellationStmtSites(
   case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        CollectPart7TaskGroupCancellationStmtSites(body_stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart7TaskGroupCancellationExprSites(
+      CollectConcurrencyTaskGroupCancellationExprSites(
           stmt->expr_stmt->value.get(), summary);
     }
     return;
@@ -5153,8 +5153,8 @@ void CollectPart7TaskGroupCancellationStmtSites(
   }
 }
 
-void CollectPart3TypeSourceClosureExprSites(
-    const Expr *expr, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+void CollectTypeSystemTypeSourceClosureExprSites(
+    const Expr *expr, Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
   if (expr == nullptr) {
     return;
   }
@@ -5171,12 +5171,12 @@ void CollectPart3TypeSourceClosureExprSites(
   if (expr->typed_keypath_literal_enabled) {
     ++summary.typed_keypath_literal_sites;
   }
-  CollectPart3TypeSourceClosureExprSites(expr->receiver.get(), summary);
-  CollectPart3TypeSourceClosureExprSites(expr->left.get(), summary);
-  CollectPart3TypeSourceClosureExprSites(expr->right.get(), summary);
-  CollectPart3TypeSourceClosureExprSites(expr->third.get(), summary);
+  CollectTypeSystemTypeSourceClosureExprSites(expr->receiver.get(), summary);
+  CollectTypeSystemTypeSourceClosureExprSites(expr->left.get(), summary);
+  CollectTypeSystemTypeSourceClosureExprSites(expr->right.get(), summary);
+  CollectTypeSystemTypeSourceClosureExprSites(expr->third.get(), summary);
   for (const auto &arg : expr->args) {
-    CollectPart3TypeSourceClosureExprSites(arg.get(), summary);
+    CollectTypeSystemTypeSourceClosureExprSites(arg.get(), summary);
   }
   for (const auto &stmt : expr->block_body) {
     if (stmt != nullptr) {
@@ -5184,22 +5184,22 @@ void CollectPart3TypeSourceClosureExprSites(
       switch (nested->kind) {
       case Stmt::Kind::Let:
         if (nested->let_stmt != nullptr) {
-          CollectPart3TypeSourceClosureExprSites(nested->let_stmt->value.get(), summary);
+          CollectTypeSystemTypeSourceClosureExprSites(nested->let_stmt->value.get(), summary);
         }
         break;
       case Stmt::Kind::Assign:
         if (nested->assign_stmt != nullptr) {
-          CollectPart3TypeSourceClosureExprSites(nested->assign_stmt->value.get(), summary);
+          CollectTypeSystemTypeSourceClosureExprSites(nested->assign_stmt->value.get(), summary);
         }
         break;
       case Stmt::Kind::Return:
         if (nested->return_stmt != nullptr) {
-          CollectPart3TypeSourceClosureExprSites(nested->return_stmt->value.get(), summary);
+          CollectTypeSystemTypeSourceClosureExprSites(nested->return_stmt->value.get(), summary);
         }
         break;
       case Stmt::Kind::Expr:
         if (nested->expr_stmt != nullptr) {
-          CollectPart3TypeSourceClosureExprSites(nested->expr_stmt->value.get(), summary);
+          CollectTypeSystemTypeSourceClosureExprSites(nested->expr_stmt->value.get(), summary);
         }
         break;
       case Stmt::Kind::If:
@@ -5218,76 +5218,76 @@ void CollectPart3TypeSourceClosureExprSites(
   }
 }
 
-void CollectPart3TypeSourceClosureStmtSites(
-    const Stmt *stmt, Objc3FrontendPart3TypeSourceClosureSummary &summary) {
+void CollectTypeSystemTypeSourceClosureStmtSites(
+    const Stmt *stmt, Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
   switch (stmt->kind) {
   case Stmt::Kind::Let:
     if (stmt->let_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->let_stmt->value.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->let_stmt->value.get(), summary);
     }
     break;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->assign_stmt->value.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->assign_stmt->value.get(), summary);
     }
     break;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->return_stmt->value.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->return_stmt->value.get(), summary);
     }
     break;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->expr_stmt->value.get(), summary);
     }
     break;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->if_stmt->condition.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->if_stmt->condition.get(), summary);
       for (const auto &child : stmt->if_stmt->then_body) {
-        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
       for (const auto &child : stmt->if_stmt->else_body) {
-        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->do_while_stmt->condition.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->do_while_stmt->condition.get(), summary);
       for (const auto &child : stmt->do_while_stmt->body) {
-        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->for_stmt->init.value.get(), summary);
-      CollectPart3TypeSourceClosureExprSites(stmt->for_stmt->condition.get(), summary);
-      CollectPart3TypeSourceClosureExprSites(stmt->for_stmt->step.value.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->for_stmt->init.value.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->for_stmt->condition.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->for_stmt->step.value.get(), summary);
       for (const auto &child : stmt->for_stmt->body) {
-        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->switch_stmt->condition.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->switch_stmt->condition.get(), summary);
       for (const auto &case_stmt : stmt->switch_stmt->cases) {
         for (const auto &child : case_stmt.body) {
-          CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+          CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
         }
       }
     }
     break;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart3TypeSourceClosureExprSites(stmt->while_stmt->condition.get(), summary);
+      CollectTypeSystemTypeSourceClosureExprSites(stmt->while_stmt->condition.get(), summary);
       for (const auto &child : stmt->while_stmt->body) {
-        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
@@ -5295,7 +5295,7 @@ void CollectPart3TypeSourceClosureStmtSites(
       case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &child : stmt->block_stmt->body) {
-        CollectPart3TypeSourceClosureStmtSites(child.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
@@ -5306,11 +5306,11 @@ void CollectPart3TypeSourceClosureStmtSites(
   }
 }
 
-Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
+Objc3FrontendTypeSystemTypeSourceClosureSummary BuildTypeSystemTypeSourceClosureSummary(
     const Objc3Program &program,
     const Objc3FrontendObjectPointerNullabilityGenericsSummary
         &object_pointer_summary) {
-  Objc3FrontendPart3TypeSourceClosureSummary summary;
+  Objc3FrontendTypeSystemTypeSourceClosureSummary summary;
   for (const auto &protocol_decl : program.protocols) {
     for (const auto &method_decl : protocol_decl.methods) {
       if (method_decl.protocol_requirement_kind ==
@@ -5348,13 +5348,13 @@ Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
   summary.optional_member_access_fail_closed = false;
   for (const auto &fn : program.functions) {
     for (const auto &stmt : fn.body) {
-      CollectPart3TypeSourceClosureStmtSites(stmt.get(), summary);
+      CollectTypeSystemTypeSourceClosureStmtSites(stmt.get(), summary);
     }
   }
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
       for (const auto &stmt : method.body) {
-        CollectPart3TypeSourceClosureStmtSites(stmt.get(), summary);
+        CollectTypeSystemTypeSourceClosureStmtSites(stmt.get(), summary);
       }
     }
   }
@@ -5368,13 +5368,13 @@ Objc3FrontendPart3TypeSourceClosureSummary BuildPart3TypeSourceClosureSummary(
               summary.protocol_optional_property_count >=
           summary.protocol_optional_property_count;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key = BuildPart3TypeSourceClosureReplayKey(summary);
+  summary.replay_key = BuildTypeSystemTypeSourceClosureReplayKey(summary);
   return summary;
 }
 
-void CollectPart5ControlFlowSourceClosureStmtSites(
+void CollectControlFlowControlFlowSourceClosureStmtSites(
     const Stmt *stmt,
-    Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
+    Objc3FrontendControlFlowControlFlowSourceClosureSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
@@ -5397,24 +5397,24 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
             stmt->if_stmt->guard_boolean_condition_clause_count;
       }
       for (const auto &child : stmt->if_stmt->then_body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
       }
       for (const auto &child : stmt->if_stmt->else_body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &child : stmt->do_while_stmt->body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
       for (const auto &child : stmt->for_stmt->body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
@@ -5430,7 +5430,7 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
             ++summary.switch_case_pattern_sites;
           }
           for (const auto &child : case_stmt.body) {
-            CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+            CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
           }
         }
         break;
@@ -5460,7 +5460,7 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
           }
         }
         for (const auto &child : case_stmt.body) {
-          CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+          CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
         }
       }
     }
@@ -5468,7 +5468,7 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
       for (const auto &child : stmt->while_stmt->body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
@@ -5476,7 +5476,7 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
       case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &child : stmt->block_stmt->body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(child.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(child.get(), summary);
       }
     }
     break;
@@ -5487,11 +5487,11 @@ void CollectPart5ControlFlowSourceClosureStmtSites(
   }
 }
 
-Objc3FrontendPart5ControlFlowSourceClosureSummary
-BuildPart5ControlFlowSourceClosureSummary(
+Objc3FrontendControlFlowControlFlowSourceClosureSummary
+BuildControlFlowControlFlowSourceClosureSummary(
     const Objc3Program &program,
     const std::vector<Objc3LexToken> &tokens) {
-  Objc3FrontendPart5ControlFlowSourceClosureSummary summary;
+  Objc3FrontendControlFlowControlFlowSourceClosureSummary summary;
   for (const auto &token : tokens) {
     if (token.kind == Objc3LexTokenKind::KwDefer) {
       ++summary.defer_keyword_sites;
@@ -5499,13 +5499,13 @@ BuildPart5ControlFlowSourceClosureSummary(
   }
   for (const auto &fn : program.functions) {
     for (const auto &stmt : fn.body) {
-      CollectPart5ControlFlowSourceClosureStmtSites(stmt.get(), summary);
+      CollectControlFlowControlFlowSourceClosureStmtSites(stmt.get(), summary);
     }
   }
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
       for (const auto &stmt : method.body) {
-        CollectPart5ControlFlowSourceClosureStmtSites(stmt.get(), summary);
+        CollectControlFlowControlFlowSourceClosureStmtSites(stmt.get(), summary);
       }
     }
   }
@@ -5533,14 +5533,14 @@ BuildPart5ControlFlowSourceClosureSummary(
       summary.match_default_sites <=
           summary.match_statement_sites + summary.match_default_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key = BuildPart5ControlFlowSourceClosureReplayKey(summary);
+  summary.replay_key = BuildControlFlowControlFlowSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart6ErrorSourceClosureSummary
-BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
+Objc3FrontendErrorHandlingErrorSourceClosureSummary
+BuildErrorHandlingErrorSourceClosureSummary(const Objc3Program &program,
                                     const std::vector<Objc3LexToken> &tokens) {
-  Objc3FrontendPart6ErrorSourceClosureSummary summary;
+  Objc3FrontendErrorHandlingErrorSourceClosureSummary summary;
   for (const auto &token : tokens) {
     if (token.kind == Objc3LexTokenKind::KwTry) {
       ++summary.try_keyword_sites;
@@ -5646,14 +5646,14 @@ BuildPart6ErrorSourceClosureSummary(const Objc3Program &program,
       summary.ns_error_bridge_path_sites <=
           summary.ns_error_out_parameter_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key = BuildPart6ErrorSourceClosureReplayKey(summary);
+  summary.replay_key = BuildErrorHandlingErrorSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart7AsyncSourceClosureSummary
-BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
+Objc3FrontendConcurrencyAsyncSourceClosureSummary
+BuildConcurrencyAsyncSourceClosureSummary(const Objc3Program &program,
                                     const std::vector<Objc3LexToken> &tokens) {
-  Objc3FrontendPart7AsyncSourceClosureSummary summary;
+  Objc3FrontendConcurrencyAsyncSourceClosureSummary summary;
   bool async_profiles_normalized = true;
   bool await_profiles_normalized = true;
 
@@ -5684,7 +5684,7 @@ BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
     await_profiles_normalized =
         await_profiles_normalized && fn.await_suspension_profile_is_normalized;
     for (const auto &stmt : fn.body) {
-      CollectPart7AsyncSourceClosureStmtSites(stmt.get(), summary);
+      CollectConcurrencyAsyncSourceClosureStmtSites(stmt.get(), summary);
     }
   }
 
@@ -5734,7 +5734,7 @@ BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
           await_profiles_normalized &&
           method.await_suspension_profile_is_normalized;
       for (const auto &stmt : method.body) {
-        CollectPart7AsyncSourceClosureStmtSites(stmt.get(), summary);
+        CollectConcurrencyAsyncSourceClosureStmtSites(stmt.get(), summary);
       }
     }
   }
@@ -5751,13 +5751,13 @@ BuildPart7AsyncSourceClosureSummary(const Objc3Program &program,
               summary.executor_named_sites <=
           summary.executor_attribute_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key = BuildPart7AsyncSourceClosureReplayKey(summary);
+  summary.replay_key = BuildConcurrencyAsyncSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
-BuildPart7ActorMemberIsolationSourceClosureSummary(const Objc3Program &program) {
-  Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary summary;
+Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
+BuildConcurrencyActorMemberIsolationSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary summary;
 
   for (const auto &interface_decl : program.interfaces) {
     if (!interface_decl.is_actor) {
@@ -5793,14 +5793,14 @@ BuildPart7ActorMemberIsolationSourceClosureSummary(const Objc3Program &program) 
           summary.actor_method_sites + summary.actor_property_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart7ActorMemberIsolationSourceClosureReplayKey(summary);
+      BuildConcurrencyActorMemberIsolationSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
-BuildPart7TaskGroupCancellationSourceClosureSummary(
+Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
+BuildConcurrencyTaskGroupCancellationSourceClosureSummary(
     const Objc3Program &program) {
-  Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary summary;
+  Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary summary;
 
   for (const auto &fn : program.functions) {
     if (fn.async_declared) {
@@ -5810,7 +5810,7 @@ BuildPart7TaskGroupCancellationSourceClosureSummary(
       ++summary.executor_attribute_sites;
     }
     for (const auto &stmt : fn.body) {
-      CollectPart7TaskGroupCancellationStmtSites(stmt.get(), summary);
+      CollectConcurrencyTaskGroupCancellationStmtSites(stmt.get(), summary);
     }
   }
 
@@ -5823,7 +5823,7 @@ BuildPart7TaskGroupCancellationSourceClosureSummary(
         ++summary.executor_attribute_sites;
       }
       for (const auto &stmt : method.body) {
-        CollectPart7TaskGroupCancellationStmtSites(stmt.get(), summary);
+        CollectConcurrencyTaskGroupCancellationStmtSites(stmt.get(), summary);
       }
     }
   }
@@ -5847,20 +5847,20 @@ BuildPart7TaskGroupCancellationSourceClosureSummary(
       summary.cancellation_handler_sites <= summary.cancellation_check_sites + 1u;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart7TaskGroupCancellationSourceClosureReplayKey(summary);
+      BuildConcurrencyTaskGroupCancellationSourceClosureReplayKey(summary);
   return summary;
 }
 
-static void CollectPart8SystemExtensionStmtSites(
+static void CollectOwnershipSystemExtensionStmtSites(
     const Stmt *stmt,
-    Objc3FrontendPart8SystemExtensionSourceClosureSummary &summary);
-static void CollectPart8CleanupResourceCaptureStmtSites(
+    Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &summary);
+static void CollectOwnershipCleanupResourceCaptureStmtSites(
     const Stmt *stmt,
-    Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary &summary);
+    Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary &summary);
 
-static void CollectPart8SystemExtensionExprSites(
+static void CollectOwnershipSystemExtensionExprSites(
     const Expr *expr,
-    Objc3FrontendPart8SystemExtensionSourceClosureSummary &summary) {
+    Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &summary) {
   if (expr == nullptr) {
     return;
   }
@@ -5876,34 +5876,34 @@ static void CollectPart8SystemExtensionExprSites(
     }
     for (const auto &stmt : expr->block_body) {
       if (stmt != nullptr) {
-        CollectPart8SystemExtensionStmtSites(stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(stmt.get(), summary);
       }
     }
     return;
   case Expr::Kind::Call:
   case Expr::Kind::MessageSend:
-    CollectPart8SystemExtensionExprSites(expr->receiver.get(), summary);
-    CollectPart8SystemExtensionExprSites(expr->left.get(), summary);
-    CollectPart8SystemExtensionExprSites(expr->right.get(), summary);
-    CollectPart8SystemExtensionExprSites(expr->third.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->receiver.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->left.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->right.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->third.get(), summary);
     for (const auto &arg : expr->args) {
-      CollectPart8SystemExtensionExprSites(arg.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(arg.get(), summary);
     }
     return;
   case Expr::Kind::Binary:
   case Expr::Kind::Conditional:
-    CollectPart8SystemExtensionExprSites(expr->left.get(), summary);
-    CollectPart8SystemExtensionExprSites(expr->right.get(), summary);
-    CollectPart8SystemExtensionExprSites(expr->third.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->left.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->right.get(), summary);
+    CollectOwnershipSystemExtensionExprSites(expr->third.get(), summary);
     return;
   default:
     return;
   }
 }
 
-static void CollectPart8SystemExtensionStmtSites(
+static void CollectOwnershipSystemExtensionStmtSites(
     const Stmt *stmt,
-    Objc3FrontendPart8SystemExtensionSourceClosureSummary &summary) {
+    Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
@@ -5919,63 +5919,63 @@ static void CollectPart8SystemExtensionStmtSites(
           ++summary.resource_invalid_clause_sites;
         }
       }
-      CollectPart8SystemExtensionExprSites(stmt->let_stmt->value.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->let_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->assign_stmt->value.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->assign_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->return_stmt->value.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->return_stmt->value.get(), summary);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->if_stmt->condition.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->if_stmt->condition.get(), summary);
       for (const auto &body_stmt : stmt->if_stmt->then_body) {
-        CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
       for (const auto &body_stmt : stmt->if_stmt->else_body) {
-        CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
-      CollectPart8SystemExtensionExprSites(stmt->do_while_stmt->condition.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->do_while_stmt->condition.get(), summary);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->for_stmt->init.value.get(), summary);
-      CollectPart8SystemExtensionExprSites(stmt->for_stmt->condition.get(), summary);
-      CollectPart8SystemExtensionExprSites(stmt->for_stmt->step.value.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->for_stmt->init.value.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->for_stmt->condition.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->for_stmt->step.value.get(), summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->switch_stmt->condition.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->switch_stmt->condition.get(), summary);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &body_stmt : switch_case.body) {
-          CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+          CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
         }
       }
     }
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->while_stmt->condition.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->while_stmt->condition.get(), summary);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
     }
     return;
@@ -5983,13 +5983,13 @@ static void CollectPart8SystemExtensionStmtSites(
   case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        CollectPart8SystemExtensionStmtSites(body_stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart8SystemExtensionExprSites(stmt->expr_stmt->value.get(), summary);
+      CollectOwnershipSystemExtensionExprSites(stmt->expr_stmt->value.get(), summary);
     }
     return;
   default:
@@ -5997,9 +5997,9 @@ static void CollectPart8SystemExtensionStmtSites(
   }
 }
 
-Objc3FrontendPart8SystemExtensionSourceClosureSummary
-BuildPart8SystemExtensionSourceClosureSummary(const Objc3Program &program) {
-  Objc3FrontendPart8SystemExtensionSourceClosureSummary summary;
+Objc3FrontendOwnershipSystemExtensionSourceClosureSummary
+BuildOwnershipSystemExtensionSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendOwnershipSystemExtensionSourceClosureSummary summary;
 
   auto count_borrowed_in_params = [&summary](const std::vector<FuncParam> &params) {
     for (const auto &param : params) {
@@ -6018,7 +6018,7 @@ BuildPart8SystemExtensionSourceClosureSummary(const Objc3Program &program) {
       ++summary.returns_borrowed_attribute_sites;
     }
     for (const auto &stmt : fn.body) {
-      CollectPart8SystemExtensionStmtSites(stmt.get(), summary);
+      CollectOwnershipSystemExtensionStmtSites(stmt.get(), summary);
     }
   }
 
@@ -6041,7 +6041,7 @@ BuildPart8SystemExtensionSourceClosureSummary(const Objc3Program &program) {
     for (const auto &method : implementation.methods) {
       count_method(method);
       for (const auto &stmt : method.body) {
-        CollectPart8SystemExtensionStmtSites(stmt.get(), summary);
+        CollectOwnershipSystemExtensionStmtSites(stmt.get(), summary);
       }
     }
   }
@@ -6057,13 +6057,13 @@ BuildPart8SystemExtensionSourceClosureSummary(const Objc3Program &program) {
               summary.explicit_capture_move_sites + summary.explicit_capture_plain_sites <=
           summary.explicit_capture_item_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key = BuildPart8SystemExtensionSourceClosureReplayKey(summary);
+  summary.replay_key = BuildOwnershipSystemExtensionSourceClosureReplayKey(summary);
   return summary;
 }
 
-static void CollectPart8CleanupResourceCaptureExprSites(
+static void CollectOwnershipCleanupResourceCaptureExprSites(
     const Expr *expr,
-    Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary &summary) {
+    Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary &summary) {
   if (expr == nullptr) {
     return;
   }
@@ -6079,34 +6079,34 @@ static void CollectPart8CleanupResourceCaptureExprSites(
     }
     for (const auto &stmt : expr->block_body) {
       if (stmt != nullptr) {
-        CollectPart8CleanupResourceCaptureStmtSites(stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(stmt.get(), summary);
       }
     }
     return;
   case Expr::Kind::Call:
   case Expr::Kind::MessageSend:
-    CollectPart8CleanupResourceCaptureExprSites(expr->receiver.get(), summary);
-    CollectPart8CleanupResourceCaptureExprSites(expr->left.get(), summary);
-    CollectPart8CleanupResourceCaptureExprSites(expr->right.get(), summary);
-    CollectPart8CleanupResourceCaptureExprSites(expr->third.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->receiver.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->left.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->right.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->third.get(), summary);
     for (const auto &arg : expr->args) {
-      CollectPart8CleanupResourceCaptureExprSites(arg.get(), summary);
+      CollectOwnershipCleanupResourceCaptureExprSites(arg.get(), summary);
     }
     return;
   case Expr::Kind::Binary:
   case Expr::Kind::Conditional:
-    CollectPart8CleanupResourceCaptureExprSites(expr->left.get(), summary);
-    CollectPart8CleanupResourceCaptureExprSites(expr->right.get(), summary);
-    CollectPart8CleanupResourceCaptureExprSites(expr->third.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->left.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->right.get(), summary);
+    CollectOwnershipCleanupResourceCaptureExprSites(expr->third.get(), summary);
     return;
   default:
     return;
   }
 }
 
-static void CollectPart8CleanupResourceCaptureStmtSites(
+static void CollectOwnershipCleanupResourceCaptureStmtSites(
     const Stmt *stmt,
-    Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary &summary) {
+    Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary &summary) {
   if (stmt == nullptr) {
     return;
   }
@@ -6131,73 +6131,73 @@ static void CollectPart8CleanupResourceCaptureStmtSites(
           ++summary.resource_invalid_clause_sites;
         }
       }
-      CollectPart8CleanupResourceCaptureExprSites(stmt->let_stmt->value.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->let_stmt->value.get(),
                                                   summary);
     }
     return;
   case Stmt::Kind::Assign:
     if (stmt->assign_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(stmt->assign_stmt->value.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->assign_stmt->value.get(),
                                                   summary);
     }
     return;
   case Stmt::Kind::Return:
     if (stmt->return_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(stmt->return_stmt->value.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->return_stmt->value.get(),
                                                   summary);
     }
     return;
   case Stmt::Kind::If:
     if (stmt->if_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(stmt->if_stmt->condition.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->if_stmt->condition.get(),
                                                   summary);
       for (const auto &body_stmt : stmt->if_stmt->then_body) {
-        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
       }
       for (const auto &body_stmt : stmt->if_stmt->else_body) {
-        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::DoWhile:
     if (stmt->do_while_stmt != nullptr) {
       for (const auto &body_stmt : stmt->do_while_stmt->body) {
-        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
       }
-      CollectPart8CleanupResourceCaptureExprSites(
+      CollectOwnershipCleanupResourceCaptureExprSites(
           stmt->do_while_stmt->condition.get(), summary);
     }
     return;
   case Stmt::Kind::For:
     if (stmt->for_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(stmt->for_stmt->init.value.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->for_stmt->init.value.get(),
                                                   summary);
-      CollectPart8CleanupResourceCaptureExprSites(
+      CollectOwnershipCleanupResourceCaptureExprSites(
           stmt->for_stmt->condition.get(), summary);
-      CollectPart8CleanupResourceCaptureExprSites(stmt->for_stmt->step.value.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->for_stmt->step.value.get(),
                                                   summary);
       for (const auto &body_stmt : stmt->for_stmt->body) {
-        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Switch:
     if (stmt->switch_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(
+      CollectOwnershipCleanupResourceCaptureExprSites(
           stmt->switch_stmt->condition.get(), summary);
       for (const auto &switch_case : stmt->switch_stmt->cases) {
         for (const auto &body_stmt : switch_case.body) {
-          CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+          CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
         }
       }
     }
     return;
   case Stmt::Kind::While:
     if (stmt->while_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(
+      CollectOwnershipCleanupResourceCaptureExprSites(
           stmt->while_stmt->condition.get(), summary);
       for (const auto &body_stmt : stmt->while_stmt->body) {
-        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
@@ -6205,13 +6205,13 @@ static void CollectPart8CleanupResourceCaptureStmtSites(
   case Stmt::Kind::Defer:
     if (stmt->block_stmt != nullptr) {
       for (const auto &body_stmt : stmt->block_stmt->body) {
-        CollectPart8CleanupResourceCaptureStmtSites(body_stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(body_stmt.get(), summary);
       }
     }
     return;
   case Stmt::Kind::Expr:
     if (stmt->expr_stmt != nullptr) {
-      CollectPart8CleanupResourceCaptureExprSites(stmt->expr_stmt->value.get(),
+      CollectOwnershipCleanupResourceCaptureExprSites(stmt->expr_stmt->value.get(),
                                                   summary);
     }
     return;
@@ -6220,20 +6220,20 @@ static void CollectPart8CleanupResourceCaptureStmtSites(
   }
 }
 
-Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
-BuildPart8CleanupResourceCaptureSourceCompletionSummary(
+Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
+BuildOwnershipCleanupResourceCaptureSourceCompletionSummary(
     const Objc3Program &program) {
-  Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary summary;
+  Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary summary;
 
   for (const auto &fn : program.functions) {
     for (const auto &stmt : fn.body) {
-      CollectPart8CleanupResourceCaptureStmtSites(stmt.get(), summary);
+      CollectOwnershipCleanupResourceCaptureStmtSites(stmt.get(), summary);
     }
   }
   for (const auto &implementation : program.implementations) {
     for (const auto &method : implementation.methods) {
       for (const auto &stmt : method.body) {
-        CollectPart8CleanupResourceCaptureStmtSites(stmt.get(), summary);
+        CollectOwnershipCleanupResourceCaptureStmtSites(stmt.get(), summary);
       }
     }
   }
@@ -6251,14 +6251,14 @@ BuildPart8CleanupResourceCaptureSourceCompletionSummary(
           summary.explicit_capture_item_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart8CleanupResourceCaptureSourceCompletionReplayKey(summary);
+      BuildOwnershipCleanupResourceCaptureSourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
-BuildPart8RetainableCFamilySourceCompletionSummary(
+Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
+BuildOwnershipRetainableCFamilySourceCompletionSummary(
     const Objc3Program &program) {
-  Objc3FrontendPart8RetainableCFamilySourceCompletionSummary summary;
+  Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary summary;
 
   const auto accumulate_callable =
       [&summary](const auto &decl) {
@@ -6305,13 +6305,13 @@ BuildPart8RetainableCFamilySourceCompletionSummary(
   summary.deterministic_handoff = true;
   summary.ready_for_semantic_expansion = true;
   summary.replay_key =
-      BuildPart8RetainableCFamilySourceCompletionReplayKey(summary);
+      BuildOwnershipRetainableCFamilySourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart9DispatchIntentSourceClosureSummary
-BuildPart9DispatchIntentSourceClosureSummary(const Objc3Program &program) {
-  Objc3FrontendPart9DispatchIntentSourceClosureSummary summary;
+Objc3FrontendDispatchDispatchIntentSourceClosureSummary
+BuildDispatchDispatchIntentSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendDispatchDispatchIntentSourceClosureSummary summary;
 
   const auto accumulate_callable = [&summary](const auto &decl) {
     if (decl.objc_direct_declared) {
@@ -6355,13 +6355,13 @@ BuildPart9DispatchIntentSourceClosureSummary(const Objc3Program &program) {
   summary.container_annotation_source_supported = true;
   summary.deterministic_handoff = true;
   summary.ready_for_semantic_expansion = true;
-  summary.replay_key = BuildPart9DispatchIntentSourceClosureReplayKey(summary);
+  summary.replay_key = BuildDispatchDispatchIntentSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart9DispatchIntentSourceCompletionSummary
-BuildPart9DispatchIntentSourceCompletionSummary(const Objc3Program &program) {
-  Objc3FrontendPart9DispatchIntentSourceCompletionSummary summary;
+Objc3FrontendDispatchDispatchIntentSourceCompletionSummary
+BuildDispatchDispatchIntentSourceCompletionSummary(const Objc3Program &program) {
+  Objc3FrontendDispatchDispatchIntentSourceCompletionSummary summary;
 
   std::unordered_map<std::string, bool> direct_members_by_container;
   for (const auto &interface_decl : program.interfaces) {
@@ -6432,13 +6432,13 @@ BuildPart9DispatchIntentSourceCompletionSummary(const Objc3Program &program) {
               summary.direct_members_dynamic_opt_out_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart9DispatchIntentSourceCompletionReplayKey(summary);
+      BuildDispatchDispatchIntentSourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart10MetaprogrammingSourceClosureSummary
-BuildPart10MetaprogrammingSourceClosureSummary(const Objc3Program &program) {
-  Objc3FrontendPart10MetaprogrammingSourceClosureSummary summary;
+Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
+BuildMetaprogrammingMetaprogrammingSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary summary;
 
   for (const auto &fn : program.functions) {
     if (fn.objc_macro_declared) {
@@ -6491,14 +6491,14 @@ BuildPart10MetaprogrammingSourceClosureSummary(const Objc3Program &program) {
   summary.deterministic_handoff = true;
   summary.ready_for_semantic_expansion = true;
   summary.replay_key =
-      BuildPart10MetaprogrammingSourceClosureReplayKey(summary);
+      BuildMetaprogrammingMetaprogrammingSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
-BuildPart10MacroPackageProvenanceSourceCompletionSummary(
+Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
+BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummary(
     const Objc3Program &program) {
-  Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary summary;
+  Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary summary;
 
   const auto accumulate_callable = [&summary](const auto &decl) {
     if (decl.objc_macro_declared) {
@@ -6544,13 +6544,13 @@ BuildPart10MacroPackageProvenanceSourceCompletionSummary(
       summary.expansion_visible_macro_sites <= summary.macro_provenance_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart10MacroPackageProvenanceSourceCompletionReplayKey(summary);
+      BuildMetaprogrammingMacroPackageProvenanceSourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
-BuildPart10PropertyBehaviorSourceCompletionSummary(const Objc3Program &program) {
-  Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary summary;
+Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+BuildMetaprogrammingPropertyBehaviorSourceCompletionSummary(const Objc3Program &program) {
+  Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary summary;
 
   const auto accumulate_property = [&summary](const Objc3PropertyDecl &property,
                                               const char *owner_kind) {
@@ -6604,13 +6604,13 @@ BuildPart10PropertyBehaviorSourceCompletionSummary(const Objc3Program &program) 
           summary.property_behavior_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart10PropertyBehaviorSourceCompletionReplayKey(summary);
+      BuildMetaprogrammingPropertyBehaviorSourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart11ForeignImportSourceClosureSummary
-BuildPart11ForeignImportSourceClosureSummary(const Objc3Program &program) {
-  Objc3FrontendPart11ForeignImportSourceClosureSummary summary;
+Objc3FrontendInteropForeignImportSourceClosureSummary
+BuildInteropForeignImportSourceClosureSummary(const Objc3Program &program) {
+  Objc3FrontendInteropForeignImportSourceClosureSummary summary;
 
   const auto accumulate_callable = [&summary](const auto &decl) {
     if (decl.objc_foreign_declared) {
@@ -6663,14 +6663,14 @@ BuildPart11ForeignImportSourceClosureSummary(const Objc3Program &program) {
       summary.interop_annotation_sites ==
           summary.foreign_callable_sites + summary.import_module_annotation_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
-  summary.replay_key = BuildPart11ForeignImportSourceClosureReplayKey(summary);
+  summary.replay_key = BuildInteropForeignImportSourceClosureReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
-BuildPart11CppSwiftInteropAnnotationSourceCompletionSummary(
+Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+BuildInteropCppSwiftInteropAnnotationSourceCompletionSummary(
     const Objc3Program &program) {
-  Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary summary;
+  Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary summary;
 
   const auto accumulate_callable = [&summary](const auto &decl) {
     if (decl.objc_swift_name_declared) {
@@ -6734,133 +6734,133 @@ BuildPart11CppSwiftInteropAnnotationSourceCompletionSummary(
               summary.header_name_annotation_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart11CppSwiftInteropAnnotationSourceCompletionReplayKey(summary);
+      BuildInteropCppSwiftInteropAnnotationSourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
-BuildPart12DiagnosticsMigratorSourceInventorySummary(
+Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
+BuildToolingDiagnosticsMigratorSourceInventorySummary(
     const Objc3FrontendMigrationHints &migration_hints,
-    const Objc3FrontendPart6ErrorSourceClosureSummary &part6_summary,
-    const Objc3FrontendPart7AsyncSourceClosureSummary &part7_async_summary,
-    const Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
-        &part7_actor_summary,
-    const Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
-        &part7_task_summary,
-    const Objc3FrontendPart8SystemExtensionSourceClosureSummary &part8_summary,
-    const Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
-        &part8_cleanup_summary,
-    const Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
-        &part8_family_summary,
-    const Objc3FrontendPart9DispatchIntentSourceClosureSummary
-        &part9_closure_summary,
-    const Objc3FrontendPart9DispatchIntentSourceCompletionSummary
-        &part9_completion_summary,
-    const Objc3FrontendPart10MetaprogrammingSourceClosureSummary
-        &part10_closure_summary,
-    const Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
-        &part10_macro_summary,
-    const Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
-        &part10_property_summary,
-    const Objc3FrontendPart11ForeignImportSourceClosureSummary
-        &part11_closure_summary,
-    const Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
-        &part11_completion_summary) {
-  Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary summary;
+    const Objc3FrontendErrorHandlingErrorSourceClosureSummary &error_handling_summary,
+    const Objc3FrontendConcurrencyAsyncSourceClosureSummary &concurrency_async_summary,
+    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
+        &concurrency_actor_summary,
+    const Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
+        &concurrency_task_summary,
+    const Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &ownership_summary,
+    const Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
+        &ownership_cleanup_summary,
+    const Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
+        &ownership_family_summary,
+    const Objc3FrontendDispatchDispatchIntentSourceClosureSummary
+        &dispatch_closure_summary,
+    const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary
+        &dispatch_completion_summary,
+    const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
+        &metaprogramming_closure_summary,
+    const Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
+        &metaprogramming_macro_summary,
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+        &metaprogramming_property_summary,
+    const Objc3FrontendInteropForeignImportSourceClosureSummary
+        &interop_closure_summary,
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+        &interop_completion_summary) {
+  Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary summary;
 
   summary.advanced_feature_family_count = 6;
   summary.dependency_surface_count = summary.dependency_contract_ids.size();
   summary.aggregated_source_only_claim_count =
-      part6_summary.source_only_claim_ids.size() +
-      part7_async_summary.source_only_claim_ids.size() +
-      part7_actor_summary.source_only_claim_ids.size() +
-      part7_task_summary.source_only_claim_ids.size() +
-      part8_summary.source_only_claim_ids.size() +
-      part8_cleanup_summary.source_only_claim_ids.size() +
-      part8_family_summary.source_only_claim_ids.size() +
-      part9_closure_summary.source_only_claim_ids.size() +
-      part9_completion_summary.source_only_claim_ids.size() +
-      part10_closure_summary.source_only_claim_ids.size() +
-      part10_macro_summary.source_only_claim_ids.size() +
-      part10_property_summary.source_only_claim_ids.size() +
-      part11_closure_summary.source_only_claim_ids.size() +
-      part11_completion_summary.source_only_claim_ids.size();
+      error_handling_summary.source_only_claim_ids.size() +
+      concurrency_async_summary.source_only_claim_ids.size() +
+      concurrency_actor_summary.source_only_claim_ids.size() +
+      concurrency_task_summary.source_only_claim_ids.size() +
+      ownership_summary.source_only_claim_ids.size() +
+      ownership_cleanup_summary.source_only_claim_ids.size() +
+      ownership_family_summary.source_only_claim_ids.size() +
+      dispatch_closure_summary.source_only_claim_ids.size() +
+      dispatch_completion_summary.source_only_claim_ids.size() +
+      metaprogramming_closure_summary.source_only_claim_ids.size() +
+      metaprogramming_macro_summary.source_only_claim_ids.size() +
+      metaprogramming_property_summary.source_only_claim_ids.size() +
+      interop_closure_summary.source_only_claim_ids.size() +
+      interop_completion_summary.source_only_claim_ids.size();
   summary.fail_closed_construct_count =
-      part6_summary.fail_closed_construct_ids.size();
+      error_handling_summary.fail_closed_construct_ids.size();
   summary.error_surface_sites =
-      part6_summary.function_throws_declaration_sites +
-      part6_summary.method_throws_declaration_sites +
-      part6_summary.result_like_sites + part6_summary.result_payload_sites +
-      part6_summary.ns_error_bridging_sites +
-      part6_summary.ns_error_out_parameter_sites +
-      part6_summary.ns_error_bridge_path_sites +
-      part6_summary.objc_nserror_attribute_sites +
-      part6_summary.objc_status_code_attribute_sites +
-      part6_summary.try_keyword_sites + part6_summary.throw_keyword_sites +
-      part6_summary.catch_keyword_sites;
+      error_handling_summary.function_throws_declaration_sites +
+      error_handling_summary.method_throws_declaration_sites +
+      error_handling_summary.result_like_sites + error_handling_summary.result_payload_sites +
+      error_handling_summary.ns_error_bridging_sites +
+      error_handling_summary.ns_error_out_parameter_sites +
+      error_handling_summary.ns_error_bridge_path_sites +
+      error_handling_summary.objc_nserror_attribute_sites +
+      error_handling_summary.objc_status_code_attribute_sites +
+      error_handling_summary.try_keyword_sites + error_handling_summary.throw_keyword_sites +
+      error_handling_summary.catch_keyword_sites;
   summary.concurrency_surface_sites =
-      part7_async_summary.async_keyword_sites +
-      part7_async_summary.await_keyword_sites +
-      part7_async_summary.executor_attribute_sites +
-      part7_actor_summary.actor_interface_sites +
-      part7_actor_summary.actor_method_sites +
-      part7_actor_summary.actor_property_sites +
-      part7_actor_summary.objc_nonisolated_annotation_sites +
-      part7_actor_summary.actor_member_executor_annotation_sites +
-      part7_task_summary.task_creation_sites +
-      part7_task_summary.task_group_scope_sites +
-      part7_task_summary.task_group_add_task_sites +
-      part7_task_summary.task_group_wait_next_sites +
-      part7_task_summary.task_group_cancel_all_sites +
-      part7_task_summary.cancellation_check_sites +
-      part7_task_summary.cancellation_handler_sites;
+      concurrency_async_summary.async_keyword_sites +
+      concurrency_async_summary.await_keyword_sites +
+      concurrency_async_summary.executor_attribute_sites +
+      concurrency_actor_summary.actor_interface_sites +
+      concurrency_actor_summary.actor_method_sites +
+      concurrency_actor_summary.actor_property_sites +
+      concurrency_actor_summary.objc_nonisolated_annotation_sites +
+      concurrency_actor_summary.actor_member_executor_annotation_sites +
+      concurrency_task_summary.task_creation_sites +
+      concurrency_task_summary.task_group_scope_sites +
+      concurrency_task_summary.task_group_add_task_sites +
+      concurrency_task_summary.task_group_wait_next_sites +
+      concurrency_task_summary.task_group_cancel_all_sites +
+      concurrency_task_summary.cancellation_check_sites +
+      concurrency_task_summary.cancellation_handler_sites;
   summary.system_surface_sites =
-      part8_summary.resource_attribute_sites +
-      part8_summary.resource_close_clause_sites +
-      part8_summary.borrowed_pointer_sites +
-      part8_summary.returns_borrowed_attribute_sites +
-      part8_summary.explicit_capture_list_sites +
-      part8_summary.explicit_capture_item_sites +
-      part8_cleanup_summary.cleanup_attribute_sites +
-      part8_cleanup_summary.cleanup_sugar_sites +
-      part8_cleanup_summary.resource_sugar_sites +
-      part8_family_summary.family_retain_sites +
-      part8_family_summary.family_release_sites +
-      part8_family_summary.family_autorelease_sites +
-      part8_family_summary.compatibility_returns_retained_sites +
-      part8_family_summary.compatibility_returns_not_retained_sites +
-      part8_family_summary.compatibility_consumed_sites;
+      ownership_summary.resource_attribute_sites +
+      ownership_summary.resource_close_clause_sites +
+      ownership_summary.borrowed_pointer_sites +
+      ownership_summary.returns_borrowed_attribute_sites +
+      ownership_summary.explicit_capture_list_sites +
+      ownership_summary.explicit_capture_item_sites +
+      ownership_cleanup_summary.cleanup_attribute_sites +
+      ownership_cleanup_summary.cleanup_sugar_sites +
+      ownership_cleanup_summary.resource_sugar_sites +
+      ownership_family_summary.family_retain_sites +
+      ownership_family_summary.family_release_sites +
+      ownership_family_summary.family_autorelease_sites +
+      ownership_family_summary.compatibility_returns_retained_sites +
+      ownership_family_summary.compatibility_returns_not_retained_sites +
+      ownership_family_summary.compatibility_consumed_sites;
   summary.dispatch_surface_sites =
-      part9_closure_summary.direct_callable_sites +
-      part9_closure_summary.final_callable_sites +
-      part9_closure_summary.dynamic_callable_sites +
-      part9_closure_summary.direct_members_container_sites +
-      part9_closure_summary.final_container_sites +
-      part9_closure_summary.sealed_container_sites +
-      part9_completion_summary.prefixed_container_attribute_sites +
-      part9_completion_summary.effective_direct_member_sites +
-      part9_completion_summary.direct_members_defaulted_method_sites +
-      part9_completion_summary.direct_members_dynamic_opt_out_sites;
+      dispatch_closure_summary.direct_callable_sites +
+      dispatch_closure_summary.final_callable_sites +
+      dispatch_closure_summary.dynamic_callable_sites +
+      dispatch_closure_summary.direct_members_container_sites +
+      dispatch_closure_summary.final_container_sites +
+      dispatch_closure_summary.sealed_container_sites +
+      dispatch_completion_summary.prefixed_container_attribute_sites +
+      dispatch_completion_summary.effective_direct_member_sites +
+      dispatch_completion_summary.direct_members_defaulted_method_sites +
+      dispatch_completion_summary.direct_members_dynamic_opt_out_sites;
   summary.metaprogramming_surface_sites =
-      part10_closure_summary.derive_marker_sites +
-      part10_closure_summary.macro_marker_sites +
-      part10_closure_summary.property_behavior_sites +
-      part10_macro_summary.macro_package_sites +
-      part10_macro_summary.macro_provenance_sites +
-      part10_macro_summary.expansion_visible_macro_sites +
-      part10_property_summary.property_behavior_sites +
-      part10_property_summary.synthesized_binding_visible_sites +
-      part10_property_summary.synthesized_getter_visible_sites +
-      part10_property_summary.synthesized_setter_visible_sites;
+      metaprogramming_closure_summary.derive_marker_sites +
+      metaprogramming_closure_summary.macro_marker_sites +
+      metaprogramming_closure_summary.property_behavior_sites +
+      metaprogramming_macro_summary.macro_package_sites +
+      metaprogramming_macro_summary.macro_provenance_sites +
+      metaprogramming_macro_summary.expansion_visible_macro_sites +
+      metaprogramming_property_summary.property_behavior_sites +
+      metaprogramming_property_summary.synthesized_binding_visible_sites +
+      metaprogramming_property_summary.synthesized_getter_visible_sites +
+      metaprogramming_property_summary.synthesized_setter_visible_sites;
   summary.interop_surface_sites =
-      part11_closure_summary.foreign_callable_sites +
-      part11_closure_summary.import_module_annotation_sites +
-      part11_closure_summary.imported_module_name_sites +
-      part11_completion_summary.swift_name_annotation_sites +
-      part11_completion_summary.swift_private_annotation_sites +
-      part11_completion_summary.cpp_name_annotation_sites +
-      part11_completion_summary.header_name_annotation_sites +
-      part11_completion_summary.named_annotation_payload_sites;
+      interop_closure_summary.foreign_callable_sites +
+      interop_closure_summary.import_module_annotation_sites +
+      interop_closure_summary.imported_module_name_sites +
+      interop_completion_summary.swift_name_annotation_sites +
+      interop_completion_summary.swift_private_annotation_sites +
+      interop_completion_summary.cpp_name_annotation_sites +
+      interop_completion_summary.header_name_annotation_sites +
+      interop_completion_summary.named_annotation_payload_sites;
   summary.diagnostic_surface_sites =
       summary.error_surface_sites + summary.concurrency_surface_sites +
       summary.system_surface_sites + summary.dispatch_surface_sites +
@@ -6870,20 +6870,20 @@ BuildPart12DiagnosticsMigratorSourceInventorySummary(
   summary.canonicalization_hint_sites = migration_hints.legacy_total();
 
   const bool dependencies_ready =
-      part6_summary.ready_for_semantic_expansion &&
-      part7_async_summary.ready_for_semantic_expansion &&
-      part7_actor_summary.ready_for_semantic_expansion &&
-      part7_task_summary.ready_for_semantic_expansion &&
-      part8_summary.ready_for_semantic_expansion &&
-      part8_cleanup_summary.ready_for_semantic_expansion &&
-      part8_family_summary.ready_for_semantic_expansion &&
-      part9_closure_summary.ready_for_semantic_expansion &&
-      part9_completion_summary.ready_for_semantic_expansion &&
-      part10_closure_summary.ready_for_semantic_expansion &&
-      part10_macro_summary.ready_for_semantic_expansion &&
-      part10_property_summary.ready_for_semantic_expansion &&
-      part11_closure_summary.ready_for_semantic_expansion &&
-      part11_completion_summary.ready_for_semantic_expansion;
+      error_handling_summary.ready_for_semantic_expansion &&
+      concurrency_async_summary.ready_for_semantic_expansion &&
+      concurrency_actor_summary.ready_for_semantic_expansion &&
+      concurrency_task_summary.ready_for_semantic_expansion &&
+      ownership_summary.ready_for_semantic_expansion &&
+      ownership_cleanup_summary.ready_for_semantic_expansion &&
+      ownership_family_summary.ready_for_semantic_expansion &&
+      dispatch_closure_summary.ready_for_semantic_expansion &&
+      dispatch_completion_summary.ready_for_semantic_expansion &&
+      metaprogramming_closure_summary.ready_for_semantic_expansion &&
+      metaprogramming_macro_summary.ready_for_semantic_expansion &&
+      metaprogramming_property_summary.ready_for_semantic_expansion &&
+      interop_closure_summary.ready_for_semantic_expansion &&
+      interop_completion_summary.ready_for_semantic_expansion;
   summary.diagnostics_inventory_source_supported = dependencies_ready;
   summary.fixit_inventory_source_supported = dependencies_ready;
   summary.migrator_inventory_source_supported = dependencies_ready;
@@ -6895,17 +6895,17 @@ BuildPart12DiagnosticsMigratorSourceInventorySummary(
       summary.diagnostic_surface_sites >= summary.interop_surface_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
-      BuildPart12DiagnosticsMigratorSourceInventoryReplayKey(summary);
+      BuildToolingDiagnosticsMigratorSourceInventoryReplayKey(summary);
   return summary;
 }
 
-Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
-BuildPart12MigrationCanonicalizationSourceCompletionSummary(
+Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary
+BuildToolingMigrationCanonicalizationSourceCompletionSummary(
     const Objc3FrontendOptions &options,
     const Objc3FrontendMigrationHints &migration_hints,
-    const Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
+    const Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
         &inventory_summary) {
-  Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary summary;
+  Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary summary;
   summary.compatibility_mode =
       options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy
           ? "legacy"
@@ -6944,20 +6944,20 @@ BuildPart12MigrationCanonicalizationSourceCompletionSummary(
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   if (!summary.dependency_inventory_ready) {
     summary.failure_reason =
-        "part12 diagnostics/fix-it/migrator inventory prerequisite is not ready";
+        "tooling diagnostics/fix-it/migrator inventory prerequisite is not ready";
   }
   summary.replay_key =
-      BuildPart12MigrationCanonicalizationSourceCompletionReplayKey(summary);
+      BuildToolingMigrationCanonicalizationSourceCompletionReplayKey(summary);
   return summary;
 }
 
-Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
-BuildPart12DiagnosticTaxonomyPortabilityContractSummary(
-    const Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
+Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary
+BuildToolingDiagnosticTaxonomyPortabilityContractSummary(
+    const Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary
         &migration_summary,
     const Objc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureImplementationSurface
         &diagnostic_surface) {
-  Objc3Part12DiagnosticTaxonomyPortabilityContractSummary summary;
+  Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary summary;
   summary.portability_dependency_count =
       summary.portability_dependency_issue_ids.size();
   summary.diagnostics_total = diagnostic_surface.diagnostics_total;
@@ -7006,21 +7006,21 @@ BuildPart12DiagnosticTaxonomyPortabilityContractSummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic_handoff;
   if (!summary.migration_surface_ready) {
     summary.failure_reason =
-        "part12 migration/canonicalization source completion prerequisite is not ready";
+        "tooling migration/canonicalization source completion prerequisite is not ready";
   } else if (!diagnostic_surface.core_feature_impl_ready) {
     summary.failure_reason =
         "semantic diagnostic taxonomy/fix-it core feature implementation surface is not ready";
   }
   summary.replay_key =
-      BuildPart12DiagnosticTaxonomyPortabilityContractReplayKey(summary);
+      BuildToolingDiagnosticTaxonomyPortabilityContractReplayKey(summary);
   return summary;
 }
 
-Objc3Part12FeatureSpecificFixitSynthesisSummary
-BuildPart12FeatureSpecificFixitSynthesisSummary(
-    const Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
+Objc3ToolingFeatureSpecificFixitSynthesisSummary
+BuildToolingFeatureSpecificFixitSynthesisSummary(
+    const Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary
         &taxonomy_summary) {
-  Objc3Part12FeatureSpecificFixitSynthesisSummary summary;
+  Objc3ToolingFeatureSpecificFixitSynthesisSummary summary;
   summary.fixit_family_count = summary.fixit_family_ids.size();
   summary.migration_fixit_candidate_sites =
       taxonomy_summary.migration_canonicalization_candidate_sites;
@@ -7041,10 +7041,10 @@ BuildPart12FeatureSpecificFixitSynthesisSummary(
   summary.ready_for_lowering_and_runtime = summary.deterministic_handoff;
   if (!summary.diagnostic_taxonomy_ready) {
     summary.failure_reason =
-        "part12 diagnostic taxonomy and portability contract prerequisite is not ready";
+        "tooling diagnostic taxonomy and portability contract prerequisite is not ready";
   }
   summary.replay_key =
-      BuildPart12FeatureSpecificFixitSynthesisReplayKey(summary);
+      BuildToolingFeatureSpecificFixitSynthesisReplayKey(summary);
   return summary;
 }
 
@@ -7251,74 +7251,74 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       BuildPropertyAttributeSummary(Objc3ParsedProgramAst(result.program));
   result.object_pointer_nullability_generics_summary =
       BuildObjectPointerNullabilityGenericsSummary(Objc3ParsedProgramAst(result.program));
-  result.part3_type_source_closure_summary = BuildPart3TypeSourceClosureSummary(
+  result.type_system_type_source_closure_summary = BuildTypeSystemTypeSourceClosureSummary(
       Objc3ParsedProgramAst(result.program),
       result.object_pointer_nullability_generics_summary);
-  result.part5_control_flow_source_closure_summary =
-      BuildPart5ControlFlowSourceClosureSummary(
+  result.control_flow_control_flow_source_closure_summary =
+      BuildControlFlowControlFlowSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
-  result.part6_error_source_closure_summary =
-      BuildPart6ErrorSourceClosureSummary(
+  result.error_handling_error_source_closure_summary =
+      BuildErrorHandlingErrorSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
-  result.part7_async_source_closure_summary =
-      BuildPart7AsyncSourceClosureSummary(
+  result.concurrency_async_source_closure_summary =
+      BuildConcurrencyAsyncSourceClosureSummary(
           Objc3ParsedProgramAst(result.program), tokens);
-  result.part8_system_extension_source_closure_summary =
-      BuildPart8SystemExtensionSourceClosureSummary(
+  result.ownership_system_extension_source_closure_summary =
+      BuildOwnershipSystemExtensionSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part8_cleanup_resource_capture_source_completion_summary =
-      BuildPart8CleanupResourceCaptureSourceCompletionSummary(
+  result.ownership_cleanup_resource_capture_source_completion_summary =
+      BuildOwnershipCleanupResourceCaptureSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part8_retainable_c_family_source_completion_summary =
-      BuildPart8RetainableCFamilySourceCompletionSummary(
+  result.ownership_retainable_c_family_source_completion_summary =
+      BuildOwnershipRetainableCFamilySourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part9_dispatch_intent_source_closure_summary =
-      BuildPart9DispatchIntentSourceClosureSummary(
+  result.dispatch_dispatch_intent_source_closure_summary =
+      BuildDispatchDispatchIntentSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part9_dispatch_intent_source_completion_summary =
-      BuildPart9DispatchIntentSourceCompletionSummary(
+  result.dispatch_dispatch_intent_source_completion_summary =
+      BuildDispatchDispatchIntentSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part10_metaprogramming_source_closure_summary =
-      BuildPart10MetaprogrammingSourceClosureSummary(
+  result.metaprogramming_metaprogramming_source_closure_summary =
+      BuildMetaprogrammingMetaprogrammingSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part10_macro_package_provenance_source_completion_summary =
-      BuildPart10MacroPackageProvenanceSourceCompletionSummary(
+  result.metaprogramming_macro_package_provenance_source_completion_summary =
+      BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part10_property_behavior_source_completion_summary =
-      BuildPart10PropertyBehaviorSourceCompletionSummary(
+  result.metaprogramming_property_behavior_source_completion_summary =
+      BuildMetaprogrammingPropertyBehaviorSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part11_foreign_import_source_closure_summary =
-      BuildPart11ForeignImportSourceClosureSummary(
+  result.interop_foreign_import_source_closure_summary =
+      BuildInteropForeignImportSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part11_cpp_swift_interop_annotation_source_completion_summary =
-      BuildPart11CppSwiftInteropAnnotationSourceCompletionSummary(
+  result.interop_cpp_swift_interop_annotation_source_completion_summary =
+      BuildInteropCppSwiftInteropAnnotationSourceCompletionSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part7_actor_member_isolation_source_closure_summary =
-      BuildPart7ActorMemberIsolationSourceClosureSummary(
+  result.concurrency_actor_member_isolation_source_closure_summary =
+      BuildConcurrencyActorMemberIsolationSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part7_task_group_cancellation_source_closure_summary =
-      BuildPart7TaskGroupCancellationSourceClosureSummary(
+  result.concurrency_task_group_cancellation_source_closure_summary =
+      BuildConcurrencyTaskGroupCancellationSourceClosureSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part12_diagnostics_migrator_source_inventory_summary =
-      BuildPart12DiagnosticsMigratorSourceInventorySummary(
-          result.migration_hints, result.part6_error_source_closure_summary,
-          result.part7_async_source_closure_summary,
-          result.part7_actor_member_isolation_source_closure_summary,
-          result.part7_task_group_cancellation_source_closure_summary,
-          result.part8_system_extension_source_closure_summary,
-          result.part8_cleanup_resource_capture_source_completion_summary,
-          result.part8_retainable_c_family_source_completion_summary,
-          result.part9_dispatch_intent_source_closure_summary,
-          result.part9_dispatch_intent_source_completion_summary,
-          result.part10_metaprogramming_source_closure_summary,
-          result.part10_macro_package_provenance_source_completion_summary,
-          result.part10_property_behavior_source_completion_summary,
-          result.part11_foreign_import_source_closure_summary,
-          result.part11_cpp_swift_interop_annotation_source_completion_summary);
-  result.part12_migration_canonicalization_source_completion_summary =
-      BuildPart12MigrationCanonicalizationSourceCompletionSummary(
+  result.tooling_diagnostics_migrator_source_inventory_summary =
+      BuildToolingDiagnosticsMigratorSourceInventorySummary(
+          result.migration_hints, result.error_handling_error_source_closure_summary,
+          result.concurrency_async_source_closure_summary,
+          result.concurrency_actor_member_isolation_source_closure_summary,
+          result.concurrency_task_group_cancellation_source_closure_summary,
+          result.ownership_system_extension_source_closure_summary,
+          result.ownership_cleanup_resource_capture_source_completion_summary,
+          result.ownership_retainable_c_family_source_completion_summary,
+          result.dispatch_dispatch_intent_source_closure_summary,
+          result.dispatch_dispatch_intent_source_completion_summary,
+          result.metaprogramming_metaprogramming_source_closure_summary,
+          result.metaprogramming_macro_package_provenance_source_completion_summary,
+          result.metaprogramming_property_behavior_source_completion_summary,
+          result.interop_foreign_import_source_closure_summary,
+          result.interop_cpp_swift_interop_annotation_source_completion_summary);
+  result.tooling_migration_canonicalization_source_completion_summary =
+      BuildToolingMigrationCanonicalizationSourceCompletionSummary(
           options, result.migration_hints,
-          result.part12_diagnostics_migrator_source_inventory_summary);
+          result.tooling_diagnostics_migrator_source_inventory_summary);
   result.protocol_category_summary =
       BuildProtocolCategorySummary(Objc3ParsedProgramAst(result.program),
                                    result.integration_surface,
@@ -7331,7 +7331,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   result.symbol_graph_scope_resolution_summary =
       BuildSymbolGraphScopeResolutionSummary(result.integration_surface,
                                              result.sema_type_metadata_handoff);
-  const bool allow_part6_error_runtime_surface = true;
+  const bool allow_error_handling_error_runtime_surface = true;
   if (result.stage_diagnostics.lexer.empty() && result.stage_diagnostics.parser.empty()) {
     NormalizeProgramDispatchSurfaceClassification(
         MutableObjc3ParsedProgramAst(result.program));
@@ -7349,7 +7349,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     // the IR path rather than keeping defer as a source-only semantic claim.
     semantic_options.allow_source_only_defer_statements = true;
     semantic_options.allow_source_only_error_runtime_surface =
-        allow_part6_error_runtime_surface;
+        allow_error_handling_error_runtime_surface;
     semantic_options.arc_mode_enabled =
         options.arc_mode == Objc3FrontendArcMode::kEnabled;
 
@@ -7387,140 +7387,140 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
       result.stage_diagnostics.semantic = std::move(sema_result.diagnostics);
     }
   }
-  result.part5_control_flow_semantic_model_summary =
-      BuildPart5ControlFlowSemanticModelSummary(
+  result.control_flow_control_flow_semantic_model_summary =
+      BuildControlFlowControlFlowSemanticModelSummary(
           Objc3ParsedProgramAst(result.program));
-  result.part6_error_semantic_model_summary =
-      BuildPart6ErrorSemanticModelSummary(
-          result.part6_error_source_closure_summary, result.integration_surface);
-  result.part7_actor_isolation_sendable_semantic_model_summary =
-      BuildPart7ActorIsolationSendableSemanticModelSummary(
-          result.part7_actor_member_isolation_source_closure_summary,
+  result.error_handling_error_semantic_model_summary =
+      BuildErrorHandlingErrorSemanticModelSummary(
+          result.error_handling_error_source_closure_summary, result.integration_surface);
+  result.concurrency_actor_isolation_sendable_semantic_model_summary =
+      BuildConcurrencyActorIsolationSendableSemanticModelSummary(
+          result.concurrency_actor_member_isolation_source_closure_summary,
           result.integration_surface);
-  result.part7_actor_isolation_sendability_enforcement_summary =
-      BuildPart7ActorIsolationSendabilityEnforcementSummary(
+  result.concurrency_actor_isolation_sendability_enforcement_summary =
+      BuildConcurrencyActorIsolationSendabilityEnforcementSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part7_actor_isolation_sendable_semantic_model_summary,
+          result.concurrency_actor_isolation_sendable_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part7_actor_race_hazard_escape_diagnostics_summary =
-      BuildPart7ActorRaceHazardEscapeDiagnosticsSummary(
+  result.concurrency_actor_race_hazard_escape_diagnostics_summary =
+      BuildConcurrencyActorRaceHazardEscapeDiagnosticsSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part7_actor_isolation_sendability_enforcement_summary,
+          result.concurrency_actor_isolation_sendability_enforcement_summary,
           result.stage_diagnostics.semantic);
-  result.part7_task_executor_cancellation_semantic_model_summary =
-      BuildPart7TaskExecutorCancellationSemanticModelSummary(
-          result.part7_task_group_cancellation_source_closure_summary,
+  result.concurrency_task_executor_cancellation_semantic_model_summary =
+      BuildConcurrencyTaskExecutorCancellationSemanticModelSummary(
+          result.concurrency_task_group_cancellation_source_closure_summary,
           result.integration_surface);
-  result.part8_system_extension_semantic_model_summary =
-      BuildPart8SystemExtensionSemanticModelSummary(
-          result.part8_system_extension_source_closure_summary,
-          result.part8_cleanup_resource_capture_source_completion_summary,
-          result.part8_retainable_c_family_source_completion_summary);
-  result.part10_expansion_behavior_semantic_model_summary =
-      BuildPart10ExpansionBehaviorSemanticModelSummary(
-          result.part10_metaprogramming_source_closure_summary,
-          result.part10_macro_package_provenance_source_completion_summary,
-          result.part10_property_behavior_source_completion_summary,
+  result.ownership_system_extension_semantic_model_summary =
+      BuildOwnershipSystemExtensionSemanticModelSummary(
+          result.ownership_system_extension_source_closure_summary,
+          result.ownership_cleanup_resource_capture_source_completion_summary,
+          result.ownership_retainable_c_family_source_completion_summary);
+  result.metaprogramming_expansion_behavior_semantic_model_summary =
+      BuildMetaprogrammingExpansionBehaviorSemanticModelSummary(
+          result.metaprogramming_metaprogramming_source_closure_summary,
+          result.metaprogramming_macro_package_provenance_source_completion_summary,
+          result.metaprogramming_property_behavior_source_completion_summary,
           result.stage_diagnostics.semantic);
-  result.part10_derive_expansion_inventory_summary =
-      BuildPart10DeriveExpansionInventorySummary(
+  result.metaprogramming_derive_expansion_inventory_summary =
+      BuildMetaprogrammingDeriveExpansionInventorySummary(
           result.program.ast,
-          result.part10_expansion_behavior_semantic_model_summary,
+          result.metaprogramming_expansion_behavior_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part10_macro_safety_sandbox_determinism_summary =
-      BuildPart10MacroSafetySandboxDeterminismSummary(
+  result.metaprogramming_macro_safety_sandbox_determinism_summary =
+      BuildMetaprogrammingMacroSafetySandboxDeterminismSummary(
           result.program.ast,
-          result.part10_derive_expansion_inventory_summary,
+          result.metaprogramming_derive_expansion_inventory_summary,
           result.stage_diagnostics.semantic);
-  result.part10_property_behavior_legality_compatibility_summary =
-      BuildPart10PropertyBehaviorLegalityCompatibilitySummary(
+  result.metaprogramming_property_behavior_legality_compatibility_summary =
+      BuildMetaprogrammingPropertyBehaviorLegalityCompatibilitySummary(
           result.program.ast,
-          result.part10_macro_safety_sandbox_determinism_summary,
+          result.metaprogramming_macro_safety_sandbox_determinism_summary,
           result.stage_diagnostics.semantic);
-  result.part9_dispatch_intent_semantic_model_summary =
-      BuildPart9DispatchIntentSemanticModelSummary(
-          result.part9_dispatch_intent_source_completion_summary,
+  result.dispatch_dispatch_intent_semantic_model_summary =
+      BuildDispatchDispatchIntentSemanticModelSummary(
+          result.dispatch_dispatch_intent_source_completion_summary,
           result.integration_surface);
-  result.part9_dispatch_intent_legality_summary =
-      BuildPart9DispatchIntentLegalitySummary(
+  result.dispatch_dispatch_intent_legality_summary =
+      BuildDispatchDispatchIntentLegalitySummary(
           Objc3ParsedProgramAst(result.program),
-          result.part9_dispatch_intent_semantic_model_summary,
+          result.dispatch_dispatch_intent_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part9_dispatch_intent_compatibility_summary =
-      BuildPart9DispatchIntentCompatibilitySummary(
+  result.dispatch_dispatch_intent_compatibility_summary =
+      BuildDispatchDispatchIntentCompatibilitySummary(
           Objc3ParsedProgramAst(result.program),
-          result.part9_dispatch_intent_legality_summary,
+          result.dispatch_dispatch_intent_legality_summary,
           result.stage_diagnostics.semantic);
-  result.part8_resource_move_use_after_move_semantics_summary =
-      BuildPart8ResourceMoveUseAfterMoveSemanticsSummary(
+  result.ownership_resource_move_use_after_move_semantics_summary =
+      BuildOwnershipResourceMoveUseAfterMoveSemanticsSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part8_system_extension_semantic_model_summary,
+          result.ownership_system_extension_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part8_borrowed_pointer_escape_analysis_summary =
-      BuildPart8BorrowedPointerEscapeAnalysisSummary(
+  result.ownership_borrowed_pointer_escape_analysis_summary =
+      BuildOwnershipBorrowedPointerEscapeAnalysisSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part8_resource_move_use_after_move_semantics_summary,
+          result.ownership_resource_move_use_after_move_semantics_summary,
           result.stage_diagnostics.semantic);
-  result.part8_capture_list_retainable_family_legality_completion_summary =
-      BuildPart8CaptureListRetainableFamilyLegalityCompletionSummary(
+  result.ownership_capture_list_retainable_family_legality_completion_summary =
+      BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part8_borrowed_pointer_escape_analysis_summary,
+          result.ownership_borrowed_pointer_escape_analysis_summary,
           result.stage_diagnostics.semantic);
-  result.part7_structured_task_cancellation_semantic_summary =
-      BuildPart7StructuredTaskCancellationSemanticSummary(
-          result.part7_task_executor_cancellation_semantic_model_summary,
+  result.concurrency_structured_task_cancellation_semantic_summary =
+      BuildConcurrencyStructuredTaskCancellationSemanticSummary(
+          result.concurrency_task_executor_cancellation_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part7_executor_hop_affinity_compatibility_summary =
-      BuildPart7ExecutorHopAffinityCompatibilitySummary(
-          result.part7_structured_task_cancellation_semantic_summary,
-          result.part7_async_source_closure_summary,
+  result.concurrency_executor_hop_affinity_compatibility_summary =
+      BuildConcurrencyExecutorHopAffinityCompatibilitySummary(
+          result.concurrency_structured_task_cancellation_semantic_summary,
+          result.concurrency_async_source_closure_summary,
           result.stage_diagnostics.semantic);
-  result.part7_async_effect_suspension_semantic_model_summary =
-      BuildPart7AsyncEffectSuspensionSemanticModelSummary(
-          result.part7_async_source_closure_summary, result.integration_surface);
-  result.part7_await_suspension_resume_semantic_summary =
-      BuildPart7AwaitSuspensionResumeSemanticSummary(
-          result.part7_async_effect_suspension_semantic_model_summary,
+  result.concurrency_async_effect_suspension_semantic_model_summary =
+      BuildConcurrencyAsyncEffectSuspensionSemanticModelSummary(
+          result.concurrency_async_source_closure_summary, result.integration_surface);
+  result.concurrency_await_suspension_resume_semantic_summary =
+      BuildConcurrencyAwaitSuspensionResumeSemanticSummary(
+          result.concurrency_async_effect_suspension_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part7_async_diagnostics_compatibility_summary =
-      BuildPart7AsyncDiagnosticsCompatibilitySummary(
-          result.part7_await_suspension_resume_semantic_summary,
-          result.part7_async_source_closure_summary,
+  result.concurrency_async_diagnostics_compatibility_summary =
+      BuildConcurrencyAsyncDiagnosticsCompatibilitySummary(
+          result.concurrency_await_suspension_resume_semantic_summary,
+          result.concurrency_async_source_closure_summary,
           Objc3ParsedProgramAst(result.program),
           result.stage_diagnostics.semantic);
-  result.part6_try_do_catch_semantic_summary =
-      BuildPart6TryDoCatchSemanticSummary(
+  result.error_handling_try_do_catch_semantic_summary =
+      BuildErrorHandlingTryDoCatchSemanticSummary(
           Objc3ParsedProgramAst(result.program),
           result.integration_surface,
-          allow_part6_error_runtime_surface,
+          allow_error_handling_error_runtime_surface,
           result.stage_diagnostics.semantic);
-  result.part6_error_bridge_legality_summary =
-      BuildPart6ErrorBridgeLegalitySummary(
+  result.error_handling_error_bridge_legality_summary =
+      BuildErrorHandlingErrorBridgeLegalitySummary(
           Objc3ParsedProgramAst(result.program),
-          allow_part6_error_runtime_surface,
+          allow_error_handling_error_runtime_surface,
           result.stage_diagnostics.semantic);
-  result.part11_interop_semantic_model_summary =
-      BuildPart11InteropSemanticModelSummary(
-          result.part11_foreign_import_source_closure_summary,
-          result.part11_cpp_swift_interop_annotation_source_completion_summary,
-          result.part8_capture_list_retainable_family_legality_completion_summary,
-          result.part6_error_bridge_legality_summary,
-          result.part7_async_diagnostics_compatibility_summary,
-          result.part7_actor_race_hazard_escape_diagnostics_summary);
-  result.part11_interop_runtime_parity_summary =
-      BuildPart11InteropRuntimeParitySummary(
+  result.interop_interop_semantic_model_summary =
+      BuildInteropInteropSemanticModelSummary(
+          result.interop_foreign_import_source_closure_summary,
+          result.interop_cpp_swift_interop_annotation_source_completion_summary,
+          result.ownership_capture_list_retainable_family_legality_completion_summary,
+          result.error_handling_error_bridge_legality_summary,
+          result.concurrency_async_diagnostics_compatibility_summary,
+          result.concurrency_actor_race_hazard_escape_diagnostics_summary);
+  result.interop_interop_runtime_parity_summary =
+      BuildInteropInteropRuntimeParitySummary(
           Objc3ParsedProgramAst(result.program),
-          result.part11_interop_semantic_model_summary,
+          result.interop_interop_semantic_model_summary,
           result.stage_diagnostics.semantic);
-  result.part11_cpp_interop_interaction_summary =
-      BuildPart11CppInteropInteractionSummary(
+  result.interop_cpp_interop_interaction_summary =
+      BuildInteropCppInteropInteractionSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part11_interop_runtime_parity_summary,
+          result.interop_interop_runtime_parity_summary,
           result.stage_diagnostics.semantic);
-  result.part11_swift_interop_isolation_summary =
-      BuildPart11SwiftInteropIsolationSummary(
+  result.interop_swift_interop_isolation_summary =
+      BuildInteropSwiftInteropIsolationSummary(
           Objc3ParsedProgramAst(result.program),
-          result.part11_cpp_interop_interaction_summary,
+          result.interop_cpp_interop_interaction_summary,
           result.stage_diagnostics.semantic);
   result.runtime_metadata_source_records =
       BuildRuntimeMetadataSourceRecordSet(Objc3ParsedProgramAst(result.program));
@@ -7621,14 +7621,14 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.sema_parity_surface,
           result.typed_sema_to_lowering_contract_surface,
           result.semantic_diagnostic_taxonomy_and_fixit_synthesis_scaffold);
-  result.part12_diagnostic_taxonomy_portability_contract_summary =
-      BuildPart12DiagnosticTaxonomyPortabilityContractSummary(
-          result.part12_migration_canonicalization_source_completion_summary,
+  result.tooling_diagnostic_taxonomy_portability_contract_summary =
+      BuildToolingDiagnosticTaxonomyPortabilityContractSummary(
+          result.tooling_migration_canonicalization_source_completion_summary,
           result
               .semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface);
-  result.part12_feature_specific_fixit_synthesis_summary =
-      BuildPart12FeatureSpecificFixitSynthesisSummary(
-          result.part12_diagnostic_taxonomy_portability_contract_summary);
+  result.tooling_feature_specific_fixit_synthesis_summary =
+      BuildToolingFeatureSpecificFixitSynthesisSummary(
+          result.tooling_diagnostic_taxonomy_portability_contract_summary);
   result.semantic_diagnostic_taxonomy_and_fixit_core_feature_expansion_surface =
       BuildObjc3SemanticDiagnosticTaxonomyAndFixitSynthesisCoreFeatureExpansionSurface(
           result.semantic_diagnostic_taxonomy_and_fixit_core_feature_implementation_surface,

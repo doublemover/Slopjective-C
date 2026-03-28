@@ -647,7 +647,7 @@ def emit_json(payload: object) -> int:
 
 def list_actions_payload() -> dict[str, object]:
     return {
-        "mode": "m314-c002-parameterized-task-runner-v1",
+        "mode": "public_runner-c002-parameterized-task-runner-v1",
         "runner_path": "scripts/objc3c_public_workflow_runner.py",
         "action_count": len(ACTION_SPECS),
         "actions": [asdict(spec) for spec in ACTION_SPECS.values()],
@@ -657,7 +657,7 @@ def list_actions_payload() -> dict[str, object]:
 def describe_action_payload(action: str) -> dict[str, object]:
     spec = ACTION_SPECS[action]
     payload = asdict(spec)
-    payload["mode"] = "m314-c002-parameterized-task-runner-v1"
+    payload["mode"] = "public_runner-c002-parameterized-task-runner-v1"
     payload["runner_path"] = "scripts/objc3c_public_workflow_runner.py"
     return payload
 

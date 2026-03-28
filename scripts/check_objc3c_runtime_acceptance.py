@@ -151,31 +151,31 @@ INSTALLATION_LIFECYCLE_PROBE = (
     "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp"
 )
 IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE = (
-    "tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3"
+    "tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3"
 )
 IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE = (
-    "tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3"
+    "tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3"
 )
 IMPORTED_RUNTIME_PACKAGING_PROBE = (
-    "tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp"
+    "tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp"
 )
 STORAGE_REFLECTION_PRESERVATION_PROVIDER_FIXTURE = (
-    "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3"
+    "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3"
 )
 STORAGE_REFLECTION_PRESERVATION_CONSUMER_FIXTURE = (
-    "tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3"
+    "tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3"
 )
 BLOCK_OWNERSHIP_PRESERVATION_PROVIDER_FIXTURE = (
-    "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3"
+    "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
 )
 BLOCK_OWNERSHIP_PRESERVATION_CONSUMER_FIXTURE = (
-    "tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3"
+    "tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3"
 )
 BLOCK_ARC_RUNTIME_ABI_PROBE = (
-    "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp"
+    "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp"
 )
 REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE = (
-    "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp"
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
 )
 RUNTIME_ACCEPTANCE_COMMAND = "python scripts/check_objc3c_runtime_acceptance.py"
 VALIDATE_RUNTIME_ARCHITECTURE_COMMAND = (
@@ -1093,12 +1093,12 @@ def compile_fixture_with_args(
                 f"dispatch_and_synthesized_accessor_lowering_surface drifted from {field}"
             )
     expected_dispatch_and_synthesized_accessor_fixture_paths = [
-        "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-        "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-        "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+        "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
     ]
     if (
         dispatch_and_synthesized_accessor_lowering_surface.get(
@@ -1110,12 +1110,12 @@ def compile_fixture_with_args(
             "dispatch_and_synthesized_accessor_lowering_surface drifted from authoritative_fixture_paths"
         )
     expected_dispatch_and_synthesized_accessor_probe_paths = [
-        "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-        "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
     ]
     if (
         dispatch_and_synthesized_accessor_lowering_surface.get(
@@ -1215,11 +1215,11 @@ def compile_fixture_with_args(
                 f"executable_property_accessor_layout_lowering_surface drifted from {field}"
             )
     expected_executable_accessor_layout_fixture_paths = [
-        "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-        "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+        "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
     ]
     if (
         executable_property_accessor_layout_lowering_surface.get(
@@ -1231,11 +1231,11 @@ def compile_fixture_with_args(
             "executable_property_accessor_layout_lowering_surface drifted from authoritative_fixture_paths"
         )
     expected_executable_accessor_layout_probe_paths = [
-        "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-        "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
-        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
     ]
     if (
         executable_property_accessor_layout_lowering_surface.get(
@@ -1320,9 +1320,9 @@ def compile_fixture_with_args(
     if (
         executable_ivar_layout_emission_surface.get("authoritative_fixture_paths")
         != [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_source_model_completion_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         ]
     ):
         raise RuntimeError(
@@ -1331,8 +1331,8 @@ def compile_fixture_with_args(
     if (
         executable_ivar_layout_emission_surface.get("authoritative_probe_paths")
         != [
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
         ]
     ):
         raise RuntimeError(
@@ -1597,13 +1597,13 @@ def compile_fixture_with_args(
                 f"runtime_property_ivar_storage_accessor_source_surface drifted from {field}"
             )
     expected_authoritative_fixture_paths = [
-        "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-        "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-        "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
-        "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
-        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
     ]
     if (
         property_ivar_storage_accessor_source_surface.get("authoritative_fixture_paths")
@@ -1613,12 +1613,12 @@ def compile_fixture_with_args(
             "runtime_property_ivar_storage_accessor_source_surface drifted from authoritative_fixture_paths"
         )
     expected_authoritative_probe_paths = [
-        "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-        "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+        "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+        "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
     ]
     if (
         property_ivar_storage_accessor_source_surface.get("authoritative_probe_paths")
@@ -1783,22 +1783,22 @@ def compile_fixture_with_args(
             "runtime_block_arc_unified_source_surface drifted from authoritative_source_fields"
         )
     expected_block_arc_authoritative_fixture_paths = [
-        "tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3",
-        "tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3",
-        "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_bad_call.objc3",
-        "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_missing_capture.objc3",
-        "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
-        "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        "tests/tooling/fixtures/native/block_source_model_completion_positive.objc3",
+        "tests/tooling/fixtures/native/block_source_storage_annotations_positive.objc3",
+        "tests/tooling/fixtures/native/capture_legality_escape_invocation_bad_call.objc3",
+        "tests/tooling/fixtures/native/capture_legality_escape_invocation_missing_capture.objc3",
+        "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_argument_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+        "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
+        "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
+        "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+        "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+        "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+        "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
     ]
     if (
         block_arc_unified_source_surface.get("authoritative_fixture_paths")
@@ -1808,10 +1808,10 @@ def compile_fixture_with_args(
             "runtime_block_arc_unified_source_surface drifted from authoritative_fixture_paths"
         )
     expected_block_arc_authoritative_probe_paths = [
-        "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
-        "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
-        "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp",
     ]
     if (
         block_arc_unified_source_surface.get("authoritative_probe_paths")
@@ -1904,11 +1904,11 @@ def compile_fixture_with_args(
         "source_surface_model": (
             "ownership-transfer-and-capture-family-source-surface-freezes-sema-level-move-capture-explicit-capture-mode-and-retainable-family-truth-before-lowering-or-runtime-lifetime-expansion"
         ),
-        "part8_resource_move_use_after_move_surface_path": (
-            "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics"
+        "ownership_resource_move_use_after_move_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_ownership_resource_move_and_use_after_move_semantics"
         ),
-        "part8_capture_list_retainable_family_surface_path": (
-            "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion"
+        "ownership_capture_list_retainable_family_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_ownership_capture_list_and_retainable_family_legality_completion"
         ),
         "block_capture_ownership_contract_id": (
             "objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1"
@@ -1952,18 +1952,18 @@ def compile_fixture_with_args(
             "runtime_ownership_transfer_capture_family_source_surface drifted from authoritative_code_paths"
         )
     expected_ownership_transfer_capture_family_fixture_paths = [
-        "tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
-        "tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3",
-        "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
-        "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
-        "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
+        "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",
+        "tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/nonowning_object_capture_helper_elided_positive.objc3",
+        "tests/tooling/fixtures/native/nonowning_object_capture_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
+        "tests/tooling/fixtures/native/unowned_object_capture_mutation_negative.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+        "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+        "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+        "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+        "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
     ]
     if (
         ownership_transfer_capture_family_source_surface.get(
@@ -1975,9 +1975,9 @@ def compile_fixture_with_args(
             "runtime_ownership_transfer_capture_family_source_surface drifted from authoritative_fixture_paths"
         )
     expected_ownership_transfer_capture_family_probe_paths = [
-        "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
-        "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
     ]
     if (
         ownership_transfer_capture_family_source_surface.get("authoritative_probe_paths")
@@ -2164,19 +2164,19 @@ def compile_fixture_with_args(
             "runtime_block_arc_lowering_helper_surface drifted from authoritative_code_paths"
         )
     expected_block_arc_lowering_helper_fixture_paths = [
-        "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
-        "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
-        "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/nonowning_object_capture_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_argument_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+        "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+        "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
+        "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
+        "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+        "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+        "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+        "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
     ]
     if (
         block_arc_lowering_helper_surface.get("authoritative_fixture_paths")
@@ -2186,10 +2186,10 @@ def compile_fixture_with_args(
             "runtime_block_arc_lowering_helper_surface drifted from authoritative_fixture_paths"
         )
     expected_block_arc_lowering_helper_probe_paths = [
-        "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
-        "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
-        "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
+        "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp",
     ]
     if (
         block_arc_lowering_helper_surface.get("authoritative_probe_paths")
@@ -2391,12 +2391,12 @@ def compile_fixture_with_args(
                 f"runtime_property_atomicity_synthesis_reflection_source_surface drifted from {field}"
             )
     expected_atomicity_authoritative_fixture_paths = [
-        "tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3",
-        "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-        "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-        "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
-        "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
-        "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3",
+        "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+        "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+        "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+        "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
     ]
     if (
         property_atomicity_synthesis_reflection_source_surface.get(
@@ -2409,8 +2409,8 @@ def compile_fixture_with_args(
         )
     expected_atomicity_authoritative_probe_paths = [
         "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-        "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
     ]
     if (
         property_atomicity_synthesis_reflection_source_surface.get(
@@ -3960,7 +3960,7 @@ def build_runtime_error_execution_cleanup_source_surface(
             "<emit-prefix>.runtime-registration-manifest.json",
         ],
         "source_contract_ids": [
-            "objc3c.part6.error.source.closure.v1",
+            "objc3c.error_handling.error.source.closure.v1",
         ],
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
@@ -3971,10 +3971,10 @@ def build_runtime_error_execution_cleanup_source_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
-            "tests/tooling/fixtures/native/m267_try_expression_fail_closed_negative.objc3",
-            "tests/tooling/fixtures/native/m267_throw_statement_fail_closed_negative.objc3",
-            "tests/tooling/fixtures/native/m267_do_catch_fail_closed_negative.objc3",
+            "tests/tooling/fixtures/native/error_source_closure_positive.objc3",
+            "tests/tooling/fixtures/native/try_expression_fail_closed_negative.objc3",
+            "tests/tooling/fixtures/native/throw_statement_fail_closed_negative.objc3",
+            "tests/tooling/fixtures/native/do_catch_fail_closed_negative.objc3",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",
@@ -4004,8 +4004,8 @@ def build_runtime_catch_filter_finalization_source_surface(
             "<emit-prefix>.runtime-registration-manifest.json",
         ],
         "source_contract_ids": [
-            "objc3c.part6.try.throw.do.catch.semantics.v1",
-            "objc3c.part6.error.bridge.legality.v1",
+            "objc3c.error_handling.try.throw.do.catch.semantics.v1",
+            "objc3c.error_handling.error.bridge.legality.v1",
         ],
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
@@ -4016,12 +4016,12 @@ def build_runtime_catch_filter_finalization_source_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m267_try_do_catch_semantics_positive.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3",
-            "tests/tooling/fixtures/native/m267_try_requires_throwing_context_negative.objc3",
-            "tests/tooling/fixtures/native/m267_throw_requires_throws_or_catch_negative.objc3",
-            "tests/tooling/fixtures/native/m267_catch_after_catch_all_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_throws_conflict_negative.objc3",
+            "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
+            "tests/tooling/fixtures/native/try_requires_throwing_context_negative.objc3",
+            "tests/tooling/fixtures/native/throw_requires_throws_or_catch_negative.objc3",
+            "tests/tooling/fixtures/native/catch_after_catch_all_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_throws_conflict_negative.objc3",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",
@@ -4051,7 +4051,7 @@ def build_runtime_error_propagation_cleanup_semantics_surface(
             "<emit-prefix>.runtime-registration-manifest.json",
         ],
         "source_contract_ids": [
-            "objc3c.part6.error.semantic.model.v1",
+            "objc3c.error_handling.error.semantic.model.v1",
         ],
         "authoritative_code_paths": [
             "native/objc3c/src/sema/objc3_sema_contract.h",
@@ -4062,9 +4062,9 @@ def build_runtime_error_propagation_cleanup_semantics_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
-            "tests/tooling/fixtures/native/m267_error_bridge_marker_surface_positive.objc3",
-            "tests/tooling/fixtures/native/m267_status_code_attribute_missing_mapping_negative.objc3",
+            "tests/tooling/fixtures/native/error_source_closure_positive.objc3",
+            "tests/tooling/fixtures/native/error_bridge_marker_surface_positive.objc3",
+            "tests/tooling/fixtures/native/status_code_attribute_missing_mapping_negative.objc3",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",
@@ -4094,7 +4094,7 @@ def build_runtime_bridging_filter_unwind_diagnostics_surface(
             "<emit-prefix>.runtime-registration-manifest.json",
         ],
         "source_contract_ids": [
-            "objc3c.part6.error.bridge.legality.v1",
+            "objc3c.error_handling.error.bridge.legality.v1",
         ],
         "authoritative_code_paths": [
             "native/objc3c/src/sema/objc3_sema_contract.h",
@@ -4105,16 +4105,16 @@ def build_runtime_bridging_filter_unwind_diagnostics_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_native_fail_closed.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_nserror_missing_out_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_nserror_bad_return_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_throws_conflict_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_marker_conflict_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_bad_error_type_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_missing_mapping_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_bad_mapping_signature_negative.objc3",
-            "tests/tooling/fixtures/native/m267_bridge_legality_bad_status_return_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_positive.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_native_fail_closed.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_nserror_missing_out_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_nserror_bad_return_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_throws_conflict_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_marker_conflict_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_bad_error_type_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_missing_mapping_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_bad_mapping_signature_negative.objc3",
+            "tests/tooling/fixtures/native/bridge_legality_bad_status_return_negative.objc3",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",
@@ -4146,8 +4146,8 @@ def build_runtime_error_lowering_unwind_bridge_helper_surface(
         "source_contract_ids": [
             "objc3c.ns.error.bridging.lowering.v1",
             "objc3c.unwind.cleanup.lowering.v1",
-            "objc3c.part6.throws.abi.propagation.lowering.v1",
-            "objc3c.part6.result.and.bridging.artifact.replay.v1",
+            "objc3c.error_handling.throws.abi.propagation.lowering.v1",
+            "objc3c.error_handling.result.and.bridging.artifact.replay.v1",
         ],
         "authoritative_code_paths": [
             "native/objc3c/src/lower/objc3_lowering_contract.h",
@@ -4158,9 +4158,9 @@ def build_runtime_error_lowering_unwind_bridge_helper_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3",
-            "tests/tooling/fixtures/native/m267_d001_error_runtime_bridge_helper_positive.objc3",
-            "tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp",
+            "tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3",
+            "tests/tooling/fixtures/native/d001_error_runtime_bridge_helper_positive.objc3",
+            "tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-milestone-specific-scaffolding",
@@ -4213,7 +4213,7 @@ def build_runtime_error_runtime_abi_cleanup_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_probe_path": (
-            "tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp"
+            "tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp"
         ),
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -4249,11 +4249,11 @@ def build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3",
+            "tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp",
-            "tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp",
+            "tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp",
+            "tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp",
         ],
         "runtime_implementation_model": (
             "lowered-throw-catch-and-status-bridge-paths-execute-through-the-live-"
@@ -4310,14 +4310,14 @@ def build_runtime_object_model_realization_source_surface(
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -4410,21 +4410,21 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -4511,27 +4511,27 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3",
-            "tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3",
-            "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_bad_call.objc3",
-            "tests/tooling/fixtures/native/m261_capture_legality_escape_invocation_missing_capture.objc3",
-            "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
-            "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+            "tests/tooling/fixtures/native/block_source_model_completion_positive.objc3",
+            "tests/tooling/fixtures/native/block_source_storage_annotations_positive.objc3",
+            "tests/tooling/fixtures/native/capture_legality_escape_invocation_bad_call.objc3",
+            "tests/tooling/fixtures/native/capture_legality_escape_invocation_missing_capture.objc3",
+            "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_argument_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+            "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
+            "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
+            "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+            "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+            "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+            "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
-            "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
             BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],
         "explicit_non_goals": [
@@ -4574,11 +4574,11 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
         "source_surface_model": (
             "ownership-transfer-and-capture-family-source-surface-freezes-sema-level-move-capture-explicit-capture-mode-and-retainable-family-truth-before-lowering-or-runtime-lifetime-expansion"
         ),
-        "part8_resource_move_use_after_move_surface_path": (
-            "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics"
+        "ownership_resource_move_use_after_move_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_ownership_resource_move_and_use_after_move_semantics"
         ),
-        "part8_capture_list_retainable_family_surface_path": (
-            "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion"
+        "ownership_capture_list_retainable_family_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_ownership_capture_list_and_retainable_family_legality_completion"
         ),
         "block_capture_ownership_contract_id": (
             "objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1"
@@ -4610,24 +4610,24 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         ],
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
-            "tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3",
-            "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
-            "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
-            "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
+            "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",
+            "tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/nonowning_object_capture_helper_elided_positive.objc3",
+            "tests/tooling/fixtures/native/nonowning_object_capture_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
+            "tests/tooling/fixtures/native/unowned_object_capture_mutation_negative.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+            "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+            "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+            "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+            "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
-            "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-parallel-semantics-path",
@@ -4719,24 +4719,24 @@ def build_runtime_block_arc_lowering_helper_surface(
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
-            "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/nonowning_object_capture_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_argument_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+            "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+            "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
+            "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
+            "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+            "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+            "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+            "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
-            "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
             BLOCK_ARC_RUNTIME_ABI_PROBE,
         ],
         "explicit_non_goals": [
@@ -4852,17 +4852,17 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-atomic-property-runtime-abi-widening",
@@ -4922,20 +4922,20 @@ def build_dispatch_and_synthesized_accessor_lowering_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -4992,18 +4992,18 @@ def build_executable_property_accessor_layout_lowering_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -5057,13 +5057,13 @@ def build_executable_ivar_layout_emission_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_source_model_completion_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -5125,18 +5125,18 @@ def build_executable_synthesized_accessor_property_lowering_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
         ],
         "explicit_non_goals": [
             "no-public-runtime-abi-widening",
@@ -5194,17 +5194,17 @@ def build_runtime_realization_lowering_reflection_artifact_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_descriptor_artifact": True,
         "requires_coupled_registration_manifest": True,
@@ -5253,15 +5253,15 @@ def build_runtime_dispatch_table_reflection_record_lowering_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
         ],
         "requires_coupled_registration_descriptor_artifact": True,
         "requires_coupled_registration_manifest": True,
@@ -5371,21 +5371,21 @@ def build_runtime_object_model_abi_query_surface(
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
-            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5455,13 +5455,13 @@ def build_runtime_realization_lookup_reflection_implementation_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5507,14 +5507,14 @@ def build_runtime_reflection_query_surface(results: list[CaseResult]) -> dict[st
         ],
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "no_public_reflection_abi": True,
         "requires_coupled_registration_manifest": True,
@@ -5563,13 +5563,13 @@ def build_runtime_realization_lookup_semantics_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
-            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5681,12 +5681,12 @@ def build_runtime_category_attachment_merged_dispatch_surface(
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5743,18 +5743,18 @@ def build_runtime_reflection_visibility_coherence_diagnostics_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [
-            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/b004_property_reflection_attribute_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
-            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -6038,7 +6038,7 @@ def check_error_execution_cleanup_source_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_part6_error_source_closure_positive.objc3"
+        / "error_source_closure_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -6046,15 +6046,15 @@ def check_error_execution_cleanup_source_case(run_dir: Path) -> CaseResult:
         manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_error_source_closure", {})
+        .get("objc_error_handling_error_source_closure", {})
     )
     expect(
         isinstance(surface, dict),
-        "expected error source closure fixture to publish objc_part6_error_source_closure",
+        "expected error source closure fixture to publish objc_error_handling_error_source_closure",
     )
     expected_fields = {
-        "contract_id": "objc3c.part6.error.source.closure.v1",
-        "frontend_surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_source_closure",
+        "contract_id": "objc3c.error_handling.error.source.closure.v1",
+        "frontend_surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_error_source_closure",
         "throws_declaration_source_supported": True,
         "result_carrier_source_supported": True,
         "ns_error_bridging_source_supported": True,
@@ -6094,7 +6094,7 @@ def check_error_execution_cleanup_source_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="error-execution-cleanup-source",
         probe="compile-manifest-source-surface",
-        fixture="tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
+        fixture="tests/tooling/fixtures/native/error_source_closure_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6114,7 +6114,7 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_try_do_catch_semantics_positive.objc3"
+        / "try_do_catch_semantics_positive.objc3"
     )
     _, _, try_manifest_path = compile_fixture_outputs(try_fixture, case_dir / "try")
     try_manifest = json.loads(try_manifest_path.read_text(encoding="utf-8"))
@@ -6122,16 +6122,16 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         try_manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_try_do_catch_semantics", {})
+        .get("objc_error_handling_try_do_catch_semantics", {})
     )
     expect(
         isinstance(try_surface, dict),
-        "expected try/do/catch fixture to publish objc_part6_try_do_catch_semantics",
+        "expected try/do/catch fixture to publish objc_error_handling_try_do_catch_semantics",
     )
     expected_try_fields = {
-        "contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
-        "dependency_contract_id": "objc3c.part6.error.semantic.model.v1",
-        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics",
+        "contract_id": "objc3c.error_handling.try.throw.do.catch.semantics.v1",
+        "dependency_contract_id": "objc3c.error_handling.error.semantic.model.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_try_do_catch_semantics",
         "try_surface_landed": True,
         "throw_surface_landed": True,
         "do_catch_surface_landed": True,
@@ -6160,7 +6160,7 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_bridge_legality_positive.objc3"
+        / "bridge_legality_positive.objc3"
     )
     _, _, bridge_manifest_path = compile_fixture_outputs(bridge_fixture, case_dir / "bridge")
     bridge_manifest = json.loads(bridge_manifest_path.read_text(encoding="utf-8"))
@@ -6168,16 +6168,16 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
         bridge_manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_error_bridge_legality", {})
+        .get("objc_error_handling_error_bridge_legality", {})
     )
     expect(
         isinstance(bridge_surface, dict),
-        "expected bridge legality fixture to publish objc_part6_error_bridge_legality",
+        "expected bridge legality fixture to publish objc_error_handling_error_bridge_legality",
     )
     expected_bridge_fields = {
-        "contract_id": "objc3c.part6.error.bridge.legality.v1",
-        "dependency_contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
-        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality",
+        "contract_id": "objc3c.error_handling.error.bridge.legality.v1",
+        "dependency_contract_id": "objc3c.error_handling.try.throw.do.catch.semantics.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_error_bridge_legality",
         "bridge_legality_landed": True,
         "try_bridge_filter_landed": True,
         "unsupported_combinations_fail_closed": True,
@@ -6202,7 +6202,7 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="catch-filter-finalization-source",
         probe="compile-manifest-source-surface",
-        fixture="tests/tooling/fixtures/native/m267_try_do_catch_semantics_positive.objc3",
+        fixture="tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6224,7 +6224,7 @@ def check_error_propagation_cleanup_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_part6_error_source_closure_positive.objc3"
+        / "error_source_closure_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -6232,16 +6232,16 @@ def check_error_propagation_cleanup_semantics_case(run_dir: Path) -> CaseResult:
         manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_error_semantic_model", {})
+        .get("objc_error_handling_error_semantic_model", {})
     )
     expect(
         isinstance(surface, dict),
-        "expected error semantic model fixture to publish objc_part6_error_semantic_model",
+        "expected error semantic model fixture to publish objc_error_handling_error_semantic_model",
     )
     expected_fields = {
-        "contract_id": "objc3c.part6.error.semantic.model.v1",
-        "frontend_dependency_contract_id": "objc3c.part6.error.source.closure.v1",
-        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_semantic_model",
+        "contract_id": "objc3c.error_handling.error.semantic.model.v1",
+        "frontend_dependency_contract_id": "objc3c.error_handling.error.source.closure.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_error_semantic_model",
         "throws_declaration_semantics_landed": True,
         "result_carrier_profile_semantics_landed": True,
         "ns_error_bridging_profile_semantics_landed": True,
@@ -6272,7 +6272,7 @@ def check_error_propagation_cleanup_semantics_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="error-propagation-cleanup-semantics",
         probe="compile-manifest-semantic-surface",
-        fixture="tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
+        fixture="tests/tooling/fixtures/native/error_source_closure_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6292,7 +6292,7 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_try_do_catch_semantics_positive.objc3"
+        / "try_do_catch_semantics_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(positive_fixture, case_dir / "positive")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -6300,16 +6300,16 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_try_do_catch_semantics", {})
+        .get("objc_error_handling_try_do_catch_semantics", {})
     )
     expect(
         isinstance(surface, dict),
-        "expected try/do/catch positive fixture to publish objc_part6_try_do_catch_semantics",
+        "expected try/do/catch positive fixture to publish objc_error_handling_try_do_catch_semantics",
     )
     expected_fields = {
-        "contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
-        "dependency_contract_id": "objc3c.part6.error.semantic.model.v1",
-        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics",
+        "contract_id": "objc3c.error_handling.try.throw.do.catch.semantics.v1",
+        "dependency_contract_id": "objc3c.error_handling.error.semantic.model.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_try_do_catch_semantics",
         "try_surface_landed": True,
         "throw_surface_landed": True,
         "do_catch_surface_landed": True,
@@ -6344,22 +6344,22 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
 
     negatives = [
         (
-            "m267_try_requires_throwing_context_negative.objc3",
+            "try_requires_throwing_context_negative.objc3",
             ["propagating try requires a throws function or an enclosing do/catch"],
             ["O3S272"],
         ),
         (
-            "m267_try_requires_throwing_or_bridged_operand_negative.objc3",
+            "try_requires_throwing_or_bridged_operand_negative.objc3",
             ["try operand must be a throwing or NSError-bridged call surface"],
             ["O3S271"],
         ),
         (
-            "m267_throw_requires_throws_or_catch_negative.objc3",
+            "throw_requires_throws_or_catch_negative.objc3",
             ["throw statements require a throws function or a catch body"],
             ["O3S274"],
         ),
         (
-            "m267_catch_after_catch_all_negative.objc3",
+            "catch_after_catch_all_negative.objc3",
             ["catch clauses after a catch-all are unreachable"],
             ["O3S269"],
         ),
@@ -6388,7 +6388,7 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_try_do_catch_native_fail_closed.objc3"
+        / "try_do_catch_native_fail_closed.objc3"
     )
     _, _, native_manifest_path = compile_fixture_outputs(
         native_fail_closed_fixture, case_dir / "native-fail-closed"
@@ -6398,11 +6398,11 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
         native_manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_try_do_catch_semantics", {})
+        .get("objc_error_handling_try_do_catch_semantics", {})
     )
     expect(
         isinstance(native_surface, dict),
-        "expected native fail-closed fixture to publish objc_part6_try_do_catch_semantics",
+        "expected native fail-closed fixture to publish objc_error_handling_try_do_catch_semantics",
     )
     expect(
         native_surface.get("native_emit_remains_fail_closed") is True
@@ -6415,7 +6415,7 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
     return CaseResult(
         case_id="executable-try-throw-do-catch-semantics",
         probe="compile-manifest-semantic-surface-plus-fail-closed-diagnostics",
-        fixture="tests/tooling/fixtures/native/m267_try_do_catch_semantics_positive.objc3",
+        fixture="tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6443,7 +6443,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_bridge_legality_positive.objc3"
+        / "bridge_legality_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(positive_fixture, case_dir / "positive")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -6451,16 +6451,16 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_error_bridge_legality", {})
+        .get("objc_error_handling_error_bridge_legality", {})
     )
     expect(
         isinstance(surface, dict),
-        "expected bridge legality positive fixture to publish objc_part6_error_bridge_legality",
+        "expected bridge legality positive fixture to publish objc_error_handling_error_bridge_legality",
     )
     expected_fields = {
-        "contract_id": "objc3c.part6.error.bridge.legality.v1",
-        "dependency_contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
-        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality",
+        "contract_id": "objc3c.error_handling.error.bridge.legality.v1",
+        "dependency_contract_id": "objc3c.error_handling.try.throw.do.catch.semantics.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_error_handling_error_bridge_legality",
         "bridge_legality_landed": True,
         "try_bridge_filter_landed": True,
         "unsupported_combinations_fail_closed": True,
@@ -6490,7 +6490,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_bridge_legality_native_fail_closed.objc3"
+        / "bridge_legality_native_fail_closed.objc3"
     )
     _, _, native_manifest_path = compile_fixture_outputs(
         native_fail_closed_fixture, case_dir / "native-fail-closed"
@@ -6500,11 +6500,11 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
         native_manifest.get("frontend", {})
         .get("pipeline", {})
         .get("semantic_surface", {})
-        .get("objc_part6_error_bridge_legality", {})
+        .get("objc_error_handling_error_bridge_legality", {})
     )
     expect(
         isinstance(native_surface, dict),
-        "expected bridge native fail-closed fixture to publish objc_part6_error_bridge_legality",
+        "expected bridge native fail-closed fixture to publish objc_error_handling_error_bridge_legality",
     )
     expect(
         native_surface.get("native_emit_remains_fail_closed") is True
@@ -6516,42 +6516,42 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
 
     negatives = [
         (
-            "m267_bridge_legality_nserror_missing_out_negative.objc3",
+            "bridge_legality_nserror_missing_out_negative.objc3",
             ["objc_nserror requires an NSError out parameter"],
             ["O3S275"],
         ),
         (
-            "m267_bridge_legality_nserror_bad_return_negative.objc3",
+            "bridge_legality_nserror_bad_return_negative.objc3",
             ["objc_nserror currently requires a BOOL-like success return"],
             ["O3S276"],
         ),
         (
-            "m267_bridge_legality_throws_conflict_negative.objc3",
+            "bridge_legality_throws_conflict_negative.objc3",
             ["NSError/status bridge markers cannot currently be combined with throws"],
             ["O3S277"],
         ),
         (
-            "m267_bridge_legality_marker_conflict_negative.objc3",
+            "bridge_legality_marker_conflict_negative.objc3",
             ["objc_nserror and objc_status_code cannot appear on the same callable"],
             ["O3S278"],
         ),
         (
-            "m267_bridge_legality_bad_error_type_negative.objc3",
+            "bridge_legality_bad_error_type_negative.objc3",
             ["objc_status_code currently requires error_type: NSError"],
             ["O3S280"],
         ),
         (
-            "m267_bridge_legality_missing_mapping_negative.objc3",
+            "bridge_legality_missing_mapping_negative.objc3",
             ["objc_status_code mapping symbol must resolve to a declared function"],
             ["O3S282"],
         ),
         (
-            "m267_bridge_legality_bad_mapping_signature_negative.objc3",
+            "bridge_legality_bad_mapping_signature_negative.objc3",
             ["objc_status_code mapping function must accept one matching status parameter and return NSError"],
             ["O3S283"],
         ),
         (
-            "m267_bridge_legality_bad_status_return_negative.objc3",
+            "bridge_legality_bad_status_return_negative.objc3",
             ["objc_status_code requires a BOOL-like or integer status return"],
             ["O3S281"],
         ),
@@ -6577,7 +6577,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
     return CaseResult(
         case_id="bridging-filter-unwind-compatibility-diagnostics",
         probe="compile-manifest-semantic-surface-plus-compatibility-diagnostics",
-        fixture="tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3",
+        fixture="tests/tooling/fixtures/native/bridge_legality_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6604,20 +6604,20 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_c002_error_out_abi_positive.objc3"
+        / "c002_error_out_abi_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     ns_error_bridging = manifest.get("lowering_ns_error_bridging", {})
     unwind_cleanup = manifest.get("lowering_unwind_cleanup", {})
-    throws_abi = manifest.get("lowering_part6_throws_abi_propagation", {})
-    result_replay = manifest.get("lowering_part6_result_and_bridging_artifact_replay", {})
+    throws_abi = manifest.get("lowering_error_handling_throws_abi_propagation", {})
+    result_replay = manifest.get("lowering_error_handling_result_and_bridging_artifact_replay", {})
     expect(
         isinstance(ns_error_bridging, dict)
         and isinstance(unwind_cleanup, dict)
         and isinstance(throws_abi, dict)
         and isinstance(result_replay, dict),
-        "expected error lowering fixture to publish the part6 lowering and replay surfaces",
+        "expected error lowering fixture to publish the error_handling lowering and replay surfaces",
     )
     expect(
         ns_error_bridging.get("lane_contract") == "objc3c.ns.error.bridging.lowering.v1"
@@ -6630,19 +6630,19 @@ def check_error_lowering_unwind_bridge_helper_surface_case(run_dir: Path) -> Cas
         "expected error lowering fixture to preserve the unwind cleanup lowering contract",
     )
     expect(
-        throws_abi.get("contract_id") == "objc3c.part6.throws.abi.propagation.lowering.v1"
+        throws_abi.get("contract_id") == "objc3c.error_handling.throws.abi.propagation.lowering.v1"
         and throws_abi.get("deterministic_handoff") is False,
         "expected error lowering fixture to preserve the throws ABI propagation lowering contract",
     )
     expect(
-        result_replay.get("contract_id") == "objc3c.part6.result.and.bridging.artifact.replay.v1"
+        result_replay.get("contract_id") == "objc3c.error_handling.result.and.bridging.artifact.replay.v1"
         and result_replay.get("deterministic_handoff") is False,
         "expected error lowering fixture to preserve the result and bridge replay lowering contract",
     )
     return CaseResult(
         case_id="error-lowering-unwind-bridge-helper-surface",
         probe="compile-manifest-lowering-surface",
-        fixture="tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3",
+        fixture="tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6664,13 +6664,13 @@ def check_executable_throw_catch_cleanup_lowering_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_c002_error_out_abi_positive.objc3"
+        / "c002_error_out_abi_positive.objc3"
     )
     obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     ll_text = ll_path.read_text(encoding="utf-8")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    throws_abi = manifest.get("lowering_part6_throws_abi_propagation", {})
-    result_replay = manifest.get("lowering_part6_result_and_bridging_artifact_replay", {})
+    throws_abi = manifest.get("lowering_error_handling_throws_abi_propagation", {})
+    result_replay = manifest.get("lowering_error_handling_result_and_bridging_artifact_replay", {})
     ns_error_bridging = manifest.get("lowering_ns_error_bridging", {})
     unwind_cleanup = manifest.get("lowering_unwind_cleanup", {})
     expect(obj_path.is_file(), "expected executable error lowering fixture to emit an object artifact")
@@ -6691,14 +6691,14 @@ def check_executable_throw_catch_cleanup_lowering_case(
         "expected executable error lowering to emit catch-match helper calls",
     )
     expect(
-        "objc_part6_throws_abi_propagation" in ll_text
-        and "objc_part6_result_and_bridging_artifact_replay" in ll_text,
-        "expected executable error lowering to preserve the part6 lowering metadata packets in emitted LLVM",
+        "objc_error_handling_throws_abi_propagation" in ll_text
+        and "objc_error_handling_result_and_bridging_artifact_replay" in ll_text,
+        "expected executable error lowering to preserve the error_handling lowering metadata packets in emitted LLVM",
     )
     expect(
         isinstance(throws_abi, dict)
         and throws_abi.get("contract_id")
-        == "objc3c.part6.throws.abi.propagation.lowering.v1",
+        == "objc3c.error_handling.throws.abi.propagation.lowering.v1",
         "expected executable error lowering fixture to preserve the throws ABI propagation contract",
     )
     expect(
@@ -6709,8 +6709,8 @@ def check_executable_throw_catch_cleanup_lowering_case(
     expect(
         isinstance(result_replay, dict)
         and result_replay.get("contract_id")
-        == "objc3c.part6.result.and.bridging.artifact.replay.v1",
-        "expected executable error lowering fixture to preserve the part6 replay contract",
+        == "objc3c.error_handling.result.and.bridging.artifact.replay.v1",
+        "expected executable error lowering fixture to preserve the error_handling replay contract",
     )
     expect(
         isinstance(ns_error_bridging, dict)
@@ -6727,7 +6727,7 @@ def check_executable_throw_catch_cleanup_lowering_case(
     return CaseResult(
         case_id="executable-throw-catch-cleanup-lowering",
         probe="compile-artifact-llvm-helper-lowering",
-        fixture="tests/tooling/fixtures/native/m267_c002_error_out_abi_positive.objc3",
+        fixture="tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6755,7 +6755,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_c003_part6_artifact_replay_producer.objc3"
+        / "c003_artifact_replay_producer.objc3"
     )
     consumer_fixture = (
         ROOT
@@ -6763,7 +6763,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_c003_result_bridge_consumer.objc3"
+        / "c003_result_bridge_consumer.objc3"
     )
     provider_dir = case_dir / "provider"
     consumer_dir = case_dir / "consumer"
@@ -6800,7 +6800,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
     )
     imported_module = imported_modules[0]
     expect(
-        imported_module.get("module_name") == "m267_c003_part6_artifact_replay_producer",
+        imported_module.get("module_name") == "m267_c003_error_handling_artifact_replay_producer",
         "expected cross-module error consumer to preserve the imported producer module name",
     )
     expect(
@@ -6808,38 +6808,38 @@ def check_cross_module_error_metadata_replay_preservation_case(
         "expected cross-module error consumer to preserve the imported producer registration ordinal",
     )
     expect(
-        imported_module.get("part6_result_and_bridging_artifact_replay_present")
+        imported_module.get("error_handling_result_and_bridging_artifact_replay_present")
         is True,
-        "expected cross-module error consumer to preserve the part6 replay packet presence flag",
+        "expected cross-module error consumer to preserve the error_handling replay packet presence flag",
     )
     expect(
-        imported_module.get("part6_binary_artifact_replay_ready") is True
-        and imported_module.get("part6_runtime_import_artifact_ready") is True
-        and imported_module.get("part6_separate_compilation_replay_ready") is True,
-        "expected cross-module error consumer to preserve the part6 replay readiness flags",
+        imported_module.get("error_handling_binary_artifact_replay_ready") is True
+        and imported_module.get("error_handling_runtime_import_artifact_ready") is True
+        and imported_module.get("error_handling_separate_compilation_replay_ready") is True,
+        "expected cross-module error consumer to preserve the error_handling replay readiness flags",
     )
     expect(
-        imported_module.get("part6_contract_id")
-        == "objc3c.part6.result.and.bridging.artifact.replay.v1",
-        "expected cross-module error consumer to preserve the part6 replay contract id",
+        imported_module.get("error_handling_contract_id")
+        == "objc3c.error_handling.result.and.bridging.artifact.replay.v1",
+        "expected cross-module error consumer to preserve the error_handling replay contract id",
     )
     expect(
-        imported_module.get("part6_source_contract_id")
-        == "objc3c.part6.throws.abi.propagation.lowering.v1",
-        "expected cross-module error consumer to preserve the part6 replay source contract id",
+        imported_module.get("error_handling_source_contract_id")
+        == "objc3c.error_handling.throws.abi.propagation.lowering.v1",
+        "expected cross-module error consumer to preserve the error_handling replay source contract id",
     )
-    replay_key = imported_module.get("part6_result_and_bridging_artifact_replay_key", "")
-    throws_replay_key = imported_module.get("part6_replay_key", "")
+    replay_key = imported_module.get("error_handling_result_and_bridging_artifact_replay_key", "")
+    throws_replay_key = imported_module.get("error_handling_replay_key", "")
     expect(
         isinstance(replay_key, str)
         and "runtime_import_artifact_ready=true" in replay_key
         and "separate_compilation_replay_ready=true" in replay_key,
-        "expected cross-module error consumer to preserve the part6 replay packet readiness in the imported replay key",
+        "expected cross-module error consumer to preserve the error_handling replay packet readiness in the imported replay key",
     )
     expect(
         isinstance(throws_replay_key, str)
         and "ready_for_runtime_execution=true" in throws_replay_key,
-        "expected cross-module error consumer to preserve runtime-executable throws replay in the imported part6 lowering key",
+        "expected cross-module error consumer to preserve runtime-executable throws replay in the imported error_handling lowering key",
     )
     local_module = link_plan.get("local_module", {})
     expect(
@@ -6850,7 +6850,7 @@ def check_cross_module_error_metadata_replay_preservation_case(
     return CaseResult(
         case_id="cross-module-error-metadata-replay-preservation",
         probe="cross-module-runtime-link-plan",
-        fixture="tests/tooling/fixtures/native/m267_c003_result_bridge_consumer.objc3",
+        fixture="tests/tooling/fixtures/native/c003_result_bridge_consumer.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -6875,9 +6875,9 @@ def check_error_runtime_abi_cleanup_case(clangxx: str, run_dir: Path) -> CaseRes
         / "tests"
         / "tooling"
         / "runtime"
-        / "m267_d001_error_runtime_bridge_helper_probe.cpp"
+        / "d001_error_runtime_bridge_helper_probe.cpp"
     )
-    exe_path = case_dir / "m267_d001_error_runtime_bridge_helper_probe.exe"
+    exe_path = case_dir / "d001_error_runtime_bridge_helper_probe.exe"
     compile_probe(clangxx, probe, exe_path, [])
     payload = parse_key_value_output(run_probe(exe_path), "error runtime ABI cleanup probe")
     expected_integer_fields = {
@@ -6914,8 +6914,8 @@ def check_error_runtime_abi_cleanup_case(clangxx: str, run_dir: Path) -> CaseRes
     )
     return CaseResult(
         case_id="error-runtime-abi-cleanup",
-        probe="tests/tooling/runtime/m267_d001_error_runtime_bridge_helper_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m267_d001_error_runtime_bridge_helper_positive.objc3",
+        probe="tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp",
+        fixture="tests/tooling/fixtures/native/d001_error_runtime_bridge_helper_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -6939,7 +6939,7 @@ def check_live_error_runtime_integration_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m267_d002_live_error_runtime_integration_positive.objc3"
+        / "d002_live_error_runtime_integration_positive.objc3"
     )
     obj_path, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     probe = (
@@ -6947,13 +6947,13 @@ def check_live_error_runtime_integration_case(
         / "tests"
         / "tooling"
         / "runtime"
-        / "m267_d002_live_error_runtime_integration_probe.cpp"
+        / "d002_live_error_runtime_integration_probe.cpp"
     )
-    exe_path = case_dir / "m267_d002_live_error_runtime_integration_probe.exe"
+    exe_path = case_dir / "d002_live_error_runtime_integration_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "live error runtime integration probe")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-    throws_abi = manifest.get("lowering_part6_throws_abi_propagation", {})
+    throws_abi = manifest.get("lowering_error_handling_throws_abi_propagation", {})
     expect(
         payload.get("status") == 0,
         "expected live error runtime integration probe to copy the bridge-state snapshot successfully",
@@ -6985,7 +6985,7 @@ def check_live_error_runtime_integration_case(
     expect(
         isinstance(throws_abi, dict)
         and throws_abi.get("contract_id")
-        == "objc3c.part6.throws.abi.propagation.lowering.v1",
+        == "objc3c.error_handling.throws.abi.propagation.lowering.v1",
         "expected live error runtime integration fixture to preserve the throws ABI propagation contract",
     )
     expect(
@@ -6995,8 +6995,8 @@ def check_live_error_runtime_integration_case(
     )
     return CaseResult(
         case_id="live-error-runtime-integration",
-        probe="tests/tooling/runtime/m267_d002_live_error_runtime_integration_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m267_d002_live_error_runtime_integration_positive.objc3",
+        probe="tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp",
+        fixture="tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -7847,7 +7847,7 @@ def check_imported_runtime_packaging_replay_case(
         "expected cross-module link plan to publish two ordered link objects",
     )
 
-    exe_path = case_dir / "m258_e002_import_module_execution_matrix_probe.exe"
+    exe_path = case_dir / "e002_import_module_execution_matrix_probe.exe"
     probe_link_started = perf_counter()
     compile_probe(clangxx, probe, exe_path, [provider_obj, consumer_obj])
     probe_link_ms = int((perf_counter() - probe_link_started) * 1000)
@@ -8292,14 +8292,14 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
 
 def check_canonical_sample_set_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "canonical-sample-set"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m259_a002_canonical_runnable_sample_set.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "canonical_runnable_sample_set.objc3"
     obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
     if not registration_manifest_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
 
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m259_a002_canonical_runnable_sample_set_probe.cpp"
-    exe_path = case_dir / "m259_a002_canonical_runnable_sample_set_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "canonical_runnable_sample_set_probe.cpp"
+    exe_path = case_dir / "canonical_runnable_sample_set_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "canonical runnable sample set probe")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -8412,8 +8412,8 @@ def check_canonical_sample_set_case(clangxx: str, run_dir: Path) -> CaseResult:
 
     return CaseResult(
         case_id="canonical-sample-set",
-        probe="tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+        probe="tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+        fixture="tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -8437,7 +8437,7 @@ def check_realization_lookup_reflection_runtime_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m259_a002_canonical_runnable_sample_set.objc3"
+        / "canonical_runnable_sample_set.objc3"
     )
     obj_path, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     registration_manifest_path = (
@@ -8449,7 +8449,7 @@ def check_realization_lookup_reflection_runtime_case(
         )
 
     probe = ROOT / REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE
-    exe_path = case_dir / "m259_d002_realization_lookup_reflection_runtime_probe.exe"
+    exe_path = case_dir / "object_model_lookup_reflection_runtime_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(
         run_probe(exe_path), "realization lookup reflection runtime probe"
@@ -8533,7 +8533,7 @@ def check_realization_lookup_reflection_runtime_case(
     return CaseResult(
         case_id="realization-lookup-reflection-runtime",
         probe=REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
-        fixture="tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+        fixture="tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -8553,11 +8553,11 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
         / "tooling"
         / "fixtures"
         / "native"
-        / "m272_d002_live_dispatch_fast_path_positive.objc3"
+        / "d002_live_dispatch_fast_path_positive.objc3"
     )
     obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m272_d002_live_dispatch_fast_path_probe.cpp"
-    exe_path = case_dir / "m272_d002_live_dispatch_fast_path_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "d002_live_dispatch_fast_path_probe.cpp"
+    exe_path = case_dir / "d002_live_dispatch_fast_path_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_key_value_output(run_probe(exe_path), "dispatch fast-path probe")
     ll_text = ll_path.read_text(encoding="utf-8")
@@ -8775,8 +8775,8 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
 
     return CaseResult(
         case_id="dispatch-fast-path",
-        probe="tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+        probe="tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp",
+        fixture="tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -8803,7 +8803,7 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
 
 def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-reflection"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_d003_property_metadata_reflection_positive.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "d003_property_metadata_reflection_positive.objc3"
     obj_path = compile_fixture(fixture, case_dir / "compile")
     probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_property_metadata_reflection_probe.cpp"
     exe_path = case_dir / "runtime_property_metadata_reflection_probe.exe"
@@ -8837,7 +8837,7 @@ def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="property-reflection",
         probe="tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+        fixture="tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -8851,10 +8851,10 @@ def check_property_reflection_case(clangxx: str, run_dir: Path) -> CaseResult:
 
 def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-execution"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_property_ivar_execution_matrix_positive.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "property_ivar_execution_matrix_positive.objc3"
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m257_e002_property_ivar_execution_matrix_probe.cpp"
-    exe_path = case_dir / "m257_e002_property_ivar_execution_matrix_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "e002_property_ivar_execution_matrix_probe.cpp"
+    exe_path = case_dir / "e002_property_ivar_execution_matrix_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "property execution probe")
 
@@ -9054,8 +9054,8 @@ def check_property_execution_case(clangxx: str, run_dir: Path) -> CaseResult:
            "expected tokenValue getter to remain builtin-backed and report zero getter parameters")
     return CaseResult(
         case_id="property-execution",
-        probe="tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        probe="tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+        fixture="tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -9080,7 +9080,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_escaping_block_runtime_hook_argument_positive.objc3"
+        / "escaping_block_runtime_hook_argument_positive.objc3"
     )
     _, _, argument_manifest_path = compile_fixture_outputs(
         argument_fixture, case_dir / "argument-positive"
@@ -9105,7 +9105,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_escaping_block_runtime_hook_return_positive.objc3"
+        / "escaping_block_runtime_hook_return_positive.objc3"
     )
     _, _, return_manifest_path = compile_fixture_outputs(
         return_fixture, case_dir / "return-positive"
@@ -9130,7 +9130,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_capture_legality_escape_invocation_bad_call.objc3",
+        / "capture_legality_escape_invocation_bad_call.objc3",
         case_dir / "bad-call-negative",
         expected_snippets=[
             "type mismatch: expected 'i32' argument for parameter 0 of callable 'closure', got 'bool'"
@@ -9143,7 +9143,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_capture_legality_escape_invocation_missing_capture.objc3",
+        / "capture_legality_escape_invocation_missing_capture.objc3",
         case_dir / "missing-capture-negative",
         expected_snippets=["undefined capture 'seed' in block literal"],
         expected_codes=["O3S202"],
@@ -9154,7 +9154,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_escaping_block_runtime_hook_byref_positive.objc3"
+        / "escaping_block_runtime_hook_byref_positive.objc3"
     )
     _, _, byref_escape_manifest_path = compile_fixture_outputs(
         byref_escape_fixture, case_dir / "byref-escape-positive"
@@ -9179,7 +9179,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_escaping_block_runtime_hook_owned_capture_positive.objc3"
+        / "escaping_block_runtime_hook_owned_capture_positive.objc3"
     )
     _, _, owned_escape_manifest_path = compile_fixture_outputs(
         owned_escape_fixture, case_dir / "owned-escape-positive"
@@ -9245,7 +9245,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="escaping-block-capture-legality",
         probe="compile-manifest-diagnostics-and-llvm-ir",
-        fixture="tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
+        fixture="tests/tooling/fixtures/native/escaping_block_runtime_hook_argument_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -9284,7 +9284,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_owned_object_capture_helper_positive.objc3"
+        / "owned_object_capture_helper_positive.objc3"
     )
     _, owned_ll_path, owned_manifest_path = compile_fixture_outputs(
         owned_fixture, case_dir / "owned-positive"
@@ -9307,7 +9307,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_nonowning_object_capture_helper_elided_positive.objc3"
+        / "nonowning_object_capture_helper_elided_positive.objc3"
     )
     _, nonowning_ll_path, nonowning_manifest_path = compile_fixture_outputs(
         nonowning_fixture, case_dir / "nonowning-positive"
@@ -9334,7 +9334,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_mode_handling_positive.objc3"
+        / "arc_mode_handling_positive.objc3"
     )
     compile_fixture_with_args(
         arc_mode_fixture, case_dir / "arc-mode-positive", extra_args=["-fobjc-arc"]
@@ -9359,7 +9359,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_inference_lifetime_positive.objc3"
+        / "arc_inference_lifetime_positive.objc3"
     )
     compile_fixture_with_args(
         arc_inference_fixture,
@@ -9384,7 +9384,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_cleanup_scope_positive.objc3"
+        / "arc_cleanup_scope_positive.objc3"
     )
     compile_fixture_with_args(
         arc_cleanup_scope_fixture,
@@ -9407,7 +9407,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_implicit_cleanup_void_positive.objc3"
+        / "arc_implicit_cleanup_void_positive.objc3"
     )
     compile_fixture_with_args(
         arc_implicit_cleanup_fixture,
@@ -9430,7 +9430,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_autorelease_return_positive.objc3"
+        / "arc_autorelease_return_positive.objc3"
     )
     compile_fixture_with_args(
         arc_autorelease_return_fixture,
@@ -9459,7 +9459,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_weak_object_capture_mutation_negative.objc3",
+        / "weak_object_capture_mutation_negative.objc3",
         case_dir / "weak-mutation-negative",
         expected_snippets=[
             "type mismatch: block mutated capture 'weakValue' requires owned runtime-backed storage"
@@ -9472,7 +9472,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_unowned_object_capture_mutation_negative.objc3",
+        / "unowned_object_capture_mutation_negative.objc3",
         case_dir / "unowned-mutation-negative",
         expected_snippets=[
             "type mismatch: block mutated capture 'borrowedValue' requires owned runtime-backed storage"
@@ -9647,7 +9647,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
     return CaseResult(
         case_id="block-storage-arc-automation-semantics",
         probe="compile-manifest-diagnostics-and-llvm-ir",
-        fixture="tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
+        fixture="tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -9680,7 +9680,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
 def check_block_arc_runtime_abi_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "block-arc-runtime-abi"
     probe = ROOT / Path(BLOCK_ARC_RUNTIME_ABI_PROBE)
-    exe_path = case_dir / "m281_d001_block_arc_runtime_abi_probe.exe"
+    exe_path = case_dir / "d001_block_arc_runtime_abi_probe.exe"
     compile_probe(clangxx, probe, exe_path, [])
     payload = parse_json_output(run_probe(exe_path), "block ARC runtime ABI probe")
 
@@ -9807,7 +9807,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_byref_cell_copy_dispose_runtime_positive.objc3"
+        / "byref_cell_copy_dispose_runtime_positive.objc3"
     )
     byref_obj, _, byref_manifest_path = compile_fixture_outputs(
         byref_fixture, case_dir / "byref-runtime-positive"
@@ -9819,7 +9819,7 @@ def check_block_helper_runtime_execution_case(
         .get("semantic_surface", {})
         .get("objc_block_copy_dispose_lowering_surface", {})
     )
-    byref_exe = case_dir / "byref-runtime-positive" / "m261_byref_runtime.exe"
+    byref_exe = case_dir / "byref-runtime-positive" / "byref_runtime.exe"
     link_fixture_executable(clangxx, byref_obj, byref_exe)
     byref_run = run([str(byref_exe)])
     expect(
@@ -9836,10 +9836,10 @@ def check_block_helper_runtime_execution_case(
         / "tests"
         / "tooling"
         / "runtime"
-        / "m261_d003_block_runtime_byref_forwarding_probe.cpp"
+        / "d003_block_runtime_byref_forwarding_probe.cpp"
     )
     byref_forwarding_exe = (
-        case_dir / "m261_d003_block_runtime_byref_forwarding_probe.exe"
+        case_dir / "d003_block_runtime_byref_forwarding_probe.exe"
     )
     compile_probe(clangxx, byref_forwarding_probe, byref_forwarding_exe, [])
     byref_forwarding_payload = parse_json_output(
@@ -9882,7 +9882,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_owned_object_capture_runtime_positive.objc3"
+        / "owned_object_capture_runtime_positive.objc3"
     )
     owned_obj, _, owned_manifest_path = compile_fixture_outputs(
         owned_fixture, case_dir / "owned-runtime-positive"
@@ -9894,7 +9894,7 @@ def check_block_helper_runtime_execution_case(
         .get("semantic_surface", {})
         .get("objc_block_copy_dispose_lowering_surface", {})
     )
-    owned_exe = case_dir / "owned-runtime-positive" / "m261_owned_runtime.exe"
+    owned_exe = case_dir / "owned-runtime-positive" / "owned_runtime.exe"
     link_fixture_executable(clangxx, owned_obj, owned_exe)
     owned_run = run([str(owned_exe)])
     expect(
@@ -9913,7 +9913,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_nonowning_object_capture_runtime_positive.objc3"
+        / "nonowning_object_capture_runtime_positive.objc3"
     )
     nonowning_obj, _, nonowning_manifest_path = compile_fixture_outputs(
         nonowning_fixture, case_dir / "nonowning-runtime-positive"
@@ -9928,7 +9928,7 @@ def check_block_helper_runtime_execution_case(
         .get("objc_block_copy_dispose_lowering_surface", {})
     )
     nonowning_exe = (
-        case_dir / "nonowning-runtime-positive" / "m261_nonowning_runtime.exe"
+        case_dir / "nonowning-runtime-positive" / "nonowning_runtime.exe"
     )
     link_fixture_executable(clangxx, nonowning_obj, nonowning_exe)
     nonowning_run = run([str(nonowning_exe)])
@@ -9948,7 +9948,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_mode_handling_positive.objc3"
+        / "arc_mode_handling_positive.objc3"
     )
     arc_mode_obj, _, arc_mode_manifest_path = compile_fixture_outputs_with_args(
         arc_mode_fixture,
@@ -9959,7 +9959,7 @@ def check_block_helper_runtime_execution_case(
     arc_mode_sema = arc_mode_manifest.get("frontend", {}).get("pipeline", {}).get(
         "sema_pass_manager", {}
     )
-    arc_mode_exe = case_dir / "arc-mode-runtime-positive" / "m262_arc_mode.exe"
+    arc_mode_exe = case_dir / "arc-mode-runtime-positive" / "arc_mode.exe"
     link_fixture_executable(clangxx, arc_mode_obj, arc_mode_exe)
     arc_mode_run = run([str(arc_mode_exe)])
     expect(
@@ -9982,7 +9982,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_inference_lifetime_positive.objc3"
+        / "arc_inference_lifetime_positive.objc3"
     )
     arc_inference_obj, _, arc_inference_manifest_path = (
         compile_fixture_outputs_with_args(
@@ -9998,7 +9998,7 @@ def check_block_helper_runtime_execution_case(
         "pipeline", {}
     ).get("sema_pass_manager", {})
     arc_inference_exe = (
-        case_dir / "arc-inference-runtime-positive" / "m262_arc_inference.exe"
+        case_dir / "arc-inference-runtime-positive" / "arc_inference.exe"
     )
     link_fixture_executable(clangxx, arc_inference_obj, arc_inference_exe)
     arc_inference_run = run([str(arc_inference_exe)])
@@ -10024,7 +10024,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_cleanup_scope_positive.objc3"
+        / "arc_cleanup_scope_positive.objc3"
     )
     arc_cleanup_scope_obj, _, arc_cleanup_scope_manifest_path = (
         compile_fixture_outputs_with_args(
@@ -10040,7 +10040,7 @@ def check_block_helper_runtime_execution_case(
         "pipeline", {}
     ).get("sema_pass_manager", {})
     arc_cleanup_scope_exe = (
-        case_dir / "arc-cleanup-scope-runtime-positive" / "m262_arc_cleanup_scope.exe"
+        case_dir / "arc-cleanup-scope-runtime-positive" / "arc_cleanup_scope.exe"
     )
     link_fixture_executable(clangxx, arc_cleanup_scope_obj, arc_cleanup_scope_exe)
     arc_cleanup_scope_run = run([str(arc_cleanup_scope_exe)])
@@ -10066,7 +10066,7 @@ def check_block_helper_runtime_execution_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_implicit_cleanup_void_positive.objc3"
+        / "arc_implicit_cleanup_void_positive.objc3"
     )
     arc_implicit_cleanup_obj, _, arc_implicit_cleanup_manifest_path = (
         compile_fixture_outputs_with_args(
@@ -10084,7 +10084,7 @@ def check_block_helper_runtime_execution_case(
     arc_implicit_cleanup_exe = (
         case_dir
         / "arc-implicit-cleanup-runtime-positive"
-        / "m262_arc_implicit_cleanup.exe"
+        / "arc_implicit_cleanup.exe"
     )
     link_fixture_executable(
         clangxx, arc_implicit_cleanup_obj, arc_implicit_cleanup_exe
@@ -10109,7 +10109,7 @@ def check_block_helper_runtime_execution_case(
     return CaseResult(
         case_id="block-helper-runtime-execution",
         probe="linked-fixture-main",
-        fixture="tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
+        fixture="tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -10160,11 +10160,11 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m262_arc_property_interaction_positive.objc3"
+        / "arc_property_interaction_positive.objc3"
     )
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m262_d003_arc_debug_instrumentation_probe.cpp"
-    exe_path = case_dir / "m262_d003_arc_debug_instrumentation_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "d003_arc_debug_instrumentation_probe.cpp"
+    exe_path = case_dir / "d003_arc_debug_instrumentation_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "arc property helper probe")
 
@@ -10266,8 +10266,8 @@ def check_arc_property_helper_case(clangxx: str, run_dir: Path) -> CaseResult:
 
     return CaseResult(
         case_id="arc-property-helper-abi",
-        probe="tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        probe="tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
+        fixture="tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -10295,15 +10295,15 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         / "tooling"
         / "fixtures"
         / "native"
-        / "m260_runtime_backed_storage_ownership_reflection_positive.objc3"
+        / "runtime_backed_storage_ownership_reflection_positive.objc3"
     )
     obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
     if not registration_manifest_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
 
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m260_runtime_backed_storage_ownership_reflection_probe.cpp"
-    exe_path = case_dir / "m260_runtime_backed_storage_ownership_reflection_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_backed_storage_ownership_reflection_probe.cpp"
+    exe_path = case_dir / "runtime_backed_storage_ownership_reflection_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "storage ownership reflection probe")
 
@@ -10542,8 +10542,8 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
 
     return CaseResult(
         case_id="storage-ownership-reflection",
-        probe="tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        probe="tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+        fixture="tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -10571,7 +10571,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m260_runtime_backed_storage_ownership_legality_positive.objc3"
+        / "runtime_backed_storage_ownership_legality_positive.objc3"
     )
     _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "positive")
     registration_manifest_path = (
@@ -10658,7 +10658,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_property_atomic_ownership_negative.objc3",
+        / "property_atomic_ownership_negative.objc3",
         case_dir / "negative-atomic-ownership",
         expected_snippets=[
             "atomic ownership-aware property 'value' in interface 'Widget' is unsupported until executable accessor storage semantics land"
@@ -10671,7 +10671,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m260_runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
+        / "runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
         case_dir / "negative-weak-mismatch",
         expected_snippets=[
             "property ownership qualifier '__weak' conflicts with @property ownership modifier 'assign'"
@@ -10684,7 +10684,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m260_runtime_backed_storage_ownership_unowned_mismatch_negative.objc3",
+        / "runtime_backed_storage_ownership_unowned_mismatch_negative.objc3",
         case_dir / "negative-unowned-mismatch",
         expected_snippets=[
             "property ownership qualifier '__unsafe_unretained' conflicts with @property ownership modifier 'unowned'"
@@ -10697,7 +10697,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_property_scalar_ownership_negative.objc3",
+        / "property_scalar_ownership_negative.objc3",
         case_dir / "negative-scalar-ownership",
         expected_snippets=[
             "@property ownership modifier 'strong' requires an Objective-C object property"
@@ -10710,7 +10710,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_accessor_duplicate_getter_negative.objc3",
+        / "accessor_duplicate_getter_negative.objc3",
         case_dir / "negative-duplicate-getter",
         expected_snippets=[
             "duplicate effective getter selector 'value' for properties 'token' and 'alias'"
@@ -10723,7 +10723,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_accessor_duplicate_setter_negative.objc3",
+        / "accessor_duplicate_setter_negative.objc3",
         case_dir / "negative-duplicate-setter",
         expected_snippets=[
             "duplicate effective setter selector 'setValue:' for properties 'token' and 'alias'"
@@ -10736,7 +10736,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m280_b001_property_readonly_setter_negative.objc3",
+        / "b001_property_readonly_setter_negative.objc3",
         case_dir / "negative-readonly-setter",
         expected_snippets=[
             "readonly property 'value' in interface 'Widget' must not declare a setter modifier"
@@ -10747,7 +10747,7 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="storage-legality-semantics",
         probe="compile-manifest-and-diagnostics",
-        fixture="tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_legality_positive.objc3",
+        fixture="tests/tooling/fixtures/native/runtime_backed_storage_ownership_legality_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -10786,7 +10786,7 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3"
+        / "property_synthesis_default_ivar_binding_no_redeclaration.objc3"
     )
     _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "positive")
     registration_manifest_path = (
@@ -10895,7 +10895,7 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_property_synthesis_default_ivar_binding_incompatible_redeclaration.objc3",
+        / "property_synthesis_default_ivar_binding_incompatible_redeclaration.objc3",
         case_dir / "negative-incompatible-redeclaration",
         expected_snippets=[
             "type mismatch: property synthesis for 'token' in implementation 'Widget' drifted from the interface default ivar binding",
@@ -10907,7 +10907,7 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
     return CaseResult(
         case_id="property-synthesis-storage-binding-semantics",
         probe="compile-manifest-and-diagnostics",
-        fixture="tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+        fixture="tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -10944,7 +10944,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m280_b004_property_accessor_selector_compatibility_negative.objc3",
+        / "b004_property_accessor_selector_compatibility_negative.objc3",
         case_dir / "accessor-selector-mismatch",
         expected_snippets=[
             "type mismatch: effective getter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
@@ -10957,7 +10957,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m280_b004_property_setter_selector_compatibility_negative.objc3",
+        / "b004_property_setter_selector_compatibility_negative.objc3",
         case_dir / "setter-selector-mismatch",
         expected_snippets=[
             "type mismatch: effective setter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
@@ -10970,7 +10970,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         / "tooling"
         / "fixtures"
         / "native"
-        / "m280_b004_property_reflection_attribute_compatibility_negative.objc3",
+        / "b004_property_reflection_attribute_compatibility_negative.objc3",
         case_dir / "reflection-attribute-mismatch",
         expected_snippets=[
             "type mismatch: reflected property attribute and ownership profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
@@ -10981,7 +10981,7 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
     return CaseResult(
         case_id="property-reflection-accessor-compatibility-diagnostics",
         probe="compile-diagnostics",
-        fixture="tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+        fixture="tests/tooling/fixtures/native/b004_property_accessor_selector_compatibility_negative.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -11006,7 +11006,7 @@ def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_property_ivar_source_model_completion_positive.objc3"
+        / "property_ivar_source_model_completion_positive.objc3"
     )
     _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -11136,7 +11136,7 @@ def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="property-ivar-ordering-semantics",
         probe="compile-manifest-source-records",
-        fixture="tests/tooling/fixtures/native/m257_property_ivar_source_model_completion_positive.objc3",
+        fixture="tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -11158,10 +11158,10 @@ def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
 
 def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "synthesized-accessor-runtime"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "synthesized_accessor_property_lowering_positive.objc3"
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m257_c003_synthesized_accessor_probe.cpp"
-    exe_path = case_dir / "m257_c003_synthesized_accessor_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "c003_synthesized_accessor_probe.cpp"
+    exe_path = case_dir / "c003_synthesized_accessor_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "synthesized accessor runtime probe")
 
@@ -11204,8 +11204,8 @@ def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> Case
 
     return CaseResult(
         case_id="synthesized-accessor-runtime",
-        probe="tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        probe="tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+        fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -11310,7 +11310,7 @@ def check_accessor_storage_lowering_metadata_surface_case(
         )
 
     synthesized_manifest, synthesized_ll = load_compile_artifacts(
-        "m257_synthesized_accessor_property_lowering_positive.objc3",
+        "synthesized_accessor_property_lowering_positive.objc3",
         "synthesized-accessors",
     )
     synthesized_lowering_surface = synthesized_manifest.get(
@@ -11388,24 +11388,24 @@ def check_accessor_storage_lowering_metadata_surface_case(
     expect(
         synthesized_lowering_surface.get("authoritative_fixture_paths")
         == [
-            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_synthesis_default_ivar_binding_no_redeclaration.objc3",
-            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
-            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
-            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+            "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+            "tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
         ],
         "expected lowering surface to publish the authoritative fixture set",
     )
     expect(
         synthesized_lowering_surface.get("authoritative_probe_paths")
         == [
-            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
-            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
             "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
-            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
-            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
-            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+            "tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp",
         ],
         "expected lowering surface to publish the authoritative probe set",
     )
@@ -11528,7 +11528,7 @@ def check_accessor_storage_lowering_metadata_surface_case(
     )
 
     arc_manifest, arc_ll = load_compile_artifacts(
-        "m262_arc_property_interaction_positive.objc3",
+        "arc_property_interaction_positive.objc3",
         "arc-accessors",
     )
     arc_lowering_surface = arc_manifest.get(
@@ -11600,7 +11600,7 @@ def check_accessor_storage_lowering_metadata_surface_case(
     return CaseResult(
         case_id="accessor-storage-lowering-metadata-surface",
         probe="compile-manifest-and-executable-metadata-surface",
-        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -11631,7 +11631,7 @@ def check_property_accessor_layout_lowering_case(run_dir: Path) -> CaseResult:
         / "tooling"
         / "fixtures"
         / "native"
-        / "m257_synthesized_accessor_property_lowering_positive.objc3"
+        / "synthesized_accessor_property_lowering_positive.objc3"
     )
     _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     registration_manifest_path = (
@@ -11913,7 +11913,7 @@ def check_property_accessor_layout_lowering_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="property-accessor-layout-lowering",
         probe="compile-manifest-registration-manifest-and-llvm-ir",
-        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -11933,10 +11933,10 @@ def check_property_accessor_layout_lowering_case(run_dir: Path) -> CaseResult:
 
 def check_property_layout_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-layout"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "synthesized_accessor_property_lowering_positive.objc3"
     obj_path, ll_path, _ = compile_fixture_outputs(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "m257_d001_property_layout_runtime_probe.cpp"
-    exe_path = case_dir / "m257_d001_property_layout_runtime_probe.exe"
+    probe = ROOT / "tests" / "tooling" / "runtime" / "d001_property_layout_runtime_probe.cpp"
+    exe_path = case_dir / "d001_property_layout_runtime_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "property layout runtime probe")
 
@@ -12004,8 +12004,8 @@ def check_property_layout_case(clangxx: str, run_dir: Path) -> CaseResult:
     allocation_mode = "shared-instance-freeze" if same_instance_mode else "distinct-instance-forward-compatible"
     return CaseResult(
         case_id="property-layout",
-        probe="tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
-        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        probe="tests/tooling/runtime/d001_property_layout_runtime_probe.cpp",
+        fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
@@ -12021,7 +12021,7 @@ def check_property_layout_case(clangxx: str, run_dir: Path) -> CaseResult:
 
 def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-codegen"
-    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "synthesized_accessor_property_lowering_positive.objc3"
     _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
     if not registration_manifest_path.is_file():
@@ -12121,7 +12121,7 @@ def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
     return CaseResult(
         case_id="property-codegen",
         probe="real-compile-llvm-inspection",
-        fixture="tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+        fixture="tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
@@ -12395,3 +12395,5 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+

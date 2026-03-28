@@ -1,0 +1,44 @@
+module m267_error_handling_source_closure;
+
+@protocol Base
+@end
+
+@protocol Worker<Base>
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@interface Widget<Worker>
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue;
+- (id) currentValue;
++ (id) shared;
+@end
+
+@implementation Widget
+@property (readonly, getter=tokenValue) id token;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+- (id) tokenValue {
+  return 0;
+}
+- (id) currentValue {
+  return 1;
+}
++ (id) shared {
+  return 2;
+}
+@end
+
+extern fn reportError(value: i32) -> i32;
+
+fn recover(error: NSError*) throws -> i32 {
+  if (true) {
+    return reportError(1);
+  }
+  return 0;
+}
+
+fn main() -> i32 {
+  return 0;
+}

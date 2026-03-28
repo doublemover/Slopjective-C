@@ -256,10 +256,10 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                                         cli_options.emit_prefix,
                                         artifacts.runtime_metadata_binary);
     }
-    if (!artifacts.part6_result_bridge_artifact_replay_json.empty()) {
-      WritePart6ResultBridgeArtifactReplay(
+    if (!artifacts.error_handling_result_bridge_artifact_replay_json.empty()) {
+      WriteErrorHandlingResultBridgeArtifactReplay(
           cli_options.out_dir, cli_options.emit_prefix,
-          artifacts.part6_result_bridge_artifact_replay_json);
+          artifacts.error_handling_result_bridge_artifact_replay_json);
     }
     if (!artifacts.diagnostics.empty()) {
       return 1;
@@ -283,55 +283,55 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     // path includes the live D002 bridge sidecars consumed by the lane-E gate.
     // Part 11 lane-E anchors: the driver-side publication
     // path includes the live D002 bridge sidecars consumed by the gate and the closeout matrix.
-    if (!artifacts.part11_bridge_header_artifact_text.empty()) {
-      WritePart11BridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
-                                      artifacts.part11_bridge_header_artifact_text);
+    if (!artifacts.interop_bridge_header_artifact_text.empty()) {
+      WriteInteropBridgeHeaderArtifact(cli_options.out_dir, cli_options.emit_prefix,
+                                      artifacts.interop_bridge_header_artifact_text);
     }
-    if (!artifacts.part11_bridge_module_artifact_text.empty()) {
-      WritePart11BridgeModuleArtifact(cli_options.out_dir, cli_options.emit_prefix,
-                                      artifacts.part11_bridge_module_artifact_text);
+    if (!artifacts.interop_bridge_module_artifact_text.empty()) {
+      WriteInteropBridgeModuleArtifact(cli_options.out_dir, cli_options.emit_prefix,
+                                      artifacts.interop_bridge_module_artifact_text);
     }
-    if (!artifacts.part11_bridge_artifact_json.empty()) {
-      WritePart11BridgeArtifact(cli_options.out_dir, cli_options.emit_prefix,
-                                artifacts.part11_bridge_artifact_json);
+    if (!artifacts.interop_bridge_artifact_json.empty()) {
+      WriteInteropBridgeArtifact(cli_options.out_dir, cli_options.emit_prefix,
+                                artifacts.interop_bridge_artifact_json);
     }
-    if (artifacts.part10_macro_host_process_cache_runtime_integration_ready) {
-      std::string part10_host_cache_artifact_json;
-      std::string part10_host_cache_error;
-      if (!TryBuildObjc3Part10MacroHostProcessCacheArtifact(
+    if (artifacts.metaprogramming_macro_host_process_cache_runtime_integration_ready) {
+      std::string metaprogramming_host_cache_artifact_json;
+      std::string metaprogramming_host_cache_error;
+      if (!TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact(
               {.contract_id =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId,
                .source_contract_id =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId,
                .surface_path =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSurfacePath,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfacePath,
                .artifact_relative_path =
-                   kObjc3Part10MacroHostProcessCacheArtifactRelativePath,
+                   kObjc3MetaprogrammingMacroHostProcessCacheArtifactRelativePath,
                .host_executable_relative_path =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath,
                .cache_root_relative_path =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath,
                .host_model =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostModel,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostModel,
                .toolchain_model =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationToolchainModel,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel,
                .cache_model =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheModel,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel,
                .fail_closed_model =
-                   kObjc3Part10MacroHostProcessCacheRuntimeIntegrationFailClosedModel,
+                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel,
                .replay_key =
                    artifacts
-                       .part10_macro_host_process_cache_runtime_integration_replay_key,
+                       .metaprogramming_macro_host_process_cache_runtime_integration_replay_key,
                .deterministic = true},
               cli_options.input,
-              part10_host_cache_artifact_json,
-              part10_host_cache_error)) {
-        std::cerr << part10_host_cache_error << "\n";
+              metaprogramming_host_cache_artifact_json,
+              metaprogramming_host_cache_error)) {
+        std::cerr << metaprogramming_host_cache_error << "\n";
         return 125;
       }
-      WritePart10MacroHostProcessCacheArtifact(
+      WriteMetaprogrammingMacroHostProcessCacheArtifact(
           cli_options.out_dir, cli_options.emit_prefix,
-          part10_host_cache_artifact_json);
+          metaprogramming_host_cache_artifact_json);
     }
     if (!IsReadyObjc3VersionedConformanceReportLoweringSummary(
             artifacts.versioned_conformance_report_lowering_summary)) {
@@ -387,9 +387,9 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
              .advanced_feature_ops_contract_id =
                  "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1",
              .advanced_feature_reporting_contract_id =
-                 "objc3c.part12.feature.aware.conformance.report.emission.v1",
+                 "objc3c.tooling.feature.aware.conformance.report.emission.v1",
              .advanced_feature_release_evidence_contract_id =
-                 "objc3c.part12.corpus.sharding.release.evidence.packaging.v1",
+                 "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1",
              .ci_release_evidence_gate_script_path =
                  "scripts/check_release_evidence.py",
              .runbook_reference_path =
@@ -1241,41 +1241,41 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           link_plan_inputs.local_driver_linker_flags = {
               linker_retention_artifacts.driver_linker_flag};
 
-          link_plan_inputs.expected_part6_contract_id =
-              kObjc3Part6ResultAndBridgingArtifactReplayContractId;
-          link_plan_inputs.expected_part6_source_contract_id =
-              kObjc3Part6ThrowsAbiPropagationLoweringContractId;
-          link_plan_inputs.expected_part7_actor_contract_id =
-              "objc3c.part7.actor.mailbox.isolation.import.surface.v1";
-          link_plan_inputs.expected_part7_actor_source_contract_id =
-              "objc3c.part7.actor.lowering.and.metadata.contract.v1";
-          link_plan_inputs.expected_part11_ffi_contract_id =
-              kObjc3Part11FfiMetadataInterfacePreservationContractId;
-          link_plan_inputs.expected_part11_ffi_source_contract_id =
-              kObjc3Part11FfiMetadataInterfacePreservationSourceContractId;
-          link_plan_inputs.expected_part11_ffi_preservation_contract_id =
-              kObjc3Part11ForeignSurfaceInterfacePreservationContractId;
-          link_plan_inputs.expected_part11_header_module_bridge_contract_id =
-              kObjc3Part11HeaderModuleBridgeGenerationContractId;
-          link_plan_inputs.expected_part11_header_module_bridge_source_contract_id =
-              kObjc3Part11HeaderModuleBridgeGenerationSourceContractId;
+          link_plan_inputs.expected_error_handling_contract_id =
+              kObjc3ErrorHandlingResultAndBridgingArtifactReplayContractId;
+          link_plan_inputs.expected_error_handling_source_contract_id =
+              kObjc3ErrorHandlingThrowsAbiPropagationLoweringContractId;
+          link_plan_inputs.expected_concurrency_actor_contract_id =
+              "objc3c.concurrency.actor.mailbox.isolation.import.surface.v1";
+          link_plan_inputs.expected_concurrency_actor_source_contract_id =
+              "objc3c.concurrency.actor.lowering.and.metadata.contract.v1";
+          link_plan_inputs.expected_interop_ffi_contract_id =
+              kObjc3InteropFfiMetadataInterfacePreservationContractId;
+          link_plan_inputs.expected_interop_ffi_source_contract_id =
+              kObjc3InteropFfiMetadataInterfacePreservationSourceContractId;
+          link_plan_inputs.expected_interop_ffi_preservation_contract_id =
+              kObjc3InteropForeignSurfaceInterfacePreservationContractId;
+          link_plan_inputs.expected_interop_header_module_bridge_contract_id =
+              kObjc3InteropHeaderModuleBridgeGenerationContractId;
+          link_plan_inputs.expected_interop_header_module_bridge_source_contract_id =
+              kObjc3InteropHeaderModuleBridgeGenerationSourceContractId;
           link_plan_inputs
-              .expected_part11_header_module_bridge_preservation_contract_id =
-              kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId;
-          link_plan_inputs.expected_part11_bridge_header_artifact_relative_path =
-              kObjc3Part11BridgeHeaderArtifactRelativePath;
-          link_plan_inputs.expected_part11_bridge_module_artifact_relative_path =
-              kObjc3Part11BridgeModuleArtifactRelativePath;
-          link_plan_inputs.expected_part11_bridge_artifact_relative_path =
-              kObjc3Part11BridgeArtifactRelativePath;
-          link_plan_inputs.expected_part10_host_cache_contract_id =
-              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationContractId;
-          link_plan_inputs.expected_part10_host_cache_source_contract_id =
-              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationSourceContractId;
-          link_plan_inputs.expected_part10_host_cache_executable_relative_path =
-              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
-          link_plan_inputs.expected_part10_host_cache_root_relative_path =
-              kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
+              .expected_interop_header_module_bridge_preservation_contract_id =
+              kObjc3InteropHeaderModuleBridgeGenerationPreservationContractId;
+          link_plan_inputs.expected_interop_bridge_header_artifact_relative_path =
+              kObjc3InteropBridgeHeaderArtifactRelativePath;
+          link_plan_inputs.expected_interop_bridge_module_artifact_relative_path =
+              kObjc3InteropBridgeModuleArtifactRelativePath;
+          link_plan_inputs.expected_interop_bridge_artifact_relative_path =
+              kObjc3InteropBridgeArtifactRelativePath;
+          link_plan_inputs.expected_metaprogramming_host_cache_contract_id =
+              kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId;
+          link_plan_inputs.expected_metaprogramming_host_cache_source_contract_id =
+              kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId;
+          link_plan_inputs.expected_metaprogramming_host_cache_executable_relative_path =
+              kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
+          link_plan_inputs.expected_metaprogramming_host_cache_root_relative_path =
+              kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
           link_plan_inputs.expected_block_ownership_contract_id =
               kObjc3RuntimeBlockOwnershipArtifactPreservationContractId;
           link_plan_inputs.expected_block_ownership_source_contract_id =
@@ -1382,132 +1382,132 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 .bootstrap_live_restart_reset_replay_state_snapshot_symbol =
                 peer_artifacts
                     .bootstrap_live_restart_reset_replay_state_snapshot_symbol;
-            imported_input.part6_result_and_bridging_artifact_replay_present =
-                imported_surface.part6_result_and_bridging_artifact_replay_present;
-            imported_input.part6_binary_artifact_replay_ready =
-                imported_surface.part6_binary_artifact_replay_ready;
-            imported_input.part6_runtime_import_artifact_ready =
-                imported_surface.part6_runtime_import_artifact_ready;
-            imported_input.part6_separate_compilation_replay_ready =
-                imported_surface.part6_separate_compilation_replay_ready;
-            imported_input.part6_deterministic =
-                imported_surface.part6_deterministic;
-            imported_input.part6_contract_id = imported_surface.part6_contract_id;
-            imported_input.part6_source_contract_id =
-                imported_surface.part6_source_contract_id;
-            imported_input.part6_result_and_bridging_artifact_replay_key =
-                imported_surface.part6_result_and_bridging_artifact_replay_key;
-            imported_input.part6_part6_replay_key =
-                imported_surface.part6_part6_replay_key;
-            imported_input.part6_throws_replay_key =
-                imported_surface.part6_throws_replay_key;
-            imported_input.part6_result_like_replay_key =
-                imported_surface.part6_result_like_replay_key;
-            imported_input.part6_ns_error_replay_key =
-                imported_surface.part6_ns_error_replay_key;
-            imported_input.part6_unwind_replay_key =
-                imported_surface.part6_unwind_replay_key;
-            imported_input.part7_actor_mailbox_runtime_import_present =
-                imported_surface.part7_actor_mailbox_runtime_import_present;
-            imported_input.part7_actor_mailbox_runtime_ready =
-                imported_surface.part7_actor_mailbox_runtime_ready;
-            imported_input.part7_actor_mailbox_runtime_deterministic =
-                imported_surface.part7_actor_mailbox_runtime_deterministic;
-            imported_input.part7_actor_contract_id =
-                imported_surface.part7_actor_mailbox_runtime_contract_id;
-            imported_input.part7_actor_source_contract_id =
-                imported_surface.part7_actor_mailbox_runtime_source_contract_id;
-            imported_input.part7_actor_mailbox_runtime_replay_key =
-                imported_surface.part7_actor_mailbox_runtime_replay_key;
-            imported_input.part7_actor_lowering_replay_key =
-                imported_surface.part7_actor_lowering_replay_key;
-            imported_input.part7_actor_isolation_lowering_replay_key =
-                imported_surface.part7_actor_isolation_lowering_replay_key;
-            imported_input.part11_ffi_metadata_interface_preservation_present =
-                imported_surface.part11_ffi_metadata_interface_preservation_present;
-            imported_input.part11_ffi_runtime_import_artifact_ready =
-                imported_surface.part11_ffi_runtime_import_artifact_ready;
-            imported_input.part11_ffi_separate_compilation_preservation_ready =
+            imported_input.error_handling_result_and_bridging_artifact_replay_present =
+                imported_surface.error_handling_result_and_bridging_artifact_replay_present;
+            imported_input.error_handling_binary_artifact_replay_ready =
+                imported_surface.error_handling_binary_artifact_replay_ready;
+            imported_input.error_handling_runtime_import_artifact_ready =
+                imported_surface.error_handling_runtime_import_artifact_ready;
+            imported_input.error_handling_separate_compilation_replay_ready =
+                imported_surface.error_handling_separate_compilation_replay_ready;
+            imported_input.error_handling_deterministic =
+                imported_surface.error_handling_deterministic;
+            imported_input.error_handling_contract_id = imported_surface.error_handling_contract_id;
+            imported_input.error_handling_source_contract_id =
+                imported_surface.error_handling_source_contract_id;
+            imported_input.error_handling_result_and_bridging_artifact_replay_key =
+                imported_surface.error_handling_result_and_bridging_artifact_replay_key;
+            imported_input.error_handling_error_handling_replay_key =
+                imported_surface.error_handling_error_handling_replay_key;
+            imported_input.error_handling_throws_replay_key =
+                imported_surface.error_handling_throws_replay_key;
+            imported_input.error_handling_result_like_replay_key =
+                imported_surface.error_handling_result_like_replay_key;
+            imported_input.error_handling_ns_error_replay_key =
+                imported_surface.error_handling_ns_error_replay_key;
+            imported_input.error_handling_unwind_replay_key =
+                imported_surface.error_handling_unwind_replay_key;
+            imported_input.concurrency_actor_mailbox_runtime_import_present =
+                imported_surface.concurrency_actor_mailbox_runtime_import_present;
+            imported_input.concurrency_actor_mailbox_runtime_ready =
+                imported_surface.concurrency_actor_mailbox_runtime_ready;
+            imported_input.concurrency_actor_mailbox_runtime_deterministic =
+                imported_surface.concurrency_actor_mailbox_runtime_deterministic;
+            imported_input.concurrency_actor_contract_id =
+                imported_surface.concurrency_actor_mailbox_runtime_contract_id;
+            imported_input.concurrency_actor_source_contract_id =
+                imported_surface.concurrency_actor_mailbox_runtime_source_contract_id;
+            imported_input.concurrency_actor_mailbox_runtime_replay_key =
+                imported_surface.concurrency_actor_mailbox_runtime_replay_key;
+            imported_input.concurrency_actor_lowering_replay_key =
+                imported_surface.concurrency_actor_lowering_replay_key;
+            imported_input.concurrency_actor_isolation_lowering_replay_key =
+                imported_surface.concurrency_actor_isolation_lowering_replay_key;
+            imported_input.interop_ffi_metadata_interface_preservation_present =
+                imported_surface.interop_ffi_metadata_interface_preservation_present;
+            imported_input.interop_ffi_runtime_import_artifact_ready =
+                imported_surface.interop_ffi_runtime_import_artifact_ready;
+            imported_input.interop_ffi_separate_compilation_preservation_ready =
                 imported_surface
-                    .part11_ffi_separate_compilation_preservation_ready;
-            imported_input.part11_ffi_deterministic =
-                imported_surface.part11_ffi_deterministic;
-            imported_input.part11_ffi_contract_id =
-                imported_surface.part11_ffi_contract_id;
-            imported_input.part11_ffi_source_contract_id =
-                imported_surface.part11_ffi_source_contract_id;
-            imported_input.part11_ffi_preservation_contract_id =
-                imported_surface.part11_ffi_preservation_contract_id;
-            imported_input.part11_ffi_replay_key =
-                imported_surface.part11_ffi_replay_key;
-            imported_input.part11_ffi_lowering_replay_key =
-                imported_surface.part11_ffi_lowering_replay_key;
-            imported_input.part11_ffi_preservation_replay_key =
-                imported_surface.part11_ffi_preservation_replay_key;
-            imported_input.part11_ffi_local_foreign_callable_count =
-                imported_surface.part11_ffi_local_foreign_callable_count;
-            imported_input.part11_ffi_local_metadata_preservation_sites =
-                imported_surface.part11_ffi_local_metadata_preservation_sites;
-            imported_input.part11_ffi_local_interface_annotation_sites =
-                imported_surface.part11_ffi_local_interface_annotation_sites;
-            imported_input.part11_header_module_bridge_generation_present =
-                imported_surface.part11_header_module_bridge_generation_present;
-            imported_input.part11_header_module_bridge_runtime_generation_ready =
+                    .interop_ffi_separate_compilation_preservation_ready;
+            imported_input.interop_ffi_deterministic =
+                imported_surface.interop_ffi_deterministic;
+            imported_input.interop_ffi_contract_id =
+                imported_surface.interop_ffi_contract_id;
+            imported_input.interop_ffi_source_contract_id =
+                imported_surface.interop_ffi_source_contract_id;
+            imported_input.interop_ffi_preservation_contract_id =
+                imported_surface.interop_ffi_preservation_contract_id;
+            imported_input.interop_ffi_replay_key =
+                imported_surface.interop_ffi_replay_key;
+            imported_input.interop_ffi_lowering_replay_key =
+                imported_surface.interop_ffi_lowering_replay_key;
+            imported_input.interop_ffi_preservation_replay_key =
+                imported_surface.interop_ffi_preservation_replay_key;
+            imported_input.interop_ffi_local_foreign_callable_count =
+                imported_surface.interop_ffi_local_foreign_callable_count;
+            imported_input.interop_ffi_local_metadata_preservation_sites =
+                imported_surface.interop_ffi_local_metadata_preservation_sites;
+            imported_input.interop_ffi_local_interface_annotation_sites =
+                imported_surface.interop_ffi_local_interface_annotation_sites;
+            imported_input.interop_header_module_bridge_generation_present =
+                imported_surface.interop_header_module_bridge_generation_present;
+            imported_input.interop_header_module_bridge_runtime_generation_ready =
                 imported_surface
-                    .part11_header_module_bridge_runtime_generation_ready;
+                    .interop_header_module_bridge_runtime_generation_ready;
             imported_input
-                .part11_header_module_bridge_cross_module_packaging_ready =
+                .interop_header_module_bridge_cross_module_packaging_ready =
                 imported_surface
-                    .part11_header_module_bridge_cross_module_packaging_ready;
-            imported_input.part11_header_module_bridge_deterministic =
-                imported_surface.part11_header_module_bridge_deterministic;
-            imported_input.part11_header_module_bridge_contract_id =
-                imported_surface.part11_header_module_bridge_contract_id;
-            imported_input.part11_header_module_bridge_source_contract_id =
-                imported_surface.part11_header_module_bridge_source_contract_id;
-            imported_input.part11_header_module_bridge_preservation_contract_id =
+                    .interop_header_module_bridge_cross_module_packaging_ready;
+            imported_input.interop_header_module_bridge_deterministic =
+                imported_surface.interop_header_module_bridge_deterministic;
+            imported_input.interop_header_module_bridge_contract_id =
+                imported_surface.interop_header_module_bridge_contract_id;
+            imported_input.interop_header_module_bridge_source_contract_id =
+                imported_surface.interop_header_module_bridge_source_contract_id;
+            imported_input.interop_header_module_bridge_preservation_contract_id =
                 imported_surface
-                    .part11_header_module_bridge_preservation_contract_id;
-            imported_input.part11_header_module_bridge_replay_key =
-                imported_surface.part11_header_module_bridge_replay_key;
-            imported_input.part11_header_module_bridge_preservation_replay_key =
+                    .interop_header_module_bridge_preservation_contract_id;
+            imported_input.interop_header_module_bridge_replay_key =
+                imported_surface.interop_header_module_bridge_replay_key;
+            imported_input.interop_header_module_bridge_preservation_replay_key =
                 imported_surface
-                    .part11_header_module_bridge_preservation_replay_key;
-            imported_input.part11_bridge_header_artifact_relative_path =
-                imported_surface.part11_bridge_header_artifact_relative_path;
-            imported_input.part11_bridge_module_artifact_relative_path =
-                imported_surface.part11_bridge_module_artifact_relative_path;
-            imported_input.part11_bridge_artifact_relative_path =
-                imported_surface.part11_bridge_artifact_relative_path;
-            imported_input.part11_header_module_bridge_local_foreign_callable_count =
+                    .interop_header_module_bridge_preservation_replay_key;
+            imported_input.interop_bridge_header_artifact_relative_path =
+                imported_surface.interop_bridge_header_artifact_relative_path;
+            imported_input.interop_bridge_module_artifact_relative_path =
+                imported_surface.interop_bridge_module_artifact_relative_path;
+            imported_input.interop_bridge_artifact_relative_path =
+                imported_surface.interop_bridge_artifact_relative_path;
+            imported_input.interop_header_module_bridge_local_foreign_callable_count =
                 imported_surface
-                    .part11_header_module_bridge_local_foreign_callable_count;
+                    .interop_header_module_bridge_local_foreign_callable_count;
             imported_input
-                .part10_macro_host_process_cache_runtime_integration_present =
+                .metaprogramming_macro_host_process_cache_runtime_integration_present =
                 imported_surface
-                    .part10_macro_host_process_cache_runtime_integration_present;
-            imported_input.part10_macro_host_process_cache_runtime_ready =
-                imported_surface.part10_macro_host_process_cache_runtime_ready;
+                    .metaprogramming_macro_host_process_cache_runtime_integration_present;
+            imported_input.metaprogramming_macro_host_process_cache_runtime_ready =
+                imported_surface.metaprogramming_macro_host_process_cache_runtime_ready;
             imported_input
-                .part10_macro_host_process_cache_separate_compilation_ready =
+                .metaprogramming_macro_host_process_cache_separate_compilation_ready =
                 imported_surface
-                    .part10_macro_host_process_cache_separate_compilation_ready;
-            imported_input.part10_macro_host_process_cache_deterministic =
-                imported_surface.part10_macro_host_process_cache_deterministic;
-            imported_input.part10_macro_host_process_cache_contract_id =
-                imported_surface.part10_macro_host_process_cache_contract_id;
-            imported_input.part10_macro_host_process_cache_source_contract_id =
+                    .metaprogramming_macro_host_process_cache_separate_compilation_ready;
+            imported_input.metaprogramming_macro_host_process_cache_deterministic =
+                imported_surface.metaprogramming_macro_host_process_cache_deterministic;
+            imported_input.metaprogramming_macro_host_process_cache_contract_id =
+                imported_surface.metaprogramming_macro_host_process_cache_contract_id;
+            imported_input.metaprogramming_macro_host_process_cache_source_contract_id =
                 imported_surface
-                    .part10_macro_host_process_cache_source_contract_id;
-            imported_input.part10_macro_host_process_cache_replay_key =
-                imported_surface.part10_macro_host_process_cache_replay_key;
+                    .metaprogramming_macro_host_process_cache_source_contract_id;
+            imported_input.metaprogramming_macro_host_process_cache_replay_key =
+                imported_surface.metaprogramming_macro_host_process_cache_replay_key;
             imported_input
-                .part10_macro_host_process_cache_host_executable_relative_path =
+                .metaprogramming_macro_host_process_cache_host_executable_relative_path =
                 imported_surface
-                    .part10_macro_host_process_cache_host_executable_relative_path;
-            imported_input.part10_macro_host_process_cache_root_relative_path =
+                    .metaprogramming_macro_host_process_cache_host_executable_relative_path;
+            imported_input.metaprogramming_macro_host_process_cache_root_relative_path =
                 imported_surface
-                    .part10_macro_host_process_cache_root_relative_path;
+                    .metaprogramming_macro_host_process_cache_root_relative_path;
             imported_input.block_ownership_artifact_preservation_present =
                 imported_surface.block_ownership_artifact_preservation_present;
             imported_input.block_ownership_runtime_import_artifact_ready =

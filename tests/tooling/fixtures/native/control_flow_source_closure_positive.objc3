@@ -1,0 +1,20 @@
+module m266ControlFlowControlFlowSourceClosurePositive;
+
+fn classify(maybeValue: id?) -> i32 {
+  guard let ready = maybeValue else {
+    return 7;
+  }
+
+  switch (2) {
+    case 1:
+      return 10;
+    case 2:
+      return 11;
+    default:
+      return 12;
+  }
+}
+
+fn main(maybeValue: id?) -> i32 {
+  return classify(maybeValue);
+}

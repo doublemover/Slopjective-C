@@ -1,5 +1,0 @@
-module Part9B003Function;
-
-fn plain() -> i32 __attribute__((objc_dynamic)) {
-  return 1;
-}

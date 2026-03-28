@@ -13,7 +13,7 @@ from typing import Any, Sequence
 
 
 ROOT = Path(__file__).resolve().parents[1]
-INTEGRATION_SCRIPT = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+INTEGRATION_SCRIPT = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "runtime" / "architecture-integration" / "summary.json"
 ACCEPTANCE_REPORT = ROOT / "tmp" / "reports" / "runtime" / "acceptance" / "summary.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "runtime" / "runnable-error-conformance" / "summary.json"
@@ -79,7 +79,7 @@ def load_json(path: Path) -> dict[str, Any]:
 def main() -> int:
     if os.environ.get("OBJC3C_SKIP_INTEGRATION_RERUN") != "1":
         integration_result = run_capture(
-            [sys.executable, str(INTEGRATION_SCRIPT), "validate-runtime-architecture"]
+            [sys.executable, str(INTEGRATION_SCRIPT)]
         )
         if integration_result.returncode != 0:
             raise RuntimeError("runtime architecture integration workflow failed")

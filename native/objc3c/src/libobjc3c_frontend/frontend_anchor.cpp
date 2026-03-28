@@ -566,14 +566,14 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   }
 
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.part6_result_bridge_artifact_replay_json.empty()) {
+      !product.artifact_bundle.error_handling_result_bridge_artifact_replay_json.empty()) {
 
     const std::filesystem::path replay_out =
-        BuildPart6ResultBridgeArtifactReplayPath(out_dir, emit_prefix);
+        BuildErrorHandlingResultBridgeArtifactReplayPath(out_dir, emit_prefix);
     std::string io_error;
     if (!WriteTextFile(
             replay_out,
-            product.artifact_bundle.part6_result_bridge_artifact_replay_json,
+            product.artifact_bundle.error_handling_result_bridge_artifact_replay_json,
             io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
@@ -619,12 +619,12 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   // Part 11 lane-E anchors: the frontend C API preserves
   // the same D002 generated-bridge artifacts as the native driver path.
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.part11_bridge_header_artifact_text.empty()) {
+      !product.artifact_bundle.interop_bridge_header_artifact_text.empty()) {
     const std::filesystem::path header_out =
-        BuildPart11BridgeHeaderArtifactPath(out_dir, emit_prefix);
+        BuildInteropBridgeHeaderArtifactPath(out_dir, emit_prefix);
     std::string io_error;
     if (!WriteTextFile(header_out,
-                       product.artifact_bundle.part11_bridge_header_artifact_text,
+                       product.artifact_bundle.interop_bridge_header_artifact_text,
                        io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
@@ -633,12 +633,12 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.part11_bridge_module_artifact_text.empty()) {
+      !product.artifact_bundle.interop_bridge_module_artifact_text.empty()) {
     const std::filesystem::path module_out =
-        BuildPart11BridgeModuleArtifactPath(out_dir, emit_prefix);
+        BuildInteropBridgeModuleArtifactPath(out_dir, emit_prefix);
     std::string io_error;
     if (!WriteTextFile(module_out,
-                       product.artifact_bundle.part11_bridge_module_artifact_text,
+                       product.artifact_bundle.interop_bridge_module_artifact_text,
                        io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
@@ -647,12 +647,12 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
     }
   }
   if (result->status == OBJC3C_FRONTEND_STATUS_OK && has_out_dir &&
-      !product.artifact_bundle.part11_bridge_artifact_json.empty()) {
+      !product.artifact_bundle.interop_bridge_artifact_json.empty()) {
     const std::filesystem::path bridge_out =
-        BuildPart11BridgeArtifactPath(out_dir, emit_prefix);
+        BuildInteropBridgeArtifactPath(out_dir, emit_prefix);
     std::string io_error;
     if (!WriteTextFile(bridge_out,
-                       product.artifact_bundle.part11_bridge_artifact_json,
+                       product.artifact_bundle.interop_bridge_artifact_json,
                        io_error)) {
       result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
       result->process_exit_code = 2;
@@ -733,9 +733,9 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                  .advanced_feature_ops_contract_id =
                      "objc3c.advanced.feature.ci.runbook.dashboard.contract.v1",
                  .advanced_feature_reporting_contract_id =
-                     "objc3c.part12.feature.aware.conformance.report.emission.v1",
+                     "objc3c.tooling.feature.aware.conformance.report.emission.v1",
                  .advanced_feature_release_evidence_contract_id =
-                     "objc3c.part12.corpus.sharding.release.evidence.packaging.v1",
+                     "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1",
                  .ci_release_evidence_gate_script_path =
                      "scripts/check_release_evidence.py",
                  .runbook_reference_path =

@@ -1233,26 +1233,26 @@ struct Objc3FrontendObjectPointerNullabilityGenericsSummary {
   bool deterministic_object_pointer_nullability_generics_handoff = true;
 };
 
-inline constexpr const char *kObjc3Part3TypeSourceClosureContractId =
-    "objc3c.part3.type.source.closure.v1";
-inline constexpr const char *kObjc3Part3TypeSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part3_type_source_closure";
-inline constexpr const char *kObjc3Part3TypeSourceClosureSourceModel =
+inline constexpr const char *kObjc3TypeSystemTypeSourceClosureContractId =
+    "objc3c.type_system.type.source.closure.v1";
+inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_type_system_type_source_closure";
+inline constexpr const char *kObjc3TypeSystemTypeSourceClosureSourceModel =
     "protocol-optional-partitions-object-pointer-nullability-generic-suffixes-optional-bindings-optional-sends-optional-member-access-nil-coalescing-and-typed-keypaths-are-live-parser-owned-source-surfaces";
-inline constexpr const char *kObjc3Part3TypeSourceClosureFailureModel =
+inline constexpr const char *kObjc3TypeSystemTypeSourceClosureFailureModel =
     "typed-keypath-literals-remain-source-sema-surfaces-while-native-lowering-now-emits-stable-descriptor-handles-for-the-validated-single-component-subset";
-inline constexpr const char *kObjc3Part3TypeSemanticModelContractId =
-    "objc3c.part3.type.semantic.model.v1";
-inline constexpr const char *kObjc3Part3TypeSemanticModelSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part3_type_semantic_model";
-inline constexpr const char *kObjc3Part3TypeSemanticModelCoreRule =
+inline constexpr const char *kObjc3TypeSystemTypeSemanticModelContractId =
+    "objc3c.type_system.type.semantic.model.v1";
+inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_type_system_type_semantic_model";
+inline constexpr const char *kObjc3TypeSystemTypeSemanticModelCoreRule =
     "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
 
-struct Objc3FrontendPart3TypeSourceClosureSummary {
-  std::string contract_id = kObjc3Part3TypeSourceClosureContractId;
-  std::string frontend_surface_path = kObjc3Part3TypeSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part3TypeSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part3TypeSourceClosureFailureModel;
+struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
+  std::string contract_id = kObjc3TypeSystemTypeSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3TypeSystemTypeSourceClosureSurfacePath;
+  std::string source_model = kObjc3TypeSystemTypeSourceClosureSourceModel;
+  std::string failure_model = kObjc3TypeSystemTypeSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions,
       kObjc3SourceOnlyFeatureClaimObjectPointerNullabilitySuffixes,
@@ -1293,36 +1293,36 @@ struct Objc3FrontendPart3TypeSourceClosureSummary {
   std::string failure_reason;
 };
 
-inline constexpr const char *kObjc3Part5ControlFlowSourceClosureContractId =
-    "objc3c.part5.control.flow.source.closure.v1";
-inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part5_control_flow_source_closure";
-inline constexpr const char *kObjc3Part5ControlFlowSourceClosureSourceModel =
+inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureContractId =
+    "objc3c.control_flow.control.flow.source.closure.v1";
+inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_control_flow_control_flow_source_closure";
+inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureSourceModel =
     "guard-condition-lists-defer-statements-and-statement-match-patterns-are-live-frontend-owned-control-flow-surfaces-while-match-expression-guarded-patterns-and-type-test-patterns-remain-fail-closed";
-inline constexpr const char *kObjc3Part5ControlFlowSourceClosureFailureModel =
+inline constexpr const char *kObjc3ControlFlowControlFlowSourceClosureFailureModel =
     "match-remains-statement-only-and-guarded-or-type-test-patterns-remain-fail-closed-until-later-sema-lowering-and-runtime-work";
 
-struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
-  std::string contract_id = kObjc3Part5ControlFlowSourceClosureContractId;
+struct Objc3FrontendControlFlowControlFlowSourceClosureSummary {
+  std::string contract_id = kObjc3ControlFlowControlFlowSourceClosureContractId;
   std::string frontend_surface_path =
-      kObjc3Part5ControlFlowSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part5ControlFlowSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part5ControlFlowSourceClosureFailureModel;
+      kObjc3ControlFlowControlFlowSourceClosureSurfacePath;
+  std::string source_model = kObjc3ControlFlowControlFlowSourceClosureSourceModel;
+  std::string failure_model = kObjc3ControlFlowControlFlowSourceClosureFailureModel;
   std::vector<std::string> supported_construct_ids = {
-      kObjc3Part5SourceSurfaceGuardBindings,
-      kObjc3Part5SourceSurfaceGuardConditionLists,
-      kObjc3Part5SourceSurfaceSwitchCasePatterns,
-      kObjc3Part5SourceSurfaceDeferStatements,
-      kObjc3Part5SourceSurfaceMatchStatement,
-      kObjc3Part5SourceSurfaceMatchWildcardPatterns,
-      kObjc3Part5SourceSurfaceMatchLiteralPatterns,
-      kObjc3Part5SourceSurfaceMatchBindingPatterns,
-      kObjc3Part5SourceSurfaceMatchResultCasePatterns,
+      kObjc3ControlFlowSourceSurfaceGuardBindings,
+      kObjc3ControlFlowSourceSurfaceGuardConditionLists,
+      kObjc3ControlFlowSourceSurfaceSwitchCasePatterns,
+      kObjc3ControlFlowSourceSurfaceDeferStatements,
+      kObjc3ControlFlowSourceSurfaceMatchStatement,
+      kObjc3ControlFlowSourceSurfaceMatchWildcardPatterns,
+      kObjc3ControlFlowSourceSurfaceMatchLiteralPatterns,
+      kObjc3ControlFlowSourceSurfaceMatchBindingPatterns,
+      kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns,
   };
   std::vector<std::string> fail_closed_construct_ids = {
-      kObjc3Part5FailClosedConstructMatchExpression,
-      kObjc3Part5FailClosedConstructGuardedPatterns,
-      kObjc3Part5FailClosedConstructMatchTypeTestPatterns,
+      kObjc3ControlFlowFailClosedConstructMatchExpression,
+      kObjc3ControlFlowFailClosedConstructGuardedPatterns,
+      kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns,
   };
   std::size_t guard_binding_sites = 0;
   std::size_t guard_binding_clause_sites = 0;
@@ -1357,29 +1357,29 @@ struct Objc3FrontendPart5ControlFlowSourceClosureSummary {
   std::string failure_reason;
 };
 
-inline constexpr const char *kObjc3Part6ErrorSourceClosureContractId =
-    "objc3c.part6.error.source.closure.v1";
-inline constexpr const char *kObjc3Part6ErrorSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part6_error_source_closure";
-inline constexpr const char *kObjc3Part6ErrorSourceClosureSourceModel =
+inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureContractId =
+    "objc3c.error_handling.error.source.closure.v1";
+inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_error_handling_error_source_closure";
+inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureSourceModel =
     "throws-declarations-result-carrier-profiles-nserror-bridging-profiles-and-canonical-error-bridge-markers-are-live-frontend-owned-source-surfaces-while-try-throw-and-do-catch-remain-reserved-fail-closed";
-inline constexpr const char *kObjc3Part6ErrorSourceClosureFailureModel =
-    "try-expressions-throw-statements-and-do-catch-remain-parse-owned-fail-closed-boundaries-until-runnable-part6-sema-lowering-and-runtime-work";
+inline constexpr const char *kObjc3ErrorHandlingErrorSourceClosureFailureModel =
+    "try-expressions-throw-statements-and-do-catch-remain-parse-owned-fail-closed-boundaries-until-runnable-error_handling-sema-lowering-and-runtime-work";
 
-struct Objc3FrontendPart6ErrorSourceClosureSummary {
-  std::string contract_id = kObjc3Part6ErrorSourceClosureContractId;
-  std::string frontend_surface_path = kObjc3Part6ErrorSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part6ErrorSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part6ErrorSourceClosureFailureModel;
+struct Objc3FrontendErrorHandlingErrorSourceClosureSummary {
+  std::string contract_id = kObjc3ErrorHandlingErrorSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3ErrorHandlingErrorSourceClosureSurfacePath;
+  std::string source_model = kObjc3ErrorHandlingErrorSourceClosureSourceModel;
+  std::string failure_model = kObjc3ErrorHandlingErrorSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimThrowsDeclarations,
       kObjc3SourceOnlyFeatureClaimResultCarrierProfiles,
       kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles,
   };
   std::vector<std::string> fail_closed_construct_ids = {
-      kObjc3Part6FailClosedConstructTryExpressions,
-      kObjc3Part6FailClosedConstructThrowStatements,
-      kObjc3Part6FailClosedConstructDoCatchStatements,
+      kObjc3ErrorHandlingFailClosedConstructTryExpressions,
+      kObjc3ErrorHandlingFailClosedConstructThrowStatements,
+      kObjc3ErrorHandlingFailClosedConstructDoCatchStatements,
   };
   std::size_t function_throws_declaration_sites = 0;
   std::size_t method_throws_declaration_sites = 0;
@@ -1415,26 +1415,26 @@ struct Objc3FrontendPart6ErrorSourceClosureSummary {
   std::string failure_reason;
 };
 
-inline constexpr const char *kObjc3Part7AsyncSourceClosureContractId =
-    "objc3c.part7.async.source.closure.v1";
-inline constexpr const char *kObjc3Part7AsyncSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_async_source_closure";
-inline constexpr const char *kObjc3Part7AsyncSourceClosureSourceModel =
+inline constexpr const char *kObjc3ConcurrencyAsyncSourceClosureContractId =
+    "objc3c.concurrency.async.source.closure.v1";
+inline constexpr const char *kObjc3ConcurrencyAsyncSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_async_source_closure";
+inline constexpr const char *kObjc3ConcurrencyAsyncSourceClosureSourceModel =
     "async-entry-await-expression-and-executor-affinity-syntax-are-live-frontend-owned-source-surfaces-while-continuation-lowering-suspension-cleanup-and-runtime-scheduling-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7AsyncSourceClosureFailureModel =
+inline constexpr const char *kObjc3ConcurrencyAsyncSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-runnable-continuation-abi-suspension-cleanup-or-executor-runtime-behavior";
-inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_actor_member_and_isolation_source_closure";
-inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureSourceModel =
+inline constexpr const char *kObjc3ConcurrencyActorMemberIsolationSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_actor_member_and_isolation_source_closure";
+inline constexpr const char *kObjc3ConcurrencyActorMemberIsolationSourceClosureSourceModel =
     "actor-class-declarations-actor-members-and-objc-nonisolated-annotations-are-live-frontend-owned-source-surfaces-while-actor-legality-diagnostics-and-runnable-actor-runtime-behavior-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7ActorMemberIsolationSourceClosureFailureModel =
+inline constexpr const char *kObjc3ConcurrencyActorMemberIsolationSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-actor-member-legality-diagnostics-cross-actor-enforcement-or-runnable-actor-runtime-behavior";
 
-struct Objc3FrontendPart7AsyncSourceClosureSummary {
-  std::string contract_id = kObjc3Part7AsyncSourceClosureContractId;
-  std::string frontend_surface_path = kObjc3Part7AsyncSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part7AsyncSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part7AsyncSourceClosureFailureModel;
+struct Objc3FrontendConcurrencyAsyncSourceClosureSummary {
+  std::string contract_id = kObjc3ConcurrencyAsyncSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3ConcurrencyAsyncSourceClosureSurfacePath;
+  std::string source_model = kObjc3ConcurrencyAsyncSourceClosureSourceModel;
+  std::string failure_model = kObjc3ConcurrencyAsyncSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimAsyncDeclarations,
       kObjc3SourceOnlyFeatureClaimAwaitExpressions,
@@ -1459,14 +1459,14 @@ struct Objc3FrontendPart7AsyncSourceClosureSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary {
+struct Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary {
   std::string contract_id = kObjc3ActorMemberIsolationSourceClosureContractId;
   std::string frontend_surface_path =
-      kObjc3Part7ActorMemberIsolationSourceClosureSurfacePath;
+      kObjc3ConcurrencyActorMemberIsolationSourceClosureSurfacePath;
   std::string source_model =
-      kObjc3Part7ActorMemberIsolationSourceClosureSourceModel;
+      kObjc3ConcurrencyActorMemberIsolationSourceClosureSourceModel;
   std::string failure_model =
-      kObjc3Part7ActorMemberIsolationSourceClosureFailureModel;
+      kObjc3ConcurrencyActorMemberIsolationSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimActorDeclarationMarkers,
       kObjc3SourceOnlyFeatureClaimActorMemberSurfaces,
@@ -1490,164 +1490,164 @@ struct Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary {
   std::string failure_reason;
 };
 
-inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part7_task_group_and_cancellation_source_closure";
-inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureSourceModel =
+inline constexpr const char *kObjc3ConcurrencyTaskGroupCancellationSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_concurrency_task_group_and_cancellation_source_closure";
+inline constexpr const char *kObjc3ConcurrencyTaskGroupCancellationSourceClosureSourceModel =
     "task-creation-task-group-and-cancellation-call-surfaces-are-live-frontend-owned-source-surfaces-while-runnable-task-allocation-executor-hops-and-scheduler-execution-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part7TaskGroupCancellationSourceClosureFailureModel =
+inline constexpr const char *kObjc3ConcurrencyTaskGroupCancellationSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-runnable-task-allocation-task-group-execution-or-scheduler-backed-cancellation-runtime-behavior";
 
-inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part8_resource_borrowed_and_capture_list_source_closure";
-inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureSourceModel =
+inline constexpr const char *kObjc3OwnershipSystemExtensionSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_ownership_resource_borrowed_and_capture_list_source_closure";
+inline constexpr const char *kObjc3OwnershipSystemExtensionSourceClosureSourceModel =
     "resource-let-attributes-borrowed-pointer-qualifiers-borrowed-return-relations-and-explicit-block-capture-lists-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-lifetime-enforcement-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part8SystemExtensionSourceClosureFailureModel =
+inline constexpr const char *kObjc3OwnershipSystemExtensionSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-resource-cleanup-lowering-borrowed-escape-enforcement-or-runnable-capture-ownership-runtime-behavior";
-inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part8_cleanup_resource_and_capture_source_completion";
-inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionSourceModel =
+inline constexpr const char *kObjc3OwnershipCleanupResourceCaptureSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_ownership_cleanup_resource_and_capture_source_completion";
+inline constexpr const char *kObjc3OwnershipCleanupResourceCaptureSourceCompletionSourceModel =
     "cleanup-hooks-resource-sugar-and-explicit-block-capture-surface-forms-are-live-frontend-owned-source-surfaces-while-legality-diagnostics-cleanup-lowering-and-runtime-resource-ownership-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part8CleanupResourceCaptureSourceCompletionFailureModel =
+inline constexpr const char *kObjc3OwnershipCleanupResourceCaptureSourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-cleanup-lowering-resource-runtime-behavior-or-borrowed-pointer-semantic-enforcement";
-inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part8_retainable_c_family_source_completion";
-inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionSourceModel =
+inline constexpr const char *kObjc3OwnershipRetainableCFamilySourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_ownership_retainable_c_family_source_completion";
+inline constexpr const char *kObjc3OwnershipRetainableCFamilySourceCompletionSourceModel =
     "retainable-c-family-callable-annotations-and-compatibility-aliases-are-live-frontend-owned-source-surfaces-while-family-legality-arc-integration-and-runtime-interop-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part8RetainableCFamilySourceCompletionFailureModel =
+inline constexpr const char *kObjc3OwnershipRetainableCFamilySourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-retainable-c-family-legality-arc-interop-or-runnable-family-runtime-behavior";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_and_dynamism_source_closure";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureSourceModel =
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_dispatch_dispatch_intent_and_dynamism_source_closure";
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceClosureSourceModel =
     "direct-final-sealed-and-dynamism-control-attributes-are-live-frontend-owned-source-surfaces-while-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceClosureFailureModel =
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceClosureFailureModel =
     "frontend-source-closure-does-not-yet-claim-direct-dispatch-legality-final-sealed-enforcement-or-runnable-dispatch-boundary-behavior";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part9_dispatch_intent_attribute_and_defaulting_source_completion";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionSourceModel =
-    "prefixed-container-attributes-direct-members-defaulting-and-dynamic-opt-out-surfaces-are-live-frontend-owned-source-surfaces-while-part9-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part9DispatchIntentSourceCompletionFailureModel =
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_dispatch_dispatch_intent_attribute_and_defaulting_source_completion";
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceCompletionSourceModel =
+    "prefixed-container-attributes-direct-members-defaulting-and-dynamic-opt-out-surfaces-are-live-frontend-owned-source-surfaces-while-dispatch-legality-lowering-metadata-and-runtime-dispatch-realization-remain-later-runtime-work";
+inline constexpr const char *kObjc3DispatchDispatchIntentSourceCompletionFailureModel =
     "frontend-source-completion-does-not-yet-claim-final-sealed-legality-enforcement-direct-call-lowering-or-runnable-dispatch-boundary-behavior";
-inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part10_derive_macro_property_behavior_source_closure";
-inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureSourceModel =
+inline constexpr const char *kObjc3MetaprogrammingMetaprogrammingSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_metaprogramming_derive_macro_property_behavior_source_closure";
+inline constexpr const char *kObjc3MetaprogrammingMetaprogrammingSourceClosureSourceModel =
     "derive-markers-macro-markers-and-property-behavior-markers-are-live-parser-owned-source-surfaces-while-expansion-synthesis-and-runtime-behavior-remain-deferred";
-inline constexpr const char *kObjc3Part10MetaprogrammingSourceClosureFailureModel =
-    "part10-stays-source-closure-only-with-no-macro-expansion-derived-conformance-synthesis-or-property-runtime-claims-yet";
-inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part10_macro_package_and_provenance_source_completion";
-inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionSourceModel =
+inline constexpr const char *kObjc3MetaprogrammingMetaprogrammingSourceClosureFailureModel =
+    "metaprogramming-stays-source-closure-only-with-no-macro-expansion-derived-conformance-synthesis-or-property-runtime-claims-yet";
+inline constexpr const char *kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_metaprogramming_macro_package_and_provenance_source_completion";
+inline constexpr const char *kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionSourceModel =
     "macro-package-markers-macro-provenance-markers-and-expansion-visible-source-state-are-live-frontend-owned-surfaces-while-expansion-execution-and-sandboxing-remain-deferred";
-inline constexpr const char *kObjc3Part10MacroPackageProvenanceSourceCompletionFailureModel =
-    "part10-source-completion-does-not-yet-claim-macro-expansion-engine-sandbox-or-runtime-package-loading";
-inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part10_property_behavior_and_synthesized_declaration_source_completion";
-inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionSourceModel =
+inline constexpr const char *kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionFailureModel =
+    "metaprogramming-source-completion-does-not-yet-claim-macro-expansion-engine-sandbox-or-runtime-package-loading";
+inline constexpr const char *kObjc3MetaprogrammingPropertyBehaviorSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_metaprogramming_property_behavior_and_synthesized_declaration_source_completion";
+inline constexpr const char *kObjc3MetaprogrammingPropertyBehaviorSourceCompletionSourceModel =
     "behavior-bearing-properties-and-their-deterministic-synthesized-binding-and-accessor-visibility-source-state-are-live-frontend-owned-surfaces-while-real-property-behavior-expansion-and-runtime-hooks-remain-deferred";
-inline constexpr const char *kObjc3Part10PropertyBehaviorSourceCompletionFailureModel =
-    "part10-source-completion-does-not-yet-claim-property-behavior-expansion-runtime-hooks-or-executable-synthesized-declaration-materialization";
-inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part11_foreign_declaration_and_import_source_closure";
-inline constexpr const char *kObjc3Part11ForeignImportSourceClosureSourceModel =
+inline constexpr const char *kObjc3MetaprogrammingPropertyBehaviorSourceCompletionFailureModel =
+    "metaprogramming-source-completion-does-not-yet-claim-property-behavior-expansion-runtime-hooks-or-executable-synthesized-declaration-materialization";
+inline constexpr const char *kObjc3InteropForeignImportSourceClosureSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_interop_foreign_declaration_and_import_source_closure";
+inline constexpr const char *kObjc3InteropForeignImportSourceClosureSourceModel =
     "foreign-callable-markers-import-module-annotations-and-base-interop-annotation-surfaces-are-live-frontend-owned-source-surfaces-while-cpp-swift-annotation-completion-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part11ForeignImportSourceClosureFailureModel =
-    "part11-source-closure-does-not-yet-claim-cpp-swift-specific-annotation-completion-interface-emission-ffi-lowering-or-runnable-bridge-generation";
-inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSurfacePath =
-    "frontend.pipeline.semantic_surface.objc_part11_cpp_and_swift_interop_annotation_source_completion";
-inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSourceModel =
+inline constexpr const char *kObjc3InteropForeignImportSourceClosureFailureModel =
+    "interop-source-closure-does-not-yet-claim-cpp-swift-specific-annotation-completion-interface-emission-ffi-lowering-or-runnable-bridge-generation";
+inline constexpr const char *kObjc3InteropCppSwiftInteropAnnotationSourceCompletionSurfacePath =
+    "frontend.pipeline.semantic_surface.objc_interop_cpp_and_swift_interop_annotation_source_completion";
+inline constexpr const char *kObjc3InteropCppSwiftInteropAnnotationSourceCompletionSourceModel =
     "swift-facing-name-private-markers-cpp-facing-name-markers-and-header-name-metadata-surfaces-are-live-frontend-owned-source-surfaces-while-interface-preservation-lowering-and-runtime-bridge-generation-remain-later-runtime-work";
-inline constexpr const char *kObjc3Part11CppSwiftInteropAnnotationSourceCompletionFailureModel =
-    "part11-source-completion-does-not-yet-claim-interface-emission-cpp-swift-runtime-bridging-or-runnable-cross-language-call-behavior";
+inline constexpr const char *kObjc3InteropCppSwiftInteropAnnotationSourceCompletionFailureModel =
+    "interop-source-completion-does-not-yet-claim-interface-emission-cpp-swift-runtime-bridging-or-runnable-cross-language-call-behavior";
 inline constexpr const char
-    *kObjc3Part12DiagnosticsMigratorSourceInventorySurfacePath =
+    *kObjc3ToolingDiagnosticsMigratorSourceInventorySurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part12_diagnostics_fixit_and_migrator_source_inventory";
+        "objc_tooling_diagnostics_fixit_and_migrator_source_inventory";
 inline constexpr const char
-    *kObjc3Part12DiagnosticsMigratorSourceInventorySourceModel =
-        "advanced-part6-through-part11-source-packets-and-migration-hints-are-aggregated-into-one-frontend-owned-inventory-for-diagnostics-fix-its-and-migrator-planning-while-feature-specific-synthesis-report-emission-and-release-automation-remain-later-runtime-work";
+    *kObjc3ToolingDiagnosticsMigratorSourceInventorySourceModel =
+        "advanced-error_handling-through-interop-source-packets-and-migration-hints-are-aggregated-into-one-frontend-owned-inventory-for-diagnostics-fix-its-and-migrator-planning-while-feature-specific-synthesis-report-emission-and-release-automation-remain-later-runtime-work";
 inline constexpr const char
-    *kObjc3Part12DiagnosticsMigratorSourceInventoryFailureModel =
-        "part12-source-inventory-does-not-yet-claim-feature-specific-fix-it-rewrites-legacy-to-canonical-migration-application-or-machine-readable-release-report-emission";
+    *kObjc3ToolingDiagnosticsMigratorSourceInventoryFailureModel =
+        "tooling-source-inventory-does-not-yet-claim-feature-specific-fix-it-rewrites-legacy-to-canonical-migration-application-or-machine-readable-release-report-emission";
 inline constexpr const char
-    *kObjc3Part12MigrationCanonicalizationSourceCompletionSurfacePath =
+    *kObjc3ToolingMigrationCanonicalizationSourceCompletionSurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part12_migration_and_canonicalization_source_completion";
+        "objc_tooling_migration_and_canonicalization_source_completion";
 inline constexpr const char
-    *kObjc3Part12MigrationCanonicalizationSourceCompletionSourceModel =
+    *kObjc3ToolingMigrationCanonicalizationSourceCompletionSourceModel =
         "migration-assist-enabled-legacy-yes-no-null-token-sites-are-canonicalized-by-the-lexer-and-published-as-a-deterministic-frontend-source-completion-packet";
 inline constexpr const char
-    *kObjc3Part12MigrationCanonicalizationSourceCompletionCompletionModel =
+    *kObjc3ToolingMigrationCanonicalizationSourceCompletionCompletionModel =
         "frontend-manifest-and-c-api-artifacts-now-publish-feature-aware-canonicalization-candidate-counts-and-rewrite-kind-counts-for-migrator-planning";
 inline constexpr const char
-    *kObjc3Part12MigrationCanonicalizationSourceCompletionFailureModel =
-        "part12-source-completion-does-not-yet-apply-rewrites-or-emit-machine-readable-fix-it-edits-beyond-deterministic-candidate-inventory";
+    *kObjc3ToolingMigrationCanonicalizationSourceCompletionFailureModel =
+        "tooling-source-completion-does-not-yet-apply-rewrites-or-emit-machine-readable-fix-it-edits-beyond-deterministic-candidate-inventory";
 inline constexpr const char
-    *kObjc3Part12DiagnosticTaxonomyPortabilitySurfacePath =
+    *kObjc3ToolingDiagnosticTaxonomyPortabilitySurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part12_diagnostic_taxonomy_and_portability_contract";
+        "objc_tooling_diagnostic_taxonomy_and_portability_contract";
 inline constexpr const char
-    *kObjc3Part12DiagnosticTaxonomyPortabilitySemanticModel =
-        "advanced-sema-diagnostic-taxonomy-and-portability-freeze-publishes-one-deterministic-part12-packet-over-the-live-arc-fixit-and-migration-surfaces";
+    *kObjc3ToolingDiagnosticTaxonomyPortabilitySemanticModel =
+        "advanced-sema-diagnostic-taxonomy-and-portability-freeze-publishes-one-deterministic-tooling-packet-over-the-live-arc-fixit-and-migration-surfaces";
 inline constexpr const char
-    *kObjc3Part12DiagnosticTaxonomyPortabilityPortabilityModel =
-        "advanced-feature-portability-claims-remain-anchored-to-completed-advanced-closeout-dependencies-while-part12-freezes-the-frontdoor-sema-contract";
+    *kObjc3ToolingDiagnosticTaxonomyPortabilityPortabilityModel =
+        "advanced-feature-portability-claims-remain-anchored-to-completed-advanced-closeout-dependencies-while-tooling-freezes-the-frontdoor-sema-contract";
 inline constexpr const char
-    *kObjc3Part12FeatureSpecificFixitSynthesisSurfacePath =
+    *kObjc3ToolingFeatureSpecificFixitSynthesisSurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part12_feature_specific_fixit_synthesis";
+        "objc_tooling_feature_specific_fixit_synthesis";
 inline constexpr const char
-    *kObjc3Part12FeatureSpecificFixitSynthesisSemanticModel =
-        "part12-now-publishes-one-deterministic-implementation-packet-over-the-live-migration-canonicalization-and-ownership-arc-fixit-slices";
+    *kObjc3ToolingFeatureSpecificFixitSynthesisSemanticModel =
+        "tooling-now-publishes-one-deterministic-implementation-packet-over-the-live-migration-canonicalization-and-ownership-arc-fixit-slices";
 inline constexpr const char
-    *kObjc3Part12LegacyCanonicalMigrationSemanticsSurfacePath =
+    *kObjc3ToolingLegacyCanonicalMigrationSemanticsSurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part12_legacy_canonical_migration_semantics";
+        "objc_tooling_legacy_canonical_migration_semantics";
 inline constexpr const char
-    *kObjc3Part12LegacyCanonicalMigrationSemanticsSemanticModel =
-        "part12-now-publishes-one-deterministic-compatibility-packet-over-the-live-canonical-mode-migration-assist-diagnostics-and-feature-specific-fixit-baseline";
+    *kObjc3ToolingLegacyCanonicalMigrationSemanticsSemanticModel =
+        "tooling-now-publishes-one-deterministic-compatibility-packet-over-the-live-canonical-mode-migration-assist-diagnostics-and-feature-specific-fixit-baseline";
 inline constexpr const char
-    *kObjc3Part12LegacyCanonicalMigrationSemanticsCompatibilityModel =
+    *kObjc3ToolingLegacyCanonicalMigrationSemanticsCompatibilityModel =
         "legacy-mode-keeps-inventory-only-while-canonical-mode-fails-closed-on-legacy-yes-no-null-literals-with-o3s216-and-preserves-the-canonical-literal-happy-path";
 inline constexpr const char
-    *kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath =
+    *kObjc3InteropForeignSurfaceInterfacePreservationSurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part11_foreign_surface_interface_and_module_preservation";
+        "objc_interop_foreign_surface_interface_and_module_preservation";
 inline constexpr const char
-    *kObjc3Part11ForeignSurfaceInterfacePreservationImportArtifactMemberName =
-        "objc_part11_foreign_surface_interface_and_module_preservation";
+    *kObjc3InteropForeignSurfaceInterfacePreservationImportArtifactMemberName =
+        "objc_interop_foreign_surface_interface_and_module_preservation";
 inline constexpr const char
-    *kObjc3Part11ForeignSurfaceInterfacePreservationSourceModel =
-        "runtime-import-surface-artifacts-preserve-part11-foreign-declaration-import-module-and-cpp-swift-facing-annotation-facts-for-separate-compilation-and-interface-inspection";
+    *kObjc3InteropForeignSurfaceInterfacePreservationSourceModel =
+        "runtime-import-surface-artifacts-preserve-interop-foreign-declaration-import-module-and-cpp-swift-facing-annotation-facts-for-separate-compilation-and-interface-inspection";
 inline constexpr const char
-    *kObjc3Part11ForeignSurfaceInterfacePreservationModel =
+    *kObjc3InteropForeignSurfaceInterfacePreservationModel =
         "provider-and-consumer-runtime-import-surface-artifacts-preserve-foreign-callable-import-module-and-cpp-swift-annotation-counts-and-module-name-facts-beyond-local-source-closure-packets";
 inline constexpr const char
-    *kObjc3Part11ForeignSurfaceInterfacePreservationFailClosedModel =
-        "missing-or-drifted-part11-preservation-packets-disable-cross-module-foreign-surface-preservation-claims";
+    *kObjc3InteropForeignSurfaceInterfacePreservationFailClosedModel =
+        "missing-or-drifted-interop-preservation-packets-disable-cross-module-foreign-surface-preservation-claims";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationContractId =
-        "objc3c.part11.header.module.and.bridge.generation.v1";
+    *kObjc3InteropHeaderModuleBridgeGenerationContractId =
+        "objc3c.interop.header.module.and.bridge.generation.v1";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationSourceContractId =
-        "objc3c.part11.bridge.packaging.and.toolchain.contract.v1";
+    *kObjc3InteropHeaderModuleBridgeGenerationSourceContractId =
+        "objc3c.interop.bridge.packaging.and.toolchain.contract.v1";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId =
-        "objc3c.part11.ffi.metadata.interface.preservation.v1";
+    *kObjc3InteropHeaderModuleBridgeGenerationPreservationContractId =
+        "objc3c.interop.ffi.metadata.interface.preservation.v1";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationSurfacePath =
+    *kObjc3InteropHeaderModuleBridgeGenerationSurfacePath =
         "frontend.pipeline.semantic_surface."
-        "objc_part11_header_module_and_bridge_generation";
+        "objc_interop_header_module_and_bridge_generation";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationImportArtifactMemberName =
-        "objc_part11_header_module_and_bridge_generation";
+    *kObjc3InteropHeaderModuleBridgeGenerationImportArtifactMemberName =
+        "objc_interop_header_module_and_bridge_generation";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationModel =
-        "compiler-emits-deterministic-header-modulemap-and-bridge-json-artifacts-for-supported-part11-foreign-callable-surfaces";
+    *kObjc3InteropHeaderModuleBridgeGenerationModel =
+        "compiler-emits-deterministic-header-modulemap-and-bridge-json-artifacts-for-supported-interop-foreign-callable-surfaces";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationPackagingModel =
-        "runtime-import-surfaces-and-cross-module-link-plans-preserve-generated-part11-header-module-and-bridge-artifact-paths";
+    *kObjc3InteropHeaderModuleBridgeGenerationPackagingModel =
+        "runtime-import-surfaces-and-cross-module-link-plans-preserve-generated-interop-header-module-and-bridge-artifact-paths";
 inline constexpr const char
-    *kObjc3Part11HeaderModuleBridgeGenerationFailClosedModel =
-        "missing-generated-artifacts-or-drifted-import-surface-bridge-packets-disable-live-part11-bridge-generation-claims";
+    *kObjc3InteropHeaderModuleBridgeGenerationFailClosedModel =
+        "missing-generated-artifacts-or-drifted-import-surface-bridge-packets-disable-live-interop-bridge-generation-claims";
 inline constexpr const char
     *kObjc3RuntimeStorageReflectionArtifactPreservationContractId =
         "objc3c.runtime.storage.reflection.artifact.preservation.v1";
@@ -1687,11 +1687,11 @@ inline constexpr const char
     *kObjc3RuntimeBlockOwnershipArtifactPreservationFailClosedModel =
         "missing-or-drifted-block-ownership-preservation-packets-disable-cross-module-block-ownership-claims";
 
-struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
-  std::string contract_id = kObjc3Part8SystemExtensionSourceClosureContractId;
-  std::string frontend_surface_path = kObjc3Part8SystemExtensionSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part8SystemExtensionSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part8SystemExtensionSourceClosureFailureModel;
+struct Objc3FrontendOwnershipSystemExtensionSourceClosureSummary {
+  std::string contract_id = kObjc3OwnershipSystemExtensionSourceClosureContractId;
+  std::string frontend_surface_path = kObjc3OwnershipSystemExtensionSourceClosureSurfacePath;
+  std::string source_model = kObjc3OwnershipSystemExtensionSourceClosureSourceModel;
+  std::string failure_model = kObjc3OwnershipSystemExtensionSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimResourceHandleAnnotations,
       kObjc3SourceOnlyFeatureClaimBorrowedPointerAnnotations,
@@ -1719,15 +1719,15 @@ struct Objc3FrontendPart8SystemExtensionSourceClosureSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary {
+struct Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary {
   std::string contract_id =
-      kObjc3Part8CleanupResourceCaptureSurfaceCompletionContractId;
+      kObjc3OwnershipCleanupResourceCaptureSurfaceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part8CleanupResourceCaptureSourceCompletionSurfacePath;
+      kObjc3OwnershipCleanupResourceCaptureSourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part8CleanupResourceCaptureSourceCompletionSourceModel;
+      kObjc3OwnershipCleanupResourceCaptureSourceCompletionSourceModel;
   std::string failure_model =
-      kObjc3Part8CleanupResourceCaptureSourceCompletionFailureModel;
+      kObjc3OwnershipCleanupResourceCaptureSourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimCleanupHookAnnotations,
       kObjc3SourceOnlyFeatureClaimResourceHandleAnnotations,
@@ -1755,15 +1755,15 @@ struct Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary {
+struct Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary {
   std::string contract_id =
-      kObjc3Part8RetainableCFamilySourceCompletionContractId;
+      kObjc3OwnershipRetainableCFamilySourceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part8RetainableCFamilySourceCompletionSurfacePath;
+      kObjc3OwnershipRetainableCFamilySourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part8RetainableCFamilySourceCompletionSourceModel;
+      kObjc3OwnershipRetainableCFamilySourceCompletionSourceModel;
   std::string failure_model =
-      kObjc3Part8RetainableCFamilySourceCompletionFailureModel;
+      kObjc3OwnershipRetainableCFamilySourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimRetainableCFamilyCallableAnnotations,
       kObjc3SourceOnlyFeatureClaimRetainableCFamilyCompatibilityAliases,
@@ -1782,12 +1782,12 @@ struct Objc3FrontendPart8RetainableCFamilySourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart9DispatchIntentSourceClosureSummary {
-  std::string contract_id = kObjc3Part9DispatchIntentSourceClosureContractId;
+struct Objc3FrontendDispatchDispatchIntentSourceClosureSummary {
+  std::string contract_id = kObjc3DispatchDispatchIntentSourceClosureContractId;
   std::string frontend_surface_path =
-      kObjc3Part9DispatchIntentSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part9DispatchIntentSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part9DispatchIntentSourceClosureFailureModel;
+      kObjc3DispatchDispatchIntentSourceClosureSurfacePath;
+  std::string source_model = kObjc3DispatchDispatchIntentSourceClosureSourceModel;
+  std::string failure_model = kObjc3DispatchDispatchIntentSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations,
       kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations,
@@ -1810,14 +1810,14 @@ struct Objc3FrontendPart9DispatchIntentSourceClosureSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary {
-  std::string contract_id = kObjc3Part9DispatchIntentSourceCompletionContractId;
+struct Objc3FrontendDispatchDispatchIntentSourceCompletionSummary {
+  std::string contract_id = kObjc3DispatchDispatchIntentSourceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part9DispatchIntentSourceCompletionSurfacePath;
+      kObjc3DispatchDispatchIntentSourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part9DispatchIntentSourceCompletionSourceModel;
+      kObjc3DispatchDispatchIntentSourceCompletionSourceModel;
   std::string failure_model =
-      kObjc3Part9DispatchIntentSourceCompletionFailureModel;
+      kObjc3DispatchDispatchIntentSourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimPrefixedDispatchIntentAttributes,
       kObjc3SourceOnlyFeatureClaimDirectMembersDefaultingSurfaces,
@@ -1840,14 +1840,14 @@ struct Objc3FrontendPart9DispatchIntentSourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart10MetaprogrammingSourceClosureSummary {
-  std::string contract_id = kObjc3Part10MetaprogrammingSourceClosureContractId;
+struct Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary {
+  std::string contract_id = kObjc3MetaprogrammingMetaprogrammingSourceClosureContractId;
   std::string frontend_surface_path =
-      kObjc3Part10MetaprogrammingSourceClosureSurfacePath;
+      kObjc3MetaprogrammingMetaprogrammingSourceClosureSurfacePath;
   std::string source_model =
-      kObjc3Part10MetaprogrammingSourceClosureSourceModel;
+      kObjc3MetaprogrammingMetaprogrammingSourceClosureSourceModel;
   std::string failure_model =
-      kObjc3Part10MetaprogrammingSourceClosureFailureModel;
+      kObjc3MetaprogrammingMetaprogrammingSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimDeriveMarkers,
       kObjc3SourceOnlyFeatureClaimMacroMarkers,
@@ -1865,15 +1865,15 @@ struct Objc3FrontendPart10MetaprogrammingSourceClosureSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary {
+struct Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary {
   std::string contract_id =
-      kObjc3Part10MacroPackageProvenanceSourceCompletionContractId;
+      kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part10MacroPackageProvenanceSourceCompletionSurfacePath;
+      kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part10MacroPackageProvenanceSourceCompletionSourceModel;
+      kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionSourceModel;
   std::string failure_model =
-      kObjc3Part10MacroPackageProvenanceSourceCompletionFailureModel;
+      kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimMacroMarkers,
       kObjc3SourceOnlyFeatureClaimMacroPackageMarkers,
@@ -1893,15 +1893,15 @@ struct Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary {
+struct Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary {
   std::string contract_id =
-      kObjc3Part10PropertyBehaviorSourceCompletionContractId;
+      kObjc3MetaprogrammingPropertyBehaviorSourceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part10PropertyBehaviorSourceCompletionSurfacePath;
+      kObjc3MetaprogrammingPropertyBehaviorSourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part10PropertyBehaviorSourceCompletionSourceModel;
+      kObjc3MetaprogrammingPropertyBehaviorSourceCompletionSourceModel;
   std::string failure_model =
-      kObjc3Part10PropertyBehaviorSourceCompletionFailureModel;
+      kObjc3MetaprogrammingPropertyBehaviorSourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimPropertyBehaviorMarkers,
       kObjc3SourceOnlyFeatureClaimPropertyBehaviorSynthesisVisibility,
@@ -1921,14 +1921,14 @@ struct Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart11ForeignImportSourceClosureSummary {
-  std::string contract_id = kObjc3Part11ForeignImportSourceClosureContractId;
+struct Objc3FrontendInteropForeignImportSourceClosureSummary {
+  std::string contract_id = kObjc3InteropForeignImportSourceClosureContractId;
   std::string frontend_surface_path =
-      kObjc3Part11ForeignImportSourceClosureSurfacePath;
+      kObjc3InteropForeignImportSourceClosureSurfacePath;
   std::string source_model =
-      kObjc3Part11ForeignImportSourceClosureSourceModel;
+      kObjc3InteropForeignImportSourceClosureSourceModel;
   std::string failure_model =
-      kObjc3Part11ForeignImportSourceClosureFailureModel;
+      kObjc3InteropForeignImportSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimForeignDeclarationMarkers,
       kObjc3SourceOnlyFeatureClaimImportedModuleAnnotations,
@@ -1948,15 +1948,15 @@ struct Objc3FrontendPart11ForeignImportSourceClosureSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary {
+struct Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary {
   std::string contract_id =
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId;
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSurfacePath;
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionSourceModel;
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionSourceModel;
   std::string failure_model =
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionFailureModel;
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimSwiftFacingAnnotationMarkers,
       kObjc3SourceOnlyFeatureClaimCppFacingAnnotationMarkers,
@@ -1978,30 +1978,30 @@ struct Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary {
+struct Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary {
   std::string contract_id =
-      kObjc3Part12DiagnosticsMigratorSourceInventoryContractId;
+      kObjc3ToolingDiagnosticsMigratorSourceInventoryContractId;
   std::string frontend_surface_path =
-      kObjc3Part12DiagnosticsMigratorSourceInventorySurfacePath;
+      kObjc3ToolingDiagnosticsMigratorSourceInventorySurfacePath;
   std::string source_model =
-      kObjc3Part12DiagnosticsMigratorSourceInventorySourceModel;
+      kObjc3ToolingDiagnosticsMigratorSourceInventorySourceModel;
   std::string failure_model =
-      kObjc3Part12DiagnosticsMigratorSourceInventoryFailureModel;
+      kObjc3ToolingDiagnosticsMigratorSourceInventoryFailureModel;
   std::vector<std::string> dependency_contract_ids = {
-      kObjc3Part6ErrorSourceClosureContractId,
-      kObjc3Part7AsyncSourceClosureContractId,
+      kObjc3ErrorHandlingErrorSourceClosureContractId,
+      kObjc3ConcurrencyAsyncSourceClosureContractId,
       kObjc3ActorMemberIsolationSourceClosureContractId,
-      kObjc3Part7TaskGroupCancellationSourceClosureContractId,
-      kObjc3Part8SystemExtensionSourceClosureContractId,
-      kObjc3Part8CleanupResourceCaptureSurfaceCompletionContractId,
-      kObjc3Part8RetainableCFamilySourceCompletionContractId,
-      kObjc3Part9DispatchIntentSourceClosureContractId,
-      kObjc3Part9DispatchIntentSourceCompletionContractId,
-      kObjc3Part10MetaprogrammingSourceClosureContractId,
-      kObjc3Part10MacroPackageProvenanceSourceCompletionContractId,
-      kObjc3Part10PropertyBehaviorSourceCompletionContractId,
-      kObjc3Part11ForeignImportSourceClosureContractId,
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId,
+      kObjc3ConcurrencyTaskGroupCancellationSourceClosureContractId,
+      kObjc3OwnershipSystemExtensionSourceClosureContractId,
+      kObjc3OwnershipCleanupResourceCaptureSurfaceCompletionContractId,
+      kObjc3OwnershipRetainableCFamilySourceCompletionContractId,
+      kObjc3DispatchDispatchIntentSourceClosureContractId,
+      kObjc3DispatchDispatchIntentSourceCompletionContractId,
+      kObjc3MetaprogrammingMetaprogrammingSourceClosureContractId,
+      kObjc3MetaprogrammingMacroPackageProvenanceSourceCompletionContractId,
+      kObjc3MetaprogrammingPropertyBehaviorSourceCompletionContractId,
+      kObjc3InteropForeignImportSourceClosureContractId,
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionContractId,
   };
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimAdvancedDiagnosticInventory,
@@ -2031,19 +2031,19 @@ struct Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary {
   std::string failure_reason;
 };
 
-struct Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary {
+struct Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary {
   std::string contract_id =
-      kObjc3Part12MigrationCanonicalizationSourceCompletionContractId;
+      kObjc3ToolingMigrationCanonicalizationSourceCompletionContractId;
   std::string dependency_contract_id =
-      kObjc3Part12DiagnosticsMigratorSourceInventoryContractId;
+      kObjc3ToolingDiagnosticsMigratorSourceInventoryContractId;
   std::string frontend_surface_path =
-      kObjc3Part12MigrationCanonicalizationSourceCompletionSurfacePath;
+      kObjc3ToolingMigrationCanonicalizationSourceCompletionSurfacePath;
   std::string source_model =
-      kObjc3Part12MigrationCanonicalizationSourceCompletionSourceModel;
+      kObjc3ToolingMigrationCanonicalizationSourceCompletionSourceModel;
   std::string completion_model =
-      kObjc3Part12MigrationCanonicalizationSourceCompletionCompletionModel;
+      kObjc3ToolingMigrationCanonicalizationSourceCompletionCompletionModel;
   std::string failure_model =
-      kObjc3Part12MigrationCanonicalizationSourceCompletionFailureModel;
+      kObjc3ToolingMigrationCanonicalizationSourceCompletionFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimAdvancedCanonicalizationInventory,
       kObjc3SourceOnlyFeatureClaimAdvancedMigrationAssistFlow,
@@ -2070,23 +2070,23 @@ struct Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part12DiagnosticTaxonomyPortabilityContractSummary {
-  std::string contract_id = kObjc3Part12DiagnosticTaxonomyPortabilityContractId;
+struct Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary {
+  std::string contract_id = kObjc3ToolingDiagnosticTaxonomyPortabilityContractId;
   std::string dependency_contract_id =
-      kObjc3Part12MigrationCanonicalizationSourceCompletionContractId;
+      kObjc3ToolingMigrationCanonicalizationSourceCompletionContractId;
   std::string frontend_surface_path =
-      kObjc3Part12DiagnosticTaxonomyPortabilitySurfacePath;
+      kObjc3ToolingDiagnosticTaxonomyPortabilitySurfacePath;
   std::string semantic_model =
-      kObjc3Part12DiagnosticTaxonomyPortabilitySemanticModel;
+      kObjc3ToolingDiagnosticTaxonomyPortabilitySemanticModel;
   std::string portability_model =
-      kObjc3Part12DiagnosticTaxonomyPortabilityPortabilityModel;
+      kObjc3ToolingDiagnosticTaxonomyPortabilityPortabilityModel;
   std::vector<std::string> portability_dependency_issue_ids = {
       "M264-E002", "M265-E002", "M266-E002", "M267-E002", "M268-E002",
       "M269-E002", "M270-E002", "M271-E002", "M272-E002", "M273-E002",
       "M274-E002",
   };
   std::string diagnostic_namespace =
-      kObjc3Part12DiagnosticTaxonomyPortabilityDiagnosticNamespace;
+      kObjc3ToolingDiagnosticTaxonomyPortabilityDiagnosticNamespace;
   std::size_t portability_dependency_count = 0;
   std::size_t diagnostics_total = 0;
   std::size_t diagnostics_after_pass_final = 0;
@@ -2108,14 +2108,14 @@ struct Objc3Part12DiagnosticTaxonomyPortabilityContractSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part12FeatureSpecificFixitSynthesisSummary {
-  std::string contract_id = kObjc3Part12FeatureSpecificFixitSynthesisContractId;
+struct Objc3ToolingFeatureSpecificFixitSynthesisSummary {
+  std::string contract_id = kObjc3ToolingFeatureSpecificFixitSynthesisContractId;
   std::string dependency_contract_id =
-      kObjc3Part12DiagnosticTaxonomyPortabilityContractId;
+      kObjc3ToolingDiagnosticTaxonomyPortabilityContractId;
   std::string frontend_surface_path =
-      kObjc3Part12FeatureSpecificFixitSynthesisSurfacePath;
+      kObjc3ToolingFeatureSpecificFixitSynthesisSurfacePath;
   std::string semantic_model =
-      kObjc3Part12FeatureSpecificFixitSynthesisSemanticModel;
+      kObjc3ToolingFeatureSpecificFixitSynthesisSemanticModel;
   std::vector<std::string> fixit_family_ids = {
       "migration-canonicalization",
       "ownership-arc",
@@ -2132,19 +2132,19 @@ struct Objc3Part12FeatureSpecificFixitSynthesisSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part12LegacyCanonicalMigrationSemanticsSummary {
+struct Objc3ToolingLegacyCanonicalMigrationSemanticsSummary {
   std::string contract_id =
-      kObjc3Part12LegacyCanonicalMigrationSemanticsContractId;
+      kObjc3ToolingLegacyCanonicalMigrationSemanticsContractId;
   std::string dependency_contract_id =
-      kObjc3Part12FeatureSpecificFixitSynthesisContractId;
+      kObjc3ToolingFeatureSpecificFixitSynthesisContractId;
   std::string compatibility_semantics_contract_id =
       kObjc3CompatibilityStrictnessClaimSemanticsContractId;
   std::string frontend_surface_path =
-      kObjc3Part12LegacyCanonicalMigrationSemanticsSurfacePath;
+      kObjc3ToolingLegacyCanonicalMigrationSemanticsSurfacePath;
   std::string semantic_model =
-      kObjc3Part12LegacyCanonicalMigrationSemanticsSemanticModel;
+      kObjc3ToolingLegacyCanonicalMigrationSemanticsSemanticModel;
   std::string compatibility_model =
-      kObjc3Part12LegacyCanonicalMigrationSemanticsCompatibilityModel;
+      kObjc3ToolingLegacyCanonicalMigrationSemanticsCompatibilityModel;
   std::string effective_compatibility_mode = "canonical";
   bool migration_assist_enabled = false;
   std::size_t current_run_legacy_literal_sites = 0;
@@ -2155,7 +2155,7 @@ struct Objc3Part12LegacyCanonicalMigrationSemanticsSummary {
   bool compatibility_mode_semantics_landed = false;
   bool migration_assist_semantics_landed = false;
   std::string canonical_mode_rejection_code =
-      kObjc3Part12LegacyCanonicalMigrationDiagnosticCode;
+      kObjc3ToolingLegacyCanonicalMigrationDiagnosticCode;
   bool canonical_mode_rejection_ready = false;
   bool feature_specific_fixit_surface_ready = false;
   bool deterministic_handoff = false;
@@ -2164,23 +2164,23 @@ struct Objc3Part12LegacyCanonicalMigrationSemanticsSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part11ForeignSurfaceInterfacePreservationSummary {
+struct Objc3InteropForeignSurfaceInterfacePreservationSummary {
   std::string contract_id =
-      kObjc3Part11ForeignSurfaceInterfacePreservationContractId;
+      kObjc3InteropForeignSurfaceInterfacePreservationContractId;
   std::string foreign_import_source_contract_id =
-      kObjc3Part11ForeignImportSourceClosureContractId;
+      kObjc3InteropForeignImportSourceClosureContractId;
   std::string cpp_swift_source_contract_id =
-      kObjc3Part11CppSwiftInteropAnnotationSourceCompletionContractId;
+      kObjc3InteropCppSwiftInteropAnnotationSourceCompletionContractId;
   std::string surface_path =
-      kObjc3Part11ForeignSurfaceInterfacePreservationSurfacePath;
+      kObjc3InteropForeignSurfaceInterfacePreservationSurfacePath;
   std::string import_artifact_member_name =
-      kObjc3Part11ForeignSurfaceInterfacePreservationImportArtifactMemberName;
+      kObjc3InteropForeignSurfaceInterfacePreservationImportArtifactMemberName;
   std::string source_model =
-      kObjc3Part11ForeignSurfaceInterfacePreservationSourceModel;
+      kObjc3InteropForeignSurfaceInterfacePreservationSourceModel;
   std::string preservation_model =
-      kObjc3Part11ForeignSurfaceInterfacePreservationModel;
+      kObjc3InteropForeignSurfaceInterfacePreservationModel;
   std::string fail_closed_model =
-      kObjc3Part11ForeignSurfaceInterfacePreservationFailClosedModel;
+      kObjc3InteropForeignSurfaceInterfacePreservationFailClosedModel;
   std::string foreign_import_source_replay_key;
   std::string cpp_swift_source_replay_key;
   std::vector<std::string> local_import_module_names_lexicographic;
@@ -2208,27 +2208,27 @@ struct Objc3Part11ForeignSurfaceInterfacePreservationSummary {
   std::string replay_key;
 };
 
-struct Objc3Part11HeaderModuleBridgeGenerationSummary {
-  std::string contract_id = kObjc3Part11HeaderModuleBridgeGenerationContractId;
+struct Objc3InteropHeaderModuleBridgeGenerationSummary {
+  std::string contract_id = kObjc3InteropHeaderModuleBridgeGenerationContractId;
   std::string source_contract_id =
-      kObjc3Part11HeaderModuleBridgeGenerationSourceContractId;
+      kObjc3InteropHeaderModuleBridgeGenerationSourceContractId;
   std::string preservation_contract_id =
-      kObjc3Part11HeaderModuleBridgeGenerationPreservationContractId;
+      kObjc3InteropHeaderModuleBridgeGenerationPreservationContractId;
   std::string surface_path =
-      kObjc3Part11HeaderModuleBridgeGenerationSurfacePath;
+      kObjc3InteropHeaderModuleBridgeGenerationSurfacePath;
   std::string import_artifact_member_name =
-      kObjc3Part11HeaderModuleBridgeGenerationImportArtifactMemberName;
-  std::string generation_model = kObjc3Part11HeaderModuleBridgeGenerationModel;
+      kObjc3InteropHeaderModuleBridgeGenerationImportArtifactMemberName;
+  std::string generation_model = kObjc3InteropHeaderModuleBridgeGenerationModel;
   std::string packaging_model =
-      kObjc3Part11HeaderModuleBridgeGenerationPackagingModel;
+      kObjc3InteropHeaderModuleBridgeGenerationPackagingModel;
   std::string fail_closed_model =
-      kObjc3Part11HeaderModuleBridgeGenerationFailClosedModel;
+      kObjc3InteropHeaderModuleBridgeGenerationFailClosedModel;
   std::string header_artifact_relative_path =
-      kObjc3Part11BridgeHeaderArtifactRelativePath;
+      kObjc3InteropBridgeHeaderArtifactRelativePath;
   std::string module_artifact_relative_path =
-      kObjc3Part11BridgeModuleArtifactRelativePath;
+      kObjc3InteropBridgeModuleArtifactRelativePath;
   std::string bridge_artifact_relative_path =
-      kObjc3Part11BridgeArtifactRelativePath;
+      kObjc3InteropBridgeArtifactRelativePath;
   std::vector<std::string> local_import_module_names_lexicographic;
   std::vector<std::string> imported_provider_module_names_lexicographic;
   std::size_t local_foreign_callable_count = 0;
@@ -2244,12 +2244,12 @@ struct Objc3Part11HeaderModuleBridgeGenerationSummary {
   std::string replay_key;
 };
 
-struct Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary {
-  std::string contract_id = kObjc3Part7TaskGroupCancellationSourceClosureContractId;
+struct Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary {
+  std::string contract_id = kObjc3ConcurrencyTaskGroupCancellationSourceClosureContractId;
   std::string frontend_surface_path =
-      kObjc3Part7TaskGroupCancellationSourceClosureSurfacePath;
-  std::string source_model = kObjc3Part7TaskGroupCancellationSourceClosureSourceModel;
-  std::string failure_model = kObjc3Part7TaskGroupCancellationSourceClosureFailureModel;
+      kObjc3ConcurrencyTaskGroupCancellationSourceClosureSurfacePath;
+  std::string source_model = kObjc3ConcurrencyTaskGroupCancellationSourceClosureSourceModel;
+  std::string failure_model = kObjc3ConcurrencyTaskGroupCancellationSourceClosureFailureModel;
   std::vector<std::string> source_only_claim_ids = {
       kObjc3SourceOnlyFeatureClaimTaskCreationSites,
       kObjc3SourceOnlyFeatureClaimSupportedTaskGroupSurface,
@@ -2882,7 +2882,7 @@ struct Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary {
   std::size_t typed_keypath_literal_site_count = 0;
   std::size_t live_optional_lowering_site_count = 0;
   std::size_t live_typed_keypath_artifact_site_count = 0;
-  std::size_t imported_part3_optional_keypath_module_count = 0;
+  std::size_t imported_type_system_optional_keypath_module_count = 0;
   std::size_t imported_optional_runtime_ready_module_count = 0;
   std::size_t imported_typed_keypath_runtime_ready_module_count = 0;
   bool fail_closed = false;
@@ -2893,7 +2893,7 @@ struct Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary {
   bool imported_dispatch_traits_landed = false;
   bool imported_effect_traits_landed = false;
   bool imported_runtime_metadata_semantics_landed = false;
-  bool imported_part3_type_surface_landed = false;
+  bool imported_type_system_type_surface_landed = false;
   bool imported_optional_runtime_semantics_landed = false;
   bool imported_typed_keypath_runtime_semantics_landed = false;
   bool ready_for_imported_metadata_semantic_rules = false;
@@ -2983,7 +2983,7 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   std::size_t typed_keypath_literal_site_count = 0;
   std::size_t live_optional_lowering_site_count = 0;
   std::size_t live_typed_keypath_artifact_site_count = 0;
-  std::size_t imported_part3_optional_keypath_module_count = 0;
+  std::size_t imported_type_system_optional_keypath_module_count = 0;
   std::size_t imported_optional_runtime_ready_module_count = 0;
   std::size_t imported_typed_keypath_runtime_ready_module_count = 0;
   bool fail_closed = false;
@@ -2995,7 +2995,7 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   bool imported_dispatch_traits_landed = false;
   bool imported_effect_traits_landed = false;
   bool imported_runtime_metadata_semantics_landed = false;
-  bool imported_part3_type_surface_landed = false;
+  bool imported_type_system_type_surface_landed = false;
   bool imported_optional_runtime_semantics_landed = false;
   bool imported_typed_keypath_runtime_semantics_landed = false;
   bool ready_for_imported_metadata_semantic_rules = false;
@@ -3230,7 +3230,7 @@ struct Objc3CrossModuleBuildRuntimeOrchestrationSummary {
   bool source_imported_runtime_metadata_semantic_rules_ready = false;
   bool semantic_surface_published = false;
   bool local_registration_manifest_emitted = false;
-  bool imported_part3_type_surface_landed = false;
+  bool imported_type_system_type_surface_landed = false;
   bool imported_optional_runtime_semantics_landed = false;
   bool imported_typed_keypath_runtime_semantics_landed = false;
   bool cross_module_link_plan_artifact_landed = false;
@@ -5601,12 +5601,12 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
-    const Objc3FrontendPart3TypeSourceClosureSummary &summary) {
-  return summary.contract_id == kObjc3Part3TypeSourceClosureContractId &&
-         summary.frontend_surface_path == kObjc3Part3TypeSourceClosureSurfacePath &&
-         summary.source_model == kObjc3Part3TypeSourceClosureSourceModel &&
-         summary.failure_model == kObjc3Part3TypeSourceClosureFailureModel &&
+inline bool IsReadyObjc3FrontendTypeSystemTypeSourceClosureSummary(
+    const Objc3FrontendTypeSystemTypeSourceClosureSummary &summary) {
+  return summary.contract_id == kObjc3TypeSystemTypeSourceClosureContractId &&
+         summary.frontend_surface_path == kObjc3TypeSystemTypeSourceClosureSurfacePath &&
+         summary.source_model == kObjc3TypeSystemTypeSourceClosureSourceModel &&
+         summary.failure_model == kObjc3TypeSystemTypeSourceClosureFailureModel &&
          summary.source_only_claim_ids.size() == 7 &&
          summary.source_only_claim_ids[0] ==
              kObjc3SourceOnlyFeatureClaimProtocolOptionalPartitions &&
@@ -5636,40 +5636,40 @@ inline bool IsReadyObjc3FrontendPart3TypeSourceClosureSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline bool IsReadyObjc3FrontendPart5ControlFlowSourceClosureSummary(
-    const Objc3FrontendPart5ControlFlowSourceClosureSummary &summary) {
-  return summary.contract_id == kObjc3Part5ControlFlowSourceClosureContractId &&
+inline bool IsReadyObjc3FrontendControlFlowControlFlowSourceClosureSummary(
+    const Objc3FrontendControlFlowControlFlowSourceClosureSummary &summary) {
+  return summary.contract_id == kObjc3ControlFlowControlFlowSourceClosureContractId &&
          summary.frontend_surface_path ==
-             kObjc3Part5ControlFlowSourceClosureSurfacePath &&
-         summary.source_model == kObjc3Part5ControlFlowSourceClosureSourceModel &&
+             kObjc3ControlFlowControlFlowSourceClosureSurfacePath &&
+         summary.source_model == kObjc3ControlFlowControlFlowSourceClosureSourceModel &&
          summary.failure_model ==
-             kObjc3Part5ControlFlowSourceClosureFailureModel &&
+             kObjc3ControlFlowControlFlowSourceClosureFailureModel &&
          summary.supported_construct_ids.size() == 8 &&
          summary.supported_construct_ids[0] ==
-             kObjc3Part5SourceSurfaceGuardBindings &&
+             kObjc3ControlFlowSourceSurfaceGuardBindings &&
          summary.supported_construct_ids[1] ==
-             kObjc3Part5SourceSurfaceGuardConditionLists &&
+             kObjc3ControlFlowSourceSurfaceGuardConditionLists &&
          summary.supported_construct_ids[2] ==
-             kObjc3Part5SourceSurfaceSwitchCasePatterns &&
+             kObjc3ControlFlowSourceSurfaceSwitchCasePatterns &&
          summary.supported_construct_ids[3] ==
-             kObjc3Part5SourceSurfaceDeferStatements &&
+             kObjc3ControlFlowSourceSurfaceDeferStatements &&
          summary.supported_construct_ids[4] ==
-             kObjc3Part5SourceSurfaceMatchStatement &&
+             kObjc3ControlFlowSourceSurfaceMatchStatement &&
          summary.supported_construct_ids[5] ==
-             kObjc3Part5SourceSurfaceMatchWildcardPatterns &&
+             kObjc3ControlFlowSourceSurfaceMatchWildcardPatterns &&
          summary.supported_construct_ids[6] ==
-             kObjc3Part5SourceSurfaceMatchLiteralPatterns &&
+             kObjc3ControlFlowSourceSurfaceMatchLiteralPatterns &&
          summary.supported_construct_ids[7] ==
-             kObjc3Part5SourceSurfaceMatchBindingPatterns &&
+             kObjc3ControlFlowSourceSurfaceMatchBindingPatterns &&
          summary.supported_construct_ids[8] ==
-             kObjc3Part5SourceSurfaceMatchResultCasePatterns &&
+             kObjc3ControlFlowSourceSurfaceMatchResultCasePatterns &&
          summary.fail_closed_construct_ids.size() == 3 &&
          summary.fail_closed_construct_ids[0] ==
-             kObjc3Part5FailClosedConstructMatchExpression &&
+             kObjc3ControlFlowFailClosedConstructMatchExpression &&
          summary.fail_closed_construct_ids[1] ==
-             kObjc3Part5FailClosedConstructGuardedPatterns &&
+             kObjc3ControlFlowFailClosedConstructGuardedPatterns &&
          summary.fail_closed_construct_ids[2] ==
-             kObjc3Part5FailClosedConstructMatchTypeTestPatterns &&
+             kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns &&
          summary.guard_binding_source_supported &&
          summary.guard_condition_list_source_supported &&
          summary.switch_case_pattern_source_supported &&
@@ -5688,13 +5688,13 @@ inline bool IsReadyObjc3FrontendPart5ControlFlowSourceClosureSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline bool IsReadyObjc3FrontendPart6ErrorSourceClosureSummary(
-    const Objc3FrontendPart6ErrorSourceClosureSummary &summary) {
-  return summary.contract_id == kObjc3Part6ErrorSourceClosureContractId &&
+inline bool IsReadyObjc3FrontendErrorHandlingErrorSourceClosureSummary(
+    const Objc3FrontendErrorHandlingErrorSourceClosureSummary &summary) {
+  return summary.contract_id == kObjc3ErrorHandlingErrorSourceClosureContractId &&
          summary.frontend_surface_path ==
-             kObjc3Part6ErrorSourceClosureSurfacePath &&
-         summary.source_model == kObjc3Part6ErrorSourceClosureSourceModel &&
-         summary.failure_model == kObjc3Part6ErrorSourceClosureFailureModel &&
+             kObjc3ErrorHandlingErrorSourceClosureSurfacePath &&
+         summary.source_model == kObjc3ErrorHandlingErrorSourceClosureSourceModel &&
+         summary.failure_model == kObjc3ErrorHandlingErrorSourceClosureFailureModel &&
          summary.source_only_claim_ids.size() == 3 &&
          summary.source_only_claim_ids[0] ==
              kObjc3SourceOnlyFeatureClaimThrowsDeclarations &&
@@ -5704,11 +5704,11 @@ inline bool IsReadyObjc3FrontendPart6ErrorSourceClosureSummary(
              kObjc3SourceOnlyFeatureClaimNSErrorBridgingProfiles &&
          summary.fail_closed_construct_ids.size() == 3 &&
          summary.fail_closed_construct_ids[0] ==
-             kObjc3Part6FailClosedConstructTryExpressions &&
+             kObjc3ErrorHandlingFailClosedConstructTryExpressions &&
          summary.fail_closed_construct_ids[1] ==
-             kObjc3Part6FailClosedConstructThrowStatements &&
+             kObjc3ErrorHandlingFailClosedConstructThrowStatements &&
          summary.fail_closed_construct_ids[2] ==
-             kObjc3Part6FailClosedConstructDoCatchStatements &&
+             kObjc3ErrorHandlingFailClosedConstructDoCatchStatements &&
          summary.throws_declaration_source_supported &&
          summary.result_carrier_source_supported &&
          summary.ns_error_bridging_source_supported &&
@@ -5779,21 +5779,21 @@ struct Objc3VersionedConformanceReportLoweringSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part12MachineReadableConformanceReportContractSummary {
+struct Objc3ToolingMachineReadableConformanceReportContractSummary {
   std::string contract_id =
-      kObjc3Part12MachineReadableConformanceReportContractId;
+      kObjc3ToolingMachineReadableConformanceReportContractId;
   std::string dependency_contract_id =
-      kObjc3Part12MachineReadableConformanceReportDependencyContractId;
+      kObjc3ToolingMachineReadableConformanceReportDependencyContractId;
   std::string lowering_contract_id =
       kObjc3VersionedConformanceReportLoweringContractId;
   std::string runtime_capability_contract_id =
       kObjc3RuntimeCapabilityReportingContractId;
   std::string frontend_surface_path =
-      kObjc3Part12MachineReadableConformanceReportSurfacePath;
+      kObjc3ToolingMachineReadableConformanceReportSurfacePath;
   std::string payload_model =
-      kObjc3Part12MachineReadableConformanceReportPayloadModel;
+      kObjc3ToolingMachineReadableConformanceReportPayloadModel;
   std::string authority_model =
-      kObjc3Part12MachineReadableConformanceReportAuthorityModel;
+      kObjc3ToolingMachineReadableConformanceReportAuthorityModel;
   std::string artifact_suffix =
       kObjc3VersionedConformanceReportLoweringArtifactSuffix;
   std::string artifact_schema_id =
@@ -5810,30 +5810,30 @@ struct Objc3Part12MachineReadableConformanceReportContractSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part12FeatureAwareConformanceReportEmissionSummary {
+struct Objc3ToolingFeatureAwareConformanceReportEmissionSummary {
   std::string contract_id =
-      kObjc3Part12FeatureAwareConformanceReportEmissionContractId;
+      kObjc3ToolingFeatureAwareConformanceReportEmissionContractId;
   std::string dependency_contract_id =
-      kObjc3Part12FeatureAwareConformanceReportEmissionDependencyContractId;
+      kObjc3ToolingFeatureAwareConformanceReportEmissionDependencyContractId;
   std::string machine_readable_report_contract_id =
-      kObjc3Part12MachineReadableConformanceReportContractId;
+      kObjc3ToolingMachineReadableConformanceReportContractId;
   std::string fixit_contract_id =
-      kObjc3Part12FeatureSpecificFixitSynthesisContractId;
+      kObjc3ToolingFeatureSpecificFixitSynthesisContractId;
   std::string migration_semantics_contract_id =
-      kObjc3Part12LegacyCanonicalMigrationSemanticsContractId;
+      kObjc3ToolingLegacyCanonicalMigrationSemanticsContractId;
   std::string frontend_surface_path =
-      kObjc3Part12FeatureAwareConformanceReportEmissionSurfacePath;
+      kObjc3ToolingFeatureAwareConformanceReportEmissionSurfacePath;
   std::string payload_model =
-      kObjc3Part12FeatureAwareConformanceReportEmissionPayloadModel;
+      kObjc3ToolingFeatureAwareConformanceReportEmissionPayloadModel;
   std::string authority_model =
-      kObjc3Part12FeatureAwareConformanceReportEmissionAuthorityModel;
+      kObjc3ToolingFeatureAwareConformanceReportEmissionAuthorityModel;
   std::string effective_compatibility_mode = "canonical";
   bool migration_assist_enabled = false;
   std::vector<std::string> fixit_family_ids;
   std::size_t fixit_family_count = 0;
   std::size_t current_run_legacy_literal_sites = 0;
   std::string canonical_mode_rejection_code =
-      kObjc3Part12LegacyCanonicalMigrationDiagnosticCode;
+      kObjc3ToolingLegacyCanonicalMigrationDiagnosticCode;
   bool report_payload_emitted = false;
   bool deterministic_handoff = false;
   bool ready_for_runtime_publication = false;
@@ -5841,21 +5841,21 @@ struct Objc3Part12FeatureAwareConformanceReportEmissionSummary {
   std::string failure_reason;
 };
 
-struct Objc3Part12CorpusShardingReleaseEvidencePackagingSummary {
+struct Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary {
   std::string contract_id =
-      kObjc3Part12CorpusShardingReleaseEvidencePackagingContractId;
+      kObjc3ToolingCorpusShardingReleaseEvidencePackagingContractId;
   std::string dependency_contract_id =
-      kObjc3Part12CorpusShardingReleaseEvidencePackagingDependencyContractId;
+      kObjc3ToolingCorpusShardingReleaseEvidencePackagingDependencyContractId;
   std::string feature_aware_report_contract_id =
-      kObjc3Part12FeatureAwareConformanceReportEmissionContractId;
+      kObjc3ToolingFeatureAwareConformanceReportEmissionContractId;
   std::string machine_readable_report_contract_id =
-      kObjc3Part12MachineReadableConformanceReportContractId;
+      kObjc3ToolingMachineReadableConformanceReportContractId;
   std::string frontend_surface_path =
-      kObjc3Part12CorpusShardingReleaseEvidencePackagingSurfacePath;
+      kObjc3ToolingCorpusShardingReleaseEvidencePackagingSurfacePath;
   std::string payload_model =
-      kObjc3Part12CorpusShardingReleaseEvidencePackagingPayloadModel;
+      kObjc3ToolingCorpusShardingReleaseEvidencePackagingPayloadModel;
   std::string authority_model =
-      kObjc3Part12CorpusShardingReleaseEvidencePackagingAuthorityModel;
+      kObjc3ToolingCorpusShardingReleaseEvidencePackagingAuthorityModel;
   std::vector<std::string> targeted_profile_ids = {
       "strict", "strict-concurrency", "strict-system"};
   std::size_t targeted_profile_count = 3;
@@ -5933,8 +5933,8 @@ inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
          !summary.replay_key.empty() && summary.failure_reason.empty();
 }
 
-inline bool IsReadyObjc3Part12MachineReadableConformanceReportContractSummary(
-    const Objc3Part12MachineReadableConformanceReportContractSummary &summary) {
+inline bool IsReadyObjc3ToolingMachineReadableConformanceReportContractSummary(
+    const Objc3ToolingMachineReadableConformanceReportContractSummary &summary) {
   const bool compatibility_mode_valid =
       summary.effective_compatibility_mode == "canonical" ||
       summary.effective_compatibility_mode == "legacy";
@@ -5956,8 +5956,8 @@ inline bool IsReadyObjc3Part12MachineReadableConformanceReportContractSummary(
          summary.failure_reason.empty();
 }
 
-inline bool IsReadyObjc3Part12FeatureAwareConformanceReportEmissionSummary(
-    const Objc3Part12FeatureAwareConformanceReportEmissionSummary &summary) {
+inline bool IsReadyObjc3ToolingFeatureAwareConformanceReportEmissionSummary(
+    const Objc3ToolingFeatureAwareConformanceReportEmissionSummary &summary) {
   const bool compatibility_mode_valid =
       summary.effective_compatibility_mode == "canonical" ||
       summary.effective_compatibility_mode == "legacy";
@@ -5976,8 +5976,8 @@ inline bool IsReadyObjc3Part12FeatureAwareConformanceReportEmissionSummary(
          summary.failure_reason.empty();
 }
 
-inline bool IsReadyObjc3Part12CorpusShardingReleaseEvidencePackagingSummary(
-    const Objc3Part12CorpusShardingReleaseEvidencePackagingSummary &summary) {
+inline bool IsReadyObjc3ToolingCorpusShardingReleaseEvidencePackagingSummary(
+    const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary &summary) {
   const bool compatibility_mode_valid =
       summary.effective_compatibility_mode == "canonical" ||
       summary.effective_compatibility_mode == "legacy";
@@ -6162,98 +6162,98 @@ struct Objc3FrontendPipelineResult {
   Objc3FrontendSelectorNormalizationSummary selector_normalization_summary;
   Objc3FrontendPropertyAttributeSummary property_attribute_summary;
   Objc3FrontendObjectPointerNullabilityGenericsSummary object_pointer_nullability_generics_summary;
-  Objc3FrontendPart3TypeSourceClosureSummary part3_type_source_closure_summary;
-  Objc3FrontendPart5ControlFlowSourceClosureSummary
-      part5_control_flow_source_closure_summary;
-  Objc3FrontendPart6ErrorSourceClosureSummary part6_error_source_closure_summary;
-  Objc3FrontendPart7AsyncSourceClosureSummary part7_async_source_closure_summary;
-  Objc3FrontendPart8SystemExtensionSourceClosureSummary
-      part8_system_extension_source_closure_summary;
-  Objc3FrontendPart8CleanupResourceCaptureSourceCompletionSummary
-      part8_cleanup_resource_capture_source_completion_summary;
-  Objc3FrontendPart8RetainableCFamilySourceCompletionSummary
-      part8_retainable_c_family_source_completion_summary;
-  Objc3FrontendPart9DispatchIntentSourceClosureSummary
-      part9_dispatch_intent_source_closure_summary;
-  Objc3FrontendPart9DispatchIntentSourceCompletionSummary
-      part9_dispatch_intent_source_completion_summary;
-  Objc3FrontendPart10MetaprogrammingSourceClosureSummary
-      part10_metaprogramming_source_closure_summary;
-  Objc3FrontendPart10MacroPackageProvenanceSourceCompletionSummary
-      part10_macro_package_provenance_source_completion_summary;
-  Objc3FrontendPart10PropertyBehaviorSourceCompletionSummary
-      part10_property_behavior_source_completion_summary;
-  Objc3FrontendPart11ForeignImportSourceClosureSummary
-      part11_foreign_import_source_closure_summary;
-  Objc3FrontendPart11CppSwiftInteropAnnotationSourceCompletionSummary
-      part11_cpp_swift_interop_annotation_source_completion_summary;
-  Objc3FrontendPart12DiagnosticsMigratorSourceInventorySummary
-      part12_diagnostics_migrator_source_inventory_summary;
-  Objc3FrontendPart12MigrationCanonicalizationSourceCompletionSummary
-      part12_migration_canonicalization_source_completion_summary;
-  Objc3Part12DiagnosticTaxonomyPortabilityContractSummary
-      part12_diagnostic_taxonomy_portability_contract_summary;
-  Objc3Part12FeatureSpecificFixitSynthesisSummary
-      part12_feature_specific_fixit_synthesis_summary;
-  Objc3Part11ForeignSurfaceInterfacePreservationSummary
-      part11_foreign_surface_interface_preservation_summary;
-  Objc3FrontendPart7ActorMemberIsolationSourceClosureSummary
-      part7_actor_member_isolation_source_closure_summary;
-  Objc3Part7ActorIsolationSendableSemanticModelSummary
-      part7_actor_isolation_sendable_semantic_model_summary;
-  Objc3Part7ActorIsolationSendabilityEnforcementSummary
-      part7_actor_isolation_sendability_enforcement_summary;
-  Objc3Part7ActorRaceHazardEscapeDiagnosticsSummary
-      part7_actor_race_hazard_escape_diagnostics_summary;
-  Objc3FrontendPart7TaskGroupCancellationSourceClosureSummary
-      part7_task_group_cancellation_source_closure_summary;
-  Objc3Part5ControlFlowSemanticModelSummary
-      part5_control_flow_semantic_model_summary;
-  Objc3Part6ErrorSemanticModelSummary part6_error_semantic_model_summary;
-  Objc3Part7TaskExecutorCancellationSemanticModelSummary
-      part7_task_executor_cancellation_semantic_model_summary;
-  Objc3Part8SystemExtensionSemanticModelSummary
-      part8_system_extension_semantic_model_summary;
-  Objc3Part10ExpansionBehaviorSemanticModelSummary
-      part10_expansion_behavior_semantic_model_summary;
-  Objc3Part10DeriveExpansionInventorySummary
-      part10_derive_expansion_inventory_summary;
-  Objc3Part10MacroSafetySandboxDeterminismSummary
-      part10_macro_safety_sandbox_determinism_summary;
-  Objc3Part10PropertyBehaviorLegalityCompatibilitySummary
-      part10_property_behavior_legality_compatibility_summary;
-    Objc3Part9DispatchIntentSemanticModelSummary
-        part9_dispatch_intent_semantic_model_summary;
-    Objc3Part9DispatchIntentLegalitySummary
-        part9_dispatch_intent_legality_summary;
-    Objc3Part9DispatchIntentCompatibilitySummary
-        part9_dispatch_intent_compatibility_summary;
-    Objc3Part8ResourceMoveUseAfterMoveSemanticsSummary
-        part8_resource_move_use_after_move_semantics_summary;
-  Objc3Part8BorrowedPointerEscapeAnalysisSummary
-      part8_borrowed_pointer_escape_analysis_summary;
-  Objc3Part8CaptureListRetainableFamilyLegalityCompletionSummary
-      part8_capture_list_retainable_family_legality_completion_summary;
-  Objc3Part11InteropSemanticModelSummary
-      part11_interop_semantic_model_summary;
-  Objc3Part11InteropRuntimeParitySummary
-      part11_interop_runtime_parity_summary;
-  Objc3Part11CppInteropInteractionSummary
-      part11_cpp_interop_interaction_summary;
-  Objc3Part11SwiftInteropIsolationSummary
-      part11_swift_interop_isolation_summary;
-  Objc3Part7StructuredTaskCancellationSemanticSummary
-      part7_structured_task_cancellation_semantic_summary;
-  Objc3Part7ExecutorHopAffinityCompatibilitySummary
-      part7_executor_hop_affinity_compatibility_summary;
-  Objc3Part7AsyncEffectSuspensionSemanticModelSummary
-      part7_async_effect_suspension_semantic_model_summary;
-  Objc3Part7AwaitSuspensionResumeSemanticSummary
-      part7_await_suspension_resume_semantic_summary;
-  Objc3Part7AsyncDiagnosticsCompatibilitySummary
-      part7_async_diagnostics_compatibility_summary;
-  Objc3Part6TryDoCatchSemanticSummary part6_try_do_catch_semantic_summary;
-  Objc3Part6ErrorBridgeLegalitySummary part6_error_bridge_legality_summary;
+  Objc3FrontendTypeSystemTypeSourceClosureSummary type_system_type_source_closure_summary;
+  Objc3FrontendControlFlowControlFlowSourceClosureSummary
+      control_flow_control_flow_source_closure_summary;
+  Objc3FrontendErrorHandlingErrorSourceClosureSummary error_handling_error_source_closure_summary;
+  Objc3FrontendConcurrencyAsyncSourceClosureSummary concurrency_async_source_closure_summary;
+  Objc3FrontendOwnershipSystemExtensionSourceClosureSummary
+      ownership_system_extension_source_closure_summary;
+  Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
+      ownership_cleanup_resource_capture_source_completion_summary;
+  Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
+      ownership_retainable_c_family_source_completion_summary;
+  Objc3FrontendDispatchDispatchIntentSourceClosureSummary
+      dispatch_dispatch_intent_source_closure_summary;
+  Objc3FrontendDispatchDispatchIntentSourceCompletionSummary
+      dispatch_dispatch_intent_source_completion_summary;
+  Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
+      metaprogramming_metaprogramming_source_closure_summary;
+  Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
+      metaprogramming_macro_package_provenance_source_completion_summary;
+  Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+      metaprogramming_property_behavior_source_completion_summary;
+  Objc3FrontendInteropForeignImportSourceClosureSummary
+      interop_foreign_import_source_closure_summary;
+  Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+      interop_cpp_swift_interop_annotation_source_completion_summary;
+  Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
+      tooling_diagnostics_migrator_source_inventory_summary;
+  Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary
+      tooling_migration_canonicalization_source_completion_summary;
+  Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary
+      tooling_diagnostic_taxonomy_portability_contract_summary;
+  Objc3ToolingFeatureSpecificFixitSynthesisSummary
+      tooling_feature_specific_fixit_synthesis_summary;
+  Objc3InteropForeignSurfaceInterfacePreservationSummary
+      interop_foreign_surface_interface_preservation_summary;
+  Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
+      concurrency_actor_member_isolation_source_closure_summary;
+  Objc3ConcurrencyActorIsolationSendableSemanticModelSummary
+      concurrency_actor_isolation_sendable_semantic_model_summary;
+  Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
+      concurrency_actor_isolation_sendability_enforcement_summary;
+  Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary
+      concurrency_actor_race_hazard_escape_diagnostics_summary;
+  Objc3FrontendConcurrencyTaskGroupCancellationSourceClosureSummary
+      concurrency_task_group_cancellation_source_closure_summary;
+  Objc3ControlFlowControlFlowSemanticModelSummary
+      control_flow_control_flow_semantic_model_summary;
+  Objc3ErrorHandlingErrorSemanticModelSummary error_handling_error_semantic_model_summary;
+  Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary
+      concurrency_task_executor_cancellation_semantic_model_summary;
+  Objc3OwnershipSystemExtensionSemanticModelSummary
+      ownership_system_extension_semantic_model_summary;
+  Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
+      metaprogramming_expansion_behavior_semantic_model_summary;
+  Objc3MetaprogrammingDeriveExpansionInventorySummary
+      metaprogramming_derive_expansion_inventory_summary;
+  Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary
+      metaprogramming_macro_safety_sandbox_determinism_summary;
+  Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
+      metaprogramming_property_behavior_legality_compatibility_summary;
+    Objc3DispatchDispatchIntentSemanticModelSummary
+        dispatch_dispatch_intent_semantic_model_summary;
+    Objc3DispatchDispatchIntentLegalitySummary
+        dispatch_dispatch_intent_legality_summary;
+    Objc3DispatchDispatchIntentCompatibilitySummary
+        dispatch_dispatch_intent_compatibility_summary;
+    Objc3OwnershipResourceMoveUseAfterMoveSemanticsSummary
+        ownership_resource_move_use_after_move_semantics_summary;
+  Objc3OwnershipBorrowedPointerEscapeAnalysisSummary
+      ownership_borrowed_pointer_escape_analysis_summary;
+  Objc3OwnershipCaptureListRetainableFamilyLegalityCompletionSummary
+      ownership_capture_list_retainable_family_legality_completion_summary;
+  Objc3InteropInteropSemanticModelSummary
+      interop_interop_semantic_model_summary;
+  Objc3InteropInteropRuntimeParitySummary
+      interop_interop_runtime_parity_summary;
+  Objc3InteropCppInteropInteractionSummary
+      interop_cpp_interop_interaction_summary;
+  Objc3InteropSwiftInteropIsolationSummary
+      interop_swift_interop_isolation_summary;
+  Objc3ConcurrencyStructuredTaskCancellationSemanticSummary
+      concurrency_structured_task_cancellation_semantic_summary;
+  Objc3ConcurrencyExecutorHopAffinityCompatibilitySummary
+      concurrency_executor_hop_affinity_compatibility_summary;
+  Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary
+      concurrency_async_effect_suspension_semantic_model_summary;
+  Objc3ConcurrencyAwaitSuspensionResumeSemanticSummary
+      concurrency_await_suspension_resume_semantic_summary;
+  Objc3ConcurrencyAsyncDiagnosticsCompatibilitySummary
+      concurrency_async_diagnostics_compatibility_summary;
+  Objc3ErrorHandlingTryDoCatchSemanticSummary error_handling_try_do_catch_semantic_summary;
+  Objc3ErrorHandlingErrorBridgeLegalitySummary error_handling_error_bridge_legality_summary;
   Objc3FrontendSymbolGraphScopeResolutionSummary symbol_graph_scope_resolution_summary;
   Objc3RuntimeMetadataSourceRecordSet runtime_metadata_source_records;
   Objc3ExecutableMetadataSourceGraph executable_metadata_source_graph;

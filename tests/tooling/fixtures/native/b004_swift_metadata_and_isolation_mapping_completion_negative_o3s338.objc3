@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3S338.
+module InteropSwiftActorIsolationRejected;
+
+actor class SwiftMailbox
+- (i32)run __attribute__((objc_swift_name(named("RunBridge"))));
+@end
+
+@implementation SwiftMailbox
+- (i32)run {
+  return 0;
+}
+@end

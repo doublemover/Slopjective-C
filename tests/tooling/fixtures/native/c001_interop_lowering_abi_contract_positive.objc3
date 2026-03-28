@@ -1,0 +1,32 @@
+module InteropInteropLoweringAbiContractPositive;
+
+extern fn cImportedEntry(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
+extern pure fn cImportedPureEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("SampleKit"))));
+
+extern fn cppBridge(value: i32) -> i32 __attribute__((objc_cxx_name(named("CppBridge")), objc_header_name(named("Bridge.hpp"))));
+
+fn localCppBridge() -> i32 __attribute__((objc_cxx_name(named("LocalBridge")))) {
+  return 7;
+}
+
+fn swiftBridge() -> i32 __attribute__((objc_swift_name(named("SwiftBridge")), objc_swift_private)) {
+  return localCppBridge();
+}
+
+@protocol RuntimeParityProtocol
+- (id) protocolForeignCall __attribute__((objc_foreign));
+@end
+
+@interface RuntimeParityBridge
+- (id) interfaceForeignCall: (Class) owner __attribute__((objc_foreign));
+@end
+
+@implementation RuntimeParityBridge
+- (id) interfaceForeignCall: (Class) owner {
+  return nil;
+}
+@end
+
+fn main() -> i32 {
+  return cppBridge(2) + swiftBridge();
+}
