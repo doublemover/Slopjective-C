@@ -29,6 +29,7 @@
     "test:objc3c:object-model-conformance": "python scripts/objc3c_public_workflow_runner.py validate-object-model-conformance",
     "test:objc3c:storage-reflection-conformance": "python scripts/objc3c_public_workflow_runner.py validate-storage-reflection-conformance",
     "test:objc3c:runnable-bootstrap": "python scripts/objc3c_public_workflow_runner.py validate-runnable-bootstrap",
+    "test:objc3c:runnable-block-arc": "python scripts/objc3c_public_workflow_runner.py validate-runnable-block-arc",
     "test:objc3c:runnable-object-model": "python scripts/objc3c_public_workflow_runner.py validate-runnable-object-model",
     "test:objc3c:runnable-storage-reflection": "python scripts/objc3c_public_workflow_runner.py validate-runnable-storage-reflection",
     "test:objc3c:fixture-matrix": "python scripts/objc3c_public_workflow_runner.py test-fixture-matrix",

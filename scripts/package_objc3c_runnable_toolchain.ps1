@@ -143,8 +143,11 @@ $requiredRelativeFiles = @(
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp",
+  "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
   "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+  "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp",
   "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+  "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
   "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
 )
 
@@ -174,6 +177,9 @@ $manifestPayload = [ordered]@{
   runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   object_model_probe = "tests/tooling/runtime/m259_d002_realization_lookup_reflection_runtime_probe.cpp"
+  block_arc_fixture = "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3"
+  block_arc_runtime_abi_probe = "tests/tooling/runtime/m281_d001_block_arc_runtime_abi_probe.cpp"
+  block_arc_byref_forwarding_probe = "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp"
   storage_reflection_fixture = "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3"
   storage_reflection_probe = "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
