@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3S206.
+module m280B004PropertyAccessorSelectorCompatibility;
+
+@interface Widget
+@property (readonly, getter=tokenValue) id value;
+@end
+
+@implementation Widget
+@property (readonly, getter=currentValue) id value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

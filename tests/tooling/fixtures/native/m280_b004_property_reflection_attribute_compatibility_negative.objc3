@@ -1,0 +1,14 @@
+// Expected diagnostic code(s): O3S206.
+module m280B004PropertyReflectionAttributeCompatibility;
+
+@interface Widget
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@end
+
+@implementation Widget
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, copy) id value;
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -5565,6 +5565,71 @@ static void EmitPropertyContractViolation(Objc3PropertyInfo &property,
   FinalizePropertyInvalidAttributeContract(property);
 }
 
+static bool EmitImplementationPropertyReflectionAccessorCompatibilityDiagnostics(
+    const Objc3PropertyInfo &interface_property,
+    Objc3PropertyInfo &implementation_property,
+    const std::string &property_name,
+    const std::string &implementation_name,
+    std::vector<std::string> &diagnostics) {
+  bool emitted = false;
+  const auto emit = [&](const std::string &message,
+                        bool accessor_selector_violation) {
+    EmitPropertyContractViolation(implementation_property,
+                                  implementation_property.line,
+                                  implementation_property.column,
+                                  message,
+                                  diagnostics,
+                                  accessor_selector_violation);
+    emitted = true;
+  };
+
+  const std::string implementation_label =
+      "implementation '" + implementation_name + "'";
+
+  const bool getter_profile_mismatch =
+      interface_property.getter_selector != implementation_property.getter_selector ||
+      interface_property.effective_getter_selector !=
+          implementation_property.effective_getter_selector;
+  if (getter_profile_mismatch) {
+    emit("type mismatch: effective getter selector profile for property '" +
+             property_name + "' in " + implementation_label +
+             " drifted from the interface declaration",
+         true);
+  }
+
+  const bool setter_profile_mismatch =
+      interface_property.has_setter != implementation_property.has_setter ||
+      interface_property.setter_selector != implementation_property.setter_selector ||
+      interface_property.effective_setter_available !=
+          implementation_property.effective_setter_available ||
+      interface_property.effective_setter_selector !=
+          implementation_property.effective_setter_selector;
+  if (setter_profile_mismatch) {
+    emit("type mismatch: effective setter selector profile for property '" +
+             property_name + "' in " + implementation_label +
+             " drifted from the interface declaration",
+         true);
+  }
+
+  const bool reflection_profile_mismatch =
+      interface_property.property_attribute_profile !=
+          implementation_property.property_attribute_profile ||
+      interface_property.ownership_lifetime_profile !=
+          implementation_property.ownership_lifetime_profile ||
+      interface_property.ownership_runtime_hook_profile !=
+          implementation_property.ownership_runtime_hook_profile ||
+      interface_property.accessor_ownership_profile !=
+          implementation_property.accessor_ownership_profile;
+  if (reflection_profile_mismatch) {
+    emit("type mismatch: reflected property attribute and ownership profile for property '" +
+             property_name + "' in " + implementation_label +
+             " drifted from the interface declaration",
+         false);
+  }
+
+  return emitted;
+}
+
 static void ValidatePropertyAccessorSelectorUniqueness(
     Objc3PropertyInfo &property,
     const std::string &property_name,
@@ -20839,11 +20904,20 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
         continue;
       }
       if (!IsCompatiblePropertySignature(interface_property_it->second, property_insert.first->second)) {
-        diagnostics.push_back(MakeDiag(property_decl.line,
-                                       property_decl.column,
-                                       "O3S206",
-                                       "type mismatch: incompatible property signature for '" + property_decl.name +
-                                           "' in implementation '" + implementation_decl.name + "'"));
+        if (!EmitImplementationPropertyReflectionAccessorCompatibilityDiagnostics(
+                interface_property_it->second,
+                property_insert.first->second,
+                property_decl.name,
+                implementation_decl.name,
+                diagnostics)) {
+          diagnostics.push_back(MakeDiag(
+              property_decl.line,
+              property_decl.column,
+              "O3S206",
+              "type mismatch: incompatible property signature for '" +
+                  property_decl.name + "' in implementation '" +
+                  implementation_decl.name + "'"));
+        }
         continue;
       }
       OverlayAuthoritativeDefaultIvarBinding(property_insert.first->second,

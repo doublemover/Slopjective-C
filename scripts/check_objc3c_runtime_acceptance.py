@@ -2639,6 +2639,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         if result.case_id
         in {
             "property-ivar-ordering-semantics",
+            "property-reflection-accessor-compatibility-diagnostics",
             "property-synthesis-storage-binding-semantics",
             "storage-legality-semantics",
             "synthesized-accessor-codegen",
@@ -2706,6 +2707,8 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
             "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
             "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
             "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
         ],
@@ -2736,6 +2739,7 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
         for result in results
         if result.case_id
         in {
+            "property-reflection-accessor-compatibility-diagnostics",
             "storage-legality-semantics",
             "property-reflection",
             "property-execution",
@@ -2789,6 +2793,8 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
             "tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3",
             "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
             "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
@@ -3360,6 +3366,7 @@ def build_runtime_reflection_visibility_coherence_diagnostics_surface(
         for result in results
         if result.case_id in {
             "canonical-sample-set",
+            "property-reflection-accessor-compatibility-diagnostics",
             "property-reflection",
             "property-execution",
             "storage-ownership-reflection",
@@ -3403,6 +3410,8 @@ def build_runtime_reflection_visibility_coherence_diagnostics_surface(
             "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
             "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
             "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+            "tests/tooling/fixtures/native/m280_b004_property_reflection_attribute_compatibility_negative.objc3",
             "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
         ],
         "authoritative_probe_paths": [
@@ -5598,6 +5607,54 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
     )
 
 
+def check_property_reflection_accessor_compatibility_diagnostics_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "property-reflection-accessor-compatibility-diagnostics"
+    accessor_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m280_b004_property_accessor_selector_compatibility_negative.objc3",
+        case_dir / "accessor-selector-mismatch",
+        expected_snippets=[
+            "type mismatch: effective getter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+        ],
+        expected_codes=["O3S206"],
+    )
+    reflection_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m280_b004_property_reflection_attribute_compatibility_negative.objc3",
+        case_dir / "reflection-attribute-mismatch",
+        expected_snippets=[
+            "type mismatch: reflected property attribute and ownership profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+        ],
+        expected_codes=["O3S206"],
+    )
+
+    return CaseResult(
+        case_id="property-reflection-accessor-compatibility-diagnostics",
+        probe="compile-diagnostics",
+        fixture="tests/tooling/fixtures/native/m280_b004_property_accessor_selector_compatibility_negative.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "accessor_selector_negative_diagnostic_count": accessor_negative[
+                "diagnostic_count"
+            ],
+            "reflection_attribute_negative_diagnostic_count": reflection_negative[
+                "diagnostic_count"
+            ],
+        },
+    )
+
+
 def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "property-ivar-ordering-semantics"
     fixture = (
@@ -5995,6 +6052,7 @@ def main() -> int:
         check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_storage_ownership_reflection_case(clangxx, run_dir),
         check_property_ivar_ordering_semantics_case(run_dir),
+        check_property_reflection_accessor_compatibility_diagnostics_case(run_dir),
         check_property_synthesis_storage_binding_semantics_case(run_dir),
         check_storage_legality_semantics_case(run_dir),
         check_synthesized_accessor_codegen_case(run_dir),
