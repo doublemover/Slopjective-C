@@ -237,6 +237,13 @@ def write_composite_validation_report(
         payload["runtime_dispatch_table_reflection_record_lowering_surface"] = (
             runtime_dispatch_table_reflection_record_lowering_surface
         )
+    runtime_cross_module_realized_metadata_replay_preservation_surface = load_surface_from_report(
+        steps, "runtime_cross_module_realized_metadata_replay_preservation_surface"
+    )
+    if runtime_cross_module_realized_metadata_replay_preservation_surface is not None:
+        payload["runtime_cross_module_realized_metadata_replay_preservation_surface"] = (
+            runtime_cross_module_realized_metadata_replay_preservation_surface
+        )
     runtime_reflection_query_surface = load_surface_from_report(
         steps, "runtime_reflection_query_surface"
     )

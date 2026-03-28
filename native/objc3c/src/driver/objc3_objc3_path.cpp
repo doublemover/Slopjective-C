@@ -1128,6 +1128,24 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           link_plan_inputs.local_translation_unit_registration_order_ordinal =
               artifacts.runtime_translation_unit_registration_manifest_summary
                   .translation_unit_registration_order_ordinal;
+          link_plan_inputs.local_class_descriptor_count =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .class_descriptor_count;
+          link_plan_inputs.local_protocol_descriptor_count =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .protocol_descriptor_count;
+          link_plan_inputs.local_category_descriptor_count =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .category_descriptor_count;
+          link_plan_inputs.local_property_descriptor_count =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .property_descriptor_count;
+          link_plan_inputs.local_ivar_descriptor_count =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .ivar_descriptor_count;
+          link_plan_inputs.local_total_descriptor_count =
+              artifacts.runtime_translation_unit_registration_manifest_summary
+                  .total_descriptor_count;
           link_plan_inputs.local_driver_linker_flags = {
               linker_retention_artifacts.driver_linker_flag};
 
@@ -1203,6 +1221,18 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 peer_artifacts.runtime_support_library_archive_relative_path;
             imported_input.translation_unit_registration_order_ordinal =
                 peer_artifacts.translation_unit_registration_order_ordinal;
+            imported_input.class_descriptor_count =
+                peer_artifacts.class_descriptor_count;
+            imported_input.protocol_descriptor_count =
+                peer_artifacts.protocol_descriptor_count;
+            imported_input.category_descriptor_count =
+                peer_artifacts.category_descriptor_count;
+            imported_input.property_descriptor_count =
+                peer_artifacts.property_descriptor_count;
+            imported_input.ivar_descriptor_count =
+                peer_artifacts.ivar_descriptor_count;
+            imported_input.total_descriptor_count =
+                peer_artifacts.total_descriptor_count;
             imported_input.driver_linker_flags =
                 peer_artifacts.driver_linker_flags;
             imported_input.ready_for_live_registration_discovery_replay =

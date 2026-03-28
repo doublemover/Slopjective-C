@@ -135,6 +135,12 @@ struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {
   std::string translation_unit_identity_key;
   std::string object_format;
   std::uint64_t translation_unit_registration_order_ordinal = 0;
+  std::size_t class_descriptor_count = 0;
+  std::size_t protocol_descriptor_count = 0;
+  std::size_t category_descriptor_count = 0;
+  std::size_t property_descriptor_count = 0;
+  std::size_t ivar_descriptor_count = 0;
+  std::size_t total_descriptor_count = 0;
   std::vector<std::string> driver_linker_flags;
   bool ready_for_live_registration_discovery_replay = false;
   bool ready_for_live_restart_hardening = false;

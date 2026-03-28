@@ -195,6 +195,12 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string object_format;
   std::string runtime_support_library_archive_relative_path;
   std::uint64_t translation_unit_registration_order_ordinal = 0;
+  std::size_t class_descriptor_count = 0;
+  std::size_t protocol_descriptor_count = 0;
+  std::size_t category_descriptor_count = 0;
+  std::size_t property_descriptor_count = 0;
+  std::size_t ivar_descriptor_count = 0;
+  std::size_t total_descriptor_count = 0;
   std::vector<std::string> driver_linker_flags;
   bool ready_for_live_registration_discovery_replay = false;
   bool ready_for_live_restart_hardening = false;
@@ -284,6 +290,12 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::string local_translation_unit_identity_model;
   std::string local_translation_unit_identity_key;
   std::uint64_t local_translation_unit_registration_order_ordinal = 0;
+  std::size_t local_class_descriptor_count = 0;
+  std::size_t local_protocol_descriptor_count = 0;
+  std::size_t local_category_descriptor_count = 0;
+  std::size_t local_property_descriptor_count = 0;
+  std::size_t local_ivar_descriptor_count = 0;
+  std::size_t local_total_descriptor_count = 0;
   std::vector<std::string> local_driver_linker_flags;
   std::string expected_part6_contract_id;
   std::string expected_part6_source_contract_id;

@@ -972,6 +972,9 @@ inline constexpr const char
         "module.runtime-registration-manifest.json";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanContractId =
     "objc3c.cross.module.runtime.packaging.link.plan.v1";
+inline constexpr const char
+    *kObjc3RuntimeCrossModuleRealizedMetadataReplayPreservationSurfaceContractId =
+        "objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanPayloadModel =
     "cross-module-runtime-link-plan-json-v1";
 inline constexpr const char *kObjc3CrossModuleRuntimeLinkPlanArtifactSuffix =
@@ -1017,6 +1020,9 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3CrossModuleRuntimeLinkObjectOrderModel =
         "ascending-registration-ordinal-then-translation-unit-identity-key";
+inline constexpr const char
+    *kObjc3CrossModuleRealizedMetadataReplayPreservationModel =
+        "cross-module-link-plan-preserves-local-and-imported-realized-metadata-descriptor-counts-identities-and-reset-replay-readiness-from-runtime-registration-manifests";
 inline constexpr const char
     *kObjc3RuntimeTranslationUnitRegistrationInitStubSymbolPrefix =
         "__objc3_runtime_register_image_init_stub_";

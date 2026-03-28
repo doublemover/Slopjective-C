@@ -603,6 +603,44 @@ results. Downstream work must extend this emitted surface instead of
 reconstructing coherence from source-only manifests, ad hoc probe payloads, or
 milestone-local notes.
 
+## Cross-Module Realized-Metadata Replay Preservation
+
+- authoritative emitted artifact:
+  - `module.cross-module-runtime-link-plan.json`
+- machine-readable key:
+  - `runtime_cross_module_realized_metadata_replay_preservation_surface`
+- authoritative source contracts:
+  - `objc3c.cross.module.runtime.packaging.link.plan.v1`
+  - `objc3c.runtime.object.model.realization.source.surface.v1`
+  - `objc3c.runtime.realization.lowering.reflection.artifact.surface.v1`
+  - `objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1`
+- emitted preservation facts:
+  - imported and local descriptor counts:
+    - class
+    - protocol
+    - category
+    - property
+    - ivar
+    - total
+  - transitive descriptor-count totals
+  - translation-unit identity keys
+  - registration ordinals
+  - replay/reset readiness and bootstrap replay symbols
+- authoritative proof path:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+  - probe:
+    - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+
+This is the authoritative cross-module realized-metadata replay boundary. It
+freezes the fact that the emitted cross-module link plan, not milestone-local
+notes or ad hoc probe interpretation, carries the preserved descriptor-count,
+identity, registration-order, and replay-readiness facts for imported and local
+runtime images. Downstream work must consume that emitted artifact and its
+reported surface instead of reconstructing cross-image replay truth from source
+text or sidecar-only summaries.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

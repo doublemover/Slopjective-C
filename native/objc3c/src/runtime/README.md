@@ -121,6 +121,26 @@ Dispatch-table and reflection-record lowering surface:
     class, protocol, category, property, and ivar record roots in emitted
     artifacts
 
+Cross-module realized-metadata replay preservation surface:
+
+- authoritative emitted artifact:
+  - `module.cross-module-runtime-link-plan.json`
+- coupled emitted artifacts:
+  - `<emit-prefix>.obj`
+  - `<emit-prefix>.runtime-import-surface.json`
+  - `<emit-prefix>.runtime-registration-manifest.json`
+  - `<emit-prefix>.cross-module-runtime-link-plan.json`
+  - `<emit-prefix>.cross-module-runtime-linker-options.rsp`
+- authoritative executable probe:
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+- semantic boundary:
+  - the cross-module link plan preserves local and imported descriptor-count,
+    translation-unit-identity, and registration-ordinal facts from the emitted
+    runtime registration manifests
+  - the same link plan preserves imported reset/replay readiness and bootstrap
+    replay symbols so runnable replay proof stays coupled to emitted packaging
+    artifacts
+
 Reflection query surface:
 
 - emitted compile-manifest key:

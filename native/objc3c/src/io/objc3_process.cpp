@@ -1762,6 +1762,12 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.local_translation_unit_identity_model.empty() ||
       inputs.local_translation_unit_identity_key.empty() ||
       inputs.local_translation_unit_registration_order_ordinal == 0 ||
+      inputs.local_total_descriptor_count !=
+          inputs.local_class_descriptor_count +
+              inputs.local_protocol_descriptor_count +
+              inputs.local_category_descriptor_count +
+              inputs.local_property_descriptor_count +
+              inputs.local_ivar_descriptor_count ||
       inputs.expected_part6_contract_id.empty() ||
       inputs.expected_part6_source_contract_id.empty() ||
       inputs.expected_part7_actor_contract_id.empty() ||
@@ -1840,6 +1846,12 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
   std::vector<std::string> imported_part11_ffi_module_names;
   std::vector<std::string> imported_part11_header_module_bridge_module_names;
   std::vector<std::string> imported_part10_host_cache_module_names;
+  std::size_t imported_class_descriptor_count = 0;
+  std::size_t imported_protocol_descriptor_count = 0;
+  std::size_t imported_category_descriptor_count = 0;
+  std::size_t imported_property_descriptor_count = 0;
+  std::size_t imported_ivar_descriptor_count = 0;
+  std::size_t imported_total_descriptor_count = 0;
   std::vector<std::string> direct_import_surface_artifact_paths =
       inputs.direct_import_surface_artifact_paths;
   std::sort(direct_import_surface_artifact_paths.begin(),
@@ -1893,6 +1905,12 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         imported_input.object_format.empty() ||
         imported_input.runtime_support_library_archive_relative_path.empty() ||
         imported_input.translation_unit_registration_order_ordinal == 0 ||
+        imported_input.total_descriptor_count !=
+            imported_input.class_descriptor_count +
+                imported_input.protocol_descriptor_count +
+                imported_input.category_descriptor_count +
+                imported_input.property_descriptor_count +
+                imported_input.ivar_descriptor_count ||
         imported_input.driver_linker_flags.empty() ||
         imported_input.bootstrap_live_registration_contract_id.empty() ||
         imported_input.bootstrap_live_restart_hardening_contract_id.empty() ||
@@ -2240,6 +2258,15 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
          imported_input.module_name,
          imported_input.object_artifact_path,
          imported_input.driver_linker_flags});
+    imported_class_descriptor_count += imported_input.class_descriptor_count;
+    imported_protocol_descriptor_count +=
+        imported_input.protocol_descriptor_count;
+    imported_category_descriptor_count +=
+        imported_input.category_descriptor_count;
+    imported_property_descriptor_count +=
+        imported_input.property_descriptor_count;
+    imported_ivar_descriptor_count += imported_input.ivar_descriptor_count;
+    imported_total_descriptor_count += imported_input.total_descriptor_count;
   }
 
   ordered_link_inputs.push_back(
@@ -2308,6 +2335,18 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << "\",\n"
         << "      \"translation_unit_registration_order_ordinal\": "
         << imported_input.translation_unit_registration_order_ordinal << ",\n"
+        << "      \"class_descriptor_count\": "
+        << imported_input.class_descriptor_count << ",\n"
+        << "      \"protocol_descriptor_count\": "
+        << imported_input.protocol_descriptor_count << ",\n"
+        << "      \"category_descriptor_count\": "
+        << imported_input.category_descriptor_count << ",\n"
+        << "      \"property_descriptor_count\": "
+        << imported_input.property_descriptor_count << ",\n"
+        << "      \"ivar_descriptor_count\": "
+        << imported_input.ivar_descriptor_count << ",\n"
+        << "      \"total_descriptor_count\": "
+        << imported_input.total_descriptor_count << ",\n"
         << "      \"object_format\": \""
         << EscapeJsonString(imported_input.object_format) << "\",\n"
         << "      \"runtime_support_library_archive_relative_path\": \""
@@ -2725,8 +2764,70 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"bootstrap_reset_for_testing_symbol\": \""
       << EscapeJsonString(inputs.expected_bootstrap_reset_for_testing_symbol)
       << "\",\n"
+      << "  \"runtime_cross_module_realized_metadata_replay_preservation_surface_contract_id\": \""
+      << "objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1"
+      << "\",\n"
+      << "  \"runtime_object_model_realization_source_surface_contract_id\": \""
+      << "objc3c.runtime.object.model.realization.source.surface.v1"
+      << "\",\n"
+      << "  \"runtime_realization_lowering_reflection_artifact_surface_contract_id\": \""
+      << "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1"
+      << "\",\n"
+      << "  \"runtime_dispatch_table_reflection_record_lowering_surface_contract_id\": \""
+      << "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1"
+      << "\",\n"
+      << "  \"realized_metadata_replay_preservation_model\": \""
+      << "cross-module-link-plan-preserves-local-and-imported-realized-metadata-descriptor-counts-identities-and-reset-replay-readiness-from-runtime-registration-manifests"
+      << "\",\n"
       << "  \"imported_live_registration_replay_ready\": true,\n"
       << "  \"imported_live_restart_hardening_ready\": true,\n"
+      << "  \"module_image_count\": " << imported_inputs.size() + 1 << ",\n"
+      << "  \"direct_import_input_count\": " << imported_inputs.size() << ",\n"
+      << "  \"local_class_descriptor_count\": "
+      << inputs.local_class_descriptor_count << ",\n"
+      << "  \"local_protocol_descriptor_count\": "
+      << inputs.local_protocol_descriptor_count << ",\n"
+      << "  \"local_category_descriptor_count\": "
+      << inputs.local_category_descriptor_count << ",\n"
+      << "  \"local_property_descriptor_count\": "
+      << inputs.local_property_descriptor_count << ",\n"
+      << "  \"local_ivar_descriptor_count\": "
+      << inputs.local_ivar_descriptor_count << ",\n"
+      << "  \"local_total_descriptor_count\": "
+      << inputs.local_total_descriptor_count << ",\n"
+      << "  \"imported_class_descriptor_count\": "
+      << imported_class_descriptor_count << ",\n"
+      << "  \"imported_protocol_descriptor_count\": "
+      << imported_protocol_descriptor_count << ",\n"
+      << "  \"imported_category_descriptor_count\": "
+      << imported_category_descriptor_count << ",\n"
+      << "  \"imported_property_descriptor_count\": "
+      << imported_property_descriptor_count << ",\n"
+      << "  \"imported_ivar_descriptor_count\": "
+      << imported_ivar_descriptor_count << ",\n"
+      << "  \"imported_total_descriptor_count\": "
+      << imported_total_descriptor_count << ",\n"
+      << "  \"transitive_class_descriptor_count\": "
+      << inputs.local_class_descriptor_count + imported_class_descriptor_count
+      << ",\n"
+      << "  \"transitive_protocol_descriptor_count\": "
+      << inputs.local_protocol_descriptor_count +
+             imported_protocol_descriptor_count
+      << ",\n"
+      << "  \"transitive_category_descriptor_count\": "
+      << inputs.local_category_descriptor_count +
+             imported_category_descriptor_count
+      << ",\n"
+      << "  \"transitive_property_descriptor_count\": "
+      << inputs.local_property_descriptor_count +
+             imported_property_descriptor_count
+      << ",\n"
+      << "  \"transitive_ivar_descriptor_count\": "
+      << inputs.local_ivar_descriptor_count + imported_ivar_descriptor_count
+      << ",\n"
+      << "  \"transitive_total_descriptor_count\": "
+      << inputs.local_total_descriptor_count + imported_total_descriptor_count
+      << ",\n"
       << "  \"cleanup_unwind_runtime_link_model\": "
       << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"runtime_support_library_archive_relative_path\": \""
@@ -2755,6 +2856,18 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "\",\n"
       << "    \"translation_unit_registration_order_ordinal\": "
       << inputs.local_translation_unit_registration_order_ordinal << ",\n"
+      << "    \"class_descriptor_count\": "
+      << inputs.local_class_descriptor_count << ",\n"
+      << "    \"protocol_descriptor_count\": "
+      << inputs.local_protocol_descriptor_count << ",\n"
+      << "    \"category_descriptor_count\": "
+      << inputs.local_category_descriptor_count << ",\n"
+      << "    \"property_descriptor_count\": "
+      << inputs.local_property_descriptor_count << ",\n"
+      << "    \"ivar_descriptor_count\": "
+      << inputs.local_ivar_descriptor_count << ",\n"
+      << "    \"total_descriptor_count\": "
+      << inputs.local_total_descriptor_count << ",\n"
       << "    \"driver_linker_flags\": "
       << BuildIndentedStringArrayJson(inputs.local_driver_linker_flags,
                                       "      ")

@@ -1738,6 +1738,18 @@ bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
       !ReadUnsignedMember(root, "translation_unit_registration_order_ordinal",
                           artifacts.translation_unit_registration_order_ordinal,
                           error) ||
+      !ReadUnsignedMember(root, "class_descriptor_count",
+                          artifacts.class_descriptor_count, error) ||
+      !ReadUnsignedMember(root, "protocol_descriptor_count",
+                          artifacts.protocol_descriptor_count, error) ||
+      !ReadUnsignedMember(root, "category_descriptor_count",
+                          artifacts.category_descriptor_count, error) ||
+      !ReadUnsignedMember(root, "property_descriptor_count",
+                          artifacts.property_descriptor_count, error) ||
+      !ReadUnsignedMember(root, "ivar_descriptor_count",
+                          artifacts.ivar_descriptor_count, error) ||
+      !ReadUnsignedMember(root, "total_descriptor_count",
+                          artifacts.total_descriptor_count, error) ||
       !ReadStringArrayMember(root, "driver_linker_flags",
                              artifacts.driver_linker_flags, error) ||
       !ReadStringMember(root, "bootstrap_live_registration_contract_id",
@@ -1787,6 +1799,14 @@ bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
   if (!ready_for_live_restart_hardening) {
     error =
         "runtime registration manifest is not ready for live restart hardening";
+    return false;
+  }
+  if (artifacts.total_descriptor_count !=
+      artifacts.class_descriptor_count + artifacts.protocol_descriptor_count +
+          artifacts.category_descriptor_count +
+          artifacts.property_descriptor_count + artifacts.ivar_descriptor_count) {
+    error =
+        "runtime registration manifest descriptor counts are internally inconsistent";
     return false;
   }
   for (const auto &flag : artifacts.driver_linker_flags) {

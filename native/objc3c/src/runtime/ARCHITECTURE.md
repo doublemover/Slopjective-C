@@ -137,6 +137,19 @@ Dispatch-table and reflection-record lowering source of truth:
   emitted surface instead of rediscovering selector-table or reflection-record
   roots from ad hoc IR inspection or milestone notes
 
+Cross-module realized-metadata replay preservation source of truth:
+
+- emitted packaging proof exposes the cross-module realized-metadata replay
+  boundary through `module.cross-module-runtime-link-plan.json`
+- that artifact must point at the realization source surface,
+  realization-lowering reflection-artifact surface, dispatch-table/
+  reflection-record lowering surface, and the preserved local/imported
+  descriptor-count, identity, registration-ordinal, and replay-readiness facts
+  derived from emitted runtime registration manifests
+- later runtime ABI, lookup, and end-to-end conformance work must consume that
+  emitted link-plan boundary instead of reconstructing cross-image replay truth
+  from ad hoc probe payloads or milestone-local notes
+
 Reflection query source of truth:
 
 - compile publication exposes the coupled reflection boundary through the

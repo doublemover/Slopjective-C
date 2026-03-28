@@ -18,6 +18,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
+    RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
@@ -100,6 +101,15 @@ COMMON_SURFACES = (
         (
             "source_contract_ids",
             "dispatch_table_lowering_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_cross_module_realized_metadata_replay_preservation_surface",
+        RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "realized_metadata_replay_preservation_model",
             "authoritative_case_ids",
         ),
     ),
@@ -294,6 +304,7 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
             RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
+            RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
             RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
             RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
             RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
@@ -361,6 +372,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_dispatch_table_reflection_record_lowering_surface": surfaces[
             "runtime_dispatch_table_reflection_record_lowering_surface"
+        ],
+        "runtime_cross_module_realized_metadata_replay_preservation_surface": surfaces[
+            "runtime_cross_module_realized_metadata_replay_preservation_surface"
         ],
         "runtime_reflection_query_surface": surfaces["runtime_reflection_query_surface"],
         "runtime_realization_lookup_semantics_surface": surfaces[
