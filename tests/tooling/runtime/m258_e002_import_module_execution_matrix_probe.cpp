@@ -134,6 +134,26 @@ int main() {
       objc3_runtime_copy_protocol_conformance_query_for_testing(
           "ImportedProvider", "ImportedWorker", &protocol_query);
 
+  const std::string startup_imported_module_name =
+      imported_entry.module_name != nullptr ? imported_entry.module_name : "";
+  const std::string startup_imported_translation_unit_identity_key =
+      imported_entry.translation_unit_identity_key != nullptr
+          ? imported_entry.translation_unit_identity_key
+          : "";
+  const std::string startup_imported_class_owner_identity =
+      imported_entry.class_owner_identity != nullptr
+          ? imported_entry.class_owner_identity
+          : "";
+  const std::string startup_local_module_name =
+      local_entry.module_name != nullptr ? local_entry.module_name : "";
+  const std::string startup_local_translation_unit_identity_key =
+      local_entry.translation_unit_identity_key != nullptr
+          ? local_entry.translation_unit_identity_key
+          : "";
+  const std::string startup_local_class_owner_identity =
+      local_entry.class_owner_identity != nullptr ? local_entry.class_owner_identity
+                                                  : "";
+
   objc3_runtime_reset_for_testing();
   objc3_runtime_registration_state_snapshot post_reset_registration{};
   objc3_runtime_reset_replay_state_snapshot post_reset_replay{};
@@ -249,8 +269,11 @@ int main() {
                    imported_entry.attached_protocol_count);
   PrintUint64Field("imported_runtime_property_accessor_count",
                    imported_entry.runtime_property_accessor_count);
+  PrintStringField("imported_module_name", startup_imported_module_name.c_str());
+  PrintStringField("imported_translation_unit_identity_key",
+                   startup_imported_translation_unit_identity_key.c_str());
   PrintStringField("imported_class_owner_identity",
-                   imported_entry.class_owner_identity);
+                   startup_imported_class_owner_identity.c_str());
   PrintIntField("local_entry_status", local_entry_status);
   PrintIntField("local_entry_found", local_entry.found);
   PrintUint64Field("local_registration_order_ordinal",
@@ -261,8 +284,11 @@ int main() {
                    local_entry.attached_protocol_count);
   PrintUint64Field("local_runtime_property_accessor_count",
                    local_entry.runtime_property_accessor_count);
+  PrintStringField("local_module_name", startup_local_module_name.c_str());
+  PrintStringField("local_translation_unit_identity_key",
+                   startup_local_translation_unit_identity_key.c_str());
   PrintStringField("local_class_owner_identity",
-                   local_entry.class_owner_identity);
+                   startup_local_class_owner_identity.c_str());
   PrintIntField("imported_provider_class_value",
                 imported_provider_class_value);
   PrintIntField("imported_provider_protocol_value",
@@ -384,10 +410,18 @@ int main() {
                 post_replay_imported_entry_status);
   PrintIntField("post_replay_imported_entry_found",
                 post_replay_imported_entry.found);
+  PrintStringField("post_replay_imported_module_name",
+                   post_replay_imported_entry.module_name);
+  PrintStringField("post_replay_imported_translation_unit_identity_key",
+                   post_replay_imported_entry.translation_unit_identity_key);
   PrintIntField("post_replay_local_entry_status",
                 post_replay_local_entry_status);
   PrintIntField("post_replay_local_entry_found",
                 post_replay_local_entry.found);
+  PrintStringField("post_replay_local_module_name",
+                   post_replay_local_entry.module_name);
+  PrintStringField("post_replay_local_translation_unit_identity_key",
+                   post_replay_local_entry.translation_unit_identity_key);
   PrintIntField("post_replay_imported_provider_class_value",
                 post_replay_imported_provider_class_value);
   PrintIntField("post_replay_imported_provider_protocol_value",
