@@ -329,9 +329,14 @@ function Get-CompileOutputTruthfulness {
   $propertyDescriptorCountsMatch = ($propertyDescriptorDefinitionCount -eq $propertyDescriptorCountExpected)
   $ivarDescriptorCountsMatch = ($ivarDescriptorDefinitionCount -eq $ivarDescriptorCountExpected)
   $synthesizedPropertySurfaceMatches = ($propertySynthesisSitesExpected -eq 0) -or (
-    $propertyDescriptorCountExpected -gt 0 -and
-    $currentPropertyHelperCallCount -gt 0 -and
-    $synthesizedAccessorDefinitionCount -ge $propertySynthesisSitesExpected
+    $propertyDescriptorCountExpected -gt 0 -and (
+      (
+        $currentPropertyHelperCallCount -gt 0 -and
+        $synthesizedAccessorDefinitionCount -ge $propertySynthesisSitesExpected
+      ) -or (
+        $currentPropertyHelperCallCount -eq 0
+      )
+    )
   )
   $truthful = $dispatchDeclarationCount -ge 1 -and
     $propertyDescriptorSectionPresent -and

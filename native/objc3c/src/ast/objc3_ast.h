@@ -743,7 +743,7 @@ inline constexpr const char *kObjc3ExecutablePropertyAccessorSelectorUniquenessM
 inline constexpr const char *kObjc3ExecutablePropertyOwnershipAtomicityInteractionModel =
     "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land";
 inline constexpr const char *kObjc3ExecutablePropertyStorageSemanticsModel =
-    "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation";
+    "interface-owned-property-layout-slots-sizes-alignment-init-order-and-reverse-destruction-order-remain-deterministic-before-runtime-allocation";
 inline constexpr const char *kObjc3ExecutablePropertyCompatibilitySemanticsModel =
     "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols";
 inline constexpr const char *kObjc3RuntimeMetadataMethodAstAnchor =
@@ -1700,6 +1700,8 @@ struct Objc3PropertyDecl {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_init_order_index = 0;
+  std::size_t executable_ivar_destroy_order_index = 0;
   unsigned line = 1;
   unsigned column = 1;
 };

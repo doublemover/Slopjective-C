@@ -7829,6 +7829,10 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << property_record.executable_ivar_layout_size_bytes
         << ",\"executable_ivar_layout_alignment_bytes\":"
         << property_record.executable_ivar_layout_alignment_bytes
+        << ",\"executable_ivar_init_order_index\":"
+        << property_record.executable_ivar_init_order_index
+        << ",\"executable_ivar_destroy_order_index\":"
+        << property_record.executable_ivar_destroy_order_index
         << ",\"line\":" << property_record.line
         << ",\"column\":" << property_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
@@ -7881,6 +7885,10 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << ivar_record.executable_ivar_layout_size_bytes
         << ",\"executable_ivar_layout_alignment_bytes\":"
         << ivar_record.executable_ivar_layout_alignment_bytes
+        << ",\"executable_ivar_init_order_index\":"
+        << ivar_record.executable_ivar_init_order_index
+        << ",\"executable_ivar_destroy_order_index\":"
+        << ivar_record.executable_ivar_destroy_order_index
         << ",\"source_model\":\""
         << EscapeJsonString(ivar_record.source_model)
         << "\",\"line\":" << ivar_record.line
@@ -9052,6 +9060,10 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << node.executable_ivar_layout_size_bytes
         << ",\"executable_ivar_layout_alignment_bytes\":"
         << node.executable_ivar_layout_alignment_bytes
+        << ",\"executable_ivar_init_order_index\":"
+        << node.executable_ivar_init_order_index
+        << ",\"executable_ivar_destroy_order_index\":"
+        << node.executable_ivar_destroy_order_index
         << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
   }
   out << "],\"method_node_entries\":[";
@@ -9106,6 +9118,10 @@ std::string BuildExecutableMetadataSourceGraphJson(
         << node.executable_ivar_layout_size_bytes
         << ",\"executable_ivar_layout_alignment_bytes\":"
         << node.executable_ivar_layout_alignment_bytes
+        << ",\"executable_ivar_init_order_index\":"
+        << node.executable_ivar_init_order_index
+        << ",\"executable_ivar_destroy_order_index\":"
+        << node.executable_ivar_destroy_order_index
         << ",\"line\":" << node.line << ",\"column\":" << node.column << "}";
   }
   out << "],\"owner_edges\":[";
@@ -22678,7 +22694,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << kObjc3ExecutablePropertyOwnershipAtomicityInteractionModel
            << "\",\"storage_semantics_model\":\""
            << kObjc3ExecutablePropertyStorageSemanticsModel
-           << "\",\"compatibility_semantics_model\":\""
+           << "\",\"layout_init_order_field\":\"Objc3PropertyDecl.executable_ivar_init_order_index\""
+           << ",\"layout_destroy_order_field\":\"Objc3PropertyDecl.executable_ivar_destroy_order_index\""
+           << ",\"compatibility_semantics_model\":\""
            << kObjc3ExecutablePropertyCompatibilitySemanticsModel
            << "\",\"ast_source_path\":\"native/objc3c/src/ast/objc3_ast.h\""
            << ",\"sema_source_path\":\"native/objc3c/src/sema/objc3_semantic_passes.cpp\""
@@ -23590,6 +23608,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
              << property_record.executable_ivar_layout_size_bytes
              << ",\"executable_ivar_layout_alignment_bytes\":"
              << property_record.executable_ivar_layout_alignment_bytes
+             << ",\"executable_ivar_init_order_index\":"
+             << property_record.executable_ivar_init_order_index
+             << ",\"executable_ivar_destroy_order_index\":"
+             << property_record.executable_ivar_destroy_order_index
              << ",\"line\":" << property_record.line
              << ",\"column\":" << property_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
@@ -23632,6 +23654,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
              << ivar_record.executable_ivar_layout_size_bytes
              << ",\"executable_ivar_layout_alignment_bytes\":"
              << ivar_record.executable_ivar_layout_alignment_bytes
+             << ",\"executable_ivar_init_order_index\":"
+             << ivar_record.executable_ivar_init_order_index
+             << ",\"executable_ivar_destroy_order_index\":"
+             << ivar_record.executable_ivar_destroy_order_index
              << ",\"source_model\":\"" << ivar_record.source_model << "\",\"line\":"
              << ivar_record.line << ",\"column\":" << ivar_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.ivars_lexicographic.size()) {

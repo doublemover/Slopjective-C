@@ -2332,6 +2332,8 @@ struct Objc3RuntimeMetadataPropertySourceRecord {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_init_order_index = 0;
+  std::size_t executable_ivar_destroy_order_index = 0;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -2361,6 +2363,8 @@ struct Objc3RuntimeMetadataIvarSourceRecord {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_init_order_index = 0;
+  std::size_t executable_ivar_destroy_order_index = 0;
   std::string source_model = kObjc3RuntimeMetadataIvarSourceModel;
   unsigned line = 1;
   unsigned column = 1;
@@ -3162,6 +3166,8 @@ struct Objc3ExecutableMetadataPropertyGraphNode {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_init_order_index = 0;
+  std::size_t executable_ivar_destroy_order_index = 0;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -3198,6 +3204,8 @@ struct Objc3ExecutableMetadataIvarGraphNode {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_init_order_index = 0;
+  std::size_t executable_ivar_destroy_order_index = 0;
   unsigned line = 1;
   unsigned column = 1;
 };

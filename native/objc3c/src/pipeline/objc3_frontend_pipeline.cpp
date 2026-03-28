@@ -724,6 +724,10 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
               property.executable_ivar_layout_size_bytes;
           property_record.executable_ivar_layout_alignment_bytes =
               property.executable_ivar_layout_alignment_bytes;
+          property_record.executable_ivar_init_order_index =
+              property.executable_ivar_init_order_index;
+          property_record.executable_ivar_destroy_order_index =
+              property.executable_ivar_destroy_order_index;
           property_record.line = property.line;
           property_record.column = property.column;
           records.properties_lexicographic.push_back(std::move(property_record));
@@ -746,6 +750,10 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
                 property.executable_ivar_layout_size_bytes;
             ivar_record.executable_ivar_layout_alignment_bytes =
                 property.executable_ivar_layout_alignment_bytes;
+            ivar_record.executable_ivar_init_order_index =
+                property.executable_ivar_init_order_index;
+            ivar_record.executable_ivar_destroy_order_index =
+                property.executable_ivar_destroy_order_index;
             ivar_record.line = property.line;
             ivar_record.column = property.column;
             records.ivars_lexicographic.push_back(std::move(ivar_record));
@@ -1087,6 +1095,10 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
               property.executable_ivar_layout_size_bytes;
           node.executable_ivar_layout_alignment_bytes =
               property.executable_ivar_layout_alignment_bytes;
+          node.executable_ivar_init_order_index =
+              property.executable_ivar_init_order_index;
+          node.executable_ivar_destroy_order_index =
+              property.executable_ivar_destroy_order_index;
           node.line = property.line;
           node.column = property.column;
           graph.property_nodes_lexicographic.push_back(node);
@@ -1119,6 +1131,10 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                 property.executable_ivar_layout_size_bytes;
             ivar_node.executable_ivar_layout_alignment_bytes =
                 property.executable_ivar_layout_alignment_bytes;
+            ivar_node.executable_ivar_init_order_index =
+                property.executable_ivar_init_order_index;
+            ivar_node.executable_ivar_destroy_order_index =
+                property.executable_ivar_destroy_order_index;
             ivar_node.line = property.line;
             ivar_node.column = property.column;
             graph.ivar_nodes_lexicographic.push_back(ivar_node);
@@ -7570,4 +7586,3 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   TransportObjc3DiagnosticsToParsedProgram(result.stage_diagnostics, result.program);
   return result;
 }
-

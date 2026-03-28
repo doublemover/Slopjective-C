@@ -5187,6 +5187,10 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       property.executable_ivar_layout_size_bytes;
   info.executable_ivar_layout_alignment_bytes =
       property.executable_ivar_layout_alignment_bytes;
+  info.executable_ivar_init_order_index =
+      property.executable_ivar_init_order_index;
+  info.executable_ivar_destroy_order_index =
+      property.executable_ivar_destroy_order_index;
   info.line = property.line;
   info.column = property.column;
 
@@ -16297,7 +16301,11 @@ static bool HasCompatibleResolvedDefaultIvarBinding(
          interface_property.executable_ivar_layout_size_bytes ==
              implementation_property.executable_ivar_layout_size_bytes &&
          interface_property.executable_ivar_layout_alignment_bytes ==
-             implementation_property.executable_ivar_layout_alignment_bytes;
+             implementation_property.executable_ivar_layout_alignment_bytes &&
+         interface_property.executable_ivar_init_order_index ==
+             implementation_property.executable_ivar_init_order_index &&
+         interface_property.executable_ivar_destroy_order_index ==
+             implementation_property.executable_ivar_destroy_order_index;
 }
 
 static bool HasCompatibleResolvedDefaultIvarBinding(
@@ -16316,7 +16324,11 @@ static bool HasCompatibleResolvedDefaultIvarBinding(
          interface_property.executable_ivar_layout_size_bytes ==
              implementation_property.executable_ivar_layout_size_bytes &&
          interface_property.executable_ivar_layout_alignment_bytes ==
-             implementation_property.executable_ivar_layout_alignment_bytes;
+             implementation_property.executable_ivar_layout_alignment_bytes &&
+         interface_property.executable_ivar_init_order_index ==
+             implementation_property.executable_ivar_init_order_index &&
+         interface_property.executable_ivar_destroy_order_index ==
+             implementation_property.executable_ivar_destroy_order_index;
 }
 
 static void OverlayAuthoritativeDefaultIvarBinding(
@@ -16336,6 +16348,10 @@ static void OverlayAuthoritativeDefaultIvarBinding(
       interface_property.executable_ivar_layout_size_bytes;
   implementation_property.executable_ivar_layout_alignment_bytes =
       interface_property.executable_ivar_layout_alignment_bytes;
+  implementation_property.executable_ivar_init_order_index =
+      interface_property.executable_ivar_init_order_index;
+  implementation_property.executable_ivar_destroy_order_index =
+      interface_property.executable_ivar_destroy_order_index;
 }
 
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(
@@ -21549,6 +21565,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_ivar_layout_size_bytes;
       property_metadata.executable_ivar_layout_alignment_bytes =
           source.executable_ivar_layout_alignment_bytes;
+      property_metadata.executable_ivar_init_order_index =
+          source.executable_ivar_init_order_index;
+      property_metadata.executable_ivar_destroy_order_index =
+          source.executable_ivar_destroy_order_index;
       property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
       property_metadata.property_contract_violations = source.property_contract_violations;
       property_metadata.has_unknown_attribute = source.has_unknown_attribute;
@@ -21859,6 +21879,10 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_ivar_layout_size_bytes;
       property_metadata.executable_ivar_layout_alignment_bytes =
           source.executable_ivar_layout_alignment_bytes;
+      property_metadata.executable_ivar_init_order_index =
+          source.executable_ivar_init_order_index;
+      property_metadata.executable_ivar_destroy_order_index =
+          source.executable_ivar_destroy_order_index;
       property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
       property_metadata.property_contract_violations = source.property_contract_violations;
       property_metadata.has_unknown_attribute = source.has_unknown_attribute;

@@ -966,7 +966,7 @@ def compile_fixture_with_args(
             "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land"
         ),
         "storage_semantics_model": (
-            "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation"
+            "interface-owned-property-layout-slots-sizes-alignment-init-order-and-reverse-destruction-order-remain-deterministic-before-runtime-allocation"
         ),
         "compatibility_semantics_model": (
             "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols"
@@ -2638,6 +2638,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         for result in results
         if result.case_id
         in {
+            "property-ivar-ordering-semantics",
             "property-synthesis-storage-binding-semantics",
             "storage-legality-semantics",
             "synthesized-accessor-codegen",
@@ -2683,6 +2684,8 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
             "Objc3PropertyDecl.executable_ivar_layout_slot_index",
             "Objc3PropertyDecl.executable_ivar_layout_size_bytes",
             "Objc3PropertyDecl.executable_ivar_layout_alignment_bytes",
+            "Objc3PropertyDecl.executable_ivar_init_order_index",
+            "Objc3PropertyDecl.executable_ivar_destroy_order_index",
         ],
         "semantic_boundary_model": (
             "property-ivar-storage-accessor-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion"
@@ -2695,7 +2698,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
             "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission",
             "effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding",
             "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land",
-            "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation",
+            "interface-owned-property-layout-slots-sizes-alignment-init-order-and-reverse-destruction-order-remain-deterministic-before-runtime-allocation",
             "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols",
         ],
         "authoritative_case_ids": authoritative_case_ids,
@@ -5595,6 +5598,119 @@ def check_property_synthesis_storage_binding_semantics_case(run_dir: Path) -> Ca
     )
 
 
+def check_property_ivar_ordering_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "property-ivar-ordering-semantics"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_property_ivar_source_model_completion_positive.objc3"
+    )
+    _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    surface = manifest.get("runtime_property_ivar_storage_accessor_source_surface", {})
+    expect(
+        surface.get("layout_init_order_field")
+        == "Objc3PropertyDecl.executable_ivar_init_order_index",
+        "expected property/ivar storage source surface to publish the init-order field",
+    )
+    expect(
+        surface.get("layout_destroy_order_field")
+        == "Objc3PropertyDecl.executable_ivar_destroy_order_index",
+        "expected property/ivar storage source surface to publish the destruction-order field",
+    )
+    expect(
+        surface.get("storage_semantics_model")
+        == "interface-owned-property-layout-slots-sizes-alignment-init-order-and-reverse-destruction-order-remain-deterministic-before-runtime-allocation",
+        "expected property/ivar storage source surface to publish the init/destroy ordering model",
+    )
+
+    property_records = manifest.get("runtime_metadata_source_records", {}).get(
+        "properties", []
+    )
+    ivar_records = manifest.get("runtime_metadata_source_records", {}).get(
+        "ivars", []
+    )
+    expect(
+        isinstance(property_records, list) and property_records,
+        "expected property ordering fixture to publish property source records",
+    )
+    expect(
+        isinstance(ivar_records, list) and ivar_records,
+        "expected property ordering fixture to publish ivar source records",
+    )
+
+    property_index = {
+        (record.get("owner_kind"), record.get("owner_name"), record.get("property_name")): record
+        for record in property_records
+        if isinstance(record, dict)
+    }
+    ivar_index = {
+        (record.get("owner_kind"), record.get("owner_name"), record.get("property_name")): record
+        for record in ivar_records
+        if isinstance(record, dict)
+    }
+    expected_property_records = (
+        ("class-interface", "Widget", "token", 0, 2),
+        ("class-interface", "Widget", "value", 1, 1),
+        ("class-interface", "Widget", "count", 2, 0),
+        ("class-implementation", "Widget", "token", 0, 2),
+        ("class-implementation", "Widget", "value", 1, 1),
+        ("class-implementation", "Widget", "count", 2, 0),
+    )
+    for owner_kind, owner_name, property_name, init_index, destroy_index in expected_property_records:
+        record = property_index.get((owner_kind, owner_name, property_name), {})
+        expect(
+            record.get("executable_ivar_layout_slot_index") == init_index,
+            f"expected {owner_kind} {owner_name}.{property_name} to preserve slot index {init_index}",
+        )
+        expect(
+            record.get("executable_ivar_init_order_index") == init_index,
+            f"expected {owner_kind} {owner_name}.{property_name} to preserve init order {init_index}",
+        )
+        expect(
+            record.get("executable_ivar_destroy_order_index") == destroy_index,
+            f"expected {owner_kind} {owner_name}.{property_name} to preserve destruction order {destroy_index}",
+        )
+
+    expected_ivar_records = (
+        ("class-interface", "Widget", "token", 0, 2),
+        ("class-interface", "Widget", "value", 1, 1),
+        ("class-interface", "Widget", "count", 2, 0),
+    )
+    for owner_kind, owner_name, property_name, init_index, destroy_index in expected_ivar_records:
+        record = ivar_index.get((owner_kind, owner_name, property_name), {})
+        expect(
+            record.get("executable_ivar_init_order_index") == init_index,
+            f"expected ivar record for {owner_name}.{property_name} to preserve init order {init_index}",
+        )
+        expect(
+            record.get("executable_ivar_destroy_order_index") == destroy_index,
+            f"expected ivar record for {owner_name}.{property_name} to preserve destruction order {destroy_index}",
+        )
+
+    return CaseResult(
+        case_id="property-ivar-ordering-semantics",
+        probe="compile-manifest-source-records",
+        fixture="tests/tooling/fixtures/native/m257_property_ivar_source_model_completion_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "property_record_count": len(property_records),
+            "ivar_record_count": len(ivar_records),
+            "token_destroy_order_index": property_index.get(
+                ("class-interface", "Widget", "token"), {}
+            ).get("executable_ivar_destroy_order_index"),
+            "count_init_order_index": property_index.get(
+                ("class-interface", "Widget", "count"), {}
+            ).get("executable_ivar_init_order_index"),
+        },
+    )
+
+
 def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "synthesized-accessor-runtime"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
@@ -5878,6 +5994,7 @@ def main() -> int:
         check_realization_lookup_reflection_runtime_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_storage_ownership_reflection_case(clangxx, run_dir),
+        check_property_ivar_ordering_semantics_case(run_dir),
         check_property_synthesis_storage_binding_semantics_case(run_dir),
         check_storage_legality_semantics_case(run_dir),
         check_synthesized_accessor_codegen_case(run_dir),

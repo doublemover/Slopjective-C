@@ -8505,20 +8505,39 @@ class Objc3Parser {
       property.executable_ivar_layout_size_bytes = layout_shape.size_bytes;
       property.executable_ivar_layout_alignment_bytes =
           layout_shape.alignment_bytes;
+      property.executable_ivar_init_order_index = slot_index;
+      property.executable_ivar_destroy_order_index = 0;
     } else {
       property.executable_ivar_layout_symbol.clear();
       property.executable_ivar_layout_slot_index = 0;
       property.executable_ivar_layout_size_bytes = 0;
       property.executable_ivar_layout_alignment_bytes = 0;
+      property.executable_ivar_init_order_index = 0;
+      property.executable_ivar_destroy_order_index = 0;
     }
     property.accessor_ownership_profile =
         BuildExecutableAccessorOwnershipProfile(property);
   }
 
   void FinalizeObjcPropertySynthesisIvarBindingPackets(
-      const std::vector<Objc3PropertyDecl> &properties,
+      std::vector<Objc3PropertyDecl> &properties,
       std::vector<std::string> &property_synthesis_symbols_lexicographic,
       std::vector<std::string> &ivar_binding_symbols_lexicographic) {
+    const std::size_t property_count = properties.size();
+    for (auto &property : properties) {
+      if (!property.executable_ivar_layout_symbol.empty()) {
+        property.executable_ivar_init_order_index =
+            property.executable_ivar_layout_slot_index;
+        property.executable_ivar_destroy_order_index =
+            property_count > property.executable_ivar_layout_slot_index
+                ? (property_count - 1u) -
+                      property.executable_ivar_layout_slot_index
+                : 0u;
+      } else {
+        property.executable_ivar_init_order_index = 0;
+        property.executable_ivar_destroy_order_index = 0;
+      }
+    }
     property_synthesis_symbols_lexicographic = BuildObjcPropertySynthesisSymbolsLexicographic(properties);
     ivar_binding_symbols_lexicographic = BuildObjcIvarBindingSymbolsLexicographic(properties);
   }
@@ -9417,6 +9436,9 @@ class Objc3Parser {
       SynchronizeObjcContainer();
     }
 
+    FinalizeObjcPropertySynthesisIvarBindingPackets(
+        decl->properties, decl->property_synthesis_symbols_lexicographic,
+        decl->ivar_binding_symbols_lexicographic);
     FinalizeObjcMethodLookupOverrideConflictPackets(decl->methods,
                                                     decl->method_lookup_symbols_lexicographic,
                                                     decl->override_lookup_symbols_lexicographic,
