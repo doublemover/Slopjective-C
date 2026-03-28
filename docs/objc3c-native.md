@@ -340,6 +340,45 @@ automation work must extend this emitted surface instead of reconstructing
 truth from sidecar-only notes, probe-local assumptions, or milestone-local
 scaffolding.
 
+## Ownership Transfer And Capture-Family Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_ownership_transfer_capture_family_source_surface`
+- authoritative composed source inputs:
+  - `frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics`
+  - `frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion`
+  - `objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1`
+  - `objc3c.arc.inference.lifetime.v1`
+  - `objc3c.arc.interaction.semantics.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3`
+    - `tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp`
+    - `tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp`
+    - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+
+This is the authoritative ownership-transfer and capture-family source
+boundary. It freezes cleanup ownership transfer, explicit capture ownership
+modes, retainable-family legality, and the normalized owned/weak/unowned block
+capture profile before lowering or runtime lifetime expansion. Downstream
+semantic, lowering, and runtime work must extend this emitted surface instead
+of reinterpreting capture-family truth from ad hoc lowering state or
+milestone-local notes.
+
 ## Property/Ivar/Storage/Accessor Source Surface
 
 - authoritative compile-manifest key:

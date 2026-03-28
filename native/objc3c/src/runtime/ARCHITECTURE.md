@@ -124,6 +124,21 @@ Block/ARC unified source of truth:
   extend that emitted surface rather than inferring runtime truth from sidecar
   probes, ad hoc IR inspection, or milestone-local notes
 
+Ownership-transfer and capture-family source of truth:
+
+- compile publication exposes the coupled ownership-transfer/capture-family
+  boundary through the emitted compile-manifest key
+  `runtime_ownership_transfer_capture_family_source_surface`
+- that surface must point at the Part 8 resource-move/use-after-move summary,
+  the Part 8 capture-list/retainable-family legality summary, the block object
+  capture ownership contract, the ARC inference and interaction contracts, and
+  the authoritative AST fields that publish owned/weak/unowned capture counts
+  plus the normalized block capture ownership profile
+- later block storage semantics, escaping byref legality, and ARC cleanup or
+  ownership-transfer implementation must extend that emitted surface instead of
+  inventing a second semantic path or re-deriving capture-family truth during
+  lowering
+
 Property/ivar/storage/accessor source of truth:
 
 - compile publication exposes the coupled property/ivar/storage/accessor source

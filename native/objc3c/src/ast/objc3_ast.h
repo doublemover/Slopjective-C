@@ -1329,6 +1329,12 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeBlockArcUnifiedSourceSurfaceModel =
         "block-arc-unified-source-surface-freezes-live-frontend-sema-ir-and-runtime-entrypoints-before-generalized-ownership-automation-or-public-abi-widening";
+inline constexpr const char
+    *kObjc3RuntimeOwnershipTransferCaptureFamilySourceSurfaceContractId =
+        "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeOwnershipTransferCaptureFamilySourceSurfaceModel =
+        "ownership-transfer-and-capture-family-source-surface-freezes-sema-level-move-capture-explicit-capture-mode-and-retainable-family-truth-before-lowering-or-runtime-lifetime-expansion";
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,

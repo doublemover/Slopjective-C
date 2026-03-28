@@ -41,6 +41,9 @@ RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.block.arc.unified.source.surface.v1"
 )
+RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1"
+)
 DISPATCH_AND_SYNTHESIZED_ACCESSOR_LOWERING_SURFACE_CONTRACT_ID = (
     "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
 )
@@ -268,6 +271,9 @@ def compile_fixture_with_args(
     )
     block_arc_unified_source_surface = manifest.get(
         "runtime_block_arc_unified_source_surface"
+    )
+    ownership_transfer_capture_family_source_surface = manifest.get(
+        "runtime_ownership_transfer_capture_family_source_surface"
     )
     dispatch_and_synthesized_accessor_lowering_surface = manifest.get(
         "dispatch_and_synthesized_accessor_lowering_surface"
@@ -1752,6 +1758,177 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_block_arc_unified_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(ownership_transfer_capture_family_source_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_ownership_transfer_capture_family_source_surface"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get("contract_id")
+        != RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_ownership_transfer_capture_family_source_surface contract"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get("object_artifact")
+        != obj_path.name
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from the emitted object artifact path"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get("backend_artifact")
+        != ll_path.name
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_ownership_transfer_capture_family_fields = {
+        "block_arc_unified_source_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "source_surface_model": (
+            "ownership-transfer-and-capture-family-source-surface-freezes-sema-level-move-capture-explicit-capture-mode-and-retainable-family-truth-before-lowering-or-runtime-lifetime-expansion"
+        ),
+        "part8_resource_move_use_after_move_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics"
+        ),
+        "part8_capture_list_retainable_family_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion"
+        ),
+        "block_capture_ownership_contract_id": (
+            "objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1"
+        ),
+        "arc_inference_lifetime_contract_id": "objc3c.arc.inference.lifetime.v1",
+        "arc_interaction_semantics_contract_id": "objc3c.arc.interaction.semantics.v1",
+        "block_capture_ownership_profile_field": (
+            "Expr.block_runtime_capture_ownership_profile"
+        ),
+        "block_capture_owned_count_field": (
+            "Expr.block_runtime_owned_object_capture_count"
+        ),
+        "block_capture_weak_count_field": (
+            "Expr.block_runtime_weak_object_capture_count"
+        ),
+        "block_capture_unowned_count_field": (
+            "Expr.block_runtime_unowned_object_capture_count"
+        ),
+        "cleanup_ownership_transfer_field": "cleanup_ownership_transfer_enforced",
+        "explicit_capture_ownership_mode_field": (
+            "explicit_capture_ownership_mode_enforced"
+        ),
+        "retainable_family_conflict_field": "retainable_family_conflict_enforced",
+    }
+    for field, expected_value in expected_ownership_transfer_capture_family_fields.items():
+        if ownership_transfer_capture_family_source_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_ownership_transfer_capture_family_source_surface drifted from {field}"
+            )
+    expected_ownership_transfer_capture_family_code_paths = [
+        "native/objc3c/src/ast/objc3_ast.h",
+        "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+        "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    ]
+    if (
+        ownership_transfer_capture_family_source_surface.get("authoritative_code_paths")
+        != expected_ownership_transfer_capture_family_code_paths
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from authoritative_code_paths"
+        )
+    expected_ownership_transfer_capture_family_fixture_paths = [
+        "tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
+        "tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3",
+        "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
+        "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
+        "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
+        "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
+        "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
+    ]
+    if (
+        ownership_transfer_capture_family_source_surface.get(
+            "authoritative_fixture_paths"
+        )
+        != expected_ownership_transfer_capture_family_fixture_paths
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from authoritative_fixture_paths"
+        )
+    expected_ownership_transfer_capture_family_probe_paths = [
+        "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
+        "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
+        "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+    ]
+    if (
+        ownership_transfer_capture_family_source_surface.get("authoritative_probe_paths")
+        != expected_ownership_transfer_capture_family_probe_paths
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from authoritative_probe_paths"
+        )
+    expected_ownership_transfer_capture_family_non_goals = [
+        "no-parallel-semantics-path",
+        "no-milestone-specific-scaffolding",
+        "no-lowering-owned-reinterpretation-of-capture-family-truth",
+    ]
+    if (
+        ownership_transfer_capture_family_source_surface.get("explicit_non_goals")
+        != expected_ownership_transfer_capture_family_non_goals
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface drifted from explicit_non_goals"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get(
+            "requires_real_compile_output"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface must require real compile output"
+        )
+    if (
+        ownership_transfer_capture_family_source_surface.get(
+            "requires_linked_runtime_probe"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_ownership_transfer_capture_family_source_surface must require a linked runtime probe"
         )
     if not isinstance(property_atomicity_synthesis_reflection_source_surface, dict):
         raise RuntimeError(
@@ -3622,6 +3799,91 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "no-public-block-object-abi-widening",
             "no-milestone-specific-scaffolding",
             "no-sidecar-only-block-or-arc-proof",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_ownership_transfer_capture_family_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"arc-property-helper-abi"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
+        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
+        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
+        "object_artifact": "<emit-prefix>.obj",
+        "backend_artifact": "<emit-prefix>.ll",
+        "block_arc_unified_source_surface_contract_id": (
+            RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "source_surface_model": (
+            "ownership-transfer-and-capture-family-source-surface-freezes-sema-level-move-capture-explicit-capture-mode-and-retainable-family-truth-before-lowering-or-runtime-lifetime-expansion"
+        ),
+        "part8_resource_move_use_after_move_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_part8_resource_move_and_use_after_move_semantics"
+        ),
+        "part8_capture_list_retainable_family_surface_path": (
+            "frontend.pipeline.semantic_surface.objc_part8_capture_list_and_retainable_family_legality_completion"
+        ),
+        "block_capture_ownership_contract_id": (
+            "objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1"
+        ),
+        "arc_inference_lifetime_contract_id": "objc3c.arc.inference.lifetime.v1",
+        "arc_interaction_semantics_contract_id": "objc3c.arc.interaction.semantics.v1",
+        "block_capture_ownership_profile_field": (
+            "Expr.block_runtime_capture_ownership_profile"
+        ),
+        "block_capture_owned_count_field": (
+            "Expr.block_runtime_owned_object_capture_count"
+        ),
+        "block_capture_weak_count_field": (
+            "Expr.block_runtime_weak_object_capture_count"
+        ),
+        "block_capture_unowned_count_field": (
+            "Expr.block_runtime_unowned_object_capture_count"
+        ),
+        "cleanup_ownership_transfer_field": "cleanup_ownership_transfer_enforced",
+        "explicit_capture_ownership_mode_field": (
+            "explicit_capture_ownership_mode_enforced"
+        ),
+        "retainable_family_conflict_field": "retainable_family_conflict_enforced",
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3",
+            "tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3",
+            "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
+            "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
+            "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
+            "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3",
+            "tests/tooling/fixtures/native/m271_b004_capture_list_and_retainable_family_legality_completion_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp",
+            "tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp",
+            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-parallel-semantics-path",
+            "no-milestone-specific-scaffolding",
+            "no-lowering-owned-reinterpretation-of-capture-family-truth",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -8650,6 +8912,9 @@ def main() -> int:
         ),
         "runtime_block_arc_unified_source_surface": (
             build_runtime_block_arc_unified_source_surface(results)
+        ),
+        "runtime_ownership_transfer_capture_family_source_surface": (
+            build_runtime_ownership_transfer_capture_family_source_surface(results)
         ),
         "runtime_property_ivar_storage_accessor_source_surface": (
             build_runtime_property_ivar_storage_accessor_source_surface(results)
