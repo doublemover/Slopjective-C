@@ -26,6 +26,9 @@ PWSH = shutil.which("pwsh") or shutil.which("powershell") or "pwsh"
 RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID = "objc3c.runtime.state.publication.surface.v1"
 RUNTIME_STATE_PUBLICATION_SURFACE_KIND = "compile-manifest-plus-registration-manifest"
 RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID = "objc3c.runtime.bootstrap.registration.source.surface.v1"
+RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.bootstrap.lowering.registration.artifact.surface.v1"
+)
 RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.multi.image.startup.ordering.source.surface.v1"
 )
@@ -154,6 +157,9 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     pipeline = frontend.get("pipeline", {}) if isinstance(frontend, dict) else {}
     semantic_surface = pipeline.get("semantic_surface", {}) if isinstance(pipeline, dict) else {}
     bootstrap_source_surface = manifest.get("runtime_bootstrap_registration_source_surface")
+    bootstrap_lowering_registration_artifact_surface = manifest.get(
+        "runtime_bootstrap_lowering_registration_artifact_surface"
+    )
     multi_image_startup_ordering_source_surface = manifest.get(
         "runtime_multi_image_startup_ordering_source_surface"
     )
@@ -286,6 +292,129 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError("runtime_bootstrap_registration_source_surface must require the coupled runtime registration manifest")
     if bootstrap_source_surface.get("requires_real_compile_output") is not True:
         raise RuntimeError("runtime_bootstrap_registration_source_surface must require real compile output")
+    if not isinstance(bootstrap_lowering_registration_artifact_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_bootstrap_lowering_registration_artifact_surface"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get("contract_id")
+        != RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_bootstrap_lowering_registration_artifact_surface contract"
+        )
+    if bootstrap_lowering_registration_artifact_surface.get("compile_manifest_artifact") != "module.manifest.json":
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get("registration_manifest_artifact")
+        != "module.runtime-registration-manifest.json"
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get("registration_descriptor_artifact")
+        != "module.runtime-registration-descriptor.json"
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if bootstrap_lowering_registration_artifact_surface.get("object_artifact") != "module.obj":
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the emitted object artifact path"
+        )
+    if bootstrap_lowering_registration_artifact_surface.get("backend_artifact") != "module.ll":
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the emitted LLVM IR artifact path"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get("bootstrap_lowering_contract_id")
+        != runtime_bootstrap_lowering.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the bootstrap lowering contract"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get("registration_manifest_contract_id")
+        != translation_unit_registration_manifest.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the registration manifest contract"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get("bootstrap_semantics_contract_id")
+        != runtime_bootstrap_semantics.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the bootstrap semantics contract"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get(
+            "registration_descriptor_frontend_closure_contract_id"
+        )
+        != registration_descriptor_frontend_closure.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the registration-descriptor frontend closure contract"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get(
+            "runtime_support_library_archive_relative_path"
+        )
+        != registration_manifest.get("runtime_support_library_archive_relative_path")
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface drifted from the runtime support library archive path"
+        )
+    for surface_field, lowering_field in (
+        ("constructor_root_symbol", "constructor_root_symbol"),
+        ("init_stub_symbol_prefix", "constructor_init_stub_symbol_prefix"),
+        ("registration_table_symbol_prefix", "registration_table_symbol_prefix"),
+        ("image_local_init_state_symbol_prefix", "image_local_init_state_symbol_prefix"),
+        ("registration_entrypoint_symbol", "registration_entrypoint_symbol"),
+        ("global_ctor_list_model", "global_ctor_list_model"),
+        ("registration_table_layout_model", "registration_table_layout_model"),
+        ("image_local_initialization_model", "image_local_initialization_model"),
+        ("registration_table_abi_version", "registration_table_abi_version"),
+        ("registration_table_pointer_field_count", "registration_table_pointer_field_count"),
+        ("constructor_root_emission_state", "constructor_root_emission_state"),
+        ("init_stub_emission_state", "init_stub_emission_state"),
+        ("registration_table_emission_state", "registration_table_emission_state"),
+        ("bootstrap_ir_materialization_landed", "bootstrap_ir_materialization_landed"),
+        ("image_local_initialization_landed", "image_local_initialization_landed"),
+    ):
+        if (
+            bootstrap_lowering_registration_artifact_surface.get(surface_field)
+            != runtime_bootstrap_lowering.get(lowering_field)
+        ):
+            raise RuntimeError(
+                "runtime_bootstrap_lowering_registration_artifact_surface drifted "
+                f"from bootstrap lowering field {lowering_field}"
+            )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get(
+            "requires_coupled_registration_descriptor_artifact"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface must require the coupled runtime registration descriptor artifact"
+        )
+    if (
+        bootstrap_lowering_registration_artifact_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface must require the coupled runtime registration manifest"
+        )
+    if bootstrap_lowering_registration_artifact_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError(
+            "runtime_bootstrap_lowering_registration_artifact_surface must require real compile output"
+        )
     if not isinstance(multi_image_startup_ordering_source_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_multi_image_startup_ordering_source_surface")
     if (
@@ -655,6 +784,45 @@ def build_runtime_bootstrap_registration_source_surface() -> dict[str, Any]:
         "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
         "object_artifact": "<emit-prefix>.obj",
         "backend_artifact": "<emit-prefix>.ll",
+        "requires_coupled_registration_descriptor_artifact": True,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_bootstrap_lowering_registration_artifact_surface() -> dict[str, Any]:
+    return {
+        "contract_id": RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID,
+        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
+        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
+        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
+        "object_artifact": "<emit-prefix>.obj",
+        "backend_artifact": "<emit-prefix>.ll",
+        "composed_source_inputs": [
+            "objc_runtime_bootstrap_lowering_contract",
+            "objc_runtime_translation_unit_registration_manifest",
+            "objc_runtime_startup_bootstrap_semantics",
+            "objc_runtime_registration_descriptor_frontend_closure",
+        ],
+        "emitted_symbol_fields": [
+            "constructor_root_symbol",
+            "init_stub_symbol_prefix",
+            "registration_table_symbol_prefix",
+            "image_local_init_state_symbol_prefix",
+            "registration_entrypoint_symbol",
+        ],
+        "emitted_table_fields": [
+            "registration_table_layout_model",
+            "registration_table_abi_version",
+            "registration_table_pointer_field_count",
+        ],
+        "emission_state_fields": [
+            "constructor_root_emission_state",
+            "init_stub_emission_state",
+            "registration_table_emission_state",
+            "bootstrap_ir_materialization_landed",
+            "image_local_initialization_landed",
+        ],
         "requires_coupled_registration_descriptor_artifact": True,
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -2214,6 +2382,9 @@ def main() -> int:
         "claim_boundary": build_claim_boundary(),
         "runtime_state_publication_surface": build_runtime_state_publication_surface(),
         "runtime_bootstrap_registration_source_surface": build_runtime_bootstrap_registration_source_surface(),
+        "runtime_bootstrap_lowering_registration_artifact_surface": (
+            build_runtime_bootstrap_lowering_registration_artifact_surface()
+        ),
         "runtime_multi_image_startup_ordering_source_surface": (
             build_runtime_multi_image_startup_ordering_source_surface(results)
         ),

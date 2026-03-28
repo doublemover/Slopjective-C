@@ -22442,6 +22442,69 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_coupled_registration_manifest\":true"
            << ",\"requires_real_compile_output\":true"
            << "},\n";
+  manifest << "  \"runtime_bootstrap_lowering_registration_artifact_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeBootstrapLoweringRegistrationArtifactSurfaceContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"registration_descriptor_artifact\":\""
+           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"bootstrap_lowering_contract_id\":\""
+           << runtime_bootstrap_lowering.contract_id
+           << "\",\"registration_manifest_contract_id\":\""
+           << runtime_translation_unit_registration_manifest.contract_id
+           << "\",\"bootstrap_semantics_contract_id\":\""
+           << runtime_bootstrap_semantics.contract_id
+           << "\",\"registration_descriptor_frontend_closure_contract_id\":\""
+           << runtime_registration_descriptor_frontend_closure.contract_id
+           << "\",\"runtime_support_library_archive_relative_path\":\""
+           << runtime_translation_unit_registration_manifest
+                  .runtime_support_library_archive_relative_path
+           << "\",\"constructor_root_symbol\":\""
+           << runtime_bootstrap_lowering.constructor_root_symbol
+           << "\",\"init_stub_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.constructor_init_stub_symbol_prefix
+           << "\",\"registration_table_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.registration_table_symbol_prefix
+           << "\",\"image_local_init_state_symbol_prefix\":\""
+           << runtime_bootstrap_lowering.image_local_init_state_symbol_prefix
+           << "\",\"registration_entrypoint_symbol\":\""
+           << runtime_bootstrap_lowering.registration_entrypoint_symbol
+           << "\",\"global_ctor_list_model\":\""
+           << runtime_bootstrap_lowering.global_ctor_list_model
+           << "\",\"registration_table_layout_model\":\""
+           << runtime_bootstrap_lowering.registration_table_layout_model
+           << "\",\"image_local_initialization_model\":\""
+           << runtime_bootstrap_lowering.image_local_initialization_model
+           << "\",\"registration_table_abi_version\":"
+           << runtime_bootstrap_lowering.registration_table_abi_version
+           << ",\"registration_table_pointer_field_count\":"
+           << runtime_bootstrap_lowering
+                  .registration_table_pointer_field_count
+           << ",\"constructor_root_emission_state\":\""
+           << runtime_bootstrap_lowering.constructor_root_emission_state
+           << "\",\"init_stub_emission_state\":\""
+           << runtime_bootstrap_lowering.init_stub_emission_state
+           << "\",\"registration_table_emission_state\":\""
+           << runtime_bootstrap_lowering.registration_table_emission_state
+           << "\",\"bootstrap_ir_materialization_landed\":"
+           << (runtime_bootstrap_lowering.bootstrap_ir_materialization_landed
+                   ? "true"
+                   : "false")
+           << ",\"image_local_initialization_landed\":"
+           << (runtime_bootstrap_lowering.image_local_initialization_landed
+                   ? "true"
+                   : "false")
+           << ",\"requires_coupled_registration_descriptor_artifact\":true"
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << "},\n";
   manifest << "  \"runtime_multi_image_startup_ordering_source_surface\":{\"contract_id\":\""
            << kObjc3RuntimeMultiImageStartupOrderingSourceSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""

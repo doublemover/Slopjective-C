@@ -1123,6 +1123,9 @@ inline constexpr const char
     *kObjc3RuntimeBootstrapRegistrationSourceSurfaceContractId =
         "objc3c.runtime.bootstrap.registration.source.surface.v1";
 inline constexpr const char
+    *kObjc3RuntimeBootstrapLoweringRegistrationArtifactSurfaceContractId =
+        "objc3c.runtime.bootstrap.lowering.registration.artifact.surface.v1";
+inline constexpr const char
     *kObjc3RuntimeMultiImageStartupOrderingSourceSurfaceContractId =
         "objc3c.runtime.multi.image.startup.ordering.source.surface.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarContractId =

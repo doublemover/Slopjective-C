@@ -96,6 +96,44 @@ registration order ordinal as one coupled compile output instead of leaving
 downstream work to reconstruct that source of truth from separate manifest
 fragments.
 
+## Bootstrap Lowering And Registration Artifact Surface
+
+- authoritative compile-manifest key:
+  - `runtime_bootstrap_lowering_registration_artifact_surface`
+- authoritative composed source inputs:
+  - `objc_runtime_bootstrap_lowering_contract`
+  - `objc_runtime_translation_unit_registration_manifest`
+  - `objc_runtime_startup_bootstrap_semantics`
+  - `objc_runtime_registration_descriptor_frontend_closure`
+- authoritative emitted artifacts:
+  - `<prefix>.manifest.json`
+  - `<prefix>.runtime-registration-manifest.json`
+  - `<prefix>.runtime-registration-descriptor.json`
+  - `<prefix>.obj`
+  - `<prefix>.ll`
+- authoritative lowered symbol fields:
+  - `constructor_root_symbol`
+  - `init_stub_symbol_prefix`
+  - `registration_table_symbol_prefix`
+  - `image_local_init_state_symbol_prefix`
+  - `registration_entrypoint_symbol`
+- authoritative loader-table freeze fields:
+  - `registration_table_layout_model`
+  - `registration_table_abi_version`
+  - `registration_table_pointer_field_count`
+- authoritative emission-state fields:
+  - `constructor_root_emission_state`
+  - `init_stub_emission_state`
+  - `registration_table_emission_state`
+  - `bootstrap_ir_materialization_landed`
+  - `image_local_initialization_landed`
+
+This is the authoritative bootstrap lowering and registration artifact
+boundary. It freezes the lowered constructor-root/init-stub/registration-table
+symbol family and loader-table ABI facts against the emitted manifest, object,
+and IR artifacts instead of leaving later loader-table work to infer those
+details from the semantic packet alone.
+
 ## Multi-Image Startup Ordering Source Surface
 
 - authoritative compile-manifest key:

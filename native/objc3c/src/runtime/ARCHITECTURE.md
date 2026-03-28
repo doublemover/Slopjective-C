@@ -60,6 +60,19 @@ Bootstrap registration source of truth:
 - later bootstrap, loader, and replay work must consume that emitted surface
   rather than reconstructing bootstrap source facts from partial sidecars
 
+Bootstrap lowering and registration artifact source of truth:
+
+- compile publication exposes the coupled lowering/artifact boundary through the
+  emitted compile-manifest key
+  `runtime_bootstrap_lowering_registration_artifact_surface`
+- that surface must point at the live lowering contract, registration manifest,
+  bootstrap semantics, registration-descriptor frontend closure, emitted
+  manifest/object/IR artifacts, ctor/init-stub/registration-table symbol
+  family, and loader-table ABI/version facts
+- later loader-table realization, imported-image replay, and packaging work
+  must consume that emitted surface rather than reconstructing lowering truth
+  from the semantic packet alone
+
 Multi-image startup ordering source of truth:
 
 - compile publication exposes the coupled multi-image ordering boundary through
