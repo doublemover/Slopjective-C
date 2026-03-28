@@ -3979,6 +3979,53 @@ def build_runtime_error_execution_cleanup_source_surface(
     }
 
 
+def build_runtime_catch_filter_finalization_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id == "catch-filter-finalization-source"
+    ]
+    return {
+        "contract_id": RUNTIME_CATCH_FILTER_FINALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.part6.try.throw.do.catch.semantics.v1",
+            "objc3c.part6.error.bridge.legality.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/parse/objc3_parser.cpp",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m267_try_do_catch_semantics_positive.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3",
+            "tests/tooling/fixtures/native/m267_try_requires_throwing_context_negative.objc3",
+            "tests/tooling/fixtures/native/m267_throw_requires_throws_or_catch_negative.objc3",
+            "tests/tooling/fixtures/native/m267_catch_after_catch_all_negative.objc3",
+            "tests/tooling/fixtures/native/m267_bridge_legality_throws_conflict_negative.objc3",
+        ],
+        "explicit_non_goals": [
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-proof",
+            "no-lowering-or-runtime-abi-claims",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": False,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -5811,6 +5858,116 @@ def check_error_execution_cleanup_source_case(run_dir: Path) -> CaseResult:
             "result_like_sites": surface.get("result_like_sites"),
             "ns_error_bridging_sites": surface.get("ns_error_bridging_sites"),
             "ready_for_semantic_expansion": surface.get("ready_for_semantic_expansion"),
+        },
+    )
+
+
+def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "catch-filter-finalization-source"
+    try_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_try_do_catch_semantics_positive.objc3"
+    )
+    _, _, try_manifest_path = compile_fixture_outputs(try_fixture, case_dir / "try")
+    try_manifest = json.loads(try_manifest_path.read_text(encoding="utf-8"))
+    try_surface = (
+        try_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_part6_try_do_catch_semantics", {})
+    )
+    expect(
+        isinstance(try_surface, dict),
+        "expected try/do/catch fixture to publish objc_part6_try_do_catch_semantics",
+    )
+    expected_try_fields = {
+        "contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
+        "dependency_contract_id": "objc3c.part6.error.semantic.model.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_try_do_catch_semantics",
+        "try_surface_landed": True,
+        "throw_surface_landed": True,
+        "do_catch_surface_landed": True,
+        "throwing_context_legality_enforced": True,
+        "native_emit_remains_fail_closed": True,
+        "deterministic": True,
+        "ready_for_lowering_and_runtime": False,
+    }
+    for field_name, expected_value in expected_try_fields.items():
+        expect(
+            try_surface.get(field_name) == expected_value,
+            f"expected try/do/catch source surface to preserve {field_name}",
+        )
+    expect(
+        try_surface.get("try_expression_sites") == 3
+        and try_surface.get("throw_statement_sites") == 1
+        and try_surface.get("do_catch_sites") == 1
+        and try_surface.get("catch_clause_sites") == 2
+        and try_surface.get("catch_all_sites") == 1,
+        "expected try/do/catch source surface to preserve the catch/finalization source counts",
+    )
+
+    bridge_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_bridge_legality_positive.objc3"
+    )
+    _, _, bridge_manifest_path = compile_fixture_outputs(bridge_fixture, case_dir / "bridge")
+    bridge_manifest = json.loads(bridge_manifest_path.read_text(encoding="utf-8"))
+    bridge_surface = (
+        bridge_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_part6_error_bridge_legality", {})
+    )
+    expect(
+        isinstance(bridge_surface, dict),
+        "expected bridge legality fixture to publish objc_part6_error_bridge_legality",
+    )
+    expected_bridge_fields = {
+        "contract_id": "objc3c.part6.error.bridge.legality.v1",
+        "dependency_contract_id": "objc3c.part6.try.throw.do.catch.semantics.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_bridge_legality",
+        "bridge_legality_landed": True,
+        "try_bridge_filter_landed": True,
+        "unsupported_combinations_fail_closed": True,
+        "native_emit_remains_fail_closed": True,
+        "deterministic": True,
+        "ready_for_lowering_and_runtime": False,
+    }
+    for field_name, expected_value in expected_bridge_fields.items():
+        expect(
+            bridge_surface.get(field_name) == expected_value,
+            f"expected bridge legality source surface to preserve {field_name}",
+        )
+    expect(
+        bridge_surface.get("bridge_callable_sites") == 2
+        and bridge_surface.get("semantically_valid_bridge_callable_sites") == 2
+        and bridge_surface.get("try_eligible_bridge_callable_sites") == 2
+        and bridge_surface.get("unsupported_combination_sites") == 0
+        and bridge_surface.get("throws_bridge_conflict_sites") == 0,
+        "expected bridge legality source surface to preserve the catch-filter eligibility counts",
+    )
+
+    return CaseResult(
+        case_id="catch-filter-finalization-source",
+        probe="compile-manifest-source-surface",
+        fixture="tests/tooling/fixtures/native/m267_try_do_catch_semantics_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "try_expression_sites": try_surface.get("try_expression_sites"),
+            "catch_clause_sites": try_surface.get("catch_clause_sites"),
+            "bridge_callable_sites": bridge_surface.get("bridge_callable_sites"),
+            "try_eligible_bridge_callable_sites": bridge_surface.get(
+                "try_eligible_bridge_callable_sites"
+            ),
         },
     )
 
@@ -10954,6 +11111,7 @@ def main() -> int:
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
         check_error_execution_cleanup_source_case(run_dir),
+        check_catch_filter_finalization_source_case(run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -11008,6 +11166,9 @@ def main() -> int:
         ),
         "runtime_error_execution_cleanup_source_surface": (
             build_runtime_error_execution_cleanup_source_surface(results)
+        ),
+        "runtime_catch_filter_finalization_source_surface": (
+            build_runtime_catch_filter_finalization_source_surface(results)
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

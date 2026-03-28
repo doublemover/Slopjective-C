@@ -275,6 +275,34 @@ one coupled compile surface instead of leaving later error-runtime work to
 reconstruct source truth from deleted milestone scripts or stale planning
 packets.
 
+## Catch Filter And Finalization Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_catch_filter_finalization_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.part6.try.throw.do.catch.semantics.v1`
+  - `objc3c.part6.error.bridge.legality.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/parse/objc3_parser.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m267_try_do_catch_semantics_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_try_requires_throwing_context_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_throw_requires_throws_or_catch_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_catch_after_catch_all_negative.objc3`
+    - `tests/tooling/fixtures/native/m267_bridge_legality_throws_conflict_negative.objc3`
+
+This is the authoritative source boundary for catch filtering, catch-all
+finalization ordering, and bridge eligibility before lowering. It freezes the
+live try/throw/do/catch legality contract together with bridge-marker filtering
+semantics so later execution and runtime issues do not have to guess which
+source forms are valid or try-eligible.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:

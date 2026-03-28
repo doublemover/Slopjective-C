@@ -216,6 +216,13 @@ def write_composite_validation_report(
         payload["runtime_error_execution_cleanup_source_surface"] = (
             runtime_error_execution_cleanup_source_surface
         )
+    runtime_catch_filter_finalization_source_surface = load_surface_from_report(
+        steps, "runtime_catch_filter_finalization_source_surface"
+    )
+    if runtime_catch_filter_finalization_source_surface is not None:
+        payload["runtime_catch_filter_finalization_source_surface"] = (
+            runtime_catch_filter_finalization_source_surface
+        )
     acceptance_suite_surface = load_surface_from_report(steps, "acceptance_suite_surface")
     if acceptance_suite_surface is not None:
         payload["acceptance_suite_surface"] = acceptance_suite_surface
