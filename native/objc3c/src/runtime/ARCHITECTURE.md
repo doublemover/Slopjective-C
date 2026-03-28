@@ -108,6 +108,22 @@ Object-model realization source of truth:
   rather than rederiving class/category/protocol behavior from sidecars or
   stale milestone notes
 
+Block/ARC unified source of truth:
+
+- compile publication exposes the coupled block/ARC source boundary through the
+  emitted compile-manifest key `runtime_block_arc_unified_source_surface`
+- that surface must point at the live block source/model/storage/semantic
+  contracts, the executable block lowering contracts already emitted through
+  the real compiler path, the ARC mode/semantic/inference/interaction
+  contracts, the authoritative semantic-packet field names, and the runtime
+  entrypoints `objc3_runtime_promote_block_i32`,
+  `objc3_runtime_invoke_block_i32`, and
+  `objc3_runtime_copy_arc_debug_state_for_testing`
+- later ownership transfer, capture-family, generalized ARC insertion, block
+  helper/runtime implementation, and runnable block-ARC validation work must
+  extend that emitted surface rather than inferring runtime truth from sidecar
+  probes, ad hoc IR inspection, or milestone-local notes
+
 Property/ivar/storage/accessor source of truth:
 
 - compile publication exposes the coupled property/ivar/storage/accessor source

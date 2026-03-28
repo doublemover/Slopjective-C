@@ -219,6 +219,60 @@ later realization and reflection work must consume. Downstream work must extend
 this emitted surface rather than rederiving realized graph truth from
 sidecars, stale milestone notes, or synthetic probes.
 
+## Block/ARC Unified Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_block_arc_unified_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.executable.block.source.closure.v1`
+  - `objc3c.executable.block.source.model.completion.v1`
+  - `objc3c.executable.block.source.storage.annotation.v1`
+  - `objc3c.executable.block.runtime.semantic.rules.v1`
+  - `objc3c.executable.block.capture.legality.escape.and.invocation.v1`
+  - `objc3c.executable.block.byref.copy.dispose.and.object.capture.ownership.v1`
+  - `objc3c.executable.block.object.and.invoke.thunk.lowering.v1`
+  - `objc3c.executable.block.byref.helper.lowering.v1`
+  - `objc3c.executable.block.escape.runtime.hook.lowering.v1`
+  - `objc3c.arc.source.mode.boundary.freeze.v1`
+  - `objc3c.arc.mode.handling.v1`
+  - `objc3c.arc.semantic.rules.v1`
+  - `objc3c.arc.inference.lifetime.v1`
+  - `objc3c.arc.interaction.semantics.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp`
+    - `tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp`
+    - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+
+This is the authoritative block/ARC unified source boundary. It freezes the
+live frontend semantic packet, the emitted LLVM IR block-runtime summary
+anchors, and the private runtime entrypoints used for escaping block promotion,
+block invocation, and ARC debug snapshots as one coupled compile artifact.
+Downstream block lowering, byref forwarding, ownership transfer, and ARC
+automation work must extend this emitted surface instead of reconstructing
+truth from sidecar-only notes, probe-local assumptions, or milestone-local
+scaffolding.
+
 ## Property/Ivar/Storage/Accessor Source Surface
 
 - authoritative compile-manifest key:

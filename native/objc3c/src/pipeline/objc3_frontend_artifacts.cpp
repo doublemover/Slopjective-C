@@ -23040,6 +23040,100 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
            << "},\n";
+  manifest << "  \"runtime_block_arc_unified_source_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeBlockArcUnifiedSourceSurfaceContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"registration_descriptor_artifact\":\""
+           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"source_surface_model\":\""
+           << kObjc3RuntimeBlockArcUnifiedSourceSurfaceModel
+           << "\",\"source_contract_ids\":[\""
+           << Expr::kObjc3ExecutableBlockSourceClosureContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockSourceModelCompletionContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockSourceStorageAnnotationContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockRuntimeSemanticRulesContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockCaptureLegalityImplementationContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockOwnershipSemanticsImplementationContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockObjectInvokeThunkLoweringContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockByrefHelperLoweringContractId
+           << "\",\""
+           << Expr::kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId
+           << "\",\""
+           << Expr::kObjc3ArcSourceModeBoundaryContractId
+           << "\",\""
+           << Expr::kObjc3ArcModeHandlingContractId
+           << "\",\""
+           << Expr::kObjc3ArcSemanticRulesContractId
+           << "\",\""
+           << Expr::kObjc3ArcInferenceLifetimeContractId
+           << "\",\""
+           << Expr::kObjc3ArcInteractionSemanticsContractId
+           << "\"]"
+           << ",\"authoritative_code_paths\":[\"native/objc3c/src/ast/objc3_ast.h\""
+           << ",\"native/objc3c/src/sema/objc3_semantic_passes.cpp\""
+           << ",\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
+           << ",\"native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp\""
+           << ",\"native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h\""
+           << ",\"native/objc3c/src/runtime/objc3_runtime.cpp\"]"
+           << ",\"authoritative_source_fields\":[\"frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface\""
+           << ",\"frontend.pipeline.semantic_surface.objc_block_literal_capture_lowering_surface\""
+           << ",\"frontend.pipeline.semantic_surface.objc_block_source_model_completion_surface\""
+           << ",\"frontend.pipeline.semantic_surface.objc_block_source_storage_annotation_surface\""
+           << ",\"frontend.pipeline.semantic_surface.objc_block_abi_invoke_trampoline_lowering_surface\""
+           << ",\"frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface\""
+           << ",\"frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface\""
+           << ",\"llvm_ir_summary.executable_block_object_invoke_thunk_lowering\""
+           << ",\"llvm_ir_summary.executable_block_byref_helper_lowering\""
+           << ",\"llvm_ir_summary.executable_block_escape_runtime_hook_lowering\""
+           << ",\"llvm_ir_summary.runtime_block_api_object_layout\""
+           << ",\"llvm_ir_summary.runtime_block_allocation_copy_dispose_invoke_support\""
+           << ",\"llvm_ir_summary.runtime_block_byref_forwarding_heap_promotion_ownership_interop\""
+           << ",\"runtime_api.objc3_runtime_promote_block_i32\""
+           << ",\"runtime_api.objc3_runtime_invoke_block_i32\""
+           << ",\"runtime_api.objc3_runtime_copy_arc_debug_state_for_testing\"]"
+           << ",\"block_runtime_boundary_model\":\""
+           << Expr::kObjc3ExecutableBlockByrefMutationOwnershipModel
+           << "\""
+           << ",\"arc_runtime_boundary_model\":\""
+           << Expr::kObjc3ArcInteractionSemanticsSemanticModel
+           << "\""
+           << ",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/m261_block_source_model_completion_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m261_block_source_storage_annotations_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m262_arc_block_autorelease_return_positive.objc3\""
+           << ",\"tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3\"]"
+           << ",\"authoritative_probe_paths\":[\"tests/tooling/runtime/m261_d002_block_runtime_copy_dispose_invoke_probe.cpp\""
+           << ",\"tests/tooling/runtime/m261_d003_block_runtime_byref_forwarding_probe.cpp\""
+           << ",\"tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp\"]"
+           << ",\"explicit_non_goals\":[\"no-public-block-object-abi-widening\""
+           << ",\"no-milestone-specific-scaffolding\""
+           << ",\"no-sidecar-only-block-or-arc-proof\"]"
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
   manifest << "  \"runtime_property_ivar_accessor_reflection_implementation_surface\":{\"contract_id\":\""
            << kObjc3RuntimePropertyIvarAccessorReflectionImplementationSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""

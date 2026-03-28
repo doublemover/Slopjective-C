@@ -1323,6 +1323,12 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeRegistrationDescriptorPayloadOwnershipModel =
         "compiler-emits-registration-descriptor-artifact-runtime-consumes-bootstrap-identity";
+inline constexpr const char
+    *kObjc3RuntimeBlockArcUnifiedSourceSurfaceContractId =
+        "objc3c.runtime.block.arc.unified.source.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeBlockArcUnifiedSourceSurfaceModel =
+        "block-arc-unified-source-surface-freezes-live-frontend-sema-ir-and-runtime-entrypoints-before-generalized-ownership-automation-or-public-abi-widening";
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,
