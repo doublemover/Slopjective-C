@@ -360,9 +360,9 @@ milestone-local notes.
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative proof paths:
   - fixtures:
-    - `tests/tooling/fixtures/native/m261_owned_object_capture_helper_positive.objc3`
-    - `tests/tooling/fixtures/native/m261_nonowning_object_capture_helper_elided_positive.objc3`
     - `tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_owned_object_capture_runtime_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3`
     - `tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3`
