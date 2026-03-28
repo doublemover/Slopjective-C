@@ -74,3 +74,16 @@ Multi-image startup ordering source of truth:
   `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp` proof
   path instead of reconstructing ordering truth from scattered semantic
   fragments or hand-maintained notes
+
+Bootstrap legality and installation semantics:
+
+- duplicate translation-unit identity keys must fail closed with
+  `OBJC3_RUNTIME_REGISTRATION_STATUS_DUPLICATE_TRANSLATION_UNIT_IDENTITY_KEY`
+  and must not advance installed-image counts or next-expected registration
+  ordinals
+- out-of-order registration ordinals must fail closed with
+  `OBJC3_RUNTIME_REGISTRATION_STATUS_OUT_OF_ORDER_REGISTRATION` and must not
+  advance installed-image counts or next-expected registration ordinals
+- the shared proof path for those guarantees is
+  `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`,
+  exercised through `python scripts/check_objc3c_runtime_acceptance.py`

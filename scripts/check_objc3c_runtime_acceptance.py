@@ -696,9 +696,15 @@ def build_loader_lifecycle_surface(results: list[CaseResult]) -> dict[str, Any]:
         "authoritative_case_ids": authoritative_case_ids,
         "lifecycle_phases": [
             "startup-installed-runtime-state",
+            "duplicate-registration-rejected-without-state-advance",
+            "out-of-order-registration-rejected-without-state-advance",
             "reset-retained-bootstrap-catalog",
             "replay-restored-installed-runtime-state",
         ],
+        "rejected_registration_status_codes": {
+            "duplicate_translation_unit_identity_key": -2,
+            "out_of_order_registration": -3,
+        },
         "retained_bootstrap_catalog_required": True,
         "deterministic_replay_required": True,
         "requires_linked_fixture_or_loader_retained_roots": True,
@@ -752,6 +758,32 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
     startup_identity_key = payload.get("startup_last_registered_translation_unit_identity_key")
     expect(isinstance(startup_module_name, str) and startup_module_name != "", "expected startup installation state to publish a registered module name")
     expect(isinstance(startup_identity_key, str) and startup_identity_key != "", "expected startup installation state to publish a registered translation unit identity key")
+    expect(payload.get("duplicate_status") == -2, "expected duplicate registration to fail with duplicate translation-unit identity status")
+    expect(payload.get("after_duplicate_registration_copy_status") == 0, "expected duplicate rejection registration snapshot copy to succeed")
+    expect(payload.get("after_duplicate_image_walk_copy_status") == 0, "expected duplicate rejection image walk snapshot copy to succeed")
+    expect(payload.get("after_duplicate_registered_image_count") == 1, "expected duplicate rejection to leave installed image count unchanged")
+    expect(payload.get("after_duplicate_next_expected_registration_order_ordinal") == 2, "expected duplicate rejection to preserve the next expected registration ordinal")
+    expect(payload.get("after_duplicate_last_successful_registration_order_ordinal") == 1, "expected duplicate rejection to preserve the last successful registration ordinal")
+    expect(payload.get("after_duplicate_last_registration_status") == -2, "expected duplicate rejection snapshot to publish duplicate registration status")
+    expect(payload.get("after_duplicate_last_rejected_module_name") == startup_module_name, "expected duplicate rejection snapshot to publish the rejected module name")
+    expect(payload.get("after_duplicate_last_rejected_translation_unit_identity_key") == startup_identity_key, "expected duplicate rejection snapshot to publish the rejected translation unit identity key")
+    expect(payload.get("after_duplicate_last_rejected_registration_order_ordinal") == 1, "expected duplicate rejection snapshot to publish the rejected registration ordinal")
+    expect(payload.get("after_duplicate_walked_image_count") == 1, "expected duplicate rejection to leave image walk state unchanged")
+    expect(payload.get("out_of_order_status") == -3, "expected out-of-order registration to fail with out-of-order status")
+    expect(payload.get("after_out_of_order_registration_copy_status") == 0, "expected out-of-order rejection registration snapshot copy to succeed")
+    expect(payload.get("after_out_of_order_image_walk_copy_status") == 0, "expected out-of-order rejection image walk snapshot copy to succeed")
+    expect(payload.get("after_out_of_order_registered_image_count") == 1, "expected out-of-order rejection to leave installed image count unchanged")
+    expect(payload.get("after_out_of_order_next_expected_registration_order_ordinal") == 2, "expected out-of-order rejection to preserve the next expected registration ordinal")
+    expect(payload.get("after_out_of_order_last_successful_registration_order_ordinal") == 1, "expected out-of-order rejection to preserve the last successful registration ordinal")
+    expect(payload.get("after_out_of_order_last_registration_status") == -3, "expected out-of-order rejection snapshot to publish out-of-order status")
+    expect(payload.get("after_out_of_order_last_rejected_module_name") == "out-of-order-module", "expected out-of-order rejection snapshot to publish the rejected module name")
+    expect(
+        payload.get("after_out_of_order_last_rejected_translation_unit_identity_key")
+        == startup_identity_key + "-out-of-order",
+        "expected out-of-order rejection snapshot to publish the rejected translation unit identity key",
+    )
+    expect(payload.get("after_out_of_order_last_rejected_registration_order_ordinal") == 3, "expected out-of-order rejection snapshot to publish the rejected registration ordinal")
+    expect(payload.get("after_out_of_order_walked_image_count") == 1, "expected out-of-order rejection to leave image walk state unchanged")
 
     expect(payload.get("post_reset_registration_copy_status") == 0, "expected post-reset registration snapshot copy to succeed")
     expect(payload.get("post_reset_reset_replay_copy_status") == 0, "expected post-reset reset/replay snapshot copy to succeed")
@@ -791,6 +823,8 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "probe_link_ms": probe_link_ms,
             "probe_run_ms": probe_run_ms,
             "case_total_ms": case_total_ms,
+            "duplicate_status": payload["duplicate_status"],
+            "out_of_order_status": payload["out_of_order_status"],
             "startup_registered_image_count": payload["startup_registered_image_count"],
             "post_reset_registered_image_count": payload["post_reset_registered_image_count"],
             "post_replay_registered_image_count": payload["post_replay_registered_image_count"],
