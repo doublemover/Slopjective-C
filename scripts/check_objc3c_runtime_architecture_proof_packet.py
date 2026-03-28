@@ -34,6 +34,7 @@ SURFACE_KEYS = (
     "runtime_reflection_query_surface",
     "runtime_realization_lookup_semantics_surface",
     "runtime_class_metaclass_protocol_realization_surface",
+    "runtime_category_attachment_merged_dispatch_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
 )
@@ -189,6 +190,9 @@ def main() -> int:
         ],
         "runtime_class_metaclass_protocol_realization_surface": runtime_acceptance_report[
             "runtime_class_metaclass_protocol_realization_surface"
+        ],
+        "runtime_category_attachment_merged_dispatch_surface": runtime_acceptance_report[
+            "runtime_category_attachment_merged_dispatch_surface"
         ],
         "runtime_installation_abi_surface": runtime_acceptance_report["runtime_installation_abi_surface"],
         "runtime_loader_lifecycle_surface": runtime_acceptance_report[

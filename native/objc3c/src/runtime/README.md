@@ -117,6 +117,28 @@ Class/metaclass/protocol realization surface:
   - realized class entries plus runtime conformance queries publish direct and
     attached protocol conformance
 
+Category attachment and merged dispatch surface:
+
+- emitted compile-manifest key:
+  - `runtime_category_attachment_merged_dispatch_surface`
+- private category query boundary:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+  - `objc3_runtime_copy_method_cache_state_for_testing`
+  - `objc3_runtime_copy_method_cache_entry_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+- semantic boundary:
+  - registration attaches category-owned instance and protocol members onto live
+    realized classes before dispatch
+  - attached-category implementations override base-class instance lookup
+    before superclass and protocol fallback
+  - attached categories publish owner and name through realized class entries
+    and protocol-conformance queries
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records

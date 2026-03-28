@@ -149,6 +149,20 @@ Class/metaclass/protocol realization source of truth:
   class lineage or protocol truth from milestone-local notes or synthetic
   summaries
 
+Category attachment and merged dispatch source of truth:
+
+- compile publication exposes the coupled category-attachment and merged
+  dispatch boundary through the emitted compile-manifest key
+  `runtime_category_attachment_merged_dispatch_surface`
+- that surface must point at the category-attachment protocol-conformance
+  contract, realization/lookup semantics surface, class/metaclass/protocol
+  realization surface, coupled registration artifacts, and the private
+  realized-class graph, realized-class entry, protocol-conformance, and
+  method-cache query symbols that the live executable probes consume
+- later reflection visibility hardening and runnable conformance work must
+  extend that emitted surface instead of rederiving category merge truth from
+  ad hoc probe payloads or stale milestone notes
+
 Bootstrap legality and installation semantics:
 
 - duplicate translation-unit identity keys must fail closed with

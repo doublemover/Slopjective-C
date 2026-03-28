@@ -16,6 +16,7 @@ from check_objc3c_runtime_acceptance import (
     COMPILE_PROVENANCE_CONTRACT_ID,
     COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
     RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
+    RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
@@ -105,6 +106,15 @@ COMMON_SURFACES = (
         (
             "private_realization_query_boundary",
             "metaclass_lineage_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_category_attachment_merged_dispatch_surface",
+        RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
+        (
+            "private_category_query_boundary",
+            "merged_dispatch_resolution_model",
             "authoritative_case_ids",
         ),
     ),
@@ -255,6 +265,7 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
             RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
             RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
+            RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
         ],
         "shared_compile_truth_contracts": [
             COMPILE_PROVENANCE_CONTRACT_ID,
@@ -318,6 +329,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_class_metaclass_protocol_realization_surface": surfaces[
             "runtime_class_metaclass_protocol_realization_surface"
+        ],
+        "runtime_category_attachment_merged_dispatch_surface": surfaces[
+            "runtime_category_attachment_merged_dispatch_surface"
         ],
     }
     for optional_surface_key in (

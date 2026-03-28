@@ -404,6 +404,52 @@ and reflection. Downstream work must extend this emitted surface instead of
 recovering class lineage or protocol truth from ad hoc sidecars, stale
 milestone notes, or synthetic summaries.
 
+## Category Attachment And Merged Dispatch Surface
+
+- authoritative compile-manifest key:
+  - `runtime_category_attachment_merged_dispatch_surface`
+- authoritative composed source inputs:
+  - `objc3c.runtime.category.attachment.protocol.conformance.v1`
+  - `runtime_realization_lookup_semantics_surface`
+  - `runtime_class_metaclass_protocol_realization_surface`
+- authoritative runtime boundary:
+  - public ABI:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+  - private category query boundary:
+    - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+    - `objc3_runtime_copy_realized_class_entry_for_testing`
+    - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+    - `objc3_runtime_copy_method_cache_state_for_testing`
+    - `objc3_runtime_copy_method_cache_entry_for_testing`
+- frozen semantic models:
+  - category attachment:
+    - `registration-attaches-category-owned-instance-and-protocol-members-onto-live-realized-classes-before-dispatch`
+  - merged dispatch resolution:
+    - `attached-category-implementations-override-base-class-instance-lookup-before-superclass-and-protocol-fallback`
+  - attached protocol visibility:
+    - `attached-categories-publish-owner-and-name-through-realized-class-entries-and-protocol-conformance-queries`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+  - probes:
+    - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+
+This is the authoritative category-attachment and merged-dispatch boundary. It
+freezes the fact that live registration attaches category-owned methods and
+protocol conformance before runtime dispatch, that attached implementations win
+before superclass/protocol fallback, and that attached category owner/name
+facts remain queryable through the same compile-coupled executable path used by
+dispatch and reflection. Downstream work must extend this emitted surface
+instead of reconstructing category merge truth from ad hoc sidecars or stale
+planning notes.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:
