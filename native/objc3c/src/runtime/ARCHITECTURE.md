@@ -94,6 +94,20 @@ Multi-image startup ordering source of truth:
   path instead of reconstructing ordering truth from scattered semantic
   fragments or hand-maintained notes
 
+Object-model realization source of truth:
+
+- compile publication exposes the coupled realization boundary through the
+  emitted compile-manifest key
+  `runtime_object_model_realization_source_surface`
+- that surface must point at the emitted realization records contracts, runtime
+  realization/metaclass/category-protocol contracts, coupled registration
+  artifacts, and the runtime entrypoints plus private realized-class/protocol
+  query snapshots that later work must consume
+- later realization semantics, dispatch-table lowering, reflection query
+  completion, and runnable conformance work must consume that emitted surface
+  rather than rederiving class/category/protocol behavior from sidecars or
+  stale milestone notes
+
 Bootstrap legality and installation semantics:
 
 - duplicate translation-unit identity keys must fail closed with

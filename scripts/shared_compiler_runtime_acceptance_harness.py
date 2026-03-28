@@ -16,6 +16,7 @@ from check_objc3c_runtime_acceptance import (
     COMPILE_PROVENANCE_CONTRACT_ID,
     COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
     RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
+    RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
 )
 
@@ -66,6 +67,15 @@ COMMON_SURFACES = (
             "authoritative_claim_classes",
             "compile_output_provenance_contract_id",
             "compile_output_truthfulness_contract_id",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_object_model_realization_source_surface",
+        RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "private_object_model_query_boundary",
+            "authoritative_case_ids",
         ),
     ),
 )
@@ -211,6 +221,7 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             CLAIM_BOUNDARY_CONTRACT_ID,
             RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
             RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
         ],
         "shared_compile_truth_contracts": [
             COMPILE_PROVENANCE_CONTRACT_ID,
@@ -265,6 +276,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "claim_boundary": surfaces["claim_boundary"],
         "runtime_state_publication_surface": surfaces["runtime_state_publication_surface"],
         "acceptance_suite_surface": surfaces["acceptance_suite_surface"],
+        "runtime_object_model_realization_source_surface": surfaces[
+            "runtime_object_model_realization_source_surface"
+        ],
     }
     for optional_surface_key in (
         "runtime_installation_abi_surface",

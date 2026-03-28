@@ -249,6 +249,43 @@ header paths, and the live installation lifecycle proof command surface as one
 coupled artifact instead of leaving later bootstrap work to infer ordering
 truth from scattered semantic and runtime-side reports.
 
+## Object-Model Realization Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_object_model_realization_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.executable.realization.records.v1`
+  - `objc3c.runtime.class.realization.freeze.v1`
+  - `objc3c.runtime.metaclass.graph.root.class.baseline.v1`
+  - `objc3c.runtime.category.attachment.protocol.conformance.v1`
+  - `objc3c.runtime.canonical.runnable.object.sample.support.v1`
+- authoritative runtime boundary:
+  - public ABI:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+  - private query boundary:
+    - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+    - `objc3_runtime_copy_realized_class_entry_for_testing`
+    - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+
+This is the authoritative object-model realization source boundary. It freezes
+the emitted class/metaclass/protocol/category realization contracts, coupled
+registration artifacts, and the live runtime query/dispatch entrypoints that
+later realization and reflection work must consume. Downstream work must extend
+this emitted surface rather than rederiving realized graph truth from
+sidecars, stale milestone notes, or synthetic probes.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

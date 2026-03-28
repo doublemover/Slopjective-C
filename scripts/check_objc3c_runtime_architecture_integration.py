@@ -37,6 +37,7 @@ CLAIM_BOUNDARY_CONTRACT_ID = "objc3c.runtime.execution.claim.boundary.v1"
 SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
+    "runtime_object_model_realization_source_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
 )
@@ -246,6 +247,9 @@ def main() -> int:
         "runtime_acceptance_claim_boundary": runtime_claim_boundary,
         "runtime_state_publication_surface": public_workflow_report["runtime_state_publication_surface"],
         "acceptance_suite_surface": public_workflow_report["acceptance_suite_surface"],
+        "runtime_object_model_realization_source_surface": public_workflow_report[
+            "runtime_object_model_realization_source_surface"
+        ],
         "runtime_installation_abi_surface": public_workflow_report["runtime_installation_abi_surface"],
         "runtime_loader_lifecycle_surface": public_workflow_report[
             "runtime_loader_lifecycle_surface"

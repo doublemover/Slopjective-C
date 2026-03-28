@@ -32,6 +32,9 @@ RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID = (
 RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.multi.image.startup.ordering.source.surface.v1"
 )
+RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.object.model.realization.source.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -190,6 +193,9 @@ def compile_fixture_with_args(
     )
     multi_image_startup_ordering_source_surface = manifest.get(
         "runtime_multi_image_startup_ordering_source_surface"
+    )
+    object_model_realization_source_surface = manifest.get(
+        "runtime_object_model_realization_source_surface"
     )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
@@ -739,6 +745,80 @@ def compile_fixture_with_args(
         raise RuntimeError(
             "runtime_multi_image_startup_ordering_source_surface must require real compile output"
         )
+    if not isinstance(object_model_realization_source_surface, dict):
+        raise RuntimeError("compiled fixture manifest did not publish runtime_object_model_realization_source_surface")
+    if (
+        object_model_realization_source_surface.get("contract_id")
+        != RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_object_model_realization_source_surface contract"
+        )
+    if object_model_realization_source_surface.get("compile_manifest_artifact") != manifest_path.name:
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        object_model_realization_source_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        object_model_realization_source_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if object_model_realization_source_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface drifted from the emitted object artifact path"
+        )
+    if object_model_realization_source_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_object_model_contract_fields = {
+        "executable_realization_records_contract_id": "objc3c.executable.realization.records.v1",
+        "runtime_class_realization_contract_id": "objc3c.runtime.class.realization.freeze.v1",
+        "runtime_metaclass_graph_contract_id": "objc3c.runtime.metaclass.graph.root.class.baseline.v1",
+        "runtime_category_attachment_protocol_conformance_contract_id": (
+            "objc3c.runtime.category.attachment.protocol.conformance.v1"
+        ),
+        "canonical_runnable_object_support_contract_id": (
+            "objc3c.runtime.canonical.runnable.object.sample.support.v1"
+        ),
+        "runtime_support_library_archive_relative_path": (
+            registration_manifest.get("runtime_support_library_archive_relative_path")
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "registration_entrypoint_symbol": registration_manifest.get("registration_entrypoint_symbol"),
+        "selector_lookup_symbol": "objc3_runtime_lookup_selector",
+        "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+        "realized_class_graph_snapshot_symbol": "objc3_runtime_copy_realized_class_graph_state_for_testing",
+        "realized_class_entry_snapshot_symbol": "objc3_runtime_copy_realized_class_entry_for_testing",
+        "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    }
+    for field, expected_value in expected_object_model_contract_fields.items():
+        if object_model_realization_source_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_object_model_realization_source_surface drifted from {field}"
+            )
+    if object_model_realization_source_surface.get("requires_coupled_registration_manifest") is not True:
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface must require the coupled runtime registration manifest"
+        )
+    if object_model_realization_source_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface must require real compile output"
+        )
+    if object_model_realization_source_surface.get("requires_linked_runtime_probe") is not True:
+        raise RuntimeError(
+            "runtime_object_model_realization_source_surface must require a linked runtime probe"
+        )
     if not isinstance(runtime_installation_abi_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_installation_abi_surface")
     if (
@@ -1227,6 +1307,58 @@ def build_runtime_multi_image_startup_ordering_source_surface(
                 "out_of_order_rejected_registration_order_ordinal"
             ),
         },
+    }
+
+
+def build_runtime_object_model_realization_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {
+            "imported-runtime-packaging-replay",
+            "canonical-sample-set",
+            "dispatch-fast-path",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.executable.realization.records.v1",
+            "objc3c.runtime.class.realization.freeze.v1",
+            "objc3c.runtime.metaclass.graph.root.class.baseline.v1",
+            "objc3c.runtime.category.attachment.protocol.conformance.v1",
+            "objc3c.runtime.canonical.runnable.object.sample.support.v1",
+        ],
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_object_model_query_boundary": [
+            "objc3_runtime_copy_realized_class_graph_state_for_testing",
+            "objc3_runtime_copy_realized_class_entry_for_testing",
+            "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
+            IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROBE,
+            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
     }
 
 
@@ -3029,6 +3161,9 @@ def main() -> int:
         ),
         "runtime_multi_image_startup_ordering_source_surface": (
             build_runtime_multi_image_startup_ordering_source_surface(results)
+        ),
+        "runtime_object_model_realization_source_surface": (
+            build_runtime_object_model_realization_source_surface(results)
         ),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),

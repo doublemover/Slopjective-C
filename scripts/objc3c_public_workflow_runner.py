@@ -216,6 +216,13 @@ def write_composite_validation_report(
     )
     if runtime_loader_lifecycle_surface is not None:
         payload["runtime_loader_lifecycle_surface"] = runtime_loader_lifecycle_surface
+    runtime_object_model_realization_source_surface = load_surface_from_report(
+        steps, "runtime_object_model_realization_source_surface"
+    )
+    if runtime_object_model_realization_source_surface is not None:
+        payload["runtime_object_model_realization_source_surface"] = (
+            runtime_object_model_realization_source_surface
+        )
     report_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return report_path
 

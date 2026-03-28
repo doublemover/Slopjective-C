@@ -48,6 +48,23 @@ Installation ABI and loader lifecycle surface:
   - `runtime_installation_abi_surface`
   - `runtime_loader_lifecycle_surface`
 
+Object-model realization surface:
+
+- emitted compile-manifest key:
+  - `runtime_object_model_realization_source_surface`
+- public runtime ABI consumed:
+  - `objc3_runtime_register_image`
+  - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32`
+- private query boundary consumed:
+  - `objc3_runtime_copy_realized_class_graph_state_for_testing`
+  - `objc3_runtime_copy_realized_class_entry_for_testing`
+  - `objc3_runtime_copy_protocol_conformance_query_for_testing`
+- authoritative executable probes:
+  - `tests/tooling/runtime/m258_e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+
 Current synthesized-property path:
 
 1. frontend metadata carries effective getter/setter selectors, binding symbols, and ivar layout records
