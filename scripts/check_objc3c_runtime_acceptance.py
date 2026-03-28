@@ -1758,8 +1758,8 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
         "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
         "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_negative.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
         "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
@@ -1926,7 +1926,7 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
         "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
         "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
-        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
@@ -2137,6 +2137,8 @@ def compile_fixture_with_args(
         "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
         "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
         "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
+        "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
         "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
         "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
@@ -4157,8 +4159,8 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3",
             "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
             "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_negative.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
             "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
@@ -4255,7 +4257,7 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
             "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
             "tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3",
             "tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3",
-            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3",
@@ -4363,6 +4365,8 @@ def build_runtime_block_arc_lowering_helper_surface(
             "tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3",
             "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3",
             "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3",
+            "tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3",
             "tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3",
             "tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3",
@@ -7807,31 +7811,56 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         expected_snippets=["undefined capture 'seed' in block literal"],
         expected_codes=["O3S202"],
     )
-    byref_escape_negative = compile_fixture_expect_failure(
+    byref_escape_fixture = (
         ROOT
         / "tests"
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_escaping_block_runtime_hook_byref_negative.objc3",
-        case_dir / "byref-escape-negative",
-        expected_snippets=[
-            "capture-list legality failed: escaping block cannot capture mutable local 'seed' by reference before live byref forwarding support lands"
-        ],
-        expected_codes=["O3S206"],
+        / "m261_escaping_block_runtime_hook_byref_positive.objc3"
     )
-    owned_escape_negative = compile_fixture_expect_failure(
+    _, _, byref_escape_manifest_path = compile_fixture_outputs(
+        byref_escape_fixture, case_dir / "byref-escape-positive"
+    )
+    byref_escape_manifest = json.loads(byref_escape_manifest_path.read_text(encoding="utf-8"))
+    byref_escape_surface = (
+        byref_escape_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_storage_escape_lowering_surface", {})
+    )
+    byref_copy_dispose_surface = (
+        byref_escape_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_copy_dispose_lowering_surface", {})
+    )
+
+    owned_escape_fixture = (
         ROOT
         / "tests"
         / "tooling"
         / "fixtures"
         / "native"
-        / "m261_escaping_block_runtime_hook_owned_capture_negative.objc3",
-        case_dir / "owned-escape-negative",
-        expected_snippets=[
-            "capture-list legality failed: escaping block cannot capture owned Objective-C reference 'ownedValue' before live block ownership transfer support lands"
-        ],
-        expected_codes=["O3S206"],
+        / "m261_escaping_block_runtime_hook_owned_capture_positive.objc3"
+    )
+    _, _, owned_escape_manifest_path = compile_fixture_outputs(
+        owned_escape_fixture, case_dir / "owned-escape-positive"
+    )
+    owned_escape_manifest = json.loads(
+        owned_escape_manifest_path.read_text(encoding="utf-8")
+    )
+    owned_escape_surface = (
+        owned_escape_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_storage_escape_lowering_surface", {})
+    )
+    owned_escape_copy_dispose_surface = (
+        owned_escape_manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_block_copy_dispose_lowering_surface", {})
     )
 
     expect(
@@ -7854,6 +7883,27 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         and return_copy_dispose_surface.get("dispose_helper_required_sites") == 0,
         "expected escaping return fixture to keep copy/dispose helpers elided",
     )
+    expect(
+        byref_escape_surface.get("escape_to_heap_sites") == 1
+        and byref_escape_surface.get("requires_byref_cells_sites") == 1,
+        "expected escaping byref fixture to publish one heap-promotion candidate with one byref-cell site",
+    )
+    expect(
+        byref_copy_dispose_surface.get("copy_helper_required_sites") == 1
+        and byref_copy_dispose_surface.get("dispose_helper_required_sites") == 1,
+        "expected escaping byref fixture to require copy/dispose helpers",
+    )
+    expect(
+        owned_escape_surface.get("escape_to_heap_sites") == 1
+        and owned_escape_surface.get("requires_byref_cells_sites") == 0,
+        "expected escaping owned-capture fixture to publish one heap-promotion candidate without byref cells",
+    )
+    expect(
+        owned_escape_copy_dispose_surface.get("copy_helper_required_sites") == 1
+        and owned_escape_copy_dispose_surface.get("dispose_helper_required_sites")
+        == 1,
+        "expected escaping owned-capture fixture to require copy/dispose helpers",
+    )
 
     return CaseResult(
         case_id="escaping-block-capture-legality",
@@ -7872,12 +7922,18 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
             "missing_capture_diagnostic_count": missing_capture_negative[
                 "diagnostic_count"
             ],
-            "byref_escape_diagnostic_count": byref_escape_negative[
-                "diagnostic_count"
-            ],
-            "owned_escape_diagnostic_count": owned_escape_negative[
-                "diagnostic_count"
-            ],
+            "byref_escape_to_heap_sites": byref_escape_surface.get(
+                "escape_to_heap_sites"
+            ),
+            "byref_copy_helper_required_sites": byref_copy_dispose_surface.get(
+                "copy_helper_required_sites"
+            ),
+            "owned_escape_to_heap_sites": owned_escape_surface.get(
+                "escape_to_heap_sites"
+            ),
+            "owned_copy_helper_required_sites": (
+                owned_escape_copy_dispose_surface.get("copy_helper_required_sites")
+            ),
         },
     )
 
@@ -8438,6 +8494,50 @@ def check_block_helper_runtime_execution_case(
         and byref_copy_dispose_surface.get("dispose_helper_required_sites") == 1,
         "expected byref runtime positive fixture to require copy/dispose helpers",
     )
+    byref_forwarding_probe = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "runtime"
+        / "m261_d003_block_runtime_byref_forwarding_probe.cpp"
+    )
+    byref_forwarding_exe = (
+        case_dir / "m261_d003_block_runtime_byref_forwarding_probe.exe"
+    )
+    compile_probe(clangxx, byref_forwarding_probe, byref_forwarding_exe, [])
+    byref_forwarding_payload = parse_json_output(
+        run_probe(byref_forwarding_exe),
+        "block runtime byref forwarding probe",
+    )
+    expect(
+        isinstance(byref_forwarding_payload.get("handle"), int)
+        and byref_forwarding_payload.get("handle", 0) > 0,
+        "expected byref forwarding probe to publish a positive runtime block handle",
+    )
+    expect(
+        byref_forwarding_payload.get("copy_count_after_promotion") == 1,
+        "expected byref forwarding probe to execute one copy helper during promotion",
+    )
+    expect(
+        byref_forwarding_payload.get("first_invoke_result") == 23
+        and byref_forwarding_payload.get("second_invoke_result") == 25,
+        "expected byref forwarding probe to preserve runtime-owned forwarded cell state across invokes",
+    )
+    expect(
+        byref_forwarding_payload.get("dispose_count_before_final_release") == 0
+        and byref_forwarding_payload.get("dispose_count_after_final_release") == 1,
+        "expected byref forwarding probe to defer dispose helper execution until final release",
+    )
+    expect(
+        byref_forwarding_payload.get("last_disposed_value") == 11,
+        "expected byref forwarding probe to dispose the original owned capture payload",
+    )
+    expect(
+        byref_forwarding_payload.get("final_release_result")
+        == byref_forwarding_payload.get("handle")
+        and byref_forwarding_payload.get("invoke_after_release_result") == 0,
+        "expected byref forwarding probe to release the block handle and reject post-release invocation",
+    )
 
     owned_fixture = (
         ROOT
@@ -8683,6 +8783,13 @@ def check_block_helper_runtime_execution_case(
             "arc_inference_runtime_exit_code": arc_inference_run.returncode,
             "arc_cleanup_scope_runtime_exit_code": arc_cleanup_scope_run.returncode,
             "arc_implicit_cleanup_runtime_exit_code": arc_implicit_cleanup_run.returncode,
+            "byref_forwarding_probe_handle": byref_forwarding_payload.get("handle"),
+            "byref_forwarding_first_invoke_result": byref_forwarding_payload.get(
+                "first_invoke_result"
+            ),
+            "byref_forwarding_second_invoke_result": byref_forwarding_payload.get(
+                "second_invoke_result"
+            ),
             "byref_copy_helper_required_sites": byref_copy_dispose_surface.get(
                 "copy_helper_required_sites"
             ),

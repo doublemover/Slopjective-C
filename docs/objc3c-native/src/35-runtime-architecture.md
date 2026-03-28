@@ -254,8 +254,8 @@ sidecars, stale milestone notes, or synthetic probes.
     - `tests/tooling/fixtures/native/m261_byref_cell_copy_dispose_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3`
-    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_negative.objc3`
-    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3`
     - `tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
@@ -271,7 +271,8 @@ sidecars, stale milestone notes, or synthetic probes.
 This is the authoritative block/ARC unified source boundary. It freezes the
 live frontend semantic packet, the emitted LLVM IR block-runtime summary
 anchors, and the private runtime entrypoints used for escaping block promotion,
-block invocation, and ARC debug snapshots as one coupled compile artifact.
+block invocation, byref forwarding, owned capture preservation, and ARC debug
+snapshots as one coupled compile artifact.
 Downstream block lowering, byref forwarding, ownership transfer, and ARC
 automation work must extend this emitted surface instead of reconstructing
 truth from sidecar-only notes, probe-local assumptions, or milestone-local
@@ -307,7 +308,7 @@ symbol inventories from ad hoc probes.
     - `tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/m261_weak_object_capture_mutation_negative.objc3`
     - `tests/tooling/fixtures/native/m261_unowned_object_capture_mutation_negative.objc3`
-    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_negative.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_cleanup_scope_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_implicit_cleanup_void_positive.objc3`
@@ -373,6 +374,8 @@ milestone-local notes.
     - `tests/tooling/fixtures/native/m261_nonowning_object_capture_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_argument_positive.objc3`
     - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_return_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_byref_positive.objc3`
+    - `tests/tooling/fixtures/native/m261_escaping_block_runtime_hook_owned_capture_positive.objc3`
     - `tests/tooling/fixtures/native/m261_executable_block_object_invoke_thunk_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_mode_handling_positive.objc3`
     - `tests/tooling/fixtures/native/m262_arc_inference_lifetime_positive.objc3`
@@ -388,7 +391,8 @@ milestone-local notes.
 This is the authoritative lowering/helper boundary for `M281` lane C. It
 freezes the live semantic lowering packets, manifest replay keys, emitted LLVM
 helper summaries, and private runtime hook symbols that together describe the
-current executable block/ARC lowering story. Cross-module preservation and
+current executable block/ARC lowering story, including escaping byref and owned
+capture lowering through the native runtime path. Cross-module preservation and
 runtime-ABI widening work must extend this emitted surface instead of inferring
 lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
 

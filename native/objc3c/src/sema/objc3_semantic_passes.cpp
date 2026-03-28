@@ -863,30 +863,11 @@ static bool IsEscapingBlockRuntimeHandleCompatible(
 static void DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
     unsigned line, unsigned column, const SemanticTypeInfo &value,
     std::vector<std::string> &diagnostics) {
+  (void)line;
+  (void)column;
+  (void)diagnostics;
   if (!value.callable_block_runtime_handle_candidate) {
     return;
-  }
-  if (value.callable_block_runtime_handle_has_byref_capture) {
-    const std::string capture_name =
-        value.callable_block_runtime_first_byref_capture_name.empty()
-            ? std::string("capture")
-            : value.callable_block_runtime_first_byref_capture_name;
-    diagnostics.push_back(
-        MakeDiag(line, column, "O3S206",
-                 "capture-list legality failed: escaping block cannot capture mutable local '" +
-                     capture_name +
-                     "' by reference before live byref forwarding support lands"));
-  }
-  if (value.callable_block_runtime_handle_has_owned_object_capture) {
-    const std::string capture_name =
-        value.callable_block_runtime_first_owned_capture_name.empty()
-            ? std::string("capture")
-            : value.callable_block_runtime_first_owned_capture_name;
-    diagnostics.push_back(
-        MakeDiag(line, column, "O3S206",
-                 "capture-list legality failed: escaping block cannot capture owned Objective-C reference '" +
-                     capture_name +
-                     "' before live block ownership transfer support lands"));
   }
 }
 

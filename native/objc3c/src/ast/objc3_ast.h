@@ -154,11 +154,11 @@ struct Expr {
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringContractId =
       "objc3c.executable.block.byref.helper.lowering.v1";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringActiveModel =
-      "native-lowering-emits-stack-byref-cells-and-copy-dispose-helper-bodies-for-nonescaping-block-captures";
+      "native-lowering-emits-stack-byref-cells-and-runtime-copy-dispose-helper-bodies-for-nonescaping-and-escaping-block-captures";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringDeferredModel =
-      "heap-promotion-and-runtime-managed-block-copy-dispose-lifecycle-remain-deferred-to-later-runtime-work";
+      "public-block-object-abi-widening-and-generalized-foreign-block-interop-remain-deferred-to-later-runtime-work";
   static inline constexpr const char *kObjc3ExecutableBlockByrefHelperLoweringExecutionEvidenceModel =
-      "native-compile-link-run-proves-byref-mutation-and-owned-capture-helper-lowering-through-emitted-block-helper-bodies";
+      "native-compile-link-run-proves-byref-mutation-owned-capture-and-escaping-block-helper-lowering-through-emitted-block-helper-bodies";
   // escaping-block runtime-hook constants: lane-C widens runnable
   // block lowering to readonly-scalar escaping cases by lowering heap
   // promotion and invoke hooks against the native runtime while ownership-
@@ -166,11 +166,11 @@ struct Expr {
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringContractId =
       "objc3c.executable.block.escape.runtime.hook.lowering.v1";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringActiveModel =
-      "native-lowering-emits-runtime-block-promotion-and-invoke-hooks-for-readonly-scalar-escaping-block-values";
+      "native-lowering-emits-runtime-block-promotion-invoke-byref-forwarding-and-owned-capture-hooks-for-escaping-block-values";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringDeferredModel =
-      "byref-forwarding-owned-capture-escape-lifetimes-and-runtime-managed-copy-dispose-remain-deferred-to-later-runtime-work";
+      "public-block-object-abi-widening-and-generalized-foreign-block-interop-remain-deferred-to-later-runtime-work";
   static inline constexpr const char *kObjc3ExecutableBlockEscapeRuntimeHookLoweringExecutionEvidenceModel =
-      "native-compile-link-run-proves-returned-and-argument-passed-readonly-scalar-block-values-through-runtime-promotion-hooks";
+      "native-compile-link-run-proves-returned-argument-passed-byref-and-owned-capture-escaping-block-values-through-runtime-promotion-hooks";
   // runnable-block-runtime gate constants: lane-E now freezes the
   // truthful integrated block-runtime proof boundary above the retained source,
   // sema, lowering, and runtime evidence chain before broader block closeout
