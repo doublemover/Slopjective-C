@@ -1677,7 +1677,8 @@ class Objc3IREmitter {
     // retainable-object semantic-rule freeze anchor: retain/release,
     // autoreleasepool, and destruction-order behavior are still represented by
     // deterministic summary lanes only; runtime-backed property/member
-    // ownership metadata is live, but storage legality is not yet executable.
+    // ownership metadata and storage legality are now live sema-enforced
+    // surfaces before metadata emission.
     out << "; retainable_object_semantic_rules_freeze = "
         << Objc3RetainableObjectSemanticRulesFreezeSummary() << "\n";
     // runtime-backed storage ownership legality anchor: explicit

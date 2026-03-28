@@ -699,9 +699,10 @@ std::string Objc3RuntimeBackedObjectOwnershipAttributeSurfaceSummary() {
 std::string Objc3RetainableObjectSemanticRulesFreezeSummary() {
   std::ostringstream out;
   // retainable-object semantic-rule freeze anchor: runtime-backed
-  // property/member ownership metadata is now the truthful live surface, but
-  // retain/release legality, autoreleasepool execution, and destruction-order
-  // behavior remain summary-driven and fail-closed until the next runtime step+ land.
+  // property/member ownership metadata and storage legality are now truthful
+  // live sema-enforced surfaces, but retain/release legality,
+  // autoreleasepool execution, and destruction-order behavior remain
+  // summary-driven and fail-closed until the next runtime step lands.
   out << "contract=" << kObjc3RetainableObjectSemanticRulesFreezeContractId
       << ";semantic_model="
       << kObjc3RetainableObjectSemanticRulesSemanticModel

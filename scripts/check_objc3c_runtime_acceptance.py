@@ -2229,6 +2229,67 @@ def compile_fixture_outputs(fixture: Path, out_dir: Path) -> tuple[Path, Path, P
     return obj_path, ll_path, manifest_path
 
 
+def compile_fixture_expect_failure(
+    fixture: Path,
+    out_dir: Path,
+    *,
+    expected_snippets: list[str],
+    expected_codes: list[str],
+) -> dict[str, Any]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    result = run(
+        [
+            PWSH,
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(COMPILE_PS1),
+            str(fixture),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+        ]
+    )
+    if result.returncode == 0:
+        raise RuntimeError(f"fixture compile unexpectedly succeeded for {fixture}")
+    diagnostics_txt_path = out_dir / "module.diagnostics.txt"
+    diagnostics_json_path = out_dir / "module.diagnostics.json"
+    if not diagnostics_txt_path.is_file():
+        raise RuntimeError(f"failed compile for {fixture} did not publish {diagnostics_txt_path}")
+    if not diagnostics_json_path.is_file():
+        raise RuntimeError(f"failed compile for {fixture} did not publish {diagnostics_json_path}")
+    diagnostics_text = diagnostics_txt_path.read_text(encoding="utf-8")
+    diagnostics_payload = json.loads(diagnostics_json_path.read_text(encoding="utf-8"))
+    diagnostics = diagnostics_payload.get("diagnostics", [])
+    expect(
+        isinstance(diagnostics, list) and diagnostics,
+        f"failed compile for {fixture} did not publish structured diagnostics",
+    )
+    for snippet in expected_snippets:
+        expect(
+            snippet in diagnostics_text,
+            f"failed compile for {fixture} did not publish expected diagnostic snippet: {snippet}",
+        )
+    observed_codes = {
+        diagnostic.get("code")
+        for diagnostic in diagnostics
+        if isinstance(diagnostic, dict) and isinstance(diagnostic.get("code"), str)
+    }
+    for expected_code in expected_codes:
+        expect(
+            expected_code in observed_codes,
+            f"failed compile for {fixture} did not publish expected diagnostic code {expected_code}",
+        )
+    return {
+        "returncode": result.returncode,
+        "diagnostic_count": len(diagnostics),
+        "diagnostic_codes": sorted(observed_codes),
+        "diagnostics_path": str(diagnostics_json_path.relative_to(ROOT)).replace("\\", "/"),
+    }
+
+
 def compile_probe(clangxx: str, probe: Path, exe_path: Path, extra_objects: list[Path]) -> None:
     compile_probe_with_args(clangxx, probe, exe_path, extra_objects, [])
 
@@ -2577,6 +2638,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
         for result in results
         if result.case_id
         in {
+            "storage-legality-semantics",
             "synthesized-accessor-codegen",
             "synthesized-accessor-runtime",
             "property-layout",
@@ -2670,6 +2732,7 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
         for result in results
         if result.case_id
         in {
+            "storage-legality-semantics",
             "property-reflection",
             "property-execution",
             "storage-ownership-reflection",
@@ -5301,6 +5364,118 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
     )
 
 
+def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "storage-legality-semantics"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m260_runtime_backed_storage_ownership_legality_positive.objc3"
+    )
+    _, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "positive")
+    registration_manifest_path = (
+        case_dir / "positive" / "module.runtime-registration-manifest.json"
+    )
+    if not registration_manifest_path.is_file():
+        raise RuntimeError(
+            f"compiled fixture did not publish {registration_manifest_path}"
+        )
+    registration_manifest = json.loads(
+        registration_manifest_path.read_text(encoding="utf-8")
+    )
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ll_text = ll_path.read_text(encoding="utf-8")
+
+    expect(
+        registration_manifest.get("property_descriptor_count") == 10,
+        "expected storage legality positive fixture to publish ten property descriptors",
+    )
+    expect(
+        registration_manifest.get("ivar_descriptor_count") == 5,
+        "expected storage legality positive fixture to publish five ivar descriptors",
+    )
+    expect(
+        manifest.get("runtime_property_ivar_storage_accessor_source_surface", {}).get(
+            "contract_id"
+        )
+        == RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
+        "expected storage legality positive fixture to publish the property/ivar/storage/accessor source surface",
+    )
+    expect(
+        manifest.get(
+            "runtime_property_atomicity_synthesis_reflection_source_surface", {}
+        ).get("contract_id")
+        == RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
+        "expected storage legality positive fixture to publish the property atomicity/synthesis/reflection source surface",
+    )
+    for needle, label in (
+        ("runtime_backed_storage_ownership_legality", "runtime-backed storage ownership legality"),
+        ("property_attribute_profiles=10", "ten property-attribute profiles"),
+        ("accessor_ownership_profiles=10", "ten accessor ownership profiles"),
+    ):
+        expect(
+            needle in ll_text,
+            f"expected storage legality positive fixture to publish {label} in LLVM IR",
+        )
+
+    atomic_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m257_property_atomic_ownership_negative.objc3",
+        case_dir / "negative-atomic-ownership",
+        expected_snippets=[
+            "atomic ownership-aware property 'value' in interface 'Widget' is unsupported until executable accessor storage semantics land"
+        ],
+        expected_codes=["O3S206"],
+    )
+    weak_mismatch_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m260_runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
+        case_dir / "negative-weak-mismatch",
+        expected_snippets=[
+            "property ownership qualifier '__weak' conflicts with @property ownership modifier 'assign'"
+        ],
+        expected_codes=["O3S206"],
+    )
+    unowned_mismatch_negative = compile_fixture_expect_failure(
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m260_runtime_backed_storage_ownership_unowned_mismatch_negative.objc3",
+        case_dir / "negative-unowned-mismatch",
+        expected_snippets=[
+            "property ownership qualifier '__unsafe_unretained' conflicts with @property ownership modifier 'unowned'"
+        ],
+        expected_codes=["O3S206"],
+    )
+
+    return CaseResult(
+        case_id="storage-legality-semantics",
+        probe="compile-manifest-and-diagnostics",
+        fixture="tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_legality_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
+            "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
+            "atomic_negative_diagnostic_count": atomic_negative["diagnostic_count"],
+            "weak_mismatch_diagnostic_count": weak_mismatch_negative["diagnostic_count"],
+            "unowned_mismatch_diagnostic_count": unowned_mismatch_negative["diagnostic_count"],
+        },
+    )
+
+
 def check_synthesized_accessor_runtime_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "synthesized-accessor-runtime"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m257_synthesized_accessor_property_lowering_positive.objc3"
@@ -5584,6 +5759,7 @@ def main() -> int:
         check_realization_lookup_reflection_runtime_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),
         check_storage_ownership_reflection_case(clangxx, run_dir),
+        check_storage_legality_semantics_case(run_dir),
         check_synthesized_accessor_codegen_case(run_dir),
         check_synthesized_accessor_runtime_case(clangxx, run_dir),
         check_property_layout_case(clangxx, run_dir),

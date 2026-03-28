@@ -546,7 +546,7 @@ inline constexpr const char
         "objc3c.retainable.object.semantic.rules.freeze.v1";
 inline constexpr const char
     *kObjc3RetainableObjectSemanticRulesSemanticModel =
-        "runtime-backed-object-semantic-rules-freeze-property-member-ownership-metadata-while-retain-release-and-storage-legality-remain-summary-driven";
+        "runtime-backed-object-semantic-rules-freeze-property-member-ownership-metadata-while-retain-release-remains-summary-driven-and-runtime-backed-storage-legality-is-live-sema-enforced";
 inline constexpr const char
     *kObjc3RetainableObjectSemanticRulesDestructionModel =
         "destruction-order-autoreleasepool-and-live-arc-execution-stay-fail-closed-outside-runtime-backed-storage-legality";
