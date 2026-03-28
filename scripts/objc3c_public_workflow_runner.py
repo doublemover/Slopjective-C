@@ -33,6 +33,7 @@ RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 RUNTIME_ARCHITECTURE_PROOF_PACKET_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_proof_packet.py"
 RUNTIME_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
 RUNNABLE_BOOTSTRAP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bootstrap_end_to_end.py"
+RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_conformance.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 
 
@@ -374,6 +375,9 @@ def action_validate_runnable_bootstrap(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_BOOTSTRAP_E2E_PY)])
 
 
+def action_validate_object_model_conformance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY)])
+
 def action_test_fixture_matrix(rest: list[str]) -> int:
     return pwsh_file(MATRIX_PS1, *rest)
 
@@ -435,6 +439,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture proof packet", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py", ("proof:objc3c:runtime-architecture",)),
     "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and proof packet", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture proof packet alignment"),
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", ("test:objc3c:runnable-bootstrap",), validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
+    "validate-object-model-conformance": ActionSpec("validate-object-model-conformance", "validate runnable object-model conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_object_model_conformance.py", ("test:objc3c:object-model-conformance",), validation_tier="full", guarantee_owner="integrated object-model conformance over the live runtime architecture workflow"),
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
@@ -464,6 +469,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "proof-runtime-architecture": action_proof_runtime_architecture,
     "validate-runtime-architecture": action_validate_runtime_architecture,
     "validate-runnable-bootstrap": action_validate_runnable_bootstrap,
+    "validate-object-model-conformance": action_validate_object_model_conformance,
     "test-fixture-matrix": action_test_fixture_matrix,
     "test-negative-expectations": action_test_negative_expectations,
     "test-full": action_test_full,

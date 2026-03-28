@@ -25,6 +25,7 @@
     "test:objc3c:execution-replay-proof": "python scripts/objc3c_public_workflow_runner.py test-execution-replay",
     "test:objc3c:runtime-acceptance": "python scripts/objc3c_public_workflow_runner.py test-runtime-acceptance",
     "test:objc3c:runtime-architecture": "python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture",
+    "test:objc3c:object-model-conformance": "python scripts/objc3c_public_workflow_runner.py validate-object-model-conformance",
     "test:objc3c:runnable-bootstrap": "python scripts/objc3c_public_workflow_runner.py validate-runnable-bootstrap",
     "test:objc3c:fixture-matrix": "python scripts/objc3c_public_workflow_runner.py test-fixture-matrix",
     "test:objc3c:negative-expectations": "python scripts/objc3c_public_workflow_runner.py test-negative-expectations",

@@ -2,7 +2,7 @@
 
 This runbook is generated from the live public workflow runner metadata.
 
-- Current public script count: `31`
+- Current public script count: `32`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 
@@ -29,6 +29,7 @@ This runbook is generated from the live public workflow runner metadata.
 | `proof:objc3c:runtime-architecture` | `proof-runtime-architecture` | `-` | `-` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_proof_packet.py` |
 | `test:objc3c:runtime-architecture` | `validate-runtime-architecture` | `full` | `full public workflow and runtime architecture proof packet alignment` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_integration.py` |
 | `test:objc3c:runnable-bootstrap` | `validate-runnable-bootstrap` | `full` | `packaged compile, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py` |
+| `test:objc3c:object-model-conformance` | `validate-object-model-conformance` | `full` | `integrated object-model conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_conformance.py` |
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive corpus artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
