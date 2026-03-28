@@ -4026,6 +4026,49 @@ def build_runtime_catch_filter_finalization_source_surface(
     }
 
 
+def build_runtime_error_propagation_cleanup_semantics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id == "error-propagation-cleanup-semantics"
+    ]
+    return {
+        "contract_id": RUNTIME_ERROR_PROPAGATION_CLEANUP_SEMANTICS_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.part6.error.semantic.model.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/sema/objc3_sema_contract.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/sema/objc3_semantic_passes.h",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
+            "tests/tooling/fixtures/native/m267_error_bridge_marker_surface_positive.objc3",
+            "tests/tooling/fixtures/native/m267_status_code_attribute_missing_mapping_negative.objc3",
+        ],
+        "explicit_non_goals": [
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-proof",
+            "no-runtime-abi-claims-before-lane-d",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": False,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -5968,6 +6011,74 @@ def check_catch_filter_finalization_source_case(run_dir: Path) -> CaseResult:
             "try_eligible_bridge_callable_sites": bridge_surface.get(
                 "try_eligible_bridge_callable_sites"
             ),
+        },
+    )
+
+
+def check_error_propagation_cleanup_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "error-propagation-cleanup-semantics"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "m267_part6_error_source_closure_positive.objc3"
+    )
+    _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    surface = (
+        manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_part6_error_semantic_model", {})
+    )
+    expect(
+        isinstance(surface, dict),
+        "expected error semantic model fixture to publish objc_part6_error_semantic_model",
+    )
+    expected_fields = {
+        "contract_id": "objc3c.part6.error.semantic.model.v1",
+        "frontend_dependency_contract_id": "objc3c.part6.error.source.closure.v1",
+        "surface_path": "frontend.pipeline.semantic_surface.objc_part6_error_semantic_model",
+        "throws_declaration_semantics_landed": True,
+        "result_carrier_profile_semantics_landed": True,
+        "ns_error_bridging_profile_semantics_landed": True,
+        "bridge_marker_semantics_landed": True,
+        "parser_fail_closed_boundary_required": True,
+        "parser_fail_closed_boundary_preserved": True,
+        "propagation_runtime_deferred": True,
+        "status_to_error_runtime_deferred": True,
+        "native_error_abi_deferred": True,
+        "placeholder_throws_summary_carried": True,
+        "deterministic": True,
+        "ready_for_lowering_and_runtime": False,
+    }
+    for field_name, expected_value in expected_fields.items():
+        expect(
+            surface.get(field_name) == expected_value,
+            f"expected error semantic model to preserve {field_name}",
+        )
+    expect(
+        surface.get("throws_declaration_sites") == 1
+        and surface.get("result_like_sites") == 7
+        and surface.get("ns_error_bridging_sites") == 3
+        and surface.get("placeholder_throws_propagation_sites") == 0
+        and surface.get("placeholder_unwind_cleanup_sites") == 0,
+        "expected error semantic model to preserve propagation and cleanup counts",
+    )
+
+    return CaseResult(
+        case_id="error-propagation-cleanup-semantics",
+        probe="compile-manifest-semantic-surface",
+        fixture="tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "throws_declaration_sites": surface.get("throws_declaration_sites"),
+            "result_like_sites": surface.get("result_like_sites"),
+            "ns_error_bridging_sites": surface.get("ns_error_bridging_sites"),
+            "propagation_runtime_deferred": surface.get("propagation_runtime_deferred"),
         },
     )
 
@@ -11112,6 +11223,7 @@ def main() -> int:
         check_installation_lifecycle_case(clangxx, run_dir),
         check_error_execution_cleanup_source_case(run_dir),
         check_catch_filter_finalization_source_case(run_dir),
+        check_error_propagation_cleanup_semantics_case(run_dir),
         check_cross_module_block_ownership_artifact_preservation_case(run_dir),
         check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
         check_imported_runtime_packaging_replay_case(clangxx, run_dir),
@@ -11169,6 +11281,9 @@ def main() -> int:
         ),
         "runtime_catch_filter_finalization_source_surface": (
             build_runtime_catch_filter_finalization_source_surface(results)
+        ),
+        "runtime_error_propagation_cleanup_semantics_surface": (
+            build_runtime_error_propagation_cleanup_semantics_surface(results)
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)

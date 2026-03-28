@@ -236,6 +236,30 @@ live try/throw/do/catch legality contract together with bridge-marker filtering
 semantics so later execution and runtime issues do not have to guess which
 source forms are valid or try-eligible.
 
+## Error Propagation And Cleanup Semantics Surface
+
+- authoritative compile-manifest key:
+  - `runtime_error_propagation_cleanup_semantics_surface`
+- authoritative composed source inputs:
+  - `objc3c.part6.error.semantic.model.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/sema/objc3_sema_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/sema/objc3_semantic_passes.h`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m267_part6_error_source_closure_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_error_bridge_marker_surface_positive.objc3`
+    - `tests/tooling/fixtures/native/m267_status_code_attribute_missing_mapping_negative.objc3`
+
+This is the authoritative semantic-model boundary for error propagation and
+cleanup. It freezes the live throws declaration, result carrier, and NSError
+bridge semantics together with the explicit deferred runtime/ABI flags, so the
+next lowering and runtime issues inherit one concrete semantic contract instead
+of hand-waving over what is already enforced in the compiler.
+
 ## Object-Model Realization Source Surface
 
 - authoritative compile-manifest key:

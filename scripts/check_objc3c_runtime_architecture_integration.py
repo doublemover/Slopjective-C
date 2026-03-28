@@ -39,6 +39,7 @@ SURFACE_KEYS = (
     "acceptance_suite_surface",
     "runtime_error_execution_cleanup_source_surface",
     "runtime_catch_filter_finalization_source_surface",
+    "runtime_error_propagation_cleanup_semantics_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",
@@ -272,6 +273,9 @@ def main() -> int:
         ],
         "runtime_catch_filter_finalization_source_surface": public_workflow_report[
             "runtime_catch_filter_finalization_source_surface"
+        ],
+        "runtime_error_propagation_cleanup_semantics_surface": public_workflow_report[
+            "runtime_error_propagation_cleanup_semantics_surface"
         ],
         "runtime_object_model_realization_source_surface": public_workflow_report[
             "runtime_object_model_realization_source_surface"
