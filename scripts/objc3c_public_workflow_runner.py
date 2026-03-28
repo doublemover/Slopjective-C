@@ -232,6 +232,13 @@ def write_composite_validation_report(
         payload["runtime_property_ivar_storage_accessor_source_surface"] = (
             runtime_property_ivar_storage_accessor_source_surface
         )
+    runtime_property_atomicity_synthesis_reflection_source_surface = load_surface_from_report(
+        steps, "runtime_property_atomicity_synthesis_reflection_source_surface"
+    )
+    if runtime_property_atomicity_synthesis_reflection_source_surface is not None:
+        payload["runtime_property_atomicity_synthesis_reflection_source_surface"] = (
+            runtime_property_atomicity_synthesis_reflection_source_surface
+        )
     runtime_realization_lowering_reflection_artifact_surface = load_surface_from_report(
         steps, "runtime_realization_lowering_reflection_artifact_surface"
     )

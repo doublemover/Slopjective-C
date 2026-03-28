@@ -708,6 +708,12 @@ inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfa
     "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1";
 inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceModel =
     "property-ivar-storage-accessor-runtime-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion";
+inline constexpr const char *kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId =
+    "objc3c.runtime.property.atomicity.synthesis.reflection.source.surface.v1";
+inline constexpr const char *kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceModel =
+    "property-atomicity-synthesis-reflection-source-surface-freezes-atomicity-flags-conflict-state-attribute-profiles-and-private-reflection-codepaths-before-runtime-managed-atomic-storage-semantics-land";
+inline constexpr const char *kObjc3RuntimePropertyAtomicityReflectionBoundaryModel =
+    "property-attribute-profiles-remain-the-authoritative-reflection-carrier-for-atomicity-and-synthesis-state-on-the-private-property-query-boundary";
 inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
     "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =

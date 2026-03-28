@@ -270,6 +270,47 @@ selectors, or ownership behavior outside this emitted source surface. Public
 runtime ABI widening and milestone-specific scaffolding are explicit
 non-goals.
 
+## Property Atomicity/Synthesis/Reflection Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_property_atomicity_synthesis_reflection_source_surface`
+- authoritative composed source inputs:
+  - `runtime_property_ivar_storage_accessor_source_surface`
+  - `objc3c.runtime.property.metadata.reflection.v1`
+  - `objc3c.runtime.backed.object.ownership.attribute.surface.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative source fields:
+  - `Objc3PropertyDecl.is_atomic`
+  - `Objc3PropertyDecl.is_nonatomic`
+  - `Objc3PropertyDecl.has_atomicity_conflict`
+  - `Objc3PropertyDecl.property_attribute_profile`
+  - `objc3_runtime_property_entry_snapshot.property_attribute_profile`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+
+This is the authoritative property atomicity/synthesis/reflection source
+boundary. It freezes the live sema, pipeline, and runtime reflection path that
+currently carries atomicity through `property_attribute_profile` and the
+private property snapshot boundary. Atomic ownership-aware storage remains a
+fail-closed semantic rule until later implementation issues land; widening the
+public runtime ABI or inventing a parallel atomic helper surface are explicit
+non-goals.
+
 ## Realization Lowering And Reflection Artifact Surface
 
 - authoritative compile-manifest key:

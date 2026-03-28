@@ -39,6 +39,7 @@ SURFACE_KEYS = (
     "acceptance_suite_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_property_ivar_storage_accessor_source_surface",
+    "runtime_property_atomicity_synthesis_reflection_source_surface",
     "runtime_realization_lowering_reflection_artifact_surface",
     "runtime_dispatch_table_reflection_record_lowering_surface",
     "runtime_cross_module_realized_metadata_replay_preservation_surface",
@@ -263,6 +264,9 @@ def main() -> int:
         ],
         "runtime_property_ivar_storage_accessor_source_surface": public_workflow_report[
             "runtime_property_ivar_storage_accessor_source_surface"
+        ],
+        "runtime_property_atomicity_synthesis_reflection_source_surface": public_workflow_report[
+            "runtime_property_atomicity_synthesis_reflection_source_surface"
         ],
         "runtime_realization_lowering_reflection_artifact_surface": public_workflow_report[
             "runtime_realization_lowering_reflection_artifact_surface"

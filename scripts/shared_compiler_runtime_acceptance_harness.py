@@ -22,6 +22,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOOKUP_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
@@ -92,6 +93,15 @@ COMMON_SURFACES = (
     SurfaceRequirement(
         "runtime_property_ivar_storage_accessor_source_surface",
         RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_code_paths",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_property_atomicity_synthesis_reflection_source_surface",
+        RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
         (
             "source_contract_ids",
             "authoritative_code_paths",
@@ -399,6 +409,9 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_property_ivar_storage_accessor_source_surface": surfaces[
             "runtime_property_ivar_storage_accessor_source_surface"
+        ],
+        "runtime_property_atomicity_synthesis_reflection_source_surface": surfaces[
+            "runtime_property_atomicity_synthesis_reflection_source_surface"
         ],
         "runtime_realization_lowering_reflection_artifact_surface": surfaces[
             "runtime_realization_lowering_reflection_artifact_surface"

@@ -38,6 +38,9 @@ RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1"
 )
+RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.property.atomicity.synthesis.reflection.source.surface.v1"
+)
 RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1"
 )
@@ -235,6 +238,9 @@ def compile_fixture_with_args(
     )
     property_ivar_storage_accessor_source_surface = manifest.get(
         "runtime_property_ivar_storage_accessor_source_surface"
+    )
+    property_atomicity_synthesis_reflection_source_surface = manifest.get(
+        "runtime_property_atomicity_synthesis_reflection_source_surface"
     )
     realization_lowering_reflection_artifact_surface = manifest.get(
         "runtime_realization_lowering_reflection_artifact_surface"
@@ -1000,6 +1006,120 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_property_ivar_storage_accessor_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(property_atomicity_synthesis_reflection_source_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_property_atomicity_synthesis_reflection_source_surface"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("contract_id")
+        != RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_property_atomicity_synthesis_reflection_source_surface contract"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("object_artifact")
+        != obj_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from the emitted object artifact path"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get("backend_artifact")
+        != ll_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_property_atomicity_synthesis_reflection_fields = {
+        "property_storage_source_surface_contract_id": (
+            RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "property_metadata_reflection_contract_id": "objc3c.runtime.property.metadata.reflection.v1",
+        "runtime_backed_object_ownership_attribute_surface_contract_id": (
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1"
+        ),
+        "atomic_modifier_field": "Objc3PropertyDecl.is_atomic",
+        "nonatomic_modifier_field": "Objc3PropertyDecl.is_nonatomic",
+        "atomicity_conflict_field": "Objc3PropertyDecl.has_atomicity_conflict",
+        "property_attribute_profile_field": "Objc3PropertyDecl.property_attribute_profile",
+        "reflection_attribute_profile_field": (
+            "objc3_runtime_property_entry_snapshot.property_attribute_profile"
+        ),
+        "ast_source_path": "native/objc3c/src/ast/objc3_ast.h",
+        "sema_source_path": "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+        "sema_pass_manager_source_path": "native/objc3c/src/sema/objc3_sema_pass_manager.cpp",
+        "frontend_pipeline_source_path": "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+        "frontend_artifacts_source_path": (
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+        ),
+        "runtime_internal_header_path": (
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+        ),
+        "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "source_surface_model": (
+            "property-atomicity-synthesis-reflection-source-surface-freezes-atomicity-flags-conflict-state-attribute-profiles-and-private-reflection-codepaths-before-runtime-managed-atomic-storage-semantics-land"
+        ),
+        "atomicity_fail_closed_model": (
+            "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land"
+        ),
+        "reflection_boundary_model": (
+            "property-attribute-profiles-remain-the-authoritative-reflection-carrier-for-atomicity-and-synthesis-state-on-the-private-property-query-boundary"
+        ),
+    }
+    for field, expected_value in expected_property_atomicity_synthesis_reflection_fields.items():
+        if property_atomicity_synthesis_reflection_source_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_property_atomicity_synthesis_reflection_source_surface drifted from {field}"
+            )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get(
+            "requires_real_compile_output"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface must require real compile output"
+        )
+    if (
+        property_atomicity_synthesis_reflection_source_surface.get(
+            "requires_linked_runtime_probe"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_property_atomicity_synthesis_reflection_source_surface must require a linked runtime probe"
         )
     if not isinstance(realization_lowering_reflection_artifact_surface, dict):
         raise RuntimeError(
@@ -2535,6 +2655,84 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
             "no-public-runtime-abi-widening",
             "no-milestone-specific-scaffolding",
             "no-lowering-owned-storage-or-accessor-semantics-invention",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_property_atomicity_synthesis_reflection_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {
+            "property-reflection",
+            "property-execution",
+            "storage-ownership-reflection",
+            "arc-property-helper-abi",
+        }
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
+            "objc3c.runtime.property.metadata.reflection.v1",
+            "objc3c.runtime.backed.object.ownership.attribute.surface.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/sema/objc3_sema_pass_manager.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_source_fields": [
+            "Objc3PropertyDecl.is_atomic",
+            "Objc3PropertyDecl.is_nonatomic",
+            "Objc3PropertyDecl.has_atomicity_conflict",
+            "Objc3PropertyDecl.property_attribute_profile",
+            "objc3_runtime_property_entry_snapshot.property_attribute_profile",
+        ],
+        "source_surface_model": (
+            "property-atomicity-synthesis-reflection-source-surface-freezes-atomicity-flags-conflict-state-attribute-profiles-and-private-reflection-codepaths-before-runtime-managed-atomic-storage-semantics-land"
+        ),
+        "atomicity_fail_closed_model": (
+            "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land"
+        ),
+        "reflection_boundary_model": (
+            "property-attribute-profiles-remain-the-authoritative-reflection-carrier-for-atomicity-and-synthesis-state-on-the-private-property-query-boundary"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m257_property_atomic_ownership_negative.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-atomic-property-runtime-abi-widening",
+            "no-runtime-managed-atomic-storage-semantics-before-lane-b-and-lane-d-implementation",
+            "no-milestone-specific-scaffolding",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5425,6 +5623,9 @@ def main() -> int:
         ),
         "runtime_property_ivar_storage_accessor_source_surface": (
             build_runtime_property_ivar_storage_accessor_source_surface(results)
+        ),
+        "runtime_property_atomicity_synthesis_reflection_source_surface": (
+            build_runtime_property_atomicity_synthesis_reflection_source_surface(results)
         ),
         "runtime_realization_lowering_reflection_artifact_surface": (
             build_runtime_realization_lowering_reflection_artifact_surface(results)

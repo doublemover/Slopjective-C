@@ -110,6 +110,41 @@ Property/ivar/storage/accessor source surface:
   - no public runtime ABI widening or milestone-specific scaffolding is part
     of this boundary
 
+Property atomicity/synthesis/reflection source surface:
+
+- emitted compile-manifest key:
+  - `runtime_property_atomicity_synthesis_reflection_source_surface`
+- authoritative composed source inputs:
+  - `runtime_property_ivar_storage_accessor_source_surface`
+  - `objc3c.runtime.property.metadata.reflection.v1`
+  - `objc3c.runtime.backed.object.ownership.attribute.surface.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative source fields:
+  - `Objc3PropertyDecl.is_atomic`
+  - `Objc3PropertyDecl.is_nonatomic`
+  - `Objc3PropertyDecl.has_atomicity_conflict`
+  - `Objc3PropertyDecl.property_attribute_profile`
+  - `objc3_runtime_property_entry_snapshot.property_attribute_profile`
+- authoritative executable probes:
+  - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+- semantic boundary:
+  - runtime-managed atomic ownership combinations remain fail-closed until the
+    later storage-semantics implementation lands
+  - atomicity and synthesis state remain reflected through the private property
+    query boundary via the property-attribute profile rather than any widened
+    public runtime ABI
+  - no milestone-specific scaffolding or parallel atomic helper ABI is part of
+    this boundary
+
 Realization lowering and reflection artifact surface:
 
 - emitted compile-manifest key:

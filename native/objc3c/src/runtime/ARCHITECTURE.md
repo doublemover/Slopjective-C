@@ -123,6 +123,21 @@ Property/ivar/storage/accessor source of truth:
   than inventing semantics from milestone-local notes, sidecar-only metadata,
   or lowering-owned re-derivation
 
+Property atomicity/synthesis/reflection source of truth:
+
+- compile publication exposes the coupled property atomicity/synthesis/
+  reflection source boundary through the emitted compile-manifest key
+  `runtime_property_atomicity_synthesis_reflection_source_surface`
+- that surface must point at the property source surface, property metadata
+  reflection contract, ownership-backed property attribute surface, the
+  authoritative atomic/non-atomic/conflict/property-attribute source fields,
+  and the exact sema/pipeline/runtime reflection code paths that later issues
+  must use
+- later legality, lowering, reflection, and runtime-storage work must extend
+  that emitted surface instead of widening the public ABI, inventing an
+  ad hoc atomic helper path, or bypassing the existing private property query
+  boundary
+
 Realization lowering and reflection artifact source of truth:
 
 - compile publication exposes the coupled realization-lowering and reflection-

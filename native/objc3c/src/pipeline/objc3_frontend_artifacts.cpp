@@ -22681,6 +22681,47 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
            << "},\n";
+  manifest << "  \"runtime_property_atomicity_synthesis_reflection_source_surface\":{\"contract_id\":\""
+           << kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"registration_descriptor_artifact\":\""
+           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"property_storage_source_surface_contract_id\":\""
+           << kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId
+           << "\",\"property_metadata_reflection_contract_id\":\""
+           << kObjc3RuntimePropertyMetadataReflectionContractId
+           << "\",\"runtime_backed_object_ownership_attribute_surface_contract_id\":\""
+           << kObjc3RuntimeBackedObjectOwnershipAttributeSurfaceContractId
+           << "\",\"atomic_modifier_field\":\"Objc3PropertyDecl.is_atomic\""
+           << ",\"nonatomic_modifier_field\":\"Objc3PropertyDecl.is_nonatomic\""
+           << ",\"atomicity_conflict_field\":\"Objc3PropertyDecl.has_atomicity_conflict\""
+           << ",\"property_attribute_profile_field\":\"Objc3PropertyDecl.property_attribute_profile\""
+           << ",\"reflection_attribute_profile_field\":\"objc3_runtime_property_entry_snapshot.property_attribute_profile\""
+           << ",\"ast_source_path\":\"native/objc3c/src/ast/objc3_ast.h\""
+           << ",\"sema_source_path\":\"native/objc3c/src/sema/objc3_semantic_passes.cpp\""
+           << ",\"sema_pass_manager_source_path\":\"native/objc3c/src/sema/objc3_sema_pass_manager.cpp\""
+           << ",\"frontend_pipeline_source_path\":\"native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp\""
+           << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp\""
+           << ",\"runtime_internal_header_path\":\"native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h\""
+           << ",\"runtime_source_path\":\"native/objc3c/src/runtime/objc3_runtime.cpp\""
+           << ",\"source_surface_model\":\""
+           << kObjc3RuntimePropertyAtomicitySynthesisReflectionSourceSurfaceModel
+           << "\",\"atomicity_fail_closed_model\":\""
+           << kObjc3ExecutablePropertyOwnershipAtomicityInteractionModel
+           << "\",\"reflection_boundary_model\":\""
+           << kObjc3RuntimePropertyAtomicityReflectionBoundaryModel
+           << "\",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
   manifest << "  \"runtime_realization_lowering_reflection_artifact_surface\":{\"contract_id\":\""
            << kObjc3RuntimeRealizationLoweringReflectionArtifactSurfaceContractId
            << "\",\"compile_manifest_artifact\":\""
