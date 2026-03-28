@@ -59,3 +59,18 @@ Bootstrap registration source of truth:
   ordinal
 - later bootstrap, loader, and replay work must consume that emitted surface
   rather than reconstructing bootstrap source facts from partial sidecars
+
+Multi-image startup ordering source of truth:
+
+- compile publication exposes the coupled multi-image ordering boundary through
+  the emitted compile-manifest key
+  `runtime_multi_image_startup_ordering_source_surface`
+- that surface must point at the live legality semantics, restart/replay
+  semantics, bootstrap API/reset/registrar contracts, archive static-link
+  replay corpus contract, runtime header paths, and the installation-lifecycle
+  proof symbols and registration-order snapshot fields
+- later image-walk, duplicate-install rejection, and reset/replay expansion work
+  must consume that emitted surface plus the
+  `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp` proof
+  path instead of reconstructing ordering truth from scattered semantic
+  fragments or hand-maintained notes

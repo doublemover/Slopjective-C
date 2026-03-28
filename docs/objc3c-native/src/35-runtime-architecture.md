@@ -96,6 +96,34 @@ registration order ordinal as one coupled compile output instead of leaving
 downstream work to reconstruct that source of truth from separate manifest
 fragments.
 
+## Multi-Image Startup Ordering Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_multi_image_startup_ordering_source_surface`
+- authoritative composed source inputs:
+  - `objc_runtime_bootstrap_legality_semantics`
+  - `objc_runtime_bootstrap_failure_restart_semantics`
+  - `objc_runtime_bootstrap_api_contract`
+  - `objc_runtime_bootstrap_reset_contract`
+  - `objc_runtime_bootstrap_registrar_contract`
+  - `objc_runtime_bootstrap_archive_static_link_replay_corpus`
+- authoritative live proof path:
+  - fixture: `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+  - probe: `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
+  - acceptance command: `python scripts/check_objc3c_runtime_acceptance.py`
+  - public workflow command: `python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture`
+- authoritative runtime fields:
+  - `next_expected_registration_order_ordinal`
+  - `last_successful_registration_order_ordinal`
+  - `last_rejected_registration_order_ordinal`
+
+This is the authoritative multi-image startup ordering source boundary. It
+freezes the duplicate-registration policy, monotonic registration-order model,
+restart/replay symbols, runtime header paths, and the live installation
+lifecycle proof command surface as one coupled artifact instead of leaving
+later bootstrap work to infer ordering truth from scattered semantic and
+runtime-side reports.
+
 ## Installation ABI And Loader Lifecycle
 
 - public installation ABI:

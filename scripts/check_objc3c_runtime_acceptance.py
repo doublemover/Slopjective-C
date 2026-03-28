@@ -11,6 +11,7 @@ import sys
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 
@@ -25,9 +26,26 @@ PWSH = shutil.which("pwsh") or shutil.which("powershell") or "pwsh"
 RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID = "objc3c.runtime.state.publication.surface.v1"
 RUNTIME_STATE_PUBLICATION_SURFACE_KIND = "compile-manifest-plus-registration-manifest"
 RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID = "objc3c.runtime.bootstrap.registration.source.surface.v1"
+RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.multi.image.startup.ordering.source.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
+RUNTIME_PUBLIC_HEADER_PATH = "native/objc3c/src/runtime/objc3_runtime.h"
+RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH = (
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+)
+INSTALLATION_LIFECYCLE_FIXTURE = (
+    "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3"
+)
+INSTALLATION_LIFECYCLE_PROBE = (
+    "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp"
+)
+RUNTIME_ACCEPTANCE_COMMAND = "python scripts/check_objc3c_runtime_acceptance.py"
+VALIDATE_RUNTIME_ARCHITECTURE_COMMAND = (
+    "python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture"
+)
 PUBLIC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_register_image",
     "objc3_runtime_lookup_selector",
@@ -130,6 +148,9 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     pipeline = frontend.get("pipeline", {}) if isinstance(frontend, dict) else {}
     semantic_surface = pipeline.get("semantic_surface", {}) if isinstance(pipeline, dict) else {}
     bootstrap_source_surface = manifest.get("runtime_bootstrap_registration_source_surface")
+    multi_image_startup_ordering_source_surface = manifest.get(
+        "runtime_multi_image_startup_ordering_source_surface"
+    )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
         manifest.get("objc_runtime_registration_descriptor_frontend_closure", {}),
@@ -148,6 +169,30 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
             "objc_runtime_bootstrap_lowering_contract",
             manifest.get("objc_runtime_bootstrap_lowering", {}),
         ),
+    )
+    bootstrap_legality_semantics = semantic_surface.get(
+        "objc_runtime_bootstrap_legality_semantics",
+        manifest.get("objc_runtime_bootstrap_legality_semantics", {}),
+    )
+    bootstrap_failure_restart_semantics = semantic_surface.get(
+        "objc_runtime_bootstrap_failure_restart_semantics",
+        manifest.get("objc_runtime_bootstrap_failure_restart_semantics", {}),
+    )
+    bootstrap_api_contract = semantic_surface.get(
+        "objc_runtime_bootstrap_api_contract",
+        manifest.get("objc_runtime_bootstrap_api_contract", {}),
+    )
+    bootstrap_reset_contract = semantic_surface.get(
+        "objc_runtime_bootstrap_reset_contract",
+        manifest.get("objc_runtime_bootstrap_reset_contract", {}),
+    )
+    bootstrap_registrar_contract = semantic_surface.get(
+        "objc_runtime_bootstrap_registrar_contract",
+        manifest.get("objc_runtime_bootstrap_registrar_contract", {}),
+    )
+    bootstrap_archive_static_link_replay_corpus = semantic_surface.get(
+        "objc_runtime_bootstrap_archive_static_link_replay_corpus",
+        manifest.get("objc_runtime_bootstrap_archive_static_link_replay_corpus", {}),
     )
     publication_surface = manifest.get("runtime_state_publication_surface")
     if not isinstance(publication_surface, dict):
@@ -231,6 +276,155 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError("runtime_bootstrap_registration_source_surface must require the coupled runtime registration manifest")
     if bootstrap_source_surface.get("requires_real_compile_output") is not True:
         raise RuntimeError("runtime_bootstrap_registration_source_surface must require real compile output")
+    if not isinstance(multi_image_startup_ordering_source_surface, dict):
+        raise RuntimeError("compiled fixture manifest did not publish runtime_multi_image_startup_ordering_source_surface")
+    if (
+        multi_image_startup_ordering_source_surface.get("contract_id")
+        != RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_multi_image_startup_ordering_source_surface contract"
+        )
+    if multi_image_startup_ordering_source_surface.get("compile_manifest_artifact") != "module.manifest.json":
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the compile manifest artifact path"
+        )
+    if multi_image_startup_ordering_source_surface.get("registration_manifest_artifact") != "module.runtime-registration-manifest.json":
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the runtime registration manifest artifact path"
+        )
+    if multi_image_startup_ordering_source_surface.get("registration_descriptor_artifact") != "module.runtime-registration-descriptor.json":
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("bootstrap_legality_semantics_contract_id")
+        != bootstrap_legality_semantics.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the bootstrap legality semantics contract"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("bootstrap_failure_restart_contract_id")
+        != bootstrap_failure_restart_semantics.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the bootstrap failure restart contract"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("bootstrap_api_contract_id")
+        != bootstrap_api_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the bootstrap API contract"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("bootstrap_reset_contract_id")
+        != bootstrap_reset_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the bootstrap reset contract"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("bootstrap_registrar_contract_id")
+        != bootstrap_registrar_contract.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the bootstrap registrar contract"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("archive_static_link_replay_corpus_contract_id")
+        != bootstrap_archive_static_link_replay_corpus.get("contract_id")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the archive static-link replay corpus contract"
+        )
+    if multi_image_startup_ordering_source_surface.get("public_header_path") != RUNTIME_PUBLIC_HEADER_PATH:
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the public runtime header path"
+        )
+    if multi_image_startup_ordering_source_surface.get("internal_header_path") != RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH:
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the bootstrap internal header path"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("registration_entrypoint_symbol")
+        != registration_manifest.get("registration_entrypoint_symbol")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the registration entrypoint symbol"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("state_snapshot_symbol")
+        != bootstrap_api_contract.get("state_snapshot_symbol")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the runtime state snapshot symbol"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("reset_for_testing_symbol")
+        != bootstrap_api_contract.get("reset_for_testing_symbol")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the reset-for-testing symbol"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("replay_registered_images_symbol")
+        != bootstrap_failure_restart_semantics.get("replay_registered_images_symbol")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the replay-registered-images symbol"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("reset_replay_state_snapshot_symbol")
+        != bootstrap_failure_restart_semantics.get("reset_replay_state_snapshot_symbol")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the reset replay state snapshot symbol"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("translation_unit_identity_key")
+        != registration_manifest.get("translation_unit_identity_key")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the translation unit identity key"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("translation_unit_registration_order_ordinal")
+        != registration_manifest.get("translation_unit_registration_order_ordinal")
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the translation unit registration order ordinal"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("next_expected_registration_order_field")
+        != "next_expected_registration_order_ordinal"
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the next-expected registration order field"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("last_successful_registration_order_field")
+        != "last_successful_registration_order_ordinal"
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the last-successful registration order field"
+        )
+    if (
+        multi_image_startup_ordering_source_surface.get("last_rejected_registration_order_field")
+        != "last_rejected_registration_order_ordinal"
+    ):
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface drifted from the last-rejected registration order field"
+        )
+    if multi_image_startup_ordering_source_surface.get("requires_linked_runtime_probe") is not True:
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface must require a linked runtime probe"
+        )
+    if multi_image_startup_ordering_source_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError(
+            "runtime_multi_image_startup_ordering_source_surface must require real compile output"
+        )
 
     if provenance.get("contract_id") != COMPILE_PROVENANCE_CONTRACT_ID:
         raise RuntimeError("compiled fixture did not publish the native compile provenance contract")
@@ -396,6 +590,52 @@ def build_runtime_bootstrap_registration_source_surface() -> dict[str, Any]:
     }
 
 
+def build_runtime_multi_image_startup_ordering_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    installation_lifecycle = next(
+        (result for result in results if result.case_id == "installation-lifecycle"),
+        None,
+    )
+    return {
+        "contract_id": RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID,
+        "runtime_installation_abi_surface_contract_id": RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID,
+        "runtime_loader_lifecycle_surface_contract_id": RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID,
+        "authoritative_case_ids": (
+            ["installation-lifecycle"] if installation_lifecycle is not None else []
+        ),
+        "fixture_path": INSTALLATION_LIFECYCLE_FIXTURE,
+        "probe_path": INSTALLATION_LIFECYCLE_PROBE,
+        "runtime_public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "runtime_bootstrap_internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "validation_commands": [
+            RUNTIME_ACCEPTANCE_COMMAND,
+            VALIDATE_RUNTIME_ARCHITECTURE_COMMAND,
+        ],
+        "runtime_symbols": [
+            "objc3_runtime_register_image",
+            "objc3_runtime_copy_registration_state_for_testing",
+            "objc3_runtime_reset_for_testing",
+            "objc3_runtime_replay_registered_images_for_testing",
+            "objc3_runtime_copy_reset_replay_state_for_testing",
+        ],
+        "ordering_snapshot_fields": [
+            "next_expected_registration_order_ordinal",
+            "last_successful_registration_order_ordinal",
+            "last_rejected_registration_order_ordinal",
+        ],
+        "measured_summary_fields": [
+            "fixture_compile_ms",
+            "probe_link_ms",
+            "probe_run_ms",
+            "case_total_ms",
+        ],
+        "latest_installation_lifecycle_measurements": (
+            installation_lifecycle.summary if installation_lifecycle is not None else {}
+        ),
+    }
+
+
 def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path) -> dict[str, Any]:
     compile_coupled_case_ids = [result.case_id for result in results if result.fixture is not None]
     linked_runtime_probe_case_ids = [
@@ -482,20 +722,21 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
 
 
 def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_started = perf_counter()
     case_dir = run_dir / "installation-lifecycle"
-    fixture = (
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "runtime_canonical_runnable_object_runtime_library.objc3"
-    )
+    fixture = ROOT / Path(INSTALLATION_LIFECYCLE_FIXTURE)
+    probe = ROOT / Path(INSTALLATION_LIFECYCLE_PROBE)
+    compile_started = perf_counter()
     obj_path = compile_fixture(fixture, case_dir / "compile")
-    probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_installation_loader_lifecycle_probe.cpp"
+    fixture_compile_ms = int((perf_counter() - compile_started) * 1000)
     exe_path = case_dir / "runtime_installation_loader_lifecycle_probe.exe"
+    probe_link_started = perf_counter()
     compile_probe(clangxx, probe, exe_path, [obj_path])
+    probe_link_ms = int((perf_counter() - probe_link_started) * 1000)
+    probe_run_started = perf_counter()
     payload = parse_json_output(run_probe(exe_path), "runtime installation loader lifecycle probe")
+    probe_run_ms = int((perf_counter() - probe_run_started) * 1000)
+    case_total_ms = int((perf_counter() - case_started) * 1000)
 
     expect(payload.get("startup_registration_copy_status") == 0, "expected startup registration snapshot copy to succeed")
     expect(payload.get("startup_image_walk_copy_status") == 0, "expected startup image walk snapshot copy to succeed")
@@ -546,6 +787,10 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
         claim_class="linked-runtime-probe",
         passed=True,
         summary={
+            "fixture_compile_ms": fixture_compile_ms,
+            "probe_link_ms": probe_link_ms,
+            "probe_run_ms": probe_run_ms,
+            "case_total_ms": case_total_ms,
             "startup_registered_image_count": payload["startup_registered_image_count"],
             "post_reset_registered_image_count": payload["post_reset_registered_image_count"],
             "post_replay_registered_image_count": payload["post_replay_registered_image_count"],
@@ -1763,6 +2008,9 @@ def main() -> int:
         "claim_boundary": build_claim_boundary(),
         "runtime_state_publication_surface": build_runtime_state_publication_surface(),
         "runtime_bootstrap_registration_source_surface": build_runtime_bootstrap_registration_source_surface(),
+        "runtime_multi_image_startup_ordering_source_surface": (
+            build_runtime_multi_image_startup_ordering_source_surface(results)
+        ),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),
         "loader_lifecycle_surface": build_loader_lifecycle_surface(results),
