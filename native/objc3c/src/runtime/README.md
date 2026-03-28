@@ -65,6 +65,51 @@ Object-model realization surface:
   - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
   - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
 
+Property/ivar/storage/accessor source surface:
+
+- emitted compile-manifest key:
+  - `runtime_property_ivar_storage_accessor_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.executable.property.ivar.source.closure.v1`
+  - `objc3c.executable.property.ivar.source.model.completion.v1`
+  - `objc3c.executable.property.ivar.semantics.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative source fields:
+  - `Objc3PropertyDecl.ivar_binding_symbol`
+  - `Objc3PropertyDecl.executable_synthesized_binding_kind`
+  - `Objc3PropertyDecl.executable_synthesized_binding_symbol`
+  - `Objc3PropertyDecl.property_attribute_profile`
+  - `Objc3PropertyDecl.effective_getter_selector`
+  - `Objc3PropertyDecl.effective_setter_available`
+  - `Objc3PropertyDecl.effective_setter_selector`
+  - `Objc3PropertyDecl.accessor_ownership_profile`
+  - `Objc3PropertyDecl.executable_ivar_layout_symbol`
+  - `Objc3PropertyDecl.executable_ivar_layout_slot_index`
+  - `Objc3PropertyDecl.executable_ivar_layout_size_bytes`
+  - `Objc3PropertyDecl.executable_ivar_layout_alignment_bytes`
+- authoritative executable probes:
+  - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
+  - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+  - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+  - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+- semantic boundary:
+  - later storage legality, synthesis, lowering, runtime realization, and
+    property/reflection conformance work must consume the AST/sema-approved
+    source boundary instead of re-deriving semantics from sidecars or
+    milestone-local notes
+  - lowering may serialize these fields into emitted artifacts but must not
+    invent property storage, accessor selectors, or ownership semantics beyond
+    the frozen source model
+  - no public runtime ABI widening or milestone-specific scaffolding is part
+    of this boundary
+
 Realization lowering and reflection artifact surface:
 
 - emitted compile-manifest key:

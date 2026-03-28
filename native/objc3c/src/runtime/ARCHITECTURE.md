@@ -108,6 +108,21 @@ Object-model realization source of truth:
   rather than rederiving class/category/protocol behavior from sidecars or
   stale milestone notes
 
+Property/ivar/storage/accessor source of truth:
+
+- compile publication exposes the coupled property/ivar/storage/accessor source
+  boundary through the emitted compile-manifest key
+  `runtime_property_ivar_storage_accessor_source_surface`
+- that surface must point at the authoritative AST/sema/IR/pipeline/runtime
+  code paths, the executable property/ivar source closure/model-completion/
+  semantics contracts, and the frozen property attribute, accessor selector,
+  synthesized-binding, and ivar-layout source models that later work must
+  consume
+- later storage legality, synthesis, lowering, runtime realization, and
+  storage/reflection conformance work must extend that emitted surface rather
+  than inventing semantics from milestone-local notes, sidecar-only metadata,
+  or lowering-owned re-derivation
+
 Realization lowering and reflection artifact source of truth:
 
 - compile publication exposes the coupled realization-lowering and reflection-

@@ -704,6 +704,10 @@ inline constexpr const char *kObjc3ExecutablePropertyIvarSourceSurfaceModel =
     "property-ivar-executable-source-closure-freezes-decls-synthesis-bindings-and-accessor-selectors-before-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyIvarSourceModelCompletionContractId =
     "objc3c.executable.property.ivar.source.model.completion.v1";
+inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceContractId =
+    "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1";
+inline constexpr const char *kObjc3RuntimePropertyIvarStorageAccessorSourceSurfaceModel =
+    "property-ivar-storage-accessor-runtime-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion";
 inline constexpr const char *kObjc3ExecutablePropertyIvarLayoutModel =
     "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization";
 inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =

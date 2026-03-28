@@ -35,6 +35,9 @@ RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.object.model.realization.source.surface.v1"
 )
+RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1"
+)
 RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1"
 )
@@ -229,6 +232,9 @@ def compile_fixture_with_args(
     )
     object_model_realization_source_surface = manifest.get(
         "runtime_object_model_realization_source_surface"
+    )
+    property_ivar_storage_accessor_source_surface = manifest.get(
+        "runtime_property_ivar_storage_accessor_source_surface"
     )
     realization_lowering_reflection_artifact_surface = manifest.get(
         "runtime_realization_lowering_reflection_artifact_surface"
@@ -874,6 +880,126 @@ def compile_fixture_with_args(
     if object_model_realization_source_surface.get("requires_linked_runtime_probe") is not True:
         raise RuntimeError(
             "runtime_object_model_realization_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(property_ivar_storage_accessor_source_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_property_ivar_storage_accessor_source_surface"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("contract_id")
+        != RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_property_ivar_storage_accessor_source_surface contract"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("object_artifact")
+        != obj_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from the emitted object artifact path"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("backend_artifact")
+        != ll_path.name
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface drifted from the emitted LLVM IR artifact path"
+        )
+    expected_property_ivar_storage_accessor_source_fields = {
+        "property_ast_anchor": "Objc3PropertyDecl",
+        "ivar_ast_anchor": "Objc3PropertyDecl.ivar_binding_symbol",
+        "source_closure_contract_id": "objc3c.executable.property.ivar.source.closure.v1",
+        "source_model_completion_contract_id": (
+            "objc3c.executable.property.ivar.source.model.completion.v1"
+        ),
+        "source_semantics_contract_id": "objc3c.executable.property.ivar.semantics.v1",
+        "source_surface_model": (
+            "property-ivar-storage-accessor-runtime-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion"
+        ),
+        "layout_model": (
+            "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization"
+        ),
+        "attribute_model": (
+            "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles"
+        ),
+        "synthesis_semantics_model": (
+            "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands"
+        ),
+        "default_ivar_binding_resolution_model": (
+            "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration"
+        ),
+        "accessor_semantics_model": (
+            "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission"
+        ),
+        "accessor_selector_uniqueness_model": (
+            "effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding"
+        ),
+        "ownership_atomicity_interaction_model": (
+            "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land"
+        ),
+        "storage_semantics_model": (
+            "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation"
+        ),
+        "compatibility_semantics_model": (
+            "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols"
+        ),
+        "ast_source_path": "native/objc3c/src/ast/objc3_ast.h",
+        "sema_source_path": "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+        "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        "frontend_artifacts_source_path": (
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+        ),
+        "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+    }
+    for field, expected_value in expected_property_ivar_storage_accessor_source_fields.items():
+        if property_ivar_storage_accessor_source_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_property_ivar_storage_accessor_source_surface drifted from {field}"
+            )
+    if (
+        property_ivar_storage_accessor_source_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("requires_real_compile_output")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface must require real compile output"
+        )
+    if (
+        property_ivar_storage_accessor_source_surface.get("requires_linked_runtime_probe")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_property_ivar_storage_accessor_source_surface must require a linked runtime probe"
         )
     if not isinstance(realization_lowering_reflection_artifact_surface, dict):
         raise RuntimeError(
@@ -2316,6 +2442,99 @@ def build_runtime_object_model_realization_source_surface(
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_property_ivar_storage_accessor_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {
+            "synthesized-accessor-codegen",
+            "synthesized-accessor-runtime",
+            "property-layout",
+            "property-execution",
+            "property-reflection",
+            "storage-ownership-reflection",
+            "arc-property-helper-abi",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.executable.property.ivar.source.closure.v1",
+            "objc3c.executable.property.ivar.source.model.completion.v1",
+            "objc3c.executable.property.ivar.semantics.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_source_fields": [
+            "Objc3PropertyDecl.ivar_binding_symbol",
+            "Objc3PropertyDecl.executable_synthesized_binding_kind",
+            "Objc3PropertyDecl.executable_synthesized_binding_symbol",
+            "Objc3PropertyDecl.property_attribute_profile",
+            "Objc3PropertyDecl.effective_getter_selector",
+            "Objc3PropertyDecl.effective_setter_available",
+            "Objc3PropertyDecl.effective_setter_selector",
+            "Objc3PropertyDecl.accessor_ownership_profile",
+            "Objc3PropertyDecl.executable_ivar_layout_symbol",
+            "Objc3PropertyDecl.executable_ivar_layout_slot_index",
+            "Objc3PropertyDecl.executable_ivar_layout_size_bytes",
+            "Objc3PropertyDecl.executable_ivar_layout_alignment_bytes",
+        ],
+        "semantic_boundary_model": (
+            "property-ivar-storage-accessor-source-surface-freezes-ast-sema-ir-pipeline-and-runtime-codepaths-before-lowering-or-runtime-semantic-expansion"
+        ),
+        "source_models": [
+            "property-ivar-source-model-computes-deterministic-layout-slots-sizes-and-alignment-before-runtime-storage-realization",
+            "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles",
+            "non-category-class-interface-properties-own-deterministic-implicit-ivar-and-synthesized-binding-identities-until-explicit-synthesize-lands",
+            "matched-class-implementations-resolve-interface-declared-properties-through-authoritative-default-ivar-bindings-with-or-without-implementation-redeclaration",
+            "readonly-and-attribute-driven-accessor-selectors-resolve-to-one-declaration-level-profile-before-body-emission",
+            "effective-getter-and-setter-selectors-must-be-unique-within-each-property-container-before-runtime-accessor-binding",
+            "runtime-managed-property-ownership-and-atomicity-combinations-fail-closed-until-executable-accessor-storage-semantics-land",
+            "interface-owned-property-layout-slots-sizes-and-alignment-remain-deterministic-before-runtime-allocation",
+            "protocol-and-inheritance-compatibility-compare-declaration-level-attribute-accessor-ownership-profiles-not-storage-local-layout-symbols",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+            "tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3",
+            "tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp",
+            "tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp",
+            "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+            "tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp",
+            "tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-runtime-abi-widening",
+            "no-milestone-specific-scaffolding",
+            "no-lowering-owned-storage-or-accessor-semantics-invention",
         ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
@@ -5203,6 +5422,9 @@ def main() -> int:
         ),
         "runtime_object_model_realization_source_surface": (
             build_runtime_object_model_realization_source_surface(results)
+        ),
+        "runtime_property_ivar_storage_accessor_source_surface": (
+            build_runtime_property_ivar_storage_accessor_source_surface(results)
         ),
         "runtime_realization_lowering_reflection_artifact_surface": (
             build_runtime_realization_lowering_reflection_artifact_surface(results)

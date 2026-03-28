@@ -286,6 +286,57 @@ later realization and reflection work must consume. Downstream work must extend
 this emitted surface rather than rederiving realized graph truth from
 sidecars, stale milestone notes, or synthetic probes.
 
+## Property/Ivar/Storage/Accessor Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_property_ivar_storage_accessor_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.executable.property.ivar.source.closure.v1`
+  - `objc3c.executable.property.ivar.source.model.completion.v1`
+  - `objc3c.executable.property.ivar.semantics.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative source fields:
+  - `Objc3PropertyDecl.ivar_binding_symbol`
+  - `Objc3PropertyDecl.executable_synthesized_binding_kind`
+  - `Objc3PropertyDecl.executable_synthesized_binding_symbol`
+  - `Objc3PropertyDecl.property_attribute_profile`
+  - `Objc3PropertyDecl.effective_getter_selector`
+  - `Objc3PropertyDecl.effective_setter_available`
+  - `Objc3PropertyDecl.effective_setter_selector`
+  - `Objc3PropertyDecl.accessor_ownership_profile`
+  - `Objc3PropertyDecl.executable_ivar_layout_symbol`
+  - `Objc3PropertyDecl.executable_ivar_layout_slot_index`
+  - `Objc3PropertyDecl.executable_ivar_layout_size_bytes`
+  - `Objc3PropertyDecl.executable_ivar_layout_alignment_bytes`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/m257_synthesized_accessor_property_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+    - `tests/tooling/fixtures/native/m260_runtime_backed_storage_ownership_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/m262_arc_property_interaction_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/m257_c003_synthesized_accessor_probe.cpp`
+    - `tests/tooling/runtime/m257_d001_property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/m260_runtime_backed_storage_ownership_reflection_probe.cpp`
+    - `tests/tooling/runtime/m262_d003_arc_debug_instrumentation_probe.cpp`
+
+This is the authoritative property/ivar/storage/accessor source boundary. It
+freezes the AST/sema-approved binding, accessor, ownership, and ivar-layout
+facts plus the exact live code paths that later storage, lowering, runtime,
+and reflection work must use. Downstream work may serialize these fields into
+emitted artifacts, but it must not invent storage semantics, accessor
+selectors, or ownership behavior outside this emitted source surface. Public
+runtime ABI widening and milestone-specific scaffolding are explicit
+non-goals.
+
 ## Realization Lowering And Reflection Artifact Surface
 
 - authoritative compile-manifest key:
