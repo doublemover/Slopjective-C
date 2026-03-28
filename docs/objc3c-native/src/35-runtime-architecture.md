@@ -27,6 +27,7 @@ closure work must extend this path, not bypass it.
   - `<prefix>.ll`
   - `<prefix>.manifest.json`
   - `<prefix>.runtime-registration-manifest.json`
+  - `<prefix>.runtime-registration-descriptor.json`
   - `<prefix>.compile-provenance.json`
 - validation-owned proof path:
   - `scripts/check_objc3c_runtime_acceptance.py`
@@ -71,6 +72,29 @@ The compile manifest is the authoritative front-door runtime state publication
 surface. It must point at the coupled registration manifest, emitted object and
 IR artifacts, the runtime archive path, the registration entrypoint, the runtime
 state snapshot symbol, and the published descriptor counts.
+
+## Bootstrap Registration Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_bootstrap_registration_source_surface`
+- coupled emitted artifacts:
+  - `<prefix>.manifest.json`
+  - `<prefix>.runtime-registration-manifest.json`
+  - `<prefix>.runtime-registration-descriptor.json`
+  - `<prefix>.obj`
+  - `<prefix>.ll`
+- source inputs it composes:
+  - `objc_runtime_registration_descriptor_image_root_source_surface`
+  - `objc_runtime_registration_descriptor_frontend_closure`
+  - `objc_runtime_translation_unit_registration_manifest`
+  - `objc_runtime_bootstrap_lowering_contract`
+
+This is the authoritative bootstrap registration source audit boundary. It
+freezes the emitted registration descriptor artifact, image-root identity,
+registration entrypoint, constructor root, translation-unit identity key, and
+registration order ordinal as one coupled compile output instead of leaving
+downstream work to reconstruct that source of truth from separate manifest
+fragments.
 
 ## Installation ABI And Loader Lifecycle
 

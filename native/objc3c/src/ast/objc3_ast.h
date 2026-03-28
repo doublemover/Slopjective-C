@@ -1096,6 +1096,9 @@ inline constexpr const char *kObjc3RuntimeBootstrapApiImageWalkLifecycleModel =
 inline constexpr const char
     *kObjc3RuntimeBootstrapApiDeterministicResetLifecycleModel =
         "deferred-until-next-runtime-phase";
+inline constexpr const char
+    *kObjc3RuntimeBootstrapRegistrationSourceSurfaceContractId =
+        "objc3c.runtime.bootstrap.registration.source.surface.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarContractId =
     "objc3c.runtime.bootstrap.registrar.image.walk.v1";
 inline constexpr const char *kObjc3RuntimeBootstrapRegistrarSurfacePath =

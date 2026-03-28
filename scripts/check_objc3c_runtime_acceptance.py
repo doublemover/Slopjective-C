@@ -24,6 +24,7 @@ NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 PWSH = shutil.which("pwsh") or shutil.which("powershell") or "pwsh"
 RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID = "objc3c.runtime.state.publication.surface.v1"
 RUNTIME_STATE_PUBLICATION_SURFACE_KIND = "compile-manifest-plus-registration-manifest"
+RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID = "objc3c.runtime.bootstrap.registration.source.surface.v1"
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -109,6 +110,7 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     obj_path = out_dir / "module.obj"
     manifest_path = out_dir / "module.manifest.json"
     registration_manifest_path = out_dir / "module.runtime-registration-manifest.json"
+    registration_descriptor_path = out_dir / "module.runtime-registration-descriptor.json"
     provenance_path = out_dir / "module.compile-provenance.json"
     if not obj_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {obj_path}")
@@ -116,12 +118,37 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError(f"compiled fixture did not publish {manifest_path}")
     if not registration_manifest_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
+    if not registration_descriptor_path.is_file():
+        raise RuntimeError(f"compiled fixture did not publish {registration_descriptor_path}")
     if not provenance_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {provenance_path}")
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     provenance = json.loads(provenance_path.read_text(encoding="utf-8"))
     registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+    frontend = manifest.get("frontend", {})
+    pipeline = frontend.get("pipeline", {}) if isinstance(frontend, dict) else {}
+    semantic_surface = pipeline.get("semantic_surface", {}) if isinstance(pipeline, dict) else {}
+    bootstrap_source_surface = manifest.get("runtime_bootstrap_registration_source_surface")
+    registration_descriptor_frontend_closure = semantic_surface.get(
+        "objc_runtime_registration_descriptor_frontend_closure",
+        manifest.get("objc_runtime_registration_descriptor_frontend_closure", {}),
+    )
+    registration_descriptor_image_root_source_surface = semantic_surface.get(
+        "objc_runtime_registration_descriptor_image_root_source_surface",
+        manifest.get("objc_runtime_registration_descriptor_image_root_source_surface", {}),
+    )
+    translation_unit_registration_manifest = semantic_surface.get(
+        "objc_runtime_translation_unit_registration_manifest",
+        manifest.get("objc_runtime_translation_unit_registration_manifest", {}),
+    )
+    runtime_bootstrap_lowering = semantic_surface.get(
+        "objc_runtime_bootstrap_lowering_contract",
+        manifest.get(
+            "objc_runtime_bootstrap_lowering_contract",
+            manifest.get("objc_runtime_bootstrap_lowering", {}),
+        ),
+    )
     publication_surface = manifest.get("runtime_state_publication_surface")
     if not isinstance(publication_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_state_publication_surface")
@@ -159,6 +186,51 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
         raise RuntimeError("runtime_state_publication_surface must require the coupled runtime registration manifest")
     if publication_surface.get("publication_requires_real_compile_output") is not True:
         raise RuntimeError("runtime_state_publication_surface must require real compile output")
+    if not isinstance(bootstrap_source_surface, dict):
+        raise RuntimeError("compiled fixture manifest did not publish runtime_bootstrap_registration_source_surface")
+    if bootstrap_source_surface.get("contract_id") != RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID:
+        raise RuntimeError("compiled fixture manifest published the wrong runtime_bootstrap_registration_source_surface contract")
+    if bootstrap_source_surface.get("compile_manifest_artifact") != "module.manifest.json":
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the compile manifest artifact path")
+    if bootstrap_source_surface.get("registration_manifest_artifact") != "module.runtime-registration-manifest.json":
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the runtime registration manifest artifact path")
+    if bootstrap_source_surface.get("registration_descriptor_artifact") != "module.runtime-registration-descriptor.json":
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the runtime registration descriptor artifact path")
+    if bootstrap_source_surface.get("object_artifact") != "module.obj":
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the emitted object artifact path")
+    if bootstrap_source_surface.get("backend_artifact") != "module.ll":
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the emitted LLVM IR artifact path")
+    if bootstrap_source_surface.get("source_surface_contract_id") != registration_descriptor_image_root_source_surface.get("contract_id"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the registration-descriptor image-root source contract")
+    if bootstrap_source_surface.get("frontend_closure_contract_id") != registration_descriptor_frontend_closure.get("contract_id"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the registration-descriptor frontend closure contract")
+    if bootstrap_source_surface.get("registration_manifest_contract_id") != translation_unit_registration_manifest.get("contract_id"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the registration manifest contract")
+    if bootstrap_source_surface.get("bootstrap_lowering_contract_id") != runtime_bootstrap_lowering.get("contract_id"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the bootstrap lowering contract")
+    if bootstrap_source_surface.get("runtime_support_library_archive_relative_path") != registration_manifest.get("runtime_support_library_archive_relative_path"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the runtime support library archive path")
+    if bootstrap_source_surface.get("registration_descriptor_identifier") != registration_descriptor_frontend_closure.get("registration_descriptor_identifier"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the registration descriptor identifier")
+    if bootstrap_source_surface.get("image_root_identifier") != registration_descriptor_frontend_closure.get("image_root_identifier"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the image root identifier")
+    if bootstrap_source_surface.get("registration_entrypoint_symbol") != registration_manifest.get("registration_entrypoint_symbol"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the registration entrypoint symbol")
+    if bootstrap_source_surface.get("constructor_root_symbol") != registration_manifest.get("constructor_root_symbol"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the constructor root symbol")
+    if bootstrap_source_surface.get("translation_unit_identity_key") != registration_manifest.get("translation_unit_identity_key"):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the translation unit identity key")
+    if (
+        bootstrap_source_surface.get("translation_unit_registration_order_ordinal")
+        != registration_manifest.get("translation_unit_registration_order_ordinal")
+    ):
+        raise RuntimeError("runtime_bootstrap_registration_source_surface drifted from the translation unit registration order ordinal")
+    if bootstrap_source_surface.get("requires_coupled_registration_descriptor_artifact") is not True:
+        raise RuntimeError("runtime_bootstrap_registration_source_surface must require the coupled runtime registration descriptor artifact")
+    if bootstrap_source_surface.get("requires_coupled_registration_manifest") is not True:
+        raise RuntimeError("runtime_bootstrap_registration_source_surface must require the coupled runtime registration manifest")
+    if bootstrap_source_surface.get("requires_real_compile_output") is not True:
+        raise RuntimeError("runtime_bootstrap_registration_source_surface must require real compile output")
 
     if provenance.get("contract_id") != COMPILE_PROVENANCE_CONTRACT_ID:
         raise RuntimeError("compiled fixture did not publish the native compile provenance contract")
@@ -307,6 +379,20 @@ def build_runtime_state_publication_surface() -> dict[str, Any]:
         "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
         "publication_requires_coupled_registration_manifest": True,
         "publication_requires_real_compile_output": True,
+    }
+
+
+def build_runtime_bootstrap_registration_source_surface() -> dict[str, Any]:
+    return {
+        "contract_id": RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
+        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
+        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
+        "object_artifact": "<emit-prefix>.obj",
+        "backend_artifact": "<emit-prefix>.ll",
+        "requires_coupled_registration_descriptor_artifact": True,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
     }
 
 
@@ -1676,6 +1762,7 @@ def main() -> int:
         ],
         "claim_boundary": build_claim_boundary(),
         "runtime_state_publication_surface": build_runtime_state_publication_surface(),
+        "runtime_bootstrap_registration_source_surface": build_runtime_bootstrap_registration_source_surface(),
         "acceptance_suite_surface": build_acceptance_suite_surface(results, report_path),
         "runtime_installation_abi_surface": build_runtime_installation_abi_surface(),
         "loader_lifecycle_surface": build_loader_lifecycle_surface(results),

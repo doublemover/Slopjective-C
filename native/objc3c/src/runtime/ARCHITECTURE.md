@@ -48,3 +48,14 @@ Forbidden subsystem shortcuts:
 - selector or property execution must not bypass installation through alternate loader state
 - compile publication must not widen the public runtime ABI outside `native/objc3c/src/runtime/objc3_runtime.h`
 - milestone-specific closeout helpers must not become runtime subsystem dependencies
+
+Bootstrap registration source of truth:
+
+- compile publication exposes the coupled bootstrap registration source through
+  the emitted compile-manifest key `runtime_bootstrap_registration_source_surface`
+- that surface must point at the emitted registration descriptor artifact,
+  coupled registration manifest, emitted object/IR, constructor root,
+  registration entrypoint, translation-unit identity key, and registration order
+  ordinal
+- later bootstrap, loader, and replay work must consume that emitted surface
+  rather than reconstructing bootstrap source facts from partial sidecars
