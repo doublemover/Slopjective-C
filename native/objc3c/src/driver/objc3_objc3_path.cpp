@@ -1166,6 +1166,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
               kObjc3Part10MacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
           link_plan_inputs.expected_part10_host_cache_root_relative_path =
               kObjc3Part10MacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
+          link_plan_inputs.expected_bootstrap_live_registration_contract_id =
+              "objc3c.runtime.live.registration.discovery.replay.v1";
+          link_plan_inputs.expected_bootstrap_live_restart_hardening_contract_id =
+              "objc3c.runtime.live.restart.hardening.v1";
+          link_plan_inputs.expected_bootstrap_replay_registered_images_symbol =
+              kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol;
+          link_plan_inputs.expected_bootstrap_reset_replay_state_snapshot_symbol =
+              kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol;
+          link_plan_inputs.expected_bootstrap_reset_for_testing_symbol =
+              kObjc3RuntimeSupportLibraryResetForTestingSymbol;
           for (std::size_t index = 0; index < imported_surfaces.size(); ++index) {
             link_plan_inputs.direct_import_surface_artifact_paths.push_back(
                 imported_surfaces[index].source_path.generic_string());
@@ -1195,6 +1205,29 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                 peer_artifacts.translation_unit_registration_order_ordinal;
             imported_input.driver_linker_flags =
                 peer_artifacts.driver_linker_flags;
+            imported_input.ready_for_live_registration_discovery_replay =
+                peer_artifacts.ready_for_live_registration_discovery_replay;
+            imported_input.ready_for_live_restart_hardening =
+                peer_artifacts.ready_for_live_restart_hardening;
+            imported_input.bootstrap_live_registration_contract_id =
+                peer_artifacts.bootstrap_live_registration_contract_id;
+            imported_input.bootstrap_live_restart_hardening_contract_id =
+                peer_artifacts.bootstrap_live_restart_hardening_contract_id;
+            imported_input.bootstrap_live_replay_registered_images_symbol =
+                peer_artifacts.bootstrap_live_replay_registered_images_symbol;
+            imported_input.bootstrap_live_reset_replay_state_snapshot_symbol =
+                peer_artifacts
+                    .bootstrap_live_reset_replay_state_snapshot_symbol;
+            imported_input.bootstrap_live_restart_reset_for_testing_symbol =
+                peer_artifacts
+                    .bootstrap_live_restart_reset_for_testing_symbol;
+            imported_input.bootstrap_live_restart_replay_registered_images_symbol =
+                peer_artifacts
+                    .bootstrap_live_restart_replay_registered_images_symbol;
+            imported_input
+                .bootstrap_live_restart_reset_replay_state_snapshot_symbol =
+                peer_artifacts
+                    .bootstrap_live_restart_reset_replay_state_snapshot_symbol;
             imported_input.part6_result_and_bridging_artifact_replay_present =
                 imported_surface.part6_result_and_bridging_artifact_replay_present;
             imported_input.part6_binary_artifact_replay_ready =

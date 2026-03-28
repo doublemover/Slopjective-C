@@ -51,6 +51,15 @@ INSTALLATION_LIFECYCLE_FIXTURE = (
 INSTALLATION_LIFECYCLE_PROBE = (
     "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp"
 )
+IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE = (
+    "tests/tooling/fixtures/native/m258_d002_runtime_packaging_provider.objc3"
+)
+IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE = (
+    "tests/tooling/fixtures/native/m258_d002_runtime_packaging_consumer.objc3"
+)
+IMPORTED_RUNTIME_PACKAGING_PROBE = (
+    "tests/tooling/runtime/m258_d002_cross_module_runtime_packaging_probe.cpp"
+)
 RUNTIME_ACCEPTANCE_COMMAND = "python scripts/check_objc3c_runtime_acceptance.py"
 VALIDATE_RUNTIME_ARCHITECTURE_COMMAND = (
     "python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture"
@@ -113,7 +122,9 @@ def find_clangxx() -> str:
     raise RuntimeError("clang++ not found; set LLVM_ROOT or ensure clang++ is on PATH")
 
 
-def compile_fixture(fixture: Path, out_dir: Path) -> Path:
+def compile_fixture_with_args(
+    fixture: Path, out_dir: Path, extra_args: list[str] | None = None
+) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     result = run(
         [
@@ -128,6 +139,7 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
             str(out_dir),
             "--emit-prefix",
             "module",
+            *(extra_args or []),
         ]
     )
     if result.returncode != 0:
@@ -731,6 +743,10 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     return obj_path
 
 
+def compile_fixture(fixture: Path, out_dir: Path) -> Path:
+    return compile_fixture_with_args(fixture, out_dir)
+
+
 def compile_fixture_outputs(fixture: Path, out_dir: Path) -> tuple[Path, Path, Path]:
     obj_path = compile_fixture(fixture, out_dir)
     ll_path = out_dir / "module.ll"
@@ -1288,6 +1304,240 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "post_replay_registered_image_count": payload["post_replay_registered_image_count"],
             "retained_bootstrap_image_count": payload["post_replay_retained_bootstrap_image_count"],
             "replay_generation": payload["post_replay_replay_generation"],
+        },
+    )
+
+
+def check_imported_runtime_packaging_replay_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_started = perf_counter()
+    case_dir = run_dir / "imported-runtime-packaging-replay"
+    provider_fixture = ROOT / Path(IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE)
+    consumer_fixture = ROOT / Path(IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE)
+    probe = ROOT / Path(IMPORTED_RUNTIME_PACKAGING_PROBE)
+
+    provider_compile_dir = case_dir / "provider"
+    provider_compile_started = perf_counter()
+    provider_obj = compile_fixture_with_args(
+        provider_fixture,
+        provider_compile_dir,
+        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+    )
+    provider_compile_ms = int((perf_counter() - provider_compile_started) * 1000)
+    provider_import_surface = provider_compile_dir / "module.runtime-import-surface.json"
+    if not provider_import_surface.is_file():
+        raise RuntimeError(
+            f"imported runtime provider did not publish {provider_import_surface}"
+        )
+    provider_registration_manifest = json.loads(
+        (provider_compile_dir / "module.runtime-registration-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    consumer_compile_dir = case_dir / "consumer"
+    consumer_compile_started = perf_counter()
+    consumer_obj = compile_fixture_with_args(
+        consumer_fixture,
+        consumer_compile_dir,
+        [
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(provider_import_surface),
+        ],
+    )
+    consumer_compile_ms = int((perf_counter() - consumer_compile_started) * 1000)
+    consumer_registration_manifest = json.loads(
+        (consumer_compile_dir / "module.runtime-registration-manifest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    link_plan_path = consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
+    if not link_plan_path.is_file():
+        raise RuntimeError(
+            f"imported runtime consumer did not publish {link_plan_path}"
+        )
+    link_plan = json.loads(link_plan_path.read_text(encoding="utf-8"))
+
+    expect(
+        link_plan.get("bootstrap_live_registration_contract_id")
+        == "objc3c.runtime.live.registration.discovery.replay.v1",
+        "expected cross-module link plan to preserve the live registration replay contract",
+    )
+    expect(
+        link_plan.get("bootstrap_live_restart_hardening_contract_id")
+        == "objc3c.runtime.live.restart.hardening.v1",
+        "expected cross-module link plan to preserve the live restart hardening contract",
+    )
+    expect(
+        link_plan.get("bootstrap_replay_registered_images_symbol")
+        == "objc3_runtime_replay_registered_images_for_testing",
+        "expected cross-module link plan to preserve the replay_registered_images symbol",
+    )
+    expect(
+        link_plan.get("bootstrap_reset_replay_state_snapshot_symbol")
+        == "objc3_runtime_copy_reset_replay_state_for_testing",
+        "expected cross-module link plan to preserve the reset/replay snapshot symbol",
+    )
+    expect(
+        link_plan.get("bootstrap_reset_for_testing_symbol")
+        == "objc3_runtime_reset_for_testing",
+        "expected cross-module link plan to preserve the reset_for_testing symbol",
+    )
+    expect(
+        link_plan.get("imported_live_registration_replay_ready") is True,
+        "expected cross-module link plan to mark imported live registration replay ready",
+    )
+    expect(
+        link_plan.get("imported_live_restart_hardening_ready") is True,
+        "expected cross-module link plan to mark imported live restart hardening ready",
+    )
+    imported_modules = link_plan.get("imported_modules")
+    expect(
+        isinstance(imported_modules, list) and len(imported_modules) == 1,
+        "expected cross-module link plan to publish exactly one imported module",
+    )
+    imported_module = imported_modules[0]
+    expect(
+        imported_module.get("module_name") == "runtimePackagingProvider",
+        "expected cross-module link plan to preserve the imported provider module name",
+    )
+    expect(
+        imported_module.get("translation_unit_registration_order_ordinal") == 1,
+        "expected imported module registration ordinal to be preserved in the link plan",
+    )
+    expect(
+        imported_module.get("ready_for_live_registration_discovery_replay") is True,
+        "expected imported module to preserve live registration replay readiness",
+    )
+    expect(
+        imported_module.get("ready_for_live_restart_hardening") is True,
+        "expected imported module to preserve live restart hardening readiness",
+    )
+    for field_name, expected_value in (
+        ("bootstrap_live_registration_contract_id", "objc3c.runtime.live.registration.discovery.replay.v1"),
+        ("bootstrap_live_restart_hardening_contract_id", "objc3c.runtime.live.restart.hardening.v1"),
+        ("bootstrap_live_replay_registered_images_symbol", "objc3_runtime_replay_registered_images_for_testing"),
+        ("bootstrap_live_reset_replay_state_snapshot_symbol", "objc3_runtime_copy_reset_replay_state_for_testing"),
+        ("bootstrap_live_restart_reset_for_testing_symbol", "objc3_runtime_reset_for_testing"),
+        ("bootstrap_live_restart_replay_registered_images_symbol", "objc3_runtime_replay_registered_images_for_testing"),
+        ("bootstrap_live_restart_reset_replay_state_snapshot_symbol", "objc3_runtime_copy_reset_replay_state_for_testing"),
+    ):
+        expect(
+            imported_module.get(field_name) == expected_value,
+            f"expected imported module to preserve {field_name}",
+        )
+    local_module = link_plan.get("local_module")
+    expect(
+        isinstance(local_module, dict)
+        and local_module.get("translation_unit_registration_order_ordinal") == 2,
+        "expected cross-module link plan to preserve the local registration ordinal",
+    )
+    link_object_artifacts = link_plan.get("link_object_artifacts")
+    expect(
+        isinstance(link_object_artifacts, list) and len(link_object_artifacts) == 2,
+        "expected cross-module link plan to publish two ordered link objects",
+    )
+
+    exe_path = case_dir / "m258_d002_cross_module_runtime_packaging_probe.exe"
+    probe_link_started = perf_counter()
+    compile_probe(clangxx, probe, exe_path, [provider_obj, consumer_obj])
+    probe_link_ms = int((perf_counter() - probe_link_started) * 1000)
+    probe_run_started = perf_counter()
+    payload = parse_json_output(
+        run_probe(exe_path), "imported runtime cross-module packaging probe"
+    )
+    probe_run_ms = int((perf_counter() - probe_run_started) * 1000)
+    case_total_ms = int((perf_counter() - case_started) * 1000)
+
+    provider_identity = provider_registration_manifest["translation_unit_identity_key"]
+    consumer_identity = consumer_registration_manifest["translation_unit_identity_key"]
+    expect(payload.get("startup_registration_copy_status") == 0, "expected imported-runtime startup registration snapshot copy to succeed")
+    expect(payload.get("startup_registered_image_count") == 2, "expected imported-runtime startup to install two images")
+    expect(payload.get("startup_next_expected_registration_order_ordinal") == 3, "expected imported-runtime startup to advance the next registration ordinal to three")
+    expect(payload.get("startup_last_registered_translation_unit_identity_key") == consumer_identity, "expected imported-runtime startup to register the local image last")
+    expect(payload.get("imported_entry_status") == 0 and payload.get("imported_entry_found") == 1, "expected imported provider runtime metadata to be realized at startup")
+    expect(payload.get("local_entry_status") == 0 and payload.get("local_entry_found") == 1, "expected local consumer runtime metadata to be realized at startup")
+    expect(payload.get("imported_registration_order_ordinal") == 1, "expected imported provider runtime metadata to preserve registration ordinal one")
+    expect(payload.get("local_registration_order_ordinal") == 2, "expected local consumer runtime metadata to preserve registration ordinal two")
+    imported_provider_class_value = payload.get("imported_provider_class_value")
+    imported_provider_protocol_value = payload.get("imported_provider_protocol_value")
+    local_consumer_class_value = payload.get("local_consumer_class_value")
+    expect(
+        isinstance(imported_provider_class_value, int)
+        and imported_provider_class_value != 0,
+        "expected imported provider class dispatch to succeed",
+    )
+    expect(
+        isinstance(imported_provider_protocol_value, int)
+        and imported_provider_protocol_value != 0,
+        "expected imported provider protocol dispatch to succeed",
+    )
+    expect(
+        isinstance(local_consumer_class_value, int)
+        and local_consumer_class_value != 0,
+        "expected local consumer class dispatch to succeed",
+    )
+    expect(
+        len(
+            {
+                imported_provider_class_value,
+                imported_provider_protocol_value,
+                local_consumer_class_value,
+            }
+        )
+        == 3,
+        "expected imported and local selector dispatch results to remain distinct",
+    )
+    expect(payload.get("imported_worker_query_status") == 0 and payload.get("imported_worker_conforms") == 1, "expected imported provider protocol conformance to survive cross-module startup")
+    expect(payload.get("post_reset_registration_copy_status") == 0, "expected post-reset registration snapshot copy to succeed")
+    expect(payload.get("post_reset_replay_copy_status") == 0, "expected post-reset replay snapshot copy to succeed")
+    expect(payload.get("post_reset_registered_image_count") == 0, "expected reset to clear installed images before replay")
+    expect(payload.get("post_reset_retained_bootstrap_image_count") == 2, "expected reset to retain both imported and local bootstrap images for replay")
+    expect(payload.get("replay_status") == 0, "expected imported runtime replay to succeed")
+    expect(payload.get("post_replay_registration_copy_status") == 0, "expected post-replay registration snapshot copy to succeed")
+    expect(payload.get("post_replay_replay_copy_status") == 0, "expected post-replay replay snapshot copy to succeed")
+    expect(payload.get("post_replay_registered_image_count") == 2, "expected replay to restore both imported and local images")
+    expect(payload.get("post_replay_next_expected_registration_order_ordinal") == 3, "expected replay to restore the next registration ordinal to three")
+    expect(payload.get("post_replay_last_registered_translation_unit_identity_key") == consumer_identity, "expected replay to restore the local image as the last registered image")
+    expect(payload.get("post_replay_last_replayed_translation_unit_identity_key") == consumer_identity, "expected replay bookkeeping to end on the local translation-unit identity key")
+    expect(payload.get("post_replay_imported_entry_status") == 0 and payload.get("post_replay_imported_entry_found") == 1, "expected imported provider runtime metadata to survive replay")
+    expect(payload.get("post_replay_local_entry_status") == 0 and payload.get("post_replay_local_entry_found") == 1, "expected local consumer runtime metadata to survive replay")
+    expect(
+        payload.get("post_replay_imported_provider_class_value")
+        == imported_provider_class_value,
+        "expected imported provider class dispatch to survive replay",
+    )
+    expect(
+        payload.get("post_replay_imported_provider_protocol_value")
+        == imported_provider_protocol_value,
+        "expected imported provider protocol dispatch to survive replay",
+    )
+    expect(
+        payload.get("post_replay_local_consumer_class_value")
+        == local_consumer_class_value,
+        "expected local consumer class dispatch to survive replay",
+    )
+
+    return CaseResult(
+        case_id="imported-runtime-packaging-replay",
+        probe=IMPORTED_RUNTIME_PACKAGING_PROBE,
+        fixture=IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "provider_fixture": IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
+            "provider_import_surface": str(provider_import_surface.relative_to(ROOT)).replace("\\", "/"),
+            "link_plan": str(link_plan_path.relative_to(ROOT)).replace("\\", "/"),
+            "provider_translation_unit_identity_key": provider_identity,
+            "consumer_translation_unit_identity_key": consumer_identity,
+            "provider_compile_ms": provider_compile_ms,
+            "consumer_compile_ms": consumer_compile_ms,
+            "probe_link_ms": probe_link_ms,
+            "probe_run_ms": probe_run_ms,
+            "case_total_ms": case_total_ms,
         },
     )
 
@@ -2468,6 +2718,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
+        check_imported_runtime_packaging_replay_case(clangxx, run_dir),
         check_canonical_dispatch_case(clangxx, run_dir),
         check_canonical_sample_set_case(clangxx, run_dir),
         check_live_dispatch_fast_path_case(clangxx, run_dir),

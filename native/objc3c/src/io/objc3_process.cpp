@@ -1780,6 +1780,11 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       inputs.expected_part10_host_cache_source_contract_id.empty() ||
       inputs.expected_part10_host_cache_executable_relative_path.empty() ||
       inputs.expected_part10_host_cache_root_relative_path.empty() ||
+      inputs.expected_bootstrap_live_registration_contract_id.empty() ||
+      inputs.expected_bootstrap_live_restart_hardening_contract_id.empty() ||
+      inputs.expected_bootstrap_replay_registered_images_symbol.empty() ||
+      inputs.expected_bootstrap_reset_replay_state_snapshot_symbol.empty() ||
+      inputs.expected_bootstrap_reset_for_testing_symbol.empty() ||
       inputs.local_driver_linker_flags.empty() ||
       inputs.direct_import_surface_artifact_paths.empty() ||
       inputs.imported_inputs.empty()) {
@@ -1888,7 +1893,17 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         imported_input.object_format.empty() ||
         imported_input.runtime_support_library_archive_relative_path.empty() ||
         imported_input.translation_unit_registration_order_ordinal == 0 ||
-        imported_input.driver_linker_flags.empty()) {
+        imported_input.driver_linker_flags.empty() ||
+        imported_input.bootstrap_live_registration_contract_id.empty() ||
+        imported_input.bootstrap_live_restart_hardening_contract_id.empty() ||
+        imported_input.bootstrap_live_replay_registered_images_symbol.empty() ||
+        imported_input.bootstrap_live_reset_replay_state_snapshot_symbol
+            .empty() ||
+        imported_input.bootstrap_live_restart_reset_for_testing_symbol.empty() ||
+        imported_input.bootstrap_live_restart_replay_registered_images_symbol
+            .empty() ||
+        imported_input
+            .bootstrap_live_restart_reset_replay_state_snapshot_symbol.empty()) {
       error =
           "cross-module runtime link-plan imported input is incomplete for " +
           imported_input.module_name;
@@ -1932,6 +1947,33 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         inputs.runtime_support_library_archive_relative_path) {
       error =
           "cross-module runtime link-plan runtime library path mismatch for " +
+          imported_input.module_name;
+      return false;
+    }
+    if (!imported_input.ready_for_live_registration_discovery_replay ||
+        imported_input.bootstrap_live_registration_contract_id !=
+            inputs.expected_bootstrap_live_registration_contract_id ||
+        imported_input.bootstrap_live_replay_registered_images_symbol !=
+            inputs.expected_bootstrap_replay_registered_images_symbol ||
+        imported_input.bootstrap_live_reset_replay_state_snapshot_symbol !=
+            inputs.expected_bootstrap_reset_replay_state_snapshot_symbol) {
+      error =
+          "cross-module runtime link-plan live registration replay preservation mismatch for " +
+          imported_input.module_name;
+      return false;
+    }
+    if (!imported_input.ready_for_live_restart_hardening ||
+        imported_input.bootstrap_live_restart_hardening_contract_id !=
+            inputs.expected_bootstrap_live_restart_hardening_contract_id ||
+        imported_input.bootstrap_live_restart_reset_for_testing_symbol !=
+            inputs.expected_bootstrap_reset_for_testing_symbol ||
+        imported_input.bootstrap_live_restart_replay_registered_images_symbol !=
+            inputs.expected_bootstrap_replay_registered_images_symbol ||
+        imported_input
+                .bootstrap_live_restart_reset_replay_state_snapshot_symbol !=
+            inputs.expected_bootstrap_reset_replay_state_snapshot_symbol) {
+      error =
+          "cross-module runtime link-plan live restart hardening preservation mismatch for " +
           imported_input.module_name;
       return false;
     }
@@ -2271,6 +2313,47 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
         << "      \"runtime_support_library_archive_relative_path\": \""
         << EscapeJsonString(
                imported_input.runtime_support_library_archive_relative_path)
+        << "\",\n"
+        << "      \"ready_for_live_registration_discovery_replay\": "
+        << (imported_input.ready_for_live_registration_discovery_replay
+                ? "true"
+                : "false")
+        << ",\n"
+        << "      \"ready_for_live_restart_hardening\": "
+        << (imported_input.ready_for_live_restart_hardening ? "true"
+                                                            : "false")
+        << ",\n"
+        << "      \"bootstrap_live_registration_contract_id\": \""
+        << EscapeJsonString(
+               imported_input.bootstrap_live_registration_contract_id)
+        << "\",\n"
+        << "      \"bootstrap_live_restart_hardening_contract_id\": \""
+        << EscapeJsonString(
+               imported_input.bootstrap_live_restart_hardening_contract_id)
+        << "\",\n"
+        << "      \"bootstrap_live_replay_registered_images_symbol\": \""
+        << EscapeJsonString(
+               imported_input.bootstrap_live_replay_registered_images_symbol)
+        << "\",\n"
+        << "      \"bootstrap_live_reset_replay_state_snapshot_symbol\": \""
+        << EscapeJsonString(
+               imported_input
+                   .bootstrap_live_reset_replay_state_snapshot_symbol)
+        << "\",\n"
+        << "      \"bootstrap_live_restart_reset_for_testing_symbol\": \""
+        << EscapeJsonString(
+               imported_input
+                   .bootstrap_live_restart_reset_for_testing_symbol)
+        << "\",\n"
+        << "      \"bootstrap_live_restart_replay_registered_images_symbol\": \""
+        << EscapeJsonString(
+               imported_input
+                   .bootstrap_live_restart_replay_registered_images_symbol)
+        << "\",\n"
+        << "      \"bootstrap_live_restart_reset_replay_state_snapshot_symbol\": \""
+        << EscapeJsonString(
+               imported_input
+                   .bootstrap_live_restart_reset_replay_state_snapshot_symbol)
         << "\",\n"
         << "      \"part6_result_and_bridging_artifact_replay_present\": "
         << (imported_input.part6_result_and_bridging_artifact_replay_present
@@ -2625,6 +2708,25 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "  \"part10_host_cache_cross_module_preservation_ready\": "
       << (!imported_part10_host_cache_module_names.empty() ? "true" : "false")
       << ",\n"
+      << "  \"bootstrap_live_registration_contract_id\": \""
+      << EscapeJsonString(inputs.expected_bootstrap_live_registration_contract_id)
+      << "\",\n"
+      << "  \"bootstrap_live_restart_hardening_contract_id\": \""
+      << EscapeJsonString(
+             inputs.expected_bootstrap_live_restart_hardening_contract_id)
+      << "\",\n"
+      << "  \"bootstrap_replay_registered_images_symbol\": \""
+      << EscapeJsonString(inputs.expected_bootstrap_replay_registered_images_symbol)
+      << "\",\n"
+      << "  \"bootstrap_reset_replay_state_snapshot_symbol\": \""
+      << EscapeJsonString(
+             inputs.expected_bootstrap_reset_replay_state_snapshot_symbol)
+      << "\",\n"
+      << "  \"bootstrap_reset_for_testing_symbol\": \""
+      << EscapeJsonString(inputs.expected_bootstrap_reset_for_testing_symbol)
+      << "\",\n"
+      << "  \"imported_live_registration_replay_ready\": true,\n"
+      << "  \"imported_live_restart_hardening_ready\": true,\n"
       << "  \"cleanup_unwind_runtime_link_model\": "
       << "\"linker-response-plus-runtime-support-archive-sidecars-provide-runnable-cleanup-executable-link-inputs\",\n"
       << "  \"runtime_support_library_archive_relative_path\": \""

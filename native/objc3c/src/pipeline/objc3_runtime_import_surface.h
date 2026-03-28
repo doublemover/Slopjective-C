@@ -136,6 +136,15 @@ struct Objc3ImportedRuntimeModulePackagingPeerArtifacts {
   std::string object_format;
   std::uint64_t translation_unit_registration_order_ordinal = 0;
   std::vector<std::string> driver_linker_flags;
+  bool ready_for_live_registration_discovery_replay = false;
+  bool ready_for_live_restart_hardening = false;
+  std::string bootstrap_live_registration_contract_id;
+  std::string bootstrap_live_restart_hardening_contract_id;
+  std::string bootstrap_live_replay_registered_images_symbol;
+  std::string bootstrap_live_reset_replay_state_snapshot_symbol;
+  std::string bootstrap_live_restart_reset_for_testing_symbol;
+  std::string bootstrap_live_restart_replay_registered_images_symbol;
+  std::string bootstrap_live_restart_reset_replay_state_snapshot_symbol;
 };
 
 bool TryLoadObjc3ImportedRuntimeModuleSurface(

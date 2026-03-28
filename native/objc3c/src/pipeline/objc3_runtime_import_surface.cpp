@@ -1297,6 +1297,14 @@ bool PopulateImportedPart11HeaderModuleBridgeGeneration(
     return false;
   }
 
+  // Deferred Part 11 bridge packets are still emitted into the import surface
+  // for documentation/provenance, but cross-module runtime link planning should
+  // only treat them as active when the bridge path itself is live.
+  if (!surface.part11_header_module_bridge_runtime_generation_ready ||
+      !surface.part11_header_module_bridge_cross_module_packaging_ready) {
+    return true;
+  }
+
   surface.part11_header_module_bridge_generation_present = true;
   surface.part11_header_module_bridge_contract_id = std::move(contract_id);
   surface.part11_header_module_bridge_source_contract_id =
@@ -1716,6 +1724,8 @@ bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
     std::string &error) {
   std::string contract_id;
   bool ready_for_runtime_bootstrap_enforcement = false;
+  bool ready_for_live_registration_discovery_replay = false;
+  bool ready_for_live_restart_hardening = false;
   if (!ReadStringMember(root, "contract_id", contract_id, error) ||
       !ReadStringMember(root, "runtime_support_library_archive_relative_path",
                         artifacts.runtime_support_library_archive_relative_path,
@@ -1730,8 +1740,33 @@ bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
                           error) ||
       !ReadStringArrayMember(root, "driver_linker_flags",
                              artifacts.driver_linker_flags, error) ||
+      !ReadStringMember(root, "bootstrap_live_registration_contract_id",
+                        artifacts.bootstrap_live_registration_contract_id,
+                        error) ||
+      !ReadStringMember(root, "bootstrap_live_restart_hardening_contract_id",
+                        artifacts.bootstrap_live_restart_hardening_contract_id,
+                        error) ||
+      !ReadStringMember(root, "bootstrap_live_replay_registered_images_symbol",
+                        artifacts.bootstrap_live_replay_registered_images_symbol,
+                        error) ||
+      !ReadStringMember(root, "bootstrap_live_reset_replay_state_snapshot_symbol",
+                        artifacts.bootstrap_live_reset_replay_state_snapshot_symbol,
+                        error) ||
+      !ReadStringMember(root, "bootstrap_live_restart_reset_for_testing_symbol",
+                        artifacts.bootstrap_live_restart_reset_for_testing_symbol,
+                        error) ||
+      !ReadStringMember(root, "bootstrap_live_restart_replay_registered_images_symbol",
+                        artifacts.bootstrap_live_restart_replay_registered_images_symbol,
+                        error) ||
+      !ReadStringMember(root, "bootstrap_live_restart_reset_replay_state_snapshot_symbol",
+                        artifacts.bootstrap_live_restart_reset_replay_state_snapshot_symbol,
+                        error) ||
       !ReadBoolMember(root, "ready_for_runtime_bootstrap_enforcement",
-                      ready_for_runtime_bootstrap_enforcement, error)) {
+                      ready_for_runtime_bootstrap_enforcement, error) ||
+      !ReadBoolMember(root, "ready_for_live_registration_discovery_replay",
+                      ready_for_live_registration_discovery_replay, error) ||
+      !ReadBoolMember(root, "ready_for_live_restart_hardening",
+                      ready_for_live_restart_hardening, error)) {
     return false;
   }
   if (contract_id !=
@@ -1744,12 +1779,26 @@ bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
         "runtime registration manifest is not ready for runtime bootstrap enforcement";
     return false;
   }
+  if (!ready_for_live_registration_discovery_replay) {
+    error =
+        "runtime registration manifest is not ready for live registration discovery replay";
+    return false;
+  }
+  if (!ready_for_live_restart_hardening) {
+    error =
+        "runtime registration manifest is not ready for live restart hardening";
+    return false;
+  }
   for (const auto &flag : artifacts.driver_linker_flags) {
     if (flag.empty()) {
       error = "runtime registration manifest contains an empty driver linker flag";
       return false;
     }
   }
+  artifacts.ready_for_live_registration_discovery_replay =
+      ready_for_live_registration_discovery_replay;
+  artifacts.ready_for_live_restart_hardening =
+      ready_for_live_restart_hardening;
   return true;
 }
 

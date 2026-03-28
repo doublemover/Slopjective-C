@@ -196,6 +196,15 @@ struct Objc3CrossModuleRuntimeLinkPlanImportedInput {
   std::string runtime_support_library_archive_relative_path;
   std::uint64_t translation_unit_registration_order_ordinal = 0;
   std::vector<std::string> driver_linker_flags;
+  bool ready_for_live_registration_discovery_replay = false;
+  bool ready_for_live_restart_hardening = false;
+  std::string bootstrap_live_registration_contract_id;
+  std::string bootstrap_live_restart_hardening_contract_id;
+  std::string bootstrap_live_replay_registered_images_symbol;
+  std::string bootstrap_live_reset_replay_state_snapshot_symbol;
+  std::string bootstrap_live_restart_reset_for_testing_symbol;
+  std::string bootstrap_live_restart_replay_registered_images_symbol;
+  std::string bootstrap_live_restart_reset_replay_state_snapshot_symbol;
   bool part6_result_and_bridging_artifact_replay_present = false;
   bool part6_binary_artifact_replay_ready = false;
   bool part6_runtime_import_artifact_ready = false;
@@ -293,6 +302,11 @@ struct Objc3CrossModuleRuntimeLinkPlanArtifactInputs {
   std::string expected_part10_host_cache_source_contract_id;
   std::string expected_part10_host_cache_executable_relative_path;
   std::string expected_part10_host_cache_root_relative_path;
+  std::string expected_bootstrap_live_registration_contract_id;
+  std::string expected_bootstrap_live_restart_hardening_contract_id;
+  std::string expected_bootstrap_replay_registered_images_symbol;
+  std::string expected_bootstrap_reset_replay_state_snapshot_symbol;
+  std::string expected_bootstrap_reset_for_testing_symbol;
   std::vector<std::string> direct_import_surface_artifact_paths;
   std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs;
 };
