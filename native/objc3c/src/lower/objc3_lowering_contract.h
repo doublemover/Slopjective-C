@@ -729,17 +729,17 @@ inline constexpr const char *kObjc3RunnableBlockExecutionMatrixNonGoalModel =
 inline constexpr const char *kObjc3RunnableBlockExecutionMatrixFailClosedModel =
     "fail-closed-on-runnable-block-execution-matrix-drift-or-doc-mismatch";
 // ARC source-surface/mode-boundary freeze anchor: the compiler
-// already preserves ownership-qualifier, weak/unowned, autoreleasepool, and
-// ARC fix-it source surfaces, but there is still no user-visible `-fobjc-arc`
-// mode and executable ownership-qualified functions/methods stay fail closed.
+// preserves ownership-qualifier, weak/unowned, autoreleasepool, and ARC
+// fix-it source surfaces, and the native driver now admits the bounded
+// helper-backed `-fobjc-arc` slice proven by the executable ARC probes.
 inline constexpr const char *kObjc3ArcSourceModeBoundaryContractId =
     "objc3c.arc.source.mode.boundary.freeze.v1";
 inline constexpr const char *kObjc3ArcSourceModeBoundarySourceModel =
     "ownership-qualifier-weak-unowned-autoreleasepool-and-arc-fixit-source-surfaces-remain-live-without-enabling-runnable-arc-mode";
 inline constexpr const char *kObjc3ArcSourceModeBoundaryModeModel =
-    "native-driver-rejects-fobjc-arc-while-executable-ownership-qualified-functions-and-methods-stay-fail-closed";
+    "native-driver-admits-fobjc-arc-and-fno-objc-arc-while-runnable-arc-stays-bounded-to-the-helper-backed-supported-slice";
 inline constexpr const char *kObjc3ArcSourceModeBoundaryNonGoalModel =
-    "no-fobjc-arc-cli-mode-no-fno-objc-arc-cli-mode-no-automatic-arc-cleanup-insertion-no-user-visible-arc-runtime-mode-split";
+    "no-generalized-arc-cleanup-insertion-no-public-arc-runtime-abi-mode-split-no-full-arc-automation-beyond-the-supported-helper-backed-slice";
 inline constexpr const char *kObjc3ArcSourceModeBoundaryFailClosedModel =
     "fail-closed-on-arc-source-mode-boundary-drift-before-arc-automation";
 inline constexpr const char *kObjc3ArcModeHandlingContractId =
@@ -751,7 +751,7 @@ inline constexpr const char *kObjc3ArcModeHandlingModeModel =
 inline constexpr const char *kObjc3ArcModeHandlingFailClosedModel =
     "non-arc-mode-still-rejects-executable-ownership-qualified-method-and-function-signatures";
 inline constexpr const char *kObjc3ArcModeHandlingNonGoalModel =
-    "no-generalized-arc-cleanup-synthesis-no-implicit-nonarc-promotion-no-full-arc-automation-yet";
+    "no-implicit-nonarc-promotion-no-cross-module-arc-mode-inference-no-full-arc-automation-beyond-the-supported-helper-backed-slice";
 inline constexpr const char *kObjc3ArcSemanticRulesContractId =
     "objc3c.arc.semantic.rules.v1";
 inline constexpr const char *kObjc3ArcSemanticRulesSourceModel =

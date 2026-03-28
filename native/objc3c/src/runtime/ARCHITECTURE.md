@@ -138,8 +138,7 @@ Block/ARC runtime ABI source of truth:
   boundary, and the private block promotion/invoke, ARC helper, weak property
   helper, and testing snapshot entrypoints that make up the live block/ARC
   runtime ABI
-- later escaping block implementation, byref forwarding, ARC hardening, and
-  packaged validation work must extend that emitted ABI surface instead of
+- later packaged validation work must extend that emitted ABI surface instead of
   widening the public header or rebuilding runtime symbol inventories from
   probe-local assumptions
 
