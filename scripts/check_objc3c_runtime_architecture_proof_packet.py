@@ -31,6 +31,10 @@ SURFACE_KEYS = (
     "runtime_state_publication_surface",
     "acceptance_suite_surface",
     "runtime_object_model_realization_source_surface",
+    "runtime_block_arc_unified_source_surface",
+    "runtime_ownership_transfer_capture_family_source_surface",
+    "runtime_block_arc_lowering_helper_surface",
+    "runtime_block_arc_runtime_abi_surface",
     "runtime_property_ivar_storage_accessor_source_surface",
     "storage_accessor_runtime_abi_surface",
     "runtime_property_ivar_accessor_reflection_implementation_surface",
@@ -191,6 +195,18 @@ def main() -> int:
         "acceptance_suite_surface": runtime_acceptance_report["acceptance_suite_surface"],
         "runtime_object_model_realization_source_surface": runtime_acceptance_report[
             "runtime_object_model_realization_source_surface"
+        ],
+        "runtime_block_arc_unified_source_surface": runtime_acceptance_report[
+            "runtime_block_arc_unified_source_surface"
+        ],
+        "runtime_ownership_transfer_capture_family_source_surface": runtime_acceptance_report[
+            "runtime_ownership_transfer_capture_family_source_surface"
+        ],
+        "runtime_block_arc_lowering_helper_surface": runtime_acceptance_report[
+            "runtime_block_arc_lowering_helper_surface"
+        ],
+        "runtime_block_arc_runtime_abi_surface": runtime_acceptance_report[
+            "runtime_block_arc_runtime_abi_surface"
         ],
         "runtime_property_ivar_storage_accessor_source_surface": runtime_acceptance_report[
             "runtime_property_ivar_storage_accessor_source_surface"

@@ -2,7 +2,7 @@
 
 This runbook is generated from the live public workflow runner metadata.
 
-- Current public script count: `35`
+- Current public script count: `36`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 
@@ -29,6 +29,7 @@ This runbook is generated from the live public workflow runner metadata.
 | `proof:objc3c:runtime-architecture` | `proof-runtime-architecture` | `-` | `-` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_proof_packet.py` |
 | `test:objc3c:runtime-architecture` | `validate-runtime-architecture` | `full` | `full public workflow and runtime architecture proof packet alignment` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_integration.py` |
 | `test:objc3c:runnable-bootstrap` | `validate-runnable-bootstrap` | `full` | `packaged compile, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py` |
+| `test:objc3c:block-arc-conformance` | `validate-block-arc-conformance` | `full` | `integrated block/ARC conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_block_arc_conformance.py` |
 | `test:objc3c:object-model-conformance` | `validate-object-model-conformance` | `full` | `integrated object-model conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_conformance.py` |
 | `test:objc3c:storage-reflection-conformance` | `validate-storage-reflection-conformance` | `full` | `integrated storage/accessor/reflection conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_storage_reflection_conformance.py` |
 | `test:objc3c:runnable-object-model` | `validate-runnable-object-model` | `full` | `packaged compile, object-model probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_end_to_end.py` |

@@ -33,6 +33,7 @@ RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 RUNTIME_ARCHITECTURE_PROOF_PACKET_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_proof_packet.py"
 RUNTIME_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
 RUNNABLE_BOOTSTRAP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bootstrap_end_to_end.py"
+RUNNABLE_BLOCK_ARC_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_block_arc_conformance.py"
 RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_conformance.py"
 RUNNABLE_OBJECT_MODEL_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_end_to_end.py"
 RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_storage_reflection_conformance.py"
@@ -227,6 +228,34 @@ def write_composite_validation_report(
         payload["runtime_object_model_realization_source_surface"] = (
             runtime_object_model_realization_source_surface
         )
+    runtime_block_arc_unified_source_surface = load_surface_from_report(
+        steps, "runtime_block_arc_unified_source_surface"
+    )
+    if runtime_block_arc_unified_source_surface is not None:
+        payload["runtime_block_arc_unified_source_surface"] = (
+            runtime_block_arc_unified_source_surface
+        )
+    runtime_ownership_transfer_capture_family_source_surface = load_surface_from_report(
+        steps, "runtime_ownership_transfer_capture_family_source_surface"
+    )
+    if runtime_ownership_transfer_capture_family_source_surface is not None:
+        payload["runtime_ownership_transfer_capture_family_source_surface"] = (
+            runtime_ownership_transfer_capture_family_source_surface
+        )
+    runtime_block_arc_lowering_helper_surface = load_surface_from_report(
+        steps, "runtime_block_arc_lowering_helper_surface"
+    )
+    if runtime_block_arc_lowering_helper_surface is not None:
+        payload["runtime_block_arc_lowering_helper_surface"] = (
+            runtime_block_arc_lowering_helper_surface
+        )
+    runtime_block_arc_runtime_abi_surface = load_surface_from_report(
+        steps, "runtime_block_arc_runtime_abi_surface"
+    )
+    if runtime_block_arc_runtime_abi_surface is not None:
+        payload["runtime_block_arc_runtime_abi_surface"] = (
+            runtime_block_arc_runtime_abi_surface
+        )
     runtime_property_ivar_storage_accessor_source_surface = load_surface_from_report(
         steps, "runtime_property_ivar_storage_accessor_source_surface"
     )
@@ -409,6 +438,10 @@ def action_validate_runnable_bootstrap(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_BOOTSTRAP_E2E_PY)])
 
 
+def action_validate_block_arc_conformance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_BLOCK_ARC_CONFORMANCE_PY)])
+
+
 def action_validate_object_model_conformance(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY)])
 
@@ -486,6 +519,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture proof packet", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py", ("proof:objc3c:runtime-architecture",)),
     "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and proof packet", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture proof packet alignment"),
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", ("test:objc3c:runnable-bootstrap",), validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
+    "validate-block-arc-conformance": ActionSpec("validate-block-arc-conformance", "validate runnable block/ARC conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_block_arc_conformance.py", ("test:objc3c:block-arc-conformance",), validation_tier="full", guarantee_owner="integrated block/ARC conformance over the live runtime architecture workflow"),
     "validate-object-model-conformance": ActionSpec("validate-object-model-conformance", "validate runnable object-model conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_object_model_conformance.py", ("test:objc3c:object-model-conformance",), validation_tier="full", guarantee_owner="integrated object-model conformance over the live runtime architecture workflow"),
     "validate-storage-reflection-conformance": ActionSpec("validate-storage-reflection-conformance", "validate runnable storage/reflection conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_storage_reflection_conformance.py", ("test:objc3c:storage-reflection-conformance",), validation_tier="full", guarantee_owner="integrated storage/accessor/reflection conformance over the live runtime architecture workflow"),
     "validate-runnable-object-model": ActionSpec("validate-runnable-object-model", "validate runnable object-model execution end to end from the package root", "python:scripts/check_objc3c_runnable_object_model_end_to_end.py", ("test:objc3c:runnable-object-model",), validation_tier="full", guarantee_owner="packaged compile, object-model probe execution, smoke, and replay from the staged runnable toolchain bundle"),
@@ -519,6 +553,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "proof-runtime-architecture": action_proof_runtime_architecture,
     "validate-runtime-architecture": action_validate_runtime_architecture,
     "validate-runnable-bootstrap": action_validate_runnable_bootstrap,
+    "validate-block-arc-conformance": action_validate_block_arc_conformance,
     "validate-object-model-conformance": action_validate_object_model_conformance,
     "validate-storage-reflection-conformance": action_validate_storage_reflection_conformance,
     "validate-runnable-object-model": action_validate_runnable_object_model,
