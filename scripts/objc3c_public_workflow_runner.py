@@ -230,6 +230,13 @@ def write_composite_validation_report(
         payload["runtime_realization_lowering_reflection_artifact_surface"] = (
             runtime_realization_lowering_reflection_artifact_surface
         )
+    runtime_dispatch_table_reflection_record_lowering_surface = load_surface_from_report(
+        steps, "runtime_dispatch_table_reflection_record_lowering_surface"
+    )
+    if runtime_dispatch_table_reflection_record_lowering_surface is not None:
+        payload["runtime_dispatch_table_reflection_record_lowering_surface"] = (
+            runtime_dispatch_table_reflection_record_lowering_surface
+        )
     runtime_reflection_query_surface = load_surface_from_report(
         steps, "runtime_reflection_query_surface"
     )

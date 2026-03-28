@@ -38,6 +38,9 @@ RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1"
 )
+RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1"
+)
 RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.reflection.query.surface.v1"
 )
@@ -217,6 +220,9 @@ def compile_fixture_with_args(
     )
     realization_lowering_reflection_artifact_surface = manifest.get(
         "runtime_realization_lowering_reflection_artifact_surface"
+    )
+    dispatch_table_reflection_record_lowering_surface = manifest.get(
+        "runtime_dispatch_table_reflection_record_lowering_surface"
     )
     reflection_query_surface = manifest.get("runtime_reflection_query_surface")
     realization_lookup_semantics_surface = manifest.get(
@@ -970,6 +976,127 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_realization_lowering_reflection_artifact_surface must require compile output truthfulness"
+        )
+    if not isinstance(dispatch_table_reflection_record_lowering_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_dispatch_table_reflection_record_lowering_surface"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get("contract_id")
+        != RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_dispatch_table_reflection_record_lowering_surface contract"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get("compile_manifest_artifact")
+        != manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface drifted from the compile manifest artifact path"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get("registration_manifest_artifact")
+        != registration_manifest_path.name
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface drifted from the runtime registration manifest artifact path"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get("registration_descriptor_artifact")
+        != registration_descriptor_path.name
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface drifted from the runtime registration descriptor artifact path"
+        )
+    if dispatch_table_reflection_record_lowering_surface.get("object_artifact") != obj_path.name:
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface drifted from the emitted object artifact path"
+        )
+    if dispatch_table_reflection_record_lowering_surface.get("backend_artifact") != ll_path.name:
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface drifted from the emitted LLVM IR artifact path"
+        )
+    dispatch_lowering_surface = manifest.get("dispatch_and_synthesized_accessor_lowering_surface", {})
+    expected_dispatch_table_reflection_record_lowering_fields = {
+        "runtime_object_model_realization_source_surface_contract_id": (
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "runtime_state_publication_surface_contract_id": (
+            RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID
+        ),
+        "dispatch_and_synthesized_accessor_lowering_surface_contract_id": (
+            "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1"
+        ),
+        "method_dispatch_and_selector_thunk_lowering_contract_id": (
+            "objc3c.method.dispatch.selector.thunk.lowering.v1"
+        ),
+        "executable_realization_records_contract_id": (
+            "objc3c.executable.realization.records.v1"
+        ),
+        "runtime_support_library_archive_relative_path": (
+            registration_manifest.get("runtime_support_library_archive_relative_path")
+        ),
+        "registration_entrypoint_symbol": registration_manifest.get("registration_entrypoint_symbol"),
+        "selector_lookup_symbol": "objc3_runtime_lookup_selector",
+        "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+        "selector_pool_section_root_symbol": "@__objc3_sec_selector_pool",
+        "class_aggregate_symbol": "__objc3_sec_class_descriptors",
+        "protocol_aggregate_symbol": "__objc3_sec_protocol_descriptors",
+        "category_aggregate_symbol": "__objc3_sec_category_descriptors",
+        "property_aggregate_symbol": "__objc3_sec_property_descriptors",
+        "ivar_aggregate_symbol": "__objc3_sec_ivar_descriptors",
+        "message_send_sites": dispatch_lowering_surface.get("message_send_sites"),
+        "class_descriptor_count": registration_manifest.get("class_descriptor_count"),
+        "protocol_descriptor_count": registration_manifest.get("protocol_descriptor_count"),
+        "category_descriptor_count": registration_manifest.get("category_descriptor_count"),
+        "property_descriptor_count": registration_manifest.get("property_descriptor_count"),
+        "ivar_descriptor_count": registration_manifest.get("ivar_descriptor_count"),
+        "dispatch_table_lowering_model": (
+            "selector-pool-backed-dispatch-thunks-and-runtime-dispatch-sites-co-publish-stable-selector-table-roots-in-llvm-ir-and-manifest-artifacts"
+        ),
+        "reflection_record_lowering_model": (
+            "realization-records-and-runtime-metadata-section-aggregates-co-publish-class-protocol-category-property-and-ivar-record-roots-in-emitted-artifacts"
+        ),
+    }
+    for field, expected_value in expected_dispatch_table_reflection_record_lowering_fields.items():
+        if dispatch_table_reflection_record_lowering_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_dispatch_table_reflection_record_lowering_surface drifted from {field}"
+            )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get(
+            "requires_coupled_registration_descriptor_artifact"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface must require the coupled runtime registration descriptor artifact"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get("requires_real_compile_output")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface must require real compile output"
+        )
+    if (
+        dispatch_table_reflection_record_lowering_surface.get(
+            "requires_compile_output_truthfulness"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_dispatch_table_reflection_record_lowering_surface must require compile output truthfulness"
         )
     if not isinstance(reflection_query_surface, dict):
         raise RuntimeError("compiled fixture manifest did not publish runtime_reflection_query_surface")
@@ -2002,6 +2129,63 @@ def build_runtime_realization_lowering_reflection_artifact_surface(
     }
 
 
+def build_runtime_dispatch_table_reflection_record_lowering_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {
+            "canonical-dispatch",
+            "canonical-sample-set",
+            "dispatch-fast-path",
+            "property-execution",
+        }
+    ]
+    return {
+        "contract_id": RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+            "<emit-prefix>.compile-provenance.json",
+        ],
+        "source_contract_ids": [
+            RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
+            "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1",
+            "objc3c.method.dispatch.selector.thunk.lowering.v1",
+            "objc3c.executable.realization.records.v1",
+        ],
+        "dispatch_table_lowering_model": (
+            "selector-pool-backed-dispatch-thunks-and-runtime-dispatch-sites-co-publish-stable-selector-table-roots-in-llvm-ir-and-manifest-artifacts"
+        ),
+        "reflection_record_lowering_model": (
+            "realization-records-and-runtime-metadata-section-aggregates-co-publish-class-protocol-category-property-and-ivar-record-roots-in-emitted-artifacts"
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+            "tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3",
+            "tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3",
+            "tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+            "tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp",
+            "tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp",
+            "tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp",
+        ],
+        "requires_coupled_registration_descriptor_artifact": True,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_compile_output_truthfulness": True,
+    }
+
+
 def build_runtime_reflection_query_surface(results: list[CaseResult]) -> dict[str, Any]:
     authoritative_case_ids = [
         result.case_id
@@ -2881,11 +3065,13 @@ def check_imported_runtime_packaging_replay_case(
 def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "canonical-dispatch"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "runtime_canonical_runnable_object_runtime_library.objc3"
-    obj_path = compile_fixture(fixture, case_dir / "compile")
+    obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     probe = ROOT / "tests" / "tooling" / "runtime" / "runtime_canonical_runnable_object_probe.cpp"
     exe_path = case_dir / "runtime_canonical_runnable_object_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "canonical dispatch probe")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ll_text = ll_path.read_text(encoding="utf-8")
 
     expect(payload.get("traced_value") == 13, "expected category-backed tracedValue dispatch to return 13")
     expect(payload.get("inherited_value") == 7, "expected superclass inheritedValue dispatch to return 7")
@@ -3089,6 +3275,24 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
         and ignored_entry.get("selector") == "ignoredValue",
         "expected ignoredValue to preserve an unresolved negative cache entry on the canonical instance receiver",
     )
+    dispatch_table_reflection_record_lowering_surface = manifest.get(
+        "runtime_dispatch_table_reflection_record_lowering_surface", {}
+    )
+    expect(
+        dispatch_table_reflection_record_lowering_surface.get("contract_id")
+        == RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
+        "expected canonical dispatch compile manifest to publish dispatch-table/reflection-record lowering surface",
+    )
+    expect(
+        "; executable_realization_records = contract=objc3c.executable.realization.records.v1"
+        in ll_text,
+        "expected canonical dispatch LLVM IR to publish executable realization records",
+    )
+    expect(
+        dispatch_table_reflection_record_lowering_surface.get("selector_pool_section_root_symbol")
+        == "@__objc3_sec_selector_pool",
+        "expected canonical dispatch lowering surface to preserve the selector pool section root",
+    )
 
     return CaseResult(
         case_id="canonical-dispatch",
@@ -3110,7 +3314,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
 def check_canonical_sample_set_case(clangxx: str, run_dir: Path) -> CaseResult:
     case_dir = run_dir / "canonical-sample-set"
     fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "m259_a002_canonical_runnable_sample_set.objc3"
-    obj_path, _, _ = compile_fixture_outputs(fixture, case_dir / "compile")
+    obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
     registration_manifest_path = case_dir / "compile" / "module.runtime-registration-manifest.json"
     if not registration_manifest_path.is_file():
         raise RuntimeError(f"compiled fixture did not publish {registration_manifest_path}")
@@ -3119,7 +3323,9 @@ def check_canonical_sample_set_case(clangxx: str, run_dir: Path) -> CaseResult:
     exe_path = case_dir / "m259_a002_canonical_runnable_sample_set_probe.exe"
     compile_probe(clangxx, probe, exe_path, [obj_path])
     payload = parse_json_output(run_probe(exe_path), "canonical runnable sample set probe")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     registration_manifest = json.loads(registration_manifest_path.read_text(encoding="utf-8"))
+    ll_text = ll_path.read_text(encoding="utf-8")
 
     widget_entry = payload.get("widget_entry", {})
     worker_query = payload.get("worker_query", {})
@@ -3200,6 +3406,29 @@ def check_canonical_sample_set_case(clangxx: str, run_dir: Path) -> CaseResult:
         and token_property.get("getter_owner_identity") == "implementation:Widget::instance_method:tokenValue"
         and token_property.get("setter_owner_identity") is None,
         "expected tokenValue property reflection to preserve readonly slot/layout/accessor facts",
+    )
+    dispatch_table_reflection_record_lowering_surface = manifest.get(
+        "runtime_dispatch_table_reflection_record_lowering_surface", {}
+    )
+    expect(
+        dispatch_table_reflection_record_lowering_surface.get("contract_id")
+        == RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
+        "expected canonical sample set compile manifest to publish dispatch-table/reflection-record lowering surface",
+    )
+    expect(
+        "; executable_realization_records = contract=objc3c.executable.realization.records.v1"
+        in ll_text,
+        "expected canonical sample set LLVM IR to publish executable realization records",
+    )
+    expect(
+        dispatch_table_reflection_record_lowering_surface.get("class_aggregate_symbol")
+        == "__objc3_sec_class_descriptors",
+        "expected canonical sample set lowering surface to preserve the class aggregate root symbol",
+    )
+    expect(
+        dispatch_table_reflection_record_lowering_surface.get("property_aggregate_symbol")
+        == "__objc3_sec_property_descriptors",
+        "expected canonical sample set lowering surface to preserve the property aggregate root symbol",
     )
 
     return CaseResult(
@@ -4260,6 +4489,9 @@ def main() -> int:
         ),
         "runtime_realization_lowering_reflection_artifact_surface": (
             build_runtime_realization_lowering_reflection_artifact_surface(results)
+        ),
+        "runtime_dispatch_table_reflection_record_lowering_surface": (
+            build_runtime_dispatch_table_reflection_record_lowering_surface(results)
         ),
         "runtime_reflection_query_surface": build_runtime_reflection_query_surface(results),
         "runtime_realization_lookup_semantics_surface": (

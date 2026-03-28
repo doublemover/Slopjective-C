@@ -272,6 +272,57 @@ Downstream work must extend this emitted surface instead of inferring lowering
 truth from ad hoc IR inspection, source-only manifests, or milestone-local
 notes.
 
+## Dispatch-Table And Reflection-Record Lowering Surface
+
+- authoritative compile-manifest key:
+  - `runtime_dispatch_table_reflection_record_lowering_surface`
+- authoritative composed source inputs:
+  - `runtime_object_model_realization_source_surface`
+  - `objc3c.runtime.state.publication.surface.v1`
+  - `objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1`
+  - `objc3c.method.dispatch.selector.thunk.lowering.v1`
+  - `objc3c.executable.realization.records.v1`
+- coupled emitted artifacts:
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.runtime-registration-manifest.json`
+  - `<emit-prefix>.runtime-registration-descriptor.json`
+  - `<emit-prefix>.obj`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.compile-provenance.json`
+- authoritative lowering roots:
+  - selector table root:
+    - `@__objc3_sec_selector_pool`
+  - reflection record roots:
+    - `__objc3_sec_class_descriptors`
+    - `__objc3_sec_protocol_descriptors`
+    - `__objc3_sec_category_descriptors`
+    - `__objc3_sec_property_descriptors`
+    - `__objc3_sec_ivar_descriptors`
+- frozen semantic models:
+  - dispatch-table lowering:
+    - `selector-pool-backed-dispatch-thunks-and-runtime-dispatch-sites-co-publish-stable-selector-table-roots-in-llvm-ir-and-manifest-artifacts`
+  - reflection-record lowering:
+    - `realization-records-and-runtime-metadata-section-aggregates-co-publish-class-protocol-category-property-and-ivar-record-roots-in-emitted-artifacts`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
+    - `tests/tooling/fixtures/native/m259_a002_canonical_runnable_sample_set.objc3`
+    - `tests/tooling/fixtures/native/m272_d002_live_dispatch_fast_path_positive.objc3`
+    - `tests/tooling/fixtures/native/m257_property_ivar_execution_matrix_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+    - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+    - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+
+This is the authoritative dispatch-table and reflection-record lowering
+boundary. It freezes the fact that the real compiler co-publishes selector-pool
+roots, runtime dispatch-thunk lowering, executable realization records, and
+metadata aggregate roots through the same manifest, object, and LLVM IR
+artifacts consumed by live executable probes. Downstream work must extend this
+emitted surface instead of rediscovering selector-table or reflection-record
+truth from ad hoc IR inspection or milestone-local notes.
+
 ## Reflection Query Surface
 
 - authoritative compile-manifest key:

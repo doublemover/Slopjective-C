@@ -32,6 +32,7 @@ SURFACE_KEYS = (
     "acceptance_suite_surface",
     "runtime_object_model_realization_source_surface",
     "runtime_realization_lowering_reflection_artifact_surface",
+    "runtime_dispatch_table_reflection_record_lowering_surface",
     "runtime_reflection_query_surface",
     "runtime_realization_lookup_semantics_surface",
     "runtime_class_metaclass_protocol_realization_surface",
@@ -186,6 +187,9 @@ def main() -> int:
         ],
         "runtime_realization_lowering_reflection_artifact_surface": runtime_acceptance_report[
             "runtime_realization_lowering_reflection_artifact_surface"
+        ],
+        "runtime_dispatch_table_reflection_record_lowering_surface": runtime_acceptance_report[
+            "runtime_dispatch_table_reflection_record_lowering_surface"
         ],
         "runtime_reflection_query_surface": runtime_acceptance_report[
             "runtime_reflection_query_surface"

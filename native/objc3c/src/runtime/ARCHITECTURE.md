@@ -123,6 +123,20 @@ Realization lowering and reflection artifact source of truth:
   lowering truth from source-only manifests, ad hoc IR inspection, or stale
   milestone notes
 
+Dispatch-table and reflection-record lowering source of truth:
+
+- compile publication exposes the coupled dispatch-table and reflection-record
+  lowering boundary through the emitted compile-manifest key
+  `runtime_dispatch_table_reflection_record_lowering_surface`
+- that surface must point at the realization source surface, runtime state
+  publication surface, dispatch/accessor lowering surface, method
+  dispatch/selector thunk lowering contract, executable realization records
+  contract, and the selector-pool plus metadata-aggregate roots emitted by the
+  real compiler path
+- later cross-module replay preservation and runtime ABI work must consume that
+  emitted surface instead of rediscovering selector-table or reflection-record
+  roots from ad hoc IR inspection or milestone notes
+
 Reflection query source of truth:
 
 - compile publication exposes the coupled reflection boundary through the

@@ -22670,6 +22670,67 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_compile_output_truthfulness\":true"
            << "},\n";
+  manifest << "  \"runtime_dispatch_table_reflection_record_lowering_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeDispatchTableReflectionRecordLoweringSurfaceContractId
+           << "\",\"compile_manifest_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".manifest.json"
+           << "\",\"registration_manifest_artifact\":\""
+           << runtime_translation_unit_registration_manifest
+                  .manifest_artifact_relative_path
+           << "\",\"registration_descriptor_artifact\":\""
+           << runtime_registration_descriptor_frontend_closure.artifact_relative_path
+           << "\",\"object_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".obj"
+           << "\",\"backend_artifact\":\""
+           << runtime_state_publication_emit_prefix << ".ll"
+           << "\",\"runtime_object_model_realization_source_surface_contract_id\":\""
+           << kObjc3RuntimeObjectModelRealizationSourceSurfaceContractId
+           << "\",\"runtime_state_publication_surface_contract_id\":\""
+           << kObjc3RuntimeStatePublicationSurfaceContractId
+           << "\",\"dispatch_and_synthesized_accessor_lowering_surface_contract_id\":\"objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1\""
+           << ",\"method_dispatch_and_selector_thunk_lowering_contract_id\":\"objc3c.method.dispatch.selector.thunk.lowering.v1\""
+           << ",\"executable_realization_records_contract_id\":\""
+           << kObjc3ExecutableRealizationRecordsContractId
+           << "\",\"runtime_support_library_archive_relative_path\":\""
+           << runtime_translation_unit_registration_manifest
+                  .runtime_support_library_archive_relative_path
+           << "\",\"registration_entrypoint_symbol\":\""
+           << runtime_translation_unit_registration_manifest
+                  .registration_entrypoint_symbol
+           << "\",\"selector_lookup_symbol\":\""
+           << kObjc3RuntimeSupportLibraryLookupSelectorSymbol
+           << "\",\"runtime_dispatch_symbol\":\""
+           << kObjc3RuntimeSupportLibraryDispatchI32Symbol
+           << "\",\"selector_pool_section_root_symbol\":\"@__objc3_sec_selector_pool\""
+           << ",\"class_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.class_aggregate_symbol
+           << "\",\"protocol_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.protocol_aggregate_symbol
+           << "\",\"category_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.category_aggregate_symbol
+           << "\",\"property_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.property_aggregate_symbol
+           << "\",\"ivar_aggregate_symbol\":\""
+           << runtime_metadata_section_publication.ivar_aggregate_symbol
+           << "\",\"message_send_sites\":"
+           << message_send_selector_lowering_contract.message_send_sites
+           << ",\"class_descriptor_count\":"
+           << runtime_metadata_section_publication.class_descriptor_count
+           << ",\"protocol_descriptor_count\":"
+           << runtime_metadata_section_publication.protocol_descriptor_count
+           << ",\"category_descriptor_count\":"
+           << runtime_metadata_section_publication.category_descriptor_count
+           << ",\"property_descriptor_count\":"
+           << runtime_metadata_section_publication.property_descriptor_count
+           << ",\"ivar_descriptor_count\":"
+           << runtime_metadata_section_publication.ivar_descriptor_count
+           << ",\"dispatch_table_lowering_model\":\"selector-pool-backed-dispatch-thunks-and-runtime-dispatch-sites-co-publish-stable-selector-table-roots-in-llvm-ir-and-manifest-artifacts\""
+           << ",\"reflection_record_lowering_model\":\"realization-records-and-runtime-metadata-section-aggregates-co-publish-class-protocol-category-property-and-ivar-record-roots-in-emitted-artifacts\""
+           << ",\"requires_coupled_registration_descriptor_artifact\":true"
+           << ",\"requires_coupled_registration_manifest\":true"
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_compile_output_truthfulness\":true"
+           << "},\n";
   manifest << "  \"runtime_reflection_query_surface\":{\"contract_id\":\""
            << kObjc3RuntimeReflectionQuerySurfaceContractId
            << "\",\"compile_manifest_artifact\":\""

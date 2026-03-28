@@ -91,6 +91,36 @@ Realization lowering and reflection artifact surface:
   - property metadata and ownership artifacts remain coupled to lowered
     dispatch/accessor and executable realization-record outputs
 
+Dispatch-table and reflection-record lowering surface:
+
+- emitted compile-manifest key:
+  - `runtime_dispatch_table_reflection_record_lowering_surface`
+- coupled emitted artifacts:
+  - `<emit-prefix>.manifest.json`
+  - `<emit-prefix>.runtime-registration-manifest.json`
+  - `<emit-prefix>.runtime-registration-descriptor.json`
+  - `<emit-prefix>.obj`
+  - `<emit-prefix>.ll`
+  - `<emit-prefix>.compile-provenance.json`
+- authoritative lowering roots:
+  - `@__objc3_sec_selector_pool`
+  - `__objc3_sec_class_descriptors`
+  - `__objc3_sec_protocol_descriptors`
+  - `__objc3_sec_category_descriptors`
+  - `__objc3_sec_property_descriptors`
+  - `__objc3_sec_ivar_descriptors`
+- authoritative executable probes:
+  - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
+  - `tests/tooling/runtime/m259_a002_canonical_runnable_sample_set_probe.cpp`
+  - `tests/tooling/runtime/m272_d002_live_dispatch_fast_path_probe.cpp`
+  - `tests/tooling/runtime/m257_e002_property_ivar_execution_matrix_probe.cpp`
+- semantic boundary:
+  - selector-pool-backed dispatch thunks and runtime dispatch sites co-publish
+    stable selector table roots in LLVM IR and manifest artifacts
+  - realization records and runtime metadata section aggregates co-publish
+    class, protocol, category, property, and ivar record roots in emitted
+    artifacts
+
 Reflection query surface:
 
 - emitted compile-manifest key:
