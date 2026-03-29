@@ -137,6 +137,9 @@ RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.async.task.actor.normalization.completion.surface.v1"
 )
+RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.unified.concurrency.lowering.metadata.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -413,6 +416,9 @@ def compile_fixture_with_args(
     )
     async_task_actor_normalization_completion_surface = manifest.get(
         "runtime_async_task_actor_normalization_completion_surface"
+    )
+    unified_concurrency_lowering_metadata_surface = manifest.get(
+        "runtime_unified_concurrency_lowering_metadata_surface"
     )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
@@ -1234,6 +1240,99 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_async_task_actor_normalization_completion_surface must require the coupled registration manifest and real compile output"
+        )
+    if not isinstance(unified_concurrency_lowering_metadata_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_unified_concurrency_lowering_metadata_surface"
+        )
+    if (
+        unified_concurrency_lowering_metadata_surface.get("contract_id")
+        != RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_unified_concurrency_lowering_metadata_surface contract"
+        )
+    expected_unified_concurrency_lowering_metadata_surface_fields = {
+        "compile_manifest_artifact": manifest_path.name,
+        "registration_manifest_artifact": registration_manifest_path.name,
+        "registration_descriptor_artifact": registration_descriptor_path.name,
+        "object_artifact": obj_path.name,
+        "backend_artifact": ll_path.name,
+        "source_surface_contract_id": RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID,
+        "normalization_completion_surface_contract_id": (
+            RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
+        ),
+        "lowering_contract_ids": [
+            "objc3c.concurrency.continuation.abi.async.lowering.contract.v1",
+            "objc3c.concurrency.task.runtime.lowering.contract.v1",
+            "objc3c.concurrency.actor.lowering.and.metadata.contract.v1",
+        ],
+        "lowering_detail_contract_ids": [
+            "objc3c.concurrency.async.direct.call.lowering.v1",
+            "objc3c.concurrency.task.runtime.abi.completion.v1",
+            "objc3c.concurrency.actor.isolation.sendability.enforcement.v1",
+        ],
+        "lowering_lane_contract_ids": [
+            "objc3c.async.continuation.lowering.v1",
+            "objc3c.await.lowering.suspension.state.lowering.v1",
+            "objc3c.task.runtime.interop.cancellation.lowering.v1",
+            "objc3c.concurrency.replay.race.guard.lowering.v1",
+            "objc3c.actor.lowering.metadata.contract.v1",
+            "objc3c.actor.isolation.sendability.lowering.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        ],
+        "authoritative_surface_fields": [
+            "frontend.pipeline.semantic_surface.objc_concurrency_continuation_abi_and_async_lowering_contract",
+            "frontend.pipeline.semantic_surface.objc_concurrency_async_function_await_and_continuation_lowering",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_runtime_lowering_contract",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_group_and_runtime_abi_completion",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_lowering_and_metadata_contract",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendability_enforcement",
+        ],
+        "lowering_metadata_surface_model": (
+            "unified-concurrency-lowering-and-metadata-surface-freezes-live-async-task-actor-lowering-packets-and-emitted-metadata-boundaries-before-runtime-abi-and-runnable-execution-closure"
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/async_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/task_runtime_async_entry_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/actor_lowering_metadata_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+            "tests/tooling/runtime/task_runtime_lowering_probe.cpp",
+            "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-runtime-abi-widening",
+            "no-runnable-task-or-actor-execution-claim",
+            "no-milestone-specific-scaffolding",
+        ],
+    }
+    for field, expected_value in (
+        expected_unified_concurrency_lowering_metadata_surface_fields.items()
+    ):
+        if unified_concurrency_lowering_metadata_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_unified_concurrency_lowering_metadata_surface drifted from {field}"
+            )
+    if (
+        unified_concurrency_lowering_metadata_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+        or unified_concurrency_lowering_metadata_surface.get(
+            "requires_real_compile_output"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_lowering_metadata_surface must require the coupled registration manifest and real compile output"
         )
     if not isinstance(dispatch_and_synthesized_accessor_lowering_surface, dict):
         raise RuntimeError(
@@ -4675,6 +4774,82 @@ def build_runtime_async_task_actor_normalization_completion_surface(
     }
 
 
+def build_runtime_unified_concurrency_lowering_metadata_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"unified-concurrency-lowering-metadata-surface"}
+    ]
+    return {
+        "contract_id": RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID,
+        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
+        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
+        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
+        "object_artifact": "<emit-prefix>.obj",
+        "backend_artifact": "<emit-prefix>.ll",
+        "source_surface_contract_id": RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID,
+        "normalization_completion_surface_contract_id": (
+            RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
+        ),
+        "lowering_contract_ids": [
+            "objc3c.concurrency.continuation.abi.async.lowering.contract.v1",
+            "objc3c.concurrency.task.runtime.lowering.contract.v1",
+            "objc3c.concurrency.actor.lowering.and.metadata.contract.v1",
+        ],
+        "lowering_detail_contract_ids": [
+            "objc3c.concurrency.async.direct.call.lowering.v1",
+            "objc3c.concurrency.task.runtime.abi.completion.v1",
+            "objc3c.concurrency.actor.isolation.sendability.enforcement.v1",
+        ],
+        "lowering_lane_contract_ids": [
+            "objc3c.async.continuation.lowering.v1",
+            "objc3c.await.lowering.suspension.state.lowering.v1",
+            "objc3c.task.runtime.interop.cancellation.lowering.v1",
+            "objc3c.concurrency.replay.race.guard.lowering.v1",
+            "objc3c.actor.lowering.metadata.contract.v1",
+            "objc3c.actor.isolation.sendability.lowering.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+        ],
+        "authoritative_surface_fields": [
+            "frontend.pipeline.semantic_surface.objc_concurrency_continuation_abi_and_async_lowering_contract",
+            "frontend.pipeline.semantic_surface.objc_concurrency_async_function_await_and_continuation_lowering",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_runtime_lowering_contract",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_group_and_runtime_abi_completion",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_lowering_and_metadata_contract",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendability_enforcement",
+        ],
+        "lowering_metadata_surface_model": (
+            "unified-concurrency-lowering-and-metadata-surface-freezes-live-async-task-actor-lowering-packets-and-emitted-metadata-boundaries-before-runtime-abi-and-runnable-execution-closure"
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/async_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/task_runtime_async_entry_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/actor_lowering_metadata_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+            "tests/tooling/runtime/task_runtime_lowering_probe.cpp",
+            "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-runtime-abi-widening",
+            "no-runnable-task-or-actor-execution-claim",
+            "no-milestone-specific-scaffolding",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6463,7 +6638,7 @@ def check_unified_concurrency_runtime_architecture_case(run_dir: Path) -> CaseRe
             / "fixtures"
             / "native"
             / "task_executor_cancellation_source_closure_positive.objc3",
-            False,
+            True,
         ),
     }
     expected_semantic_surfaces = {
@@ -6719,6 +6894,151 @@ def check_async_task_actor_normalization_completion_case(run_dir: Path) -> CaseR
     return CaseResult(
         case_id="async-task-actor-normalization-completion",
         probe="compile-manifest-normalization-surface",
+        fixture="tests/tooling/fixtures/native/async_lowering_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary=summary,
+    )
+
+
+def check_unified_concurrency_lowering_metadata_surface_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "unified-concurrency-lowering-metadata-surface"
+    fixtures: dict[
+        str,
+        tuple[
+            Path,
+            str,
+            str,
+            str,
+            str,
+            str,
+            str,
+        ],
+    ] = {
+        "async_lowering": (
+            ROOT / "tests" / "tooling" / "fixtures" / "native" / "async_lowering_positive.objc3",
+            "objc_concurrency_continuation_abi_and_async_lowering_contract",
+            "objc3c.concurrency.continuation.abi.async.lowering.contract.v1",
+            "objc_concurrency_async_function_await_and_continuation_lowering",
+            "objc3c.concurrency.async.direct.call.lowering.v1",
+            "deterministic_handoff",
+            "ready_for_ir_emission",
+        ),
+        "task_lowering": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "task_runtime_async_entry_lowering_positive.objc3",
+            "objc_concurrency_task_runtime_lowering_contract",
+            "objc3c.concurrency.task.runtime.lowering.contract.v1",
+            "objc_concurrency_task_group_and_runtime_abi_completion",
+            "objc3c.concurrency.task.runtime.abi.completion.v1",
+            "deterministic_handoff",
+            "ready_for_ir_emission",
+        ),
+        "actor_lowering": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "actor_lowering_metadata_positive.objc3",
+            "objc_concurrency_actor_lowering_and_metadata_contract",
+            "objc3c.concurrency.actor.lowering.and.metadata.contract.v1",
+            "objc_concurrency_actor_isolation_and_sendability_enforcement",
+            "objc3c.concurrency.actor.isolation.sendability.enforcement.v1",
+            "deterministic_handoff",
+            "ready_for_ir_emission",
+        ),
+    }
+    summary: dict[str, Any] = {}
+
+    for (
+        fixture_key,
+        (
+            fixture_path,
+            lowering_surface_name,
+            expected_lowering_contract_id,
+            detail_surface_name,
+            expected_detail_contract_id,
+            lowering_determinism_field,
+            lowering_readiness_field,
+        ),
+    ) in fixtures.items():
+        compile_dir = case_dir / fixture_key / "compile"
+        _, _, manifest_path = compile_fixture_outputs(fixture_path, compile_dir)
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        semantic_surface = manifest.get("frontend", {}).get("pipeline", {}).get(
+            "semantic_surface", {}
+        )
+        lowering_surface = semantic_surface.get(lowering_surface_name, {})
+        detail_surface = semantic_surface.get(detail_surface_name, {})
+        expect(
+            isinstance(lowering_surface, dict),
+            f"expected {fixture_key} fixture to publish {lowering_surface_name}",
+        )
+        expect(
+            isinstance(detail_surface, dict),
+            f"expected {fixture_key} fixture to publish {detail_surface_name}",
+        )
+        expect(
+            lowering_surface.get("contract_id") == expected_lowering_contract_id,
+            f"expected {fixture_key} lowering fixture to preserve {expected_lowering_contract_id}",
+        )
+        expect(
+            detail_surface.get("contract_id") == expected_detail_contract_id,
+            f"expected {fixture_key} lowering fixture to preserve {expected_detail_contract_id}",
+        )
+        expect(
+            lowering_surface.get(lowering_determinism_field) is True,
+            f"expected {fixture_key} lowering surface to preserve {lowering_determinism_field}",
+        )
+        expect(
+            lowering_surface.get(lowering_readiness_field) is True,
+            f"expected {fixture_key} lowering surface to preserve {lowering_readiness_field}",
+        )
+        summary[fixture_key] = {
+            "fixture": str(fixture_path.relative_to(ROOT)).replace("\\", "/"),
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "lowering_surface": lowering_surface_name,
+            "lowering_contract_id": lowering_surface.get("contract_id"),
+            "detail_surface": detail_surface_name,
+            "detail_contract_id": detail_surface.get("contract_id"),
+        }
+        if fixture_key == "async_lowering":
+            top_level_surface = manifest.get(
+                "runtime_unified_concurrency_lowering_metadata_surface", {}
+            )
+            expect(
+                isinstance(top_level_surface, dict),
+                "expected async lowering fixture to publish runtime_unified_concurrency_lowering_metadata_surface",
+            )
+            expect(
+                top_level_surface.get("contract_id")
+                == RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID,
+                "expected unified concurrency lowering fixture to preserve the lowering metadata surface contract",
+            )
+            expect(
+                top_level_surface.get("lowering_metadata_surface_model")
+                == "unified-concurrency-lowering-and-metadata-surface-freezes-live-async-task-actor-lowering-packets-and-emitted-metadata-boundaries-before-runtime-abi-and-runnable-execution-closure",
+                "expected unified concurrency lowering fixture to preserve the lowering metadata model",
+            )
+            summary["runtime_surface"] = {
+                "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+                "contract_id": top_level_surface.get("contract_id"),
+                "lowering_contract_ids": top_level_surface.get("lowering_contract_ids"),
+                "lowering_detail_contract_ids": top_level_surface.get(
+                    "lowering_detail_contract_ids"
+                ),
+            }
+
+    return CaseResult(
+        case_id="unified-concurrency-lowering-metadata-surface",
+        probe="compile-manifest-lowering-metadata-surface",
         fixture="tests/tooling/fixtures/native/async_lowering_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
@@ -12844,6 +13164,7 @@ def main() -> int:
         check_installation_lifecycle_case(clangxx, run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
+        check_unified_concurrency_lowering_metadata_surface_case(run_dir),
         check_error_execution_cleanup_source_case(run_dir),
         check_catch_filter_finalization_source_case(run_dir),
         check_error_propagation_cleanup_semantics_case(run_dir),
@@ -12911,6 +13232,9 @@ def main() -> int:
         ),
         "runtime_async_task_actor_normalization_completion_surface": (
             build_runtime_async_task_actor_normalization_completion_surface(results)
+        ),
+        "runtime_unified_concurrency_lowering_metadata_surface": (
+            build_runtime_unified_concurrency_lowering_metadata_surface(results)
         ),
         "runtime_error_execution_cleanup_source_surface": (
             build_runtime_error_execution_cleanup_source_surface(results)

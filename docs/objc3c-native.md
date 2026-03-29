@@ -327,6 +327,39 @@ semantic packets and lowering contracts that later runtime issues must consume
 without widening the public runtime ABI or pretending runnable task/actor
 execution has already landed.
 
+## Unified Concurrency Lowering/Metadata Surface
+
+- authoritative compile-manifest key:
+  - `runtime_unified_concurrency_lowering_metadata_surface`
+- authoritative lowering contracts:
+  - `objc3c.concurrency.continuation.abi.async.lowering.contract.v1`
+  - `objc3c.concurrency.task.runtime.lowering.contract.v1`
+  - `objc3c.concurrency.actor.lowering.and.metadata.contract.v1`
+- authoritative lower-detail contracts:
+  - `objc3c.concurrency.async.direct.call.lowering.v1`
+  - `objc3c.concurrency.task.runtime.abi.completion.v1`
+  - `objc3c.concurrency.actor.isolation.sendability.enforcement.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/async_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/task_runtime_async_entry_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/actor_lowering_metadata_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/continuation_runtime_helper_probe.cpp`
+    - `tests/tooling/runtime/task_runtime_lowering_probe.cpp`
+    - `tests/tooling/runtime/actor_lowering_runtime_probe.cpp`
+
+This is the authoritative lowering-and-metadata boundary for the unified
+concurrency slice. It freezes the live async/task/actor lowering packets and
+their emitted metadata contracts before runtime ABI and runnable execution
+closure, so later runtime issues must consume one emitted source of truth
+instead of reconstructing lowering state from sidecars or probe-local notes.
+
 ## Error Execution And Cleanup Source Surface
 
 - authoritative compile-manifest key:

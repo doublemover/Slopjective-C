@@ -129,6 +129,24 @@ Async/task/actor normalization completion source of truth:
   must extend that emitted normalization surface instead of inventing a second
   semantic-to-lowering handoff or probe-local contract inventory
 
+Unified concurrency lowering/metadata source of truth:
+
+- compile publication exposes the coupled lowering-and-metadata boundary through
+  the emitted compile-manifest key
+  `runtime_unified_concurrency_lowering_metadata_surface`
+- that surface must point at the live continuation ABI/async lowering
+  contract, task runtime lowering contract, actor lowering/metadata contract,
+  async direct-call lowering, task runtime ABI completion packet, actor
+  isolation/sendability enforcement packet, and the authoritative AST/sema/IR/
+  pipeline code paths that publish them
+- that same surface freezes the emitted lowering contract ids and metadata
+  boundary before runtime ABI or runnable execution closure, so later runtime
+  work must consume one compile-coupled lowering source of truth instead of
+  rebuilding it from sidecars or probe-local notes
+- later executor runtime, actor mailbox, cross-module replay, and runnable
+  validation work must extend that emitted lowering/metadata surface rather
+  than inventing a second lowering boundary or widening the public ABI early
+
 Object-model realization source of truth:
 
 - compile publication exposes the coupled realization boundary through the

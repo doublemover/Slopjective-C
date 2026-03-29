@@ -1194,6 +1194,9 @@ inline constexpr const char *kObjc3RuntimeUnifiedConcurrencySourceSurfaceContrac
 inline constexpr const char
     *kObjc3RuntimeAsyncTaskActorNormalizationCompletionSurfaceContractId =
         "objc3c.runtime.async.task.actor.normalization.completion.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyLoweringMetadataSurfaceContractId =
+        "objc3c.runtime.unified.concurrency.lowering.metadata.surface.v1";
 inline constexpr const char *kObjc3RuntimeInstallationAbiSurfaceContractId =
     "objc3c.runtime.installation.abi.surface.v1";
 inline constexpr const char *kObjc3RuntimeLoaderLifecycleSurfaceContractId =
