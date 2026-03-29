@@ -9120,17 +9120,20 @@ BuildConcurrencyAsyncEffectSuspensionSemanticModelSummary(
       replay_summary.deterministic;
   summary.runnable_lowering_deferred = true;
   summary.executor_runtime_deferred = true;
+  // Async/await semantic readiness must not be blocked on the later task
+  // runtime cancellation lane. That runtime lane is surfaced here for
+  // normalization closure, but B002 needs the continuation and suspension
+  // semantics to stand on their own once the async/await profiles are sound.
   summary.deterministic =
       source_summary.deterministic_handoff && async_summary.deterministic &&
       await_summary.deterministic && actor_summary.deterministic &&
-      task_summary.deterministic && replay_summary.deterministic &&
+      replay_summary.deterministic &&
       summary.async_declaration_semantics_landed &&
       summary.executor_affinity_semantics_landed &&
       summary.await_legality_semantics_landed &&
       summary.continuation_profile_semantics_landed &&
       summary.await_suspension_profile_semantics_landed &&
       summary.actor_isolation_sendability_semantics_landed &&
-      summary.task_runtime_cancellation_semantics_landed &&
       summary.concurrency_replay_race_guard_semantics_landed;
   summary.ready_for_lowering_and_runtime = summary.deterministic;
 
@@ -10979,7 +10982,8 @@ BuildConcurrencyAwaitSuspensionResumeSemanticSummary(
 
   summary.source_dependency_required = true;
   summary.await_placement_enforced =
-      dependency_summary.ready_for_lowering_and_runtime &&
+      dependency_summary.async_declaration_semantics_landed &&
+      dependency_summary.await_legality_semantics_landed &&
       summary.illegal_await_sites <= summary.await_expression_sites &&
       summary.await_in_async_callable_sites + summary.illegal_await_sites ==
           summary.await_expression_sites;
