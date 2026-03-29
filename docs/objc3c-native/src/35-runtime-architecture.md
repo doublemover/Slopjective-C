@@ -182,6 +182,29 @@ header paths, and the live installation lifecycle proof command surface as one
 coupled artifact instead of leaving later bootstrap work to infer ordering
 truth from scattered semantic and runtime-side reports.
 
+## Metaprogramming Source Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_metaprogramming_source_surface`
+- authoritative compile-manifest semantic surface:
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_derive_macro_property_behavior_source_closure`
+- authoritative composed source inputs:
+  - `objc3c.metaprogramming.metaprogramming.source.closure.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/token/objc3_token_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+
+This is the authoritative compile-coupled source boundary for derive markers,
+macro markers, and property-behavior markers. It freezes the live parser/sema
+surface before semantic expansion, lowering, cache materialization, or runtime
+behavior claims so downstream metaprogramming work must consume one emitted
+source packet instead of inferring scope from stale checklist text.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:

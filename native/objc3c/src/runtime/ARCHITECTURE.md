@@ -94,6 +94,19 @@ Multi-image startup ordering source of truth:
   path instead of reconstructing ordering truth from scattered semantic
   fragments or hand-maintained notes
 
+Metaprogramming source of truth:
+
+- compile publication exposes the coupled metaprogramming source boundary
+  through the acceptance-summary key `runtime_metaprogramming_source_surface`
+- that surface must point at the live derive/macro/property-behavior source
+  closure contract `objc3c.metaprogramming.metaprogramming.source.closure.v1`,
+  the authoritative AST/token/sema/pipeline code paths, and the compile-coupled
+  fixture `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+- later semantic expansion, lowering, cross-module preservation, cache
+  integration, and runnable validation work must consume that emitted source
+  boundary instead of reconstructing metaprogramming scope from milestone notes
+  or probe-local assumptions
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

@@ -143,6 +143,12 @@ RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID = (
 RUNTIME_UNIFIED_CONCURRENCY_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.unified.concurrency.runtime.abi.surface.v1"
 )
+RUNTIME_METAPROGRAMMING_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.metaprogramming.source.surface.v1"
+)
+RUNTIME_METAPROGRAMMING_PACKAGE_PROVENANCE_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.metaprogramming.package.provenance.source.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -5068,6 +5074,57 @@ def build_runtime_unified_concurrency_runtime_abi_surface(
     }
 
 
+def build_runtime_metaprogramming_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"metaprogramming-source-surface"}
+    ]
+    return {
+        "contract_id": RUNTIME_METAPROGRAMMING_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.metaprogramming.metaprogramming.source.closure.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/token/objc3_token_contract.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        ],
+        "authoritative_source_fields": [
+            "Objc3InterfaceDecl.objc_derive_declared",
+            "Objc3InterfaceDecl.objc_derive_name",
+            "Objc3FunctionDecl.objc_macro_declared",
+            "Objc3FunctionDecl.objc_macro_name",
+            "Objc3PropertyDecl.property_behavior_name",
+            "frontend.pipeline.semantic_surface.objc_metaprogramming_derive_macro_property_behavior_source_closure",
+        ],
+        "source_surface_model": (
+            "derive-markers-macro-markers-and-property-behavior-markers-are-live-parser-owned-source-surfaces-before-semantic-expansion-lowering-or-runtime-materialization"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/expansion_lowering_positive.objc3",
+        ],
+        "explicit_non_goals": [
+            "no-runnable-macro-execution-claim",
+            "no-derived-method-body-materialization-claim",
+            "no-property-behavior-runtime-hook-claim",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6824,6 +6881,96 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "post_replay_registered_image_count": payload["post_replay_registered_image_count"],
             "retained_bootstrap_image_count": payload["post_replay_retained_bootstrap_image_count"],
             "replay_generation": payload["post_replay_replay_generation"],
+        },
+    )
+
+
+def check_metaprogramming_source_surface_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "metaprogramming-source-surface"
+    fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "expansion_lowering_positive.objc3"
+    )
+    _, _, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    semantic_surface = (
+        manifest.get("frontend", {})
+        .get("pipeline", {})
+        .get("semantic_surface", {})
+        .get("objc_metaprogramming_derive_macro_property_behavior_source_closure", {})
+    )
+    expect(
+        isinstance(semantic_surface, dict),
+        "expected metaprogramming source fixture to publish objc_metaprogramming_derive_macro_property_behavior_source_closure",
+    )
+    expected_fields = {
+        "contract_id": "objc3c.metaprogramming.metaprogramming.source.closure.v1",
+        "frontend_surface_path": (
+            "frontend.pipeline.semantic_surface."
+            "objc_metaprogramming_derive_macro_property_behavior_source_closure"
+        ),
+        "source_model": (
+            "derive-markers-macro-markers-and-property-behavior-markers-are-live-parser-owned-source-surfaces-while-expansion-synthesis-and-runtime-behavior-remain-deferred"
+        ),
+        "failure_model": (
+            "metaprogramming-stays-source-closure-only-with-no-macro-expansion-derived-conformance-synthesis-or-property-runtime-claims-yet"
+        ),
+    }
+    for field, expected_value in expected_fields.items():
+        expect(
+            semantic_surface.get(field) == expected_value,
+            f"expected metaprogramming source surface to preserve {field}",
+        )
+    expect(
+        semantic_surface.get("source_only_claim_ids")
+        == [
+            "source-only:derive-markers",
+            "source-only:macro-markers",
+            "source-only:property-behavior-markers",
+        ],
+        "expected metaprogramming source surface to preserve source_only_claim_ids",
+    )
+    expect(
+        semantic_surface.get("derive_marker_sites") == 1,
+        "expected metaprogramming source surface to publish one derive marker site",
+    )
+    expect(
+        semantic_surface.get("macro_marker_sites") == 1,
+        "expected metaprogramming source surface to publish one macro marker site",
+    )
+    expect(
+        semantic_surface.get("property_behavior_sites") == 2,
+        "expected metaprogramming source surface to publish two property behavior sites",
+    )
+    expect(
+        semantic_surface.get("derive_marker_source_supported") is True
+        and semantic_surface.get("macro_marker_source_supported") is True
+        and semantic_surface.get("property_behavior_source_supported") is True,
+        "expected metaprogramming source surface to preserve source support flags",
+    )
+    expect(
+        semantic_surface.get("deterministic_handoff") is True
+        and semantic_surface.get("ready_for_semantic_expansion") is True,
+        "expected metaprogramming source surface to preserve deterministic source handoff",
+    )
+
+    return CaseResult(
+        case_id="metaprogramming-source-surface",
+        probe="compile-manifest-source-surface",
+        fixture="tests/tooling/fixtures/native/expansion_lowering_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "surface": "objc_metaprogramming_derive_macro_property_behavior_source_closure",
+            "contract_id": semantic_surface.get("contract_id"),
+            "derive_marker_sites": semantic_surface.get("derive_marker_sites"),
+            "macro_marker_sites": semantic_surface.get("macro_marker_sites"),
+            "property_behavior_sites": semantic_surface.get("property_behavior_sites"),
         },
     )
 
@@ -13894,6 +14041,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
+        check_metaprogramming_source_surface_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -13961,6 +14109,9 @@ def main() -> int:
         ),
         "runtime_multi_image_startup_ordering_source_surface": (
             build_runtime_multi_image_startup_ordering_source_surface(results)
+        ),
+        "runtime_metaprogramming_source_surface": (
+            build_runtime_metaprogramming_source_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)

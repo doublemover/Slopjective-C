@@ -1,4 +1,4 @@
-module m273DeriveMacroPropertyBehavior;
+module DeriveMacroPropertyBehavior;
 
 __attribute__((objc_derive(named("Equatable"))))
 @interface Widget
@@ -8,7 +8,7 @@ __attribute__((objc_derive(named("Equatable"))))
 @implementation Widget
 @end
 
-fn traced() -> i32 __attribute__((objc_macro(named("Trace")))) {
+pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:abc123")))) {
   return 7;
 }
 
