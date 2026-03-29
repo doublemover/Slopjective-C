@@ -167,6 +167,9 @@ RUNTIME_METAPROGRAMMING_CACHE_RUNTIME_INTEGRATION_IMPLEMENTATION_SURFACE_CONTRAC
 RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.cross.module.package.interop.source.surface.v1"
 )
+RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.textual.binary.interface.parity.source.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -224,6 +227,9 @@ LIVE_ACTOR_RUNTIME_PROBE = (
 )
 INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3"
+)
+INTEROP_HEADER_MODULE_PROVIDER_FIXTURE = (
+    "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
 )
 CONCURRENCY_ACTOR_PRESERVATION_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3"
@@ -5552,6 +5558,51 @@ def build_runtime_cross_module_package_interop_source_surface(
             "no-public-runtime-abi-widening",
         ],
         "requires_runtime_import_surface": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_textual_binary_interface_parity_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"textual-binary-interface-parity-source-surface"}
+    ]
+    return {
+        "contract_id": RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-import-surface.json",
+            "<emit-prefix>.interop-bridge.h",
+            "<emit-prefix>.interop-bridge.modulemap",
+            "<emit-prefix>.interop-bridge.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.interop.cpp.swift.interop.annotation.source.completion.v1",
+            "objc3c.interop.foreign.surface.interface.preservation.v1",
+            "objc3c.interop.header.module.and.bridge.generation.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/pipeline/objc3_frontend_types.h",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+        ],
+        "authoritative_source_fields": [
+            "frontend.pipeline.semantic_surface.objc_interop_cpp_and_swift_interop_annotation_source_completion",
+            "frontend.pipeline.semantic_surface.objc_interop_foreign_surface_interface_and_module_preservation",
+            "frontend.pipeline.semantic_surface.objc_interop_header_module_and_bridge_generation",
+        ],
+        "parity_surface_model": (
+            "generated-bridge-header-modulemap-bridge-json-and-runtime-import-surface-preserve-one-foreign-cpp-and-swift-facing-interface-shape-without-textual-binary-drift"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
+        ],
+        "requires_runtime_import_surface": True,
+        "requires_textual_bridge_artifacts": True,
         "requires_real_compile_output": True,
     }
 
@@ -16284,6 +16335,149 @@ def check_cross_module_runtime_package_interop_source_surface_case(
     )
 
 
+def check_textual_binary_interface_parity_source_surface_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "textual-binary-interface-parity-source-surface"
+    fixture = ROOT / Path(INTEROP_HEADER_MODULE_PROVIDER_FIXTURE)
+    compile_dir = case_dir / "compile"
+    compile_fixture_with_args(
+        fixture,
+        compile_dir,
+        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+    )
+    manifest = json.loads((compile_dir / "module.manifest.json").read_text(encoding="utf-8"))
+    runtime_import_surface = json.loads(
+        (compile_dir / "module.runtime-import-surface.json").read_text(encoding="utf-8")
+    )
+    bridge_json = json.loads(
+        (compile_dir / "module.interop-bridge.json").read_text(encoding="utf-8")
+    )
+    bridge_header = (compile_dir / "module.interop-bridge.h").read_text(
+        encoding="utf-8"
+    )
+    bridge_modulemap = (compile_dir / "module.interop-bridge.modulemap").read_text(
+        encoding="utf-8"
+    )
+    semantic_surface = (
+        manifest.get("frontend", {}).get("pipeline", {}).get("semantic_surface", {})
+    )
+    annotation_source_surface = semantic_surface.get(
+        "objc_interop_cpp_and_swift_interop_annotation_source_completion", {}
+    )
+    foreign_preservation_surface = semantic_surface.get(
+        "objc_interop_foreign_surface_interface_and_module_preservation", {}
+    )
+    bridge_generation_surface = semantic_surface.get(
+        "objc_interop_header_module_and_bridge_generation", {}
+    )
+    runtime_bridge_packet = runtime_import_surface.get(
+        "objc_interop_header_module_and_bridge_generation", {}
+    )
+
+    expect(
+        annotation_source_surface.get("contract_id")
+        == "objc3c.interop.cpp.swift.interop.annotation.source.completion.v1",
+        "expected header/module bridge provider manifest to publish the C++/Swift annotation source-completion surface",
+    )
+    expect(
+        foreign_preservation_surface.get("contract_id")
+        == "objc3c.interop.foreign.surface.interface.preservation.v1",
+        "expected header/module bridge provider manifest to publish the foreign surface/interface preservation packet",
+    )
+    expect(
+        bridge_generation_surface.get("contract_id")
+        == "objc3c.interop.header.module.and.bridge.generation.v1",
+        "expected header/module bridge provider manifest to publish the header/module/bridge generation packet",
+    )
+    expect(
+        runtime_bridge_packet.get("contract_id")
+        == "objc3c.interop.header.module.and.bridge.generation.v1",
+        "expected header/module bridge provider runtime import surface to preserve the bridge-generation contract",
+    )
+    expect(
+        bridge_json.get("header_artifact_relative_path")
+        == runtime_bridge_packet.get("header_artifact_relative_path")
+        == "module.interop-bridge.h",
+        "expected header/module bridge provider textual and binary surfaces to preserve the header artifact path",
+    )
+    expect(
+        bridge_json.get("module_artifact_relative_path")
+        == runtime_bridge_packet.get("module_artifact_relative_path")
+        == "module.interop-bridge.modulemap",
+        "expected header/module bridge provider textual and binary surfaces to preserve the modulemap artifact path",
+    )
+    expect(
+        bridge_json.get("bridge_artifact_relative_path")
+        == runtime_bridge_packet.get("bridge_artifact_relative_path")
+        == "module.interop-bridge.json",
+        "expected header/module bridge provider textual and binary surfaces to preserve the bridge-json artifact path",
+    )
+    expect(
+        bridge_json.get("runtime_generation_ready") is True
+        and bridge_json.get("cross_module_packaging_ready") is True
+        and bridge_json.get("deterministic") is True
+        and runtime_bridge_packet.get("runtime_generation_ready") is True
+        and runtime_bridge_packet.get("cross_module_packaging_ready") is True
+        and runtime_bridge_packet.get("deterministic") is True,
+        "expected header/module bridge provider textual and binary surfaces to agree on readiness and determinism",
+    )
+    expect(
+        bridge_json.get("module_name") == runtime_import_surface.get("module_name"),
+        "expected header/module bridge provider bridge json and runtime import surface to preserve one module name",
+    )
+    expect(
+        len(bridge_json.get("foreign_callables", [])) == 2
+        and runtime_bridge_packet.get("local_foreign_callable_count") == 2
+        and foreign_preservation_surface.get("local_foreign_callable_count") == 2,
+        "expected header/module bridge provider textual and binary surfaces to preserve two foreign callables",
+    )
+    expect(
+        annotation_source_surface.get("swift_name_annotation_sites") == 1
+        and annotation_source_surface.get("cpp_name_annotation_sites") == 2
+        and annotation_source_surface.get("header_name_annotation_sites") == 2,
+        "expected header/module bridge provider source-completion surface to preserve the foreign C++/Swift annotation inventory",
+    )
+    for snippet, label in (
+        ("module.interop-bridge.h", "header artifact path"),
+        ("module.interop-bridge.modulemap", "modulemap artifact path"),
+        ("ffiInbound", "primary foreign callable"),
+        ("ffiHeaderBridge", "header-only foreign callable"),
+        ("BridgeProviderShim", "C++ bridge annotation"),
+        ("BridgeProvider.forward", "Swift bridge annotation"),
+    ):
+        expect(
+            snippet in bridge_header,
+            f"expected generated interop bridge header to preserve the {label}",
+        )
+    expect(
+        "module.interop-bridge.h" in bridge_modulemap
+        and "_objc3_interop_bridge" in bridge_modulemap,
+        "expected generated interop bridge modulemap to preserve the bridge module identity",
+    )
+
+    return CaseResult(
+        case_id="textual-binary-interface-parity-source-surface",
+        probe="compile-manifest-runtime-import-surface-bridge-header-modulemap-and-bridge-json",
+        fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "module_name": runtime_import_surface.get("module_name"),
+            "foreign_callable_count": len(bridge_json.get("foreign_callables", [])),
+            "header_artifact_relative_path": bridge_json.get(
+                "header_artifact_relative_path"
+            ),
+            "module_artifact_relative_path": bridge_json.get(
+                "module_artifact_relative_path"
+            ),
+            "bridge_artifact_relative_path": bridge_json.get(
+                "bridge_artifact_relative_path"
+            ),
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -16308,6 +16502,7 @@ def main() -> int:
         check_metaprogramming_runtime_abi_cache_surface_case(clangxx, run_dir),
         check_live_metaprogramming_cache_runtime_integration_case(clangxx, run_dir),
         check_cross_module_runtime_package_interop_source_surface_case(run_dir),
+        check_textual_binary_interface_parity_source_surface_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -16403,6 +16598,9 @@ def main() -> int:
         ),
         "runtime_cross_module_package_interop_source_surface": (
             build_runtime_cross_module_package_interop_source_surface(results)
+        ),
+        "runtime_textual_binary_interface_parity_source_surface": (
+            build_runtime_textual_binary_interface_parity_source_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
