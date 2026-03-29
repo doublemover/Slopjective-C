@@ -170,6 +170,9 @@ RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.textual.binary.interface.parity.source.surface.v1"
 )
+RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -227,6 +230,9 @@ LIVE_ACTOR_RUNTIME_PROBE = (
 )
 INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3"
+)
+INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE = (
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3"
 )
 INTEROP_HEADER_MODULE_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
@@ -4139,6 +4145,8 @@ def compile_fixture_expect_failure(
     *,
     expected_snippets: list[str],
     expected_codes: list[str],
+    extra_args: list[str] | None = None,
+    allow_missing_structured_diagnostics: bool = False,
 ) -> dict[str, Any]:
     out_dir.mkdir(parents=True, exist_ok=True)
     result = run(
@@ -4154,6 +4162,7 @@ def compile_fixture_expect_failure(
             str(out_dir),
             "--emit-prefix",
             "module",
+            *(extra_args or []),
         ]
     )
     if result.returncode == 0:
@@ -4165,12 +4174,20 @@ def compile_fixture_expect_failure(
     if not diagnostics_json_path.is_file():
         raise RuntimeError(f"failed compile for {fixture} did not publish {diagnostics_json_path}")
     diagnostics_text = diagnostics_txt_path.read_text(encoding="utf-8")
+    if diagnostics_text == "" and result.stderr:
+        diagnostics_text = result.stderr
     diagnostics_payload = json.loads(diagnostics_json_path.read_text(encoding="utf-8"))
     diagnostics = diagnostics_payload.get("diagnostics", [])
-    expect(
-        isinstance(diagnostics, list) and diagnostics,
-        f"failed compile for {fixture} did not publish structured diagnostics",
-    )
+    if allow_missing_structured_diagnostics:
+        expect(
+            isinstance(diagnostics, list),
+            f"failed compile for {fixture} did not publish a diagnostics list",
+        )
+    else:
+        expect(
+            isinstance(diagnostics, list) and diagnostics,
+            f"failed compile for {fixture} did not publish structured diagnostics",
+        )
     for snippet in expected_snippets:
         expect(
             snippet in diagnostics_text,
@@ -4190,6 +4207,7 @@ def compile_fixture_expect_failure(
         "returncode": result.returncode,
         "diagnostic_count": len(diagnostics),
         "diagnostic_codes": sorted(observed_codes),
+        "stderr": result.stderr,
         "diagnostics_path": str(diagnostics_json_path.relative_to(ROOT)).replace("\\", "/"),
     }
 
@@ -5603,6 +5621,54 @@ def build_runtime_textual_binary_interface_parity_source_surface(
         ],
         "requires_runtime_import_surface": True,
         "requires_textual_bridge_artifacts": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_mixed_image_compatibility_interop_semantics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"mixed-image-compatibility-interop-semantics"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
+            "objc3c.interop.foreign.surface.interface.preservation.v1",
+            "objc3c.interop.header.module.and.bridge.generation.v1",
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.runtime-import-surface.json",
+            "<emit-prefix>.cross-module-runtime-link-plan.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.interop-bridge.h",
+            "<emit-prefix>.interop-bridge.modulemap",
+            "<emit-prefix>.interop-bridge.json",
+        ],
+        "compatibility_model": (
+            "mixed-image-provider-and-consumer-compiles-share-one-fail-closed-registration-order-and-interop-bridge-compatibility-boundary-through-runtime-import-surfaces-and-cross-module-link-plans"
+        ),
+        "diagnostic_model": (
+            "duplicate-registration-order-or-import-surface-drift-rejects-the-consumer-before-cross-module-link-plan-installation-advances"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/driver/objc3_objc3_path.cpp",
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
+            INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
+        ],
+        "requires_runtime_import_surface_artifact": True,
+        "requires_cross_module_link_plan_artifact": True,
         "requires_real_compile_output": True,
     }
 
@@ -16478,6 +16544,157 @@ def check_textual_binary_interface_parity_source_surface_case(
     )
 
 
+def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
+    provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
+    consumer_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE)
+
+    provider_compile_dir = case_dir / "provider"
+    compile_fixture_with_args(
+        provider_fixture,
+        provider_compile_dir,
+        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+    )
+    provider_import_surface = provider_compile_dir / "module.runtime-import-surface.json"
+    provider_bridge_json = json.loads(
+        (provider_compile_dir / "module.interop-bridge.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    provider_import_payload = json.loads(
+        provider_import_surface.read_text(encoding="utf-8")
+    )
+
+    consumer_compile_dir = case_dir / "consumer"
+    compile_fixture_with_args(
+        consumer_fixture,
+        consumer_compile_dir,
+        [
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(provider_import_surface),
+        ],
+    )
+    consumer_registration_manifest = json.loads(
+        (
+            consumer_compile_dir / "module.runtime-registration-manifest.json"
+        ).read_text(encoding="utf-8")
+    )
+    link_plan_path = consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
+    link_plan = json.loads(link_plan_path.read_text(encoding="utf-8"))
+
+    expect(
+        link_plan.get("interop_header_module_bridge_imported_module_count") == 1
+        and link_plan.get("interop_ffi_imported_module_count") == 1,
+        "expected mixed-image interop link plan to preserve one imported bridge/ffi provider module",
+    )
+    expect(
+        link_plan.get("module_image_count") == 2
+        and link_plan.get("ready") is True,
+        "expected mixed-image interop link plan to publish a ready two-image package topology",
+    )
+    expect(
+        link_plan.get("expected_interop_bridge_header_artifact_relative_path")
+        == "module.interop-bridge.h"
+        and link_plan.get("expected_interop_bridge_module_artifact_relative_path")
+        == "module.interop-bridge.modulemap"
+        and link_plan.get("expected_interop_bridge_artifact_relative_path")
+        == "module.interop-bridge.json",
+        "expected mixed-image interop link plan to preserve the canonical bridge artifact paths",
+    )
+
+    local_module = link_plan.get("local_module", {})
+    imported_modules = link_plan.get("imported_modules", [])
+    expect(
+        isinstance(local_module, dict) and isinstance(imported_modules, list) and len(imported_modules) == 1,
+        "expected mixed-image interop link plan to publish one local module and one imported module summary",
+    )
+    imported_module = imported_modules[0]
+    expect(
+        local_module.get("translation_unit_registration_order_ordinal") == 2
+        and consumer_registration_manifest.get("translation_unit_registration_order_ordinal") == 2,
+        "expected mixed-image interop consumer compile to preserve registration ordinal 2",
+    )
+    expect(
+        imported_module.get("translation_unit_registration_order_ordinal") == 1,
+        "expected mixed-image interop link plan to preserve the imported provider registration ordinal",
+    )
+    expect(
+        imported_module.get("interop_header_module_bridge_contract_id")
+        == link_plan.get("expected_interop_header_module_bridge_contract_id")
+        == "objc3c.interop.header.module.and.bridge.generation.v1",
+        "expected mixed-image interop link plan to preserve the imported bridge-generation contract",
+    )
+    expect(
+        imported_module.get("interop_ffi_contract_id")
+        == link_plan.get("expected_interop_ffi_contract_id")
+        == "objc3c.interop.ffi.metadata.interface.preservation.v1",
+        "expected mixed-image interop link plan to preserve the imported ffi metadata/interface preservation contract",
+    )
+    expect(
+        imported_module.get("interop_ffi_preservation_contract_id")
+        == link_plan.get("expected_interop_ffi_preservation_contract_id")
+        == "objc3c.interop.foreign.surface.interface.preservation.v1",
+        "expected mixed-image interop link plan to preserve the imported foreign surface/interface preservation contract",
+    )
+    expect(
+        imported_module.get("interop_bridge_header_artifact_relative_path")
+        == provider_bridge_json.get("header_artifact_relative_path")
+        == "module.interop-bridge.h",
+        "expected mixed-image interop link plan to preserve the provider header bridge path",
+    )
+    expect(
+        imported_module.get("interop_header_module_bridge_cross_module_packaging_ready")
+        is True
+        and imported_module.get("interop_header_module_bridge_runtime_generation_ready")
+        is True
+        and provider_import_payload.get(
+            "objc_interop_header_module_and_bridge_generation", {}
+        ).get("cross_module_packaging_ready")
+        is True,
+        "expected mixed-image interop provider and consumer artifacts to agree on bridge packaging readiness",
+    )
+
+    duplicate_ordinal_negative = compile_fixture_expect_failure(
+        consumer_fixture,
+        case_dir / "negative-duplicate-registration-order",
+        expected_snippets=[
+            "cross-module runtime link-plan duplicate registration order ordinal: 1"
+        ],
+        expected_codes=[],
+        extra_args=[
+            "--objc3-bootstrap-registration-order-ordinal",
+            "1",
+            "--objc3-import-runtime-surface",
+            str(provider_import_surface),
+        ],
+        allow_missing_structured_diagnostics=True,
+    )
+
+    return CaseResult(
+        case_id="mixed-image-compatibility-interop-semantics",
+        probe="compile-runtime-import-surface-link-plan-and-fail-closed-diagnostics",
+        fixture=INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "provider_runtime_import_surface_path": str(
+                provider_import_surface.relative_to(ROOT)
+            ).replace("\\", "/"),
+            "link_plan_path": str(link_plan_path.relative_to(ROOT)).replace("\\", "/"),
+            "module_image_count": link_plan.get("module_image_count"),
+            "imported_module_count": len(imported_modules),
+            "duplicate_registration_order_returncode": duplicate_ordinal_negative[
+                "returncode"
+            ],
+            "duplicate_registration_order_diagnostics_path": duplicate_ordinal_negative[
+                "diagnostics_path"
+            ],
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -16503,6 +16720,7 @@ def main() -> int:
         check_live_metaprogramming_cache_runtime_integration_case(clangxx, run_dir),
         check_cross_module_runtime_package_interop_source_surface_case(run_dir),
         check_textual_binary_interface_parity_source_surface_case(run_dir),
+        check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -16601,6 +16819,9 @@ def main() -> int:
         ),
         "runtime_textual_binary_interface_parity_source_surface": (
             build_runtime_textual_binary_interface_parity_source_surface(results)
+        ),
+        "runtime_mixed_image_compatibility_interop_semantics_surface": (
+            build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
