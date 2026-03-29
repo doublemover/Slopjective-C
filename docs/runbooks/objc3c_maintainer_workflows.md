@@ -28,6 +28,7 @@ Use these roots directly when cleaning or renaming repo surfaces:
   - `tests/`
 - checked-in doc sources:
   - `README.md`
+  - `CONTRIBUTING.md`
   - `site/src/`
   - `docs/objc3c-native/src/`
   - `package.json`
@@ -42,6 +43,14 @@ Use these roots directly when cleaning or renaming repo surfaces:
 
 Do not add milestone-specific wrappers, sidecar compatibility files, or
 parallel source-of-truth copies when changing these surfaces.
+
+Contributor-facing entrypoint:
+
+- `CONTRIBUTING.md` is the contributor instruction surface for normal repo
+  changes
+- `README.md` stays focused on onboarding, setup, and repo navigation
+- this runbook is maintainer-only and should not accumulate contributor
+  guidance that belongs in `CONTRIBUTING.md`
 
 ## Build
 

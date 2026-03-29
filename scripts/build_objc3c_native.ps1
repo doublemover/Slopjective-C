@@ -693,6 +693,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
     )
     checked_in_doc_sources = @(
       "README.md",
+      "CONTRIBUTING.md",
       "site/src",
       "docs/objc3c-native/src",
       "package.json"

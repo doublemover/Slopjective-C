@@ -20,6 +20,8 @@ They describe the live native frontend, not historical milestone closeouts.
 
 - `README.md`
   - onboarding, setup, build/test entrypoints, repository map
+- `CONTRIBUTING.md`
+  - contributor instructions for normal repo changes inside the live boundary
 - `site/index.md`
   - public project explanation and implementation status
 - `docs/objc3c-native.md`
@@ -41,6 +43,7 @@ adding sidecar scaffolding:
   - `docs/objc3c-native.md`
 - public onboarding paths:
   - `README.md`
+  - `CONTRIBUTING.md`
   - `site/index.md`
 - doc build/check path:
   - `scripts/build_objc3c_native_docs.py`

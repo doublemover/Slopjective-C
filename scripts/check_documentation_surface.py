@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 README_PATH = ROOT / "README.md"
+CONTRIBUTING_PATH = ROOT / "CONTRIBUTING.md"
 SITE_BODY_PATH = ROOT / "site" / "src" / "index.body.md"
 SITE_POLICY_PATH = ROOT / "site" / "src" / "README.md"
 NATIVE_OWNERSHIP_PATH = ROOT / "docs" / "objc3c-native" / "src" / "OWNERSHIP.md"
@@ -35,11 +36,29 @@ def main() -> int:
         "## Spec Structure",
         "## Superclean Boundary",
         "published site",
+        "CONTRIBUTING.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "Canonical roots:",
         "Explicit non-goals for cleanup work:",
     ):
         require_token(readme, token, path=README_PATH, errors=errors)
+
+    contributing = CONTRIBUTING_PATH.read_text(encoding="utf-8")
+    for token in (
+        "## Contributor Surface",
+        "## Repo Boundary",
+        "README.md",
+        "CONTRIBUTING.md",
+        "docs/runbooks/objc3c_public_command_surface.md",
+        "docs/runbooks/objc3c_maintainer_workflows.md",
+        "native/objc3c/",
+        "scripts/",
+        "tests/",
+        "tmp/",
+        "artifacts/",
+        "npm run check:repo:surface",
+    ):
+        require_token(contributing, token, path=CONTRIBUTING_PATH, errors=errors)
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (
@@ -84,6 +103,7 @@ def main() -> int:
         "## Superclean Working Boundary",
         "implementation roots:",
         "generated checked-in outputs:",
+        "CONTRIBUTING.md",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(

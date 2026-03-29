@@ -68,6 +68,7 @@ Use the shortest path that matches what you are trying to do.
 | --- | --- | --- |
 | understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
 | build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
+| contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |
 | inspect implementation boundaries | [docs/objc3c-native.md](docs/objc3c-native.md) | then open `native/objc3c/` |
 | run exact package-script workflows | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing |
 | follow old spec links or archived anchors | [legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) | use this only for compatibility lookups |
@@ -76,6 +77,7 @@ Documentation boundary:
 
 - human-facing onboarding:
   - `README.md`
+  - `CONTRIBUTING.md`
   - `site/index.md`
 - implementation-facing narrative:
   - `docs/objc3c-native.md`
@@ -103,6 +105,7 @@ Canonical roots:
   - `tests/`
 - human-facing docs:
   - `README.md`
+  - `CONTRIBUTING.md`
   - `site/src/`
   - `docs/objc3c-native/src/`
   - `docs/runbooks/`

@@ -46,7 +46,7 @@ def main() -> int:
     )
     expect(
         payload.get("checked_in_doc_sources")
-        == ["README.md", "site/src", "docs/objc3c-native/src", "package.json"],
+        == ["README.md", "CONTRIBUTING.md", "site/src", "docs/objc3c-native/src", "package.json"],
         "checked_in_doc_sources drifted",
         errors,
     )
