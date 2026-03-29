@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `53`
+- Current public script count: `54`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -23,6 +23,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:docs:native` | `check-native-docs` | `-` | `-` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py --check` |
 | `build:docs:commands` | `build-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py` |
 | `check:docs:commands` | `check-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py --check` |
+| `check:docs:surface` | `check-documentation-surface` | `-` | `-` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |
 | `compile:objc3c` | `compile-objc3c` | `-` | `-` | `pass-through` | `pwsh:scripts/objc3c_native_compile.ps1` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
