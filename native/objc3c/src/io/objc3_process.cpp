@@ -1709,7 +1709,7 @@ bool TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact(
     std::error_code create_error;
     std::filesystem::create_directories(cache_entry, create_error);
     if (create_error) {
-      error = "failed to create Part 10 cache entry directory: " +
+      error = "failed to create metaprogramming host/cache entry directory: " +
               cache_entry.generic_string() + ": " + create_error.message();
       return false;
     }
@@ -1773,9 +1773,21 @@ bool TryBuildObjc3MetaprogrammingMacroHostProcessCacheArtifact(
       << EscapeJsonString(inputs.fail_closed_model) << "\",\n"
       << "  \"source_input_path\": \""
       << EscapeJsonString(source_input_path.generic_string()) << "\",\n"
+      << "  \"cache_ready\": true,\n"
       << "  \"launch_attempted\": " << (launch_attempted ? "true" : "false")
       << ",\n"
       << "  \"cache_hit\": " << (cache_hit ? "true" : "false") << ",\n"
+      << "  \"cache_summary_present\": "
+      << (std::filesystem::exists(cache_summary_path) ? "true" : "false")
+      << ",\n"
+      << "  \"cache_runtime_import_surface_present\": "
+      << (std::filesystem::exists(cache_runtime_import_path) ? "true" : "false")
+      << ",\n"
+      << "  \"cache_manifest_present\": "
+      << (std::filesystem::exists(cache_manifest_path) ? "true" : "false")
+      << ",\n"
+      << "  \"cache_materialization_state\": \""
+      << (launch_attempted ? "materialized" : "cache-hit") << "\",\n"
       << "  \"host_process_exit_code\": " << host_process_exit_code << ",\n"
       << "  \"deterministic\": " << (inputs.deterministic ? "true" : "false")
       << ",\n"
@@ -2330,14 +2342,14 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       if (imported_input.metaprogramming_macro_host_process_cache_contract_id !=
           inputs.expected_metaprogramming_host_cache_contract_id) {
         error =
-            "cross-module runtime link-plan Part 10 host/cache contract mismatch for " +
+            "cross-module runtime link-plan metaprogramming host/cache contract mismatch for " +
             imported_input.module_name;
         return false;
       }
       if (imported_input.metaprogramming_macro_host_process_cache_source_contract_id !=
           inputs.expected_metaprogramming_host_cache_source_contract_id) {
         error =
-            "cross-module runtime link-plan Part 10 host/cache source contract mismatch for " +
+            "cross-module runtime link-plan metaprogramming host/cache source contract mismatch for " +
             imported_input.module_name;
         return false;
       }
@@ -2348,21 +2360,21 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
           imported_input.metaprogramming_macro_host_process_cache_host_executable_relative_path.empty() ||
           imported_input.metaprogramming_macro_host_process_cache_root_relative_path.empty()) {
         error =
-            "cross-module runtime link-plan Part 10 host/cache surface incomplete for " +
+            "cross-module runtime link-plan metaprogramming host/cache surface incomplete for " +
             imported_input.module_name;
         return false;
       }
       if (imported_input.metaprogramming_macro_host_process_cache_host_executable_relative_path !=
           inputs.expected_metaprogramming_host_cache_executable_relative_path) {
         error =
-            "cross-module runtime link-plan Part 10 host/cache executable path mismatch for " +
+            "cross-module runtime link-plan metaprogramming host/cache executable path mismatch for " +
             imported_input.module_name;
         return false;
       }
       if (imported_input.metaprogramming_macro_host_process_cache_root_relative_path !=
           inputs.expected_metaprogramming_host_cache_root_relative_path) {
         error =
-            "cross-module runtime link-plan Part 10 host/cache root path mismatch for " +
+            "cross-module runtime link-plan metaprogramming host/cache root path mismatch for " +
             imported_input.module_name;
         return false;
       }
@@ -2370,7 +2382,7 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
                .insert(imported_input.metaprogramming_macro_host_process_cache_replay_key)
                .second) {
         error =
-            "cross-module runtime link-plan duplicate imported Part 10 host/cache replay key: " +
+            "cross-module runtime link-plan duplicate imported metaprogramming host/cache replay key: " +
             imported_input.metaprogramming_macro_host_process_cache_replay_key;
         return false;
       }

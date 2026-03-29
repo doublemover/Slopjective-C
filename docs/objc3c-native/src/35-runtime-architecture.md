@@ -377,6 +377,32 @@ with the emitted host-cache artifact and imported-surface compatibility facts,
 so later runnable metaprogramming work must consume one truthful runtime ABI
 surface instead of inventing a second host/cache model from local probe notes.
 
+## Metaprogramming Cache Runtime Integration Implementation Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_metaprogramming_cache_runtime_integration_implementation_surface`
+- authoritative source surfaces:
+  - `runtime_metaprogramming_runtime_abi_cache_surface`
+  - `runtime_cross_module_metaprogramming_artifact_preservation_surface`
+- authoritative live code paths:
+  - `native/objc3c/src/io/objc3_process.cpp`
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+    - `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`
+  - probes:
+    - `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+
+This is the authoritative live implementation boundary for metaprogramming
+host-cache integration. It freezes the real cache-materialization artifact
+fields, the runtime-import consumer link-plan coupling, and the private runtime
+snapshot that reports host-process readiness so runnable metaprogramming
+validation extends one live miss-to-hit cache path instead of relying on
+proof-only summaries or milestone-local cache assumptions.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:

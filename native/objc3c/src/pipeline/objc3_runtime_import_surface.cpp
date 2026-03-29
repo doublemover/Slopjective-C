@@ -1133,13 +1133,13 @@ bool PopulateImportedMetaprogrammingMacroHostProcessCacheRuntimeIntegration(
   if (contract_id !=
       kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId) {
     error =
-        "unexpected Part 10 macro host process/cache runtime integration contract id in import surface";
+        "unexpected metaprogramming macro host process/cache runtime integration contract id in import surface";
     return false;
   }
   if (source_contract_id !=
       kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId) {
     error =
-        "unexpected Part 10 macro host process/cache runtime integration source contract id in import surface";
+        "unexpected metaprogramming macro host process/cache runtime integration source contract id in import surface";
     return false;
   }
 

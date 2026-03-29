@@ -161,6 +161,9 @@ RUNTIME_CROSS_MODULE_METAPROGRAMMING_ARTIFACT_PRESERVATION_SURFACE_CONTRACT_ID =
 RUNTIME_METAPROGRAMMING_RUNTIME_ABI_CACHE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.metaprogramming.runtime.abi.cache.surface.v1"
 )
+RUNTIME_METAPROGRAMMING_CACHE_RUNTIME_INTEGRATION_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.metaprogramming.cache.runtime.integration.implementation.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -5447,6 +5450,50 @@ def build_runtime_metaprogramming_runtime_abi_cache_surface(
     }
 
 
+def build_runtime_metaprogramming_cache_runtime_integration_implementation_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"live-metaprogramming-cache-runtime-integration"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_METAPROGRAMMING_CACHE_RUNTIME_INTEGRATION_IMPLEMENTATION_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_METAPROGRAMMING_RUNTIME_ABI_CACHE_SURFACE_CONTRACT_ID,
+            RUNTIME_CROSS_MODULE_METAPROGRAMMING_ARTIFACT_PRESERVATION_SURFACE_CONTRACT_ID,
+        ],
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "macro_host_process_cache_integration_snapshot_symbol": (
+            "objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing"
+        ),
+        "implementation_model": (
+            "live-host-cache-artifacts-publish-cache-materialization-truth-and-cross-module-runtime-import-consumers-preserve-the-same-host-cache-runtime-boundary"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+            "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
+        ],
+        "requires_runtime_import_surface_artifact": True,
+        "requires_cross_module_link_plan_artifact": True,
+        "requires_linked_runtime_probe": True,
+        "requires_real_compile_output": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -8668,6 +8715,322 @@ def check_metaprogramming_runtime_abi_cache_surface_case(
                     "cache_root_relative_path"
                 ),
             },
+        },
+    )
+
+
+def check_live_metaprogramming_cache_runtime_integration_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "live-metaprogramming-cache-runtime-integration"
+    case_dir.mkdir(parents=True, exist_ok=True)
+
+    provider_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "macro_host_process_provider.objc3"
+    )
+    provider_source = provider_fixture.read_text(encoding="utf-8")
+    unique_suffix = datetime.now().strftime("%H%M%S%f")
+    unique_module_name = f"MetaprogrammingHostProcessProvider{unique_suffix}"
+    provider_source = provider_source.replace(
+        "module MetaprogrammingHostProcessProvider;",
+        f"module {unique_module_name};",
+        1,
+    )
+    temp_provider_fixture = case_dir / "metaprogramming_cache_provider_materialize.objc3"
+    first_compile_dir: Path | None = None
+    first_host_cache_artifact_path: Path | None = None
+    first_runtime_import_path: Path | None = None
+    first_host_cache_artifact: dict[str, Any] | None = None
+    first_runtime_import_surface: dict[str, Any] | None = None
+    first_host_cache_import_surface: dict[str, Any] | None = None
+    for materialization_attempt in range(0, 16):
+        extra_macros = "".join(
+            [
+                "\n"
+                f"pure fn cacheSeed{materialization_attempt}_{index}() -> i32 "
+                '__attribute__((objc_macro(named("Trace")), '
+                f'objc_macro_package(named("std.metaprogramming.trace.{materialization_attempt}")), '
+                f'objc_macro_provenance(named("sha256:{unique_suffix}{index:02d}")))) {{\n'
+                f"  return {17 + index};\n"
+                "}\n"
+                for index in range(materialization_attempt)
+            ]
+        )
+        temp_provider_fixture.write_text(provider_source + extra_macros, encoding="utf-8")
+        compile_dir = case_dir / f"provider-first-{materialization_attempt:02d}"
+        compile_fixture_with_args(
+            temp_provider_fixture,
+            compile_dir,
+            ["--objc3-bootstrap-registration-order-ordinal", "1"],
+        )
+        candidate_host_cache_artifact_path = (
+            compile_dir / "module.metaprogramming-macro-host-cache.json"
+        )
+        candidate_runtime_import_path = compile_dir / "module.runtime-import-surface.json"
+        candidate_host_cache_artifact = json.loads(
+            candidate_host_cache_artifact_path.read_text(encoding="utf-8")
+        )
+        candidate_runtime_import_surface = json.loads(
+            candidate_runtime_import_path.read_text(encoding="utf-8")
+        )
+        candidate_host_cache_import_surface = candidate_runtime_import_surface.get(
+            "objc_metaprogramming_macro_host_process_and_cache_runtime_integration", {}
+        )
+        if candidate_host_cache_artifact.get("launch_attempted") is True:
+            first_compile_dir = compile_dir
+            first_host_cache_artifact_path = candidate_host_cache_artifact_path
+            first_runtime_import_path = candidate_runtime_import_path
+            first_host_cache_artifact = candidate_host_cache_artifact
+            first_runtime_import_surface = candidate_runtime_import_surface
+            first_host_cache_import_surface = candidate_host_cache_import_surface
+            break
+    expect(
+        first_compile_dir is not None
+        and first_host_cache_artifact_path is not None
+        and first_runtime_import_path is not None
+        and first_host_cache_artifact is not None
+        and first_runtime_import_surface is not None
+        and first_host_cache_import_surface is not None,
+        "expected live metaprogramming host-cache implementation case to force a materializing cache miss before the cache-hit replay check",
+    )
+    for field_name, expected_value in {
+        "cache_ready": True,
+        "launch_attempted": True,
+        "cache_hit": True,
+        "cache_summary_present": True,
+        "cache_runtime_import_surface_present": True,
+        "cache_manifest_present": True,
+        "cache_materialization_state": "materialized",
+        "host_process_exit_code": 0,
+        "deterministic": True,
+    }.items():
+        expect(
+            first_host_cache_artifact.get(field_name) == expected_value,
+            f"expected first metaprogramming host-cache materialization artifact to preserve {field_name}",
+        )
+    for relative_field in (
+        "cache_entry_relative_path",
+        "cache_summary_relative_path",
+        "cache_runtime_import_surface_relative_path",
+        "cache_manifest_relative_path",
+    ):
+        relative_value = first_host_cache_artifact.get(relative_field)
+        expect(
+            isinstance(relative_value, str) and relative_value != "",
+            f"expected first metaprogramming host-cache materialization artifact to publish {relative_field}",
+        )
+        expect(
+            (ROOT / Path(relative_value)).is_file()
+            or (ROOT / Path(relative_value)).is_dir(),
+            f"expected first metaprogramming host-cache materialization artifact path {relative_field} to exist",
+        )
+    expect(
+        first_runtime_import_surface.get("module_name") == unique_module_name,
+        "expected first metaprogramming host-cache materialization compile to publish the unique module name",
+    )
+    expect(
+        first_host_cache_import_surface.get("host_executable_relative_path")
+        == first_host_cache_artifact.get("host_executable_relative_path")
+        and first_host_cache_import_surface.get("cache_root_relative_path")
+        == first_host_cache_artifact.get("cache_root_relative_path"),
+        "expected first metaprogramming host-cache materialization compile to align import-surface and artifact cache paths",
+    )
+
+    second_compile_dir = case_dir / "provider-second"
+    compile_fixture_with_args(
+        temp_provider_fixture,
+        second_compile_dir,
+        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+    )
+    second_host_cache_artifact_path = (
+        second_compile_dir / "module.metaprogramming-macro-host-cache.json"
+    )
+    second_runtime_import_path = second_compile_dir / "module.runtime-import-surface.json"
+    second_host_cache_artifact = json.loads(
+        second_host_cache_artifact_path.read_text(encoding="utf-8")
+    )
+    second_runtime_import_surface = json.loads(
+        second_runtime_import_path.read_text(encoding="utf-8")
+    )
+    second_host_cache_import_surface = second_runtime_import_surface.get(
+        "objc_metaprogramming_macro_host_process_and_cache_runtime_integration", {}
+    )
+    for field_name, expected_value in {
+        "cache_ready": True,
+        "launch_attempted": False,
+        "cache_hit": True,
+        "cache_summary_present": True,
+        "cache_runtime_import_surface_present": True,
+        "cache_manifest_present": True,
+        "cache_materialization_state": "cache-hit",
+        "host_process_exit_code": 0,
+        "deterministic": True,
+    }.items():
+        expect(
+            second_host_cache_artifact.get(field_name) == expected_value,
+            f"expected second metaprogramming host-cache materialization artifact to preserve {field_name}",
+        )
+    for field_name in (
+        "cache_key",
+        "cache_entry_relative_path",
+        "cache_summary_relative_path",
+        "cache_runtime_import_surface_relative_path",
+        "cache_manifest_relative_path",
+        "host_executable_relative_path",
+        "cache_root_relative_path",
+        "replay_key",
+    ):
+        expect(
+            second_host_cache_artifact.get(field_name)
+            == first_host_cache_artifact.get(field_name),
+            f"expected second metaprogramming host-cache materialization artifact to preserve {field_name}",
+        )
+    expect(
+        second_host_cache_import_surface.get("replay_key")
+        == first_host_cache_import_surface.get("replay_key"),
+        "expected repeated metaprogramming host-cache materialization compile to preserve the same import-surface replay key",
+    )
+
+    consumer_fixture = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "fixtures"
+        / "native"
+        / "macro_host_process_consumer.objc3"
+    )
+    consumer_compile_dir = case_dir / "consumer"
+    compile_fixture_with_args(
+        consumer_fixture,
+        consumer_compile_dir,
+        [
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(first_runtime_import_path),
+        ],
+    )
+    link_plan_path = consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
+    link_plan = json.loads(link_plan_path.read_text(encoding="utf-8"))
+    for field_name, expected_value in (
+        (
+            "expected_metaprogramming_host_cache_contract_id",
+            "objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1",
+        ),
+        (
+            "expected_metaprogramming_host_cache_source_contract_id",
+            "objc3c.metaprogramming.expansion.host.runtime.boundary.v1",
+        ),
+        (
+            "expected_metaprogramming_host_cache_executable_relative_path",
+            first_host_cache_artifact.get("host_executable_relative_path"),
+        ),
+        (
+            "expected_metaprogramming_host_cache_root_relative_path",
+            first_host_cache_artifact.get("cache_root_relative_path"),
+        ),
+    ):
+        expect(
+            link_plan.get(field_name) == expected_value,
+            f"expected live metaprogramming host-cache consumer link plan to preserve {field_name}",
+        )
+    expect(
+        link_plan.get("metaprogramming_host_cache_imported_module_count") == 1
+        and link_plan.get("metaprogramming_host_cache_imported_module_names_lexicographic")
+        == [unique_module_name]
+        and link_plan.get("metaprogramming_host_cache_cross_module_preservation_ready")
+        is True,
+        "expected live metaprogramming host-cache consumer link plan to preserve imported module readiness",
+    )
+    imported_modules = link_plan.get("imported_modules", [])
+    expect(
+        isinstance(imported_modules, list) and len(imported_modules) == 1,
+        "expected live metaprogramming host-cache consumer link plan to publish one imported module",
+    )
+    imported_module = imported_modules[0]
+    for field_name, expected_value in (
+        ("module_name", unique_module_name),
+        ("metaprogramming_macro_host_process_cache_runtime_integration_present", True),
+        ("metaprogramming_macro_host_process_cache_runtime_ready", True),
+        ("metaprogramming_macro_host_process_cache_separate_compilation_ready", True),
+        ("metaprogramming_macro_host_process_cache_deterministic", True),
+        (
+            "metaprogramming_macro_host_process_cache_host_executable_relative_path",
+            first_host_cache_artifact.get("host_executable_relative_path"),
+        ),
+        (
+            "metaprogramming_macro_host_process_cache_root_relative_path",
+            first_host_cache_artifact.get("cache_root_relative_path"),
+        ),
+    ):
+        expect(
+            imported_module.get(field_name) == expected_value,
+            f"expected live metaprogramming host-cache imported module to preserve {field_name}",
+        )
+
+    host_cache_probe = (
+        ROOT
+        / "tests"
+        / "tooling"
+        / "runtime"
+        / "macro_host_process_cache_integration_probe.cpp"
+    )
+    host_cache_exe = case_dir / "macro_host_process_cache_integration_probe.exe"
+    compile_probe(clangxx, host_cache_probe, host_cache_exe, [])
+    host_cache_payload = parse_key_value_output(
+        run_probe(host_cache_exe),
+        "live metaprogramming host-cache runtime integration probe",
+    )
+    expect(
+        host_cache_payload.get("host_executable_relative_path")
+        == first_host_cache_artifact.get("host_executable_relative_path")
+        and host_cache_payload.get("cache_root_relative_path")
+        == first_host_cache_artifact.get("cache_root_relative_path")
+        and host_cache_payload.get("macro_host_execution_ready") == 1
+        and host_cache_payload.get("macro_host_process_launch_ready") == 1,
+        "expected live metaprogramming host-cache runtime probe to stay aligned with the cache artifact paths and readiness",
+    )
+
+    return CaseResult(
+        case_id="live-metaprogramming-cache-runtime-integration",
+        probe="tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
+        fixture=str(temp_provider_fixture.relative_to(ROOT)).replace("\\", "/"),
+        claim_class="compile-linked-runtime-probe",
+        passed=True,
+        summary={
+            "provider_fixture": str(temp_provider_fixture.relative_to(ROOT)).replace(
+                "\\", "/"
+            ),
+            "provider_module_name": unique_module_name,
+            "first_host_cache_artifact": {
+                "path": str(first_host_cache_artifact_path.relative_to(ROOT)).replace(
+                    "\\", "/"
+                ),
+                "cache_key": first_host_cache_artifact.get("cache_key"),
+                "cache_materialization_state": first_host_cache_artifact.get(
+                    "cache_materialization_state"
+                ),
+                "launch_attempted": first_host_cache_artifact.get("launch_attempted"),
+            },
+            "second_host_cache_artifact": {
+                "path": str(second_host_cache_artifact_path.relative_to(ROOT)).replace(
+                    "\\", "/"
+                ),
+                "cache_key": second_host_cache_artifact.get("cache_key"),
+                "cache_materialization_state": second_host_cache_artifact.get(
+                    "cache_materialization_state"
+                ),
+                "launch_attempted": second_host_cache_artifact.get("launch_attempted"),
+            },
+            "consumer_link_plan": str(link_plan_path.relative_to(ROOT)).replace("\\", "/"),
+            "imported_module_names": link_plan.get(
+                "metaprogramming_host_cache_imported_module_names_lexicographic"
+            ),
         },
     )
 
@@ -15747,6 +16110,7 @@ def main() -> int:
         check_metaprogramming_executable_lowering_case(clangxx, run_dir),
         check_cross_module_metaprogramming_artifact_preservation_case(run_dir),
         check_metaprogramming_runtime_abi_cache_surface_case(clangxx, run_dir),
+        check_live_metaprogramming_cache_runtime_integration_case(clangxx, run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -15834,6 +16198,11 @@ def main() -> int:
         ),
         "runtime_metaprogramming_runtime_abi_cache_surface": (
             build_runtime_metaprogramming_runtime_abi_cache_surface(results)
+        ),
+        "runtime_metaprogramming_cache_runtime_integration_implementation_surface": (
+            build_runtime_metaprogramming_cache_runtime_integration_implementation_surface(
+                results
+            )
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)

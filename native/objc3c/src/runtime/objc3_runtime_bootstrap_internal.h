@@ -656,7 +656,8 @@ int objc3_runtime_bind_current_property_context_for_testing(
     int receiver, const char *class_name, const char *property_name);
 void objc3_runtime_clear_current_property_context_for_testing(void);
 // expansion-host/runtime-boundary anchor: the same private property
-// accessor/current-property helper slice now defines the truthful Part 10
+// accessor/current-property helper slice now defines the truthful
+// metaprogramming host/cache
 // property-behavior runtime boundary while macro host execution and runtime
 // package loading remain explicitly disabled.
 typedef struct objc3_runtime_metaprogramming_expansion_host_boundary_snapshot {

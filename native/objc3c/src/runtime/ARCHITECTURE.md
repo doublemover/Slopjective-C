@@ -200,6 +200,21 @@ Metaprogramming runtime ABI and cache source of truth:
   runtime header or reconstructing host/cache truth from local probe payloads
   and sidecar manifests
 
+Metaprogramming cache runtime integration implementation source of truth:
+
+- compile publication exposes the live implementation boundary through the
+  acceptance-summary key
+  `runtime_metaprogramming_cache_runtime_integration_implementation_surface`
+- that surface must point at the metaprogramming runtime ABI/cache surface, the
+  cross-module preservation surface, the authoritative io/runtime-import/runtime
+  code paths, the real provider/consumer fixtures
+  `tests/tooling/fixtures/native/macro_host_process_provider.objc3` and
+  `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`, and the
+  proof path `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+- later runnable metaprogramming conformance and packaged validation work must
+  extend that emitted implementation boundary instead of inventing synthetic
+  cache-materialization proofs or host/runtime integration sidecars
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

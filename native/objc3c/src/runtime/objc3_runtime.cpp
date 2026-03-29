@@ -4960,7 +4960,7 @@ int objc3_runtime_copy_actor_runtime_state_for_testing(
 int objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing(
     objc3_runtime_metaprogramming_expansion_host_boundary_snapshot *snapshot) {
   // expansion-host/runtime-boundary anchor: lane-D freezes the
-  // truthful Part 10 boundary on one private snapshot backed by the existing
+  // truthful metaprogramming host/cache boundary on one private snapshot backed by the existing
   // packaged runtime archive and property-accessor helper slice without
   // claiming live macro host execution or runtime package loading.
   if (snapshot == nullptr) {
