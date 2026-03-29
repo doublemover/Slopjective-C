@@ -56,6 +56,13 @@ Contributor-facing entrypoint:
 - this runbook is maintainer-only and should not accumulate contributor
   guidance that belongs in `CONTRIBUTING.md`
 
+Developer-tooling entrypoint:
+
+- `docs/runbooks/objc3c_developer_tooling.md` is the maintainer boundary for
+  live inspection, debug, and explainability work
+- developer ergonomics changes must stay on the existing native tooling,
+  runtime ABI, and public workflow runner surfaces named there
+
 ## Build
 
 ```powershell
@@ -94,5 +101,6 @@ npm run test:repo
 - repo superclean integration: `npm run test:repo`
 - docs stitch/check: `npm run check:docs:native`
 - parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
+- developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.

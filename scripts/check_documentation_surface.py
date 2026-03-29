@@ -17,6 +17,7 @@ SITE_POLICY_PATH = ROOT / "site" / "src" / "README.md"
 NATIVE_OWNERSHIP_PATH = ROOT / "docs" / "objc3c-native" / "src" / "OWNERSHIP.md"
 NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.md"
 MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
+DEVELOPER_TOOLING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_developer_tooling.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
@@ -258,12 +259,34 @@ def main() -> int:
         "docs/tutorials/",
         "CONTRIBUTING.md",
         "showcase/",
+        "docs/runbooks/objc3c_developer_tooling.md",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(
             maintainer_workflow,
             token,
             path=MAINTAINER_WORKFLOW_PATH,
+            errors=errors,
+        )
+
+    developer_tooling_runbook = DEVELOPER_TOOLING_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Developer Tooling Boundary",
+        "## Working Boundary",
+        "## Exact Live Implementation Paths",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+        "scripts/build_objc3c_native.ps1",
+        "scripts/objc3c_public_workflow_runner.py",
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "scripts/check_objc3c_library_cli_parity.py",
+        "scripts/check_objc3c_runtime_acceptance.py",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+        "## Explicit Non-Goals",
+    ):
+        require_token(
+            developer_tooling_runbook,
+            token,
+            path=DEVELOPER_TOOLING_RUNBOOK_PATH,
             errors=errors,
         )
 

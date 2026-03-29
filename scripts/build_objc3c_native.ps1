@@ -697,6 +697,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "showcase",
       "site/src",
       "docs/objc3c-native/src",
+      "docs/runbooks",
       "package.json"
     )
     generated_checked_in_outputs = @(
