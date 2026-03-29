@@ -1,0 +1,9 @@
+module PatchKit;
+
+fn applyPatch(base: i32, delta: i32) {
+  return base + delta;
+}
+
+fn main() {
+  return applyPatch(20, 22);
+}

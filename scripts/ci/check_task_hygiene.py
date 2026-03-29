@@ -21,6 +21,7 @@ REMOVED_FAMILY_PATTERNS = (
 LIVE_SCAN_ROOTS = [
     ROOT / ".github",
     ROOT / "docs",
+    ROOT / "showcase",
     ROOT / "scripts",
     ROOT / "tests",
     ROOT / "native",

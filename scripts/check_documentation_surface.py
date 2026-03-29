@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 README_PATH = ROOT / "README.md"
 CONTRIBUTING_PATH = ROOT / "CONTRIBUTING.md"
+SHOWCASE_README_PATH = ROOT / "showcase" / "README.md"
 SITE_BODY_PATH = ROOT / "site" / "src" / "index.body.md"
 SITE_POLICY_PATH = ROOT / "site" / "src" / "README.md"
 NATIVE_OWNERSHIP_PATH = ROOT / "docs" / "objc3c-native" / "src" / "OWNERSHIP.md"
@@ -37,6 +38,7 @@ def main() -> int:
         "## Superclean Boundary",
         "published site",
         "CONTRIBUTING.md",
+        "showcase/README.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "Canonical roots:",
         "Explicit non-goals for cleanup work:",
@@ -51,6 +53,7 @@ def main() -> int:
         "CONTRIBUTING.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "docs/runbooks/objc3c_maintainer_workflows.md",
+        "showcase/",
         "native/objc3c/",
         "scripts/",
         "tests/",
@@ -59,6 +62,20 @@ def main() -> int:
         "npm run check:repo:surface",
     ):
         require_token(contributing, token, path=CONTRIBUTING_PATH, errors=errors)
+
+    showcase_readme = SHOWCASE_README_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# Showcase Examples",
+        "## Portfolio Boundary",
+        "showcase/portfolio.json",
+        "showcase/auroraBoard/main.objc3",
+        "showcase/signalMesh/main.objc3",
+        "showcase/patchKit/main.objc3",
+        "scripts/check_showcase_surface.py",
+        "tmp/artifacts/showcase/",
+        "## Explicit Non-Goals",
+    ):
+        require_token(showcase_readme, token, path=SHOWCASE_README_PATH, errors=errors)
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (
@@ -104,6 +121,7 @@ def main() -> int:
         "implementation roots:",
         "generated checked-in outputs:",
         "CONTRIBUTING.md",
+        "showcase/",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(

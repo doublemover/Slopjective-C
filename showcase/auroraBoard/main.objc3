@@ -1,0 +1,11 @@
+module AuroraBoard;
+
+let columnBase = 12;
+
+fn scoreCell(row: i32, column: i32) {
+  return row + column + columnBase;
+}
+
+fn main() {
+  return scoreCell(10, 11);
+}

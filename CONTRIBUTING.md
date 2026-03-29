@@ -24,6 +24,7 @@ Treat these as the canonical roots for normal contribution work:
 - canonical doc inputs:
   - `README.md`
   - `CONTRIBUTING.md`
+  - `showcase/`
   - `site/src/`
   - `docs/objc3c-native/src/`
   - `package.json`

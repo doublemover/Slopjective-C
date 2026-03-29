@@ -69,6 +69,7 @@ Use the shortest path that matches what you are trying to do.
 | understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
 | build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
 | contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |
+| inspect runnable showcase examples | [showcase/README.md](showcase/README.md) | compile them through `npm run compile:objc3c -- ...` or the showcase surface check |
 | inspect implementation boundaries | [docs/objc3c-native.md](docs/objc3c-native.md) | then open `native/objc3c/` |
 | run exact package-script workflows | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing |
 | follow old spec links or archived anchors | [legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) | use this only for compatibility lookups |
@@ -79,6 +80,8 @@ Documentation boundary:
   - `README.md`
   - `CONTRIBUTING.md`
   - `site/index.md`
+- user-facing runnable examples:
+  - `showcase/`
 - implementation-facing narrative:
   - `docs/objc3c-native.md`
   - `docs/objc3c-native/src/*.md`
@@ -109,6 +112,8 @@ Canonical roots:
   - `site/src/`
   - `docs/objc3c-native/src/`
   - `docs/runbooks/`
+- user-facing example sources:
+  - `showcase/`
 - generated checked-in outputs:
   - `site/index.md`
   - `docs/objc3c-native.md`
@@ -132,6 +137,8 @@ Explicit non-goals for cleanup work:
   - the native compiler, runtime-facing lowering, and toolchain integration work
 - `site/`
   - the generated public overview page
+- `showcase/`
+  - runnable example sources and the checked-in showcase portfolio
 - `scripts/`
   - build, validation, and documentation tooling
 - `tests/`

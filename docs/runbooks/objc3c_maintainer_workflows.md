@@ -29,6 +29,7 @@ Use these roots directly when cleaning or renaming repo surfaces:
 - checked-in doc sources:
   - `README.md`
   - `CONTRIBUTING.md`
+  - `showcase/`
   - `site/src/`
   - `docs/objc3c-native/src/`
   - `package.json`
@@ -48,6 +49,7 @@ Contributor-facing entrypoint:
 
 - `CONTRIBUTING.md` is the contributor instruction surface for normal repo
   changes
+- `showcase/README.md` is the runnable example map and live showcase boundary
 - `README.md` stays focused on onboarding, setup, and repo navigation
 - this runbook is maintainer-only and should not accumulate contributor
   guidance that belongs in `CONTRIBUTING.md`

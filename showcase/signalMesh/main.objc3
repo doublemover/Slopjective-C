@@ -1,0 +1,14 @@
+module SignalMesh;
+
+fn foldStatus(seed: i32) {
+  let state = seed + 3;
+  if (state > 5) {
+    return state;
+  } else {
+    return 5;
+  }
+}
+
+fn main() {
+  return foldStatus(4);
+}
