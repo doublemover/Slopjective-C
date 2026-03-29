@@ -12,6 +12,7 @@
     "test:smoke": "python scripts/objc3c_public_workflow_runner.py test-smoke",
     "test:ci": "python scripts/objc3c_public_workflow_runner.py test-ci",
     "test:docs": "python scripts/objc3c_public_workflow_runner.py validate-documentation-surface",
+    "test:repo": "python scripts/objc3c_public_workflow_runner.py validate-repo-superclean",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",
     "build:site": "python scripts/objc3c_public_workflow_runner.py build-site",
     "build:docs:native": "python scripts/objc3c_public_workflow_runner.py build-native-docs",

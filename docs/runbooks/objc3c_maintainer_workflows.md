@@ -65,6 +65,7 @@ npm run build:objc3c-native:contracts
 npm run test:smoke
 npm run test:ci
 npm run test:docs
+npm run test:repo
 ```
 
 `npm run test:ci` now includes the compact documentation integration surface:
@@ -86,6 +87,7 @@ npm run test:docs
 - dependency boundaries: `python scripts/check_objc3c_dependency_boundaries.py --strict`
 - task hygiene: `python scripts/ci/check_task_hygiene.py`
 - repo superclean surface: `npm run check:repo:surface`
+- repo superclean integration: `npm run test:repo`
 - docs stitch/check: `npm run check:docs:native`
 - parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
 

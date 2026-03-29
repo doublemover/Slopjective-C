@@ -179,6 +179,16 @@ def action_validate_documentation_surface(_: list[str]) -> int:
     return 0
 
 
+def action_validate_repo_superclean(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-repo-superclean",
+        [
+            ("build-native-contracts", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(BUILD_PS1), "-ExecutionMode", "contracts-binary"]),
+            ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
+        ],
+    )
+
+
 def action_compile_objc3c(rest: list[str]) -> int:
     return pwsh_file(COMPILE_PS1, *rest)
 
@@ -819,6 +829,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
     "check-repo-superclean-surface": ActionSpec("check-repo-superclean-surface", "check the build-emitted repo superclean source-of-truth artifact", "python:scripts/check_repo_superclean_surface.py", ("check:repo:surface",), validation_tier="repo", guarantee_owner="native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact"),
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
+    "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
@@ -872,6 +883,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-documentation-surface": action_check_documentation_surface,
     "check-repo-superclean-surface": action_check_repo_superclean_surface,
     "validate-documentation-surface": action_validate_documentation_surface,
+    "validate-repo-superclean": action_validate_repo_superclean,
     "compile-objc3c": action_compile_objc3c,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
