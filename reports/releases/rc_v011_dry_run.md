@@ -30,7 +30,7 @@ _Run execution date (UTC): 2026-02-23_
 | `PFG-03`     | `Blocking` | `PASS` | Profile rows present for `core`, `strict`, `strict-concurrency`, `strict-system` in `profiles[]`.                                                                                                 |
 | `PFG-04`     | `Blocking` | `PASS` | Dependency rows present for `B-04`, `B-10`, `B-11`, `B-12` with `status` and `refreshed_at` fields.                                                                                               |
 | `PFG-05`     | `Blocking` | `PASS` | Every `artifacts[].artifact_path` referenced by dependency rows resolves in-repo (see Section 9 `VAL-179-05`).                                                                                    |
-| `PFG-06`     | `Blocking` | `PASS` | Required owner roles and backups are assigned in this report metadata and `spec/planning/issue_179_rc_toolchain_dry_run_package.md` Section 8.                                                    |
+| `PFG-06`     | `Blocking` | `PASS` | Required owner roles and backups are assigned in this report metadata and `docs/reference/legacy_spec_anchor_index.md#3-dry-run-scope-contract` Section 8.                                                    |
 | `PFG-07`     | `Blocking` | `PASS` | Run window and review windows are timestamped in Section 1.                                                                                                                                       |
 | `PFG-08`     | `Advisory` | `PASS` | Prior-run continuity captured via `change_history[]` in `reports/conformance/dashboard_v011.status.json`.                                                                                         |
 

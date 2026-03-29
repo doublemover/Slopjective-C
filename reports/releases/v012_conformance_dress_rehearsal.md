@@ -41,7 +41,7 @@ Final publication state: `complete`.
 | `DR11-PF-03` | Evidence artifact paths resolve and digest checks pass.             | `PASS` | Section `2` + `reports/conformance/reproducibility/v011_rerun_digest_report.md` |
 | `DR11-PF-04` | Dependency freshness is within policy windows.                      | `PASS` | `FR-*` rows in EV-08 status are within thresholds                               |
 | `DR11-PF-05` | Owner roster has no unassigned required role.                       | `PASS` | Section `1` owner roster                                                        |
-| `DR11-PF-06` | Escalation contacts and review windows are scheduled.               | `PASS` | `spec/planning/v013_wave2_w2_batch_manifest_20260223.md` section `4`            |
+| `DR11-PF-06` | Escalation contacts and review windows are scheduled.               | `PASS` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-wave2-w2-batch-manifest-20260223` section `4`            |
 | `DR11-PF-07` | Prior open blocker import is complete with state continuity.        | `PASS` | Baseline v0.11 rehearsal blocker ledger imported                                |
 
 ## 4. Runbook Stage Ledger (Deterministic Order)

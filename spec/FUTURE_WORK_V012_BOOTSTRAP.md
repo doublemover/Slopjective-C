@@ -25,7 +25,7 @@ Scope baseline for this bootstrap artifact:
 - Uses `D-13` governance constraints from
   `spec/planning/issue_190_carryover_descoping_package.md`.
 - Uses `D-12` risk framing from
-  `spec/planning/issue_189_readiness_dossier_package.md`.
+  `docs/reference/legacy_spec_anchor_index.md#issue-189-closeout-comment-template`.
 
 ## 2. Approved Carryover Scope
 
@@ -136,7 +136,7 @@ Gate policy:
 ## 6. Ownership and SLA Mapping
 
 Ownership baseline is inherited from
-`spec/planning/issue_159_future_work_ownership_matrix_package.md` (`D-14`
+`docs/reference/legacy_spec_anchor_index.md#planning-issue-159-future-work-ownership-matrix-package` (`D-14`
 row).
 
 | task_id    | primary_owner | backup_owner | review_sla | handoff_contact              | acknowledgement_state |
@@ -155,7 +155,7 @@ row).
 | risk_id    | carried_from                                             | severity | risk statement                                                                                                                           | linked_kickoff_actions | mitigation_owner | target_date  |
 | ---------- | -------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------- | ------------ |
 | `RK-12-01` | `spec/planning/issue_190_carryover_descoping_package.md` | `high`   | Canonical `D-13` ledger path from `spec/FUTURE_WORK_V011.md` is not present in-tree; kickoff must preserve explicit source substitution. | `ACT-01`, `ACT-06`     | `D-LEAD`         | `2026-02-24` |
-| `RK-12-02` | `spec/planning/issue_189_readiness_dossier_package.md`   | `medium` | Readiness input is package-level (`D-12`) rather than executed dossier artifact; kickoff must keep risk mapping explicit and traceable.  | `ACT-05`, `ACT-07`     | `D-LEAD`         | `2026-02-24` |
+| `RK-12-02` | `docs/reference/legacy_spec_anchor_index.md#issue-189-closeout-comment-template`   | `medium` | Readiness input is package-level (`D-12`) rather than executed dossier artifact; kickoff must keep risk mapping explicit and traceable.  | `ACT-05`, `ACT-07`     | `D-LEAD`         | `2026-02-24` |
 | `RK-12-03` | `spec/planning/issue_191_v012_kickoff_packet_package.md` | `medium` | Cross-lane handoff acknowledgement may lag publication, delaying closeout evidence packaging.                                            | `ACT-08`               | `D-LEAD`         | `2026-02-25` |
 
 Current blocker register:

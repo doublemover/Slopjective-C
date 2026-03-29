@@ -11,7 +11,7 @@
 | `report_owner`             | `D-LEAD`                                                                                                                                                                                                                                               |
 | `attendees`                | `D-LEAD`, `A-LEAD`, `B-LEAD`, `C-LEAD`, `D-OPS`                                                                                                                                                                                                        |
 | `source_revision`          | `7699e877ac4b71c4ce2993aaf799a45113e50b19`                                                                                                                                                                                                             |
-| `dependency_baseline_refs` | `spec/planning/future_work_v011_milestones.md`; `spec/planning/issue_159_future_work_ownership_matrix_package.md`; `spec/planning/issue_173_conformance_evidence_dashboard_package.md`; `spec/planning/issue_180_extension_pilots_workflow_package.md` |
+| `dependency_baseline_refs` | `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-milestones`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-159-future-work-ownership-matrix-package`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-173-conformance-evidence-dashboard-package`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-180-extension-pilots-workflow-package` |
 
 ## 2. Progress Snapshot by Lane
 
@@ -70,8 +70,8 @@
 
 | `evidence_id` | `artifact_or_link`                                                  | `description`                                                   | `verification_note`                                           |
 | ------------- | ------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------------------------- |
-| `ECP25-001`   | `spec/planning/issue_187_cross_lane_checkpoint_package.md`          | `Template, cadence, and schema contract source for CP-25.`      | `Sections 3 through 6 matched during publication review.`     |
-| `ECP25-002`   | `spec/planning/future_work_v011_milestones.md`                      | `Checkpoint schedule baseline and expected cadence markers.`    | `CP-25 timing aligns to C25 milestone window.`                |
-| `ECP25-003`   | `spec/planning/issue_159_future_work_ownership_matrix_package.md`   | `Owner and backup-owner tokens used in mitigation/action rows.` | `All owner and backup_owner fields resolve to role tokens.`   |
-| `ECP25-004`   | `spec/planning/issue_173_conformance_evidence_dashboard_package.md` | `Dashboard health dependency consumed in lane health scoring.`  | `Dependency health fields incorporate dashboard status feed.` |
+| `ECP25-001`   | `docs/reference/legacy_spec_anchor_index.md#planning-issue-187-cross-lane-checkpoint-package`          | `Template, cadence, and schema contract source for CP-25.`      | `Sections 3 through 6 matched during publication review.`     |
+| `ECP25-002`   | `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-milestones`                      | `Checkpoint schedule baseline and expected cadence markers.`    | `CP-25 timing aligns to C25 milestone window.`                |
+| `ECP25-003`   | `docs/reference/legacy_spec_anchor_index.md#planning-issue-159-future-work-ownership-matrix-package`   | `Owner and backup-owner tokens used in mitigation/action rows.` | `All owner and backup_owner fields resolve to role tokens.`   |
+| `ECP25-004`   | `docs/reference/legacy_spec_anchor_index.md#planning-issue-173-conformance-evidence-dashboard-package` | `Dashboard health dependency consumed in lane health scoring.`  | `Dependency health fields incorporate dashboard status feed.` |
 | `ECP25-005`   | `reports/planning/v011_checkpoint_25.md`                            | `Checkpoint artifact self-audit for required sections/fields.`  | `Section order 1-8 and required fields confirmed present.`    |

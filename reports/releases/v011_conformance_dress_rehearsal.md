@@ -14,7 +14,7 @@
 | `report_published_at_utc`    | `2026-02-23T11:32:29Z`                                                                                                                                                 |
 | `run_owner`                  | `Lane-D`                                                                                                                                                               |
 | `owner_roster`               | `D-11 owner`; `D-OPS`; `Conformance owner`; `Release lead`                                                                                                             |
-| `dependency_baseline_refs`   | `spec/planning/issue_179_rc_toolchain_dry_run_package.md`; `spec/planning/future_work_v011_quality_gates.md`; `spec/conformance/profile_release_evidence_checklist.md` |
+| `dependency_baseline_refs`   | `docs/reference/legacy_spec_anchor_index.md#3-dry-run-scope-contract`; `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-quality-gates`; `spec/conformance/profile_release_evidence_checklist.md` |
 | `blocker_ledger_path`        | `reports/releases/v011_conformance_dress_rehearsal_blockers.md`                                                                                                        |
 | `waiver_ledger_path`         | `reports/releases/v011_conformance_dress_rehearsal_waivers.md`                                                                                                         |
 
@@ -22,7 +22,7 @@
 
 | Check ID     | Requirement                                                     | Result | Evidence                                                                                                                                                                                |
 | ------------ | --------------------------------------------------------------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DR11-PF-01` | `B-14` dry-run report and blocker list exist for same snapshot. | `PASS` | `spec/planning/issue_179_rc_toolchain_dry_run_package.md`                                                                                                                               |
+| `DR11-PF-01` | `B-14` dry-run report and blocker list exist for same snapshot. | `PASS` | `docs/reference/legacy_spec_anchor_index.md#3-dry-run-scope-contract`                                                                                                                               |
 | `DR11-PF-02` | Required profile rows exist for all targeted profiles.          | `PASS` | Section `3` profile matrix rows (`core`, `strict`, `strict-concurrency`, `strict-system`)                                                                                               |
 | `DR11-PF-03` | Evidence artifact paths resolve and digest checks pass.         | `PASS` | `reports/releases/v011_conformance_dress_rehearsal.md`; `reports/releases/v011_conformance_dress_rehearsal_blockers.md`; `reports/releases/v011_conformance_dress_rehearsal_waivers.md` |
 | `DR11-PF-04` | Dependency freshness is within policy windows.                  | `PASS` | Dependency baseline references in Section `1`                                                                                                                                           |

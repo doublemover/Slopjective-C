@@ -9,7 +9,7 @@ for cross-vendor derive and macro extension governance. It is the canonical
 
 This document is aligned to:
 
-- `spec/planning/issue_138_governance_charter_package.md`
+- `docs/reference/legacy_spec_anchor_index.md#planning-issue-138-governance-charter-package`
 - `spec/governance/MACRO_DERIVE_EXTENSION_GOVERNANCE.md`
 
 ## 1. Purpose and Scope

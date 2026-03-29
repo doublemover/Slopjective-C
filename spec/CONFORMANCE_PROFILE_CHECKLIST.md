@@ -49,7 +49,7 @@ A toolchain **passes** a profile when it satisfies _all_ checklist items tagged 
 For v0.13 planning-cycle closeout for issue `#792` in tranche
 `BATCH-20260223-11S`, profile-gate delta evidence is anchored in:
 
-- `spec/planning/v013_profile_gate_delta.md` (seed `V013-SPEC-04`, acceptance gate `AC-V013-SPEC-04`).
+- `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta` (seed `V013-SPEC-04`, acceptance gate `AC-V013-SPEC-04`).
 - `spec/planning/evidence/lane_d/v013_seed_spec04_validation_20260223.md` (lane D validation transcript and acceptance mapping continuity).
 
 This anchor records post-v0.12 gate deltas for `core`, `strict`,

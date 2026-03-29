@@ -11,7 +11,7 @@
 | `report_owner`             | `D-LEAD`                                                                                                                                                                                                                                               |
 | `attendees`                | `D-LEAD`, `A-LEAD`, `B-LEAD`, `C-LEAD`, `D-OPS`, `A-OPS`                                                                                                                                                                                               |
 | `source_revision`          | `7699e877ac4b71c4ce2993aaf799a45113e50b19`                                                                                                                                                                                                             |
-| `dependency_baseline_refs` | `spec/planning/future_work_v011_milestones.md`; `spec/planning/issue_159_future_work_ownership_matrix_package.md`; `spec/planning/issue_173_conformance_evidence_dashboard_package.md`; `spec/planning/issue_180_extension_pilots_workflow_package.md` |
+| `dependency_baseline_refs` | `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-milestones`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-159-future-work-ownership-matrix-package`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-173-conformance-evidence-dashboard-package`; `docs/reference/legacy_spec_anchor_index.md#planning-issue-180-extension-pilots-workflow-package` |
 
 ## 2. Progress Snapshot by Lane
 
@@ -70,8 +70,8 @@
 
 | `evidence_id` | `artifact_or_link`                                             | `description`                                                                  | `verification_note`                                                   |
 | ------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `ECP75-001`   | `spec/planning/issue_187_cross_lane_checkpoint_package.md`     | `Checkpoint schema, critical-path contract, and done-criteria mapping source.` | `Sections 4, 5, 6, and 9 reviewed during CP-75 publication.`          |
+| `ECP75-001`   | `docs/reference/legacy_spec_anchor_index.md#planning-issue-187-cross-lane-checkpoint-package`     | `Checkpoint schema, critical-path contract, and done-criteria mapping source.` | `Sections 4, 5, 6, and 9 reviewed during CP-75 publication.`          |
 | `ECP75-002`   | `reports/planning/v011_checkpoint_50.md`                       | `CP-50 baseline used for variance burn-down and critical-path delta.`          | `Critical variance from CP-50 recorded as resolved before CP-75.`     |
-| `ECP75-003`   | `spec/planning/future_work_v011_milestones.md`                 | `Gate impact baseline for G4 readiness statement.`                             | `Gate summary statement aligns to milestone path assumptions.`        |
+| `ECP75-003`   | `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-milestones`                 | `Gate impact baseline for G4 readiness statement.`                             | `Gate summary statement aligns to milestone path assumptions.`        |
 | `ECP75-004`   | `reports/planning/v011_checkpoint_75.md`                       | `Checkpoint artifact self-audit for required sections/fields.`                 | `Section order 1-8 and required fields confirmed present.`            |
-| `ECP75-005`   | `spec/planning/issue_180_extension_pilots_workflow_package.md` | `C-12 dependency closure evidence source for final reconciliation state.`      | `C-12 linked task state reflected in progress and variance sections.` |
+| `ECP75-005`   | `docs/reference/legacy_spec_anchor_index.md#planning-issue-180-extension-pilots-workflow-package` | `C-12 dependency closure evidence source for final reconciliation state.`      | `C-12 linked task state reflected in progress and variance sections.` |

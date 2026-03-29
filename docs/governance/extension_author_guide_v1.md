@@ -9,7 +9,7 @@ Primary references:
 - `templates/experimental_extension_proposal.md` (`C-03` intake contract)
 - `templates/vendor_extension_conformance_claim.md` (`C-08` declaration contract)
 - `registries/experimental_extensions/index.schema.json` (`C-11` publication format)
-- `spec/planning/issue_170_review_board_operating_model_package.md` (`C-10` decision publication model)
+- `docs/reference/legacy_spec_anchor_index.md#planning-issue-170-review-board-operating-model-package` (`C-10` decision publication model)
 
 ## 2. End-to-End Workflow (`ONB-01`..`ONB-09`)
 

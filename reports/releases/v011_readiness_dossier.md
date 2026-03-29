@@ -27,9 +27,9 @@ Blocker rollup:
 
 | Dependency                             | Evidence path(s)                                                                                                                                                                        | State    | Owner             |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ----------------- |
-| `D-06` migration guidance              | `spec/planning/issue_171_migration_guidance_package.md`                                                                                                                                 | `LINKED` | `D-LEAD`          |
-| `D-08` discrepancy triage              | `spec/planning/issue_186_discrepancy_triage_package.md`                                                                                                                                 | `LINKED` | `D-LEAD`          |
-| `D-10` external review cycle           | `spec/planning/issue_177_external_review_cycle_plan.md`                                                                                                                                 | `LINKED` | `RELEASE-LIAISON` |
+| `D-06` migration guidance              | `docs/reference/legacy_spec_anchor_index.md#planning-issue-171-migration-guidance-package`                                                                                                                                 | `LINKED` | `D-LEAD`          |
+| `D-08` discrepancy triage              | `docs/reference/legacy_spec_anchor_index.md#planning-issue-186-discrepancy-triage-package`                                                                                                                                 | `LINKED` | `D-LEAD`          |
+| `D-10` external review cycle           | `docs/reference/legacy_spec_anchor_index.md#planning-issue-177-external-review-cycle-plan`                                                                                                                                 | `LINKED` | `RELEASE-LIAISON` |
 | `D-11` v0.11 rehearsal baseline        | `reports/releases/v011_conformance_dress_rehearsal.md` and ledgers                                                                                                                      | `LINKED` | `D-11 owner`      |
 | `V013-CONF-02` gate outputs            | `reports/releases/v011_quality_gate_exceptions.md`; `reports/releases/v011_quality_gate_decision.md`; `reports/releases/v011_quality_gate_decision.status.json`                         | `READY`  | `Lane B`          |
 | `V013-CONF-03` v0.12 rehearsal outputs | `reports/releases/v012_conformance_dress_rehearsal.md`; `reports/releases/v012_conformance_dress_rehearsal_blockers.md`; `reports/releases/v012_conformance_dress_rehearsal_waivers.md` | `READY`  | `Lane C`          |
@@ -56,9 +56,9 @@ Machine status summary:
 
 | Surface     | Evidence path                                           | Status   |
 | ----------- | ------------------------------------------------------- | -------- |
-| Optionals   | `spec/planning/issue_171_migration_guidance_package.md` | `LINKED` |
-| Mangling    | `spec/planning/issue_171_migration_guidance_package.md` | `LINKED` |
-| Reification | `spec/planning/issue_171_migration_guidance_package.md` | `LINKED` |
+| Optionals   | `docs/reference/legacy_spec_anchor_index.md#planning-issue-171-migration-guidance-package` | `LINKED` |
+| Mangling    | `docs/reference/legacy_spec_anchor_index.md#planning-issue-171-migration-guidance-package` | `LINKED` |
+| Reification | `docs/reference/legacy_spec_anchor_index.md#planning-issue-171-migration-guidance-package` | `LINKED` |
 
 No new migration-specific blocker was introduced in this cycle.
 
@@ -66,15 +66,15 @@ No new migration-specific blocker was introduced in this cycle.
 
 | Domain                   | Evidence path                                                  | Status                                        | Owner             |
 | ------------------------ | -------------------------------------------------------------- | --------------------------------------------- | ----------------- |
-| Discrepancy triage       | `spec/planning/issue_186_discrepancy_triage_package.md`        | `LINKED`; severity/SLA model intact           | `D-LEAD`          |
-| Risk baseline            | `spec/planning/issue_165_future_work_risk_register_package.md` | `LINKED`                                      | `RISK-OWNER`      |
+| Discrepancy triage       | `docs/reference/legacy_spec_anchor_index.md#planning-issue-186-discrepancy-triage-package`        | `LINKED`; severity/SLA model intact           | `D-LEAD`          |
+| Risk baseline            | `docs/reference/legacy_spec_anchor_index.md#planning-issue-165-future-work-risk-register-package` | `LINKED`                                      | `RISK-OWNER`      |
 | Release decision posture | this dossier                                                   | `NO-GO` due unresolved P0 from `V013-CONF-03` | `RELEASE-LIAISON` |
 
 ## RD-SEC-06 External Review Outcomes
 
 | Item                                  | Evidence path                                           | State                                                 | Owner             |
 | ------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------- | ----------------- |
-| External review cycle policy (`D-10`) | `spec/planning/issue_177_external_review_cycle_plan.md` | `LINKED`                                              | `RELEASE-LIAISON` |
+| External review cycle policy (`D-10`) | `docs/reference/legacy_spec_anchor_index.md#planning-issue-177-external-review-cycle-plan` | `LINKED`                                              | `RELEASE-LIAISON` |
 | External feedback report artifact     | `reports/reviews/v011_external_feedback.md`             | `PENDING-PUBLICATION` (non-blocking to current no-go) | `RELEASE-LIAISON` |
 
 ## RD-SEC-07 Dress Rehearsal Results

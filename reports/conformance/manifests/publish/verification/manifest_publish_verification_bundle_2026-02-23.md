@@ -50,9 +50,9 @@ Policy: `MANPUB-POLICY-v0.11-B04`
 
 | Upstream issue | Owner                        | Revision/SHA                               | Decision date (UTC) | Revision-pinned closeout reference                                |
 | -------------- | ---------------------------- | ------------------------------------------ | ------------------- | ----------------------------------------------------------------- |
-| `#150`         | Lane B generator owner       | `4fb99be2a16ac2b9f05ad2b4f52084b8017dcb3e` | `2026-02-22`        | `spec/planning/issue_150_manifest_generation_pipeline_plan.md`    |
-| `#151`         | Lane B validation owner      | `0f87108f1cde3fc8f4b6f0f12fcd9ebafe8627ab` | `2026-02-22`        | `spec/planning/issue_151_manifest_validation_ci_plan.md`          |
-| `#155`         | Lane B reproducibility owner | `321ac6d61f9a2b0d730183c1700145c9b5bd1f5e` | `2026-02-22`        | `spec/planning/issue_155_manifest_reproducibility_checks_plan.md` |
+| `#150`         | Lane B generator owner       | `4fb99be2a16ac2b9f05ad2b4f52084b8017dcb3e` | `2026-02-22`        | `docs/reference/legacy_spec_anchor_index.md#planning-issue-150-manifest-generation-pipeline-plan`    |
+| `#151`         | Lane B validation owner      | `0f87108f1cde3fc8f4b6f0f12fcd9ebafe8627ab` | `2026-02-22`        | `docs/reference/legacy_spec_anchor_index.md#planning-issue-151-manifest-validation-ci-plan`          |
+| `#155`         | Lane B reproducibility owner | `321ac6d61f9a2b0d730183c1700145c9b5bd1f5e` | `2026-02-22`        | `docs/reference/legacy_spec_anchor_index.md#planning-issue-155-manifest-reproducibility-checks-plan` |
 
 All referenced logs in this bundle are in-repo and replayable from deterministic
 run IDs listed above.

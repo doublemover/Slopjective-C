@@ -10,7 +10,7 @@
 ## Owner snapshot
 
 Captured using the deterministic owner-resolution commands from
-`spec/planning/issue_143_abstract_machine_audit_plan.md` Section 6.1:
+`docs/reference/legacy_spec_anchor_index.md#planning-issue-143-abstract-machine-audit-plan` Section 6.1:
 
 ```text
 AM owner: doublemover <153689082+doublemover@users.noreply.github.com>

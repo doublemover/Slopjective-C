@@ -11,7 +11,7 @@ _Generated on 2026-02-23 for issue `#787`._
 | `wave_id`         | `W1`                                                                                                                                                                                         |
 | `batch_id`        | `BATCH-20260223-11R`                                                                                                                                                                         |
 | `milestone`       | `#31` (`v0.13 Seed Wave W1 Reseed 1`)                                                                                                                                                        |
-| `owned_artifacts` | `spec/planning/v013_seeded_traceability_refresh_package.md`; `reports/conformance/spec_open_issues_v013_summary.md`; `spec/planning/evidence/lane_d/v013_seed_conf04_validation_20260223.md` |
+| `owned_artifacts` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-seeded-traceability-refresh-package`; `reports/conformance/spec_open_issues_v013_summary.md`; `docs/reference/legacy_spec_anchor_index.md#planning-evidence-lane-d-v013-seed-conf04-validation-20260223` |
 | `consumed_matrix` | `tests/conformance/spec_open_issues/P0-P3-seed_traceability.csv`                                                                                                                             |
 
 ## 2. Scope

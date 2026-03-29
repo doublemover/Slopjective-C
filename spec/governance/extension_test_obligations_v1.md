@@ -7,7 +7,7 @@ before lifecycle promotions and for steady-state lifecycle compliance.
 
 This document is aligned to:
 
-- `spec/planning/issue_175_extension_test_obligations_package.md`
+- `docs/reference/legacy_spec_anchor_index.md#planning-issue-175-extension-test-obligations-package`
 - `spec/governance/extension_lifecycle_v1.md`
 - `reports/conformance/extension_test_catalog_skeleton_v011.md`
 

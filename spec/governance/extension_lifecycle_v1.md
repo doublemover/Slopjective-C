@@ -7,7 +7,7 @@ for promotion, rollback, deprecation, and retirement decisions.
 
 This document is aligned to:
 
-- `spec/planning/issue_164_extension_lifecycle_states_package.md`
+- `docs/reference/legacy_spec_anchor_index.md#planning-issue-164-extension-lifecycle-states-package`
 - `spec/governance/extension_review_rubric_v1.md`
 - `spec/governance/capability_namespace_policy_v1.md`
 

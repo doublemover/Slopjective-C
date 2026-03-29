@@ -14,9 +14,9 @@ Timezone baseline: `UTC`
 | `batch_id`           | `BATCH-20260223-11S`                                                   |
 | `milestone_id`       | `#32`                                                                  |
 | `acceptance_gate_id` | `AC-V013-GOV-03`                                                       |
-| `source_package`     | `spec/planning/v013_review_board_cadence_quorum_package.md`            |
+| `source_package`     | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`            |
 | `operating_model`    | `spec/governance/review_board_operating_model_v1.md`                   |
-| `lane_evidence`      | `spec/planning/evidence/lane_c/v013_seed_gov03_validation_20260223.md` |
+| `lane_evidence`      | `docs/reference/legacy_spec_anchor_index.md#planning-evidence-lane-c-v013-seed-gov03-validation-20260223` |
 
 ## 1. Deterministic Session Calendar
 

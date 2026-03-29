@@ -15,9 +15,9 @@ and escalation windows for v0.13 governance operations.
 | `batch_id`               | `BATCH-20260223-11S`                                                   |
 | `milestone_id`           | `#32`                                                                  |
 | `acceptance_gate_id`     | `AC-V013-GOV-03`                                                       |
-| `package_artifact`       | `spec/planning/v013_review_board_cadence_quorum_package.md`            |
+| `package_artifact`       | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`            |
 | `calendar_artifact`      | `reports/reviews/v013_review_board_calendar.md`                        |
-| `lane_evidence_artifact` | `spec/planning/evidence/lane_c/v013_seed_gov03_validation_20260223.md` |
+| `lane_evidence_artifact` | `docs/reference/legacy_spec_anchor_index.md#planning-evidence-lane-c-v013-seed-gov03-validation-20260223` |
 
 ## 1. Scope and authority
 

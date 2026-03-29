@@ -8,7 +8,7 @@ requirements.
 ## 1. Purpose and Scope
 
 This catalog skeleton materializes the required row schema defined by
-`spec/planning/issue_175_extension_test_obligations_package.md` Section 9 and
+`docs/reference/legacy_spec_anchor_index.md#planning-issue-175-extension-test-obligations-package` Section 9 and
 provides canonical starter rows for `F-01` through `F-10`.
 
 The artifact is intentionally deterministic:

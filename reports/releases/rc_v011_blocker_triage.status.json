@@ -128,7 +128,7 @@
     "AC-179-01": {
       "status": "pass",
       "evidence": [
-        "spec/planning/issue_179_rc_toolchain_dry_run_package.md",
+        "docs/reference/legacy_spec_anchor_index.md#3-dry-run-scope-contract",
         "reports/releases/rc_v011_dry_run.md#4-execution-matrix-results-rcm-01rcm-04"
       ]
     },

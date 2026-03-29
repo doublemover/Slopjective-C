@@ -126,7 +126,7 @@ Closeout scope reflected in this phase:
 - Core/Strict historical workpack: `tests/conformance/workpacks/e3_core_strict_workpack.md`
 - Concurrency/System/Optional historical workpack: `tests/conformance/workpacks/e3_concurrency_system_opt_workpack.md`
 - Active microtask backlog (generated from open GH issues): `spec/EXECUTION_MICROTASK_BACKLOG.md`
-- Seeded task review catalog (`SPT-0001`..`SPT-0510`): `spec/planning/remaining_task_review_catalog.md`
+- Seeded task review catalog (`SPT-0001`..`SPT-0510`): `docs/reference/legacy_spec_anchor_index.md#planning-remaining-task-review-catalog`
 - Seeded task review catalog JSON: `spec/planning/remaining_task_review_catalog.json`
 - Wave 1 shard plan and ownership model: `spec/planning/v012_wave1_parallel_execution_plan.md`
 - Wave 2 shard plan and ownership model: `spec/planning/v012_wave2_parallel_execution_plan.md`
@@ -137,7 +137,7 @@ Closeout scope reflected in this phase:
 - Wave 7 shard plan and ownership model: `spec/planning/v012_wave7_parallel_execution_plan.md`
 - Wave 15 completed batch manifest: `spec/planning/v012_wave15_batch_manifest_20260223.md`
 - Wave 16 candidate shards + completed manifest:
-  - `spec/planning/v012_wave16_candidate_shards_20260223.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-v012-wave16-candidate-shards-20260223`
   - `spec/planning/v012_wave16_batch_manifest_20260223.md`
 - v0.13 Wave 1 completed manifest:
   - `spec/planning/v013_wave1_batch_manifest_20260223.md`
@@ -148,7 +148,7 @@ Closeout scope reflected in this phase:
 - v0.13 Wave 2 W1B completed manifest:
   - `spec/planning/v013_wave2_w1b_batch_manifest_20260223.md`
 - v0.13 Wave 2 W2 completed manifest + closeout templates:
-  - `spec/planning/v013_wave2_w2_batch_manifest_20260223.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-v013-wave2-w2-batch-manifest-20260223`
   - `spec/planning/v013_wave2_w2_closeout_comment_templates.md`
 - v0.13 Wave 2 W3 completed manifest + closeout templates:
   - `spec/planning/v013_wave2_w3_batch_manifest_20260223.md`
@@ -214,7 +214,7 @@ Closeout scope reflected in this phase:
 - v0.13 seed wave W0 reseed 1 final metrics evidence:
   - `spec/planning/evidence/integrator/v013_seed_wave_w0_reseed1_final_metrics_sync_20260223.md`
 - v0.13 seed wave W1 reseed 1 manifest:
-  - `spec/planning/v013_seed_wave_w1_reseed1_batch_manifest_20260223.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-v013-seed-wave-w1-reseed1-batch-manifest-20260223`
 - v0.13 seed wave W1 reseed 1 preflight metrics evidence:
   - `spec/planning/evidence/integrator/v013_seed_wave_w1_reseed1_preflight_metrics_20260223.md`
 - v0.13 seed wave W1 reseed 1 final metrics evidence:
@@ -239,10 +239,10 @@ Closeout scope reflected in this phase:
 - v0.13 milestone archive reconciliation package:
   - `spec/planning/v013_milestone_archive_reconciliation.md`
 - v0.13 release-chain closeout artifacts:
-  - `spec/planning/future_work_v011_carryover.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-carryover`
   - `spec/FUTURE_WORK_V013_BOOTSTRAP.md`
   - `spec/planning/v013_kickoff_checklist.md`
-  - `spec/planning/v013_rel03_signoff_consolidation_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`
 - Checkbox-to-issue closeout helper: `scripts/close_spt_issues_from_checkboxes.py`
 - Expanded v0.11 future-work task inventory: `spec/FUTURE_WORK_V011.md`
 - Runtime manifest guidance and sample artifacts (`#115`):
@@ -266,53 +266,53 @@ Closeout scope reflected in this phase:
 - FW Wave 1 issue seeding source:
   - `spec/FUTURE_WORK_V011.md`
 - FW Wave 2 planning artifacts (`#143`..`#147`):
-  - `spec/planning/issue_143_abstract_machine_audit_plan.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-143-abstract-machine-audit-plan`
   - `spec/planning/issue_144_profile_gate_matrix_package.md`
   - `spec/planning/issue_145_edge_case_examples_package.md`
   - `spec/planning/issue_146_capability_namespace_policy_package.md`
-  - `spec/planning/future_work_v011_milestones.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-milestones`
 - FW Wave 3 planning artifacts (`#149`..`#153`):
-  - `spec/planning/issue_149_lane_a_consolidated_closure_bundle.md`
-  - `spec/planning/issue_150_manifest_generation_pipeline_plan.md`
-  - `spec/planning/issue_151_manifest_validation_ci_plan.md`
-  - `spec/planning/issue_152_extension_proposal_intake_template_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-149-lane-a-consolidated-closure-bundle`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-150-manifest-generation-pipeline-plan`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-151-manifest-validation-ci-plan`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-152-extension-proposal-intake-template-package`
   - `spec/planning/issue_153_extension_review_rubric_package.md`
 - FW Wave 4 planning artifacts (`#155`..`#159`):
-  - `spec/planning/issue_155_manifest_reproducibility_checks_plan.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-155-manifest-reproducibility-checks-plan`
   - `spec/planning/issue_156_optional_spelling_parser_behavior_plan.md`
   - `spec/planning/issue_157_generic_function_mangler_plan.md`
-  - `spec/planning/issue_158_abstract_machine_drift_lint_plan.md`
-  - `spec/planning/issue_159_future_work_ownership_matrix_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-158-abstract-machine-drift-lint-plan`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-159-future-work-ownership-matrix-package`
 - FW Wave 5 planning artifacts (`#161`..`#165`):
   - `spec/planning/issue_161_manifest_ci_publish_policy_package.md`
-  - `spec/planning/issue_162_optional_spelling_diagnostics_fixit_plan.md`
-  - `spec/planning/issue_163_demangler_reflection_update_plan.md`
-  - `spec/planning/issue_164_extension_lifecycle_states_package.md`
-  - `spec/planning/issue_165_future_work_risk_register_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-162-optional-spelling-diagnostics-fixit-plan`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-163-demangler-reflection-update-plan`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-164-extension-lifecycle-states-package`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-165-future-work-risk-register-package`
 - FW Wave 6 planning artifacts (`#167`..`#171`):
-  - `spec/planning/issue_167_seeded_issue_conformance_tests_plan.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-167-seeded-issue-conformance-tests-plan`
   - `spec/planning/issue_168_macro_package_provenance_policy_package.md`
   - `spec/planning/issue_169_vendor_conformance_declaration_template_package.md`
-  - `spec/planning/issue_170_review_board_operating_model_package.md`
-  - `spec/planning/issue_171_migration_guidance_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-170-review-board-operating-model-package`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-171-migration-guidance-package`
 - FW Wave 7 planning artifacts (`#173`..`#177`):
-  - `spec/planning/issue_173_conformance_evidence_dashboard_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-173-conformance-evidence-dashboard-package`
   - `spec/planning/issue_174_macro_security_incident_playbook_package.md`
-  - `spec/planning/issue_175_extension_test_obligations_package.md`
-  - `spec/planning/issue_176_extension_registry_format_package.md`
-  - `spec/planning/issue_177_external_review_cycle_plan.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-175-extension-test-obligations-package`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-176-extension-registry-format-package`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-177-external-review-cycle-plan`
 - FW Wave 8 planning artifacts (`#179`..`#183`):
-  - `spec/planning/issue_179_rc_toolchain_dry_run_package.md`
-  - `spec/planning/issue_180_extension_pilots_workflow_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#3-dry-run-scope-contract`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-180-extension-pilots-workflow-package`
   - `spec/planning/issue_181_extension_onboarding_faq_package.md`
-  - `spec/planning/issue_182_governance_v1_ratification_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-182-governance-v1-ratification-package`
   - `spec/planning/issue_183_docs_sync_workflow_package.md`
 - FW Wave 9 planning artifacts (`#185`..`#191`):
-  - `spec/planning/issue_185_quality_gates_thresholds_package.md`
-  - `spec/planning/issue_186_discrepancy_triage_package.md`
-  - `spec/planning/issue_187_cross_lane_checkpoint_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-185-quality-gates-thresholds-package`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-186-discrepancy-triage-package`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-issue-187-cross-lane-checkpoint-package`
   - `spec/planning/issue_188_conformance_dress_rehearsal_package.md`
-  - `spec/planning/issue_189_readiness_dossier_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md#issue-189-closeout-comment-template`
   - `spec/planning/issue_190_carryover_descoping_package.md`
   - `spec/planning/issue_191_v012_kickoff_packet_package.md`
 - Conformance evidence bundle schema/index/release gate (`#122`..`#125`):
@@ -321,7 +321,7 @@ Closeout scope reflected in this phase:
   - `scripts/check_release_evidence.py`
   - `.github/workflows/conformance-evidence-gate.yml`
 - Parallel-governance artifacts (`#130`..`#133`):
-  - `spec/planning/PARALLEL_LANE_OWNERSHIP_AND_HANDOFF.md`
+  - `docs/reference/legacy_spec_anchor_index.md#planning-parallel-lane-ownership-and-handoff`
   - `spec/planning/ISSUE_CLOSEOUT_EVIDENCE_TEMPLATE.md`
   - `spec/planning/ROADMAP_REFRESH_CADENCE_AND_SNAPSHOT_PROTOCOL.md`
   - `.github/ISSUE_TEMPLATE/roadmap_execution.yml`
@@ -421,7 +421,7 @@ Next-wave execution order:
    `spec/planning/v012_wave9_batch_manifest_20260223.md`
    (`BATCH-20260223-03`) with 31 deterministic `SPT-*` issue closures.
 3. Execute Wave 10 worklane shards from
-   `spec/planning/v012_wave10_candidate_shards_20260223.md` with file-isolated
+   `docs/reference/legacy_spec_anchor_index.md#planning-v012-wave10-candidate-shards-20260223` with file-isolated
    ownership under active manifest
    `spec/planning/v012_wave10_batch_manifest_20260223.md`
    (`BATCH-20260223-04`).
@@ -473,7 +473,7 @@ Next-wave execution order:
 19. Next unlocked dependency chain after W1B is `V013-SPEC-04` -> `V013-CONF-02`
     -> `V013-CONF-03` with release-lane gates continuing from those outputs.
 20. W2 execution is complete under
-    `spec/planning/v013_wave2_w2_batch_manifest_20260223.md`
+    `docs/reference/legacy_spec_anchor_index.md#planning-v013-wave2-w2-batch-manifest-20260223`
     (`BATCH-20260223-11D`) covering `#722`, `#723`, `#725`, `#726`.
 21. Next unlocked dependency chain after W2 is `V013-REL-02` -> `V013-REL-03`
     with kickoff publication gated by REL-02 completion.
@@ -561,7 +561,7 @@ Next-wave execution order:
 50. Milestone `#30` (`v0.13 Seed Wave W0 Reseed 1`) is closed with
     `open_issues=0`; all W0 seeds in this tranche are merged and validated.
 51. Seed wave W1 reseed 1 is complete under
-    `spec/planning/v013_seed_wave_w1_reseed1_batch_manifest_20260223.md`
+    `docs/reference/legacy_spec_anchor_index.md#planning-v013-seed-wave-w1-reseed1-batch-manifest-20260223`
     (`BATCH-20260223-11R`) covering `#784`, `#785`, `#786`, `#787`, `#788`.
 52. Milestone `#31` (`v0.13 Seed Wave W1 Reseed 1`) is closed with
     `open_issues=0`; all listed W1 seeds are merged and validated.

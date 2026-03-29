@@ -10,7 +10,7 @@
 
 ## Reconciled baseline import (`V013-SPEC-02`)
 
-Imported from `spec/planning/v013_seed_source_reconciliation_package.md`:
+Imported from `docs/reference/legacy_spec_anchor_index.md#planning-v013-seed-source-reconciliation-package`:
 
 - `contract_id = V013-SPEC-02-RECON-v1`
 - `normalized_topics.part_open_issue_status = {part_0: closed, part_3: closed, part_10: closed}`
@@ -31,8 +31,8 @@ Interpretation rule for this audit refresh:
 | ------------- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | `SRC-V013-01` | `docs/reference/legacy_spec_anchor_index.md#future-work-v011`                                 | Original AM sync task contract (`A-03`, `A-04`) and delta classification requirement. |
 | `SRC-V013-02` | `docs/reference/legacy_spec_anchor_index.md#implementation-execution-roadmap`                 | Active W1 execution context and active batch snapshot (`BATCH-20260223-11A`).         |
-| `SRC-V013-12` | `spec/planning/v013_future_work_seed_matrix.md`            | Seed contract for `V013-SPEC-03`, `AC-V013-SPEC-03`, and `EDGE-V013-017` to `REL-03`. |
-| `RSRC-12/13`  | `spec/planning/v013_seed_source_reconciliation_package.md` | Reconciled dependency binding and conflict decisions consumed by this audit run.      |
+| `SRC-V013-12` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-future-work-seed-matrix`            | Seed contract for `V013-SPEC-03`, `AC-V013-SPEC-03`, and `EDGE-V013-017` to `REL-03`. |
+| `RSRC-12/13`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-seed-source-reconciliation-package` | Reconciled dependency binding and conflict decisions consumed by this audit run.      |
 | `AM-Q1`       | `reports/spec_sync/abstract_machine_audit_2026Q1.md`       | Prior baseline for delta-to-delta comparison and carry-forward tracking.              |
 
 ## Anchor verification snapshot

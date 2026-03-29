@@ -19,7 +19,7 @@ This report publishes deterministic tabletop outputs for issue `#790` and record
 | `incident_simulation_clock` | `compressed 1h = 10m`                                                                                                                                        |
 | `run_owner`                 | `WL-GOV owner`                                                                                                                                               |
 | `participants`              | `incident commander`; `security owner`; `tooling owner`; `provenance owner`; `release owner`; `governance delegate`                                          |
-| `artifact_targets`          | `spec/planning/v013_macro_security_tabletop_package.md`; `spec/governance/macro_security_incident_playbook_v1.md`; `reports/security/v013_macro_tabletop.md` |
+| `artifact_targets`          | `docs/reference/legacy_spec_anchor_index.md#planning-v013-macro-security-tabletop-package`; `spec/governance/macro_security_incident_playbook_v1.md`; `reports/security/v013_macro_tabletop.md` |
 
 ## 2. Exercise Charter
 

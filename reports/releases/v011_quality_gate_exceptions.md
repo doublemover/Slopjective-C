@@ -51,7 +51,7 @@ No exception requests are active for this publication window.
 | ------------ | ------ | ----------------- | -------------- | ------------------------------------------------------------------------------------------ |
 | `BLK-189-01` | `OPEN` | `D-LEAD`          | `2026-02-24`   | `reports/releases/v011_readiness_dossier.md#scope-and-baseline`                            |
 | `BLK-189-02` | `OPEN` | `RELEASE-LIAISON` | `2026-02-24`   | `reports/releases/v011_readiness_dossier.md#gate-decision-package`                         |
-| `BLK-189-03` | `OPEN` | `D-OPS`           | `2026-02-23`   | `spec/planning/issue_189_readiness_dossier_package.md` |
+| `BLK-189-03` | `OPEN` | `D-OPS`           | `2026-02-23`   | `docs/reference/legacy_spec_anchor_index.md#issue-189-closeout-comment-template` |
 
 ## Downstream Handoff Notes
 
