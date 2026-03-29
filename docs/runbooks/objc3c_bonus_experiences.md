@@ -101,12 +101,17 @@ real implementation exists.
 - showcase/tutorial validation report roots:
   - `tmp/reports/showcase/`
   - `tmp/reports/tutorials/`
+- staged package manifest within a runnable package root:
+  - `artifacts/package/objc3c-runnable-toolchain-package.json`
 
 ## Exact Live Commands
 
 - compile one checked-in source through the public compiler path:
   - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
   - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+- stage the runnable toolchain and package manifest surface:
+  - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+  - `npm run package:objc3c-native:runnable-toolchain`
 - dump the live playground and repro payload:
   - `python scripts/objc3c_public_workflow_runner.py inspect-playground-repro`
   - `npm run inspect:objc3c:playground`

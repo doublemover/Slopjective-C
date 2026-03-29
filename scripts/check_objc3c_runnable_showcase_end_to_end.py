@@ -121,11 +121,50 @@ def main() -> int:
     runtime_library = package_root / normalize_rel_path(str(manifest["runtime_library"]))
     showcase_portfolio = package_root / normalize_rel_path(str(manifest["showcase_portfolio"]))
     showcase_readme = package_root / normalize_rel_path(str(manifest["showcase_readme"]))
+    guided_walkthrough_manifest = package_root / normalize_rel_path(str(manifest["guided_walkthrough_manifest"]))
+    repo_superclean_surface = package_root / normalize_rel_path(str(manifest["repo_superclean_surface"]))
+    capability_probe_script = package_root / normalize_rel_path(str(manifest["capability_probe_script"]))
+    tutorial_guides = manifest.get("tutorial_guides")
     expect(showcase_portfolio.is_file(), "packaged runnable toolchain missing showcase portfolio")
     expect(showcase_readme.is_file(), "packaged runnable toolchain missing showcase README")
+    expect(guided_walkthrough_manifest.is_file(), "packaged runnable toolchain missing guided walkthrough manifest")
+    expect(repo_superclean_surface.is_file(), "packaged runnable toolchain missing repo superclean surface contract")
+    expect(capability_probe_script.is_file(), "packaged runnable toolchain missing capability probe script")
+    expect(isinstance(tutorial_guides, list) and tutorial_guides, "package manifest did not publish tutorial guides")
+    for tutorial_path in tutorial_guides:
+        expect(isinstance(tutorial_path, str) and tutorial_path, "package manifest published a malformed tutorial guide path")
+        expect((package_root / normalize_rel_path(tutorial_path)).is_file(), f"packaged runnable toolchain missing tutorial guide {tutorial_path}")
 
     showcase_examples = manifest.get("showcase_examples")
     expect(isinstance(showcase_examples, list) and showcase_examples, "package manifest did not publish showcase examples")
+    bonus_experience_surfaces = manifest.get("bonus_experience_surfaces")
+    expect(isinstance(bonus_experience_surfaces, dict), "package manifest did not publish bonus experience surface metadata")
+    expect(
+        bonus_experience_surfaces.get("playground", {}).get("public_actions") == [
+            "compile-objc3c",
+            "inspect-playground-repro",
+            "inspect-compile-observability",
+            "trace-compile-stages",
+        ],
+        "package manifest playground action surface drifted",
+    )
+    expect(
+        "scripts/probe_objc3c_llvm_capabilities.py"
+        in bonus_experience_surfaces.get("runtime_inspector", {}).get("source_roots", []),
+        "package manifest runtime inspector surface did not publish the capability probe source root",
+    )
+    expect(
+        "docs/tutorials/getting_started.md"
+        in bonus_experience_surfaces.get("template_and_demo_harness", {}).get("source_roots", []),
+        "package manifest template/demo surface did not publish getting_started.md",
+    )
+    command_surfaces = manifest.get("command_surfaces", {})
+    expect(command_surfaces.get("inspect_playground") == "npm run inspect:objc3c:playground", "package manifest missing inspect_playground command surface")
+    expect(command_surfaces.get("inspect_capabilities") == "npm run inspect:objc3c:capabilities", "package manifest missing inspect_capabilities command surface")
+    expect(command_surfaces.get("inspect_runtime") == "npm run inspect:objc3c:runtime", "package manifest missing inspect_runtime command surface")
+    expect(command_surfaces.get("trace_stages") == "npm run trace:objc3c:stages", "package manifest missing trace_stages command surface")
+    expect(command_surfaces.get("developer_tooling") == "npm run test:objc3c:developer-tooling", "package manifest missing developer_tooling command surface")
+    expect(command_surfaces.get("getting_started") == "npm run test:getting-started", "package manifest missing getting_started command surface")
     portfolio_payload = load_json(showcase_portfolio)
     expect(
         portfolio_payload.get("contract_id") == "objc3c.showcase.portfolio.surface.v1",

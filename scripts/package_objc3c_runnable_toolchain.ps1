@@ -132,12 +132,17 @@ $requiredRelativeFiles = @(
   "scripts/check_objc3c_execution_replay_proof.ps1",
   "showcase/README.md",
   "showcase/portfolio.json",
+  "showcase/tutorial_walkthrough.json",
   "showcase/auroraBoard/main.objc3",
   "showcase/auroraBoard/workspace.json",
   "showcase/signalMesh/main.objc3",
   "showcase/signalMesh/workspace.json",
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
+  "docs/tutorials/getting_started.md",
+  "docs/tutorials/build_run_verify.md",
+  "docs/tutorials/guided_walkthrough.md",
+  "scripts/probe_objc3c_llvm_capabilities.py",
   "tmp/artifacts/objc3c-native/frontend_source_graph.json",
   "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
   "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
@@ -148,6 +153,7 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json",
   "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
   "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
+  "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "schemas/objc3-conformance-dashboard-status-v1.schema.json",
@@ -190,6 +196,13 @@ $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
 foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles)) {
   Copy-RepoRelativeFile -RepoRoot $repoRoot -PackageRoot $packageRoot -RelativePath $relativePath | Out-Null
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
+}
+
+$repoSupercleanSurfaceRelativePath = "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+$repoSupercleanSurfacePath = Join-Path $packageRoot ($repoSupercleanSurfaceRelativePath.Replace('/', '\'))
+$repoSupercleanSurfacePayload = Get-Content -LiteralPath $repoSupercleanSurfacePath -Raw | ConvertFrom-Json -AsHashtable
+if (-not $repoSupercleanSurfacePayload.ContainsKey("bonus_experience_surfaces")) {
+  throw "runnable toolchain package FAIL: missing bonus_experience_surfaces in $repoSupercleanSurfaceRelativePath"
 }
 
 $manifestPayload = [ordered]@{
@@ -275,12 +288,27 @@ $manifestPayload = [ordered]@{
     "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
     "tmp/artifacts/objc3c-native/frontend_integration_closeout.json"
   )
+  repo_superclean_surface = $repoSupercleanSurfaceRelativePath
+  bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
+  guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
+  tutorial_guides = @(
+    "docs/tutorials/getting_started.md",
+    "docs/tutorials/build_run_verify.md",
+    "docs/tutorials/guided_walkthrough.md"
+  )
+  capability_probe_script = "scripts/probe_objc3c_llvm_capabilities.py"
   command_surfaces = [ordered]@{
     build = "npm run build:objc3c-native"
     package = "npm run package:objc3c-native:runnable-toolchain"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
+    inspect_playground = "npm run inspect:objc3c:playground"
+    inspect_capabilities = "npm run inspect:objc3c:capabilities"
+    inspect_runtime = "npm run inspect:objc3c:runtime"
+    trace_stages = "npm run trace:objc3c:stages"
+    developer_tooling = "npm run test:objc3c:developer-tooling"
     showcase = "npm run test:showcase"
     showcase_e2e = "npm run test:showcase:e2e"
+    getting_started = "npm run test:getting-started"
     smoke = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1"
     replay = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1"
   }

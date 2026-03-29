@@ -755,6 +755,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       runtime_inspector = [ordered]@{
         source_roots = @(
           "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+          "scripts/probe_objc3c_llvm_capabilities.py",
           "native/objc3c/src/runtime/objc3_runtime.cpp",
           "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
           "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
@@ -776,6 +777,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
           "showcase/README.md",
           "showcase/portfolio.json",
           "showcase/tutorial_walkthrough.json",
+          "docs/tutorials/getting_started.md",
           "docs/tutorials/build_run_verify.md",
           "docs/tutorials/guided_walkthrough.md"
         )
