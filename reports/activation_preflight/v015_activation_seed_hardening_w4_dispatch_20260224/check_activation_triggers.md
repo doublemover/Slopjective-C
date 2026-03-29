@@ -5,7 +5,7 @@
 - Fail closed: `true`
 - Issues snapshot: `tmp/v015_m24_open_issues_snapshot.json`
 - Milestones snapshot: `tmp/v015_m24_open_milestones_snapshot.json`
-- Catalog JSON: `spec/planning/remaining_task_review_catalog.json`
+- Catalog JSON: `docs/reference/legacy_spec_anchor_index.md`
 - Open blockers JSON: _none_
 - T4 governance overlay JSON: _none_
 - Actionable statuses: `open`, `open-blocked`, `blocked`

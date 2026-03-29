@@ -13,8 +13,8 @@ to Lane D shard `planning-issue-191`.
 | `source_cycle`              | `v0.11`                                                  |
 | `publication_date`          | `2026-02-23`                                             |
 | `source_revision`           | `fe9aedb76a9c2a07ef8d5dbe24178d4a1d1c15ab`               |
-| `carryover_source_ref`      | `spec/planning/issue_190_carryover_descoping_package.md` |
-| `dependency_map_source_ref` | `spec/planning/future_work_v011_dependency_map.md`       |
+| `carryover_source_ref`      | `docs/reference/legacy_spec_anchor_index.md` |
+| `dependency_map_source_ref` | `docs/reference/legacy_spec_anchor_index.md`       |
 | `published_by`              | `D-LEAD`                                                 |
 | `approved_by`               | `D-LEAD`, `A-LEAD`, `B-LEAD`, `C-LEAD`                   |
 
@@ -23,7 +23,7 @@ Scope baseline for this bootstrap artifact:
 - Includes only shard `planning-issue-191` carryover tasks from the remaining
   task review catalog.
 - Uses `D-13` governance constraints from
-  `spec/planning/issue_190_carryover_descoping_package.md`.
+  `docs/reference/legacy_spec_anchor_index.md`.
 - Uses `D-12` risk framing from
   `docs/reference/legacy_spec_anchor_index.md#issue-189-closeout-comment-template`.
 
@@ -86,7 +86,7 @@ Prioritization outcome:
 Dependency integration summary:
 
 - Baseline edge semantics imported from
-  `spec/planning/future_work_v011_dependency_map.md`.
+  `docs/reference/legacy_spec_anchor_index.md`.
 - Carryover node set filtered to shard tasks `SPT-0497` through `SPT-0504`.
 - Hard predecessors normalized to `all-satisfied` or `partial`.
 - Cycle check result: no cycles detected in this carryover DAG.
@@ -154,9 +154,9 @@ row).
 
 | risk_id    | carried_from                                             | severity | risk statement                                                                                                                           | linked_kickoff_actions | mitigation_owner | target_date  |
 | ---------- | -------------------------------------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------- | ------------ |
-| `RK-12-01` | `spec/planning/issue_190_carryover_descoping_package.md` | `high`   | Canonical `D-13` ledger path from `spec/FUTURE_WORK_V011.md` is not present in-tree; kickoff must preserve explicit source substitution. | `ACT-01`, `ACT-06`     | `D-LEAD`         | `2026-02-24` |
+| `RK-12-01` | `docs/reference/legacy_spec_anchor_index.md` | `high`   | Canonical `D-13` ledger path from `spec/FUTURE_WORK_V011.md` is not present in-tree; kickoff must preserve explicit source substitution. | `ACT-01`, `ACT-06`     | `D-LEAD`         | `2026-02-24` |
 | `RK-12-02` | `docs/reference/legacy_spec_anchor_index.md#issue-189-closeout-comment-template`   | `medium` | Readiness input is package-level (`D-12`) rather than executed dossier artifact; kickoff must keep risk mapping explicit and traceable.  | `ACT-05`, `ACT-07`     | `D-LEAD`         | `2026-02-24` |
-| `RK-12-03` | `spec/planning/issue_191_v012_kickoff_packet_package.md` | `medium` | Cross-lane handoff acknowledgement may lag publication, delaying closeout evidence packaging.                                            | `ACT-08`               | `D-LEAD`         | `2026-02-25` |
+| `RK-12-03` | `docs/reference/legacy_spec_anchor_index.md` | `medium` | Cross-lane handoff acknowledgement may lag publication, delaying closeout evidence packaging.                                            | `ACT-08`               | `D-LEAD`         | `2026-02-25` |
 
 Current blocker register:
 
@@ -167,12 +167,12 @@ Current blocker register:
 
 | action_id | carryover_task_id | window | action statement                                                                                             | owner    | due_utc                | exit evidence                                                                                                | linked_risks | linked_kc          |
 | --------- | ----------------- | ------ | ------------------------------------------------------------------------------------------------------------ | -------- | ---------------------- | ------------------------------------------------------------------------------------------------------------ | ------------ | ------------------ |
-| `ACT-01`  | `SPT-0497`        | `W1`   | Finalize kickoff artifact structure and required section order in bootstrap and checklist artifacts.         | `D-LEAD` | `2026-02-23T18:00:00Z` | `spec/FUTURE_WORK_V012_BOOTSTRAP.md` sections 1-9 and `spec/planning/v012_kickoff_checklist.md` sections 1-6 | `RK-12-01`   | `KC-02`            |
+| `ACT-01`  | `SPT-0497`        | `W1`   | Finalize kickoff artifact structure and required section order in bootstrap and checklist artifacts.         | `D-LEAD` | `2026-02-23T18:00:00Z` | `spec/FUTURE_WORK_V012_BOOTSTRAP.md` sections 1-9 and `docs/reference/legacy_spec_anchor_index.md` sections 1-6 | `RK-12-01`   | `KC-02`            |
 | `ACT-02`  | `SPT-0498`        | `W1`   | Finalize prioritization formula output table and tie-break trace for every carryover row.                    | `D-LEAD` | `2026-02-23T19:00:00Z` | Bootstrap section 3 scoring table includes all eight rows with `tie_break_trace`                             | `RK-12-01`   | `KC-03`            |
 | `ACT-03`  | `SPT-0499`        | `W1`   | Publish dependency map integration table and recomputed critical-path summary.                               | `D-LEAD` | `2026-02-23T20:00:00Z` | Bootstrap section 4 dependency table and chain summary                                                       | `RK-12-01`   | `KC-04`, `KC-06`   |
 | `ACT-04`  | `SPT-0500`        | `W1`   | Record `KC-01` through `KC-10` checklist definitions with blocking behavior and remediation actions.         | `D-LEAD` | `2026-02-23T21:00:00Z` | Checklist sections 1-4 include all mandatory `KC-*` rows                                                     | `RK-12-02`   | `KC-01` to `KC-10` |
 | `ACT-05`  | `SPT-0501`        | `W2`   | Record handoff windows (`T+24h`, `T+48h`, `T+72h`) and escalation route in artifact and checklist.           | `D-LEAD` | `2026-02-24T15:00:00Z` | Bootstrap section 5 and checklist section 4 handoff confirmations                                            | `RK-12-02`   | `KC-05`, `KC-10`   |
-| `ACT-06`  | `SPT-0502`        | `W2`   | Complete `D-14` done-criteria traceability in issue package and publication crosswalk.                       | `D-LEAD` | `2026-02-24T16:00:00Z` | `spec/planning/issue_191_v012_kickoff_packet_package.md` sections 9-10 and section 13                        | `RK-12-01`   | `KC-01`, `KC-09`   |
+| `ACT-06`  | `SPT-0502`        | `W2`   | Complete `D-14` done-criteria traceability in issue package and publication crosswalk.                       | `D-LEAD` | `2026-02-24T16:00:00Z` | `docs/reference/legacy_spec_anchor_index.md` sections 9-10 and section 13                        | `RK-12-01`   | `KC-01`, `KC-09`   |
 | `ACT-07`  | `SPT-0503`        | `W2`   | Execute `python scripts/spec_lint.py` and capture pass result in checklist and publication record.           | `D-LEAD` | `2026-02-24T17:00:00Z` | Checklist section 5 and bootstrap section 9 validation tables show pass                                      | `RK-12-02`   | `KC-08`            |
 | `ACT-08`  | `SPT-0504`        | `W3+`  | Publish closeout summary with artifact paths, source revision, and validation outputs for handoff consumers. | `D-LEAD` | `2026-02-25T16:00:00Z` | Issue `#191` closeout summary contains evidence package details                                              | `RK-12-03`   | `KC-09`, `KC-10`   |
 

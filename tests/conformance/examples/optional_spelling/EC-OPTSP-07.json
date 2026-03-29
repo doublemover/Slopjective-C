@@ -6,7 +6,7 @@
   "profile": "core",
   "references": [
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-6",
-    "spec/planning/issue_134_optional_spelling_diagnostics_package.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "// RUN: objc3c --emit-interface out.obji %s\n// CHECK: Optional<int> exportedValue\noptional<int> exportedValue(void);\n",
   "expect": {

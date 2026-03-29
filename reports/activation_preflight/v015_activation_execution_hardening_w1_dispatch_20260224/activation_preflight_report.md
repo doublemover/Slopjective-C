@@ -4,7 +4,7 @@
 
 - Issues snapshot: `tmp/v015_m27_live_issues_snapshot.json`
 - Milestones snapshot: `tmp/v015_m27_live_milestones_snapshot.json`
-- Catalog JSON: `spec/planning/remaining_task_review_catalog.json`
+- Catalog JSON: `docs/reference/legacy_spec_anchor_index.md`
 - Open blockers JSON: _none_
 - Spec lint globs: _default spec_lint globs_
 

@@ -10,7 +10,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-7-8-2",
     "docs/reference/legacy_spec_anchor_index.md#part-7-8-3",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "typedef id M01B006TaskHandle;\nM01B006TaskHandle m01b006_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nid m01b006_join(M01B006TaskHandle handle) async;\n\nactor class M01B006ActorBox : NSObject\n@property (atomic) int value;\n@end\n\n@interface M01B006MutableBox : NSObject\n@property (nonatomic) int value;\n@end\n\nid m01b006_positive(M01B006ActorBox *box) async {\n    M01B006TaskHandle handle = m01b006_spawn(^id(void) async {\n        return box;\n    });\n    return await m01b006_join(handle);\n}\n\nid m01b006_negative(M01B006MutableBox *box) async {\n    M01B006TaskHandle handle = m01b006_spawn(^id(void) async {\n        return box;\n    });\n    return await m01b006_join(handle);\n}\n",
   "expect": {

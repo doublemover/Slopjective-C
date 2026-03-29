@@ -21,15 +21,15 @@ Status: published package for issue `#786` (`[W1][V013-GOV-02] Add extension reg
 | `batch_id` | `BATCH-20260223-11R` |
 | `milestone_id` | `#31` |
 | `milestone_title` | `v0.13 Seed Wave W1 Reseed 1` |
-| `artifact_targets` | `spec/planning/v013_extension_registry_compat_validation_package.md`, `spec/planning/evidence/lane_c/v013_seed_gov02_validation_20260223.md` |
+| `artifact_targets` | `docs/reference/legacy_spec_anchor_index.md`, `docs/reference/legacy_spec_anchor_index.md` |
 | `required_validator` | `python scripts/spec_lint.py` |
 
 ### 1.2 Source references consumed
 
-- `SRC-V013-05` `spec/planning/PARALLEL_LANE_OWNERSHIP_AND_HANDOFF.md`
-- `SRC-V013-12` `spec/planning/v013_future_work_seed_matrix.md`
-- `SRC-V013-13` `spec/planning/v012_wave16_candidate_shards_20260223.md`
-- `SRC-V013-14` `spec/planning/v013_seed_wave_w1_reseed1_batch_manifest_20260223.md`
+- `SRC-V013-05` `docs/reference/legacy_spec_anchor_index.md`
+- `SRC-V013-12` `docs/reference/legacy_spec_anchor_index.md`
+- `SRC-V013-13` `docs/reference/legacy_spec_anchor_index.md`
+- `SRC-V013-14` `docs/reference/legacy_spec_anchor_index.md`
 
 ### 1.3 In-scope deliverables
 
@@ -43,7 +43,7 @@ Status: published package for issue `#786` (`[W1][V013-GOV-02] Add extension reg
 
 1. Lane C write ownership is limited to the two paths listed in Section `1.1`.
 2. `registries/experimental_extensions/index.schema.json` and `tests/governance/registry_compat/README.md` are consumed as read-only dependency artifacts in this issue.
-3. Validation evidence for this issue is published in `spec/planning/evidence/lane_c/v013_seed_gov02_validation_20260223.md`.
+3. Validation evidence for this issue is published in `docs/reference/legacy_spec_anchor_index.md`.
 
 ## 2. Suite Contract Summary
 
@@ -51,8 +51,8 @@ The compatibility validation suite contract is published and validated against s
 
 | Artifact | Contract role | Ownership posture for `#786` |
 | --- | --- |
-| `spec/planning/v013_extension_registry_compat_validation_package.md` | Governance contract and closeout ledger for `#786`. | Lane C write-owned artifact. |
-| `spec/planning/evidence/lane_c/v013_seed_gov02_validation_20260223.md` | Deterministic issue evidence mapping acceptance rows to concrete verification checks. | Lane C write-owned artifact. |
+| `docs/reference/legacy_spec_anchor_index.md` | Governance contract and closeout ledger for `#786`. | Lane C write-owned artifact. |
+| `docs/reference/legacy_spec_anchor_index.md` | Deterministic issue evidence mapping acceptance rows to concrete verification checks. | Lane C write-owned artifact. |
 | `registries/experimental_extensions/index.schema.json` | Machine-checkable schema contract including compatibility matrix, validators, waiver policy, and acceptance checklist structure. | Read-only dependency artifact for this issue. |
 | `tests/governance/registry_compat/README.md` | Deterministic validator runbook and governance-response expectations for failures. | Read-only dependency artifact for this issue. |
 
@@ -85,7 +85,7 @@ The compatibility validation suite contract is published and validated against s
 | --- | --- | --- | --- |
 | `VAL-RC-01` | `python scripts/spec_lint.py` | Output contains `spec-lint: OK`; exit `0`. | Mark validation run failed and stop closeout. |
 | `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | Exit `0`; no blocking drift findings. | Open governance follow-up and block publish. |
-| `VAL-RC-03` | `rg -n "compat|version|schema" spec/planning/v013_extension_registry_compat_validation_package.md` | Exit `0`; at least one matching line. | Treat package as incomplete and block publish. |
+| `VAL-RC-03` | `rg -n "compat|version|schema" docs/reference/legacy_spec_anchor_index.md` | Exit `0`; at least one matching line. | Treat package as incomplete and block publish. |
 | `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | Output contains `schema-json: OK`; exit `0`. | Treat schema as invalid JSON and block publish. |
 | `VAL-RC-05` | `python -c 'import json,pathlib,sys;d=json.loads(pathlib.Path("registries/experimental_extensions/index.schema.json").read_text(encoding="utf-8"));p=d["$defs"]["governance_contract"]["properties"];need={"compatibility_matrix","required_field_policy","validators","waiver_policy","acceptance_checklist"};m=sorted(need-set(p));print("contract-keys: OK" if not m else "contract-keys: MISSING "+",".join(m));sys.exit(0 if not m else 1)'` | Output contains `contract-keys: OK`; exit `0`. | Treat contract as incomplete and block publish. |
 

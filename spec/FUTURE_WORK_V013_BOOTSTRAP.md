@@ -18,10 +18,10 @@ Status: kickoff scaffold and dependency-preflight artifact for issue `#728`
 | `seed_id`                        | `V013-REL-03`                                               |
 | `acceptance_gate_id`             | `AC-V013-REL-03`                                            |
 | `carryover_source_ref`           | `docs/reference/legacy_spec_anchor_index.md#planning-future-work-v011-carryover`               |
-| `carryover_policy_companion_ref` | `spec/planning/issue_190_carryover_descoping_package.md`    |
+| `carryover_policy_companion_ref` | `docs/reference/legacy_spec_anchor_index.md`    |
 | `dependency_map_source_ref`      | `docs/reference/legacy_spec_anchor_index.md#planning-v013-future-work-seed-matrix`             |
-| `batch_manifest_ref`             | `spec/planning/v013_wave2_w3_batch_manifest_20260223.md`    |
-| `dispatch_queue_ref`             | `spec/planning/v013_wave2_next_dispatch_queue_20260223.md`  |
+| `batch_manifest_ref`             | `docs/reference/legacy_spec_anchor_index.md`    |
+| `dispatch_queue_ref`             | `docs/reference/legacy_spec_anchor_index.md`  |
 | `support_preflight_ref`          | `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package` |
 | `published_by`                   | `B5 worker (agent 019c8b13-026e-7f10-8a66-117c82ad3692)`    |
 | `approved_by`                    | `A5`, `C5`, `D5`, `INT5` (per W3 merge/closeout sequence)   |
@@ -42,8 +42,8 @@ its four hard dependency inputs.
 | scope_item_id    | source_ref                                                                                                               | classification     | rationale_code     | dependency_implication    | owner_primary | owner_backup | target_window |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------ | ------------------ | ------------------ | ------------------------- | ------------- | ------------ | ------------- |
 | `REL03-SCOPE-01` | `spec/FUTURE_WORK_V013_BOOTSTRAP.md`                                                                                     | `publication-core` | `R-REL-W7`         | `DEP-READY-POST-EDGE-016` | `B5`          | `C5`         | `W3-P1`       |
-| `REL03-SCOPE-02` | `spec/planning/v013_wave2_w3_batch_manifest_20260223.md`                                                                 | `hard-gate-input`  | `R-CARRYOVER-GATE` | `EDGE-V013-016`           | `A5`          | `D5`         | `W3-P0`       |
-| `REL03-SCOPE-03` | `spec/planning/v013_abstract_machine_sync_audit_2026q2_package.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md` | `hard-gate-input`  | `R-AM-SYNC`        | `EDGE-V013-017`           | `D2`          | `B5`         | `W3-P0`       |
+| `REL03-SCOPE-02` | `docs/reference/legacy_spec_anchor_index.md`                                                                 | `hard-gate-input`  | `R-CARRYOVER-GATE` | `EDGE-V013-016`           | `A5`          | `D5`         | `W3-P0`       |
+| `REL03-SCOPE-03` | `docs/reference/legacy_spec_anchor_index.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md` | `hard-gate-input`  | `R-AM-SYNC`        | `EDGE-V013-017`           | `D2`          | `B5`         | `W3-P0`       |
 | `REL03-SCOPE-04` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                                      | `hard-gate-input`  | `R-PROFILE-DELTA`  | `EDGE-V013-018`           | `A4`          | `B5`         | `W3-P0`       |
 | `REL03-SCOPE-05` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md`             | `hard-gate-input`  | `R-GOV-CADENCE`    | `EDGE-V013-019`           | `C3`          | `B5`         | `W3-P0`       |
 
@@ -86,12 +86,12 @@ Dependency integration summary:
 - Current edge-state baseline imported from
   `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`.
 - Batch-level gating policy imported from
-  `spec/planning/v013_wave2_w3_batch_manifest_20260223.md`.
+  `docs/reference/legacy_spec_anchor_index.md`.
 
 | edge_id         | predecessor_seed | successor_seed | required_input_refs                                                                                                      | predecessor_state_2026-02-23      | gate_class | publication_effect                   |
 | --------------- | ---------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------ | --------------------------------- | ---------- | ------------------------------------ |
-| `EDGE-V013-016` | `V013-REL-02`    | `V013-REL-03`  | `spec/planning/v013_wave2_w3_batch_manifest_20260223.md`; `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`    | `satisfied (#727 closeout-ready)` | `hard`     | `gate-satisfied-publication-enabled` |
-| `EDGE-V013-017` | `V013-SPEC-03`   | `V013-REL-03`  | `spec/planning/v013_abstract_machine_sync_audit_2026q2_package.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md` | `satisfied (closed in W1)`        | `hard`     | `required-input-cited`               |
+| `EDGE-V013-016` | `V013-REL-02`    | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md`; `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`    | `satisfied (#727 closeout-ready)` | `hard`     | `gate-satisfied-publication-enabled` |
+| `EDGE-V013-017` | `V013-SPEC-03`   | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md`; `reports/spec_sync/abstract_machine_audit_2026Q2.md` | `satisfied (closed in W1)`        | `hard`     | `required-input-cited`               |
 | `EDGE-V013-018` | `V013-SPEC-04`   | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                                      | `satisfied (closed in W2)`        | `hard`     | `required-input-cited`               |
 | `EDGE-V013-019` | `V013-GOV-03`    | `V013-REL-03`  | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md`             | `satisfied (closed in W1B)`       | `hard`     | `required-input-cited`               |
 
@@ -129,7 +129,7 @@ Gate policy:
 ## 6. Ownership and SLA Mapping
 
 Ownership baseline is inherited from
-`spec/planning/v013_wave2_w3_batch_manifest_20260223.md`.
+`docs/reference/legacy_spec_anchor_index.md`.
 
 | scope_item_id    | primary_owner                                     | backup_owner | review_sla                                          | handoff_contact          | acknowledgement_state |
 | ---------------- | ------------------------------------------------- | ------------ | --------------------------------------------------- | ------------------------ | --------------------- |
@@ -143,8 +143,8 @@ Ownership baseline is inherited from
 
 | risk_id         | carried_from                                                                                                             | severity | risk statement                                                                                                                                                 | linked_kickoff_actions | mitigation_owner | target_date  |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ---------------- | ------------ |
-| `RK13-REL03-01` | `spec/planning/v013_wave2_w3_batch_manifest_20260223.md`; `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`    | `medium` | `EDGE-V013-016` is now satisfied via canonical ledger publication in `#727`; residual risk is carryover-reference drift between kickoff and support artifacts. | `ACT-06`               | `A5 + B5`        | `2026-02-24` |
-| `RK13-REL03-02` | `reports/spec_sync/abstract_machine_audit_2026Q2.md`; `spec/planning/v013_abstract_machine_sync_audit_2026q2_package.md` | `medium` | AM sync audit includes unresolved blocking drift (`AM-AUDIT-2026Q2-01`) that must be reflected consistently in release kickoff messaging.                      | `ACT-02`, `ACT-07`     | `B5`             | `2026-02-24` |
+| `RK13-REL03-01` | `docs/reference/legacy_spec_anchor_index.md`; `docs/reference/legacy_spec_anchor_index.md#planning-v013-rel03-signoff-consolidation-package`    | `medium` | `EDGE-V013-016` is now satisfied via canonical ledger publication in `#727`; residual risk is carryover-reference drift between kickoff and support artifacts. | `ACT-06`               | `A5 + B5`        | `2026-02-24` |
+| `RK13-REL03-02` | `reports/spec_sync/abstract_machine_audit_2026Q2.md`; `docs/reference/legacy_spec_anchor_index.md` | `medium` | AM sync audit includes unresolved blocking drift (`AM-AUDIT-2026Q2-01`) that must be reflected consistently in release kickoff messaging.                      | `ACT-02`, `ACT-07`     | `B5`             | `2026-02-24` |
 | `RK13-REL03-03` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-profile-gate-delta`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md`                                      | `medium` | Profile gate deltas must remain synchronized across package/checklist references to prevent release handoff ambiguity.                                         | `ACT-03`, `ACT-07`     | `B5 + C5`        | `2026-02-24` |
 | `RK13-REL03-04` | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`; `reports/reviews/v013_review_board_calendar.md`             | `medium` | Governance cadence anchors can drift if signoff timing moves without calendar anchor alignment.                                                                | `ACT-04`, `ACT-08`     | `B5 + D5`        | `2026-02-24` |
 

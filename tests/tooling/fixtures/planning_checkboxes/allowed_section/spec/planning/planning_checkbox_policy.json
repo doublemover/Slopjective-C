@@ -2,7 +2,7 @@
   "version": 1,
   "allowed_unchecked_sections": [
     {
-      "path": "spec/planning/plan.md",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
       "section": "Runbook Fixture > 1. Future Rerun Checklist",
       "reason": "Procedural runbook section intentionally keeps checklist items unchecked."
     }

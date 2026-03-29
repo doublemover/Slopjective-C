@@ -6,7 +6,7 @@ registry compatibility governance.
 ## 1. Scope and Artifacts
 
 - Acceptance gate: `AC-V013-GOV-02`
-- Source contract: `spec/planning/v013_extension_registry_compat_validation_package.md`
+- Source contract: `docs/reference/legacy_spec_anchor_index.md`
 - Schema artifact: `registries/experimental_extensions/index.schema.json`
 
 ## 2. Backward/Forward Compatibility Matrix Contract
@@ -36,7 +36,7 @@ Run from repository root.
 | --- | --- | --- |
 | `VAL-RC-01` | `python scripts/spec_lint.py` | `spec-lint: OK` |
 | `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | exit `0` and no blocking drift |
-| `VAL-RC-03` | `rg -n "compat|version|schema" spec/planning/v013_extension_registry_compat_validation_package.md` | exit `0` |
+| `VAL-RC-03` | `rg -n "compat|version|schema" docs/reference/legacy_spec_anchor_index.md` | exit `0` |
 | `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | `schema-json: OK` |
 | `VAL-RC-05` | `python -c 'import json,pathlib,sys;d=json.loads(pathlib.Path("registries/experimental_extensions/index.schema.json").read_text(encoding="utf-8"));p=d["$defs"]["governance_contract"]["properties"];need={"compatibility_matrix","required_field_policy","validators","waiver_policy","acceptance_checklist"};m=sorted(need-set(p));print("contract-keys: OK" if not m else "contract-keys: MISSING "+",".join(m));sys.exit(0 if not m else 1)'` | `contract-keys: OK` |
 | `VAL-RC-06` | `rg -n "AC-V013-GOV-02|VAL-RC-|ESC-RC-" tests/governance/registry_compat/README.md` | exit `0` |

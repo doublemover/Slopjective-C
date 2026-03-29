@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m08/lane_b_m08_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "int m08b003_require_equal(int left, int right);\n\nint m08b003_positive(int seed) {\n    return m08b003_require_equal(seed, seed);\n}\n\nint m08b003_negative(id value) {\n    return m08b003_require_equal(value, 0);\n}\n",
   "expect": {

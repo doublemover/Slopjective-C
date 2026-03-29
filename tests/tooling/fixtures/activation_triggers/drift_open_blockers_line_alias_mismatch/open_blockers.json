@@ -3,7 +3,7 @@
   "open_blockers": [
     {
       "blocker_id": "BLK-100-01",
-      "source_path": "spec/planning/example.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 14,
       "line": 12
     }

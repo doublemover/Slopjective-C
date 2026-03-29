@@ -7,7 +7,7 @@ reproducibility controls for derive and macro package consumption.
 
 This document is aligned to:
 
-- `spec/planning/issue_168_macro_package_provenance_policy_package.md`
+- `docs/reference/legacy_spec_anchor_index.md`
 - `spec/governance/extension_lifecycle_v1.md`
 - `spec/governance/macro_security_incident_playbook_v1.md`
 

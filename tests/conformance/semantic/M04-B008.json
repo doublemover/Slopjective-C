@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m04/lane_b_m04_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "typedef id _Nullable m04b008_optional_id;\ntypedef id _Nonnull m04b008_nonnull_id;\n\nm04b008_nonnull_id m04b008_take_nonnull(m04b008_nonnull_id value);\n\nm04b008_nonnull_id m04b008_positive(m04b008_nonnull_id value) {\n    return m04b008_take_nonnull(value);\n}\n\nm04b008_nonnull_id m04b008_negative(m04b008_optional_id value) {\n    return m04b008_take_nonnull(value);\n}\n",
   "expect": {

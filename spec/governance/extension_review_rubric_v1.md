@@ -7,7 +7,7 @@ review decisions. It is the canonical `C-04` artifact.
 
 This document is aligned to:
 
-- `spec/planning/issue_153_extension_review_rubric_package.md`
+- `docs/reference/legacy_spec_anchor_index.md`
 - `spec/governance/macro_derive_extension_charter_v1.md`
 
 ## 1. Scope

@@ -10,7 +10,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-7-3-2",
     "docs/reference/legacy_spec_anchor_index.md#part-7-4-3-2",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m04/lane_b_m04_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "id m04b010_async_call(void) async;\nid m04b010_main_only(id seed) __attribute__((objc_executor(main)));\n\nid m04b010_positive(id seed) async __attribute__((objc_executor(main))) {\n    id value = await m04b010_async_call();\n    return m04b010_main_only(seed);\n}\n\nid m04b010_negative(id seed) async __attribute__((objc_executor(global))) {\n    id value = m04b010_main_only(seed);\n    return value;\n}\n",
   "expect": {

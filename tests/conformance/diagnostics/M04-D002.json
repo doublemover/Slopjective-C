@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-6",
     "docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-1",
-    "spec/planning/compiler/m04/lane_d_m04_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "void objc3c_harness_flag(id arg);\n\nvoid m04d002_negative(void) {\n    objc3c_harness_flag(@\"--conformance-map=runtime\");\n}\n",
   "expect": {

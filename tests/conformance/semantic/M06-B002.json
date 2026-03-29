@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m06/lane_b_m06_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "@interface m06b002Probe\n- (id _Nullable)label;\n@end\n\nid _Nullable m06b002_positive(m06b002Probe * _Nullable probe) {\n    return [probe? label];\n}\n\nint m06b002_negative(m06b002Probe * _Nullable probe) {\n    id _Nullable text = [probe? label];\n    return text;\n}\n",
   "expect": {

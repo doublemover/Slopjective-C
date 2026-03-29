@@ -9,7 +9,7 @@
     "docs/reference/legacy_spec_anchor_index.md#c-5",
     "docs/reference/legacy_spec_anchor_index.md#c-5-2",
     "docs/reference/legacy_spec_anchor_index.md#d-3-2",
-    "spec/conformance/compiler/M04_lane_c_lowering_runtime_invariants.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 -fsyntax-only %s\ntypedef enum M04C009InvariantStatus {\n    M04C009_INVARIANT_OK = 0,\n    M04C009_INVARIANT_CALL_SHAPE_DRIFT = 1,\n    M04C009_INVARIANT_CLEANUP_DRIFT = 2,\n    M04C009_INVARIANT_METADATA_DRIFT = 3\n} M04C009InvariantStatus;\n\nM04C009InvariantStatus M04c009_validate_invariants(int callShapeOk,\n                                                    int cleanupOk,\n                                                    int metadataOk) {\n    if (!callShapeOk) {\n        return M04C009_INVARIANT_CALL_SHAPE_DRIFT;\n    }\n    if (!cleanupOk) {\n        return M04C009_INVARIANT_CLEANUP_DRIFT;\n    }\n    if (!metadataOk) {\n        return M04C009_INVARIANT_METADATA_DRIFT;\n    }\n    return M04C009_INVARIANT_OK;\n}\n",
   "expect": {
@@ -53,7 +53,7 @@
       "abi_field_stability": [
         {
           "field_id": "invariants.call_shape_contract_evidence",
-          "contract_anchor": "spec/conformance/compiler/M04_lane_c_lowering_runtime_invariants.md",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md",
           "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "stability_property": "call-shape invariants remain documented and evidenced by fixture and manifest mapping",
           "must_match_modes": [
@@ -63,7 +63,7 @@
         },
         {
           "field_id": "invariants.cleanup_and_metadata_evidence",
-          "contract_anchor": "spec/conformance/compiler/M04_lane_c_lowering_runtime_invariants.md",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md",
           "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "stability_property": "cleanup and metadata invariants remain documented with deterministic replay evidence",
           "must_match_modes": [

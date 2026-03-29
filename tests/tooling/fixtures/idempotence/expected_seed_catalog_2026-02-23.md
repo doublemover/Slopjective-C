@@ -109,7 +109,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
 
 ### SPT-0004 - [SPT-0004][Lane B] Document kickoff decision record for lane batching in artifact tracker
 
-- Source: `spec/planning/issue_140_seed_fixture.md:3`
+- Source: `docs/reference/legacy_spec_anchor_index.md`
 - Bucket: `planning-checklist`
 - Lane: `Lane B - Implementation & Tooling`
 - Milestone: `v0.12 Lane B - Implementation & Tooling`
@@ -137,7 +137,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
 
 ### SPT-0005 - [SPT-0005][Lane B] Link dependency to Issue #111 and A-03 for traceability
 
-- Source: `spec/planning/issue_140_seed_fixture.md:4`
+- Source: `docs/reference/legacy_spec_anchor_index.md`
 - Bucket: `planning-checklist`
 - Lane: `Lane B - Implementation & Tooling`
 - Milestone: `v0.12 Lane B - Implementation & Tooling`

@@ -8,8 +8,8 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-10",
     "docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance",
     "docs/reference/legacy_spec_anchor_index.md#part-12-5-7",
-    "spec/planning/compiler/m07/lane_d_m07_scope_freeze.md",
-    "spec/planning/compiler/m07/lane_d_m07_execution_packet_20260226.md"
+    "docs/reference/legacy_spec_anchor_index.md",
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "void objc3c_harness_flag(id arg);`n`nvoid m07d006_negative(void) {`n    objc3c_harness_flag(@\"--strict-conformance-assert=partial\");`n}`n",
   "expect": {

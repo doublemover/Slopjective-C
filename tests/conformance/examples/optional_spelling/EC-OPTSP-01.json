@@ -6,7 +6,7 @@
   "profile": "core",
   "references": [
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-6",
-    "spec/planning/issue_134_optional_spelling_diagnostics_package.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "Optional<int> wrapCanonical(int value) {\n    return Optional<int>(value);\n}\n",
   "expect": {

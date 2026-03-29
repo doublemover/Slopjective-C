@@ -5,12 +5,12 @@
   "open_blockers": [
     {
       "blocker_id": "BLK-900-02",
-      "source_path": "spec/planning/issue_900.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 20
     },
     {
       "blocker_id": "BLK-900-01",
-      "source_path": "spec/planning/issue_900.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 10
     }
   ]

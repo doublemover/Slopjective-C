@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m02/lane_b_m02_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "int m02b006_take_int(int value);\n\nint m02b006_positive(double raw) {\n    return m02b006_take_int((int)raw);\n}\n\nint m02b006_negative(double raw) {\n    return m02b006_take_int(raw);\n}\n",
   "expect": {

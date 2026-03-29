@@ -41,14 +41,14 @@ def test_apply_overrides_updates_catalog_rows_and_preserves_existing_invariants(
         "SPT-0001": tool.OverrideEntry(
             task_id="SPT-0001",
             recommended_status="complete",
-            evidence_refs=("spec/planning/foo.md:10",),
+            evidence_refs=("docs/reference/legacy_spec_anchor_index.md",),
             rationale="Verified in package closeout section.",
             source_path=Path("lane_a.json"),
         ),
         "SPT-0002": tool.OverrideEntry(
             task_id="SPT-0002",
             recommended_status="open-blocked",
-            evidence_refs=("spec/planning/bar.md:20",),
+            evidence_refs=("docs/reference/legacy_spec_anchor_index.md",),
             rationale="Waiting on external reviewer signoff.",
             source_path=Path("lane_b.json"),
         ),
@@ -63,7 +63,7 @@ def test_apply_overrides_updates_catalog_rows_and_preserves_existing_invariants(
     assert catalog["tasks"][2]["execution_status"] == "open-blocked"
     assert "execution_status_rationale" not in catalog["tasks"][2]
     assert catalog["tasks"][0]["execution_status_evidence_refs"] == [
-        "spec/planning/foo.md:10"
+        "docs/reference/legacy_spec_anchor_index.md"
     ]
     assert catalog["tasks"][1]["execution_status_rationale"] == (
         "Waiting on external reviewer signoff."
@@ -83,7 +83,7 @@ def test_apply_overrides_allows_missing_status_when_row_is_covered_by_override()
         "SPT-0001": tool.OverrideEntry(
             task_id="SPT-0001",
             recommended_status="complete",
-            evidence_refs=("spec/planning/example.md:10",),
+            evidence_refs=("docs/reference/legacy_spec_anchor_index.md",),
             rationale="Backfilled by lane override.",
             source_path=Path("lane_a.json"),
         )
@@ -205,7 +205,7 @@ def test_load_overrides_accepts_object_with_overrides_array(tmp_path: Path) -> N
                 {
                     "task_id": "SPT-0001",
                     "recommended_status": "complete",
-                    "evidence_refs": ["spec/planning/example.md:10"],
+                    "evidence_refs": ["docs/reference/legacy_spec_anchor_index.md"],
                     "rationale": "Verified.",
                 }
             ],

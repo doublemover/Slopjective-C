@@ -2,7 +2,7 @@
   "version": 1,
   "allowed_unchecked_sections": [
     {
-      "path": "spec/planning/a.md",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
       "section": "Alpha Plan > 1. Operator Runbook",
       "reason": "Procedural runbook checklist row stays unchecked by policy."
     }

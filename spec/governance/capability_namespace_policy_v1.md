@@ -7,7 +7,7 @@ for extension identifiers used in derive and macro governance.
 
 This document is aligned to:
 
-- `spec/planning/issue_146_capability_namespace_policy_package.md`
+- `docs/reference/legacy_spec_anchor_index.md`
 - `spec/governance/MACRO_DERIVE_EXTENSION_GOVERNANCE.md`
 - `spec/governance/macro_derive_extension_charter_v1.md`
 

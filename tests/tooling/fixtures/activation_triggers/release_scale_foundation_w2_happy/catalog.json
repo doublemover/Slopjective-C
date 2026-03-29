@@ -23,10 +23,10 @@
       "blocker_notes": "Awaiting CI/workflow wiring handoff.",
       "execution_status_rationale": "Execution-ready once lane C publishes deterministic M37 entrypoints.",
       "execution_status_evidence_refs": [
-        "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w2_tooling_validation_20260225.md:2",
-        "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w2_tooling_validation_20260225.md:12"
+        "docs/reference/legacy_spec_anchor_index.md",
+        "docs/reference/legacy_spec_anchor_index.md"
       ],
-      "execution_status_override_source": "spec/planning/evidence/lane_b/v016_release_and_scale_foundation_w2_tooling_validation_20260225.md"
+      "execution_status_override_source": "docs/reference/legacy_spec_anchor_index.md"
     }
   ]
 }

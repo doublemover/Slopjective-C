@@ -1,7 +1,7 @@
 [
   {
     "blocker_id": "BLK-ALPHA-02",
-    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/spec/planning/issue_alpha.md",
+    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/docs/reference/legacy_spec_anchor_index.md",
     "line": 5,
     "owner": "TEAM-A",
     "due_date_utc": null,
@@ -10,7 +10,7 @@
   },
   {
     "blocker_id": "BLK-ALPHA-01",
-    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/spec/planning/issue_alpha.md",
+    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/docs/reference/legacy_spec_anchor_index.md",
     "line": 6,
     "owner": "TEAM-A",
     "due_date_utc": "2026-02-27",
@@ -19,7 +19,7 @@
   },
   {
     "blocker_id": "BLK-ZETA-01",
-    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/spec/planning/issue_zeta.md",
+    "source_path": "tests/tooling/fixtures/extract_open_blockers/repo_root_scan/docs/reference/legacy_spec_anchor_index.md",
     "line": 7,
     "owner": "TEAM-Z",
     "due_date_utc": "2026-03-01",

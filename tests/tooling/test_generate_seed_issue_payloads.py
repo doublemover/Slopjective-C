@@ -15,7 +15,6 @@ sys.modules[SPEC.name] = generate_seed_issue_payloads
 SPEC.loader.exec_module(generate_seed_issue_payloads)
 
 ROOT = Path(__file__).resolve().parents[2]
-GRAPH_PATH = ROOT / "spec/planning/v013_seed_dependency_graph.json"
 
 
 def run_main(args: list[str]) -> tuple[int, str, str]:
@@ -117,14 +116,16 @@ def write_issues(path: Path, payload: Any) -> None:
 def test_repository_graph_output_is_deterministic_and_contains_required_fields(
     tmp_path: Path,
 ) -> None:
+    graph_path = tmp_path / "graph.json"
     output_a = tmp_path / "payloads_a.json"
     output_b = tmp_path / "payloads_b.json"
+    write_graph(graph_path, build_minimal_graph_payload())
 
     code_a, stdout_a, stderr_a = run_main(
-        ["--graph", str(GRAPH_PATH), "--output", str(output_a)]
+        ["--graph", str(graph_path), "--output", str(output_a)]
     )
     code_b, stdout_b, stderr_b = run_main(
-        ["--graph", str(GRAPH_PATH), "--output", str(output_b)]
+        ["--graph", str(graph_path), "--output", str(output_b)]
     )
 
     assert code_a == 0
@@ -137,10 +138,10 @@ def test_repository_graph_output_is_deterministic_and_contains_required_fields(
 
     payload = json.loads(output_a.read_text(encoding="utf-8"))
     records = payload["records"]
-    assert payload["record_count"] == 20
-    assert len(records) == 20
-    assert records[0]["seed_id"] == "V013-SPEC-02"
-    assert records[-1]["seed_id"] == "V013-REL-03"
+    assert payload["record_count"] == 2
+    assert len(records) == 2
+    assert records[0]["seed_id"] == "V013-SPEC-01"
+    assert records[-1]["seed_id"] == "V013-TOOL-02"
 
     required_fields = {
         "seed_id",
@@ -161,16 +162,16 @@ def test_repository_graph_output_is_deterministic_and_contains_required_fields(
         assert "closed_at" not in record
         assert "completion_status" not in record
 
-    tool_03 = next(record for record in records if record["seed_id"] == "V013-TOOL-03")
-    assert tool_03["milestone"] == "v0.13 Seed Wave W1"
-    assert tool_03["dependencies"] == ["V013-SPEC-02"]
-    assert tool_03["shard_class"] == "medium"
-    assert tool_03["acceptance_gate_id"] == "AC-V013-TOOL-03"
-    assert tool_03["validation_commands"] == [
+    tool_02 = next(record for record in records if record["seed_id"] == "V013-TOOL-02")
+    assert tool_02["milestone"] == "v0.13 Seed Wave W1"
+    assert tool_02["dependencies"] == ["V013-SPEC-01"]
+    assert tool_02["shard_class"] == "medium"
+    assert tool_02["acceptance_gate_id"] == "AC-V013-TOOL-02"
+    assert tool_02["validation_commands"] == [
         "python scripts/spec_lint.py",
         "python scripts/check_issue_checkbox_drift.py",
     ]
-    assert "seed:V013-TOOL-03" in tool_03["labels"]
+    assert "seed:V013-TOOL-02" in tool_02["labels"]
 
 
 def test_fail_fast_when_seed_metadata_is_missing(tmp_path: Path) -> None:

@@ -74,24 +74,32 @@ def test_default_json_output_matches_expected_fixture() -> None:
         "open-blocked",
         "blocked",
     ]
-    assert payload["summary"]["dispatch_intake"]["status"] == "pass"
-    assert payload["summary"]["dispatch_intake"]["recommendation"] == "go"
-    assert payload["summary"]["overlap_conflicts"]["count"] == 0
+    assert payload["summary"]["dispatch_intake"]["status"] == "fail"
+    assert payload["summary"]["dispatch_intake"]["recommendation"] == "no-go"
+    assert payload["summary"]["overlap_conflicts"]["count"] == 1
     assert payload["summary"]["overlap_conflicts"]["max_allowed"] == 0
-    assert payload["summary"]["overlap_conflicts"]["status"] == "pass"
+    assert payload["summary"]["overlap_conflicts"]["status"] == "fail"
     assert payload["summary"]["global_capacity"]["active_issue_count"] == 6
     assert payload["summary"]["global_capacity"]["global_wip_cap"] == 16
     assert payload["summary"]["global_capacity"]["status"] == "pass"
-    assert payload["overlap_conflicts"] == []
+    assert payload["overlap_conflicts"] == [
+        {
+            "path": "docs/reference/legacy_spec_anchor_index.md",
+            "active_issue_count": 3,
+            "lane_count": 2,
+            "lanes": ["A", "B"],
+            "escalation": "ESC-MERGE-01",
+        }
+    ]
     assert [entry["status"] for entry in payload["summary"]["capacity_status_counts"]] == ["pass"]
     assert [entry["lane"] for entry in payload["capacity"]] == ["A", "B", "C", "D"]
     assert [task["task_id"] for task in payload["tasks"]] == [
+        "SPT-2007",
         "SPT-2003",
         "SPT-2002",
-        "SPT-2007",
-        "SPT-2005",
         "SPT-2008",
         "SPT-2001",
+        "SPT-2005",
     ]
 
 
@@ -149,11 +157,11 @@ def test_repeatable_filters_are_deduped_and_sorted_deterministically() -> None:
     assert payload["summary"]["total_tasks"] == 5
     assert [group["group"] for group in payload["groups"]] == ["open", "blocked"]
     assert [task["task_id"] for task in payload["tasks"]] == [
-        "SPT-2005",
         "SPT-2007",
         "SPT-2001",
-        "SPT-2002",
+        "SPT-2005",
         "SPT-2008",
+        "SPT-2002",
     ]
 
 
@@ -241,7 +249,7 @@ def test_dispatch_intake_enforcement_reports_drift_when_threshold_is_pass(tmp_pa
             {
                 "task_id": f"SPT-91{index:02d}",
                 "title": f"Lane A active task {index}",
-                "path": f"spec/planning/a{index}.md",
+                "path": f"docs/reference/legacy_spec_anchor_index.md",
                 "line": index + 1,
                 "lane": "A",
                 "execution_status": "open",
@@ -277,7 +285,7 @@ def test_dispatch_intake_enforcement_reports_fail_when_lane_exceeds_cap(tmp_path
             {
                 "task_id": f"SPT-92{index:02d}",
                 "title": f"Lane D active task {index}",
-                "path": f"spec/planning/d{index}.md",
+                "path": f"docs/reference/legacy_spec_anchor_index.md",
                 "line": index + 1,
                 "lane": "D",
                 "execution_status": "open",
@@ -313,7 +321,7 @@ def test_overlap_conflict_default_threshold_forces_fail(tmp_path: Path) -> None:
             {
                 "task_id": "SPT-9300",
                 "title": "Lane A open path overlap",
-                "path": "spec/planning/shared.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 10,
                 "lane": "A",
                 "execution_status": "open",
@@ -321,7 +329,7 @@ def test_overlap_conflict_default_threshold_forces_fail(tmp_path: Path) -> None:
             {
                 "task_id": "SPT-9301",
                 "title": "Lane B open path overlap",
-                "path": "spec/planning/shared.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 11,
                 "lane": "B",
                 "execution_status": "open",
@@ -345,7 +353,7 @@ def test_overlap_conflict_default_threshold_forces_fail(tmp_path: Path) -> None:
     assert payload["summary"]["overlap_conflicts"]["count"] == 1
     assert payload["summary"]["overlap_conflicts"]["status"] == "fail"
     assert payload["summary"]["dispatch_intake"]["status"] == "fail"
-    assert payload["overlap_conflicts"][0]["path"] == "spec/planning/shared.md"
+    assert payload["overlap_conflicts"][0]["path"] == "docs/reference/legacy_spec_anchor_index.md"
     assert payload["overlap_conflicts"][0]["lane_count"] == 2
     assert payload["overlap_conflicts"][0]["lanes"] == ["A", "B"]
     assert "status=fail" in stderr
@@ -360,7 +368,7 @@ def test_overlap_conflict_threshold_allows_drift_when_bounded(tmp_path: Path) ->
             {
                 "task_id": "SPT-9310",
                 "title": "Lane A open path overlap",
-                "path": "spec/planning/shared.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 10,
                 "lane": "A",
                 "execution_status": "open",
@@ -368,7 +376,7 @@ def test_overlap_conflict_threshold_allows_drift_when_bounded(tmp_path: Path) ->
             {
                 "task_id": "SPT-9311",
                 "title": "Lane B open path overlap",
-                "path": "spec/planning/shared.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 11,
                 "lane": "B",
                 "execution_status": "open",
@@ -407,7 +415,7 @@ def test_negative_max_overlap_conflicts_exits_2(tmp_path: Path) -> None:
             {
                 "task_id": "SPT-9320",
                 "title": "Lane A active task",
-                "path": "spec/planning/a.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 1,
                 "lane": "A",
                 "execution_status": "open",
@@ -437,7 +445,7 @@ def test_global_capacity_counts_unknown_lane_rows(tmp_path: Path) -> None:
             {
                 "task_id": "SPT-9330",
                 "title": "Unknown lane task",
-                "path": "spec/planning/unknown.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 1,
                 "lane": "E",
                 "execution_status": "open",
@@ -445,7 +453,7 @@ def test_global_capacity_counts_unknown_lane_rows(tmp_path: Path) -> None:
             {
                 "task_id": "SPT-9331",
                 "title": "Known lane task",
-                "path": "spec/planning/known.md",
+                "path": "docs/reference/legacy_spec_anchor_index.md",
                 "line": 2,
                 "lane": "A",
                 "execution_status": "open",

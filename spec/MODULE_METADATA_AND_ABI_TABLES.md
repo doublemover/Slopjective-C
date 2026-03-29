@@ -8414,7 +8414,7 @@ inspection command plus one proving summary.
 - contract id
   `objc3c-runnable-object-model-conformance-matrix/m259-e002-v1`
 - matrix artifact
-  `spec/planning/compiler/m259/m259_e002_full_runnable_object_model_conformance_matrix.json`
+  `docs/reference/legacy_spec_anchor_index.md`
 - preserved evidence summary anchors
   - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
   - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`

@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m05/lane_b_m05_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "id _Nonnull m05b011_require_nonnull(id _Nonnull value);\nid _Nullable m05b011_maybe_value(void);\n\nid _Nonnull m05b011_positive(void) {\n    id _Nullable maybe = m05b011_maybe_value();\n    if (maybe != nil) {\n        return m05b011_require_nonnull(maybe);\n    }\n    return (id _Nonnull)@\"fallback\";\n}\n\nid _Nonnull m05b011_negative(void) {\n    id _Nullable maybe = m05b011_maybe_value();\n    return m05b011_require_nonnull(maybe);\n}\n",
   "expect": {

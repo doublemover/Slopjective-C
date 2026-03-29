@@ -5,12 +5,12 @@
   "open_blockers": [
     {
       "blocker_id": "BLK-170-03",
-      "source_path": "spec/planning/issue_170_extension_policy_sync_package.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 312
     },
     {
       "blocker_id": "BLK-185-04",
-      "source_path": "spec/planning/issue_185_quality_gates_thresholds_package.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 287
     }
   ]

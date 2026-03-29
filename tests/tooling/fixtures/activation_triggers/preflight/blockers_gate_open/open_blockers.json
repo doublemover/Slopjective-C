@@ -5,12 +5,12 @@
   "open_blockers": [
     {
       "blocker_id": "BLK-182-01",
-      "source_path": "spec/planning/issue_182_governance_v1_ratification_package.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 410
     },
     {
       "blocker_id": "BLK-182-02",
-      "source_path": "spec/planning/issue_182_governance_v1_ratification_package.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 417
     }
   ]

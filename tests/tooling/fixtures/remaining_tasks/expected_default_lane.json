@@ -57,16 +57,8 @@
     ],
     "path_counts": [
       {
-        "path": "spec/planning/a.mdlpha",
-        "count": 3
-      },
-      {
-        "path": "spec/planning/beta.md",
-        "count": 2
-      },
-      {
-        "path": "spec/planning/zeta.md",
-        "count": 1
+        "path": "docs/reference/legacy_spec_anchor_index.md",
+        "count": 6
       }
     ],
     "capacity_status_counts": [
@@ -76,14 +68,14 @@
       }
     ],
     "dispatch_intake": {
-      "status": "pass",
-      "recommendation": "go"
+      "status": "fail",
+      "recommendation": "no-go"
     },
     "overlap_conflicts": {
-      "count": 0,
+      "count": 1,
       "max_allowed": 0,
-      "status": "pass",
-      "intake_recommendation": "go"
+      "status": "fail",
+      "intake_recommendation": "no-go"
     },
     "global_capacity": {
       "active_issue_count": 6,
@@ -136,18 +128,37 @@
       "load_ratio": 0.0
     }
   ],
-  "overlap_conflicts": [],
+  "overlap_conflicts": [
+    {
+      "path": "docs/reference/legacy_spec_anchor_index.md",
+      "active_issue_count": 3,
+      "lane_count": 2,
+      "lanes": [
+        "A",
+        "B"
+      ],
+      "escalation": "ESC-MERGE-01"
+    }
+  ],
   "groups": [
     {
       "group": "A",
       "count": 3,
       "tasks": [
         {
+          "task_id": "SPT-2007",
+          "title": "Open beta lane A",
+          "lane": "A",
+          "status": "open",
+          "path": "docs/reference/legacy_spec_anchor_index.md",
+          "line": 7
+        },
+        {
           "task_id": "SPT-2003",
           "title": "Open blocked alpha lane A",
           "lane": "A",
           "status": "open-blocked",
-          "path": "spec/planning/a.mdlpha",
+          "path": "docs/reference/legacy_spec_anchor_index.md",
           "line": 12
         },
         {
@@ -155,16 +166,8 @@
           "title": "Blocked alpha lane A",
           "lane": "A",
           "status": "blocked",
-          "path": "spec/planning/a.mdlpha",
+          "path": "docs/reference/legacy_spec_anchor_index.md",
           "line": 30
-        },
-        {
-          "task_id": "SPT-2007",
-          "title": "Open beta lane A",
-          "lane": "A",
-          "status": "open",
-          "path": "spec/planning/beta.md",
-          "line": 7
         }
       ]
     },
@@ -173,19 +176,11 @@
       "count": 3,
       "tasks": [
         {
-          "task_id": "SPT-2005",
-          "title": "Open alpha lane B",
-          "lane": "B",
-          "status": "open",
-          "path": "spec/planning/a.mdlpha",
-          "line": 11
-        },
-        {
           "task_id": "SPT-2008",
           "title": "Blocked beta lane B",
           "lane": "B",
           "status": "blocked",
-          "path": "spec/planning/beta.md",
+          "path": "docs/reference/legacy_spec_anchor_index.md",
           "line": 3
         },
         {
@@ -193,19 +188,35 @@
           "title": "Open zeta lane B",
           "lane": "B",
           "status": "open",
-          "path": "spec/planning/zeta.md",
+          "path": "docs/reference/legacy_spec_anchor_index.md",
           "line": 8
+        },
+        {
+          "task_id": "SPT-2005",
+          "title": "Open alpha lane B",
+          "lane": "B",
+          "status": "open",
+          "path": "docs/reference/legacy_spec_anchor_index.md",
+          "line": 11
         }
       ]
     }
   ],
   "tasks": [
     {
+      "task_id": "SPT-2007",
+      "title": "Open beta lane A",
+      "lane": "A",
+      "status": "open",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
+      "line": 7
+    },
+    {
       "task_id": "SPT-2003",
       "title": "Open blocked alpha lane A",
       "lane": "A",
       "status": "open-blocked",
-      "path": "spec/planning/a.mdlpha",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
       "line": 12
     },
     {
@@ -213,31 +224,15 @@
       "title": "Blocked alpha lane A",
       "lane": "A",
       "status": "blocked",
-      "path": "spec/planning/a.mdlpha",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
       "line": 30
-    },
-    {
-      "task_id": "SPT-2007",
-      "title": "Open beta lane A",
-      "lane": "A",
-      "status": "open",
-      "path": "spec/planning/beta.md",
-      "line": 7
-    },
-    {
-      "task_id": "SPT-2005",
-      "title": "Open alpha lane B",
-      "lane": "B",
-      "status": "open",
-      "path": "spec/planning/a.mdlpha",
-      "line": 11
     },
     {
       "task_id": "SPT-2008",
       "title": "Blocked beta lane B",
       "lane": "B",
       "status": "blocked",
-      "path": "spec/planning/beta.md",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
       "line": 3
     },
     {
@@ -245,8 +240,16 @@
       "title": "Open zeta lane B",
       "lane": "B",
       "status": "open",
-      "path": "spec/planning/zeta.md",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
       "line": 8
+    },
+    {
+      "task_id": "SPT-2005",
+      "title": "Open alpha lane B",
+      "lane": "B",
+      "status": "open",
+      "path": "docs/reference/legacy_spec_anchor_index.md",
+      "line": 11
     }
   ]
 }

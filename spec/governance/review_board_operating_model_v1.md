@@ -165,8 +165,8 @@ Every formal session must publish:
 | `issue`                      | `#854`                                                                                         |
 | `milestone_slice`            | `[v0.14][M07][lane:A]`                                                                         |
 | `objective`                  | Preserve operating-model normative enforcement as annualization W1 baseline authority.         |
-| `acceptance_matrix_artifact` | `spec/planning/v014_governance_annualization_w1_acceptance_matrix_20260224.md`                 |
-| `lane_validation_artifact`   | `spec/planning/evidence/lane_a/v014_governance_annualization_w1_lane_a_validation_20260224.md` |
+| `acceptance_matrix_artifact` | `docs/reference/legacy_spec_anchor_index.md`                 |
+| `lane_validation_artifact`   | `docs/reference/legacy_spec_anchor_index.md` |
 
 ### 9.2 Dependency rows
 

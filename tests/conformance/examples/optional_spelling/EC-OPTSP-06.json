@@ -6,7 +6,7 @@
   "profile": "core",
   "references": [
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-6",
-    "spec/planning/issue_134_optional_spelling_diagnostics_package.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "#define MAKE_OPT(T) optional<T>\nMAKE_OPT(int) macroValue(void);\n",
   "expect": {

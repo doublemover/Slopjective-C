@@ -6,12 +6,12 @@
   "open_blockers": [
     {
       "blocker_id": "BLK-M44-B1-001",
-      "source_path": "spec/planning/m44_blockers.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 14
     },
     {
       "blocker_id": "BLK-M44-B1-002",
-      "source_path": "spec/planning/m44_blockers.md",
+      "source_path": "docs/reference/legacy_spec_anchor_index.md",
       "line_number": 19,
       "line": 19
     }

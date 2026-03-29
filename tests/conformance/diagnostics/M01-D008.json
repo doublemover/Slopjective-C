@@ -9,7 +9,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-10-5",
     "docs/reference/legacy_spec_anchor_index.md#part-10-6",
     "docs/reference/legacy_spec_anchor_index.md#part-12",
-    "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\nint m01d008_negative(int value) {\\n    return value;\\n}\\n",
   "expect": {

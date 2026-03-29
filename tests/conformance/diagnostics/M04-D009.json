@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-10",
     "docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance",
     "docs/reference/legacy_spec_anchor_index.md#part-12-5-7",
-    "spec/planning/compiler/m04/lane_d_m04_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "void m04d009_edge_vector(id lhs, id rhs);\n\nvoid m04d009_negative(void) {\n    m04d009_edge_vector(@\"edge=missing-span\", @\"evidence=unstable\");\n}\n",
   "expect": {

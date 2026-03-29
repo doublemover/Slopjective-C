@@ -2,7 +2,7 @@
   "version": 1,
   "entries": [
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<COMMIT_SHA>",
       "reason": "   "
     }

@@ -21,9 +21,9 @@
       "execution_status": "open",
       "execution_status_rationale": "Contract validation in progress.",
       "execution_status_evidence_refs": [
-        "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w1_tooling_validation_20260225.md:1"
+        "docs/reference/legacy_spec_anchor_index.md"
       ],
-      "execution_status_override_source": "spec/planning/evidence/lane_b/v015_dispatch_evidence_reliability_w1_tooling_validation_20260225.md"
+      "execution_status_override_source": "docs/reference/legacy_spec_anchor_index.md"
     }
   ]
 }

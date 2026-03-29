@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-3",
     "docs/reference/legacy_spec_anchor_index.md#part-3-4-5",
     "docs/reference/legacy_spec_anchor_index.md#decisions-d-001",
-    "spec/planning/compiler/m08/lane_b_m08_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "@interface m08b007Probe\n- (int)count;\n@end\n\nint m08b007_positive(m08b007Probe *probe) {\n    return [probe count];\n}\n\nint m08b007_negative(m08b007Probe * _Nullable probe) {\n    return [probe? count];\n}\n",
   "expect": {

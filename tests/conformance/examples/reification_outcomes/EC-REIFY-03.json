@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-7",
-    "spec/planning/issue_136_reification_grammar_semantics_package.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "// MODE: generic=1,reify=0\n@reify_generics\nBox<T> gatedOff<T>(T value) { return Box<T>(value); }\n",
   "expect": {

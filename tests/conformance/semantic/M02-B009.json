@@ -8,7 +8,7 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-6",
     "docs/reference/legacy_spec_anchor_index.md#part-6",
     "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
-    "spec/planning/compiler/m02/lane_b_m02_scope_freeze.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "id m02b009_may_fail(void) throws;\n\nid m02b009_positive(void) throws {\n    return try m02b009_may_fail();\n}\n\nid m02b009_negative(void) throws {\n    return m02b009_may_fail();\n}\n",
   "expect": {

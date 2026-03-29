@@ -20,17 +20,17 @@
 - Intake template contract: `templates/experimental_extension_proposal.md`
 - Required evidence domains included: syntax, semantics, diagnostics, determinism, security.
 - Intake readiness references:
-  - `spec/planning/issue_152_extension_proposal_intake_template_package.md`
-  - `spec/planning/evidence/issue_152/proposal_instance_ext_prop_0007.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
 
 ## 2. Review evidence (`PW-04`)
 
 - Rubric and scoring contract reference:
-  - `spec/planning/issue_153_extension_review_rubric_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
 - Lifecycle rollback/deprecation linkage reference:
-  - `spec/planning/issue_164_extension_lifecycle_states_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
 - Review board operating model reference:
-  - `spec/planning/issue_170_review_board_operating_model_package.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
 
 ## 3. Testing obligations evidence (`PW-05`)
 

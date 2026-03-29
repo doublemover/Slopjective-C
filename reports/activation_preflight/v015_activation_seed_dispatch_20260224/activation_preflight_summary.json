@@ -3,7 +3,7 @@
   "inputs": {
     "issues_json": "tmp/v015_activation_open_issues_snapshot.json",
     "milestones_json": "tmp/v015_activation_open_milestones_snapshot.json",
-    "catalog_json": "spec/planning/remaining_task_review_catalog.json",
+    "catalog_json": "docs/reference/legacy_spec_anchor_index.md",
     "open_blockers_json": null,
     "spec_globs": [],
     "snapshot_refresh": true,
@@ -54,7 +54,7 @@
         "--milestones-json",
         "tmp/v015_activation_open_milestones_snapshot.json",
         "--catalog-json",
-        "spec/planning/remaining_task_review_catalog.json",
+        "docs/reference/legacy_spec_anchor_index.md",
         "--format",
         "json"
       ],
@@ -71,7 +71,7 @@
         "--milestones-json",
         "tmp/v015_activation_open_milestones_snapshot.json",
         "--catalog-json",
-        "spec/planning/remaining_task_review_catalog.json",
+        "docs/reference/legacy_spec_anchor_index.md",
         "--format",
         "markdown"
       ],

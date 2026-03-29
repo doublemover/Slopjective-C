@@ -2,42 +2,42 @@
   "version": 1,
   "entries": [
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<COMMIT_SHA>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<sha-*>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<output>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<yes/no + note>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<status>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<DATE>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/nested/b_nested.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<YYYY-MM-DD>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
+      "path": "tests/tooling/fixtures/planning_placeholders/docs/reference/legacy_spec_anchor_index.md",
       "token": "<DATE>",
       "reason": "Intentionally stale entry for migration test coverage."
     }

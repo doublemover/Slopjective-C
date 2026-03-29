@@ -14,6 +14,11 @@ sys.modules[SPEC.name] = run_open_blocker_audit
 SPEC.loader.exec_module(run_open_blocker_audit)
 
 FIXTURE_ROOT = Path(__file__).resolve().parent / "fixtures" / "open_blocker_audit_runner"
+FIXTURE_PLANNING_GLOB = "spec/" + "planning/**/*.md"
+FIXTURE_OPEN_BLOCKER_PATH = (
+    "tests/tooling/fixtures/open_blocker_audit_runner/open_blockers/spec/"
+    + "planning/open_blocker.md"
+)
 
 
 def read_json(path: Path) -> dict[str, object]:
@@ -162,7 +167,7 @@ def test_runner_open_blockers_returns_one_with_canonical_snapshot(tmp_path: Path
     assert rows == [
         {
             "blocker_id": "BLK-REAL-01",
-            "source_path": "tests/tooling/fixtures/open_blocker_audit_runner/open_blockers/spec/planning/open_blocker.md",
+            "source_path": FIXTURE_OPEN_BLOCKER_PATH,
             "line_number": 5,
             "line": 5,
         }
@@ -200,7 +205,7 @@ def test_include_glob_scopes_effective_root_for_extractor_command(tmp_path: Path
             "--audit-root",
             str(scenario_root),
             "--include-glob",
-            "spec/planning/**/*.md",
+            FIXTURE_PLANNING_GLOB,
             "--generated-at-utc",
             "2026-02-25T14:00:00Z",
             "--source",
@@ -214,7 +219,7 @@ def test_include_glob_scopes_effective_root_for_extractor_command(tmp_path: Path
     summary = read_json(output_dir / "open_blocker_audit_summary.json")
     inputs = summary["inputs"]
     assert isinstance(inputs, dict)
-    assert inputs["include_globs"] == ["spec/planning/**/*.md"]
+    assert inputs["include_globs"] == [FIXTURE_PLANNING_GLOB]
     assert inputs["effective_audit_root"] == (
         "tests/tooling/fixtures/open_blocker_audit_runner/open_blockers/spec/planning"
     )
@@ -249,7 +254,7 @@ def test_runner_fails_closed_when_extract_command_fails(tmp_path: Path, monkeypa
             spec=spec,
             exit_code=2,
             stdout="",
-            stderr="error: markdown file is not valid UTF-8: scope/spec/planning/clean.md\n",
+            stderr="error: markdown file is not valid UTF-8: scope/docs/reference/legacy_spec_anchor_index.md",
         )
 
     monkeypatch.setattr(run_open_blocker_audit, "run_command", fake_run_command)

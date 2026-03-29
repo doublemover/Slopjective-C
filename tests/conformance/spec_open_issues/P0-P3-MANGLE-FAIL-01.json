@@ -10,8 +10,8 @@
   "dependency_ref": "B-08/#163@UNPINNED-EXTERNAL",
   "references": [
     "docs/reference/legacy_spec_anchor_index.md#future-work-v011",
-    "spec/planning/issue_163_demangler_reflection_update_plan.md",
-    "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
+    "docs/reference/legacy_spec_anchor_index.md",
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "symbol=_OBJC3$gfn$<T$broken_token\\n",
   "expect": {

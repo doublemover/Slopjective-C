@@ -22,9 +22,9 @@ Reviewed sources:
 
 Mandatory source inputs for all five issues:
 
-- `spec/planning/v013_activation_reopen_playbook_20260223.md`
-- `spec/planning/v013_activation_preflight_runner_package_20260223.md`
-- `spec/planning/v013_next_dispatch_candidate_batch_20260223.md`
+- `docs/reference/legacy_spec_anchor_index.md`
+- `docs/reference/legacy_spec_anchor_index.md`
+- `docs/reference/legacy_spec_anchor_index.md`
 
 ## 4. Parallelization Decision
 

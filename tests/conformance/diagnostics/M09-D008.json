@@ -8,8 +8,8 @@
     "docs/reference/legacy_spec_anchor_index.md#e-3-10",
     "docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance",
     "docs/reference/legacy_spec_anchor_index.md#part-12-5-7",
-    "spec/planning/compiler/m09/lane_d_m09_scope_freeze.md",
-    "spec/planning/compiler/m09/lane_d_m09_execution_packet_20260226.md"
+    "docs/reference/legacy_spec_anchor_index.md",
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "void m09d008_expect(id lhs, id rhs);`n`nvoid m09d008_negative(void) {`n    m09d008_expect(@\"profile=core\", @\"expect=contract-only\");`n}`n",
   "expect": {

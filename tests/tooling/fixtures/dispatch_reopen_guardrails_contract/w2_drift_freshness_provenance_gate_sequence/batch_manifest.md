@@ -3,10 +3,10 @@
 - `batch_id`: `BATCH-20260224-M17`
 - Scope class: dispatch-reopen baseline contracts + deterministic tooling/tests + CI/operator parity + governance/runbook controls
 - Source-of-truth inputs:
-  - `spec/planning/v013_activation_reopen_playbook_20260223.md`
-  - `spec/planning/v013_activation_preflight_runner_package_20260223.md`
-  - `spec/planning/v013_next_dispatch_candidate_batch_20260223.md`
-  - `spec/planning/v014_dispatch_reopen_guardrails_w1_dispatch_review_20260224.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
+  - `docs/reference/legacy_spec_anchor_index.md`
 
 ## 3. Lane Assignment Matrix
 

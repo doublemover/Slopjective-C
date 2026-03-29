@@ -338,7 +338,7 @@ Every incident record MUST include:
 
 Audit evidence MUST maintain bidirectional references to:
 
-- `spec/planning/issue_174_macro_security_incident_playbook_package.md`
+- `docs/reference/legacy_spec_anchor_index.md`
   Sections `14` through `18`,
 - this playbook Sections `2` through `8`,
 - all associated `E174-*`, `AC-174-*`, and `SPT-0366` through `SPT-0374`

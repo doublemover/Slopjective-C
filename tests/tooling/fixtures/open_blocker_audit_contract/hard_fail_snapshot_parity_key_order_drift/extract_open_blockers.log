@@ -9,7 +9,7 @@
   "open_blockers": [
     {
       "blocker_id": "BLK-REAL-01",
-      "source_path": "tests/tooling/fixtures/open_blocker_audit_runner/open_blockers/spec/planning/open_blocker.md",
+      "source_path": "tests/tooling/fixtures/open_blocker_audit_runner/open_blockers/docs/reference/legacy_spec_anchor_index.md",
       "line_number": 5,
       "line": 5
     }

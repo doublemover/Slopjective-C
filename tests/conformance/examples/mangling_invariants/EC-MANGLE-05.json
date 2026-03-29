@@ -6,7 +6,7 @@
   "profile": "strict",
   "references": [
     "docs/reference/legacy_spec_anchor_index.md#part-3-7-7",
-    "spec/planning/issue_135_mangling_invariants_vectors_plan.md"
+    "docs/reference/legacy_spec_anchor_index.md"
   ],
   "source": "// RUN: objc3-mangle --compare-policies canonical,legacy --semantic %s\nint comparePolicies<T>(T value) { return 0; }\n",
   "expect": {
