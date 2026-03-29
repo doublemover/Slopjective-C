@@ -2,7 +2,7 @@
 
 This runbook is generated from the live public workflow runner metadata.
 
-- Current public script count: `45`
+- Current public script count: `46`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 
@@ -43,6 +43,7 @@ This runbook is generated from the live public workflow runner metadata.
 | `test:objc3c:runnable-interop` | `validate-runnable-interop` | `full` | `packaged compile, interop probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_end_to_end.py` |
 | `test:objc3c:metaprogramming-conformance` | `validate-metaprogramming-conformance` | `full` | `integrated metaprogramming conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_conformance.py` |
 | `test:objc3c:runnable-metaprogramming` | `validate-runnable-metaprogramming` | `full` | `packaged compile, metaprogramming probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_end_to_end.py` |
+| `test:objc3c:release-candidate-conformance` | `validate-release-candidate-conformance` | `full` | `integrated public-claims strict-profile and release-candidate conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_release_candidate_conformance.py` |
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive corpus artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |

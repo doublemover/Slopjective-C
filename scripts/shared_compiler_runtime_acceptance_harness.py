@@ -33,6 +33,9 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_ERROR_EXECUTION_CLEANUP_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID,
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
+    RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+    RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
     RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
     RUNTIME_METAPROGRAMMING_CACHE_RUNTIME_INTEGRATION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
@@ -44,6 +47,8 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID,
+    RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_IMPORT_VERSION_FEATURE_CLAIM_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
@@ -57,10 +62,14 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOOKUP_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_REALIZATION_LOOKUP_SEMANTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
     RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
+    RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
     RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
+    RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+    RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
 )
 
@@ -246,6 +255,87 @@ COMMON_SURFACES = (
             "implementation_snapshot_symbol",
             "property_registry_state_snapshot_symbol",
             "property_entry_snapshot_symbol",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_claimable_surface_residual_non_claimable_gaps_source_surface",
+        RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_source_fields",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_strict_profile_feature_claim_source_surface",
+        RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_source_fields",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_claimability_semantics_release_policy_surface",
+        RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "policy_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_strict_profile_claim_implementation_surface",
+        RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "claim_implementation_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface",
+        RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "compatibility_diagnostic_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_claim_publication_dashboard_schema_surface",
+        RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "dashboard_schema_path",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_final_claim_publication_deprecated_path_shutdown_surface",
+        RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "final_publication_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_release_candidate_claim_abi_surface",
+        RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+        (
+            "release_candidate_claim_snapshot_symbol",
+            "release_candidate_claim_snapshot_type",
+            "authoritative_probe_paths",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_final_release_evidence_descaffolding_implementation_surface",
+        RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        (
+            "release_candidate_evidence_snapshot_symbol",
+            "implementation_model",
+            "authoritative_probe_paths",
         ),
     ),
     SurfaceRequirement(
@@ -658,6 +748,15 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID,
             RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+            RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+            RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
+            RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID,
+            RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+            RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
             RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
@@ -775,6 +874,33 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_property_ivar_accessor_reflection_implementation_surface": surfaces[
             "runtime_property_ivar_accessor_reflection_implementation_surface"
+        ],
+        "runtime_claimable_surface_residual_non_claimable_gaps_source_surface": surfaces[
+            "runtime_claimable_surface_residual_non_claimable_gaps_source_surface"
+        ],
+        "runtime_strict_profile_feature_claim_source_surface": surfaces[
+            "runtime_strict_profile_feature_claim_source_surface"
+        ],
+        "runtime_claimability_semantics_release_policy_surface": surfaces[
+            "runtime_claimability_semantics_release_policy_surface"
+        ],
+        "runtime_strict_profile_claim_implementation_surface": surfaces[
+            "runtime_strict_profile_claim_implementation_surface"
+        ],
+        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": surfaces[
+            "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface"
+        ],
+        "runtime_claim_publication_dashboard_schema_surface": surfaces[
+            "runtime_claim_publication_dashboard_schema_surface"
+        ],
+        "runtime_final_claim_publication_deprecated_path_shutdown_surface": surfaces[
+            "runtime_final_claim_publication_deprecated_path_shutdown_surface"
+        ],
+        "runtime_release_candidate_claim_abi_surface": surfaces[
+            "runtime_release_candidate_claim_abi_surface"
+        ],
+        "runtime_final_release_evidence_descaffolding_implementation_surface": surfaces[
+            "runtime_final_release_evidence_descaffolding_implementation_surface"
         ],
         "runtime_metaprogramming_source_surface": surfaces[
             "runtime_metaprogramming_source_surface"

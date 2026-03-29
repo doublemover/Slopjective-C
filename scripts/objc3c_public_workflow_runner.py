@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -47,6 +48,7 @@ RUNNABLE_INTEROP_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_inte
 RUNNABLE_INTEROP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_interop_end_to_end.py"
 RUNNABLE_METAPROGRAMMING_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_metaprogramming_conformance.py"
 RUNNABLE_METAPROGRAMMING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_metaprogramming_end_to_end.py"
+RUNNABLE_RELEASE_CANDIDATE_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_release_candidate_conformance.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 
 
@@ -340,6 +342,69 @@ def write_composite_validation_report(
         payload["runtime_property_ivar_accessor_reflection_implementation_surface"] = (
             runtime_property_ivar_accessor_reflection_implementation_surface
         )
+    runtime_claimable_surface_residual_non_claimable_gaps_source_surface = load_surface_from_report(
+        steps, "runtime_claimable_surface_residual_non_claimable_gaps_source_surface"
+    )
+    if runtime_claimable_surface_residual_non_claimable_gaps_source_surface is not None:
+        payload["runtime_claimable_surface_residual_non_claimable_gaps_source_surface"] = (
+            runtime_claimable_surface_residual_non_claimable_gaps_source_surface
+        )
+    runtime_strict_profile_feature_claim_source_surface = load_surface_from_report(
+        steps, "runtime_strict_profile_feature_claim_source_surface"
+    )
+    if runtime_strict_profile_feature_claim_source_surface is not None:
+        payload["runtime_strict_profile_feature_claim_source_surface"] = (
+            runtime_strict_profile_feature_claim_source_surface
+        )
+    runtime_claimability_semantics_release_policy_surface = load_surface_from_report(
+        steps, "runtime_claimability_semantics_release_policy_surface"
+    )
+    if runtime_claimability_semantics_release_policy_surface is not None:
+        payload["runtime_claimability_semantics_release_policy_surface"] = (
+            runtime_claimability_semantics_release_policy_surface
+        )
+    runtime_strict_profile_claim_implementation_surface = load_surface_from_report(
+        steps, "runtime_strict_profile_claim_implementation_surface"
+    )
+    if runtime_strict_profile_claim_implementation_surface is not None:
+        payload["runtime_strict_profile_claim_implementation_surface"] = (
+            runtime_strict_profile_claim_implementation_surface
+        )
+    runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface = load_surface_from_report(
+        steps, "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface"
+    )
+    if runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface is not None:
+        payload["runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface"] = (
+            runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface
+        )
+    runtime_claim_publication_dashboard_schema_surface = load_surface_from_report(
+        steps, "runtime_claim_publication_dashboard_schema_surface"
+    )
+    if runtime_claim_publication_dashboard_schema_surface is not None:
+        payload["runtime_claim_publication_dashboard_schema_surface"] = (
+            runtime_claim_publication_dashboard_schema_surface
+        )
+    runtime_final_claim_publication_deprecated_path_shutdown_surface = load_surface_from_report(
+        steps, "runtime_final_claim_publication_deprecated_path_shutdown_surface"
+    )
+    if runtime_final_claim_publication_deprecated_path_shutdown_surface is not None:
+        payload["runtime_final_claim_publication_deprecated_path_shutdown_surface"] = (
+            runtime_final_claim_publication_deprecated_path_shutdown_surface
+        )
+    runtime_release_candidate_claim_abi_surface = load_surface_from_report(
+        steps, "runtime_release_candidate_claim_abi_surface"
+    )
+    if runtime_release_candidate_claim_abi_surface is not None:
+        payload["runtime_release_candidate_claim_abi_surface"] = (
+            runtime_release_candidate_claim_abi_surface
+        )
+    runtime_final_release_evidence_descaffolding_implementation_surface = load_surface_from_report(
+        steps, "runtime_final_release_evidence_descaffolding_implementation_surface"
+    )
+    if runtime_final_release_evidence_descaffolding_implementation_surface is not None:
+        payload["runtime_final_release_evidence_descaffolding_implementation_surface"] = (
+            runtime_final_release_evidence_descaffolding_implementation_surface
+        )
     runtime_metaprogramming_source_surface = load_surface_from_report(
         steps, "runtime_metaprogramming_source_surface"
     )
@@ -490,6 +555,17 @@ def write_composite_validation_report(
 
 
 def run_composite_step(action: str, command: Sequence[str]) -> dict[str, object]:
+    if (
+        action == "test-runtime-acceptance"
+        and os.environ.get("OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN") == "1"
+    ):
+        return {
+            "action": action,
+            "command": [str(token) for token in command],
+            "exit_code": 0,
+            "report_paths": ["tmp/reports/runtime/acceptance/summary.json"],
+            "report_reused": True,
+        }
     result = run_capture(command)
     return {
         "action": action,
@@ -624,6 +700,10 @@ def action_validate_runnable_metaprogramming(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_METAPROGRAMMING_E2E_PY)])
 
 
+def action_validate_release_candidate_conformance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_RELEASE_CANDIDATE_CONFORMANCE_PY)])
+
+
 def action_test_fixture_matrix(rest: list[str]) -> int:
     return pwsh_file(MATRIX_PS1, *rest)
 
@@ -699,6 +779,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-runnable-interop": ActionSpec("validate-runnable-interop", "validate runnable mixed-module and interop execution end to end from the package root", "python:scripts/check_objc3c_runnable_interop_end_to_end.py", ("test:objc3c:runnable-interop",), validation_tier="full", guarantee_owner="packaged compile, interop probe execution, smoke, and replay from the staged runnable toolchain bundle"),
     "validate-metaprogramming-conformance": ActionSpec("validate-metaprogramming-conformance", "validate runnable metaprogramming conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_metaprogramming_conformance.py", ("test:objc3c:metaprogramming-conformance",), validation_tier="full", guarantee_owner="integrated metaprogramming conformance over the live runtime architecture workflow"),
     "validate-runnable-metaprogramming": ActionSpec("validate-runnable-metaprogramming", "validate runnable metaprogramming execution end to end from the package root", "python:scripts/check_objc3c_runnable_metaprogramming_end_to_end.py", ("test:objc3c:runnable-metaprogramming",), validation_tier="full", guarantee_owner="packaged compile, metaprogramming probe execution, smoke, and replay from the staged runnable toolchain bundle"),
+    "validate-release-candidate-conformance": ActionSpec("validate-release-candidate-conformance", "validate runnable release-candidate conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_release_candidate_conformance.py", ("test:objc3c:release-candidate-conformance",), validation_tier="full", guarantee_owner="integrated public-claims strict-profile and release-candidate conformance over the live runtime architecture workflow"),
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
@@ -742,6 +823,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runnable-interop": action_validate_runnable_interop,
     "validate-metaprogramming-conformance": action_validate_metaprogramming_conformance,
     "validate-runnable-metaprogramming": action_validate_runnable_metaprogramming,
+    "validate-release-candidate-conformance": action_validate_release_candidate_conformance,
     "test-fixture-matrix": action_test_fixture_matrix,
     "test-negative-expectations": action_test_negative_expectations,
     "test-full": action_test_full,

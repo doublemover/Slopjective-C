@@ -45,6 +45,15 @@ SURFACE_KEYS = (
     "runtime_property_ivar_storage_accessor_source_surface",
     "storage_accessor_runtime_abi_surface",
     "runtime_property_ivar_accessor_reflection_implementation_surface",
+    "runtime_claimable_surface_residual_non_claimable_gaps_source_surface",
+    "runtime_strict_profile_feature_claim_source_surface",
+    "runtime_claimability_semantics_release_policy_surface",
+    "runtime_strict_profile_claim_implementation_surface",
+    "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface",
+    "runtime_claim_publication_dashboard_schema_surface",
+    "runtime_final_claim_publication_deprecated_path_shutdown_surface",
+    "runtime_release_candidate_claim_abi_surface",
+    "runtime_final_release_evidence_descaffolding_implementation_surface",
     "runtime_property_atomicity_synthesis_reflection_source_surface",
     "runtime_realization_lowering_reflection_artifact_surface",
     "runtime_dispatch_table_reflection_record_lowering_surface",
@@ -262,6 +271,33 @@ def main() -> int:
         ],
         "runtime_property_ivar_accessor_reflection_implementation_surface": runtime_acceptance_report[
             "runtime_property_ivar_accessor_reflection_implementation_surface"
+        ],
+        "runtime_claimable_surface_residual_non_claimable_gaps_source_surface": runtime_acceptance_report[
+            "runtime_claimable_surface_residual_non_claimable_gaps_source_surface"
+        ],
+        "runtime_strict_profile_feature_claim_source_surface": runtime_acceptance_report[
+            "runtime_strict_profile_feature_claim_source_surface"
+        ],
+        "runtime_claimability_semantics_release_policy_surface": runtime_acceptance_report[
+            "runtime_claimability_semantics_release_policy_surface"
+        ],
+        "runtime_strict_profile_claim_implementation_surface": runtime_acceptance_report[
+            "runtime_strict_profile_claim_implementation_surface"
+        ],
+        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": runtime_acceptance_report[
+            "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface"
+        ],
+        "runtime_claim_publication_dashboard_schema_surface": runtime_acceptance_report[
+            "runtime_claim_publication_dashboard_schema_surface"
+        ],
+        "runtime_final_claim_publication_deprecated_path_shutdown_surface": runtime_acceptance_report[
+            "runtime_final_claim_publication_deprecated_path_shutdown_surface"
+        ],
+        "runtime_release_candidate_claim_abi_surface": runtime_acceptance_report[
+            "runtime_release_candidate_claim_abi_surface"
+        ],
+        "runtime_final_release_evidence_descaffolding_implementation_surface": runtime_acceptance_report[
+            "runtime_final_release_evidence_descaffolding_implementation_surface"
         ],
         "runtime_metaprogramming_source_surface": runtime_acceptance_report[
             "runtime_metaprogramming_source_surface"
