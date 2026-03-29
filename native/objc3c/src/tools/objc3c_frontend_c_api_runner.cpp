@@ -516,6 +516,101 @@ void WriteRuntimeInspectorJson(
   out << indent << "}";
 }
 
+void WriteBonusExperiencesJson(
+    std::ostringstream &out,
+    const std::string &indent,
+    const RunnerOptions &options,
+    const objc3c_frontend_c_compile_result_t &result,
+    const std::string &summary_path_text,
+    const std::string &runtime_metadata_binary_path_text) {
+  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const std::string manifest_path_text = OptionalPath(result.manifest_path);
+  const std::string ir_path_text = OptionalPath(result.ir_path);
+  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string child_indent = indent + "  ";
+  const std::string grandchild_indent = child_indent + "  ";
+  const bool compile_surface_ready = result.emit.attempted != 0;
+  const bool runtime_inspector_ready =
+      PathExists(object_path_text) && PathExists(runtime_metadata_binary_path_text);
+  const bool showcase_surface_ready =
+      fs::exists(fs::path("showcase") / "portfolio.json") &&
+      fs::exists(fs::path("showcase") / "tutorial_walkthrough.json");
+  const bool tutorial_surface_ready =
+      fs::exists(fs::path("docs") / "tutorials" / "build_run_verify.md") &&
+      fs::exists(fs::path("docs") / "tutorials" / "guided_walkthrough.md");
+
+  out << "{\n";
+  out << child_indent << "\"contract_id\": "
+      << "\"objc3c.bonus.experiences.boundary.v1\",\n";
+  out << child_indent << "\"product_boundary_model\": "
+      << "\"public-runner compile inspect trace showcase and tutorial flows define the current bonus experience product boundary\",\n";
+  out << child_indent << "\"runtime_boundary_model\": "
+      << "\"frontend-c-api summary artifacts and runtime inspection ABI snapshots define the live runtime boundary for bonus experiences\",\n";
+  out << child_indent << "\"fail_closed_model\": "
+      << "\"no sidecar playground service visual shell or template catalog is authoritative until it is implemented on the live public runner and checked-in example roots\",\n";
+  out << child_indent << "\"playground\": {\n";
+  out << grandchild_indent << "\"available\": "
+      << (compile_surface_ready ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"source_path\": \""
+      << EscapeJsonString(options.input_path.generic_string()) << "\",\n";
+  out << grandchild_indent << "\"summary_path\": \""
+      << EscapeJsonString(summary_path_text) << "\",\n";
+  out << grandchild_indent << "\"artifact_roots\": [\n";
+  out << grandchild_indent << "  \"tmp/artifacts/compilation/objc3c-native\",\n";
+  out << grandchild_indent << "  \"tmp/artifacts/showcase\"\n";
+  out << grandchild_indent << "],\n";
+  out << grandchild_indent << "\"public_actions\": [\n";
+  out << grandchild_indent << "  \"compile-objc3c\",\n";
+  out << grandchild_indent << "  \"inspect-compile-observability\",\n";
+  out << grandchild_indent << "  \"trace-compile-stages\"\n";
+  out << grandchild_indent << "],\n";
+  out << grandchild_indent << "\"dump_commands\": {\n";
+  out << grandchild_indent << "  \"summary\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text)) << "\",\n";
+  out << grandchild_indent << "  \"diagnostics\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text)) << "\",\n";
+  out << grandchild_indent << "  \"manifest\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text)) << "\"\n";
+  out << grandchild_indent << "}\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"runtime_inspector_and_capability_explorer\": {\n";
+  out << grandchild_indent << "\"available\": "
+      << (runtime_inspector_ready ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"object_path\": \""
+      << EscapeJsonString(object_path_text) << "\",\n";
+  out << grandchild_indent << "\"runtime_metadata_binary_path\": \""
+      << EscapeJsonString(runtime_metadata_binary_path_text) << "\",\n";
+  out << grandchild_indent << "\"public_actions\": [\n";
+  out << grandchild_indent << "  \"inspect-runtime-inspector\",\n";
+  out << grandchild_indent << "  \"trace-compile-stages\",\n";
+  out << grandchild_indent << "  \"validate-developer-tooling\"\n";
+  out << grandchild_indent << "],\n";
+  out << grandchild_indent << "\"dump_commands\": {\n";
+  out << grandchild_indent << "  \"ir\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";
+  out << grandchild_indent << "  \"object\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(object_path_text)) << "\"\n";
+  out << grandchild_indent << "}\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"template_and_demo_harness\": {\n";
+  out << grandchild_indent << "\"available\": "
+      << ((showcase_surface_ready && tutorial_surface_ready) ? "true" : "false")
+      << ",\n";
+  out << grandchild_indent << "\"source_roots\": [\n";
+  out << grandchild_indent << "  \"showcase/portfolio.json\",\n";
+  out << grandchild_indent << "  \"showcase/tutorial_walkthrough.json\",\n";
+  out << grandchild_indent << "  \"docs/tutorials/build_run_verify.md\",\n";
+  out << grandchild_indent << "  \"docs/tutorials/guided_walkthrough.md\"\n";
+  out << grandchild_indent << "],\n";
+  out << grandchild_indent << "\"public_actions\": [\n";
+  out << grandchild_indent << "  \"validate-showcase\",\n";
+  out << grandchild_indent << "  \"validate-runnable-showcase\",\n";
+  out << grandchild_indent << "  \"validate-getting-started\"\n";
+  out << grandchild_indent << "]\n";
+  out << child_indent << "}\n";
+  out << indent << "}";
+}
+
 void WriteStageSummaryJson(std::ostringstream &out,
                            const char *name,
                            const objc3c_frontend_c_stage_summary_t &summary,
@@ -618,6 +713,15 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   out << ",\n";
   out << "  \"runtime_inspector\": ";
   WriteRuntimeInspectorJson(out, "  ", options, result);
+  out << ",\n";
+  out << "  \"bonus_experiences\": ";
+  WriteBonusExperiencesJson(
+      out,
+      "  ",
+      options,
+      result,
+      summary_path_text,
+      runtime_metadata_binary_path_text);
   out << ",\n";
   out << "  \"output_contract\": {\n";
   out << "    \"diagnostics_schema_version\": \""

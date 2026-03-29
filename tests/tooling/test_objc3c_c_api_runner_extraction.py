@@ -73,3 +73,19 @@ def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:
     assert "kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel" in source
     assert '\\"mode\\": \\"objc3c-frontend-stage-trace-v1\\"' in source
     assert "BuildStageTraceJson" in source
+
+
+def test_c_api_runner_reports_bonus_experience_boundary_surface() -> None:
+    source = _read(RUNNER_CPP)
+
+    assert '\\"bonus_experiences\\": ' in source
+    assert "WriteBonusExperiencesJson" in source
+    assert "objc3c.bonus.experiences.boundary.v1" in source
+    assert '\\"product_boundary_model\\": ' in source
+    assert '\\"runtime_boundary_model\\": ' in source
+    assert '\\"playground\\": {' in source
+    assert '\\"runtime_inspector_and_capability_explorer\\": {' in source
+    assert '\\"template_and_demo_harness\\": {' in source
+    assert "inspect-compile-observability" in source
+    assert "inspect-runtime-inspector" in source
+    assert "validate-showcase" in source
