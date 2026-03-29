@@ -13,8 +13,8 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CATALOG_JSON = ROOT / "spec" / "planning" / "remaining_task_review_catalog.json"
-DEFAULT_OPEN_BLOCKERS_ROOT = ROOT / "spec" / "planning"
+DEFAULT_CATALOG_JSON = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
+DEFAULT_OPEN_BLOCKERS_ROOT = ROOT
 DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "bootstrap_readiness"
 DEFAULT_REFRESH_OPEN_BLOCKERS_RELATIVE_PATH = Path("inputs") / "open_blockers.snapshot.json"
 DEFAULT_COMMAND_TIMEOUT_SECONDS = 600

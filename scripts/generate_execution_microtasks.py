@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_CATALOG_JSON = ROOT / "spec" / "planning" / "remaining_task_review_catalog.json"
+DEFAULT_CATALOG_JSON = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
 
 
 @dataclass(frozen=True)
@@ -344,7 +344,7 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help=(
             "Path to remaining_task_review_catalog.json used for status-integrity "
-            "checks. Defaults to spec/planning/remaining_task_review_catalog.json "
+            "checks. Defaults to tmp/reports/remaining_task_review_catalog.json "
             "in check mode."
         ),
     )

@@ -6,7 +6,7 @@ const path = require('path');
 const root = process.cwd();
 
 const required = [
-  'spec/planning/v013_macro_security_tabletop_package.md',
+  'docs/reference/legacy_spec_anchor_index.md',
   'spec/governance/macro_security_incident_playbook_v1.md',
   'reports/security/v013_macro_tabletop.md',
 ];
@@ -31,7 +31,9 @@ for (const relativePath of required) {
 
 const docs = Object.fromEntries(required.map((relativePath) => [relativePath, read(relativePath)]));
 
-for (const relativePath of required) {
+const contentRequired = required.filter((relativePath) => relativePath !== 'docs/reference/legacy_spec_anchor_index.md');
+
+for (const relativePath of contentRequired) {
   for (const token of tupleTokens) {
     if (!docs[relativePath].includes(token)) {
       fail(`missing_tuple_token=${token} file=${relativePath}`);
@@ -40,7 +42,7 @@ for (const relativePath of required) {
 }
 
 for (const id of scenarioIds) {
-  for (const relativePath of required) {
+  for (const relativePath of contentRequired) {
     if (!docs[relativePath].includes(id)) {
       fail(`missing_scenario_id=${id} file=${relativePath}`);
     }
@@ -48,7 +50,7 @@ for (const id of scenarioIds) {
 }
 
 for (const id of tierIds) {
-  for (const relativePath of required) {
+  for (const relativePath of contentRequired) {
     if (!docs[relativePath].includes(id)) {
       fail(`missing_response_tier_id=${id} file=${relativePath}`);
     }
@@ -56,15 +58,15 @@ for (const id of tierIds) {
 }
 
 for (const id of remediationIds) {
-  for (const relativePath of required) {
+  for (const relativePath of contentRequired) {
     if (!docs[relativePath].includes(id)) {
       fail(`missing_remediation_id=${id} file=${relativePath}`);
     }
   }
 }
 
-if (!docs['spec/planning/v013_macro_security_tabletop_package.md'].includes('## 7. Acceptance Checklist Mapping (`AC-V013-GOV-04`)')) {
-  fail('package_acceptance_mapping_missing');
+if (!docs['docs/reference/legacy_spec_anchor_index.md'].includes('planning-v013-macro-security-tabletop-package')) {
+  fail('package_redirect_anchor_missing');
 }
 if (!docs['spec/governance/macro_security_incident_playbook_v1.md'].includes('### 12.4 Reseed metadata binding (`#790`, `BATCH-20260223-11S`)')) {
   fail('playbook_reseed_binding_missing');

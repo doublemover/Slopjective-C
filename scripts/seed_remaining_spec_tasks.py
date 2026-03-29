@@ -39,8 +39,8 @@ DEFAULT_EXECUTION_STATUS = "open"
 DEFAULT_SEED_CONFIG: dict[str, Any] = {
     "expected_task_count": 510,
     "repo_default": "doublemover/Slopjective-C",
-    "catalog_md_default": "spec/planning/remaining_task_review_catalog.md",
-    "catalog_json_default": "spec/planning/remaining_task_review_catalog.json",
+    "catalog_md_default": "tmp/reports/remaining_task_review_catalog.md",
+    "catalog_json_default": "tmp/reports/remaining_task_review_catalog.json",
     "sleep_seconds_default": 0.35,
     "lane_name": {
         "A": "Normative Closure",

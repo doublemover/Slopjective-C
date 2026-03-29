@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Close SPT issues when their source checkbox rows are checked.
 
-This helper reconciles `spec/planning/remaining_task_review_catalog.json` against
+This helper reconciles `tmp/reports/remaining_task_review_catalog.json` against
 current markdown checkbox state in the workspace and can optionally close matching
 open SPT issues on GitHub.
 """
@@ -23,7 +23,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CLOSE_CONFIG_SECTION = "close_spt_issues_from_checkboxes"
 DEFAULT_CLOSE_CONFIG: dict[str, Any] = {
-    "catalog_default": "spec/planning/remaining_task_review_catalog.json",
+    "catalog_default": "tmp/reports/remaining_task_review_catalog.json",
     "task_id_prefix_default": "SPT-",
     "task_id_pattern": r"^\[(SPT-\d{4})\]",
 }

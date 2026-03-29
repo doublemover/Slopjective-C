@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_INPUT = ROOT / "spec" / "planning" / "remaining_task_review_catalog.json"
+DEFAULT_INPUT = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
 DEFAULT_STATUSES: tuple[str, ...] = ("open", "open-blocked", "blocked")
 STATUS_SORT_ORDER: tuple[str, ...] = ("open", "open-blocked", "blocked", "complete", "missing")
 LANE_SORT_ORDER: tuple[str, ...] = ("A", "B", "C", "D")

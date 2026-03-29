@@ -228,8 +228,8 @@ def build_payload(
     return {
         "contract_id": "V013-TOOL-04-SHARD-SIZE-v1",
         "calibration_sources": [
-            "spec/planning/v012_wave10_candidate_shards_20260223.md",
-            "spec/planning/v012_wave16_candidate_shards_20260223.md",
+            "docs/reference/legacy_spec_anchor_index.md#planning-v012-wave10-candidate-shards-20260223",
+            "docs/reference/legacy_spec_anchor_index.md#planning-v012-wave16-candidate-shards-20260223",
         ],
         "inputs": {
             "id_count": inputs.id_count,

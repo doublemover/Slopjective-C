@@ -273,13 +273,13 @@ def build_parser() -> argparse.ArgumentParser:
         prog="apply_remaining_task_status_overrides.py",
         description=(
             "Apply per-lane status override JSON files to "
-            "spec/planning/remaining_task_review_catalog.json."
+            "tmp/reports/remaining_task_review_catalog.json."
         ),
     )
     parser.add_argument(
         "--catalog",
         type=Path,
-        default=Path("spec/planning/remaining_task_review_catalog.json"),
+        default=Path("tmp/reports/remaining_task_review_catalog.json"),
         help="Path to remaining_task_review_catalog.json.",
     )
     parser.add_argument(
