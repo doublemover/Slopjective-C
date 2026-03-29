@@ -220,6 +220,77 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   WriteDashboardStatusArtifact(cli_options.out_dir,
                                cli_options.emit_prefix,
                                dashboard_status_json);
+  std::string advanced_feature_gate_artifact_json;
+  std::string advanced_feature_gate_error;
+  if (!TryBuildObjc3AdvancedFeatureGateArtifact(
+          {.surface_kind = "native-cli-validation",
+           .report_artifact_path =
+               cli_options.validate_conformance_report_path.filename().string(),
+           .publication_artifact_path = publication_path.filename().string(),
+           .validation_artifact_path =
+               BuildConformanceValidationArtifactPath(cli_options.out_dir,
+                                                     cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .release_evidence_operation_artifact_path =
+               BuildReleaseEvidenceOperationArtifactPath(
+                   cli_options.out_dir, cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .dashboard_artifact_path =
+               BuildDashboardStatusArtifactPath(cli_options.out_dir,
+                                               cli_options.emit_prefix)
+                   .filename()
+                   .string()},
+          report_json,
+          publication_json,
+          advanced_feature_gate_artifact_json,
+          advanced_feature_gate_error)) {
+    std::cerr << advanced_feature_gate_error << "\n";
+    return 125;
+  }
+  WriteAdvancedFeatureGateArtifact(cli_options.out_dir,
+                                   cli_options.emit_prefix,
+                                   advanced_feature_gate_artifact_json);
+
+  std::string release_candidate_matrix_artifact_json;
+  std::string release_candidate_matrix_error;
+  if (!TryBuildObjc3ReleaseCandidateMatrixArtifact(
+          {.surface_kind = "native-cli-validation",
+           .report_artifact_path =
+               cli_options.validate_conformance_report_path.filename().string(),
+           .publication_artifact_path = publication_path.filename().string(),
+           .advanced_feature_gate_artifact_path =
+               BuildAdvancedFeatureGateArtifactPath(cli_options.out_dir,
+                                                   cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .validation_artifact_path =
+               BuildConformanceValidationArtifactPath(cli_options.out_dir,
+                                                     cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .release_evidence_operation_artifact_path =
+               BuildReleaseEvidenceOperationArtifactPath(
+                   cli_options.out_dir, cli_options.emit_prefix)
+                   .filename()
+                   .string(),
+           .dashboard_artifact_path =
+               BuildDashboardStatusArtifactPath(cli_options.out_dir,
+                                               cli_options.emit_prefix)
+                   .filename()
+                   .string()},
+          report_json,
+          publication_json,
+          advanced_feature_gate_artifact_json,
+          release_candidate_matrix_artifact_json,
+          release_candidate_matrix_error)) {
+    std::cerr << release_candidate_matrix_error << "\n";
+    return 125;
+  }
+  WriteReleaseCandidateMatrixArtifact(cli_options.out_dir,
+                                      cli_options.emit_prefix,
+                                      release_candidate_matrix_artifact_json);
   return 0;
 }
 

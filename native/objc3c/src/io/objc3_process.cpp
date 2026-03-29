@@ -4141,7 +4141,7 @@ bool TryBuildObjc3ReleaseEvidenceOperationArtifact(
       << EscapeJsonString(kObjc3DashboardStatusPublicationContractId)
       << "\",\n"
       << "  \"operation_model\": \""
-      << "validation-publishes-release-evidence-command-surface-and-dashboard-ready-summary"
+      << "validation-publishes-release-evidence-command-surface-and-dashboard-status-over-the-final-claim-publication-artifact-set"
       << "\",\n"
       << "  \"release_label\": \""
       << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
@@ -4474,7 +4474,7 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
       << "    {\"lane\":\"E\",\"contract_id\":\"objc3c.tooling.integrated.advanced.feature.gate.v1\",\"status\":\"pass\"}\n"
       << "  ],\n"
       << "  \"matrix_model\": \""
-      << "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-emitted-sidecars"
+      << "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set"
       << "\",\n"
       << "  \"ready\": true\n"
       << "}\n";

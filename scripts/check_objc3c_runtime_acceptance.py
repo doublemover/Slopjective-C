@@ -189,6 +189,9 @@ RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE
 RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.claim.publication.dashboard.schema.surface.v1"
 )
+RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.final.claim.publication.deprecated.path.shutdown.surface.v1"
+)
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
@@ -6355,6 +6358,53 @@ def build_runtime_claim_publication_dashboard_schema_surface(
         "explicit_non_goals": [
             "no-dashboard-built-from-milestone-local-notes",
             "no-schema-drift-hidden-behind-ad-hoc-dashboard-fields",
+        ],
+        "requires_conformance_validation_artifact": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"final-claim-publication-deprecated-path-shutdown"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
+            "objc3c.tooling.integrated.advanced.feature.gate.v1",
+            "objc3c.tooling.release.candidate.execution.matrix.v1",
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.objc3-conformance-report.json",
+            "<emit-prefix>.objc3-conformance-publication.json",
+            "<emit-prefix>.objc3-conformance-validation.json",
+            "<emit-prefix>.objc3-release-evidence-operation.json",
+            "<emit-prefix>.objc3-dashboard-status.json",
+            "<emit-prefix>.objc3-advanced-feature-gate.json",
+            "<emit-prefix>.objc3-release-candidate-matrix.json",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/driver/objc3_objc3_path.cpp",
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/io/objc3_manifest_artifacts.cpp",
+        ],
+        "final_publication_model": (
+            "compile-publishes-the-live-claim-report-publication-and-initial-release-artifacts-validation-completes-the-final-claim-publication-bundle-and-no-deprecated-sidecars-remain"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
+        "deprecated_sidecar_filenames": DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
+        "explicit_non_goals": [
+            "no-dashboard-ready-summary-revival",
+            "no-toolchain-runtime-ga-scaffold-output-revival",
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
@@ -17907,6 +17957,120 @@ def check_claim_publication_dashboard_schema_surface_case(run_dir: Path) -> Case
     )
 
 
+def check_final_claim_publication_deprecated_path_shutdown_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "final-claim-publication-deprecated-path-shutdown"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+
+    compile_dir = case_dir / "compile"
+    compile_fixture_with_args(fixture, compile_dir)
+    compile_artifacts = sorted(path.name for path in compile_dir.glob("module.objc3-*.json"))
+    expect(
+        compile_artifacts
+        == [
+            "module.objc3-advanced-feature-gate.json",
+            "module.objc3-conformance-publication.json",
+            "module.objc3-conformance-report.json",
+            "module.objc3-release-candidate-matrix.json",
+        ],
+        "expected native compile to publish only the live claim publication and release-candidate sidecars",
+    )
+    expect(
+        all(not (compile_dir / filename).exists() for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES),
+        "expected native compile to stop emitting every deprecated claim/scaffold sidecar filename",
+    )
+
+    report_path = compile_dir / "module.objc3-conformance-report.json"
+    validate_dir = case_dir / "validate"
+    validate_dir.mkdir(parents=True, exist_ok=True)
+    validation = run(
+        [
+            str(NATIVE_EXE),
+            "--validate-objc3-conformance",
+            str(report_path),
+            "--out-dir",
+            str(validate_dir),
+            "--emit-prefix",
+            "module",
+            "--emit-objc3-conformance-format",
+            "json",
+        ]
+    )
+    expect(
+        validation.returncode == 0,
+        "expected conformance validation to publish the full final claim publication bundle",
+    )
+
+    validate_artifacts = sorted(path.name for path in validate_dir.glob("module.objc3-*.json"))
+    expect(
+        validate_artifacts
+        == [
+            "module.objc3-advanced-feature-gate.json",
+            "module.objc3-conformance-validation.json",
+            "module.objc3-dashboard-status.json",
+            "module.objc3-release-candidate-matrix.json",
+            "module.objc3-release-evidence-operation.json",
+        ],
+        "expected conformance validation to publish the final post-publication release artifacts and no deprecated sidecars",
+    )
+    expect(
+        all(not (validate_dir / filename).exists() for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES),
+        "expected conformance validation to keep deprecated claim/scaffold sidecar paths shut down",
+    )
+
+    release_evidence_operation = json.loads(
+        (validate_dir / "module.objc3-release-evidence-operation.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    advanced_feature_gate = json.loads(
+        (validate_dir / "module.objc3-advanced-feature-gate.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    release_candidate_matrix = json.loads(
+        (validate_dir / "module.objc3-release-candidate-matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    expect(
+        release_evidence_operation.get("operation_model")
+        == "validation-publishes-release-evidence-command-surface-and-dashboard-status-over-the-final-claim-publication-artifact-set",
+        "expected release evidence operation artifact to describe the final claim publication bundle instead of the retired dashboard-ready summary path",
+    )
+    expect(
+        advanced_feature_gate.get("surface_kind") == "native-cli-validation"
+        and release_candidate_matrix.get("surface_kind") == "native-cli-validation",
+        "expected validation-emitted gate and matrix artifacts to identify the live validation publication path",
+    )
+    expect(
+        advanced_feature_gate.get("dashboard_artifact_expected")
+        == "module.objc3-dashboard-status.json"
+        and release_candidate_matrix.get("advanced_feature_gate_artifact")
+        == "module.objc3-advanced-feature-gate.json",
+        "expected validation-emitted release artifacts to preserve the final live artifact wiring",
+    )
+    expect(
+        release_candidate_matrix.get("matrix_model")
+        == "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set",
+        "expected release candidate matrix to describe the final claim publication artifact set instead of emitted sidecars generically",
+    )
+
+    return CaseResult(
+        case_id="final-claim-publication-deprecated-path-shutdown",
+        probe="compile-validate-and-inspect-the-final-claim-publication-bundle",
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "compile_artifacts": compile_artifacts,
+            "validate_artifacts": validate_artifacts,
+            "validation_surface_kind": advanced_feature_gate.get("surface_kind"),
+        },
+    )
+
+
 def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
@@ -18753,6 +18917,7 @@ def main() -> int:
             run_dir
         ),
         check_claim_publication_dashboard_schema_surface_case(run_dir),
+        check_final_claim_publication_deprecated_path_shutdown_case(run_dir),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -18883,6 +19048,11 @@ def main() -> int:
         ),
         "runtime_claim_publication_dashboard_schema_surface": (
             build_runtime_claim_publication_dashboard_schema_surface(results)
+        ),
+        "runtime_final_claim_publication_deprecated_path_shutdown_surface": (
+            build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
+                results
+            )
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
