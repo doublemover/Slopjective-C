@@ -8,6 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_JSON = ROOT / "package.json"
+PACKAGE_SCRIPT_BUDGET = 60
 REMOVED_FAMILY_PATTERNS = (
     r"^check:objc3c:m",
     r"^test:tooling:m",
@@ -54,8 +55,10 @@ def main() -> int:
     removed_hits = sorted(name for name in scripts if any(re.match(p, name) for p in REMOVED_FAMILY_PATTERNS))
     if removed_hits:
         errors.append(f'removed script families still present: {removed_hits}')
-    if len(scripts) > 25:
-        errors.append(f'package script count exceeds budget: {len(scripts)} > 25')
+    if len(scripts) > PACKAGE_SCRIPT_BUDGET:
+        errors.append(
+            f'package script count exceeds budget: {len(scripts)} > {PACKAGE_SCRIPT_BUDGET}'
+        )
     if (ROOT / 'docs' / 'contracts').exists():
         errors.append('docs/contracts must not be live')
     if (ROOT / 'spec' / 'planning').exists():

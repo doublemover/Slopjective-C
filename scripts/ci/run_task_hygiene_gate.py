@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -10,7 +11,10 @@ ROOT = Path(__file__).resolve().parents[2]
 SEQUENCE = [
     ('task-hygiene', [sys.executable, 'scripts/ci/check_task_hygiene.py']),
     ('dependency-boundaries', [sys.executable, 'scripts/check_objc3c_dependency_boundaries.py', '--strict']),
-    ('native-docs-drift', [sys.executable, 'scripts/build_objc3c_native_docs.py', '--check']),
+    ('site-index-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-site-index']),
+    ('native-docs-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-native-docs']),
+    ('public-command-surface-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-public-command-surface']),
+    ('documentation-surface', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-documentation-surface']),
 ]
 
 
@@ -24,7 +28,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     for name, cmd in SEQUENCE:
         print(f'[check:task-hygiene] {name}', flush=True)
-        rc = subprocess.run(cmd, cwd=ROOT, check=False).returncode
+        env = os.environ.copy()
+        env['PYTHONDONTWRITEBYTECODE'] = '1'
+        rc = subprocess.run(cmd, cwd=ROOT, check=False, env=env).returncode
         if rc != 0:
             return rc
     print(f'[check:task-hygiene] sequence complete ({len(SEQUENCE)} command(s))', flush=True)

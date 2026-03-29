@@ -32,6 +32,13 @@ npm run test:smoke
 npm run test:ci
 ```
 
+`npm run test:ci` now includes the compact documentation integration surface:
+
+- generated site drift,
+- generated native-doc drift,
+- generated public-command-surface drift,
+- and reader-facing documentation/readability boundary checks.
+
 ## Direct tools
 
 - dependency boundaries: `python scripts/check_objc3c_dependency_boundaries.py --strict`
