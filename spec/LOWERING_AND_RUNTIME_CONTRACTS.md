@@ -6106,8 +6106,8 @@ fail-closed executable binding capability:
     `objc3_runtime_dispatch_i32`
   - no runtime-side body rediscovery from source or manifests
 - proof surface:
-  - `tests/tooling/fixtures/native/c002_method_body_binding.objc3`
-  - `tests/tooling/runtime/c002_method_binding_probe.cpp`
+  - `tests/tooling/fixtures/native/method_body_binding.objc3`
+  - `tests/tooling/runtime/method_binding_probe.cpp`
   - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
 
 ## M256 executable realization records (C003)
@@ -6873,7 +6873,7 @@ for executable properties and ivars.
   `fail-closed-on-runnable-property-ivar-matrix-drift-or-missing-live-runtime-proof`
 - canonical live proof assets:
   - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
-  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
 - the next implementation issue is `M258-A001`
 
 ## M258 runtime-aware import/module surface freeze (A001)
@@ -8161,11 +8161,11 @@ execution matrix above the retained `A003/B003/C004/D003/E001` chain.
   `a003-b003-c004-d003-e001-summary-plus-integrated-native-block-smoke-matrix`
 - closeout matrix claims:
   - the supported runnable block slice is proved through real native fixtures:
-    - `m261_owned_object_capture_runtime_positive.objc3` exits `11`
-    - `m261_nonowning_object_capture_runtime_positive.objc3` exits `9`
-    - `m261_byref_cell_copy_dispose_runtime_positive.objc3` exits `14`
-    - `m261_escaping_block_runtime_hook_argument_positive.objc3` exits `14`
-    - `m261_escaping_block_runtime_hook_return_positive.objc3` exits `0`
+    - `owned_object_capture_runtime_positive.objc3` exits `11`
+    - `nonowning_object_capture_runtime_positive.objc3` exits `9`
+    - `byref_cell_copy_dispose_runtime_positive.objc3` exits `14`
+    - `escaping_block_runtime_hook_argument_positive.objc3` exits `14`
+    - `escaping_block_runtime_hook_return_positive.objc3` exits `0`
   - `M261-D003` remains the authoritative escaping pointer-capture/byref
     runtime proof through its forwarding-cell runtime probe
   - emitted IR republishes:

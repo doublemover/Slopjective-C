@@ -187,7 +187,7 @@ truth from scattered semantic and runtime-side reports.
 - authoritative compile-manifest key:
   - `runtime_error_execution_cleanup_source_surface`
 - authoritative composed source inputs:
-  - `objc3c.part6.error.source.closure.v1`
+  - `objc3c.error_handling.error.source.closure.v1`
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/parse/objc3_parser.cpp`
@@ -213,8 +213,8 @@ packets.
 - authoritative compile-manifest key:
   - `runtime_catch_filter_finalization_source_surface`
 - authoritative composed source inputs:
-  - `objc3c.part6.try.throw.do.catch.semantics.v1`
-  - `objc3c.part6.error.bridge.legality.v1`
+  - `objc3c.error_handling.try.throw.do.catch.semantics.v1`
+  - `objc3c.error_handling.error.bridge.legality.v1`
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/parse/objc3_parser.cpp`
@@ -241,7 +241,7 @@ source forms are valid or try-eligible.
 - authoritative compile-manifest key:
   - `runtime_error_propagation_cleanup_semantics_surface`
 - authoritative composed source inputs:
-  - `objc3c.part6.error.semantic.model.v1`
+  - `objc3c.error_handling.error.semantic.model.v1`
 - authoritative live code paths:
   - `native/objc3c/src/sema/objc3_sema_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
@@ -265,7 +265,7 @@ of hand-waving over what is already enforced in the compiler.
 - authoritative compile-manifest key:
   - `runtime_bridging_filter_unwind_diagnostics_surface`
 - authoritative composed source inputs:
-  - `objc3c.part6.error.bridge.legality.v1`
+  - `objc3c.error_handling.error.bridge.legality.v1`
 - authoritative live code paths:
   - `native/objc3c/src/sema/objc3_sema_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
@@ -298,8 +298,8 @@ compiler contract.
 - authoritative composed source inputs:
   - `objc3c.ns.error.bridging.lowering.v1`
   - `objc3c.unwind.cleanup.lowering.v1`
-  - `objc3c.part6.throws.abi.propagation.lowering.v1`
-  - `objc3c.part6.result.and.bridging.artifact.replay.v1`
+  - `objc3c.error_handling.throws.abi.propagation.lowering.v1`
+  - `objc3c.error_handling.result.and.bridging.artifact.replay.v1`
 - authoritative live code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.h`
@@ -308,10 +308,10 @@ compiler contract.
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - authoritative proof paths:
   - fixtures:
-    - `tests/tooling/fixtures/native/c002_error_out_abi_positive.objc3`
-    - `tests/tooling/fixtures/native/d001_error_runtime_bridge_helper_positive.objc3`
+    - `tests/tooling/fixtures/native/error_out_abi_positive.objc3`
+    - `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp`
+    - `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
 
 This is the authoritative lowering boundary for bridged NSError handoff,
 cleanup emission, and the current throws/result replay handoff. It freezes the
@@ -332,7 +332,7 @@ artifact surface that packaged builds actually consume.
 - authoritative source inputs:
   - `runtime_error_lowering_unwind_bridge_helper_surface`
 - authoritative probe paths:
-  - `tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp`
+  - `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
 
 This is the authoritative runtime ABI boundary for thrown-error storage,
 NSError/status bridging, and catch-match cleanup helpers. It freezes the
@@ -353,10 +353,10 @@ the public runtime header unchanged until a wider ABI commitment is warranted.
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative proof paths:
   - fixtures:
-    - `tests/tooling/fixtures/native/d002_live_error_runtime_integration_positive.objc3`
+    - `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/d001_error_runtime_bridge_helper_probe.cpp`
-    - `tests/tooling/runtime/d002_live_error_runtime_integration_probe.cpp`
+    - `tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp`
+    - `tests/tooling/runtime/live_error_runtime_integration_probe.cpp`
 
 This is the authoritative live runtime implementation boundary for the lowered
 throw/catch/status-bridge path. It freezes the observable runtime behavior of
@@ -385,14 +385,14 @@ surfaces.
     - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - authoritative proof paths:
   - fixtures:
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3`
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3`
+    - `tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
-    - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
 
 This is the authoritative object-model realization source boundary. It freezes
 the emitted class/metaclass/protocol/category realization contracts, coupled
@@ -446,9 +446,9 @@ sidecars, stale milestone notes, or synthetic probes.
     - `tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3`
     - `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp`
-    - `tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp`
+    - `tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
 
 This is the authoritative block/ARC unified source boundary. It freezes the
 live frontend semantic packet, the emitted LLVM IR block-runtime summary
@@ -463,7 +463,7 @@ scaffolding.
 The coupled source surface also carries the private runtime snapshot
 `runtime_api.objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
 and the linked probe
-`tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp` so later
+`tests/tooling/runtime/block_arc_runtime_abi_probe.cpp` so later
 runtime ABI work extends the emitted compiler truth instead of rebuilding
 symbol inventories from ad hoc probes.
 
@@ -495,11 +495,11 @@ symbol inventories from ad hoc probes.
     - `tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3`
     - `tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3`
     - `tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3`
-    - `tests/tooling/fixtures/native/b004_capture_list_and_retainable_family_legality_completion_positive.objc3`
+    - `tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp`
-    - `tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp`
+    - `tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
 
 This is the authoritative ownership-transfer and capture-family source
 boundary. It freezes cleanup ownership transfer, explicit capture ownership
@@ -565,10 +565,10 @@ milestone-local notes.
     - `tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3`
     - `tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/d002_block_runtime_copy_dispose_invoke_probe.cpp`
-    - `tests/tooling/runtime/d003_block_runtime_byref_forwarding_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
-    - `tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp`
+    - `tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp`
+    - `tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
 
 This is the authoritative lowering/helper boundary for `M281` lane C. It
 freezes the live semantic lowering packets, manifest replay keys, emitted LLVM
@@ -610,7 +610,7 @@ lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
   - `objc3_runtime_copy_arc_debug_state_for_testing`
   - `objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
 - authoritative proof path:
-  - `tests/tooling/runtime/d001_block_arc_runtime_abi_probe.cpp`
+  - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
 
 This is the authoritative live runtime ABI boundary for `M281` lane D. It
 freezes the supported private block-promotion, block-invoke, ARC helper, weak
@@ -648,7 +648,7 @@ hoc runtime inspection.
 - authoritative proof path:
   - fixtures:
     - `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3`
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
   - emitted artifacts:
     - `module.runtime-import-surface.json`
     - `module.cross-module-runtime-link-plan.json`
@@ -691,17 +691,17 @@ runtime-link facts for imported block-heavy modules.
 - authoritative proof paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/c003_synthesized_accessor_probe.cpp`
-    - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/synthesized_accessor_probe.cpp`
+    - `tests/tooling/runtime/property_layout_runtime_probe.cpp`
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
 
 This is the authoritative property/ivar/storage/accessor source boundary. It
 freezes the AST/sema-approved binding, accessor, ownership, and ivar-layout
@@ -737,12 +737,12 @@ non-goals.
 - authoritative proof paths:
   - fixtures:
     - `tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
   - probes:
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 This is the authoritative property atomicity/synthesis/reflection source
@@ -782,17 +782,17 @@ non-goals.
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/c003_synthesized_accessor_probe.cpp`
-    - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/synthesized_accessor_probe.cpp`
+    - `tests/tooling/runtime/property_layout_runtime_probe.cpp`
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
 - explicit non-goals:
   - `no-public-runtime-abi-widening`
   - `no-milestone-specific-scaffolding`
@@ -837,11 +837,11 @@ or ad hoc IR inspection.
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/c003_synthesized_accessor_probe.cpp`
-    - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/synthesized_accessor_probe.cpp`
+    - `tests/tooling/runtime/property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
 - explicit non-goals:
   - `no-public-runtime-abi-widening`
   - `no-milestone-specific-scaffolding`
@@ -880,8 +880,8 @@ body or layout truth outside the live lowering path.
     - `tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
 - explicit non-goals:
   - `no-public-runtime-abi-widening`
   - `no-milestone-specific-scaffolding`
@@ -924,11 +924,11 @@ runtime or in sidecars.
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/arc_property_interaction_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/c003_synthesized_accessor_probe.cpp`
-    - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/synthesized_accessor_probe.cpp`
+    - `tests/tooling/runtime/property_layout_runtime_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
-    - `tests/tooling/runtime/d003_arc_debug_instrumentation_probe.cpp`
+    - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
 - explicit non-goals:
   - `no-public-runtime-abi-widening`
   - `no-milestone-specific-scaffolding`
@@ -973,14 +973,14 @@ and descriptor inventories rather than being inferred from source-only proof.
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
   - probes:
     - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 This is the authoritative realization-lowering and reflection-artifact
@@ -1027,13 +1027,13 @@ notes.
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3`
+    - `tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
   - probes:
     - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
-    - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
 
 This is the authoritative dispatch-table and reflection-record lowering
 boundary. It freezes the fact that the real compiler co-publishes selector-pool
@@ -1063,7 +1063,7 @@ truth from ad hoc IR inspection or milestone-local notes.
 - authoritative proof paths:
   - fixtures:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
   - probes:
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
@@ -1108,11 +1108,11 @@ from source-side manifests alone.
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3`
+    - `tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3`
   - probes:
     - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
-    - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
 
 This is the authoritative realization and lookup semantics boundary. It freezes
 the live selector-table, method-cache, realized-class, category-attachment, and
@@ -1146,11 +1146,11 @@ payloads or stale planning notes.
     - `realized-class-entries-and-runtime-conformance-queries-publish-direct-and-attached-protocol-conformance`
 - authoritative proof paths:
   - fixtures:
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3`
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
   - probes:
-    - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
 
 This is the authoritative class/metaclass/protocol realization boundary. It
@@ -1189,12 +1189,12 @@ milestone notes, or synthetic summaries.
     - `attached-categories-publish-owner-and-name-through-realized-class-entries-and-protocol-conformance-queries`
 - authoritative proof paths:
   - fixtures:
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3`
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
   - probes:
-    - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
 
@@ -1238,13 +1238,13 @@ planning notes.
 - authoritative proof paths:
   - fixtures:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
   - probes:
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 This is the authoritative reflection-visibility and runtime-coherence
@@ -1281,10 +1281,10 @@ milestone-local notes.
   - replay/reset readiness and bootstrap replay symbols
 - authoritative proof path:
   - fixtures:
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3`
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
   - probe:
-    - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
 
 This is the authoritative cross-module realized-metadata replay boundary. It
 freezes the fact that the emitted cross-module link plan, not milestone-local
@@ -1326,21 +1326,21 @@ text or sidecar-only summaries.
   - `objc3_runtime_copy_dispatch_state_for_testing`
 - authoritative proof path:
   - fixtures:
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3`
-    - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+    - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-    - `tests/tooling/fixtures/native/d002_live_dispatch_fast_path_positive.objc3`
-    - `tests/tooling/fixtures/native/d003_property_metadata_reflection_positive.objc3`
+    - `tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3`
+    - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3`
   - probes:
-    - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
-    - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
     - `tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp`
-    - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+    - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
     - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 This is the authoritative object-model runtime ABI/query boundary. It freezes
@@ -1379,7 +1379,7 @@ reconstructing query truth from milestone-local probe assumptions.
   - probes:
     - `tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp`
     - `tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp`
-    - `tests/tooling/runtime/d002_live_dispatch_fast_path_probe.cpp`
+    - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
 
 This is the authoritative live implementation boundary for realization lookup
 and reflection. It freezes the fact that the runtime publishes one aggregate

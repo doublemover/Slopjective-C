@@ -125,7 +125,7 @@ Block/ARC unified source of truth:
   extend that emitted surface rather than inferring runtime truth from sidecar
   probes, ad hoc IR inspection, or milestone-local notes
 - escaping byref and owned capture block values now compile through that same
-  emitted source/lowering/runtime chain, with `m261_d003_block_runtime_byref_forwarding_probe.cpp`
+  emitted source/lowering/runtime chain, with `block_runtime_byref_forwarding_probe.cpp`
   as the executable forwarding proof rather than a deferred semantic rejection
 
 Block/ARC runtime ABI source of truth:

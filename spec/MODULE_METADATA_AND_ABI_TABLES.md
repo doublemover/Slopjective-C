@@ -6390,7 +6390,7 @@ shall preserve:
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
   - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
-  - `tests/tooling/fixtures/native/b004_missing_interface_property.objc3`
+  - `tests/tooling/fixtures/native/missing_interface_property.objc3`
 - evidence path
   `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`.
 
@@ -7208,8 +7208,8 @@ the frozen `M256-C001` object-artifact boundary.
   - category implementation owner identity
     `implementation:Widget(Tracing)::instance_method:tracedValue`
 - canonical runnable proof artifacts:
-  - `tests/tooling/fixtures/native/c002_method_body_binding.objc3`
-  - `tests/tooling/runtime/c002_method_binding_probe.cpp`
+  - `tests/tooling/fixtures/native/method_body_binding.objc3`
+  - `tests/tooling/runtime/method_binding_probe.cpp`
   - `tmp/reports/m256/M256-C002/method_body_binding_summary.json`
 
 ## M256 executable realization-record metadata anchors (C003)
@@ -7249,7 +7249,7 @@ class/protocol/category realization records.
   - `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-runtime-checks`
 - canonical proof artifacts:
   - `tests/tooling/fixtures/native/protocol_conformance_positive.objc3`
-  - `tests/tooling/runtime/d001_class_realization_runtime_probe.cpp`
+  - `tests/tooling/runtime/class_realization_runtime_probe.cpp`
   - `tmp/reports/m256/M256-D001/class_realization_runtime_contract_summary.json`
 
 ## M256 runtime metaclass graph and root-class anchors (D002)
@@ -7265,8 +7265,8 @@ emitted realization records.
   - `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
   - `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
 - canonical proof artifacts:
-  - `tests/tooling/fixtures/native/d002_metaclass_graph_root_class_library.objc3`
-  - `tests/tooling/runtime/d002_metaclass_graph_root_class_probe.cpp`
+  - `tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3`
+  - `tests/tooling/runtime/metaclass_graph_root_class_probe.cpp`
   - `tmp/reports/m256/M256-D002/metaclass_graph_and_root_class_baseline_summary.json`
 
 ## M256 runtime category attachment and protocol conformance anchors (D003)
@@ -7282,8 +7282,8 @@ realized class graph and attached category surfaces.
   - `runtime-protocol-conformance-queries-walk-class-category-and-inherited-protocol-closures`
   - `invalid-attachment-owner-identities-or-broken-protocol-refs-disable-runtime-attachment-queries`
 - canonical proof artifacts:
-  - `tests/tooling/fixtures/native/d003_category_attachment_protocol_runtime_library.objc3`
-  - `tests/tooling/runtime/d003_category_attachment_protocol_runtime_probe.cpp`
+  - `tests/tooling/fixtures/native/category_attachment_protocol_runtime_library.objc3`
+  - `tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp`
   - `tmp/reports/m256/M256-D003/category_attachment_protocol_conformance_runtime_checks_summary.json`
 
 ## M256 canonical runnable class and object sample anchors (D004)
@@ -7867,7 +7867,7 @@ published summaries and emitted Part 6 replay/import/link-plan artifacts.
 - canonical IR boundary:
   - `; runtime_property_layout_consumption = contract=objc3c-runtime-property-layout-consumption-freeze/m257-d001-v1`
 - canonical proof assets:
-  - `tests/tooling/runtime/d001_property_layout_runtime_probe.cpp`
+  - `tests/tooling/runtime/property_layout_runtime_probe.cpp`
   - `tmp/reports/m257/M257-D001/property_layout_runtime_contract_summary.json`
 
 ## M257 runtime instance-allocation and layout metadata anchors (D002)
@@ -7888,7 +7888,7 @@ the historical shared storage fallback.
 - canonical IR boundary:
   - `; runtime_instance_allocation_layout_support = contract=objc3c-runtime-instance-allocation-layout-support/m257-d002-v1`
 - canonical proof assets:
-  - `tests/tooling/runtime/d002_instance_allocation_runtime_probe.cpp`
+  - `tests/tooling/runtime/instance_allocation_runtime_probe.cpp`
   - `tmp/reports/m257/M257-D002/instance_allocation_layout_runtime_summary.json`
 
 ## M257 runtime property metadata reflection anchors (D003)
@@ -7948,7 +7948,7 @@ summaries to one live executable matrix.
   - `tmp/reports/m257/M257-E001/property_ivar_execution_gate_summary.json`
 - canonical live proof assets:
   - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
-  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
 - canonical matrix evidence:
   - `tmp/reports/m257/M257-E002/runnable_property_ivar_execution_matrix_summary.json`
 
@@ -8176,7 +8176,7 @@ and realized runtime metadata into one live cross-module execution matrix.
 - contract id
   `objc3c-runnable-import-module-execution-matrix/m258-e002-v1`
 - canonical proof assets
-  - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
   - `tmp/reports/m258/M258-E002/runnable_import_module_execution_matrix_summary.json`
 - emitted metadata truth
   - the provider module still owns the imported class/protocol metadata
@@ -8196,10 +8196,10 @@ sample families the project may truthfully treat as canonical runnable proof.
   - `tests/tooling/fixtures/native/m256_d004_canonical_runnable_object_sample.objc3`
   - `tests/tooling/runtime/m256_d004_canonical_runnable_object_probe.cpp`
   - `tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3`
-  - `tests/tooling/runtime/e002_property_ivar_execution_matrix_probe.cpp`
-  - `tests/tooling/fixtures/native/d002_runtime_packaging_provider.objc3`
-  - `tests/tooling/fixtures/native/d002_runtime_packaging_consumer.objc3`
-  - `tests/tooling/runtime/e002_import_module_execution_matrix_probe.cpp`
+  - `tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp`
+  - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
+  - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
+  - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
   - `tmp/reports/m259/M259-A001/runnable_sample_surface_contract_summary.json`
 - emitted metadata truth
   - canonical runnable proof still composes existing descriptor, selector pool,
@@ -8250,9 +8250,9 @@ being misreported as runnable.
   `objc3c-runnable-core-unsupported-advanced-feature-diagnostics/m259-b002-v1`
 - canonical proof assets
   - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
-  - `tests/tooling/fixtures/native/b002_unsupported_feature_claim_throws.objc3`
-  - `tests/tooling/fixtures/native/b002_unsupported_feature_claim_autoreleasepool.objc3`
-  - `tests/tooling/fixtures/native/b002_unsupported_feature_claim_arc_ownership_qualifier.objc3`
+  - `tests/tooling/fixtures/native/unsupported_feature_claim_throws_legacy_alias.objc3`
+  - `tests/tooling/fixtures/native/unsupported_feature_claim_autoreleasepool_legacy_alias.objc3`
+  - `tests/tooling/fixtures/native/unsupported_feature_claim_arc_ownership_qualifier_legacy_alias.objc3`
   - `tmp/reports/m259/M259-A002/canonical_runnable_sample_set_summary.json`
   - `tmp/reports/m259/M259-B001/runnable_core_compatibility_guard_summary.json`
   - `tmp/reports/m259/M259-B002/fail_closed_unsupported_advanced_feature_diagnostics_summary.json`
