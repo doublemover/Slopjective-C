@@ -76,6 +76,7 @@ npm run test:docs
 
 - dependency boundaries: `python scripts/check_objc3c_dependency_boundaries.py --strict`
 - task hygiene: `python scripts/ci/check_task_hygiene.py`
+- repo superclean surface: `npm run check:repo:surface`
 - docs stitch/check: `npm run check:docs:native`
 - parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
 

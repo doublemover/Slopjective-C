@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `55`
+- Current public script count: `56`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -24,6 +24,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:docs:commands` | `build-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py` |
 | `check:docs:commands` | `check-public-command-surface` | `docs` | `operator-facing machine appendix stays in sync with the live workflow runner and package scripts` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py --check` |
 | `check:docs:surface` | `check-documentation-surface` | `docs` | `reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |
+| `check:repo:surface` | `check-repo-superclean-surface` | `repo` | `native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact` | `fixed-shape` | `python:scripts/check_repo_superclean_surface.py` |
 | `test:docs` | `validate-documentation-surface` | `docs` | `site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit` | `fixed-shape` | `runner-internal + generated documentation checks` |
 | `compile:objc3c` | `compile-objc3c` | `-` | `-` | `pass-through` | `pwsh:scripts/objc3c_native_compile.ps1` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |
