@@ -97,6 +97,16 @@ def main() -> int:
         "execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
     }:
         return fail("build_run_package_surface drifted")
+    runtime_presentation_surface = payload.get("runtime_presentation_surface")
+    if runtime_presentation_surface != {
+        "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
+        "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
+        "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
+        "shared_execution_smoke_entrypoint": "test:objc3c:execution-smoke",
+        "shared_execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+        "presentation_readme": "showcase/README.md",
+    }:
+        return fail("runtime_presentation_surface drifted")
 
     examples = payload.get("examples")
     if not isinstance(examples, list) or len(examples) != 3:
@@ -168,6 +178,26 @@ def main() -> int:
             return fail(f"workspace manifest package_stage_root drifted for {example_id}")
         if workspace_payload.get("story_capabilities") != entry.get("story_capabilities"):
             return fail(f"workspace manifest story_capabilities drifted for {example_id}")
+        runtime_surface = workspace_payload.get("runtime_surface")
+        if runtime_surface != {
+            "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
+            "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
+            "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
+            "runtime_output_root": f"tmp/artifacts/showcase/{example_id}/runtime",
+            "expected_exit_code": {"auroraBoard": 33, "signalMesh": 13, "patchKit": 7}[example_id],
+        }:
+            return fail(f"workspace manifest runtime_surface drifted for {example_id}")
+        presentation = workspace_payload.get("presentation")
+        expected_headlines = {
+            "auroraBoard": "categories, reflection, synthesized behaviors",
+            "signalMesh": "status bridging, actors, runtime messaging",
+            "patchKit": "derives, macros, property behaviors, interop",
+        }
+        if presentation != {
+            "title": entry.get("title"),
+            "headline": expected_headlines[example_id],
+        }:
+            return fail(f"workspace manifest presentation drifted for {example_id}")
         entry_with_workspace = dict(entry)
         entry_with_workspace["_workspace_payload"] = workspace_payload
         selected_examples.append(entry_with_workspace)

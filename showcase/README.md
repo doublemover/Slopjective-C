@@ -78,6 +78,12 @@ Package staging stays under `tmp/pkg/objc3c-native-runnable-toolchain/`, and
 showcase report artifacts stay under `tmp/reports/showcase/`, rooted at
 `tmp/reports/showcase/summary.json`.
 
+Runtime and presentation contracts are checked in per example under
+`showcase/<example-id>/workspace.json`. Those workspace contracts declare the
+runtime launch-contract helper, the authoritative runtime-library/linker-flag
+resolution model, the expected process exit code, and the presentation headline
+for the example.
+
 ## Explicit Non-Goals
 
 - screenshots or image-only demos

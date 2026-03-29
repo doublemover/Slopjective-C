@@ -12,5 +12,16 @@
     "status-bridging",
     "actors",
     "runtime-messaging"
-  ]
+  ],
+  "runtime_surface": {
+    "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
+    "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
+    "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
+    "runtime_output_root": "tmp/artifacts/showcase/signalMesh/runtime",
+    "expected_exit_code": 13
+  },
+  "presentation": {
+    "title": "signalMesh",
+    "headline": "status bridging, actors, runtime messaging"
+  }
 }
