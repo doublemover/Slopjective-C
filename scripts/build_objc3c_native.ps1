@@ -729,6 +729,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       build_stdlib = "build:objc3c:stdlib"
       check_stdlib_surface = "check:stdlib:surface"
       test_stdlib = "test:stdlib"
+      test_stdlib_e2e = "test:stdlib:e2e"
       test_fast = "test:fast"
       test_ci = "test:ci"
       test_docs = "test:docs"
@@ -870,6 +871,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "check-stdlib-surface",
         "materialize-stdlib-workspace",
         "validate-stdlib-foundation",
+        "validate-runnable-stdlib-foundation",
         "package-runnable-toolchain"
       )
     }

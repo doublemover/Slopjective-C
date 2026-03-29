@@ -48,3 +48,4 @@ The `M305` implementation path should leave behind:
 - `npm run check:stdlib:surface`
 - `npm run build:objc3c:stdlib`
 - `npm run test:stdlib`
+- `npm run test:stdlib:e2e`

@@ -220,6 +220,8 @@ def main() -> int:
         "tmp/reports/stdlib/",
         "## Non-goals",
         "## Expected end state",
+        "## Public actions",
+        "npm run test:stdlib:e2e",
     ):
         require_token(stdlib_runbook, token, path=STDLIB_RUNBOOK_PATH, errors=errors)
 

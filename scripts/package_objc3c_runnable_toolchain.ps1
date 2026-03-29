@@ -231,6 +231,9 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("bonus_experience_surfaces"))
 if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surface")) {
   throw "runnable toolchain package FAIL: missing performance_benchmark_surface in $repoSupercleanSurfaceRelativePath"
 }
+if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_foundation_surface")) {
+  throw "runnable toolchain package FAIL: missing stdlib_foundation_surface in $repoSupercleanSurfaceRelativePath"
+}
 
 $manifestPayload = [ordered]@{
   contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
@@ -319,6 +322,7 @@ $manifestPayload = [ordered]@{
   bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
+  stdlib_foundation_surface = $repoSupercleanSurfacePayload["stdlib_foundation_surface"]
   guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
   stdlib_root = "stdlib"
   stdlib_workspace_manifest = "stdlib/workspace.json"
@@ -373,9 +377,11 @@ $manifestPayload = [ordered]@{
     package = "npm run package:objc3c-native:runnable-toolchain"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
     build_playground = "npm run build:objc3c:playground"
+    build_stdlib = "npm run build:objc3c:stdlib"
     build_template = "npm run build:objc3c:template"
     bonus_experiences = "npm run test:bonus-experiences"
     bonus_experiences_e2e = "npm run test:bonus-experiences:e2e"
+    check_stdlib_surface = "npm run check:stdlib:surface"
     inspect_bonus_tools = "npm run inspect:objc3c:bonus-tools"
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
@@ -385,6 +391,8 @@ $manifestPayload = [ordered]@{
     inspect_runtime = "npm run inspect:objc3c:runtime"
     trace_stages = "npm run trace:objc3c:stages"
     developer_tooling = "npm run test:objc3c:developer-tooling"
+    stdlib = "npm run test:stdlib"
+    stdlib_e2e = "npm run test:stdlib:e2e"
     runnable_performance = "npm run test:objc3c:runnable-performance"
     showcase = "npm run test:showcase"
     showcase_e2e = "npm run test:showcase:e2e"
