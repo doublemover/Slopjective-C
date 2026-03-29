@@ -181,6 +181,25 @@ Cross-module metaprogramming artifact preservation source of truth:
   emitted preservation boundary instead of reconstructing imported
   metaprogramming facts from local-only manifests or milestone-local notes
 
+Metaprogramming runtime ABI and cache source of truth:
+
+- compile publication exposes the live runtime ABI boundary through the
+  acceptance-summary key `runtime_metaprogramming_runtime_abi_cache_surface`
+- that surface must point at the lowering/host-cache and cross-module
+  metaprogramming source surfaces, the stable public runtime header, the
+  private expansion-boundary and host-cache snapshot symbols, the authoritative
+  runtime/import-surface/io code paths, and the compile-coupled fixtures
+  `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`,
+  `tests/tooling/fixtures/native/macro_host_process_provider.objc3`,
+  `tests/tooling/fixtures/native/preservation_provider.objc3`, and
+  `tests/tooling/fixtures/native/preservation_consumer.objc3`, plus the proof
+  paths `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp` and
+  `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+- later runnable metaprogramming conformance and packaged validation work must
+  extend that emitted runtime ABI boundary instead of widening the public
+  runtime header or reconstructing host/cache truth from local probe payloads
+  and sidecar manifests
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

@@ -406,6 +406,44 @@ cross-module runtime link plan together so derived methods, macro/property
 artifacts, and host-cache compatibility survive separate compilation without
 being reconstructed from local-only manifest state.
 
+## Metaprogramming Runtime ABI And Cache Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_metaprogramming_runtime_abi_cache_surface`
+- authoritative source surfaces:
+  - `runtime_metaprogramming_lowering_host_cache_surface`
+  - `runtime_cross_module_metaprogramming_artifact_preservation_surface`
+- authoritative runtime ABI boundaries:
+  - public:
+    - `objc3_runtime_register_image`
+    - `objc3_runtime_lookup_selector`
+    - `objc3_runtime_dispatch_i32`
+    - `objc3_runtime_reset_for_testing`
+  - private:
+    - `objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing`
+    - `objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing`
+- authoritative live code paths:
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/io/objc3_process.cpp`
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`
+    - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+    - `tests/tooling/fixtures/native/preservation_provider.objc3`
+    - `tests/tooling/fixtures/native/preservation_consumer.objc3`
+  - probes:
+    - `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp`
+    - `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+
+This is the authoritative runtime ABI boundary for metaprogramming host/cache
+state. It freezes the private runtime snapshots that publish the fail-closed
+expansion boundary and the live host-process cache integration state together
+with the emitted host-cache artifact and imported-surface compatibility facts,
+so later runnable metaprogramming work must consume one truthful runtime ABI
+surface instead of inventing a second host/cache model from local probe notes.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:
