@@ -5040,6 +5040,47 @@ int objc3_runtime_copy_interop_bridge_packaging_toolchain_snapshot_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_release_candidate_claim_snapshot_for_testing(
+    objc3_runtime_release_candidate_claim_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->claim_bundle_ready = 1;
+  snapshot->deterministic = 1;
+  snapshot->selected_profile = "core";
+  snapshot->claimed_profile_ids_csv =
+      "core,strict,strict-concurrency,strict-system";
+  snapshot->targeted_profile_ids_csv =
+      "strict,strict-concurrency,strict-system";
+  snapshot->conformance_publication_contract_id =
+      kObjc3ConformancePublicationContractId;
+  snapshot->conformance_claim_operations_contract_id =
+      kObjc3ConformanceClaimOperationsContractId;
+  snapshot->selection_model = kObjc3ConformanceClaimSelectionModel;
+  snapshot->failure_model = kObjc3ConformanceClaimFailureModel;
+  snapshot->advanced_feature_ops_contract_id =
+      kObjc3AdvancedFeatureOpsContractId;
+  snapshot->advanced_feature_reporting_contract_id =
+      kObjc3AdvancedFeatureReportingContractId;
+  snapshot->advanced_feature_release_evidence_contract_id =
+      kObjc3AdvancedFeatureReleaseEvidenceContractId;
+  snapshot->release_evidence_operation_contract_id =
+      kObjc3AdvancedFeatureReleaseEvidenceOperationContractId;
+  snapshot->dashboard_status_publication_contract_id =
+      kObjc3AdvancedFeatureDashboardStatusPublicationContractId;
+  snapshot->release_candidate_matrix_contract_id =
+      "objc3c.tooling.release.candidate.execution.matrix.v1";
+  snapshot->dashboard_schema_path = kObjc3AdvancedFeatureDashboardSchemaPath;
+  snapshot->gate_script_path = kObjc3AdvancedFeatureEvidenceGateScriptPath;
+  snapshot->runbook_reference_path = kObjc3AdvancedFeatureEvidenceRunbookPath;
+  snapshot->release_bundle_model =
+      "final-claim-publication-bundle-is-the-conformance-publication-validation-release-evidence-dashboard-advanced-feature-gate-and-release-candidate-matrix-artifact-set";
+  snapshot->deprecated_path_shutdown_model =
+      "deprecated-claim-matrix-dashboard-ready-summary-and-toolchain-runtime-ga-scaffold-paths-remain-retired-and-fail-closed";
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing(
     objc3_runtime_interop_bridge_generation_snapshot *snapshot) {
   if (snapshot == nullptr) {

@@ -704,6 +704,30 @@ typedef struct objc3_runtime_interop_bridge_packaging_toolchain_snapshot {
 } objc3_runtime_interop_bridge_packaging_toolchain_snapshot;
 int objc3_runtime_copy_interop_bridge_packaging_toolchain_snapshot_for_testing(
     objc3_runtime_interop_bridge_packaging_toolchain_snapshot *snapshot);
+typedef struct objc3_runtime_release_candidate_claim_snapshot {
+  uint64_t claim_bundle_ready;
+  uint64_t deterministic;
+  const char *selected_profile;
+  const char *claimed_profile_ids_csv;
+  const char *targeted_profile_ids_csv;
+  const char *conformance_publication_contract_id;
+  const char *conformance_claim_operations_contract_id;
+  const char *selection_model;
+  const char *failure_model;
+  const char *advanced_feature_ops_contract_id;
+  const char *advanced_feature_reporting_contract_id;
+  const char *advanced_feature_release_evidence_contract_id;
+  const char *release_evidence_operation_contract_id;
+  const char *dashboard_status_publication_contract_id;
+  const char *release_candidate_matrix_contract_id;
+  const char *dashboard_schema_path;
+  const char *gate_script_path;
+  const char *runbook_reference_path;
+  const char *release_bundle_model;
+  const char *deprecated_path_shutdown_model;
+} objc3_runtime_release_candidate_claim_snapshot;
+int objc3_runtime_copy_release_candidate_claim_snapshot_for_testing(
+    objc3_runtime_release_candidate_claim_snapshot *snapshot);
 typedef struct objc3_runtime_interop_bridge_generation_snapshot {
   uint64_t runtime_generation_ready;
   uint64_t cross_module_packaging_ready;

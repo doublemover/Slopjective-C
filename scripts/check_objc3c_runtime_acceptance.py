@@ -192,6 +192,9 @@ RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID = (
 RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.final.claim.publication.deprecated.path.shutdown.surface.v1"
 )
+RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.release.candidate.claim.abi.surface.v1"
+)
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
@@ -295,6 +298,9 @@ INTEROP_HEADER_MODULE_CONSUMER_FIXTURE = (
 INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE = (
     "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
 )
+RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp"
+)
 INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE = (
     "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
 )
@@ -342,6 +348,9 @@ RUNTIME_LOADER_TESTING_BOUNDARY = [
     "objc3_runtime_copy_image_walk_state_for_testing",
     "objc3_runtime_replay_registered_images_for_testing",
     "objc3_runtime_copy_reset_replay_state_for_testing",
+]
+PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY = [
+    "objc3_runtime_copy_release_candidate_claim_snapshot_for_testing",
 ]
 PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_promote_block_i32",
@@ -6408,6 +6417,66 @@ def build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_release_candidate_claim_abi_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"release-candidate-runtime-claim-abi"}
+    ]
+    return {
+        "contract_id": RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "claimability_semantics_release_policy_surface_contract_id": (
+            RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID
+        ),
+        "final_claim_publication_deprecated_path_shutdown_surface_contract_id": (
+            RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_release_candidate_claim_testing_boundary": (
+            PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY
+        ),
+        "release_candidate_claim_snapshot_symbol": (
+            "objc3_runtime_copy_release_candidate_claim_snapshot_for_testing"
+        ),
+        "release_candidate_claim_snapshot_type": (
+            "objc3_runtime_release_candidate_claim_snapshot"
+        ),
+        "conformance_publication_contract_id": (
+            "objc3c.driver.conformance.report.publication.v1"
+        ),
+        "conformance_claim_operations_contract_id": (
+            "objc3c.toolchain.conformance.claim.operations.v1"
+        ),
+        "release_evidence_operation_contract_id": (
+            "objc3c.tooling.release.evidence.toolchain.operations.v1"
+        ),
+        "dashboard_status_publication_contract_id": (
+            "objc3c.tooling.dashboard.status.publication.v1"
+        ),
+        "release_candidate_matrix_contract_id": (
+            "objc3c.tooling.release.candidate.execution.matrix.v1"
+        ),
+        "claimed_profile_ids": [
+            "core",
+            "strict",
+            "strict-concurrency",
+            "strict-system",
+        ],
+        "targeted_profile_ids": ["strict", "strict-concurrency", "strict-system"],
+        "runtime_claim_boundary_model": (
+            "private-release-candidate-claim-snapshot-freezes-the-final-claim-publication-contract-set-and-deprecated-path-shutdown-without-widening-the-public-runtime-header"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_probe_paths": [RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE],
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
     }
 
 
@@ -18071,6 +18140,117 @@ def check_final_claim_publication_deprecated_path_shutdown_case(
     )
 
 
+def check_release_candidate_runtime_claim_abi_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "release-candidate-runtime-claim-abi"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+    compile_dir = case_dir / "compile"
+    compile_fixture_with_args(fixture, compile_dir)
+
+    manifest = json.loads((compile_dir / "module.manifest.json").read_text(encoding="utf-8"))
+    runtime_claim_abi_surface = manifest.get("runtime_release_candidate_claim_abi_surface")
+    expect(
+        isinstance(runtime_claim_abi_surface, dict),
+        "expected compiled fixture manifest to publish runtime_release_candidate_claim_abi_surface",
+    )
+    expect(
+        runtime_claim_abi_surface.get("contract_id")
+        == RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+        "expected compiled fixture manifest to publish the release-candidate claim ABI surface contract",
+    )
+    expect(
+        runtime_claim_abi_surface.get("public_header_path") == RUNTIME_PUBLIC_HEADER_PATH
+        and runtime_claim_abi_surface.get("internal_header_path")
+        == RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "expected release-candidate claim ABI surface to preserve the runtime header paths",
+    )
+    expect(
+        runtime_claim_abi_surface.get("public_runtime_abi_boundary")
+        == PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "expected release-candidate claim ABI surface to preserve the public runtime ABI boundary",
+    )
+    expect(
+        runtime_claim_abi_surface.get("private_release_candidate_claim_testing_boundary")
+        == PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY,
+        "expected release-candidate claim ABI surface to preserve the private claim snapshot boundary",
+    )
+    expect(
+        runtime_claim_abi_surface.get("release_candidate_claim_snapshot_symbol")
+        == "objc3_runtime_copy_release_candidate_claim_snapshot_for_testing"
+        and runtime_claim_abi_surface.get("release_candidate_claim_snapshot_type")
+        == "objc3_runtime_release_candidate_claim_snapshot",
+        "expected release-candidate claim ABI surface to publish the runtime snapshot symbol and type",
+    )
+    expect(
+        runtime_claim_abi_surface.get("claimed_profile_ids")
+        == ["core", "strict", "strict-concurrency", "strict-system"]
+        and runtime_claim_abi_surface.get("targeted_profile_ids")
+        == ["strict", "strict-concurrency", "strict-system"],
+        "expected release-candidate claim ABI surface to publish the claimed and targeted profile sets",
+    )
+    expect(
+        runtime_claim_abi_surface.get("authoritative_probe_path")
+        == RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE,
+        "expected release-candidate claim ABI surface to publish the authoritative runtime probe path",
+    )
+
+    probe = ROOT / Path(RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE)
+    exe_path = case_dir / "release_candidate_claim_runtime_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_key_value_output(
+        run_probe(exe_path), "release-candidate runtime claim ABI probe"
+    )
+    expect(
+        payload.get("copy_status") == 0
+        and payload.get("claim_bundle_ready") == 1
+        and payload.get("deterministic") == 1,
+        "expected release-candidate runtime claim ABI probe to publish a ready deterministic snapshot",
+    )
+    expect(
+        payload.get("selected_profile") == "core"
+        and payload.get("claimed_profile_ids_csv")
+        == "core,strict,strict-concurrency,strict-system"
+        and payload.get("targeted_profile_ids_csv")
+        == "strict,strict-concurrency,strict-system",
+        "expected release-candidate runtime claim ABI probe to publish the live selected, claimed, and targeted profile sets",
+    )
+    expect(
+        payload.get("conformance_publication_contract_id")
+        == "objc3c.driver.conformance.report.publication.v1"
+        and payload.get("conformance_claim_operations_contract_id")
+        == "objc3c.toolchain.conformance.claim.operations.v1"
+        and payload.get("release_evidence_operation_contract_id")
+        == "objc3c.tooling.release.evidence.toolchain.operations.v1"
+        and payload.get("dashboard_status_publication_contract_id")
+        == "objc3c.tooling.dashboard.status.publication.v1"
+        and payload.get("release_candidate_matrix_contract_id")
+        == "objc3c.tooling.release.candidate.execution.matrix.v1",
+        "expected release-candidate runtime claim ABI probe to preserve the live publication contract set",
+    )
+    expect(
+        payload.get("dashboard_schema_path")
+        == "schemas/objc3-conformance-dashboard-status-v1.schema.json"
+        and payload.get("gate_script_path") == "scripts/check_release_evidence.py"
+        and payload.get("runbook_reference_path")
+        == "spec/conformance/release_evidence_gate_maintenance.md",
+        "expected release-candidate runtime claim ABI probe to preserve the live dashboard schema and release evidence operator paths",
+    )
+
+    return CaseResult(
+        case_id="release-candidate-runtime-claim-abi",
+        probe=RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE,
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "selected_profile": payload.get("selected_profile"),
+            "claimed_profile_ids_csv": payload.get("claimed_profile_ids_csv"),
+            "targeted_profile_ids_csv": payload.get("targeted_profile_ids_csv"),
+        },
+    )
+
+
 def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
@@ -18918,6 +19098,7 @@ def main() -> int:
         ),
         check_claim_publication_dashboard_schema_surface_case(run_dir),
         check_final_claim_publication_deprecated_path_shutdown_case(run_dir),
+        check_release_candidate_runtime_claim_abi_case(clangxx, run_dir),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -19053,6 +19234,9 @@ def main() -> int:
             build_runtime_final_claim_publication_deprecated_path_shutdown_surface(
                 results
             )
+        ),
+        "runtime_release_candidate_claim_abi_surface": (
+            build_runtime_release_candidate_claim_abi_surface(results)
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
