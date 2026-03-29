@@ -30,6 +30,7 @@ npm run build:objc3c-native:contracts
 ```powershell
 npm run test:smoke
 npm run test:ci
+npm run test:docs
 ```
 
 `npm run test:ci` now includes the compact documentation integration surface:
@@ -38,6 +39,13 @@ npm run test:ci
 - generated native-doc drift,
 - generated public-command-surface drift,
 - and reader-facing documentation/readability boundary checks.
+
+`npm run test:docs` runs the full documentation build/check pass:
+
+- rebuild the published site output,
+- rebuild the generated native implementation docs,
+- rebuild the generated public command appendix,
+- and then re-check all three outputs plus the reader-facing documentation surface.
 
 ## Direct tools
 

@@ -152,6 +152,23 @@ def action_check_documentation_surface(_: list[str]) -> int:
     return run([sys.executable, str(DOCUMENTATION_SURFACE_PY)])
 
 
+def action_validate_documentation_surface(_: list[str]) -> int:
+    commands = [
+        [sys.executable, str(SITE_PY)],
+        [sys.executable, str(NATIVE_DOCS_PY)],
+        [sys.executable, str(PUBLIC_COMMAND_SURFACE_PY)],
+        [sys.executable, str(SITE_PY), "--check"],
+        [sys.executable, str(NATIVE_DOCS_PY), "--check"],
+        [sys.executable, str(PUBLIC_COMMAND_SURFACE_PY), "--check"],
+        [sys.executable, str(DOCUMENTATION_SURFACE_PY)],
+    ]
+    for command in commands:
+        rc = run(command)
+        if rc != 0:
+            return rc
+    return 0
+
+
 def action_compile_objc3c(rest: list[str]) -> int:
     return pwsh_file(COMPILE_PS1, *rest)
 
@@ -790,6 +807,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py", ("build:docs:commands",)),
     "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", ("check:docs:commands",), validation_tier="docs", guarantee_owner="operator-facing machine appendix stays in sync with the live workflow runner and package scripts"),
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
+    "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
@@ -841,6 +859,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-public-command-surface": action_build_public_command_surface,
     "check-public-command-surface": action_check_public_command_surface,
     "check-documentation-surface": action_check_documentation_surface,
+    "validate-documentation-surface": action_validate_documentation_surface,
     "compile-objc3c": action_compile_objc3c,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
