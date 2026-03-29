@@ -18,18 +18,18 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c-native:full` | `build-native-full` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:reconfigure` | `build-native-reconfigure` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:spec` | `build-spec` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py + npx prettier` |
-| `check:spec:generated` | `check-site-index` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py --check` |
+| `check:spec:generated` | `check-site-index` | `docs` | `published site index generation stays in sync with site/src inputs` | `fixed-shape` | `python:scripts/build_site_index.py --check` |
 | `build:docs:native` | `build-native-docs` | `-` | `-` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py` |
-| `check:docs:native` | `check-native-docs` | `-` | `-` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py --check` |
+| `check:docs:native` | `check-native-docs` | `docs` | `generated native implementation documentation stays in sync with docs/objc3c-native/src inputs` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py --check` |
 | `build:docs:commands` | `build-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py` |
-| `check:docs:commands` | `check-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py --check` |
-| `check:docs:surface` | `check-documentation-surface` | `-` | `-` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |
+| `check:docs:commands` | `check-public-command-surface` | `docs` | `operator-facing machine appendix stays in sync with the live workflow runner and package scripts` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py --check` |
+| `check:docs:surface` | `check-documentation-surface` | `docs` | `reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit` | `fixed-shape` | `python:scripts/check_documentation_surface.py` |
 | `compile:objc3c` | `compile-objc3c` | `-` | `-` | `pass-through` | `pwsh:scripts/objc3c_native_compile.ps1` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:smoke` | `test-smoke` | `smoke` | `full execution smoke corpus` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `ci` | `task hygiene plus full developer validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
+| `test:ci` | `test-ci` | `ci` | `task hygiene, documentation surface integration, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
