@@ -58,6 +58,7 @@ real implementation exists.
 - current developer-tooling boundary:
   - `docs/runbooks/objc3c_developer_tooling.md`
   - `scripts/check_objc3c_developer_tooling_integration.py`
+  - `scripts/check_objc3c_bonus_experience_integration.py`
 - current showcase/tutorial validation paths:
   - `scripts/check_showcase_integration.py`
   - `scripts/check_objc3c_runnable_showcase_end_to_end.py`
@@ -147,6 +148,8 @@ real implementation exists.
   - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
   - `npm run test:objc3c:developer-tooling`
 - validate showcase/tutorial-backed bonus experience flows:
+  - `python scripts/objc3c_public_workflow_runner.py validate-bonus-experiences`
+  - `npm run test:bonus-experiences`
   - `python scripts/objc3c_public_workflow_runner.py validate-showcase`
   - `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
   - `python scripts/objc3c_public_workflow_runner.py validate-getting-started`

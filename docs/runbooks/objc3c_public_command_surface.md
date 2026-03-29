@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `72`
+- Current public script count: `73`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -42,11 +42,12 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `test:objc3c:developer-tooling` | `validate-developer-tooling` | `repo` | `developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner` | `fixed-shape` | `python:scripts/check_objc3c_developer_tooling_integration.py` |
+| `test:bonus-experiences` | `validate-bonus-experiences` | `repo` | `bonus-experience workflows stay executable, template-derived, and tied to the live showcase tutorial and developer-tooling surfaces` | `fixed-shape` | `python:scripts/check_objc3c_bonus_experience_integration.py` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:smoke` | `test-smoke` | `smoke` | `full execution smoke corpus` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, showcase and tutorial onboarding validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
+| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |

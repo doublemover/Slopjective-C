@@ -39,6 +39,7 @@ SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
+BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
 PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
@@ -498,6 +499,10 @@ def action_trace_compile_stages(rest: list[str]) -> int:
 
 def action_validate_developer_tooling(_: list[str]) -> int:
     return run([sys.executable, str(DEVELOPER_TOOLING_INTEGRATION_PY)])
+
+
+def action_validate_bonus_experiences(_: list[str]) -> int:
+    return run([sys.executable, str(BONUS_EXPERIENCE_INTEGRATION_PY)])
 
 
 def action_benchmark_runtime_inspector(rest: list[str]) -> int:
@@ -1036,8 +1041,7 @@ def action_test_ci(_: list[str]) -> int:
         [
             ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
             ("validate-developer-tooling", [sys.executable, str(DEVELOPER_TOOLING_INTEGRATION_PY)]),
-            ("validate-showcase", [sys.executable, str(SHOWCASE_INTEGRATION_PY)]),
-            ("validate-getting-started", [sys.executable, str(GETTING_STARTED_INTEGRATION_PY)]),
+            ("validate-bonus-experiences", [sys.executable, str(BONUS_EXPERIENCE_INTEGRATION_PY)]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
@@ -1210,11 +1214,12 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
     "validate-developer-tooling": ActionSpec("validate-developer-tooling", "run the integrated developer-tooling inspect and trace validation flow", "python:scripts/check_objc3c_developer_tooling_integration.py", ("test:objc3c:developer-tooling",), validation_tier="repo", guarantee_owner="developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner"),
+    "validate-bonus-experiences": ActionSpec("validate-bonus-experiences", "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces", "python:scripts/check_objc3c_bonus_experience_integration.py", ("test:bonus-experiences",), validation_tier="repo", guarantee_owner="bonus-experience workflows stay executable, template-derived, and tied to the live showcase tutorial and developer-tooling surfaces"),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal + targeted smoke slice", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance, canonical replay, and a bounded smoke slice"),
     "test-smoke": ActionSpec("test-smoke", "developer smoke validation entrypoint", "runner-internal", ("test:smoke",), validation_tier="smoke", guarantee_owner="full execution smoke corpus"),
-    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",), validation_tier="ci", guarantee_owner="task hygiene, developer-tooling integration, showcase and tutorial onboarding validation, runtime acceptance, canonical replay, and full execution smoke validation"),
+    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",), validation_tier="ci", guarantee_owner="task hygiene, developer-tooling integration, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation"),
     "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",), validation_tier="recovery", guarantee_owner="recovery compile success and deterministic recovery diagnostics", pass_through_args=True),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
@@ -1279,6 +1284,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
     "validate-developer-tooling": action_validate_developer_tooling,
+    "validate-bonus-experiences": action_validate_bonus_experiences,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,
