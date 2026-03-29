@@ -141,6 +141,7 @@ def main() -> int:
     expect(isinstance(bonus_experience_surfaces, dict), "package manifest did not publish bonus experience surface metadata")
     expect(
         bonus_experience_surfaces.get("playground", {}).get("public_actions") == [
+            "materialize-playground-workspace",
             "compile-objc3c",
             "inspect-playground-repro",
             "inspect-compile-observability",
@@ -159,6 +160,7 @@ def main() -> int:
         "package manifest template/demo surface did not publish getting_started.md",
     )
     command_surfaces = manifest.get("command_surfaces", {})
+    expect(command_surfaces.get("build_playground") == "npm run build:objc3c:playground", "package manifest missing build_playground command surface")
     expect(command_surfaces.get("inspect_playground") == "npm run inspect:objc3c:playground", "package manifest missing inspect_playground command surface")
     expect(command_surfaces.get("inspect_capabilities") == "npm run inspect:objc3c:capabilities", "package manifest missing inspect_capabilities command surface")
     expect(command_surfaces.get("inspect_runtime") == "npm run inspect:objc3c:runtime", "package manifest missing inspect_runtime command surface")

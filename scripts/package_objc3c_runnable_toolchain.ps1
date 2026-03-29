@@ -301,6 +301,7 @@ $manifestPayload = [ordered]@{
     build = "npm run build:objc3c-native"
     package = "npm run package:objc3c-native:runnable-toolchain"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
+    build_playground = "npm run build:objc3c:playground"
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_capabilities = "npm run inspect:objc3c:capabilities"
     inspect_runtime = "npm run inspect:objc3c:runtime"

@@ -742,10 +742,12 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
           "tests/tooling/fixtures/native/hello.objc3"
         )
         artifact_roots = @(
-          "tmp/artifacts/compilation/objc3c-native",
+          "tmp/artifacts/playground",
+          "tmp/reports/playground",
           "tmp/artifacts/showcase"
         )
         public_actions = @(
+          "materialize-playground-workspace",
           "compile-objc3c",
           "inspect-playground-repro",
           "inspect-compile-observability",

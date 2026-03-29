@@ -91,7 +91,8 @@ real implementation exists.
 - build-emitted source-of-truth artifact:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 - playground/repro artifact roots:
-  - `tmp/artifacts/compilation/objc3c-native/`
+  - `tmp/artifacts/playground/`
+  - `tmp/reports/playground/`
   - `tmp/artifacts/showcase/`
 - runtime inspector and stage-trace report roots:
   - `tmp/reports/objc3c-public-workflow/compile-observability.json`
@@ -109,6 +110,9 @@ real implementation exists.
 - compile one checked-in source through the public compiler path:
   - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
   - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+- materialize a machine-owned playground workspace for one source:
+  - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace showcase/auroraBoard/main.objc3`
+  - `npm run build:objc3c:playground -- showcase/auroraBoard/main.objc3`
 - stage the runnable toolchain and package manifest surface:
   - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
   - `npm run package:objc3c-native:runnable-toolchain`

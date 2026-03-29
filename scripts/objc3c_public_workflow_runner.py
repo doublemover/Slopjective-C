@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -63,7 +64,11 @@ RUNNABLE_RELEASE_CANDIDATE_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_run
 RUNNABLE_RELEASE_CANDIDATE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_release_candidate_end_to_end.py"
 FRONTEND_C_API_RUNNER_EXE = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
 DEFAULT_DEVELOPER_TOOLING_SOURCE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
+DEFAULT_PLAYGROUND_SOURCE = DEFAULT_DEVELOPER_TOOLING_SOURCE
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
+PLAYGROUND_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "playground"
+PLAYGROUND_REPORT_ROOT = ROOT / "tmp" / "reports" / "playground"
+PLAYGROUND_WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"
 
 
 @dataclass(frozen=True)
@@ -242,6 +247,153 @@ def _parse_developer_tooling_invocation(rest: list[str]) -> tuple[str, list[str]
     return source_text, passthrough
 
 
+def _parse_playground_invocation(rest: list[str]) -> tuple[str, list[str]]:
+    if rest and not rest[0].startswith("--"):
+        source_text = rest[0]
+        passthrough = rest[1:]
+    else:
+        source_text = str(DEFAULT_PLAYGROUND_SOURCE.relative_to(ROOT).as_posix())
+        passthrough = rest
+    for forbidden in (
+        "--out-dir",
+        "--emit-prefix",
+        "--summary-out",
+        "--dump-summary-json",
+        "--dump-observability-json",
+        "--dump-playground-repro-json",
+        "--dump-runtime-inspector-json",
+        "--dump-stage-trace-json",
+    ):
+        if forbidden in passthrough:
+            raise ValueError(f"{forbidden} is managed by the public playground action")
+    return source_text, passthrough
+
+
+def _resolve_source_path(source_text: str) -> tuple[Path, str]:
+    candidate = Path(source_text)
+    resolved = candidate if candidate.is_absolute() else ROOT / candidate
+    resolved = resolved.resolve()
+    if not resolved.is_file():
+        raise FileNotFoundError(f"playground source not found: {source_text}")
+    try:
+        display = resolved.relative_to(ROOT).as_posix()
+    except ValueError:
+        display = resolved.as_posix()
+    return resolved, display
+
+
+def _slugify_playground_workspace(source_display: str) -> str:
+    safe_stem = re.sub(r"[^a-z0-9]+", "-", Path(source_display).stem.lower()).strip("-")
+    if not safe_stem:
+        safe_stem = "source"
+    digest = hashlib.sha256(source_display.encode("utf-8")).hexdigest()[:12]
+    return f"{safe_stem}-{digest}"
+
+
+def _run_playground_workspace(
+    rest: list[str],
+    *,
+    emit_payload: bool,
+) -> int:
+    try:
+        source_text, passthrough = _parse_playground_invocation(rest)
+        _, source_display = _resolve_source_path(source_text)
+    except (ValueError, FileNotFoundError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+
+    rc = execute_registered_action("build-native-binaries", [])
+    if rc != 0:
+        return rc
+
+    workspace_id = _slugify_playground_workspace(source_display)
+    workspace_root = PLAYGROUND_ARTIFACT_ROOT / workspace_id
+    artifact_root = workspace_root / "build"
+    report_root = PLAYGROUND_REPORT_ROOT / workspace_id
+    workspace_manifest_path = workspace_root / "workspace.json"
+    summary_path = report_root / "compile-summary.json"
+    dump_path = report_root / "playground-repro.json"
+
+    artifact_root.mkdir(parents=True, exist_ok=True)
+    report_root.mkdir(parents=True, exist_ok=True)
+
+    artifact_root_rel = artifact_root.relative_to(ROOT).as_posix()
+    summary_path_rel = summary_path.relative_to(ROOT).as_posix()
+
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    result = subprocess.run(
+        [
+            str(FRONTEND_C_API_RUNNER_EXE),
+            source_display,
+            "--out-dir",
+            artifact_root_rel,
+            "--emit-prefix",
+            "module",
+            "--summary-out",
+            summary_path_rel,
+            "--dump-playground-repro-json",
+            *passthrough,
+        ],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+        env=env,
+    )
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        if result.stdout:
+            sys.stdout.write(result.stdout)
+        return result.returncode
+
+    try:
+        playground_payload = json.loads(result.stdout)
+    except json.JSONDecodeError as exc:
+        print(f"playground-workspace: invalid JSON from frontend runner: {exc}", file=sys.stderr)
+        return 1
+
+    dump_path.write_text(json.dumps(playground_payload, indent=2) + "\n", encoding="utf-8")
+
+    workspace_payload = {
+        "contract_id": PLAYGROUND_WORKSPACE_CONTRACT_ID,
+        "schema_version": 1,
+        "workspace_id": workspace_id,
+        "source_path": source_display,
+        "workspace_root": workspace_root.relative_to(ROOT).as_posix(),
+        "artifact_root": artifact_root.relative_to(ROOT).as_posix(),
+        "report_root": report_root.relative_to(ROOT).as_posix(),
+        "emit_prefix": "module",
+        "summary_path": summary_path.relative_to(ROOT).as_posix(),
+        "playground_payload_path": dump_path.relative_to(ROOT).as_posix(),
+        "playground_payload_contract_id": playground_payload.get("contract_id"),
+        "public_actions": [
+            "materialize-playground-workspace",
+            "compile-objc3c",
+            "inspect-playground-repro",
+            "inspect-compile-observability",
+            "trace-compile-stages",
+        ],
+        "compile_profile": playground_payload.get("compile_profile", {}),
+        "artifact_paths": playground_payload.get("artifact_paths", {}),
+        "showcase_examples": playground_payload.get("showcase_examples", []),
+        "repro_command": playground_payload.get("dump_commands", {}).get("repro_runner", ""),
+    }
+    workspace_manifest_path.write_text(
+        json.dumps(workspace_payload, indent=2) + "\n",
+        encoding="utf-8",
+    )
+
+    if emit_payload:
+        sys.stdout.write(json.dumps(playground_payload, indent=2) + "\n")
+    print(f"workspace_path: {workspace_manifest_path.relative_to(ROOT).as_posix()}")
+    print(f"summary_path: {summary_path.relative_to(ROOT).as_posix()}")
+    print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
+    print(f"artifact_root: {artifact_root.relative_to(ROOT).as_posix()}")
+    return 0
+
+
 def _write_json_capture(path: Path, stdout: str) -> int:
     try:
         payload = json.loads(stdout)
@@ -323,12 +475,11 @@ def action_inspect_capability_explorer(rest: list[str]) -> int:
 
 
 def action_inspect_playground_repro(rest: list[str]) -> int:
-    return _run_developer_tooling_dump(
-        "inspect-playground-repro",
-        "--dump-playground-repro-json",
-        "playground-repro.json",
-        rest,
-    )
+    return _run_playground_workspace(rest, emit_payload=True)
+
+
+def action_materialize_playground_workspace(rest: list[str]) -> int:
+    return _run_playground_workspace(rest, emit_payload=False)
 
 
 def action_trace_compile_stages(rest: list[str]) -> int:
@@ -367,6 +518,12 @@ def extract_report_paths(stdout: str) -> list[str]:
     for raw_line in stdout.splitlines():
         line = raw_line.strip()
         if line.startswith("summary_path:"):
+            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
+            continue
+        if line.startswith("dump_path:"):
+            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
+            continue
+        if line.startswith("workspace_path:"):
             report_paths.append(to_repo_relative(line.split(":", 1)[1]))
             continue
         match = re.search(r"runtime-acceptance:\s+PASS\s+\((.+)\)", line)
@@ -990,6 +1147,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
+    "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets", pass_through_args=True),
     "inspect-capability-explorer": ActionSpec("inspect-capability-explorer", "probe LLVM and backend-routing capability state through the live capability explorer surface", "python:scripts/probe_objc3c_llvm_capabilities.py", ("inspect:objc3c:capabilities",), validation_tier="repo", guarantee_owner="capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts", pass_through_args=True),
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:playground",), validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
@@ -1055,6 +1213,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-documentation-surface": action_validate_documentation_surface,
     "validate-repo-superclean": action_validate_repo_superclean,
     "compile-objc3c": action_compile_objc3c,
+    "materialize-playground-workspace": action_materialize_playground_workspace,
     "inspect-capability-explorer": action_inspect_capability_explorer,
     "inspect-playground-repro": action_inspect_playground_repro,
     "inspect-compile-observability": action_inspect_compile_observability,

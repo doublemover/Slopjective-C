@@ -616,10 +616,12 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "\"summary_path\": \""
       << EscapeJsonString(summary_path_text) << "\",\n";
   out << grandchild_indent << "\"artifact_roots\": [\n";
-  out << grandchild_indent << "  \"tmp/artifacts/compilation/objc3c-native\",\n";
+  out << grandchild_indent << "  \"tmp/artifacts/playground\",\n";
+  out << grandchild_indent << "  \"tmp/reports/playground\",\n";
   out << grandchild_indent << "  \"tmp/artifacts/showcase\"\n";
   out << grandchild_indent << "],\n";
   out << grandchild_indent << "\"public_actions\": [\n";
+  out << grandchild_indent << "  \"materialize-playground-workspace\",\n";
   out << grandchild_indent << "  \"compile-objc3c\",\n";
   out << grandchild_indent << "  \"inspect-playground-repro\",\n";
   out << grandchild_indent << "  \"inspect-compile-observability\",\n";
@@ -714,7 +716,7 @@ void WritePlaygroundReproJson(
   out << child_indent << "\"summary_path\": \""
       << EscapeJsonString(summary_path_text) << "\",\n";
   out << child_indent << "\"artifact_root\": "
-      << "\"tmp/artifacts/compilation/objc3c-native\",\n";
+      << "\"" << EscapeJsonString(options.out_dir.generic_string()) << "\",\n";
   out << child_indent << "\"artifact_paths\": {\n";
   out << grandchild_indent << "\"diagnostics\": \""
       << EscapeJsonString(diagnostics_path_text) << "\",\n";
@@ -741,6 +743,7 @@ void WritePlaygroundReproJson(
       << options.translation_unit_registration_order_ordinal << "\n";
   out << child_indent << "},\n";
   out << child_indent << "\"public_actions\": [\n";
+  out << child_indent << "  \"materialize-playground-workspace\",\n";
   out << child_indent << "  \"compile-objc3c\",\n";
   out << child_indent << "  \"inspect-playground-repro\",\n";
   out << child_indent << "  \"inspect-compile-observability\",\n";

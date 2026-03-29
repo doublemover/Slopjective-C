@@ -87,6 +87,9 @@ def test_c_api_runner_reports_bonus_experience_boundary_surface() -> None:
     assert '\\"playground\\": {' in source
     assert '\\"runtime_inspector_and_capability_explorer\\": {' in source
     assert '\\"template_and_demo_harness\\": {' in source
+    assert "materialize-playground-workspace" in source
+    assert "tmp/artifacts/playground" in source
+    assert "tmp/reports/playground" in source
     assert "inspect-compile-observability" in source
     assert "inspect-capability-explorer" in source
     assert "inspect-runtime-inspector" in source
@@ -99,7 +102,9 @@ def test_c_api_runner_reports_playground_repro_surface() -> None:
     assert "WritePlaygroundReproJson" in source
     assert "BuildFrontendRunnerReproCommand" in source
     assert "objc3c.playground.repro.surface.v1" in source
+    assert 'EscapeJsonString(options.out_dir.generic_string())' in source
     assert '\\"compile_profile\\": {' in source
     assert '\\"showcase_examples\\": [' in source
     assert '\\"repro_runner\\": \\"' in source
+    assert "materialize-playground-workspace" in source
     assert "inspect-playground-repro" in source
