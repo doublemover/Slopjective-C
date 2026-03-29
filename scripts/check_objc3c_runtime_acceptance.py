@@ -149,6 +149,9 @@ RUNTIME_METAPROGRAMMING_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_METAPROGRAMMING_PACKAGE_PROVENANCE_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.metaprogramming.package.provenance.source.surface.v1"
 )
+RUNTIME_METAPROGRAMMING_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.metaprogramming.semantics.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -5182,6 +5185,41 @@ def build_runtime_metaprogramming_package_provenance_source_surface(
     }
 
 
+def build_runtime_metaprogramming_semantics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"metaprogramming-semantics"}
+    ]
+    return {
+        "contract_id": RUNTIME_METAPROGRAMMING_SEMANTICS_SURFACE_CONTRACT_ID,
+        "semantic_contract_ids": [
+            "objc3c.metaprogramming.expansion.behavior.semantic.model.v1",
+        ],
+        "source_dependency_contract_ids": [
+            "objc3c.metaprogramming.metaprogramming.source.closure.v1",
+            "objc3c.metaprogramming.macro.package.provenance.source.completion.v1",
+            "objc3c.metaprogramming.property.behavior.source.completion.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        ],
+        "semantic_surface_model": (
+            "derive-macro-package-provenance-and-property-behavior-source-packets-share-one-deterministic-sema-boundary-before-lowering-cache-integration-or-runtime-hooks"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3",
+            "tests/tooling/fixtures/native/expansion_lowering_positive.objc3",
+        ],
+        "requires_real_compile_output": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -7131,6 +7169,106 @@ def check_metaprogramming_package_provenance_source_surface_case(
         case_id="metaprogramming-package-provenance-source-surface",
         probe="compile-manifest-source-completion-surface",
         fixture="tests/tooling/fixtures/native/expansion_lowering_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary=summary,
+    )
+
+
+def check_metaprogramming_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "metaprogramming-semantics"
+    fixtures: dict[str, tuple[Path, int, int, int]] = {
+        "semantic_model": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "expansion_behavior_semantic_model_positive.objc3",
+            0,
+            1,
+            2,
+        ),
+        "lowering_ready": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "expansion_lowering_positive.objc3",
+            1,
+            1,
+            2,
+        ),
+    }
+    summary: dict[str, Any] = {}
+
+    for fixture_key, (
+        fixture_path,
+        expected_derive_marker_sites,
+        expected_macro_marker_sites,
+        expected_property_behavior_sites,
+    ) in fixtures.items():
+        _, _, manifest_path = compile_fixture_outputs(fixture_path, case_dir / fixture_key / "compile")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        semantic_surface = (
+            manifest.get("frontend", {})
+            .get("pipeline", {})
+            .get("semantic_surface", {})
+            .get("objc_metaprogramming_expansion_and_behavior_semantic_model", {})
+        )
+        expect(
+            isinstance(semantic_surface, dict),
+            f"expected {fixture_key} fixture to publish objc_metaprogramming_expansion_and_behavior_semantic_model",
+        )
+        expect(
+            semantic_surface.get("contract_id")
+            == "objc3c.metaprogramming.expansion.behavior.semantic.model.v1",
+            f"expected {fixture_key} fixture to preserve the metaprogramming expansion behavior semantic contract",
+        )
+        expect(
+            semantic_surface.get("frontend_dependency_contract_id")
+            == "objc3c.metaprogramming.property.behavior.source.completion.v1",
+            f"expected {fixture_key} fixture to preserve the property behavior source dependency contract",
+        )
+        expect(
+            semantic_surface.get("derive_marker_sites") == expected_derive_marker_sites
+            and semantic_surface.get("macro_marker_sites") == expected_macro_marker_sites
+            and semantic_surface.get("property_behavior_sites")
+            == expected_property_behavior_sites,
+            f"expected {fixture_key} fixture to preserve semantic site counts",
+        )
+        expect(
+            semantic_surface.get("macro_package_provenance_surface_reused") is True
+            and semantic_surface.get("property_behavior_source_supported") is True
+            and semantic_surface.get("synthesized_visibility_surface_reused")
+            is True,
+            f"expected {fixture_key} fixture to preserve semantic surface reuse flags",
+        )
+        expect(
+            semantic_surface.get("derive_synthesis_deferred") is True
+            and semantic_surface.get("macro_execution_deferred") is True
+            and semantic_surface.get("property_behavior_runtime_deferred") is True,
+            f"expected {fixture_key} fixture to preserve deferred runtime semantics",
+        )
+        expect(
+            semantic_surface.get("deterministic") is True
+            and semantic_surface.get("ready_for_core_implementation") is True,
+            f"expected {fixture_key} fixture to preserve deterministic semantic readiness",
+        )
+        summary[fixture_key] = {
+            "fixture": str(fixture_path.relative_to(ROOT)).replace("\\", "/"),
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "contract_id": semantic_surface.get("contract_id"),
+            "derive_marker_sites": semantic_surface.get("derive_marker_sites"),
+            "macro_marker_sites": semantic_surface.get("macro_marker_sites"),
+            "property_behavior_sites": semantic_surface.get("property_behavior_sites"),
+        }
+
+    return CaseResult(
+        case_id="metaprogramming-semantics",
+        probe="compile-manifest-semantic-surface",
+        fixture="tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3",
         claim_class="compile-coupled-inspection",
         passed=True,
         summary=summary,
@@ -14205,6 +14343,7 @@ def main() -> int:
         check_installation_lifecycle_case(clangxx, run_dir),
         check_metaprogramming_source_surface_case(run_dir),
         check_metaprogramming_package_provenance_source_surface_case(run_dir),
+        check_metaprogramming_semantics_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -14278,6 +14417,9 @@ def main() -> int:
         ),
         "runtime_metaprogramming_package_provenance_source_surface": (
             build_runtime_metaprogramming_package_provenance_source_surface(results)
+        ),
+        "runtime_metaprogramming_semantics_surface": (
+            build_runtime_metaprogramming_semantics_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)

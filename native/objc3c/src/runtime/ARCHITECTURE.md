@@ -124,6 +124,21 @@ Metaprogramming package/provenance source of truth:
   package/provenance visibility or synthesized declaration state from sidecars
   or milestone-local notes
 
+Metaprogramming semantic source of truth:
+
+- compile publication exposes the coupled metaprogramming semantic boundary
+  through the acceptance-summary key `runtime_metaprogramming_semantics_surface`
+- that surface must point at the live semantic contract
+  `objc3c.metaprogramming.expansion.behavior.semantic.model.v1`, its three
+  source dependency contracts, the authoritative AST/sema/pipeline code paths,
+  and the compile-coupled fixtures
+  `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
+  and `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+- later lowering, cross-module preservation, cache integration, and runtime
+  hook work must extend that emitted semantic boundary instead of rebuilding
+  metaprogramming semantics from sidecars, probe-local notes, or milestone
+  checklist text
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

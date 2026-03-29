@@ -299,6 +299,33 @@ state before semantic expansion, lowering, cache materialization, or runtime
 hooks so later metaprogramming work extends one emitted source-completion
 packet instead of inventing a second package/provenance inventory.
 
+## Metaprogramming Semantic Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_metaprogramming_semantics_surface`
+- authoritative compile-manifest semantic surface:
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_expansion_and_behavior_semantic_model`
+- authoritative semantic contract:
+  - `objc3c.metaprogramming.expansion.behavior.semantic.model.v1`
+- authoritative source dependencies:
+  - `objc3c.metaprogramming.metaprogramming.source.closure.v1`
+  - `objc3c.metaprogramming.macro.package.provenance.source.completion.v1`
+  - `objc3c.metaprogramming.property.behavior.source.completion.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
+    - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+
+This is the authoritative compile-coupled semantic boundary for derive markers,
+macro package/provenance markers, and property-behavior source completion. It
+freezes the one truthful semantic packet before lowering, cache integration, or
+runtime hooks so downstream metaprogramming issues extend a shared semantic
+surface instead of re-deriving behavior from fixture-local assumptions.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:
