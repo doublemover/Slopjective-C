@@ -40,6 +40,7 @@ RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_en
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
 RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
+PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
@@ -537,6 +538,10 @@ def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     return 0
 
 
+def action_materialize_project_template(rest: list[str]) -> int:
+    return run([sys.executable, str(PROJECT_TEMPLATE_MATERIALIZER_PY), *rest])
+
+
 def action_lint_spec(_: list[str]) -> int:
     return run([sys.executable, str(SPEC_LINT_PY)])
 
@@ -566,6 +571,12 @@ def extract_report_paths(stdout: str) -> list[str]:
             report_paths.append(to_repo_relative(line.split(":", 1)[1]))
             continue
         if line.startswith("workspace_path:"):
+            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
+            continue
+        if line.startswith("template_path:"):
+            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
+            continue
+        if line.startswith("harness_path:"):
             report_paths.append(to_repo_relative(line.split(":", 1)[1]))
             continue
         match = re.search(r"runtime-acceptance:\s+PASS\s+\((.+)\)", line)
@@ -1196,6 +1207,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
     "benchmark-runtime-inspector": ActionSpec("benchmark-runtime-inspector", "measure the live runtime-inspector and capability-explorer workflow and write a reproducible benchmark report", "python:scripts/benchmark_objc3c_runtime_inspector.py", ("inspect:objc3c:benchmark",), validation_tier="repo", guarantee_owner="runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts", pass_through_args=True),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
+    "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
     "validate-developer-tooling": ActionSpec("validate-developer-tooling", "run the integrated developer-tooling inspect and trace validation flow", "python:scripts/check_objc3c_developer_tooling_integration.py", ("test:objc3c:developer-tooling",), validation_tier="repo", guarantee_owner="developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner"),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
@@ -1264,6 +1276,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-runtime-inspector": action_inspect_runtime_inspector,
     "benchmark-runtime-inspector": action_benchmark_runtime_inspector,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
+    "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
     "validate-developer-tooling": action_validate_developer_tooling,
     "lint-spec": action_lint_spec,

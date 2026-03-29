@@ -162,11 +162,21 @@ def main() -> int:
         "package manifest template/demo surface did not publish getting_started.md",
     )
     expect(
+        "scripts/materialize_objc3c_project_template.py"
+        in bonus_experience_surfaces.get("template_and_demo_harness", {}).get("source_roots", []),
+        "package manifest template/demo surface did not publish the live template generator source root",
+    )
+    expect(
         bonus_tool_integration_surface.get("portfolio_contract") == "showcase/portfolio.json",
         "package manifest bonus-tool integration surface drifted from showcase/portfolio.json",
     )
+    expect(
+        "materialize-project-template" in bonus_tool_integration_surface.get("public_actions", []),
+        "package manifest bonus-tool integration surface did not publish materialize-project-template",
+    )
     command_surfaces = manifest.get("command_surfaces", {})
     expect(command_surfaces.get("build_playground") == "npm run build:objc3c:playground", "package manifest missing build_playground command surface")
+    expect(command_surfaces.get("build_template") == "npm run build:objc3c:template", "package manifest missing build_template command surface")
     expect(command_surfaces.get("inspect_bonus_tools") == "npm run inspect:objc3c:bonus-tools", "package manifest missing inspect_bonus_tools command surface")
     expect(command_surfaces.get("inspect_playground") == "npm run inspect:objc3c:playground", "package manifest missing inspect_playground command surface")
     expect(command_surfaces.get("inspect_benchmark") == "npm run inspect:objc3c:benchmark", "package manifest missing inspect_benchmark command surface")

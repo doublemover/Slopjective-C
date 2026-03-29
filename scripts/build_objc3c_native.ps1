@@ -777,6 +777,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       }
       template_and_demo_harness = [ordered]@{
         source_roots = @(
+          "scripts/materialize_objc3c_project_template.py",
           "showcase/README.md",
           "showcase/portfolio.json",
           "showcase/tutorial_walkthrough.json",
@@ -785,10 +786,13 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
           "docs/tutorials/guided_walkthrough.md"
         )
         report_roots = @(
+          "tmp/artifacts/project-template",
+          "tmp/reports/project-template",
           "tmp/reports/showcase",
           "tmp/reports/tutorials"
         )
         public_actions = @(
+          "materialize-project-template",
           "validate-showcase",
           "validate-runnable-showcase",
           "validate-getting-started"
@@ -803,6 +807,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
       public_actions = @(
         "inspect-bonus-tool-integration",
+        "materialize-project-template",
         "materialize-playground-workspace",
         "benchmark-runtime-inspector",
         "validate-showcase",

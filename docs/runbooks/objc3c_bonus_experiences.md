@@ -76,6 +76,7 @@ real implementation exists.
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
   - `tests/tooling/runtime/task_runtime_hardening_probe.cpp`
 - template and demo-harness source roots:
+  - `scripts/materialize_objc3c_project_template.py`
   - `showcase/README.md`
   - `showcase/portfolio.json`
   - `showcase/tutorial_walkthrough.json`
@@ -100,6 +101,8 @@ real implementation exists.
   - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
   - `tmp/reports/developer-tooling/integration-summary.json`
 - showcase/tutorial validation report roots:
+  - `tmp/artifacts/project-template/`
+  - `tmp/reports/project-template/`
   - `tmp/reports/showcase/`
   - `tmp/reports/tutorials/`
 - staged package manifest within a runnable package root:
@@ -113,6 +116,9 @@ real implementation exists.
 - materialize a machine-owned playground workspace for one source:
   - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace showcase/auroraBoard/main.objc3`
   - `npm run build:objc3c:playground -- showcase/auroraBoard/main.objc3`
+- materialize a machine-owned project template and demo harness from one showcase example:
+  - `python scripts/objc3c_public_workflow_runner.py materialize-project-template --example auroraBoard`
+  - `npm run build:objc3c:template -- --example auroraBoard`
 - stage the runnable toolchain and package manifest surface:
   - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
   - `npm run package:objc3c-native:runnable-toolchain`

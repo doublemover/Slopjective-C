@@ -23,6 +23,7 @@
     "build:docs:commands": "python scripts/objc3c_public_workflow_runner.py build-public-command-surface",
     "build:objc3c-native": "python scripts/objc3c_public_workflow_runner.py build-native-binaries",
     "build:objc3c:playground": "python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace",
+    "build:objc3c:template": "python scripts/objc3c_public_workflow_runner.py materialize-project-template",
     "build:objc3c-native:contracts": "python scripts/objc3c_public_workflow_runner.py build-native-contracts",
     "build:objc3c-native:full": "python scripts/objc3c_public_workflow_runner.py build-native-full",
     "build:objc3c-native:reconfigure": "python scripts/objc3c_public_workflow_runner.py build-native-reconfigure",
