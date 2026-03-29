@@ -1,0 +1,107 @@
+{
+  "contract_id": "objc3c.performance.benchmark.portfolio.v1",
+  "schema_version": 1,
+  "portfolio_kind": "live-benchmark-and-comparative-baseline-surface",
+  "benchmark_root": "tests/tooling/fixtures/performance",
+  "artifact_root": "tmp/artifacts/performance",
+  "report_root": "tmp/reports/performance",
+  "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "public_entrypoints": {
+    "build_native": "build:objc3c-native",
+    "compile_objc3c": "compile:objc3c",
+    "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain"
+  },
+  "objc3_workloads": [
+    {
+      "workload_id": "auroraBoard",
+      "benchmark_classes": [
+        "compile-latency",
+        "runtime-wall-clock"
+      ],
+      "source": "showcase/auroraBoard/main.objc3",
+      "workspace_manifest": "showcase/auroraBoard/workspace.json",
+      "expected_exit_code": 33,
+      "story_capabilities": [
+        "categories",
+        "reflection",
+        "synthesized-behaviors"
+      ]
+    },
+    {
+      "workload_id": "signalMesh",
+      "benchmark_classes": [
+        "compile-latency",
+        "runtime-wall-clock"
+      ],
+      "source": "showcase/signalMesh/main.objc3",
+      "workspace_manifest": "showcase/signalMesh/workspace.json",
+      "expected_exit_code": 13,
+      "story_capabilities": [
+        "status-bridging",
+        "actors",
+        "runtime-messaging"
+      ]
+    },
+    {
+      "workload_id": "patchKit",
+      "benchmark_classes": [
+        "compile-latency",
+        "runtime-wall-clock"
+      ],
+      "source": "showcase/patchKit/main.objc3",
+      "workspace_manifest": "showcase/patchKit/workspace.json",
+      "expected_exit_code": 7,
+      "story_capabilities": [
+        "derives",
+        "macros",
+        "property-behaviors",
+        "interop"
+      ]
+    }
+  ],
+  "comparative_baselines": [
+    {
+      "baseline_id": "objc2_reference",
+      "language": "objective-c-2",
+      "benchmark_classes": [
+        "comparative-compile-baseline"
+      ],
+      "source": "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
+      "compiler_hint": "clang"
+    },
+    {
+      "baseline_id": "swift_reference",
+      "language": "swift",
+      "benchmark_classes": [
+        "comparative-compile-baseline",
+        "comparative-runtime-baseline"
+      ],
+      "source": "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
+      "compiler_hint": "swiftc"
+    },
+    {
+      "baseline_id": "cpp_reference",
+      "language": "c++",
+      "benchmark_classes": [
+        "comparative-compile-baseline",
+        "comparative-runtime-baseline"
+      ],
+      "source": "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
+      "compiler_hint": "clang++"
+    }
+  ],
+  "exact_live_paths_for_downstream_work": [
+    "docs/runbooks/objc3c_performance.md",
+    "docs/tutorials/objc2_swift_cpp_comparison.md",
+    "showcase/portfolio.json",
+    "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+    "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
+    "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
+    "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp"
+  ],
+  "explicit_non_goals": [
+    "no synthetic benchmark-only app tree",
+    "no hidden baseline sources outside checked-in fixtures",
+    "no untracked comparison workloads"
+  ]
+}

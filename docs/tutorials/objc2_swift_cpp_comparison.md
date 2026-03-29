@@ -32,6 +32,10 @@ Downstream comparison and migration work should use these live inputs directly:
 - `showcase/portfolio.json`
 - `showcase/patchKit/main.objc3`
 - `showcase/signalMesh/main.objc3`
+- `tests/tooling/fixtures/performance/benchmark_portfolio.json`
+- `tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m`
+- `tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift`
+- `tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
 ## Exact Live Paths For Downstream Work
@@ -48,6 +52,11 @@ Downstream comparison and migration work should use these live inputs directly:
   - `showcase/portfolio.json`
   - `showcase/patchKit/main.objc3`
   - `showcase/signalMesh/main.objc3`
+- checked-in comparative workload inventory:
+  - `tests/tooling/fixtures/performance/benchmark_portfolio.json`
+  - `tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m`
+  - `tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift`
+  - `tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp`
 - command truth and validation references:
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `scripts/check_documentation_surface.py`
