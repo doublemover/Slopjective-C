@@ -649,9 +649,14 @@ void WriteBonusExperiencesJson(
       << EscapeJsonString(runtime_metadata_binary_path_text) << "\",\n";
   out << grandchild_indent << "\"public_actions\": [\n";
   out << grandchild_indent << "  \"inspect-runtime-inspector\",\n";
+  out << grandchild_indent << "  \"inspect-capability-explorer\",\n";
   out << grandchild_indent << "  \"trace-compile-stages\",\n";
   out << grandchild_indent << "  \"validate-developer-tooling\"\n";
   out << grandchild_indent << "],\n";
+  out << grandchild_indent << "\"capability_probe_script\": "
+      << "\"scripts/probe_objc3c_llvm_capabilities.py\",\n";
+  out << grandchild_indent << "\"capability_summary_report_path\": "
+      << "\"tmp/reports/objc3c-public-workflow/capability-explorer.json\",\n";
   out << grandchild_indent << "\"dump_commands\": {\n";
   out << grandchild_indent << "  \"ir\": \""
       << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";

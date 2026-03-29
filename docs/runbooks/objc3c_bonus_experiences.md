@@ -116,6 +116,9 @@ real implementation exists.
 - dump the current runtime-inspector payload:
   - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
   - `npm run inspect:objc3c:runtime`
+- dump the current capability-explorer payload:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
+  - `npm run inspect:objc3c:capabilities`
 - dump the current stage-trace payload:
   - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
   - `npm run trace:objc3c:stages`

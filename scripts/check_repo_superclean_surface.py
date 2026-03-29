@@ -120,6 +120,7 @@ def main() -> int:
                 ],
                 "public_actions": [
                     "compile-objc3c",
+                    "inspect-playground-repro",
                     "inspect-compile-observability",
                     "trace-compile-stages",
                 ],
@@ -138,6 +139,7 @@ def main() -> int:
                 ],
                 "public_actions": [
                     "inspect-runtime-inspector",
+                    "inspect-capability-explorer",
                     "trace-compile-stages",
                     "validate-developer-tooling",
                 ],

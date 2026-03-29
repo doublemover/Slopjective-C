@@ -38,6 +38,7 @@ SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
+LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
@@ -301,6 +302,24 @@ def action_inspect_runtime_inspector(rest: list[str]) -> int:
         "runtime-inspector.json",
         rest,
     )
+
+
+def action_inspect_capability_explorer(rest: list[str]) -> int:
+    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / "capability-explorer.json"
+    dump_path.parent.mkdir(parents=True, exist_ok=True)
+    rc = run(
+        [
+            sys.executable,
+            str(LLVM_CAPABILITIES_PROBE_PY),
+            "--summary-out",
+            str(dump_path),
+            *rest,
+        ]
+    )
+    if rc == 0:
+        print(f"summary_path: {dump_path.relative_to(ROOT).as_posix()}")
+        print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
+    return rc
 
 
 def action_inspect_playground_repro(rest: list[str]) -> int:
@@ -971,6 +990,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
+    "inspect-capability-explorer": ActionSpec("inspect-capability-explorer", "probe LLVM and backend-routing capability state through the live capability explorer surface", "python:scripts/probe_objc3c_llvm_capabilities.py", ("inspect:objc3c:capabilities",), validation_tier="repo", guarantee_owner="capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts", pass_through_args=True),
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:playground",), validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
     "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
@@ -1035,6 +1055,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-documentation-surface": action_validate_documentation_surface,
     "validate-repo-superclean": action_validate_repo_superclean,
     "compile-objc3c": action_compile_objc3c,
+    "inspect-capability-explorer": action_inspect_capability_explorer,
     "inspect-playground-repro": action_inspect_playground_repro,
     "inspect-compile-observability": action_inspect_compile_observability,
     "inspect-runtime-inspector": action_inspect_runtime_inspector,

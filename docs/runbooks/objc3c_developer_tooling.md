@@ -82,6 +82,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `tmp/reports/objc3c-public-workflow/compile-observability.json`
   - `tmp/reports/objc3c-public-workflow/inspect-runtime-inspector-summary.json`
   - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
+  - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
   - `tmp/reports/objc3c-public-workflow/trace-compile-stages-summary.json`
   - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
 
@@ -100,6 +101,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - dump the structured runtime inspector object through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
   - `npm run inspect:objc3c:runtime`
+- dump the live capability-explorer object through the public command surface:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
+  - `npm run inspect:objc3c:capabilities`
 - dump the structured compile-stage trace through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
   - `npm run trace:objc3c:stages`
@@ -118,6 +122,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - emitted metadata that already records inspection/debug facts:
   - `arc_debug_state_snapshot_symbol`
   - `runtime_metadata_object_inspection_uses_llvm_objdump`
+- live capability-explorer probe contract:
+  - `scripts/probe_objc3c_llvm_capabilities.py`
+  - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
 - downstream work must treat those runtime-emitted facts as authoritative over
   ad hoc report text
 
