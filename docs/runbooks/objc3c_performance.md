@@ -97,6 +97,12 @@ The only current claim classes allowed from this surface are:
 - compile one checked-in objc3c workload through the public compile path:
   - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
   - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+- benchmark the live objc3 showcase workloads:
+  - `python scripts/objc3c_public_workflow_runner.py benchmark-performance`
+  - `npm run inspect:objc3c:performance`
+- benchmark the checked-in ObjC2 Swift and C++ baselines:
+  - `python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines`
+  - `npm run inspect:objc3c:comparative-baselines`
 - stage the runnable toolchain before packaged benchmark validation:
   - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
   - `npm run package:objc3c-native:runnable-toolchain`

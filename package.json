@@ -33,6 +33,8 @@
     "compile:objc3c": "python scripts/objc3c_public_workflow_runner.py compile-objc3c",
     "inspect:objc3c:bonus-tools": "python scripts/objc3c_public_workflow_runner.py inspect-bonus-tool-integration",
     "inspect:objc3c:benchmark": "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector",
+    "inspect:objc3c:performance": "python scripts/objc3c_public_workflow_runner.py benchmark-performance",
+    "inspect:objc3c:comparative-baselines": "python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines",
     "inspect:objc3c:capabilities": "python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer",
     "inspect:objc3c:playground": "python scripts/objc3c_public_workflow_runner.py inspect-playground-repro",
     "inspect:objc3c:observability": "python scripts/objc3c_public_workflow_runner.py inspect-compile-observability",
