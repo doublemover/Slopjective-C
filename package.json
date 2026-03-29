@@ -14,6 +14,7 @@
     "test:docs": "python scripts/objc3c_public_workflow_runner.py validate-documentation-surface",
     "test:repo": "python scripts/objc3c_public_workflow_runner.py validate-repo-superclean",
     "test:showcase": "python scripts/objc3c_public_workflow_runner.py validate-showcase",
+    "test:showcase:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",
     "build:site": "python scripts/objc3c_public_workflow_runner.py build-site",
     "build:docs:native": "python scripts/objc3c_public_workflow_runner.py build-native-docs",

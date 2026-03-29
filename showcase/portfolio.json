@@ -11,6 +11,7 @@
     "compile_example": "compile:objc3c",
     "check_surface": "check:showcase:surface",
     "validate_showcase": "test:showcase",
+    "validate_runnable_showcase": "test:showcase:e2e",
     "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain",
     "execution_smoke": "test:objc3c:execution-smoke",
     "execution_replay": "test:objc3c:execution-replay-proof"
@@ -25,6 +26,7 @@
     "compile_entrypoint": "compile:objc3c",
     "surface_check_entrypoint": "check:showcase:surface",
     "integrated_validation_entrypoint": "test:showcase",
+    "packaged_validation_entrypoint": "test:showcase:e2e",
     "package_entrypoint": "package:objc3c-native:runnable-toolchain",
     "execution_smoke_entrypoint": "test:objc3c:execution-smoke",
     "execution_replay_entrypoint": "test:objc3c:execution-replay-proof"
@@ -34,6 +36,7 @@
     "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",
     "driver_linker_flag_consumption_model": "registration-manifest-driver-linker-flags-feed-proof-and-smoke-link-commands",
     "integrated_validation_entrypoint": "test:showcase",
+    "packaged_validation_entrypoint": "test:showcase:e2e",
     "shared_execution_smoke_entrypoint": "test:objc3c:execution-smoke",
     "shared_execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
     "presentation_readme": "showcase/README.md"

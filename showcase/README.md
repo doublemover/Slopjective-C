@@ -66,6 +66,7 @@ Build and artifact entrypoints:
 - `npm run build:objc3c-native`
 - `npm run check:showcase:surface`
 - `npm run test:showcase`
+- `npm run test:showcase:e2e`
 - `npm run package:objc3c-native:runnable-toolchain`
 
 Runtime-backed shared commands used by the showcase surface:

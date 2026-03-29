@@ -130,6 +130,14 @@ $requiredRelativeFiles = @(
   "scripts/run_objc3c_native_compile_proof.ps1",
   "scripts/check_objc3c_native_execution_smoke.ps1",
   "scripts/check_objc3c_execution_replay_proof.ps1",
+  "showcase/README.md",
+  "showcase/portfolio.json",
+  "showcase/auroraBoard/main.objc3",
+  "showcase/auroraBoard/workspace.json",
+  "showcase/signalMesh/main.objc3",
+  "showcase/signalMesh/workspace.json",
+  "showcase/patchKit/main.objc3",
+  "showcase/patchKit/workspace.json",
   "tmp/artifacts/objc3c-native/frontend_source_graph.json",
   "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
   "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
@@ -199,6 +207,29 @@ $manifestPayload = [ordered]@{
   compile_proof_script = "scripts/run_objc3c_native_compile_proof.ps1"
   execution_smoke_script = "scripts/check_objc3c_native_execution_smoke.ps1"
   execution_replay_script = "scripts/check_objc3c_execution_replay_proof.ps1"
+  showcase_root = "showcase"
+  showcase_readme = "showcase/README.md"
+  showcase_portfolio = "showcase/portfolio.json"
+  showcase_examples = @(
+    [ordered]@{
+      example_id = "auroraBoard"
+      source = "showcase/auroraBoard/main.objc3"
+      workspace_manifest = "showcase/auroraBoard/workspace.json"
+      expected_exit_code = 33
+    },
+    [ordered]@{
+      example_id = "signalMesh"
+      source = "showcase/signalMesh/main.objc3"
+      workspace_manifest = "showcase/signalMesh/workspace.json"
+      expected_exit_code = 13
+    },
+    [ordered]@{
+      example_id = "patchKit"
+      source = "showcase/patchKit/main.objc3"
+      workspace_manifest = "showcase/patchKit/workspace.json"
+      expected_exit_code = 7
+    }
+  )
   canonical_runnable_fixture = "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3"
   runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
@@ -248,6 +279,8 @@ $manifestPayload = [ordered]@{
     build = "npm run build:objc3c-native"
     package = "npm run package:objc3c-native:runnable-toolchain"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
+    showcase = "npm run test:showcase"
+    showcase_e2e = "npm run test:showcase:e2e"
     smoke = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_execution_smoke.ps1"
     replay = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_execution_replay_proof.ps1"
   }
