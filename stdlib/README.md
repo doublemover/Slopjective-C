@@ -9,6 +9,8 @@ Live stdlib work must stay on these paths:
 
 - `stdlib/README.md`
 - `stdlib/workspace.json`
+- `stdlib/module_inventory.json`
+- `stdlib/stability_policy.json`
 - `stdlib/modules/`
 - `docs/runbooks/objc3c_stdlib_foundation.md`
 - `tmp/artifacts/stdlib/`
@@ -30,6 +32,7 @@ This root is not a place for:
 ## Working model
 
 - canonical module names come from `spec/STANDARD_LIBRARY_CONTRACT.md`
+- stability and allowed cross-module dependencies come from `stdlib/stability_policy.json`
 - the checked-in module roots will live under `stdlib/modules/`
 - machine-owned materializations belong under `tmp/artifacts/stdlib/`
 - validation reports belong under `tmp/reports/stdlib/`

@@ -1,0 +1,52 @@
+{
+  "contract_id": "objc3c.stdlib.stability_policy.v1",
+  "schema_version": 1,
+  "evolution_model": "major-version-gated-additive-within-v1",
+  "compatibility_rules": [
+    "canonical module names remain stable within major version 1",
+    "capability identifiers remain stable within major version 1",
+    "new exported APIs may be added without renaming existing modules",
+    "layering violations are rejected at the checked-in workspace boundary"
+  ],
+  "layers": [
+    {
+      "name": "foundation",
+      "modules": [
+        "objc3.core"
+      ],
+      "allowed_dependencies": []
+    },
+    {
+      "name": "data-and-errors",
+      "modules": [
+        "objc3.errors",
+        "objc3.keypath"
+      ],
+      "allowed_dependencies": [
+        "objc3.core"
+      ]
+    },
+    {
+      "name": "concurrency",
+      "modules": [
+        "objc3.concurrency"
+      ],
+      "allowed_dependencies": [
+        "objc3.core",
+        "objc3.errors"
+      ]
+    },
+    {
+      "name": "system",
+      "modules": [
+        "objc3.system"
+      ],
+      "allowed_dependencies": [
+        "objc3.core",
+        "objc3.errors",
+        "objc3.concurrency",
+        "objc3.keypath"
+      ]
+    }
+  ]
+}
