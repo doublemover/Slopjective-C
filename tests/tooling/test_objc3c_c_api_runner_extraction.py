@@ -91,6 +91,7 @@ def test_c_api_runner_reports_bonus_experience_boundary_surface() -> None:
     assert "tmp/artifacts/playground" in source
     assert "tmp/reports/playground" in source
     assert "inspect-compile-observability" in source
+    assert "benchmark-runtime-inspector" in source
     assert "inspect-capability-explorer" in source
     assert "inspect-runtime-inspector" in source
     assert "validate-showcase" in source

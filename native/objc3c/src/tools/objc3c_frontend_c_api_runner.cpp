@@ -652,6 +652,7 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "\"public_actions\": [\n";
   out << grandchild_indent << "  \"inspect-runtime-inspector\",\n";
   out << grandchild_indent << "  \"inspect-capability-explorer\",\n";
+  out << grandchild_indent << "  \"benchmark-runtime-inspector\",\n";
   out << grandchild_indent << "  \"trace-compile-stages\",\n";
   out << grandchild_indent << "  \"validate-developer-tooling\"\n";
   out << grandchild_indent << "],\n";

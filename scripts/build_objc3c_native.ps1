@@ -770,6 +770,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         public_actions = @(
           "inspect-runtime-inspector",
           "inspect-capability-explorer",
+          "benchmark-runtime-inspector",
           "trace-compile-stages",
           "validate-developer-tooling"
         )

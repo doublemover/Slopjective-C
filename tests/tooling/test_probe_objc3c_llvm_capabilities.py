@@ -51,6 +51,10 @@ def test_probe_passes_when_clang_and_llc_capabilities_are_detected(
     assert payload["mode"] == "objc3c-llvm-capabilities-v2"
     assert payload["ok"] is True
     assert payload["failures"] == []
+    assert payload["clang"]["version_duration_ms"] >= 0.0
+    assert payload["llc"]["version_duration_ms"] >= 0.0
+    assert payload["llc_features"]["help_duration_ms"] >= 0.0
+    assert payload["llc_features"]["version_with_filetype_duration_ms"] >= 0.0
     assert payload["llc_features"]["supports_filetype_obj"] is True
     assert payload["sema_type_system_parity"]["deterministic_semantic_diagnostics"] is True
     assert payload["sema_type_system_parity"]["deterministic_type_metadata_handoff"] is True

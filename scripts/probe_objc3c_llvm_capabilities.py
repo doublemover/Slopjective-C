@@ -8,6 +8,7 @@ import json
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 from typing import Sequence
 
@@ -39,28 +40,31 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
+def run_command(command: list[str]) -> tuple[subprocess.CompletedProcess[str], float]:
+    started = time.perf_counter()
     try:
-        return subprocess.run(
+        result = subprocess.run(
             command,
             capture_output=True,
             text=True,
             check=False,
         )
     except FileNotFoundError:
-        return subprocess.CompletedProcess(
+        result = subprocess.CompletedProcess(
             command,
             127,
             stdout="",
             stderr=f"executable not found: {command[0]}",
         )
     except OSError as exc:
-        return subprocess.CompletedProcess(
+        result = subprocess.CompletedProcess(
             command,
             126,
             stdout="",
             stderr=f"command launch error ({exc.__class__.__name__}): {command[0]}",
         )
+    duration_ms = round((time.perf_counter() - started) * 1000.0, 3)
+    return result, duration_ms
 
 
 def first_non_empty_line(text: str) -> str:
@@ -73,7 +77,7 @@ def first_non_empty_line(text: str) -> str:
 
 def probe_executable(path: Path, *, role: str) -> dict[str, object]:
     version_cmd = [str(path), "--version"]
-    version_result = run_command(version_cmd)
+    version_result, version_duration_ms = run_command(version_cmd)
     version_text = (version_result.stdout or "") + (version_result.stderr or "")
 
     found = version_result.returncode != 127
@@ -83,6 +87,7 @@ def probe_executable(path: Path, *, role: str) -> dict[str, object]:
         "path": str(path),
         "found": found,
         "version_exit_code": version_result.returncode,
+        "version_duration_ms": version_duration_ms,
         "version_headline": head,
     }
     if not found:
@@ -92,7 +97,7 @@ def probe_executable(path: Path, *, role: str) -> dict[str, object]:
 
 def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
     help_cmd = [str(path), "--help"]
-    help_result = run_command(help_cmd)
+    help_result, help_duration_ms = run_command(help_cmd)
     help_text = (help_result.stdout or "") + (help_result.stderr or "")
 
     mentions_filetype = "--filetype" in help_text or "-filetype" in help_text
@@ -100,16 +105,18 @@ def probe_llc_filetype_obj(path: Path) -> dict[str, object]:
     supports_from_help = mentions_filetype and mentions_obj
 
     version_with_filetype_cmd = [str(path), "--filetype=obj", "--version"]
-    filetype_version_result = run_command(version_with_filetype_cmd)
+    filetype_version_result, version_with_filetype_duration_ms = run_command(version_with_filetype_cmd)
     supports_from_command = filetype_version_result.returncode != 127
 
     supports_filetype_obj = supports_from_help or supports_from_command
 
     return {
         "help_exit_code": help_result.returncode,
+        "help_duration_ms": help_duration_ms,
         "help_mentions_filetype": mentions_filetype,
         "help_mentions_obj": mentions_obj,
         "version_with_filetype_exit_code": filetype_version_result.returncode,
+        "version_with_filetype_duration_ms": version_with_filetype_duration_ms,
         "supports_filetype_obj": supports_filetype_obj,
     }
 

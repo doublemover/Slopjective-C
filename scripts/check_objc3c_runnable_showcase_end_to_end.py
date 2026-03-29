@@ -162,6 +162,7 @@ def main() -> int:
     command_surfaces = manifest.get("command_surfaces", {})
     expect(command_surfaces.get("build_playground") == "npm run build:objc3c:playground", "package manifest missing build_playground command surface")
     expect(command_surfaces.get("inspect_playground") == "npm run inspect:objc3c:playground", "package manifest missing inspect_playground command surface")
+    expect(command_surfaces.get("inspect_benchmark") == "npm run inspect:objc3c:benchmark", "package manifest missing inspect_benchmark command surface")
     expect(command_surfaces.get("inspect_capabilities") == "npm run inspect:objc3c:capabilities", "package manifest missing inspect_capabilities command surface")
     expect(command_surfaces.get("inspect_runtime") == "npm run inspect:objc3c:runtime", "package manifest missing inspect_runtime command surface")
     expect(command_surfaces.get("trace_stages") == "npm run trace:objc3c:stages", "package manifest missing trace_stages command surface")

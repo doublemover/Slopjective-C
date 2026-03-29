@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `68`
+- Current public script count: `70`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -37,6 +37,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:playground` | `inspect-playground-repro` | `repo` | `playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:observability` | `inspect-compile-observability` | `repo` | `developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:runtime` | `inspect-runtime-inspector` | `repo` | `developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
+| `inspect:objc3c:benchmark` | `benchmark-runtime-inspector` | `repo` | `runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_inspector.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `test:objc3c:developer-tooling` | `validate-developer-tooling` | `repo` | `developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner` | `fixed-shape` | `python:scripts/check_objc3c_developer_tooling_integration.py` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |

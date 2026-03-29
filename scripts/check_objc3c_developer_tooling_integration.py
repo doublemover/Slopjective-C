@@ -58,6 +58,10 @@ def main() -> int:
             [sys.executable, str(PUBLIC_RUNNER), "inspect-capability-explorer"],
         ),
         run_step(
+            "benchmark-runtime-inspector",
+            [sys.executable, str(PUBLIC_RUNNER), "benchmark-runtime-inspector"],
+        ),
+        run_step(
             "trace-compile-stages",
             [sys.executable, str(PUBLIC_RUNNER), "trace-compile-stages"],
         ),
@@ -68,12 +72,14 @@ def main() -> int:
     observability_path = PUBLIC_WORKFLOW_REPORT_ROOT / "compile-observability.json"
     runtime_inspector_path = PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-inspector.json"
     capability_explorer_path = PUBLIC_WORKFLOW_REPORT_ROOT / "capability-explorer.json"
+    runtime_inspector_benchmark_path = PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-inspector-benchmark.json"
     stage_trace_path = PUBLIC_WORKFLOW_REPORT_ROOT / "compile-stage-trace.json"
-    for path in (observability_path, runtime_inspector_path, capability_explorer_path, stage_trace_path):
+    for path in (observability_path, runtime_inspector_path, capability_explorer_path, runtime_inspector_benchmark_path, stage_trace_path):
         expect(path.is_file(), f"missing expected report: {path.relative_to(ROOT).as_posix()}", failures)
     observability = read_json(observability_path) if observability_path.is_file() else {}
     runtime_inspector = read_json(runtime_inspector_path) if runtime_inspector_path.is_file() else {}
     capability_explorer = read_json(capability_explorer_path) if capability_explorer_path.is_file() else {}
+    runtime_inspector_benchmark = read_json(runtime_inspector_benchmark_path) if runtime_inspector_benchmark_path.is_file() else {}
     stage_trace = read_json(stage_trace_path) if stage_trace_path.is_file() else {}
     expect(observability.get("status_name") == "ok", "expected compile observability status_name=ok", failures)
     expect("summary" in observability.get("dump_commands", {}), "expected compile observability dump_commands.summary", failures)
@@ -85,6 +91,12 @@ def main() -> int:
     expect(capability_explorer.get("clang", {}).get("found") is True, "expected capability explorer clang probe to succeed", failures)
     expect(capability_explorer.get("llc", {}).get("found") is True, "expected capability explorer llc probe to succeed", failures)
     expect(capability_explorer.get("sema_type_system_parity", {}).get("parity_ready") is True, "expected capability explorer parity_ready=true", failures)
+    expect(float(capability_explorer.get("clang", {}).get("version_duration_ms", 0.0)) > 0.0, "expected capability explorer clang timing to be recorded", failures)
+    expect(float(capability_explorer.get("llc", {}).get("version_duration_ms", 0.0)) > 0.0, "expected capability explorer llc timing to be recorded", failures)
+    expect(runtime_inspector_benchmark.get("contract_id") == "objc3c.runtime.inspector.benchmark.v1", "expected runtime inspector benchmark contract id", failures)
+    expect(runtime_inspector_benchmark.get("ok") is True, "expected runtime inspector benchmark ok=true", failures)
+    expect(float(runtime_inspector_benchmark.get("measurements", {}).get("inspect_runtime_inspector_ms", 0.0)) > 0.0, "expected runtime inspector benchmark timing to be recorded", failures)
+    expect(float(runtime_inspector_benchmark.get("measurements", {}).get("inspect_capability_explorer_ms", 0.0)) > 0.0, "expected capability explorer benchmark timing to be recorded", failures)
     expect(stage_trace.get("mode") == "objc3c-frontend-stage-trace-v1", "expected stage trace mode", failures)
     expect(stage_trace.get("stages", {}).get("emit", {}).get("attempted") is True, "expected emit stage trace attempted=true", failures)
     expect(stage_trace.get("stages", {}).get("lex", {}).get("stage") == 0, "expected lex stage ordinal 0", failures)
@@ -97,6 +109,7 @@ def main() -> int:
             "compile_observability": observability_path.relative_to(ROOT).as_posix(),
             "runtime_inspector": runtime_inspector_path.relative_to(ROOT).as_posix(),
             "capability_explorer": capability_explorer_path.relative_to(ROOT).as_posix(),
+            "runtime_inspector_benchmark": runtime_inspector_benchmark_path.relative_to(ROOT).as_posix(),
             "compile_stage_trace": stage_trace_path.relative_to(ROOT).as_posix(),
         },
     }

@@ -83,6 +83,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `tmp/reports/objc3c-public-workflow/inspect-runtime-inspector-summary.json`
   - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
   - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
+  - `tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json`
   - `tmp/reports/objc3c-public-workflow/trace-compile-stages-summary.json`
   - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
 
@@ -104,6 +105,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - dump the live capability-explorer object through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
   - `npm run inspect:objc3c:capabilities`
+- benchmark the runtime-inspector and capability-explorer workflow through the public command surface:
+  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector`
+  - `npm run inspect:objc3c:benchmark`
 - dump the structured compile-stage trace through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
   - `npm run trace:objc3c:stages`
