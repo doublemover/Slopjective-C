@@ -43,6 +43,7 @@ BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experie
 RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
 PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
+RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
@@ -545,6 +546,10 @@ def action_inspect_bonus_tool_integration(_: list[str]) -> int:
 
 def action_materialize_project_template(rest: list[str]) -> int:
     return run([sys.executable, str(PROJECT_TEMPLATE_MATERIALIZER_PY), *rest])
+
+
+def action_validate_runnable_bonus_experiences(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_BONUS_EXPERIENCE_E2E_PY)])
 
 
 def action_lint_spec(_: list[str]) -> int:
@@ -1215,6 +1220,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
     "validate-developer-tooling": ActionSpec("validate-developer-tooling", "run the integrated developer-tooling inspect and trace validation flow", "python:scripts/check_objc3c_developer_tooling_integration.py", ("test:objc3c:developer-tooling",), validation_tier="repo", guarantee_owner="developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner"),
     "validate-bonus-experiences": ActionSpec("validate-bonus-experiences", "run the integrated bonus-experience validation flow across the live showcase tutorial and template surfaces", "python:scripts/check_objc3c_bonus_experience_integration.py", ("test:bonus-experiences",), validation_tier="repo", guarantee_owner="bonus-experience workflows stay executable, template-derived, and tied to the live showcase tutorial and developer-tooling surfaces"),
+    "validate-runnable-bonus-experiences": ActionSpec("validate-runnable-bonus-experiences", "validate template-derived bonus experiences end to end from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_bonus_experience_end_to_end.py", ("test:bonus-experiences:e2e",), validation_tier="full", guarantee_owner="staged runnable toolchain bundles preserve bonus-experience template compilation runtime execution and capability-probe semantics"),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal + targeted smoke slice", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance, canonical replay, and a bounded smoke slice"),
@@ -1285,6 +1291,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "trace-compile-stages": action_trace_compile_stages,
     "validate-developer-tooling": action_validate_developer_tooling,
     "validate-bonus-experiences": action_validate_bonus_experiences,
+    "validate-runnable-bonus-experiences": action_validate_runnable_bonus_experiences,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,

@@ -63,6 +63,7 @@ real implementation exists.
   - `scripts/check_showcase_integration.py`
   - `scripts/check_objc3c_runnable_showcase_end_to_end.py`
   - `scripts/check_getting_started_integration.py`
+  - `scripts/check_objc3c_runnable_bonus_experience_end_to_end.py`
 
 ## Exact Playground Inspector And Template Paths
 
@@ -153,6 +154,8 @@ real implementation exists.
   - `python scripts/objc3c_public_workflow_runner.py validate-showcase`
   - `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
   - `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
+  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-bonus-experiences`
+  - `npm run test:bonus-experiences:e2e`
 
 ## Feasibility And Working Model
 

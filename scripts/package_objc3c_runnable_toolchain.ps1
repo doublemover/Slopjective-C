@@ -305,6 +305,7 @@ $manifestPayload = [ordered]@{
     build_playground = "npm run build:objc3c:playground"
     build_template = "npm run build:objc3c:template"
     bonus_experiences = "npm run test:bonus-experiences"
+    bonus_experiences_e2e = "npm run test:bonus-experiences:e2e"
     inspect_bonus_tools = "npm run inspect:objc3c:bonus-tools"
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"

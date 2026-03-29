@@ -18,6 +18,7 @@
     "test:showcase:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase",
     "test:objc3c:developer-tooling": "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
     "test:bonus-experiences": "python scripts/objc3c_public_workflow_runner.py validate-bonus-experiences",
+    "test:bonus-experiences:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-bonus-experiences",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",
     "build:site": "python scripts/objc3c_public_workflow_runner.py build-site",
     "build:docs:native": "python scripts/objc3c_public_workflow_runner.py build-native-docs",

@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `73`
+- Current public script count: `74`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -43,6 +43,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `test:objc3c:developer-tooling` | `validate-developer-tooling` | `repo` | `developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner` | `fixed-shape` | `python:scripts/check_objc3c_developer_tooling_integration.py` |
 | `test:bonus-experiences` | `validate-bonus-experiences` | `repo` | `bonus-experience workflows stay executable, template-derived, and tied to the live showcase tutorial and developer-tooling surfaces` | `fixed-shape` | `python:scripts/check_objc3c_bonus_experience_integration.py` |
+| `test:bonus-experiences:e2e` | `validate-runnable-bonus-experiences` | `full` | `staged runnable toolchain bundles preserve bonus-experience template compilation runtime execution and capability-probe semantics` | `fixed-shape` | `python:scripts/check_objc3c_runnable_bonus_experience_end_to_end.py` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
