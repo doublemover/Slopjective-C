@@ -107,6 +107,21 @@ function Get-RepoRelativeExecutionFixtureFiles {
   )
 }
 
+function Get-RepoRelativeStdlibFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $stdlibRoot = Join-Path $RepoRoot "stdlib"
+  if (!(Test-Path -LiteralPath $stdlibRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: missing stdlib root $stdlibRoot"
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $stdlibRoot -Recurse -File |
+      Sort-Object -Property FullName |
+      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
+  )
+}
+
 if (!(Test-Path -LiteralPath $buildScript -PathType Leaf)) {
   throw "runnable toolchain package FAIL: missing build script $buildScript"
 }
@@ -200,8 +215,9 @@ $requiredRelativeFiles = @(
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
+$stdlibFiles = @(Get-RepoRelativeStdlibFiles -RepoRoot $repoRoot)
 $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
-foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles)) {
+foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $stdlibFiles)) {
   Copy-RepoRelativeFile -RepoRoot $repoRoot -PackageRoot $packageRoot -RelativePath $relativePath | Out-Null
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }
@@ -304,6 +320,48 @@ $manifestPayload = [ordered]@{
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
   guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
+  stdlib_root = "stdlib"
+  stdlib_workspace_manifest = "stdlib/workspace.json"
+  stdlib_module_inventory = "stdlib/module_inventory.json"
+  stdlib_stability_policy = "stdlib/stability_policy.json"
+  stdlib_package_surface = "stdlib/package_surface.json"
+  stdlib_modules = @(
+    [ordered]@{
+      canonical_module = "objc3.core"
+      implementation_module = "objc3_core"
+      manifest = "stdlib/modules/objc3.core/module.json"
+      source = "stdlib/modules/objc3.core/module.objc3"
+      smoke_source = "stdlib/modules/objc3.core/smoke.objc3"
+    },
+    [ordered]@{
+      canonical_module = "objc3.errors"
+      implementation_module = "objc3_errors"
+      manifest = "stdlib/modules/objc3.errors/module.json"
+      source = "stdlib/modules/objc3.errors/module.objc3"
+      smoke_source = "stdlib/modules/objc3.errors/smoke.objc3"
+    },
+    [ordered]@{
+      canonical_module = "objc3.concurrency"
+      implementation_module = "objc3_concurrency"
+      manifest = "stdlib/modules/objc3.concurrency/module.json"
+      source = "stdlib/modules/objc3.concurrency/module.objc3"
+      smoke_source = "stdlib/modules/objc3.concurrency/smoke.objc3"
+    },
+    [ordered]@{
+      canonical_module = "objc3.keypath"
+      implementation_module = "objc3_keypath"
+      manifest = "stdlib/modules/objc3.keypath/module.json"
+      source = "stdlib/modules/objc3.keypath/module.objc3"
+      smoke_source = "stdlib/modules/objc3.keypath/smoke.objc3"
+    },
+    [ordered]@{
+      canonical_module = "objc3.system"
+      implementation_module = "objc3_system"
+      manifest = "stdlib/modules/objc3.system/module.json"
+      source = "stdlib/modules/objc3.system/module.objc3"
+      smoke_source = "stdlib/modules/objc3.system/smoke.objc3"
+    }
+  )
   tutorial_guides = @(
     "docs/tutorials/getting_started.md",
     "docs/tutorials/build_run_verify.md",
