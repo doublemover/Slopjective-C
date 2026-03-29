@@ -587,13 +587,13 @@ bool DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
     }
     out << deprecated_artifacts[index];
   }
-  out << " (remove them and use the integrated "
+  out << " (remove them; the canonical release surface is the integrated "
          ".objc3-conformance-publication.json, "
          ".objc3-conformance-validation.json, "
          ".objc3-release-evidence-operation.json, "
          ".objc3-dashboard-status.json, "
          ".objc3-advanced-feature-gate.json, and "
-         ".objc3-release-candidate-matrix.json artifacts instead)";
+         ".objc3-release-candidate-matrix.json artifacts in the active output directory, while reports and other transient evidence belong under tmp/)";
   error = out.str();
   return false;
 }

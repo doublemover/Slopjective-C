@@ -91,6 +91,35 @@ Documentation boundary:
 
 If you are new to the repo, stay out of `tmp/` and the legacy redirect index until you actually need them.
 
+## Superclean Boundary
+
+The live repo surface is intentionally narrow.
+
+Canonical roots:
+
+- implementation:
+  - `native/objc3c/`
+  - `scripts/`
+  - `tests/`
+- human-facing docs:
+  - `README.md`
+  - `site/src/`
+  - `docs/objc3c-native/src/`
+  - `docs/runbooks/`
+- generated checked-in outputs:
+  - `site/index.md`
+  - `docs/objc3c-native.md`
+  - `docs/runbooks/objc3c_public_command_surface.md`
+- machine-owned outputs:
+  - `tmp/`
+  - `artifacts/`
+
+Explicit non-goals for cleanup work:
+
+- reintroducing milestone-coded command aliases or sidecar compatibility files,
+- treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
+- hand-editing generated outputs instead of their canonical inputs.
+
 ## Repository Layout
 
 - `docs/reference/legacy_spec_anchor_index.md`

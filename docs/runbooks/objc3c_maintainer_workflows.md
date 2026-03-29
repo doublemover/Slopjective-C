@@ -18,6 +18,30 @@ checked into the repo:
 Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
 `tmp/artifacts/` as canonical documentation.
 
+## Superclean Working Boundary
+
+Use these roots directly when cleaning or renaming repo surfaces:
+
+- implementation roots:
+  - `native/objc3c/`
+  - `scripts/`
+  - `tests/`
+- checked-in doc sources:
+  - `README.md`
+  - `site/src/`
+  - `docs/objc3c-native/src/`
+  - `package.json`
+- generated checked-in outputs:
+  - `site/index.md`
+  - `docs/objc3c-native.md`
+  - `docs/runbooks/objc3c_public_command_surface.md`
+- machine-owned outputs only:
+  - `tmp/`
+  - `artifacts/`
+
+Do not add milestone-specific wrappers, sidecar compatibility files, or
+parallel source-of-truth copies when changing these surfaces.
+
 ## Build
 
 ```powershell
