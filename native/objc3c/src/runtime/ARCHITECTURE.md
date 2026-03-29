@@ -166,6 +166,21 @@ Metaprogramming lowering and host-cache source of truth:
   extend that emitted lowering/output boundary instead of reconstructing it
   from sidecar manifests or milestone-local notes
 
+Cross-module metaprogramming artifact preservation source of truth:
+
+- compile publication exposes the cross-module preservation boundary through the
+  acceptance-summary key
+  `runtime_cross_module_metaprogramming_artifact_preservation_surface`
+- that surface must point at the runtime-import/link-plan contracts
+  `objc3c.metaprogramming.module.interface.replay.preservation.v1` and
+  `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`,
+  the authoritative io/pipeline code paths, and the compile-coupled fixtures
+  `tests/tooling/fixtures/native/preservation_provider.objc3` and
+  `tests/tooling/fixtures/native/preservation_consumer.objc3`
+- later packaged replay and runtime host integration work must extend that
+  emitted preservation boundary instead of reconstructing imported
+  metaprogramming facts from local-only manifests or milestone-local notes
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

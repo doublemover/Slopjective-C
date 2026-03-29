@@ -384,6 +384,28 @@ host-cache import artifact as one live surface so executable expansion work
 extends the real compiler outputs instead of re-deriving lowering truth from
 sidecars or milestone-local summaries.
 
+## Cross-Module Metaprogramming Artifact Preservation Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_cross_module_metaprogramming_artifact_preservation_surface`
+- authoritative runtime-import/link-plan contracts:
+  - `objc3c.metaprogramming.module.interface.replay.preservation.v1`
+  - `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/io/objc3_process.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/preservation_provider.objc3`
+    - `tests/tooling/fixtures/native/preservation_consumer.objc3`
+
+This is the authoritative cross-module preservation boundary for metaprogramming
+artifacts. It freezes the provider runtime-import packet and the consumer
+cross-module runtime link plan together so derived methods, macro/property
+artifacts, and host-cache compatibility survive separate compilation without
+being reconstructed from local-only manifest state.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:
