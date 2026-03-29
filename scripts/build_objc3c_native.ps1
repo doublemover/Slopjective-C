@@ -705,6 +705,11 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/objc3c-native.md",
       "docs/runbooks/objc3c_public_command_surface.md"
     )
+    maintainer_runbooks = @(
+      "docs/runbooks/objc3c_maintainer_workflows.md",
+      "docs/runbooks/objc3c_developer_tooling.md",
+      "docs/runbooks/objc3c_bonus_experiences.md"
+    )
     machine_owned_output_roots = @(
       "tmp",
       "artifacts"
@@ -727,6 +732,61 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       frontend_c_api_runner = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendCapiRunnerPath
       runtime_library = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
       compile_commands = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CompileCommandsPath
+    }
+    bonus_experience_surfaces = [ordered]@{
+      playground = [ordered]@{
+        source_roots = @(
+          "showcase/auroraBoard/main.objc3",
+          "showcase/signalMesh/main.objc3",
+          "showcase/patchKit/main.objc3",
+          "tests/tooling/fixtures/native/hello.objc3"
+        )
+        artifact_roots = @(
+          "tmp/artifacts/compilation/objc3c-native",
+          "tmp/artifacts/showcase"
+        )
+        public_actions = @(
+          "compile-objc3c",
+          "inspect-compile-observability",
+          "trace-compile-stages"
+        )
+      }
+      runtime_inspector = [ordered]@{
+        source_roots = @(
+          "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+          "native/objc3c/src/runtime/objc3_runtime.cpp",
+          "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+          "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+          "tests/tooling/runtime/task_runtime_hardening_probe.cpp"
+        )
+        report_roots = @(
+          "tmp/reports/objc3c-public-workflow",
+          "tmp/reports/developer-tooling"
+        )
+        public_actions = @(
+          "inspect-runtime-inspector",
+          "trace-compile-stages",
+          "validate-developer-tooling"
+        )
+      }
+      template_and_demo_harness = [ordered]@{
+        source_roots = @(
+          "showcase/README.md",
+          "showcase/portfolio.json",
+          "showcase/tutorial_walkthrough.json",
+          "docs/tutorials/build_run_verify.md",
+          "docs/tutorials/guided_walkthrough.md"
+        )
+        report_roots = @(
+          "tmp/reports/showcase",
+          "tmp/reports/tutorials"
+        )
+        public_actions = @(
+          "validate-showcase",
+          "validate-runnable-showcase",
+          "validate-getting-started"
+        )
+      }
     }
     frontend_contract_artifacts = @(
       $FrontendDefinitions | ForEach-Object {

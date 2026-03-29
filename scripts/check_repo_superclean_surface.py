@@ -57,6 +57,16 @@ def main() -> int:
         errors,
     )
     expect(
+        payload.get("maintainer_runbooks")
+        == [
+            "docs/runbooks/objc3c_maintainer_workflows.md",
+            "docs/runbooks/objc3c_developer_tooling.md",
+            "docs/runbooks/objc3c_bonus_experiences.md",
+        ],
+        "maintainer_runbooks drifted",
+        errors,
+    )
+    expect(
         payload.get("machine_owned_output_roots") == ["tmp", "artifacts"],
         "machine_owned_output_roots drifted",
         errors,
@@ -90,6 +100,68 @@ def main() -> int:
             "compile_commands": "tmp/build-objc3c-native/compile_commands.json",
         },
         "native_build_outputs drifted",
+        errors,
+    )
+
+    bonus_experience_surfaces = payload.get("bonus_experience_surfaces", {})
+    expect(
+        bonus_experience_surfaces
+        == {
+            "playground": {
+                "source_roots": [
+                    "showcase/auroraBoard/main.objc3",
+                    "showcase/signalMesh/main.objc3",
+                    "showcase/patchKit/main.objc3",
+                    "tests/tooling/fixtures/native/hello.objc3",
+                ],
+                "artifact_roots": [
+                    "tmp/artifacts/compilation/objc3c-native",
+                    "tmp/artifacts/showcase",
+                ],
+                "public_actions": [
+                    "compile-objc3c",
+                    "inspect-compile-observability",
+                    "trace-compile-stages",
+                ],
+            },
+            "runtime_inspector": {
+                "source_roots": [
+                    "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+                    "native/objc3c/src/runtime/objc3_runtime.cpp",
+                    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+                    "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+                    "tests/tooling/runtime/task_runtime_hardening_probe.cpp",
+                ],
+                "report_roots": [
+                    "tmp/reports/objc3c-public-workflow",
+                    "tmp/reports/developer-tooling",
+                ],
+                "public_actions": [
+                    "inspect-runtime-inspector",
+                    "trace-compile-stages",
+                    "validate-developer-tooling",
+                ],
+            },
+            "template_and_demo_harness": {
+                "source_roots": [
+                    "showcase/README.md",
+                    "showcase/portfolio.json",
+                    "showcase/tutorial_walkthrough.json",
+                    "docs/tutorials/build_run_verify.md",
+                    "docs/tutorials/guided_walkthrough.md",
+                ],
+                "report_roots": [
+                    "tmp/reports/showcase",
+                    "tmp/reports/tutorials",
+                ],
+                "public_actions": [
+                    "validate-showcase",
+                    "validate-runnable-showcase",
+                    "validate-getting-started",
+                ],
+            },
+        },
+        "bonus_experience_surfaces drifted",
         errors,
     )
 

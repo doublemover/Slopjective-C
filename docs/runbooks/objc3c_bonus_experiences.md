@@ -63,6 +63,67 @@ real implementation exists.
   - `scripts/check_objc3c_runnable_showcase_end_to_end.py`
   - `scripts/check_getting_started_integration.py`
 
+## Exact Playground Inspector And Template Paths
+
+- playground compile/repro source roots:
+  - `showcase/auroraBoard/main.objc3`
+  - `showcase/signalMesh/main.objc3`
+  - `showcase/patchKit/main.objc3`
+  - `tests/tooling/fixtures/native/hello.objc3`
+- runtime-inspector and capability-explorer source roots:
+  - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
+  - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
+  - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
+  - `tests/tooling/runtime/task_runtime_hardening_probe.cpp`
+- template and demo-harness source roots:
+  - `showcase/README.md`
+  - `showcase/portfolio.json`
+  - `showcase/tutorial_walkthrough.json`
+  - `docs/tutorials/build_run_verify.md`
+  - `docs/tutorials/guided_walkthrough.md`
+
+## Exact Live Artifact And Output Paths
+
+- native binaries and runtime library:
+  - `artifacts/bin/objc3c-native.exe`
+  - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
+  - `artifacts/lib/objc3_runtime.lib`
+- build-emitted source-of-truth artifact:
+  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+- playground/repro artifact roots:
+  - `tmp/artifacts/compilation/objc3c-native/`
+  - `tmp/artifacts/showcase/`
+- runtime inspector and stage-trace report roots:
+  - `tmp/reports/objc3c-public-workflow/compile-observability.json`
+  - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
+  - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
+  - `tmp/reports/developer-tooling/integration-summary.json`
+- showcase/tutorial validation report roots:
+  - `tmp/reports/showcase/`
+  - `tmp/reports/tutorials/`
+
+## Exact Live Commands
+
+- compile one checked-in source through the public compiler path:
+  - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
+  - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+- dump the current playground/repro observability payload:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-compile-observability`
+  - `npm run inspect:objc3c:observability`
+- dump the current runtime-inspector payload:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
+  - `npm run inspect:objc3c:runtime`
+- dump the current stage-trace payload:
+  - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
+  - `npm run trace:objc3c:stages`
+- validate the current developer-tooling integration surface:
+  - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
+  - `npm run test:objc3c:developer-tooling`
+- validate showcase/tutorial-backed bonus experience flows:
+  - `python scripts/objc3c_public_workflow_runner.py validate-showcase`
+  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
+  - `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
+
 ## Feasibility And Working Model
 
 The current live implementation is sufficient to support bonus experiences
