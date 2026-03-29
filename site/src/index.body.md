@@ -5,7 +5,7 @@ _Last updated: 2026-03-11_
 
 Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: the archived `spec/` corpus now sits behind a compatibility redirect index, but this page is where the project should explain itself cleanly.
 
-> Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3 object model is still in progress.
+> Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model is still in progress.
 
 ## At a Glance {#toc-status-scope-note}
 
@@ -34,9 +34,9 @@ Use this page in three passes:
 | see the runnable subset | [What Is Implemented and Runnable](#intro) |
 | understand what is still missing | [What Remains](#status-remaining) |
 | find the right draft section | [Specification Map](#toc-front-matter) |
-| build and validate the implementation | `README.md` |
-| inspect the native implementation boundary | `docs/objc3c-native.md` and `native/objc3c/` |
-| follow old spec links | `docs/reference/legacy_spec_anchor_index.md` |
+| build and validate the implementation | [README.md](../README.md) |
+| inspect the native implementation boundary | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/` |
+| follow old spec links | [legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files) |
 
 ## Reader Promises {#toc-reader-promises}
 
@@ -130,7 +130,7 @@ Today the project has:
 - real emitted metadata sections,
 - and a runnable subset.
 
-It does **not** yet have the full live Objective-C 3 object model end to end.
+It does **not** yet have the full live Objective-C 3.0 object model end to end.
 
 #### D.3 Current Priorities {#d-3}
 

@@ -310,31 +310,30 @@ The spec is organized as a small set of cross-cutting reference documents plus t
 
 Start here:
 
-- [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files)
-- [Table of contents](docs/reference/legacy_spec_anchor_index.md#table-of-contents)
-- [Introduction](docs/reference/legacy_spec_anchor_index.md#introduction)
-- [Syntax catalog](docs/reference/legacy_spec_anchor_index.md#attribute-and-syntax-catalog)
-- [Lowering and runtime contracts](docs/reference/legacy_spec_anchor_index.md#lowering-and-runtime-contracts)
-- [Module metadata and ABI tables](docs/reference/legacy_spec_anchor_index.md#module-metadata-and-abi-tables)
-- [Conformance profile checklist](docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist)
+- [Published site overview](https://doublemover.github.io/Slopjective-C/)
+- [Introduction](https://doublemover.github.io/Slopjective-C/#intro)
+- [Specification map](https://doublemover.github.io/Slopjective-C/#toc-front-matter)
+- [Module metadata and ABI surface tables](https://doublemover.github.io/Slopjective-C/#d)
+- [Conformance profile checklist](https://doublemover.github.io/Slopjective-C/#e)
+- [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) for archived anchors and compatibility links only
 
 Language parts:
 
 | Part | Focus |
 | --- | --- |
-| [Part 0](docs/reference/legacy_spec_anchor_index.md#part-0-baseline-and-normative-references) | Baseline rules, terminology, and normative references |
-| [Part 1](docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance) | Versioning, compatibility, and conformance claims |
-| [Part 2](docs/reference/legacy_spec_anchor_index.md#part-2-modules-namespacing-api-surfaces) | Modules, namespacing, and public API surfaces |
-| [Part 3](docs/reference/legacy_spec_anchor_index.md#part-3-types-nullability-optionals-generics-keypaths) | Types, nullability, optionals, generics, and key paths |
-| [Part 4](docs/reference/legacy_spec_anchor_index.md#part-4-memory-management-ownership) | Ownership, retainable objects, and lifetime rules |
-| [Part 5](docs/reference/legacy_spec_anchor_index.md#part-5-control-flow-safety-constructs) | Control flow, safety constructs, and execution behavior |
-| [Part 6](docs/reference/legacy_spec_anchor_index.md#part-6-errors-results-throws) | Errors, `Result`, and `throws` |
-| [Part 7](docs/reference/legacy_spec_anchor_index.md#part-7-concurrency-async-await-actors) | Async/await, actors, and concurrency rules |
-| [Part 8](docs/reference/legacy_spec_anchor_index.md#part-8-system-programming-extensions) | System programming extensions and low-level features |
-| [Part 9](docs/reference/legacy_spec_anchor_index.md#part-9-performance-and-dynamism-controls) | Performance controls and runtime dynamism boundaries |
-| [Part 10](docs/reference/legacy_spec_anchor_index.md#part-10-metaprogramming-derives-macros-property-behaviors) | Metaprogramming, derives, macros, and property behaviors |
-| [Part 11](docs/reference/legacy_spec_anchor_index.md#part-11-interoperability-c-cpp-swift) | Interoperability with C, C++, and Swift-facing surfaces |
-| [Part 12](docs/reference/legacy_spec_anchor_index.md#part-12-diagnostics-tooling-tests) | Diagnostics, tooling, and conformance testing |
+| [Part 0](https://doublemover.github.io/Slopjective-C/#part-0) | Baseline rules, terminology, and normative references |
+| [Part 1](https://doublemover.github.io/Slopjective-C/#part-1) | Versioning, compatibility, and conformance claims |
+| [Part 2](https://doublemover.github.io/Slopjective-C/#part-2) | Modules, namespacing, and public API surfaces |
+| [Part 3](https://doublemover.github.io/Slopjective-C/#part-3) | Types, nullability, optionals, generics, and key paths |
+| [Part 4](https://doublemover.github.io/Slopjective-C/#part-4) | Ownership, retainable objects, and lifetime rules |
+| [Part 5](https://doublemover.github.io/Slopjective-C/#part-5) | Control flow, safety constructs, and execution behavior |
+| [Part 6](https://doublemover.github.io/Slopjective-C/#part-6) | Errors, `Result`, and `throws` |
+| [Part 7](https://doublemover.github.io/Slopjective-C/#part-7) | Async/await, actors, and concurrency rules |
+| [Part 8](https://doublemover.github.io/Slopjective-C/#part-8) | System programming extensions and low-level features |
+| [Part 9](https://doublemover.github.io/Slopjective-C/#part-9) | Performance controls and runtime dynamism boundaries |
+| [Part 10](https://doublemover.github.io/Slopjective-C/#part-10) | Metaprogramming, derives, macros, and property behaviors |
+| [Part 11](https://doublemover.github.io/Slopjective-C/#part-11) | Interoperability with C, C++, and Swift-facing surfaces |
+| [Part 12](https://doublemover.github.io/Slopjective-C/#part-12) | Diagnostics, tooling, and conformance testing |
 
 ## License
 
