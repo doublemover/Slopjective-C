@@ -198,6 +198,37 @@ def main() -> int:
         "bonus_tool_integration_surface drifted",
         errors,
     )
+    expect(
+        payload.get("performance_benchmark_surface")
+        == {
+            "benchmark_portfolio": "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+            "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
+            "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
+            "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+            "telemetry_schema": "schemas/objc3c-performance-telemetry-v1.schema.json",
+            "source_roots": [
+                "showcase/auroraBoard/main.objc3",
+                "showcase/signalMesh/main.objc3",
+                "showcase/patchKit/main.objc3",
+                "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
+                "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
+                "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
+            ],
+            "report_roots": [
+                "tmp/artifacts/performance",
+                "tmp/reports/performance",
+                "tmp/pkg/objc3c-native-runnable-toolchain",
+            ],
+            "public_actions": [
+                "benchmark-performance",
+                "benchmark-comparative-baselines",
+                "validate-runnable-performance",
+                "package-runnable-toolchain",
+            ],
+        },
+        "performance_benchmark_surface drifted",
+        errors,
+    )
 
     frontend_contract_artifacts = payload.get("frontend_contract_artifacts", [])
     expect(isinstance(frontend_contract_artifacts, list) and frontend_contract_artifacts, "frontend_contract_artifacts missing", errors)

@@ -61,6 +61,7 @@
     "test:objc3c:runnable-interop": "python scripts/objc3c_public_workflow_runner.py validate-runnable-interop",
     "test:objc3c:runnable-metaprogramming": "python scripts/objc3c_public_workflow_runner.py validate-runnable-metaprogramming",
     "test:objc3c:runnable-object-model": "python scripts/objc3c_public_workflow_runner.py validate-runnable-object-model",
+    "test:objc3c:runnable-performance": "python scripts/objc3c_public_workflow_runner.py validate-runnable-performance",
     "test:objc3c:runnable-release-candidate": "python scripts/objc3c_public_workflow_runner.py validate-runnable-release-candidate",
     "test:objc3c:runnable-storage-reflection": "python scripts/objc3c_public_workflow_runner.py validate-runnable-storage-reflection",
     "test:objc3c:fixture-matrix": "python scripts/objc3c_public_workflow_runner.py test-fixture-matrix",

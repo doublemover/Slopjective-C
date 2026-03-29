@@ -188,7 +188,15 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
   "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
   "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
-  "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+  "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
+  "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+  "tests/tooling/fixtures/performance/measurement_policy.json",
+  "tests/tooling/fixtures/performance/benchmark_parameters.json",
+  "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+  "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
+  "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
+  "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
+  "schemas/objc3c-performance-telemetry-v1.schema.json"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -203,6 +211,9 @@ $repoSupercleanSurfacePath = Join-Path $packageRoot ($repoSupercleanSurfaceRelat
 $repoSupercleanSurfacePayload = Get-Content -LiteralPath $repoSupercleanSurfacePath -Raw | ConvertFrom-Json -AsHashtable
 if (-not $repoSupercleanSurfacePayload.ContainsKey("bonus_experience_surfaces")) {
   throw "runnable toolchain package FAIL: missing bonus_experience_surfaces in $repoSupercleanSurfaceRelativePath"
+}
+if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surface")) {
+  throw "runnable toolchain package FAIL: missing performance_benchmark_surface in $repoSupercleanSurfaceRelativePath"
 }
 
 $manifestPayload = [ordered]@{
@@ -291,6 +302,7 @@ $manifestPayload = [ordered]@{
   repo_superclean_surface = $repoSupercleanSurfaceRelativePath
   bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
+  performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
   guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
   tutorial_guides = @(
     "docs/tutorials/getting_started.md",
@@ -309,10 +321,13 @@ $manifestPayload = [ordered]@{
     inspect_bonus_tools = "npm run inspect:objc3c:bonus-tools"
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
+    inspect_performance = "npm run inspect:objc3c:performance"
+    inspect_comparative_baselines = "npm run inspect:objc3c:comparative-baselines"
     inspect_capabilities = "npm run inspect:objc3c:capabilities"
     inspect_runtime = "npm run inspect:objc3c:runtime"
     trace_stages = "npm run trace:objc3c:stages"
     developer_tooling = "npm run test:objc3c:developer-tooling"
+    runnable_performance = "npm run test:objc3c:runnable-performance"
     showcase = "npm run test:showcase"
     showcase_e2e = "npm run test:showcase:e2e"
     getting_started = "npm run test:getting-started"

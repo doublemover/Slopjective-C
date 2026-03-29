@@ -399,6 +399,8 @@ def main() -> int:
         "npm run inspect:objc3c:performance",
         "python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines",
         "npm run inspect:objc3c:comparative-baselines",
+        "python scripts/objc3c_public_workflow_runner.py validate-runnable-performance",
+        "npm run test:objc3c:runnable-performance",
         "python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain",
         "## Exact Live Paths For Downstream Work",
         "docs/runbooks/objc3c_performance.md",

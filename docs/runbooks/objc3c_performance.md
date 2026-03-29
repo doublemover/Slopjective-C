@@ -103,6 +103,9 @@ The only current claim classes allowed from this surface are:
 - benchmark the checked-in ObjC2 Swift and C++ baselines:
   - `python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines`
   - `npm run inspect:objc3c:comparative-baselines`
+- validate the staged runnable benchmark bundle:
+  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-performance`
+  - `npm run test:objc3c:runnable-performance`
 - stage the runnable toolchain before packaged benchmark validation:
   - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
   - `npm run package:objc3c-native:runnable-toolchain`
