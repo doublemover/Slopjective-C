@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -184,6 +185,9 @@ RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
 )
 RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.scaffold.retirement.deprecated.sidecar.compatibility.diagnostics.surface.v1"
+)
+RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.claim.publication.dashboard.schema.surface.v1"
 )
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
@@ -6308,6 +6312,49 @@ def build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnosti
         "explicit_non_goals": [
             "no-silent-compatibility-with-retired-sidecars",
             "no-separate-migration-shim-for-deprecated-claim-artifacts",
+        ],
+        "requires_conformance_validation_artifact": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_claim_publication_dashboard_schema_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"claim-publication-dashboard-schema-surface"}
+    ]
+    return {
+        "contract_id": RUNTIME_CLAIM_PUBLICATION_DASHBOARD_SCHEMA_SURFACE_CONTRACT_ID,
+        "source_contract_ids": [
+            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+            "objc3c.toolchain.dashboard.status.publication.v1",
+            "objc3c.toolchain.release.evidence.toolchain.operations.v1",
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.objc3-conformance-report.json",
+            "<emit-prefix>.objc3-conformance-publication.json",
+            "<emit-prefix>.objc3-conformance-validation.json",
+            "<emit-prefix>.objc3-release-evidence-operation.json",
+            "<emit-prefix>.objc3-dashboard-status.json",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/io/objc3_manifest_artifacts.cpp",
+            "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+        ],
+        "dashboard_schema_model": (
+            "validation-publishes-a-schema-shaped-claim-dashboard-over-the-live-report-publication-validation-and-release-evidence-artifacts"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
+        "dashboard_artifact_path": "<emit-prefix>.objc3-dashboard-status.json",
+        "dashboard_schema_path": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+        "explicit_non_goals": [
+            "no-dashboard-built-from-milestone-local-notes",
+            "no-schema-drift-hidden-behind-ad-hoc-dashboard-fields",
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
@@ -17751,6 +17798,115 @@ def check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
     )
 
 
+def check_claim_publication_dashboard_schema_surface_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "claim-publication-dashboard-schema-surface"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+    compile_dir = case_dir / "compile"
+    compile_fixture_with_args(fixture, compile_dir)
+    report_path = compile_dir / "module.objc3-conformance-report.json"
+
+    validate_dir = case_dir / "validate"
+    validate_dir.mkdir(parents=True, exist_ok=True)
+    validation = run(
+        [
+            str(NATIVE_EXE),
+            "--validate-objc3-conformance",
+            str(report_path),
+            "--out-dir",
+            str(validate_dir),
+            "--emit-prefix",
+            "module",
+            "--emit-objc3-conformance-format",
+            "json",
+        ]
+    )
+    expect(
+        validation.returncode == 0,
+        "expected conformance validation to publish the dashboard artifact successfully",
+    )
+
+    dashboard_path = validate_dir / "module.objc3-dashboard-status.json"
+    dashboard = json.loads(dashboard_path.read_text(encoding="utf-8"))
+    schema = json.loads(
+        (ROOT / "schemas" / "objc3-conformance-dashboard-status-v1.schema.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    required_keys = schema.get("required", [])
+    expect(
+        all(key in dashboard for key in required_keys),
+        "expected dashboard artifact to publish every required top-level schema field",
+    )
+    expect(
+        dashboard.get("schema_id") == "objc3-conformance-dashboard-status/v1"
+        and dashboard.get("schema_version") == 1
+        and dashboard.get("dashboard_version") == "0.11.0"
+        and dashboard.get("release_label") == "v0.11"
+        and dashboard.get("status") == "pass",
+        "expected dashboard artifact to preserve the live schema identity and release status surface",
+    )
+    expect(
+        [entry.get("profile_id") for entry in dashboard.get("profiles", [])]
+        == ["core", "strict", "strict-concurrency", "strict-system"],
+        "expected dashboard artifact to publish one schema-shaped profile row for each claimed profile",
+    )
+    expect(
+        [entry.get("dependency_id") for entry in dashboard.get("dependencies", [])]
+        == ["B-04", "B-10", "B-11", "B-12"],
+        "expected dashboard artifact to publish the schema-shaped dependency inventory",
+    )
+    artifact_paths = [entry.get("artifact_path") for entry in dashboard.get("artifacts", [])]
+    expect(
+        artifact_paths
+        == [
+            "module.objc3-conformance-report.json",
+            "module.objc3-conformance-publication.json",
+            "module.objc3-conformance-validation.json",
+            "module.objc3-release-evidence-operation.json",
+        ],
+        "expected dashboard artifact to preserve the live emitted artifact refs behind the schema surface",
+    )
+    expect(
+        all(
+            isinstance(entry.get("file_sha256"), str)
+            and re.fullmatch(r"[a-f0-9]{64}", entry["file_sha256"])
+            for entry in dashboard.get("artifacts", [])
+        ),
+        "expected dashboard artifact to publish schema-shaped lowercase 64-hex file digests for each emitted artifact ref",
+    )
+    expect(
+        dashboard.get("summary", {}).get("profile_counts")
+        == {"pass": 4, "fail": 0, "blocked": 0, "incomplete": 0}
+        and dashboard.get("summary", {}).get("dependency_counts")
+        == {"pass": 4, "fail": 0, "blocked": 0, "stale": 0, "missing": 0},
+        "expected dashboard artifact to publish deterministic schema-shaped summary counts",
+    )
+    expect(
+        dashboard.get("refresh", {}).get("trigger") == "manual-replay"
+        and dashboard.get("refresh", {}).get("stale_dependency_ids") == []
+        and dashboard.get("refresh", {}).get("escalation_state") == "none",
+        "expected dashboard artifact to publish deterministic refresh telemetry",
+    )
+    expect(
+        len(dashboard.get("change_history", [])) == 1
+        and dashboard["change_history"][0].get("change_kind") == "refresh-only",
+        "expected dashboard artifact to publish deterministic change history over the schema surface",
+    )
+
+    return CaseResult(
+        case_id="claim-publication-dashboard-schema-surface",
+        probe="compile-validate-and-inspect-schema-shaped-dashboard-artifact",
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "dashboard_schema_id": dashboard.get("schema_id"),
+            "artifact_paths": artifact_paths,
+            "profile_ids": [entry.get("profile_id") for entry in dashboard.get("profiles", [])],
+        },
+    )
+
+
 def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
@@ -18596,6 +18752,7 @@ def main() -> int:
         check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
             run_dir
         ),
+        check_claim_publication_dashboard_schema_surface_case(run_dir),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -18723,6 +18880,9 @@ def main() -> int:
             build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface(
                 results
             )
+        ),
+        "runtime_claim_publication_dashboard_schema_surface": (
+            build_runtime_claim_publication_dashboard_schema_surface(results)
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)

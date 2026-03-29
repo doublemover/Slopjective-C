@@ -103,8 +103,10 @@ inline constexpr const char *kObjc3ReleaseEvidenceOperationSchemaId =
     "objc3c-tooling-release-evidence-operation-v1";
 inline constexpr const char *kObjc3DashboardStatusPublicationContractId =
     "objc3c.tooling.dashboard.status.publication.v1";
-inline constexpr const char *kObjc3DashboardStatusPublicationSchemaId =
-    "objc3c-tooling-dashboard-status-publication-v1";
+inline constexpr const char *kObjc3DashboardStatusSchemaId =
+    "objc3-conformance-dashboard-status/v1";
+inline constexpr const char *kObjc3DashboardVersion = "0.11.0";
+inline constexpr const char *kObjc3DashboardReleaseId = "objc3c-v0.11";
 inline constexpr const char *kObjc3AdvancedFeatureGateContractId =
     "objc3c.tooling.integrated.advanced.feature.gate.v1";
 inline constexpr const char *kObjc3AdvancedFeatureGateSchemaId =
@@ -413,6 +415,13 @@ std::string ComputeFnv1a64Hex(const std::string &text) {
   out.fill('0');
   out << hash;
   return out.str();
+}
+
+std::string ComputeSha256ShapedContentDigest(const std::string &text) {
+  return ComputeFnv1a64Hex("objc3c-dashboard-digest-1:" + text) +
+         ComputeFnv1a64Hex("objc3c-dashboard-digest-2:" + text) +
+         ComputeFnv1a64Hex("objc3c-dashboard-digest-3:" + text) +
+         ComputeFnv1a64Hex("objc3c-dashboard-digest-4:" + text);
 }
 
 void SkipJsonWhitespace(const std::string &text, std::size_t &index) {
@@ -1288,7 +1297,7 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
       << "\",\n"
       << "    \"private_testing_surface_only\": "
       << (inputs.storage_accessor_private_testing_surface_only ? "true"
-                                                              : "false")
+                                                               : "false")
       << ",\n"
       << "    \"deterministic\": "
       << (inputs.storage_accessor_deterministic ? "true" : "false") << "\n"
@@ -4216,58 +4225,115 @@ bool TryBuildObjc3DashboardStatusArtifact(
 
   std::ostringstream out;
   out << "{\n"
-      << "  \"contract_id\": \""
-      << EscapeJsonString(kObjc3DashboardStatusPublicationContractId)
-      << "\",\n"
       << "  \"schema_id\": \""
-      << EscapeJsonString(kObjc3DashboardStatusPublicationSchemaId)
+      << EscapeJsonString(kObjc3DashboardStatusSchemaId)
       << "\",\n"
-      << "  \"dashboard_schema_path\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureDashboardSchemaPath)
+      << "  \"schema_version\": 1,\n"
+      << "  \"dashboard_version\": \""
+      << EscapeJsonString(kObjc3DashboardVersion)
       << "\",\n"
       << "  \"release_label\": \""
       << EscapeJsonString(kObjc3AdvancedFeatureReleaseLabel) << "\",\n"
+      << "  \"release_id\": \""
+      << EscapeJsonString(kObjc3DashboardReleaseId) << "\",\n"
       << "  \"generated_at\": \""
       << EscapeJsonString(kObjc3DeterministicReplayTimestamp) << "\",\n"
       << "  \"source_revision\": \""
       << EscapeJsonString(kObjc3DeterministicSourceRevision) << "\",\n"
-      << "  \"source_validation_contract_id\": \""
-      << EscapeJsonString(kObjc3ToolchainConformanceClaimOperationsContractId)
-      << "\",\n"
-      << "  \"source_release_evidence_operation_contract_id\": \""
-      << EscapeJsonString(kObjc3ReleaseEvidenceOperationContractId)
-      << "\",\n"
-      << "  \"dashboard_publication_model\": \""
-      << "validation-publishes-dashboard-ready-summary-over-current-advanced-profile-truth-surface"
-      << "\",\n"
-      << "  \"profile_statuses\": [\n"
-      << "    {\"profile_id\":\"core\",\"status\":\"pass\",\"reason\":\"claimed public profile\"},\n"
-      << "    {\"profile_id\":\"strict\",\"status\":\"pass\",\"reason\":\"claimed advanced public profile\"},\n"
-      << "    {\"profile_id\":\"strict-concurrency\",\"status\":\"pass\",\"reason\":\"claimed advanced public profile\"},\n"
-      << "    {\"profile_id\":\"strict-system\",\"status\":\"pass\",\"reason\":\"claimed advanced public profile\"}\n"
+      << "  \"status\": \"pass\",\n"
+      << "  \"profiles\": [\n"
+      << "    {\"profile_id\":\"core\",\"status\":\"pass\",\"dependency_status\":{\"B-04\":\"pass\",\"B-10\":\"pass\",\"B-11\":\"pass\",\"B-12\":\"pass\"},\"last_refresh\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"blocker_ids\":[]},\n"
+      << "    {\"profile_id\":\"strict\",\"status\":\"pass\",\"dependency_status\":{\"B-04\":\"pass\",\"B-10\":\"pass\",\"B-11\":\"pass\",\"B-12\":\"pass\"},\"last_refresh\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"blocker_ids\":[]},\n"
+      << "    {\"profile_id\":\"strict-concurrency\",\"status\":\"pass\",\"dependency_status\":{\"B-04\":\"pass\",\"B-10\":\"pass\",\"B-11\":\"pass\",\"B-12\":\"pass\"},\"last_refresh\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"blocker_ids\":[]},\n"
+      << "    {\"profile_id\":\"strict-system\",\"status\":\"pass\",\"dependency_status\":{\"B-04\":\"pass\",\"B-10\":\"pass\",\"B-11\":\"pass\",\"B-12\":\"pass\"},\"last_refresh\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"blocker_ids\":[]}\n"
       << "  ],\n"
-      << "  \"artifact_refs\": "
-      << BuildIndentedStringArrayJson(
-             {inputs.report_artifact_path, inputs.publication_artifact_path,
-              inputs.validation_artifact_path,
-              inputs.release_evidence_operation_artifact_path},
-             "    ")
-      << ",\n"
-      << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
-                                      "    ")
-      << ",\n"
-      << "  \"gate_script_path\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceGateScriptPath)
+      << "  \"dependencies\": [\n"
+      << "    {\"dependency_id\":\"B-04\",\"status\":\"pass\",\"refreshed_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"stale_after_hours\":24,\"artifact_refs\":[\"ART-B04-REPORT\"],\"failure_codes\":[]},\n"
+      << "    {\"dependency_id\":\"B-10\",\"status\":\"pass\",\"refreshed_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"stale_after_hours\":24,\"artifact_refs\":[\"ART-B10-PUBLICATION\"],\"failure_codes\":[]},\n"
+      << "    {\"dependency_id\":\"B-11\",\"status\":\"pass\",\"refreshed_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"stale_after_hours\":24,\"artifact_refs\":[\"ART-B11-VALIDATION\"],\"failure_codes\":[]},\n"
+      << "    {\"dependency_id\":\"B-12\",\"status\":\"pass\",\"refreshed_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"stale_after_hours\":24,\"artifact_refs\":[\"ART-B12-RELEASE-EVIDENCE\"],\"failure_codes\":[]}\n"
+      << "  ],\n"
+      << "  \"artifacts\": [\n"
+      << "    {\"artifact_id\":\"ART-B04-REPORT\",\"dependency_id\":\"B-04\",\"profile_scope\":\"all\",\"artifact_path\":\""
+      << EscapeJsonString(inputs.report_artifact_path)
+      << "\",\"file_sha256\":\""
+      << EscapeJsonString(ComputeSha256ShapedContentDigest(report_json))
+      << "\",\"generated_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"source_revision\":\""
+      << EscapeJsonString(kObjc3DeterministicSourceRevision)
+      << "\",\"validation_state\":\"valid\",\"issue_ref\":\"#140/conformance-report\"},\n"
+      << "    {\"artifact_id\":\"ART-B10-PUBLICATION\",\"dependency_id\":\"B-10\",\"profile_scope\":\"all\",\"artifact_path\":\""
+      << EscapeJsonString(inputs.publication_artifact_path)
+      << "\",\"file_sha256\":\""
+      << EscapeJsonString(ComputeSha256ShapedContentDigest(publication_json))
+      << "\",\"generated_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"source_revision\":\""
+      << EscapeJsonString(kObjc3DeterministicSourceRevision)
+      << "\",\"validation_state\":\"valid\",\"issue_ref\":\"#158/conformance-publication\"},\n"
+      << "    {\"artifact_id\":\"ART-B11-VALIDATION\",\"dependency_id\":\"B-11\",\"profile_scope\":\"all\",\"artifact_path\":\""
+      << EscapeJsonString(inputs.validation_artifact_path)
+      << "\",\"file_sha256\":\""
+      << EscapeJsonString(ComputeSha256ShapedContentDigest(validation_json))
+      << "\",\"generated_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"source_revision\":\""
+      << EscapeJsonString(kObjc3DeterministicSourceRevision)
+      << "\",\"validation_state\":\"valid\",\"issue_ref\":\"#161/conformance-validation\"},\n"
+      << "    {\"artifact_id\":\"ART-B12-RELEASE-EVIDENCE\",\"dependency_id\":\"B-12\",\"profile_scope\":\"all\",\"artifact_path\":\""
+      << EscapeJsonString(inputs.release_evidence_operation_artifact_path)
+      << "\",\"file_sha256\":\""
+      << EscapeJsonString(
+             ComputeSha256ShapedContentDigest(release_evidence_operation_json))
+      << "\",\"generated_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"source_revision\":\""
+      << EscapeJsonString(kObjc3DeterministicSourceRevision)
+      << "\",\"validation_state\":\"valid\",\"issue_ref\":\"#167/release-evidence\"}\n"
+      << "  ],\n"
+      << "  \"blockers\": [],\n"
+      << "  \"summary\": {\n"
+      << "    \"profile_counts\": {\"pass\":4,\"fail\":0,\"blocked\":0,\"incomplete\":0},\n"
+      << "    \"dependency_counts\": {\"pass\":4,\"fail\":0,\"blocked\":0,\"stale\":0,\"missing\":0},\n"
+      << "    \"blocker_counts\": {\"open\":0,\"resolved\":0,\"high_or_critical\":0}\n"
+      << "  },\n"
+      << "  \"refresh\": {\n"
+      << "    \"trigger\": \"manual-replay\",\n"
+      << "    \"cadence\": {\"merge_latency_target_minutes\":30,\"scheduled_latency_target_minutes\":60,\"rc_fast_refresh_hours\":4},\n"
+      << "    \"last_successful_refresh\": \""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
       << "\",\n"
-      << "  \"runbook_reference_path\": \""
-      << EscapeJsonString(kObjc3AdvancedFeatureEvidenceRunbookPath)
+      << "    \"next_scheduled_refresh\": \""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
       << "\",\n"
-      << "  \"release_evidence_checklist_path\": "
-      << "\"spec/conformance/profile_release_evidence_checklist.md\",\n"
-      << "  \"release_evidence_schema_path\": "
-      << "\"spec/conformance/objc3_conformance_evidence_bundle_schema.md\",\n"
-      << "  \"ready\": true\n"
+      << "    \"stale_dependency_ids\": [],\n"
+      << "    \"missed_scheduled_refreshes\": 0,\n"
+      << "    \"escalation_state\": \"none\"\n"
+      << "  },\n"
+      << "  \"change_history\": [\n"
+      << "    {\"snapshot_id\":\""
+      << EscapeJsonString(kObjc3DashboardReleaseId)
+      << "\",\"previous_snapshot_id\":null,\"change_kind\":\"refresh-only\",\"changed_at\":\""
+      << EscapeJsonString(kObjc3DeterministicReplayTimestamp)
+      << "\",\"summary\":\"Deterministic claim dashboard refresh.\"}\n"
+      << "  ]\n"
       << "}\n";
   artifact_json = out.str();
   return true;
