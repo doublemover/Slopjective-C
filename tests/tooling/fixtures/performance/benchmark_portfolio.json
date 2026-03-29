@@ -7,6 +7,7 @@
   "report_root": "tmp/reports/performance",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
   "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
+  "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
   "public_entrypoints": {
     "build_native": "build:objc3c-native",
     "compile_objc3c": "compile:objc3c",
@@ -95,6 +96,7 @@
     "docs/runbooks/objc3c_performance.md",
     "docs/tutorials/objc2_swift_cpp_comparison.md",
     "tests/tooling/fixtures/performance/measurement_policy.json",
+    "tests/tooling/fixtures/performance/benchmark_parameters.json",
     "showcase/portfolio.json",
     "tests/tooling/fixtures/performance/benchmark_portfolio.json",
     "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",

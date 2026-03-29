@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.performance.parameterization.v1",
+  "schema_version": 1,
+  "parameterization_kind": "benchmark-matrix-and-hardware-normalization",
+  "compile_latency": {
+    "measured_workloads": [
+      "auroraBoard",
+      "signalMesh",
+      "patchKit",
+      "objc2_reference",
+      "swift_reference",
+      "cpp_reference"
+    ],
+    "invocation_shape": "single-source-single-output",
+    "output_root": "tmp/artifacts/performance/compile",
+    "report_root": "tmp/reports/performance/compile"
+  },
+  "runtime_wall_clock": {
+    "measured_workloads": [
+      "auroraBoard",
+      "signalMesh",
+      "patchKit",
+      "swift_reference",
+      "cpp_reference"
+    ],
+    "output_root": "tmp/artifacts/performance/runtime",
+    "report_root": "tmp/reports/performance/runtime"
+  },
+  "hardware_profile_capture": {
+    "capture_fields": [
+      "hostname",
+      "os",
+      "arch",
+      "cpu_model",
+      "cpu_count",
+      "python_version"
+    ],
+    "normalization_mode": "machine-profile-ratio-plus-raw-samples",
+    "normalization_rules": [
+      "raw_samples_are_authoritative",
+      "normalized_values_must_point_back_to_raw_samples",
+      "no_cross_machine_claim_without_machine_profile"
+    ]
+  },
+  "exact_live_paths_for_downstream_work": [
+    "tests/tooling/fixtures/performance/benchmark_parameters.json",
+    "tests/tooling/fixtures/performance/measurement_policy.json",
+    "tests/tooling/fixtures/performance/benchmark_portfolio.json"
+  ]
+}
