@@ -53,12 +53,14 @@ If you want the ordered example sequence after these commands are clear, continu
 ## Validation Surface
 
 The bounded getting-started validation contract is implemented in `scripts/check_getting_started_surface.py`.
+The public integrated entrypoint for the same tutorial and onboarding flow is `npm run test:getting-started`.
 
 That surface proves:
 
 - the reader-facing documentation structure is still intact
 - the walkthrough manifest still points at the right showcase examples
 - the walkthrough-selected examples still compile through the normal public compiler path
+- the public tutorial and onboarding command surface still runs end to end
 
 The live smoke integration for that same surface is implemented in `scripts/check_getting_started_integration.py`.
 

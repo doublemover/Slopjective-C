@@ -65,6 +65,7 @@ That manifest is part of the live showcase surface and should stay aligned with:
 
 The bounded validation surface for this walkthrough is `scripts/check_getting_started_surface.py`.
 The live smoke integration for the same walkthrough is `scripts/check_getting_started_integration.py`.
+Use `npm run test:getting-started` when you want the public integrated entrypoint for that same flow.
 
 ## Canonical Inputs
 

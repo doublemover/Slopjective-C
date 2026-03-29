@@ -13,6 +13,7 @@
     "test:ci": "python scripts/objc3c_public_workflow_runner.py test-ci",
     "test:docs": "python scripts/objc3c_public_workflow_runner.py validate-documentation-surface",
     "test:repo": "python scripts/objc3c_public_workflow_runner.py validate-repo-superclean",
+    "test:getting-started": "python scripts/objc3c_public_workflow_runner.py validate-getting-started",
     "test:showcase": "python scripts/objc3c_public_workflow_runner.py validate-showcase",
     "test:showcase:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",

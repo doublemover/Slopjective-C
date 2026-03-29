@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `60`
+- Current public script count: `61`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -27,6 +27,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:showcase:surface` | `check-showcase-surface` | `repo` | `showcase examples stay compile-coupled, checked in, and tied to the public compiler path` | `pass-through` | `python:scripts/check_showcase_surface.py` |
 | `test:showcase` | `validate-showcase` | `repo` | `showcase examples stay compiled, runnable, and wired into the normal repo validation path` | `fixed-shape` | `python:scripts/check_showcase_integration.py` |
 | `test:showcase:e2e` | `validate-runnable-showcase` | `full` | `showcase examples stay publishable and runnable from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_showcase_end_to_end.py` |
+| `test:getting-started` | `validate-getting-started` | `repo` | `getting-started tutorials stay compile-coupled, runnable, and wired into the normal repo validation path` | `fixed-shape` | `python:scripts/check_getting_started_integration.py` |
 | `check:repo:surface` | `check-repo-superclean-surface` | `repo` | `native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact` | `fixed-shape` | `python:scripts/check_repo_superclean_surface.py` |
 | `test:docs` | `validate-documentation-surface` | `docs` | `site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit` | `fixed-shape` | `runner-internal + generated documentation checks` |
 | `test:repo` | `validate-repo-superclean` | `repo` | `repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced` | `fixed-shape` | `runner-internal + native build contracts + task hygiene gate` |
@@ -35,7 +36,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:smoke` | `test-smoke` | `smoke` | `full execution smoke corpus` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `ci` | `task hygiene, documentation surface integration, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
+| `test:ci` | `test-ci` | `ci` | `task hygiene, documentation surface integration, showcase and tutorial onboarding validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
