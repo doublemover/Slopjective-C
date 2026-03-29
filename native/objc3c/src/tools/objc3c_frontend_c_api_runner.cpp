@@ -212,6 +212,136 @@ std::string OptionalPath(const char *value) {
   return value;
 }
 
+struct DiagnosticTotals {
+  std::uint64_t total = 0;
+  std::uint64_t notes = 0;
+  std::uint64_t warnings = 0;
+  std::uint64_t errors = 0;
+  std::uint64_t fatals = 0;
+};
+
+void AccumulateStageDiagnostics(
+    const objc3c_frontend_c_stage_summary_t &summary,
+    DiagnosticTotals &totals) {
+  totals.total += summary.diagnostics_total;
+  totals.notes += summary.diagnostics_notes;
+  totals.warnings += summary.diagnostics_warnings;
+  totals.errors += summary.diagnostics_errors;
+  totals.fatals += summary.diagnostics_fatals;
+}
+
+DiagnosticTotals BuildDiagnosticTotals(
+    const objc3c_frontend_c_compile_result_t &result) {
+  DiagnosticTotals totals;
+  AccumulateStageDiagnostics(result.lex, totals);
+  AccumulateStageDiagnostics(result.parse, totals);
+  AccumulateStageDiagnostics(result.sema, totals);
+  AccumulateStageDiagnostics(result.lower, totals);
+  AccumulateStageDiagnostics(result.emit, totals);
+  return totals;
+}
+
+const char *StatusName(objc3c_frontend_c_status_t status) {
+  switch (status) {
+    case OBJC3C_FRONTEND_STATUS_OK:
+      return "ok";
+    case OBJC3C_FRONTEND_STATUS_DIAGNOSTICS:
+      return "diagnostics";
+    case OBJC3C_FRONTEND_STATUS_USAGE_ERROR:
+      return "usage-error";
+    case OBJC3C_FRONTEND_STATUS_EMIT_ERROR:
+      return "emit-error";
+    case OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR:
+      return "internal-error";
+    default:
+      return "unknown";
+  }
+}
+
+const char *HighestDiagnosticSeverity(const DiagnosticTotals &totals) {
+  if (totals.fatals != 0) {
+    return "fatal";
+  }
+  if (totals.errors != 0) {
+    return "error";
+  }
+  if (totals.warnings != 0) {
+    return "warning";
+  }
+  if (totals.notes != 0) {
+    return "note";
+  }
+  return "none";
+}
+
+std::string LastAttemptedStageName(
+    const objc3c_frontend_c_compile_result_t &result) {
+  if (result.emit.attempted != 0) {
+    return "emit";
+  }
+  if (result.lower.attempted != 0) {
+    return "lower";
+  }
+  if (result.sema.attempted != 0) {
+    return "sema";
+  }
+  if (result.parse.attempted != 0) {
+    return "parse";
+  }
+  if (result.lex.attempted != 0) {
+    return "lex";
+  }
+  return "";
+}
+
+std::string BlockingStageName(
+    const objc3c_frontend_c_compile_result_t &result) {
+  if (result.lex.diagnostics_errors != 0 || result.lex.diagnostics_fatals != 0) {
+    return "lex";
+  }
+  if (result.parse.diagnostics_errors != 0 ||
+      result.parse.diagnostics_fatals != 0) {
+    return "parse";
+  }
+  if (result.sema.diagnostics_errors != 0 ||
+      result.sema.diagnostics_fatals != 0) {
+    return "sema";
+  }
+  if (result.lower.diagnostics_errors != 0 ||
+      result.lower.diagnostics_fatals != 0) {
+    return "lower";
+  }
+  if (result.emit.diagnostics_errors != 0 ||
+      result.emit.diagnostics_fatals != 0 || result.process_exit_code != 0) {
+    return "emit";
+  }
+  return LastAttemptedStageName(result);
+}
+
+bool PathExists(const std::string &path_text) {
+  return !path_text.empty() && fs::exists(fs::path(path_text));
+}
+
+std::string QuotePowerShellArg(const std::string &value) {
+  std::string quoted = "'";
+  for (char c : value) {
+    if (c == '\'') {
+      quoted += "''";
+    } else {
+      quoted += c;
+    }
+  }
+  quoted += "'";
+  return quoted;
+}
+
+std::string BuildPowerShellReadCommand(const std::string &path_text) {
+  if (!PathExists(path_text)) {
+    return "";
+  }
+  return "Get-Content -Raw " + QuotePowerShellArg(path_text);
+}
+
 void WriteStageSummaryJson(std::ostringstream &out,
                            const char *name,
                            const objc3c_frontend_c_stage_summary_t &summary,
@@ -233,6 +363,7 @@ void WriteStageSummaryJson(std::ostringstream &out,
 }
 
 std::string BuildSummaryJson(const RunnerOptions &options,
+                             const fs::path &summary_path,
                              objc3c_frontend_c_status_t status,
                              const objc3c_frontend_c_compile_result_t &result,
                              const std::string &last_error,
@@ -246,10 +377,18 @@ std::string BuildSummaryJson(const RunnerOptions &options,
       options.compatibility_mode == OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY ? "legacy" : "canonical";
   const fs::path runtime_metadata_binary_path =
       BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
+  const std::string summary_path_text = summary_path.generic_string();
+  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const std::string manifest_path_text = OptionalPath(result.manifest_path);
+  const std::string ir_path_text = OptionalPath(result.ir_path);
+  const std::string object_path_text = OptionalPath(result.object_path);
   const std::string runtime_metadata_binary_path_text =
       fs::exists(runtime_metadata_binary_path)
           ? runtime_metadata_binary_path.generic_string()
           : std::string();
+  const DiagnosticTotals diagnostic_totals = BuildDiagnosticTotals(result);
+  const std::string last_attempted_stage = LastAttemptedStageName(result);
+  const std::string blocking_stage = BlockingStageName(result);
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
@@ -264,10 +403,11 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   out << "  \"success\": " << (result.success != 0 ? "true" : "false") << ",\n";
   out << "  \"semantic_skipped\": " << (result.semantic_skipped != 0 ? "true" : "false") << ",\n";
   out << "  \"paths\": {\n";
-  out << "    \"diagnostics\": \"" << EscapeJsonString(OptionalPath(result.diagnostics_path)) << "\",\n";
-  out << "    \"manifest\": \"" << EscapeJsonString(OptionalPath(result.manifest_path)) << "\",\n";
-  out << "    \"ir\": \"" << EscapeJsonString(OptionalPath(result.ir_path)) << "\",\n";
-  out << "    \"object\": \"" << EscapeJsonString(OptionalPath(result.object_path)) << "\",\n";
+  out << "    \"summary\": \"" << EscapeJsonString(summary_path_text) << "\",\n";
+  out << "    \"diagnostics\": \"" << EscapeJsonString(diagnostics_path_text) << "\",\n";
+  out << "    \"manifest\": \"" << EscapeJsonString(manifest_path_text) << "\",\n";
+  out << "    \"ir\": \"" << EscapeJsonString(ir_path_text) << "\",\n";
+  out << "    \"object\": \"" << EscapeJsonString(object_path_text) << "\",\n";
   out << "    \"runtime_metadata_binary\": \"" << EscapeJsonString(runtime_metadata_binary_path_text) << "\"\n";
   out << "  },\n";
   out << "  \"last_error\": \"" << EscapeJsonString(last_error) << "\",\n";
@@ -277,6 +417,33 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   WriteStageSummaryJson(out, "sema", result.sema, true);
   WriteStageSummaryJson(out, "lower", result.lower, true);
   WriteStageSummaryJson(out, "emit", result.emit, false);
+  out << "  },\n";
+  out << "  \"observability\": {\n";
+  out << "    \"status_name\": \"" << StatusName(status) << "\",\n";
+  out << "    \"last_attempted_stage\": \"" << EscapeJsonString(last_attempted_stage) << "\",\n";
+  out << "    \"blocking_stage\": \"" << EscapeJsonString(blocking_stage) << "\",\n";
+  out << "    \"highest_diagnostic_severity\": \"" << HighestDiagnosticSeverity(diagnostic_totals) << "\",\n";
+  out << "    \"diagnostics_total\": " << diagnostic_totals.total << ",\n";
+  out << "    \"diagnostics_notes\": " << diagnostic_totals.notes << ",\n";
+  out << "    \"diagnostics_warnings\": " << diagnostic_totals.warnings << ",\n";
+  out << "    \"diagnostics_errors\": " << diagnostic_totals.errors << ",\n";
+  out << "    \"diagnostics_fatals\": " << diagnostic_totals.fatals << ",\n";
+  out << "    \"artifact_presence\": {\n";
+  out << "      \"summary\": true,\n";
+  out << "      \"diagnostics\": " << (PathExists(diagnostics_path_text) ? "true" : "false") << ",\n";
+  out << "      \"manifest\": " << (PathExists(manifest_path_text) ? "true" : "false") << ",\n";
+  out << "      \"ir\": " << (PathExists(ir_path_text) ? "true" : "false") << ",\n";
+  out << "      \"object\": " << (PathExists(object_path_text) ? "true" : "false") << ",\n";
+  out << "      \"runtime_metadata_binary\": "
+      << (!runtime_metadata_binary_path_text.empty() ? "true" : "false") << "\n";
+  out << "    },\n";
+  out << "    \"dump_commands\": {\n";
+  out << "      \"summary\": \"" << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text)) << "\",\n";
+  out << "      \"diagnostics\": \"" << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text)) << "\",\n";
+  out << "      \"manifest\": \"" << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text)) << "\",\n";
+  out << "      \"ir\": \"" << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";
+  out << "      \"object\": \"" << EscapeJsonString(BuildPowerShellReadCommand(object_path_text)) << "\"\n";
+  out << "    }\n";
   out << "  },\n";
   out << "  \"output_contract\": {\n";
   out << "    \"diagnostics_schema_version\": \""
@@ -720,6 +887,7 @@ int main(int argc, char **argv) {
 
   const std::string summary_json = BuildSummaryJson(
       options,
+      summary_path,
       status,
       result,
       last_error,

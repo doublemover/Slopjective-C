@@ -40,3 +40,18 @@ def test_c_api_runner_reports_summary_and_cli_contract() -> None:
     assert "compile_options.migration_assist = options.migration_assist ? 1u : 0u;" in source
     assert "compile_options.ir_object_backend = options.ir_object_backend;" in source
     assert "ExitCodeFromStatus" in source
+
+
+def test_c_api_runner_reports_observability_surface() -> None:
+    source = _read(RUNNER_CPP)
+
+    assert '\\"observability\\": {' in source
+    assert '\\"status_name\\": \\"' in source
+    assert '\\"last_attempted_stage\\": \\"' in source
+    assert '\\"blocking_stage\\": \\"' in source
+    assert '\\"highest_diagnostic_severity\\": \\"' in source
+    assert '\\"artifact_presence\\": {' in source
+    assert '\\"dump_commands\\": {' in source
+    assert "BuildDiagnosticTotals" in source
+    assert "BuildPowerShellReadCommand" in source
+    assert "Get-Content -Raw " in source
