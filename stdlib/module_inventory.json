@@ -1,0 +1,32 @@
+{
+  "contract_id": "objc3c.stdlib.module_inventory.v1",
+  "schema_version": 1,
+  "spec_contract": "spec/STANDARD_LIBRARY_CONTRACT.md",
+  "canonical_modules": [
+    {
+      "module": "objc3.core",
+      "capability_id": "objc3.cap.core",
+      "required_profile": "Core and above"
+    },
+    {
+      "module": "objc3.errors",
+      "capability_id": "objc3.cap.errors",
+      "required_profile": "Core and above"
+    },
+    {
+      "module": "objc3.concurrency",
+      "capability_id": "objc3.cap.concurrency",
+      "required_profile": "Core and above"
+    },
+    {
+      "module": "objc3.keypath",
+      "capability_id": "objc3.cap.keypath",
+      "required_profile": "Core and above"
+    },
+    {
+      "module": "objc3.system",
+      "capability_id": "objc3.cap.system",
+      "required_profile": "Strict System"
+    }
+  ]
+}

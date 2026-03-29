@@ -9,6 +9,7 @@
   "readme": "stdlib/README.md",
   "runbook": "docs/runbooks/objc3c_stdlib_foundation.md",
   "spec_contract": "spec/STANDARD_LIBRARY_CONTRACT.md",
+  "module_inventory": "stdlib/module_inventory.json",
   "working_scope": [
     "checked-in standard-library root",
     "canonical module partition under stdlib/modules",
