@@ -35,6 +35,7 @@ RUNTIME_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_a
 RUNNABLE_BOOTSTRAP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bootstrap_end_to_end.py"
 RUNNABLE_BLOCK_ARC_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_block_arc_conformance.py"
 RUNNABLE_BLOCK_ARC_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_block_arc_end_to_end.py"
+RUNNABLE_CONCURRENCY_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_concurrency_conformance.py"
 RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_conformance.py"
 RUNNABLE_OBJECT_MODEL_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_object_model_end_to_end.py"
 RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_storage_reflection_conformance.py"
@@ -500,6 +501,10 @@ def action_validate_runnable_block_arc(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_BLOCK_ARC_E2E_PY)])
 
 
+def action_validate_concurrency_conformance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_CONCURRENCY_CONFORMANCE_PY)])
+
+
 def action_validate_object_model_conformance(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY)])
 
@@ -587,6 +592,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", ("test:objc3c:runnable-bootstrap",), validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
     "validate-block-arc-conformance": ActionSpec("validate-block-arc-conformance", "validate runnable block/ARC conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_block_arc_conformance.py", ("test:objc3c:block-arc-conformance",), validation_tier="full", guarantee_owner="integrated block/ARC conformance over the live runtime architecture workflow"),
     "validate-runnable-block-arc": ActionSpec("validate-runnable-block-arc", "validate runnable block/ARC execution end to end from the package root", "python:scripts/check_objc3c_runnable_block_arc_end_to_end.py", ("test:objc3c:runnable-block-arc",), validation_tier="full", guarantee_owner="packaged compile, block/ARC probe execution, smoke, and replay from the staged runnable toolchain bundle"),
+    "validate-concurrency-conformance": ActionSpec("validate-concurrency-conformance", "validate runnable concurrency conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_concurrency_conformance.py", ("test:objc3c:concurrency-conformance",), validation_tier="full", guarantee_owner="integrated async/task/executor/actor conformance over the live runtime architecture workflow"),
     "validate-object-model-conformance": ActionSpec("validate-object-model-conformance", "validate runnable object-model conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_object_model_conformance.py", ("test:objc3c:object-model-conformance",), validation_tier="full", guarantee_owner="integrated object-model conformance over the live runtime architecture workflow"),
     "validate-storage-reflection-conformance": ActionSpec("validate-storage-reflection-conformance", "validate runnable storage/reflection conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_storage_reflection_conformance.py", ("test:objc3c:storage-reflection-conformance",), validation_tier="full", guarantee_owner="integrated storage/accessor/reflection conformance over the live runtime architecture workflow"),
     "validate-runnable-object-model": ActionSpec("validate-runnable-object-model", "validate runnable object-model execution end to end from the package root", "python:scripts/check_objc3c_runnable_object_model_end_to_end.py", ("test:objc3c:runnable-object-model",), validation_tier="full", guarantee_owner="packaged compile, object-model probe execution, smoke, and replay from the staged runnable toolchain bundle"),
@@ -624,6 +630,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runnable-bootstrap": action_validate_runnable_bootstrap,
     "validate-block-arc-conformance": action_validate_block_arc_conformance,
     "validate-runnable-block-arc": action_validate_runnable_block_arc,
+    "validate-concurrency-conformance": action_validate_concurrency_conformance,
     "validate-object-model-conformance": action_validate_object_model_conformance,
     "validate-storage-reflection-conformance": action_validate_storage_reflection_conformance,
     "validate-runnable-object-model": action_validate_runnable_object_model,

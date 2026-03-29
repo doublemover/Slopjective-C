@@ -26,6 +26,7 @@
     "test:objc3c:runtime-acceptance": "python scripts/objc3c_public_workflow_runner.py test-runtime-acceptance",
     "test:objc3c:runtime-architecture": "python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture",
     "test:objc3c:block-arc-conformance": "python scripts/objc3c_public_workflow_runner.py validate-block-arc-conformance",
+    "test:objc3c:concurrency-conformance": "python scripts/objc3c_public_workflow_runner.py validate-concurrency-conformance",
     "test:objc3c:error-conformance": "python scripts/objc3c_public_workflow_runner.py validate-error-conformance",
     "test:objc3c:object-model-conformance": "python scripts/objc3c_public_workflow_runner.py validate-object-model-conformance",
     "test:objc3c:storage-reflection-conformance": "python scripts/objc3c_public_workflow_runner.py validate-storage-reflection-conformance",
