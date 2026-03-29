@@ -35,6 +35,7 @@
     "test:objc3c:runnable-block-arc": "python scripts/objc3c_public_workflow_runner.py validate-runnable-block-arc",
     "test:objc3c:runnable-concurrency": "python scripts/objc3c_public_workflow_runner.py validate-runnable-concurrency",
     "test:objc3c:runnable-error": "python scripts/objc3c_public_workflow_runner.py validate-runnable-error",
+    "test:objc3c:runnable-metaprogramming": "python scripts/objc3c_public_workflow_runner.py validate-runnable-metaprogramming",
     "test:objc3c:runnable-object-model": "python scripts/objc3c_public_workflow_runner.py validate-runnable-object-model",
     "test:objc3c:runnable-storage-reflection": "python scripts/objc3c_public_workflow_runner.py validate-runnable-storage-reflection",
     "test:objc3c:fixture-matrix": "python scripts/objc3c_public_workflow_runner.py test-fixture-matrix",

@@ -150,13 +150,19 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
   "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
   "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+  "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
   "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+  "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+  "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+  "tests/tooling/fixtures/native/runtime_metadata_source_records_class_protocol_property_ivar.objc3",
   "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
   "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
   "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
   "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
   "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
-  "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3"
+  "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
+  "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+  "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -198,6 +204,9 @@ $manifestPayload = [ordered]@{
   task_runtime_probe = "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp"
   actor_runtime_fixture = "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3"
   actor_runtime_probe = "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
+  metaprogramming_runtime_fixture = "tests/tooling/fixtures/native/macro_host_process_provider.objc3"
+  metaprogramming_runtime_consumer_fixture = "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
+  metaprogramming_runtime_probe = "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
