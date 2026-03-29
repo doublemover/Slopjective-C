@@ -1,5 +1,21 @@
 module objc3_errors_smoke;
 
+fn objc3_errors_result_ok_tag() {
+  return 1;
+}
+
+fn objc3_errors_result_err_tag() {
+  return 2;
+}
+
+fn objc3_errors_result_is_ok(tag: i32) {
+  if (tag == 1) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
   if (value) {
     return value;
@@ -8,6 +24,23 @@ fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
   }
 }
 
+fn objc3_errors_or_throw_code(value: i32, fallback: i32) {
+  if (value) {
+    return value;
+  } else {
+    return fallback;
+  }
+}
+
+fn objc3_errors_text_data_compatibility_score(unit_count: i32, byte_count: i32) {
+  return unit_count + byte_count;
+}
+
 fn main() {
-  return objc3_errors_ok_or_code(0, 2);
+  return objc3_errors_result_ok_tag()
+    + objc3_errors_result_err_tag()
+    + objc3_errors_result_is_ok(1)
+    + objc3_errors_ok_or_code(0, 2)
+    + objc3_errors_or_throw_code(3, 4)
+    + objc3_errors_text_data_compatibility_score(5, 6);
 }

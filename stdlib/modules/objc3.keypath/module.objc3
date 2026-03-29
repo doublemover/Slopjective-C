@@ -3,3 +3,11 @@ module objc3_keypath;
 fn objc3_keypath_apply_index(root: i32, offset: i32) {
   return root + offset;
 }
+
+fn objc3_keypath_component_count(root: i32, offset: i32) {
+  return root + offset;
+}
+
+fn objc3_keypath_text_compatibility_score(component_count: i32, text_units: i32) {
+  return component_count + text_units;
+}

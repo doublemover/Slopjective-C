@@ -81,6 +81,38 @@ Downstream implementation issues may add concrete helpers inside these families,
 but they should not invent a second family split or move ownership between
 modules without updating the checked-in architecture contract.
 
+## Exact checked-in source surface
+
+`objc3.core` exports:
+
+- `Objc3CoreLanguageRevision`
+- `Objc3CoreProfileRevision`
+- `objc3_core_language_revision`
+- `objc3_core_profile_revision`
+- `objc3_core_has_capability`
+- `objc3_core_option_has_value`
+- `objc3_core_string_view_length`
+- `objc3_core_bytes_span_length`
+- `objc3_core_array_count`
+- `objc3_core_map_entry_present`
+
+`objc3.errors` exports:
+
+- `Objc3ErrorsResultOkTag`
+- `Objc3ErrorsResultErrTag`
+- `objc3_errors_result_ok_tag`
+- `objc3_errors_result_err_tag`
+- `objc3_errors_result_is_ok`
+- `objc3_errors_ok_or_code`
+- `objc3_errors_or_throw_code`
+- `objc3_errors_text_data_compatibility_score`
+
+`objc3.keypath` exports:
+
+- `objc3_keypath_apply_index`
+- `objc3_keypath_component_count`
+- `objc3_keypath_text_compatibility_score`
+
 ## Explicit non-goals
 
 This milestone does not justify:

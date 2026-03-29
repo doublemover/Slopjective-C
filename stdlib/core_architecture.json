@@ -41,6 +41,42 @@
       "unchanged-by-m306"
     ]
   },
+  "required_exports": {
+    "objc3.core": [
+      "Objc3CoreLanguageRevision",
+      "Objc3CoreProfileRevision",
+      "objc3_core_language_revision",
+      "objc3_core_profile_revision",
+      "objc3_core_has_capability",
+      "objc3_core_option_has_value",
+      "objc3_core_string_view_length",
+      "objc3_core_bytes_span_length",
+      "objc3_core_array_count",
+      "objc3_core_map_entry_present"
+    ],
+    "objc3.errors": [
+      "Objc3ErrorsResultOkTag",
+      "Objc3ErrorsResultErrTag",
+      "objc3_errors_result_ok_tag",
+      "objc3_errors_result_err_tag",
+      "objc3_errors_result_is_ok",
+      "objc3_errors_ok_or_code",
+      "objc3_errors_or_throw_code",
+      "objc3_errors_text_data_compatibility_score"
+    ],
+    "objc3.keypath": [
+      "objc3_keypath_apply_index",
+      "objc3_keypath_component_count",
+      "objc3_keypath_text_compatibility_score"
+    ],
+    "objc3.concurrency": [
+      "objc3_concurrency_spawn_token",
+      "objc3_concurrency_cancellation_checkpoint"
+    ],
+    "objc3.system": [
+      "objc3_system_resource_token"
+    ]
+  },
   "module_roles": {
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
     "objc3.errors": "error identity, result helpers, and optional-to-error bridges",

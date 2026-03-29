@@ -19,7 +19,14 @@
   ],
   "exports": [
     "Objc3CoreLanguageRevision",
+    "Objc3CoreProfileRevision",
     "objc3_core_language_revision",
-    "objc3_core_profile_revision"
+    "objc3_core_profile_revision",
+    "objc3_core_has_capability",
+    "objc3_core_option_has_value",
+    "objc3_core_string_view_length",
+    "objc3_core_bytes_span_length",
+    "objc3_core_array_count",
+    "objc3_core_map_entry_present"
   ]
 }

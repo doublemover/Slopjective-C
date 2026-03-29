@@ -257,6 +257,10 @@ def main() -> int:
         "profile-revision",
         "result-shape",
         "typed-keypath-text-compatibility",
+        "## Exact checked-in source surface",
+        "objc3_core_string_view_length",
+        "objc3_errors_text_data_compatibility_score",
+        "objc3_keypath_text_compatibility_score",
         "## Explicit non-goals",
     ):
         require_token(stdlib_core_runbook, token, path=stdlib_core_runbook_path, errors=errors)

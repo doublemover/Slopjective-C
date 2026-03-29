@@ -1,5 +1,24 @@
 module objc3_errors;
 
+let Objc3ErrorsResultOkTag = 1;
+let Objc3ErrorsResultErrTag = 2;
+
+fn objc3_errors_result_ok_tag() {
+  return Objc3ErrorsResultOkTag;
+}
+
+fn objc3_errors_result_err_tag() {
+  return Objc3ErrorsResultErrTag;
+}
+
+fn objc3_errors_result_is_ok(tag: i32) {
+  if (tag == Objc3ErrorsResultOkTag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
   if (value) {
     return value;
@@ -14,4 +33,8 @@ fn objc3_errors_or_throw_code(value: i32, fallback: i32) {
   } else {
     return fallback;
   }
+}
+
+fn objc3_errors_text_data_compatibility_score(unit_count: i32, byte_count: i32) {
+  return unit_count + byte_count;
 }

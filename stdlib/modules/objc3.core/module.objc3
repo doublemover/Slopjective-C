@@ -10,3 +10,39 @@ fn objc3_core_language_revision() {
 fn objc3_core_profile_revision() {
   return Objc3CoreProfileRevision;
 }
+
+fn objc3_core_has_capability(capability: i32) {
+  if (capability) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+fn objc3_core_option_has_value(flag: i32) {
+  if (flag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+fn objc3_core_string_view_length(count: i32) {
+  return count;
+}
+
+fn objc3_core_bytes_span_length(count: i32) {
+  return count;
+}
+
+fn objc3_core_array_count(count: i32) {
+  return count;
+}
+
+fn objc3_core_map_entry_present(flag: i32) {
+  if (flag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

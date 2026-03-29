@@ -274,6 +274,16 @@ def main() -> int:
             isinstance(value, str) and value for value in manifest_api_families
         ):
             return fail(f"module manifest api_families malformed for {entry['module']}")
+        manifest_exports = manifest_payload.get("exports")
+        if not isinstance(manifest_exports, list) or not all(
+            isinstance(value, str) and value for value in manifest_exports
+        ):
+            return fail(f"module manifest exports malformed for {entry['module']}")
+        for export_name in manifest_exports:
+            if export_name not in source_text:
+                return fail(
+                    f"module source missing exported symbol spelling {export_name} for {entry['module']}"
+                )
 
     architecture_live_paths = core_architecture.get("live_paths")
     if not isinstance(architecture_live_paths, list) or not architecture_live_paths:
@@ -297,6 +307,17 @@ def main() -> int:
         manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
         if manifest_payload.get("api_families") != families:
             return fail(f"module manifest api_families drifted for {module_name}")
+    architecture_required_exports = core_architecture.get("required_exports")
+    if not isinstance(architecture_required_exports, dict) or not architecture_required_exports:
+        return fail("core architecture missing required_exports")
+    for module_name, required_exports in architecture_required_exports.items():
+        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
+            return fail(f"core architecture required_exports referenced unknown module {module_name}")
+        if not isinstance(required_exports, list) or not required_exports:
+            return fail(f"core architecture required_exports malformed for {module_name}")
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        if manifest_payload.get("exports") != required_exports:
+            return fail(f"module manifest exports drifted for {module_name}")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(
@@ -315,6 +336,7 @@ def main() -> int:
                 "layers": layers,
                 "module_imports": module_imports,
                 "api_families": architecture_api_families,
+                "required_exports": architecture_required_exports,
             },
             indent=2,
         )
