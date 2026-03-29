@@ -1,11 +1,44 @@
 module AuroraBoard;
 
-let columnBase = 12;
+@protocol BoardDebug
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+@end
+
+@interface Tile
+@property (assign) i32 row;
+@property (assign) i32 column;
+@property (strong) id title;
+@end
+
+@implementation Tile
+@property (assign) i32 row;
+@property (assign) i32 column;
+@property (strong) id title;
+@end
+
+@interface Tile (Debug)<BoardDebug>
+@property (readonly) id shadow;
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue;
+- (id) debugName;
+@end
+
+@implementation Tile (Debug)
+@property (readonly) id shadow;
+@property (readonly, getter=tokenValue) id token;
+- (id) tokenValue {
+  return 7;
+}
+- (id) debugName {
+  return 5;
+}
+@end
 
 fn scoreCell(row: i32, column: i32) {
-  return row + column + columnBase;
+  return row + column;
 }
 
 fn main() {
-  return scoreCell(10, 11);
+  return scoreCell(10, 11) + 12;
 }
