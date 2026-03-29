@@ -62,6 +62,9 @@ Developer-tooling entrypoint:
   live inspection, debug, and explainability work
 - developer ergonomics changes must stay on the existing native tooling,
   runtime ABI, and public workflow runner surfaces named there
+- use the direct commands in that runbook when you need compile summaries,
+  runtime debug-state inspection, or parity validation without inventing a
+  sidecar workflow
 
 ## Build
 
