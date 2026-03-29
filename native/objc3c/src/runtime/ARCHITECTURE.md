@@ -129,13 +129,17 @@ Metaprogramming semantic source of truth:
 - compile publication exposes the coupled metaprogramming semantic boundary
   through the acceptance-summary key `runtime_metaprogramming_semantics_surface`
 - that surface must point at the live semantic contract
-  `objc3c.metaprogramming.expansion.behavior.semantic.model.v1`, its three
-  source dependency contracts, the authoritative AST/sema/pipeline code paths,
-  and the compile-coupled fixtures
+  `objc3c.metaprogramming.expansion.behavior.semantic.model.v1`, the live macro
+  safety contract `objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1`,
+  the live host-cache compatibility contract
+  `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`,
+  its three source dependency contracts, the authoritative AST/sema/io/pipeline
+  code paths, and the compile-coupled fixtures
   `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
   , `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`,
   `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3`,
-  and `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3`
+  `tests/tooling/fixtures/native/macro_host_process_provider.objc3`, and
+  `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3`
 - later lowering, cross-module preservation, cache integration, and runtime
   hook work must extend that emitted semantic boundary instead of rebuilding
   metaprogramming semantics from sidecars, probe-local notes, or milestone
