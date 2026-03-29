@@ -107,6 +107,23 @@ Metaprogramming source of truth:
   boundary instead of reconstructing metaprogramming scope from milestone notes
   or probe-local assumptions
 
+Metaprogramming package/provenance source of truth:
+
+- compile publication exposes the coupled package/provenance source-completion
+  boundary through the acceptance-summary key
+  `runtime_metaprogramming_package_provenance_source_surface`
+- that surface must point at the live macro package/provenance source-completion
+  contract `objc3c.metaprogramming.macro.package.provenance.source.completion.v1`,
+  the property-behavior source-completion contract
+  `objc3c.metaprogramming.property.behavior.source.completion.v1`, the
+  authoritative AST/token/sema/pipeline code paths, and the compile-coupled
+  fixtures `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+  and `tests/tooling/fixtures/native/property_behavior_source_completion_positive.objc3`
+- later semantic expansion, lowering, cache integration, and runtime hook work
+  must extend that emitted source-completion boundary instead of reconstructing
+  package/provenance visibility or synthesized declaration state from sidecars
+  or milestone-local notes
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

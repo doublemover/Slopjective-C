@@ -272,6 +272,33 @@ surface before semantic expansion, lowering, cache materialization, or runtime
 behavior claims so downstream metaprogramming work must consume one emitted
 source packet instead of inferring scope from stale checklist text.
 
+## Metaprogramming Package/Provenance Source Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_metaprogramming_package_provenance_source_surface`
+- authoritative compile-manifest semantic surfaces:
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_macro_package_and_provenance_source_completion`
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_property_behavior_and_synthesized_declaration_source_completion`
+- authoritative composed source inputs:
+  - `objc3c.metaprogramming.macro.package.provenance.source.completion.v1`
+  - `objc3c.metaprogramming.property.behavior.source.completion.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/token/objc3_token_contract.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/property_behavior_source_completion_positive.objc3`
+
+This is the authoritative compile-coupled source-completion boundary for macro
+package/provenance markers and property-behavior synthesized-declaration
+visibility. It freezes the exact expansion-visible and synthesized declaration
+state before semantic expansion, lowering, cache materialization, or runtime
+hooks so later metaprogramming work extends one emitted source-completion
+packet instead of inventing a second package/provenance inventory.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:

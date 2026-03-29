@@ -5125,6 +5125,63 @@ def build_runtime_metaprogramming_source_surface(
     }
 
 
+def build_runtime_metaprogramming_package_provenance_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"metaprogramming-package-provenance-source-surface"}
+    ]
+    return {
+        "contract_id": RUNTIME_METAPROGRAMMING_PACKAGE_PROVENANCE_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_artifact_set": [
+            "<emit-prefix>.obj",
+            "<emit-prefix>.ll",
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.runtime-registration-descriptor.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.metaprogramming.macro.package.provenance.source.completion.v1",
+            "objc3c.metaprogramming.property.behavior.source.completion.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/token/objc3_token_contract.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        ],
+        "authoritative_source_fields": [
+            "Objc3FunctionDecl.objc_macro_package_declared",
+            "Objc3FunctionDecl.objc_macro_package_name",
+            "Objc3FunctionDecl.objc_macro_provenance_declared",
+            "Objc3FunctionDecl.objc_macro_provenance_name",
+            "Objc3PropertyDecl.property_behavior_name",
+            "Objc3PropertyDecl.executable_synthesized_binding_symbol",
+            "Objc3PropertyDecl.effective_getter_selector",
+            "Objc3PropertyDecl.effective_setter_selector",
+            "frontend.pipeline.semantic_surface.objc_metaprogramming_macro_package_and_provenance_source_completion",
+            "frontend.pipeline.semantic_surface.objc_metaprogramming_property_behavior_and_synthesized_declaration_source_completion",
+        ],
+        "source_surface_model": (
+            "macro-package-macro-provenance-and-property-behavior-source-completion-freezes-expansion-visible-and-synthesized-declaration-state-before-semantic-expansion-lowering-or-runtime-materialization"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/expansion_lowering_positive.objc3",
+            "tests/tooling/fixtures/native/property_behavior_source_completion_positive.objc3",
+        ],
+        "explicit_non_goals": [
+            "no-macro-sandbox-execution-claim",
+            "no-property-behavior-runtime-hook-claim",
+            "no-executable-synthesized-declaration-materialization-claim",
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -6972,6 +7029,111 @@ def check_metaprogramming_source_surface_case(run_dir: Path) -> CaseResult:
             "macro_marker_sites": semantic_surface.get("macro_marker_sites"),
             "property_behavior_sites": semantic_surface.get("property_behavior_sites"),
         },
+    )
+
+
+def check_metaprogramming_package_provenance_source_surface_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "metaprogramming-package-provenance-source-surface"
+    fixtures: dict[str, tuple[Path, str, str]] = {
+        "macro_package_provenance": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "expansion_lowering_positive.objc3",
+            "objc_metaprogramming_macro_package_and_provenance_source_completion",
+            "objc3c.metaprogramming.macro.package.provenance.source.completion.v1",
+        ),
+        "property_behavior_source_completion": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "property_behavior_source_completion_positive.objc3",
+            "objc_metaprogramming_property_behavior_and_synthesized_declaration_source_completion",
+            "objc3c.metaprogramming.property.behavior.source.completion.v1",
+        ),
+    }
+    summary: dict[str, Any] = {}
+
+    for fixture_key, (
+        fixture_path,
+        semantic_surface_name,
+        expected_contract_id,
+    ) in fixtures.items():
+        _, _, manifest_path = compile_fixture_outputs(fixture_path, case_dir / fixture_key / "compile")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        semantic_surface = (
+            manifest.get("frontend", {})
+            .get("pipeline", {})
+            .get("semantic_surface", {})
+            .get(semantic_surface_name, {})
+        )
+        expect(
+            isinstance(semantic_surface, dict),
+            f"expected {fixture_key} fixture to publish {semantic_surface_name}",
+        )
+        expect(
+            semantic_surface.get("contract_id") == expected_contract_id,
+            f"expected {fixture_key} fixture to preserve {expected_contract_id}",
+        )
+        expect(
+            semantic_surface.get("deterministic_handoff") is True
+            and semantic_surface.get("ready_for_semantic_expansion") is True,
+            f"expected {fixture_key} fixture to preserve deterministic source completion handoff",
+        )
+        summary[fixture_key] = {
+            "fixture": str(fixture_path.relative_to(ROOT)).replace("\\", "/"),
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "surface": semantic_surface_name,
+            "contract_id": semantic_surface.get("contract_id"),
+        }
+        if fixture_key == "macro_package_provenance":
+            expect(
+                semantic_surface.get("macro_marker_sites") == 1
+                and semantic_surface.get("macro_package_sites") == 1
+                and semantic_surface.get("macro_provenance_sites") == 1
+                and semantic_surface.get("expansion_visible_macro_sites") == 1,
+                "expected macro package/provenance source completion to preserve marker and visibility counts",
+            )
+            expect(
+                semantic_surface.get("macro_package_source_supported") is True
+                and semantic_surface.get("macro_provenance_source_supported") is True
+                and semantic_surface.get("expansion_visible_source_supported") is True,
+                "expected macro package/provenance source completion to preserve support flags",
+            )
+        else:
+            expect(
+                semantic_surface.get("property_behavior_sites") == 5
+                and semantic_surface.get("interface_property_behavior_sites") == 2
+                and semantic_surface.get("implementation_property_behavior_sites") == 2
+                and semantic_surface.get("protocol_property_behavior_sites") == 1,
+                "expected property-behavior source completion to preserve property behavior counts",
+            )
+            expect(
+                semantic_surface.get("synthesized_binding_visible_sites") == 4
+                and semantic_surface.get("synthesized_getter_visible_sites") == 5
+                and semantic_surface.get("synthesized_setter_visible_sites") == 2,
+                "expected property-behavior source completion to preserve synthesized declaration visibility counts",
+            )
+            expect(
+                semantic_surface.get("property_behavior_source_supported") is True
+                and semantic_surface.get("synthesized_declaration_visibility_supported")
+                is True,
+                "expected property-behavior source completion to preserve support flags",
+            )
+
+    return CaseResult(
+        case_id="metaprogramming-package-provenance-source-surface",
+        probe="compile-manifest-source-completion-surface",
+        fixture="tests/tooling/fixtures/native/expansion_lowering_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary=summary,
     )
 
 
@@ -14042,6 +14204,7 @@ def main() -> int:
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
         check_metaprogramming_source_surface_case(run_dir),
+        check_metaprogramming_package_provenance_source_surface_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -14112,6 +14275,9 @@ def main() -> int:
         ),
         "runtime_metaprogramming_source_surface": (
             build_runtime_metaprogramming_source_surface(results)
+        ),
+        "runtime_metaprogramming_package_provenance_source_surface": (
+            build_runtime_metaprogramming_package_provenance_source_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
