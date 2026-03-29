@@ -58,6 +58,13 @@ SURFACE_KEYS = (
     "runtime_reflection_visibility_coherence_diagnostics_surface",
     "runtime_installation_abi_surface",
     "runtime_loader_lifecycle_surface",
+    "runtime_metaprogramming_source_surface",
+    "runtime_metaprogramming_package_provenance_source_surface",
+    "runtime_metaprogramming_semantics_surface",
+    "runtime_metaprogramming_lowering_host_cache_surface",
+    "runtime_cross_module_metaprogramming_artifact_preservation_surface",
+    "runtime_metaprogramming_runtime_abi_cache_surface",
+    "runtime_metaprogramming_cache_runtime_integration_implementation_surface",
 )
 CLAIM_BOUNDARY_CONTRACT_ID = "objc3c.runtime.execution.claim.boundary.v1"
 
@@ -244,6 +251,27 @@ def main() -> int:
         ],
         "runtime_property_ivar_accessor_reflection_implementation_surface": runtime_acceptance_report[
             "runtime_property_ivar_accessor_reflection_implementation_surface"
+        ],
+        "runtime_metaprogramming_source_surface": runtime_acceptance_report[
+            "runtime_metaprogramming_source_surface"
+        ],
+        "runtime_metaprogramming_package_provenance_source_surface": runtime_acceptance_report[
+            "runtime_metaprogramming_package_provenance_source_surface"
+        ],
+        "runtime_metaprogramming_semantics_surface": runtime_acceptance_report[
+            "runtime_metaprogramming_semantics_surface"
+        ],
+        "runtime_metaprogramming_lowering_host_cache_surface": runtime_acceptance_report[
+            "runtime_metaprogramming_lowering_host_cache_surface"
+        ],
+        "runtime_cross_module_metaprogramming_artifact_preservation_surface": runtime_acceptance_report[
+            "runtime_cross_module_metaprogramming_artifact_preservation_surface"
+        ],
+        "runtime_metaprogramming_runtime_abi_cache_surface": runtime_acceptance_report[
+            "runtime_metaprogramming_runtime_abi_cache_surface"
+        ],
+        "runtime_metaprogramming_cache_runtime_integration_implementation_surface": runtime_acceptance_report[
+            "runtime_metaprogramming_cache_runtime_integration_implementation_surface"
         ],
         "runtime_property_atomicity_synthesis_reflection_source_surface": runtime_acceptance_report[
             "runtime_property_atomicity_synthesis_reflection_source_surface"

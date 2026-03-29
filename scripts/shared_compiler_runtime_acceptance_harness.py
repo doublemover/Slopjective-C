@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
@@ -21,6 +22,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_CATCH_FILTER_FINALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_CROSS_MODULE_METAPROGRAMMING_ARTIFACT_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_PROPAGATION_CATCH_CLEANUP_RUNTIME_IMPLEMENTATION_SURFACE_CONTRACT_ID,
@@ -30,6 +32,12 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID,
     RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
+    RUNTIME_METAPROGRAMMING_CACHE_RUNTIME_INTEGRATION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+    RUNTIME_METAPROGRAMMING_LOWERING_HOST_CACHE_SURFACE_CONTRACT_ID,
+    RUNTIME_METAPROGRAMMING_PACKAGE_PROVENANCE_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_METAPROGRAMMING_RUNTIME_ABI_CACHE_SURFACE_CONTRACT_ID,
+    RUNTIME_METAPROGRAMMING_SEMANTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_METAPROGRAMMING_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
@@ -227,6 +235,69 @@ COMMON_SURFACES = (
             "implementation_snapshot_symbol",
             "property_registry_state_snapshot_symbol",
             "property_entry_snapshot_symbol",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_metaprogramming_source_surface",
+        RUNTIME_METAPROGRAMMING_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_code_paths",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_metaprogramming_package_provenance_source_surface",
+        RUNTIME_METAPROGRAMMING_PACKAGE_PROVENANCE_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_code_paths",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_metaprogramming_semantics_surface",
+        RUNTIME_METAPROGRAMMING_SEMANTICS_SURFACE_CONTRACT_ID,
+        (
+            "semantic_contract_ids",
+            "authoritative_code_paths",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_metaprogramming_lowering_host_cache_surface",
+        RUNTIME_METAPROGRAMMING_LOWERING_HOST_CACHE_SURFACE_CONTRACT_ID,
+        (
+            "host_cache_artifact",
+            "expansion_lowering_contract_id",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_cross_module_metaprogramming_artifact_preservation_surface",
+        RUNTIME_CROSS_MODULE_METAPROGRAMMING_ARTIFACT_PRESERVATION_SURFACE_CONTRACT_ID,
+        (
+            "runtime_import_surface_artifact",
+            "cross_module_link_plan_artifact",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_metaprogramming_runtime_abi_cache_surface",
+        RUNTIME_METAPROGRAMMING_RUNTIME_ABI_CACHE_SURFACE_CONTRACT_ID,
+        (
+            "macro_host_process_cache_integration_snapshot_symbol",
+            "authoritative_probe_paths",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_metaprogramming_cache_runtime_integration_implementation_surface",
+        RUNTIME_METAPROGRAMMING_CACHE_RUNTIME_INTEGRATION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        (
+            "authoritative_probe_paths",
+            "authoritative_case_ids",
+            "macro_host_process_cache_integration_snapshot_symbol",
         ),
     ),
     SurfaceRequirement(
@@ -584,6 +655,27 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         "runtime_property_ivar_accessor_reflection_implementation_surface": surfaces[
             "runtime_property_ivar_accessor_reflection_implementation_surface"
         ],
+        "runtime_metaprogramming_source_surface": surfaces[
+            "runtime_metaprogramming_source_surface"
+        ],
+        "runtime_metaprogramming_package_provenance_source_surface": surfaces[
+            "runtime_metaprogramming_package_provenance_source_surface"
+        ],
+        "runtime_metaprogramming_semantics_surface": surfaces[
+            "runtime_metaprogramming_semantics_surface"
+        ],
+        "runtime_metaprogramming_lowering_host_cache_surface": surfaces[
+            "runtime_metaprogramming_lowering_host_cache_surface"
+        ],
+        "runtime_cross_module_metaprogramming_artifact_preservation_surface": surfaces[
+            "runtime_cross_module_metaprogramming_artifact_preservation_surface"
+        ],
+        "runtime_metaprogramming_runtime_abi_cache_surface": surfaces[
+            "runtime_metaprogramming_runtime_abi_cache_surface"
+        ],
+        "runtime_metaprogramming_cache_runtime_integration_implementation_surface": surfaces[
+            "runtime_metaprogramming_cache_runtime_integration_implementation_surface"
+        ],
         "runtime_property_atomicity_synthesis_reflection_source_surface": surfaces[
             "runtime_property_atomicity_synthesis_reflection_source_surface"
         ],
@@ -632,11 +724,18 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
 
 
 def run_suite(entry: SuiteEntry) -> dict[str, Any]:
-    command = [str(token) for token in entry.command]
-    result = run_capture(command)
-    if result.returncode != 0:
-        raise RuntimeError(f"suite execution failed for {entry.suite_id} with exit code {result.returncode}")
     report_path = ROOT / entry.report_path
+    if os.environ.get("OBJC3C_SKIP_SUITE_RERUN") != "1":
+        command = [str(token) for token in entry.command]
+        result = run_capture(command)
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"suite execution failed for {entry.suite_id} with exit code {result.returncode}"
+            )
+    elif not report_path.is_file():
+        raise RuntimeError(
+            f"suite execution rerun was skipped but report is missing for {entry.suite_id}: {entry.report_path}"
+        )
     report = load_report(report_path)
     surfaces = validate_suite_report(entry, report)
     return summarize_report(entry, report, surfaces)
