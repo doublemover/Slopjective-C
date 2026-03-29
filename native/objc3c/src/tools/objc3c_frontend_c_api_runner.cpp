@@ -49,6 +49,7 @@ struct RunnerOptions {
   bool dump_summary_json = false;
   bool dump_observability_json = false;
   bool dump_runtime_inspector_json = false;
+  bool dump_stage_trace_json = false;
 };
 
 std::string Usage() {
@@ -59,7 +60,8 @@ std::string Usage() {
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object] "
-         "[--dump-summary-json] [--dump-observability-json] [--dump-runtime-inspector-json]";
+         "[--dump-summary-json] [--dump-observability-json] [--dump-runtime-inspector-json] "
+         "[--dump-stage-trace-json]";
 }
 
 bool ParseIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
@@ -163,6 +165,8 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.dump_observability_json = true;
     } else if (arg == "--dump-runtime-inspector-json") {
       options.dump_runtime_inspector_json = true;
+    } else if (arg == "--dump-stage-trace-json") {
+      options.dump_stage_trace_json = true;
     } else if (arg == "--help" || arg == "-h") {
       error = Usage();
       return false;
@@ -530,6 +534,24 @@ void WriteStageSummaryJson(std::ostringstream &out,
     out << ",";
   }
   out << "\n";
+}
+
+std::string BuildStageTraceJson(const objc3c_frontend_c_compile_result_t &result) {
+  std::ostringstream out;
+  out << "{\n";
+  out << "  \"mode\": \"objc3c-frontend-stage-trace-v1\",\n";
+  out << "  \"semantic_skipped\": "
+      << (result.semantic_skipped != 0 ? "true" : "false") << ",\n";
+  out << "  \"process_exit_code\": " << result.process_exit_code << ",\n";
+  out << "  \"stages\": {\n";
+  WriteStageSummaryJson(out, "lex", result.lex, true);
+  WriteStageSummaryJson(out, "parse", result.parse, true);
+  WriteStageSummaryJson(out, "sema", result.sema, true);
+  WriteStageSummaryJson(out, "lower", result.lower, true);
+  WriteStageSummaryJson(out, "emit", result.emit, false);
+  out << "  }\n";
+  out << "}\n";
+  return out.str();
 }
 
 std::string BuildSummaryJson(const RunnerOptions &options,
@@ -1067,7 +1089,7 @@ int main(int argc, char **argv) {
     emitted_dump = true;
   };
   if (options.dump_summary_json || options.dump_observability_json ||
-      options.dump_runtime_inspector_json) {
+      options.dump_runtime_inspector_json || options.dump_stage_trace_json) {
     if (options.dump_summary_json) {
       emit_dump_json(summary_json);
     }
@@ -1088,6 +1110,9 @@ int main(int argc, char **argv) {
       WriteRuntimeInspectorJson(dump, "", options, result);
       dump << "\n";
       emit_dump_json(dump.str());
+    }
+    if (options.dump_stage_trace_json) {
+      emit_dump_json(BuildStageTraceJson(result));
     }
   } else {
     std::cout << "wrote summary: " << summary_path.generic_string() << "\n";

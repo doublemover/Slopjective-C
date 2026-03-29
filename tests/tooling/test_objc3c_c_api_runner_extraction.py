@@ -63,6 +63,7 @@ def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:
     assert "--dump-summary-json" in source
     assert "--dump-observability-json" in source
     assert "--dump-runtime-inspector-json" in source
+    assert "--dump-stage-trace-json" in source
     assert '\\"runtime_inspector\\": ' in source
     assert '\\"section_inventory_command\\": \\"' in source
     assert '\\"symbol_inventory_command\\": \\"' in source
@@ -70,3 +71,5 @@ def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:
     assert "BuildObjectInspectionCommand" in source
     assert "kObjc3RuntimeMetadataObjectInspectionContractId" in source
     assert "kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel" in source
+    assert '\\"mode\\": \\"objc3c-frontend-stage-trace-v1\\"' in source
+    assert "BuildStageTraceJson" in source

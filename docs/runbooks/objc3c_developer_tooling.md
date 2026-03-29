@@ -82,6 +82,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `tmp/reports/objc3c-public-workflow/compile-observability.json`
   - `tmp/reports/objc3c-public-workflow/inspect-runtime-inspector-summary.json`
   - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
+  - `tmp/reports/objc3c-public-workflow/trace-compile-stages-summary.json`
+  - `tmp/reports/objc3c-public-workflow/compile-stage-trace.json`
 
 ## Exact Live Commands
 
@@ -98,6 +100,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - dump the structured runtime inspector object through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
   - `npm run inspect:objc3c:runtime`
+- dump the structured compile-stage trace through the public command surface:
+  - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
+  - `npm run trace:objc3c:stages`
 - validate compiler/library parity:
   - `python scripts/check_objc3c_library_cli_parity.py`
 - validate runtime/debug ABI and emitted source surfaces:
