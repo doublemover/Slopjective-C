@@ -145,6 +145,24 @@ Metaprogramming semantic source of truth:
   metaprogramming semantics from sidecars, probe-local notes, or milestone
   checklist text
 
+Metaprogramming lowering and host-cache source of truth:
+
+- compile publication exposes the coupled lowering/output boundary through the
+  acceptance-summary key `runtime_metaprogramming_lowering_host_cache_surface`
+- that surface must point at the live lowering contract
+  `objc3c.metaprogramming.expansion.lowering.contract.v1`, the synthesized
+  emission contract `objc3c.metaprogramming.synthesized.ast.ir.emission.v1`,
+  the replay-preservation contract
+  `objc3c.metaprogramming.module.interface.replay.preservation.v1`, the
+  host-cache integration contract
+  `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`,
+  the authoritative AST/IR/io/pipeline code paths, and the compile-coupled
+  fixtures `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+  and `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+- later executable expansion, packaged cache reuse, and runtime host work must
+  extend that emitted lowering/output boundary instead of reconstructing it
+  from sidecar manifests or milestone-local notes
+
 Unified concurrency runtime architecture source of truth:
 
 - compile publication exposes the coupled concurrency source boundary through

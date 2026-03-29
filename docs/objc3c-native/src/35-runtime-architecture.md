@@ -281,6 +281,38 @@ integration, or runtime hooks so downstream metaprogramming issues extend a
 shared semantic surface instead of re-deriving behavior from fixture-local
 assumptions.
 
+## Metaprogramming Lowering And Host-Cache Surface
+
+- authoritative acceptance-summary key:
+  - `runtime_metaprogramming_lowering_host_cache_surface`
+- authoritative compile-manifest semantic surfaces:
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_expansion_and_lowering_contract`
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_synthesized_ast_and_ir_emission`
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_module_interface_and_replay_preservation`
+  - `frontend.pipeline.semantic_surface.objc_metaprogramming_macro_host_process_and_cache_runtime_integration`
+- authoritative lowering/cache contracts:
+  - `objc3c.metaprogramming.expansion.lowering.contract.v1`
+  - `objc3c.metaprogramming.synthesized.ast.ir.emission.v1`
+  - `objc3c.metaprogramming.module.interface.replay.preservation.v1`
+  - `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/io/objc3_process.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+
+This is the authoritative compile-coupled lowering/output boundary for
+metaprogramming expansion. It freezes the emitted lowering contract,
+synthesized AST/IR packet, cross-module replay packet, and deterministic
+host-cache import artifact as one live surface so executable expansion work
+extends the real compiler outputs instead of re-deriving lowering truth from
+sidecars or milestone-local summaries.
+
 ## Unified Concurrency Runtime Source Surface
 
 - authoritative compile-manifest key:
