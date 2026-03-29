@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKSPACE_PATH = ROOT / "stdlib" / "workspace.json"
 MODULE_INVENTORY_PATH = ROOT / "stdlib" / "module_inventory.json"
 STABILITY_POLICY_PATH = ROOT / "stdlib" / "stability_policy.json"
+PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "package_surface.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
@@ -61,12 +62,15 @@ def main() -> int:
         return fail(f"missing module inventory: {repo_rel(MODULE_INVENTORY_PATH)}")
     if not STABILITY_POLICY_PATH.is_file():
         return fail(f"missing stability policy: {repo_rel(STABILITY_POLICY_PATH)}")
+    if not PACKAGE_SURFACE_PATH.is_file():
+        return fail(f"missing package surface: {repo_rel(PACKAGE_SURFACE_PATH)}")
     if not SPEC_CONTRACT_PATH.is_file():
         return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
 
     workspace = load_json(WORKSPACE_PATH)
     inventory = load_json(MODULE_INVENTORY_PATH)
     stability_policy = load_json(STABILITY_POLICY_PATH)
+    package_surface = load_json(PACKAGE_SURFACE_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
@@ -77,6 +81,8 @@ def main() -> int:
         return fail("workspace module_inventory path drifted")
     if workspace.get("stability_policy") != "stdlib/stability_policy.json":
         return fail("workspace stability_policy path drifted")
+    if workspace.get("package_surface") != "stdlib/package_surface.json":
+        return fail("workspace package_surface path drifted")
     if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
         return fail("module inventory contract_id drifted")
     if inventory.get("schema_version") != 1:
@@ -87,6 +93,24 @@ def main() -> int:
         return fail("stability policy contract_id drifted")
     if stability_policy.get("schema_version") != 1:
         return fail("stability policy schema_version drifted")
+    if package_surface.get("contract_id") != "objc3c.stdlib.package_surface.v1":
+        return fail("package surface contract_id drifted")
+    if package_surface.get("schema_version") != 1:
+        return fail("package surface schema_version drifted")
+    if package_surface.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("package surface workspace_contract drifted")
+    if package_surface.get("module_inventory") != "stdlib/module_inventory.json":
+        return fail("package surface module_inventory drifted")
+    if package_surface.get("stability_policy") != "stdlib/stability_policy.json":
+        return fail("package surface stability_policy drifted")
+    if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
+        return fail("package surface machine_output_root drifted")
+    if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
+        return fail("package surface machine_report_root drifted")
+    if package_surface.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
+        return fail("package surface package_stage_root drifted")
+    if package_surface.get("import_model") != "implementation-alias-module-declarations-map-to-canonical-spec-module-ids":
+        return fail("package surface import_model drifted")
 
     canonical_modules = inventory.get("canonical_modules")
     if not isinstance(canonical_modules, list) or not canonical_modules:
@@ -170,6 +194,26 @@ def main() -> int:
     if covered_modules != inventory_module_names:
         return fail("stability policy module coverage drifted from module inventory")
 
+    module_imports = package_surface.get("module_imports")
+    if not isinstance(module_imports, list) or not module_imports:
+        return fail("package surface missing module_imports")
+    package_imports_by_module: dict[str, dict[str, str]] = {}
+    for entry in module_imports:
+        if not isinstance(entry, dict):
+            return fail("package surface module_import entry must be an object")
+        canonical_module = entry.get("canonical_module")
+        implementation_module = entry.get("implementation_module")
+        source_declaration = entry.get("source_declaration")
+        if not all(
+            isinstance(value, str) and value
+            for value in (canonical_module, implementation_module, source_declaration)
+        ):
+            return fail("package surface module_import entry is malformed")
+        package_imports_by_module[str(canonical_module)] = {
+            "implementation_module": str(implementation_module),
+            "source_declaration": str(source_declaration),
+        }
+
     for entry in inventory_rows:
         for path_key in ("workspace_root", "source", "smoke_source", "manifest"):
             path = ROOT / entry[path_key]
@@ -198,6 +242,13 @@ def main() -> int:
         expected_decl = f"module {entry['implementation_module']};"
         if expected_decl not in source_text:
             return fail(f"module source declaration drifted for {entry['module']}")
+        package_import = package_imports_by_module.get(entry["module"])
+        if package_import is None:
+            return fail(f"package surface missing canonical module {entry['module']}")
+        if package_import["implementation_module"] != entry["implementation_module"]:
+            return fail(f"package surface implementation_module drifted for {entry['module']}")
+        if package_import["source_declaration"] != expected_decl:
+            return fail(f"package surface source_declaration drifted for {entry['module']}")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(
@@ -209,9 +260,11 @@ def main() -> int:
                 "workspace_contract": repo_rel(WORKSPACE_PATH),
                 "module_inventory": repo_rel(MODULE_INVENTORY_PATH),
                 "stability_policy": repo_rel(STABILITY_POLICY_PATH),
+                "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
                 "canonical_modules": inventory_rows,
                 "layers": layers,
+                "module_imports": module_imports,
             },
             indent=2,
         )

@@ -11,6 +11,7 @@
   "spec_contract": "spec/STANDARD_LIBRARY_CONTRACT.md",
   "module_inventory": "stdlib/module_inventory.json",
   "stability_policy": "stdlib/stability_policy.json",
+  "package_surface": "stdlib/package_surface.json",
   "working_scope": [
     "checked-in standard-library root",
     "canonical module partition under stdlib/modules",

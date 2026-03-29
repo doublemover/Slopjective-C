@@ -1,0 +1,38 @@
+{
+  "contract_id": "objc3c.stdlib.package_surface.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "module_inventory": "stdlib/module_inventory.json",
+  "stability_policy": "stdlib/stability_policy.json",
+  "machine_output_root": "tmp/artifacts/stdlib",
+  "machine_report_root": "tmp/reports/stdlib",
+  "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "import_model": "implementation-alias-module-declarations-map-to-canonical-spec-module-ids",
+  "module_imports": [
+    {
+      "canonical_module": "objc3.core",
+      "implementation_module": "objc3_core",
+      "source_declaration": "module objc3_core;"
+    },
+    {
+      "canonical_module": "objc3.errors",
+      "implementation_module": "objc3_errors",
+      "source_declaration": "module objc3_errors;"
+    },
+    {
+      "canonical_module": "objc3.concurrency",
+      "implementation_module": "objc3_concurrency",
+      "source_declaration": "module objc3_concurrency;"
+    },
+    {
+      "canonical_module": "objc3.keypath",
+      "implementation_module": "objc3_keypath",
+      "source_declaration": "module objc3_keypath;"
+    },
+    {
+      "canonical_module": "objc3.system",
+      "implementation_module": "objc3_system",
+      "source_declaration": "module objc3_system;"
+    }
+  ]
+}

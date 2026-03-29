@@ -11,6 +11,7 @@ Live stdlib work must stay on these paths:
 - `stdlib/workspace.json`
 - `stdlib/module_inventory.json`
 - `stdlib/stability_policy.json`
+- `stdlib/package_surface.json`
 - `stdlib/modules/`
 - `docs/runbooks/objc3c_stdlib_foundation.md`
 - `tmp/artifacts/stdlib/`
@@ -33,6 +34,7 @@ This root is not a place for:
 
 - canonical module names come from `spec/STANDARD_LIBRARY_CONTRACT.md`
 - stability and allowed cross-module dependencies come from `stdlib/stability_policy.json`
+- import/package alias mapping comes from `stdlib/package_surface.json`
 - the checked-in module roots will live under `stdlib/modules/`
 - canonical module names map onto implementation aliases because the current
   frontend module declaration syntax is identifier-based rather than dotted
