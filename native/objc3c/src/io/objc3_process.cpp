@@ -117,10 +117,19 @@ inline constexpr const char *kObjc3AdvancedFeatureReleaseLabel = "v0.11";
 inline constexpr const char *kObjc3DeterministicReplayTimestamp =
     "1970-01-01T00:00:00Z";
 inline constexpr const char *kObjc3DeterministicSourceRevision = "0000000";
+inline constexpr const char *kObjc3ConformanceProfileClaimPolicyModel =
+    "core-profile-claimed-strict-profiles-targeted-for-release-evidence-and-fail-closed-until-runtime-backed";
+inline constexpr const char *kObjc3ConformanceFormatClaimPolicyModel =
+    "json-only-conformance-artifacts-remain-claimable-until-other-formats-gain-validation-and-publication-support";
 // scheduler/executor runtime anchor: the driver/process layer still
 // does not own scheduling itself, but emitted IR/object evidence now carries a
 // frozen private task-runtime helper boundary that later runtime integration
 // issues must consume without reconstructing helper or snapshot names ad hoc.
+
+std::vector<std::string> BuildFixedStringVector(
+    std::initializer_list<const char *> values) {
+  return std::vector<std::string>(values.begin(), values.end());
+}
 
 bool IsRecognizedCoffMachine(std::uint16_t machine) {
   switch (machine) {
@@ -518,6 +527,44 @@ bool TryExtractJsonStringArrayField(const std::string &text,
 }
 
 }  // namespace
+
+std::vector<std::string> BuildObjc3ClaimedConformanceProfileIds() {
+  return BuildFixedStringVector({"core"});
+}
+
+std::vector<std::string> BuildObjc3RejectedConformanceProfileIds() {
+  return BuildFixedStringVector({"strict", "strict-concurrency", "strict-system"});
+}
+
+std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds() {
+  return BuildFixedStringVector({"strict", "strict-concurrency", "strict-system"});
+}
+
+bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id) {
+  return profile_id == "core";
+}
+
+bool IsObjc3SupportedConformanceFormat(const std::string &format) {
+  return format == "json";
+}
+
+std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
+    const std::string &profile_id) {
+  std::ostringstream out;
+  out << "unsupported --objc3-conformance-profile selection: " << profile_id
+      << " (claimed profiles: core; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
+      << kObjc3ConformanceProfileClaimPolicyModel << ")";
+  return out.str();
+}
+
+std::string BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
+    const std::string &format) {
+  std::ostringstream out;
+  out << "unsupported --emit-objc3-conformance-format selection: " << format
+      << " (claimed publication format: json; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
+      << kObjc3ConformanceFormatClaimPolicyModel << ")";
+  return out.str();
+}
 
 int RunProcess(const std::string &executable, const std::vector<std::string> &args) {
   std::vector<std::string> owned_argv;
@@ -3753,6 +3800,12 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
   std::string ci_release_evidence_gate_script_path;
   std::string runbook_reference_path;
   std::string dashboard_schema_path;
+  const std::vector<std::string> expected_supported_profile_ids =
+      BuildObjc3ClaimedConformanceProfileIds();
+  const std::vector<std::string> expected_rejected_profile_ids =
+      BuildObjc3RejectedConformanceProfileIds();
+  const std::vector<std::string> expected_targeted_profile_ids =
+      BuildObjc3ReleaseTargetedProfileIds();
 
   if (!TryExtractJsonStringField(report_json, "schema_id", report_schema_id) ||
       report_schema_id != "objc3c-versioned-conformance-report-v1") {
@@ -3818,28 +3871,27 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     return false;
   }
   if (!TryExtractJsonStringField(publication_json, "selected_profile",
-                                 selected_profile) ||
-      selected_profile != "core") {
-    error = "selected_profile must remain core";
+                                 selected_profile)) {
+    error = "selected_profile is missing from conformance publication";
     return false;
   }
   if (!TryExtractJsonBoolField(publication_json, "selected_profile_supported",
                                selected_profile_supported) ||
-      !selected_profile_supported) {
-    error = "selected_profile_supported must remain true";
+      selected_profile_supported !=
+          IsObjc3ClaimedConformanceProfile(selected_profile)) {
+    error = "selected_profile_supported drifted from the live claim policy";
     return false;
   }
   if (!TryExtractJsonStringArrayField(publication_json, "supported_profile_ids",
                                       supported_profile_ids) ||
-      supported_profile_ids.size() != 1u ||
-      supported_profile_ids[0] != "core") {
-    error = "supported_profile_ids must remain [core]";
+      supported_profile_ids != expected_supported_profile_ids) {
+    error = "supported_profile_ids drifted from the live claim policy";
     return false;
   }
   if (!TryExtractJsonStringArrayField(publication_json, "rejected_profile_ids",
                                       rejected_profile_ids) ||
-      rejected_profile_ids.size() != 3u) {
-    error = "rejected_profile_ids must remain the three known non-runnable profiles";
+      rejected_profile_ids != expected_rejected_profile_ids) {
+    error = "rejected_profile_ids drifted from the live claim policy";
     return false;
   }
   if (!TryExtractJsonStringField(publication_json, "publication_surface_kind",
@@ -3880,9 +3932,7 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
   if (!TryExtractJsonStringArrayField(publication_json,
                                       "advanced_feature_targeted_profile_ids",
                                       advanced_feature_targeted_profile_ids) ||
-      advanced_feature_targeted_profile_ids !=
-          std::vector<std::string>{"strict", "strict-concurrency",
-                                   "strict-system"}) {
+      advanced_feature_targeted_profile_ids != expected_targeted_profile_ids) {
     error = "advanced_feature_targeted_profile_ids drifted";
     return false;
   }
@@ -3962,7 +4012,8 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
       << EscapeJsonString(dashboard_schema_path) << "\",\n"
       << "  \"selected_profile\": \"" << EscapeJsonString(selected_profile)
       << "\",\n"
-      << "  \"selected_profile_supported\": true,\n"
+      << "  \"selected_profile_supported\": "
+      << (selected_profile_supported ? "true" : "false") << ",\n"
       << "  \"supported_profile_ids\": "
       << BuildIndentedStringArrayJson(supported_profile_ids, "    ") << ",\n"
       << "  \"rejected_profile_ids\": "
@@ -4153,8 +4204,8 @@ bool TryBuildObjc3DashboardStatusArtifact(
              "    ")
       << ",\n"
       << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(
-             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
+                                      "    ")
       << ",\n"
       << "  \"gate_script_path\": \""
       << EscapeJsonString(kObjc3AdvancedFeatureEvidenceGateScriptPath)
@@ -4230,8 +4281,8 @@ bool TryBuildObjc3AdvancedFeatureGateArtifact(
       << "integrated-advanced-feature-gate-consumes-report-publication-and-native-validation-sidecars"
       << "\",\n"
       << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(
-             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
+                                      "    ")
       << ",\n"
       << "  \"native_validation_required\": true,\n"
       << "  \"report_payload_ready\": true,\n"
@@ -4296,8 +4347,8 @@ bool TryBuildObjc3ReleaseCandidateMatrixArtifact(
       << "  \"dashboard_artifact_expected\": \""
       << EscapeJsonString(inputs.dashboard_artifact_path) << "\",\n"
       << "  \"targeted_profile_ids\": "
-      << BuildIndentedStringArrayJson(
-             {"strict", "strict-concurrency", "strict-system"}, "    ")
+      << BuildIndentedStringArrayJson(BuildObjc3ReleaseTargetedProfileIds(),
+                                      "    ")
       << ",\n"
       << "  \"matrix_rows\": [\n"
       << "    {\"lane\":\"A\",\"contract_id\":\"objc3c.tooling.migration.canonicalization.source.completion.v1\",\"status\":\"pass\"},\n"

@@ -514,6 +514,16 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
                            const std::filesystem::path &object_out,
                            std::string &error);
 
+std::vector<std::string> BuildObjc3ClaimedConformanceProfileIds();
+std::vector<std::string> BuildObjc3RejectedConformanceProfileIds();
+std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds();
+bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id);
+bool IsObjc3SupportedConformanceFormat(const std::string &format);
+std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
+    const std::string &profile_id);
+std::string BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
+    const std::string &format);
+
 bool TryBuildObjc3RuntimeMetadataLinkerRetentionArtifacts(
     const std::filesystem::path &ir_path,
     const std::filesystem::path &object_out,

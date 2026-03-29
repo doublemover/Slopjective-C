@@ -197,16 +197,18 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
 
 int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   try {
-    if (cli_options.emit_objc3_conformance_format != "json") {
-      std::cerr << "unsupported --emit-objc3-conformance-format selection: "
-                << cli_options.emit_objc3_conformance_format
-                << " (current runnable emission format is json)\n";
+    if (!IsObjc3SupportedConformanceFormat(
+            cli_options.emit_objc3_conformance_format)) {
+      std::cerr << BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
+                       cli_options.emit_objc3_conformance_format)
+                << "\n";
       return 125;
     }
-    if (cli_options.conformance_profile != Objc3ConformanceProfile::kCore) {
-      std::cerr << "unsupported --objc3-conformance-profile selection: "
-                << ConformanceProfileName(cli_options.conformance_profile)
-                << " (current runnable profile is core)\n";
+    if (!IsObjc3ClaimedConformanceProfile(
+            ConformanceProfileName(cli_options.conformance_profile))) {
+      std::cerr << BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
+                       ConformanceProfileName(cli_options.conformance_profile))
+                << "\n";
       return 125;
     }
     const std::string source = ReadText(cli_options.input);
@@ -360,15 +362,15 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     }
     std::string conformance_publication_artifact_json;
     std::string conformance_publication_error;
-    if (!TryBuildObjc3ConformanceReportPublicationArtifact(
+        if (!TryBuildObjc3ConformanceReportPublicationArtifact(
             {.contract_id = "objc3c.driver.conformance.report.publication.v1",
              .schema_id = "objc3c-driver-conformance-publication-v1",
              .selected_profile =
                  ConformanceProfileName(cli_options.conformance_profile),
-             .selected_profile_supported = true,
-             .supported_profile_ids = {"core"},
-             .rejected_profile_ids = {"strict", "strict-concurrency",
-                                      "strict-system"},
+             .selected_profile_supported = IsObjc3ClaimedConformanceProfile(
+                 ConformanceProfileName(cli_options.conformance_profile)),
+             .supported_profile_ids = BuildObjc3ClaimedConformanceProfileIds(),
+             .rejected_profile_ids = BuildObjc3RejectedConformanceProfileIds(),
              .effective_compatibility_mode =
                  (cli_options.compat_mode == Objc3CompatMode::kLegacy
                       ? "legacy"
@@ -397,7 +399,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
              .dashboard_schema_path =
                  "schemas/objc3-conformance-dashboard-status-v1.schema.json",
              .advanced_feature_targeted_profile_ids =
-                 {"strict", "strict-concurrency", "strict-system"},
+                 BuildObjc3ReleaseTargetedProfileIds(),
              .report_artifact_relative_path =
                  (cli_options.emit_prefix +
                   kObjc3VersionedConformanceReportLoweringArtifactSuffix)},

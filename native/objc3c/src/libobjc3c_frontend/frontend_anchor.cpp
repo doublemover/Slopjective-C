@@ -708,10 +708,12 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                      "objc3c.driver.conformance.report.publication.v1",
                  .schema_id = "objc3c-driver-conformance-publication-v1",
                  .selected_profile = "core",
-                 .selected_profile_supported = true,
-                 .supported_profile_ids = {"core"},
-                 .rejected_profile_ids = {"strict", "strict-concurrency",
-                                          "strict-system"},
+                 .selected_profile_supported =
+                     IsObjc3ClaimedConformanceProfile("core"),
+                 .supported_profile_ids =
+                     BuildObjc3ClaimedConformanceProfileIds(),
+                 .rejected_profile_ids =
+                     BuildObjc3RejectedConformanceProfileIds(),
                  .effective_compatibility_mode =
                      (frontend_options.compatibility_mode ==
                               Objc3FrontendCompatibilityMode::kLegacy
@@ -743,7 +745,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                  .dashboard_schema_path =
                      "schemas/objc3-conformance-dashboard-status-v1.schema.json",
                  .advanced_feature_targeted_profile_ids =
-                     {"strict", "strict-concurrency", "strict-system"},
+                     BuildObjc3ReleaseTargetedProfileIds(),
                  .report_artifact_relative_path =
                      (emit_prefix +
                       kObjc3VersionedConformanceReportLoweringArtifactSuffix)},
