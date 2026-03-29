@@ -71,16 +71,21 @@ ActionHandler = Callable[[list[str]], int]
 
 
 def run(command: Sequence[str]) -> int:
-    return subprocess.run(list(command), cwd=ROOT, check=False).returncode
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return subprocess.run(list(command), cwd=ROOT, check=False, env=env).returncode
 
 
 def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     result = subprocess.run(
         list(command),
         cwd=ROOT,
         check=False,
         text=True,
         capture_output=True,
+        env=env,
     )
     if result.stdout:
         sys.stdout.write(result.stdout)

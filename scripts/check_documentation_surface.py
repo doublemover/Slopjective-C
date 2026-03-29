@@ -13,6 +13,8 @@ README_PATH = ROOT / "README.md"
 SITE_BODY_PATH = ROOT / "site" / "src" / "index.body.md"
 SITE_POLICY_PATH = ROOT / "site" / "src" / "README.md"
 NATIVE_OWNERSHIP_PATH = ROOT / "docs" / "objc3c-native" / "src" / "OWNERSHIP.md"
+NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.md"
+MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 
 
@@ -31,8 +33,11 @@ def main() -> int:
         "## First Working Session",
         "## Public Command Surface",
         "## Spec Structure",
+        "## Superclean Boundary",
         "published site",
         "docs/runbooks/objc3c_public_command_surface.md",
+        "Canonical roots:",
+        "Explicit non-goals for cleanup work:",
     ):
         require_token(readme, token, path=README_PATH, errors=errors)
 
@@ -60,11 +65,41 @@ def main() -> int:
         errors=errors,
     )
 
+    native_fragment_readme = NATIVE_FRAGMENT_README_PATH.read_text(encoding="utf-8")
+    for token in (
+        "## Canonical Naming And Path Rules",
+        "user-facing package entrypoints come from `package.json`",
+        "transient outputs stay under `tmp/`",
+        "published binaries and libraries stay under `artifacts/`",
+    ):
+        require_token(
+            native_fragment_readme,
+            token,
+            path=NATIVE_FRAGMENT_README_PATH,
+            errors=errors,
+        )
+
+    maintainer_workflow = MAINTAINER_WORKFLOW_PATH.read_text(encoding="utf-8")
+    for token in (
+        "## Superclean Working Boundary",
+        "implementation roots:",
+        "generated checked-in outputs:",
+        "Do not add milestone-specific wrappers, sidecar compatibility files, or",
+    ):
+        require_token(
+            maintainer_workflow,
+            token,
+            path=MAINTAINER_WORKFLOW_PATH,
+            errors=errors,
+        )
+
     command_surface = PUBLIC_COMMAND_SURFACE_PATH.read_text(encoding="utf-8")
     for token in (
         "operator-facing appendix",
         "## Operator Notes",
         "Treat this file as a generated machine-facing appendix",
+        "Canonical user-facing command names come from `package.json`",
+        "`native/objc3c/`, `scripts/`, and `tests/` are the live implementation roots",
     ):
         require_token(
             command_surface,
