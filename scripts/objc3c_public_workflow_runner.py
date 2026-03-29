@@ -28,6 +28,8 @@ NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_ex
 PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
 PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
 SITE_PY = ROOT / "scripts" / "build_site_index.py"
+NATIVE_DOCS_PY = ROOT / "scripts" / "build_objc3c_native_docs.py"
+PUBLIC_COMMAND_SURFACE_PY = ROOT / "scripts" / "render_objc3c_public_command_surface.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
@@ -123,6 +125,26 @@ def action_build_spec(_: list[str]) -> int:
     if rc != 0:
         return rc
     return run([NPX, "prettier", "--write", "site/index.md"])
+
+
+def action_check_site_index(_: list[str]) -> int:
+    return run([sys.executable, str(SITE_PY), "--check"])
+
+
+def action_build_native_docs(_: list[str]) -> int:
+    return run([sys.executable, str(NATIVE_DOCS_PY)])
+
+
+def action_check_native_docs(_: list[str]) -> int:
+    return run([sys.executable, str(NATIVE_DOCS_PY), "--check"])
+
+
+def action_build_public_command_surface(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_COMMAND_SURFACE_PY)])
+
+
+def action_check_public_command_surface(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_COMMAND_SURFACE_PY), "--check"])
 
 
 def action_compile_objc3c(rest: list[str]) -> int:
@@ -757,6 +779,11 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-native-full": ActionSpec("build-native-full", "run full native build", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:full",)),
     "build-native-reconfigure": ActionSpec("build-native-reconfigure", "force native reconfigure build", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:reconfigure",)),
     "build-spec": ActionSpec("build-spec", "build site/spec output and format it", "python:scripts/build_site_index.py + npx prettier", ("build:spec",)),
+    "check-site-index": ActionSpec("check-site-index", "check generated site output for drift", "python:scripts/build_site_index.py --check", ("check:spec:generated",)),
+    "build-native-docs": ActionSpec("build-native-docs", "build the generated native implementation docs", "python:scripts/build_objc3c_native_docs.py", ("build:docs:native",)),
+    "check-native-docs": ActionSpec("check-native-docs", "check generated native implementation docs for drift", "python:scripts/build_objc3c_native_docs.py --check", ("check:docs:native",)),
+    "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py", ("build:docs:commands",)),
+    "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", ("check:docs:commands",)),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
@@ -802,6 +829,11 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-native-full": action_build_native_full,
     "build-native-reconfigure": action_build_native_reconfigure,
     "build-spec": action_build_spec,
+    "check-site-index": action_check_site_index,
+    "build-native-docs": action_build_native_docs,
+    "check-native-docs": action_check_native_docs,
+    "build-public-command-surface": action_build_public_command_surface,
+    "check-public-command-surface": action_check_public_command_surface,
     "compile-objc3c": action_compile_objc3c,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,

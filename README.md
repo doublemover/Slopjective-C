@@ -190,6 +190,13 @@ npm run build:objc3c-native
 npm run build:spec
 ```
 
+Optional generated-doc refreshes:
+
+```powershell
+npm run build:docs:native
+npm run build:docs:commands
+```
+
 3. Compile the canonical hello fixture:
 
 ```powershell
@@ -283,6 +290,8 @@ Use package scripts for normal work. The common ones are:
 
 - `npm run build:objc3c-native`
 - `npm run build:spec`
+- `npm run build:docs:native`
+- `npm run build:docs:commands`
 - `npm run compile:objc3c -- ...`
 - `npm run test:fast`
 - `npm run test:smoke`

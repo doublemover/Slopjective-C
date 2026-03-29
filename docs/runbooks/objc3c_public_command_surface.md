@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `48`
+- Current public script count: `53`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -18,6 +18,11 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c-native:full` | `build-native-full` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:reconfigure` | `build-native-reconfigure` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:spec` | `build-spec` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py + npx prettier` |
+| `check:spec:generated` | `check-site-index` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py --check` |
+| `build:docs:native` | `build-native-docs` | `-` | `-` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py` |
+| `check:docs:native` | `check-native-docs` | `-` | `-` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py --check` |
+| `build:docs:commands` | `build-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py` |
+| `check:docs:commands` | `check-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py --check` |
 | `compile:objc3c` | `compile-objc3c` | `-` | `-` | `pass-through` | `pwsh:scripts/objc3c_native_compile.ps1` |
 | `lint:spec` | `lint-spec` | `-` | `-` | `fixed-shape` | `python:scripts/spec_lint.py` |
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
