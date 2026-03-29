@@ -77,6 +77,11 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - runtime/debug report roots:
   - `tmp/reports/runtime/`
   - `tmp/reports/objc3c-public-workflow/`
+- developer-tooling dump artifacts:
+  - `tmp/reports/objc3c-public-workflow/inspect-compile-observability-summary.json`
+  - `tmp/reports/objc3c-public-workflow/compile-observability.json`
+  - `tmp/reports/objc3c-public-workflow/inspect-runtime-inspector-summary.json`
+  - `tmp/reports/objc3c-public-workflow/runtime-inspector.json`
 
 ## Exact Live Commands
 
@@ -87,6 +92,12 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3`
 - inspect the direct compiler/summary boundary:
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 --summary-out tmp/reports/objc3c-public-workflow/frontend-c-api-runner-summary.json`
+- dump the structured developer observability object through the public command surface:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-compile-observability`
+  - `npm run inspect:objc3c:observability`
+- dump the structured runtime inspector object through the public command surface:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
+  - `npm run inspect:objc3c:runtime`
 - validate compiler/library parity:
   - `python scripts/check_objc3c_library_cli_parity.py`
 - validate runtime/debug ABI and emitted source surfaces:

@@ -59,6 +59,8 @@ RUNNABLE_METAPROGRAMMING_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runna
 RUNNABLE_METAPROGRAMMING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_metaprogramming_end_to_end.py"
 RUNNABLE_RELEASE_CANDIDATE_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_release_candidate_conformance.py"
 RUNNABLE_RELEASE_CANDIDATE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_release_candidate_end_to_end.py"
+FRONTEND_C_API_RUNNER_EXE = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
+DEFAULT_DEVELOPER_TOOLING_SOURCE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 
 
@@ -216,6 +218,86 @@ def action_validate_repo_superclean(_: list[str]) -> int:
 
 def action_compile_objc3c(rest: list[str]) -> int:
     return pwsh_file(COMPILE_PS1, *rest)
+
+
+def _parse_developer_tooling_invocation(rest: list[str]) -> tuple[str, list[str]]:
+    if rest and not rest[0].startswith("--"):
+        source_text = rest[0]
+        passthrough = rest[1:]
+    else:
+        source_text = str(DEFAULT_DEVELOPER_TOOLING_SOURCE.relative_to(ROOT).as_posix())
+        passthrough = rest
+    for forbidden in (
+        "--summary-out",
+        "--dump-summary-json",
+        "--dump-observability-json",
+        "--dump-runtime-inspector-json",
+    ):
+        if forbidden in passthrough:
+            raise ValueError(f"{forbidden} is managed by the public developer-tooling action")
+    return source_text, passthrough
+
+
+def _write_json_capture(path: Path, stdout: str) -> int:
+    try:
+        payload = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        print(f"developer-tooling-dump: invalid JSON from frontend runner: {exc}", file=sys.stderr)
+        return 1
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    return 0
+
+
+def _run_developer_tooling_dump(action_name: str,
+                                dump_flag: str,
+                                dump_filename: str,
+                                rest: list[str]) -> int:
+    try:
+        source_text, passthrough = _parse_developer_tooling_invocation(rest)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    rc = execute_registered_action("build-native-binaries", [])
+    if rc != 0:
+        return rc
+    summary_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action_name}-summary.json"
+    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / dump_filename
+    command = [
+        str(FRONTEND_C_API_RUNNER_EXE),
+        source_text,
+        "--summary-out",
+        str(summary_path),
+        dump_flag,
+        *passthrough,
+    ]
+    result = run_capture(command)
+    if result.returncode != 0:
+        return result.returncode
+    rc = _write_json_capture(dump_path, result.stdout)
+    if rc != 0:
+        return rc
+    print(f"summary_path: {summary_path.relative_to(ROOT).as_posix()}")
+    print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
+    return 0
+
+
+def action_inspect_compile_observability(rest: list[str]) -> int:
+    return _run_developer_tooling_dump(
+        "inspect-compile-observability",
+        "--dump-observability-json",
+        "compile-observability.json",
+        rest,
+    )
+
+
+def action_inspect_runtime_inspector(rest: list[str]) -> int:
+    return _run_developer_tooling_dump(
+        "inspect-runtime-inspector",
+        "--dump-runtime-inspector-json",
+        "runtime-inspector.json",
+        rest,
+    )
 
 
 def action_lint_spec(_: list[str]) -> int:
@@ -863,6 +945,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
+    "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
+    "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal + targeted smoke slice", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance, canonical replay, and a bounded smoke slice"),
@@ -922,6 +1006,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-documentation-surface": action_validate_documentation_surface,
     "validate-repo-superclean": action_validate_repo_superclean,
     "compile-objc3c": action_compile_objc3c,
+    "inspect-compile-observability": action_inspect_compile_observability,
+    "inspect-runtime-inspector": action_inspect_runtime_inspector,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,
