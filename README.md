@@ -70,6 +70,37 @@ What is not fully runnable yet:
 
 If you only want the high-level picture, read the published site first. If you want the exact language rules, use the legacy redirect index under `docs/reference/legacy_spec_anchor_index.md`. If you want the implementation, start in `native/objc3c/`.
 
+## Documentation Audience Map
+
+The repository now has three live documentation audiences. Use the right one first.
+
+| Audience | Start here | Use it for | Stay out of |
+| --- | --- | --- | --- |
+| First-time reader | [site/index.md](site/index.md) | project overview, implementation status, spec map | `tmp/`, `reports/`, historical spec redirects unless you need compatibility links |
+| Builder / evaluator | [README.md](README.md) | setup, build commands, validation entrypoints, repository layout | deep runtime/source fragments until you need implementation detail |
+| Implementer / maintainer | [docs/objc3c-native.md](docs/objc3c-native.md) and [`native/objc3c/`](native/objc3c/) | native compiler/runtime boundaries, emitted artifacts, live proof paths | archived milestone closeout material |
+
+Documentation working boundary:
+
+- public onboarding surface:
+  - `README.md`
+  - `site/index.md`
+- implementation-facing docs surface:
+  - `docs/objc3c-native.md`
+  - `docs/objc3c-native/src/*.md`
+- compatibility-only redirect surface:
+  - `docs/reference/legacy_spec_anchor_index.md`
+- machine-owned or proof-owned surfaces, not user-facing onboarding:
+  - `tmp/`
+  - `artifacts/`
+  - `reports/`
+
+Explicit non-goals for the public onboarding surface:
+
+- do not make new readers navigate archived milestone material,
+- do not treat generated proof artifacts as primary documentation,
+- do not force users through the legacy redirect index unless they need old links or exact archived anchors.
+
 ## Repository Layout
 
 - `docs/reference/legacy_spec_anchor_index.md`
