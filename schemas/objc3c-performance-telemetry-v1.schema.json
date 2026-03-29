@@ -1,0 +1,181 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3c-performance-telemetry-v1.schema.json",
+  "title": "objc3c Performance Telemetry (v1)",
+  "description": "Machine-readable raw-sample and normalized-summary contract for objc3c benchmark telemetry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "schema_version",
+    "benchmark_kind",
+    "generated_at_utc",
+    "machine_profile",
+    "tool_versions",
+    "raw_samples",
+    "normalized_summary"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c.performance.telemetry.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "benchmark_kind": {
+      "type": "string",
+      "enum": [
+        "compile-latency",
+        "runtime-wall-clock",
+        "comparative-compile-baseline",
+        "comparative-runtime-baseline"
+      ]
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "machine_profile": {
+      "$ref": "#/$defs/machineProfile"
+    },
+    "tool_versions": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "raw_samples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/rawSample"
+      }
+    },
+    "normalized_summary": {
+      "$ref": "#/$defs/normalizedSummary"
+    }
+  },
+  "$defs": {
+    "machineProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "hostname",
+        "os",
+        "arch",
+        "cpu_model",
+        "cpu_count",
+        "python_version"
+      ],
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "os": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        },
+        "cpu_model": {
+          "type": "string"
+        },
+        "cpu_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "python_version": {
+          "type": "string"
+        }
+      }
+    },
+    "rawSample": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_id",
+        "workload_id",
+        "language",
+        "step_kind",
+        "command",
+        "duration_ms",
+        "exit_code"
+      ],
+      "properties": {
+        "sample_id": {
+          "type": "string"
+        },
+        "workload_id": {
+          "type": "string"
+        },
+        "language": {
+          "type": "string"
+        },
+        "step_kind": {
+          "type": "string",
+          "enum": [
+            "compile",
+            "runtime",
+            "availability-probe"
+          ]
+        },
+        "command": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "exit_code": {
+          "type": "integer"
+        },
+        "stdout_digest": {
+          "type": "string"
+        },
+        "stderr_digest": {
+          "type": "string"
+        }
+      }
+    },
+    "normalizedSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sample_count",
+        "min_duration_ms",
+        "median_duration_ms",
+        "max_duration_ms",
+        "normalization_mode"
+      ],
+      "properties": {
+        "sample_count": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "min_duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "median_duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "max_duration_ms": {
+          "type": "number",
+          "minimum": 0
+        },
+        "normalization_mode": {
+          "type": "string"
+        },
+        "availability_status": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -9,6 +9,7 @@
   "measurement_policy": "tests/tooling/fixtures/performance/measurement_policy.json",
   "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
   "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+  "telemetry_schema": "schemas/objc3c-performance-telemetry-v1.schema.json",
   "public_entrypoints": {
     "build_native": "build:objc3c-native",
     "compile_objc3c": "compile:objc3c",
@@ -99,6 +100,7 @@
     "tests/tooling/fixtures/performance/measurement_policy.json",
     "tests/tooling/fixtures/performance/benchmark_parameters.json",
     "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+    "schemas/objc3c-performance-telemetry-v1.schema.json",
     "showcase/portfolio.json",
     "tests/tooling/fixtures/performance/benchmark_portfolio.json",
     "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
