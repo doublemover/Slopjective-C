@@ -182,6 +182,42 @@ header paths, and the live installation lifecycle proof command surface as one
 coupled artifact instead of leaving later bootstrap work to infer ordering
 truth from scattered semantic and runtime-side reports.
 
+## Unified Concurrency Runtime Source Surface
+
+- authoritative compile-manifest key:
+  - `runtime_unified_concurrency_source_surface`
+- authoritative composed source inputs:
+  - `objc3c.concurrency.async.source.closure.v1`
+  - `objc3c.concurrency.actor.member.isolation.source.closure.v1`
+  - `objc3c.concurrency.task.group.cancellation.source.closure.v1`
+  - `objc3c.concurrency.async.effect.suspension.semantic.model.v1`
+  - `objc3c.concurrency.task.executor.cancellation.semantic.model.v1`
+  - `objc3c.concurrency.actor.isolation.sendable.semantic.model.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3`
+    - `tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3`
+    - `tests/tooling/fixtures/native/task_executor_cancellation_source_closure_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/continuation_runtime_helper_probe.cpp`
+    - `tests/tooling/runtime/task_runtime_lowering_probe.cpp`
+    - `tests/tooling/runtime/actor_lowering_runtime_probe.cpp`
+
+This is the authoritative compile-coupled source boundary for async functions,
+task groups, executors, actors, and sendability before lowering and runtime ABI
+closure. It freezes the live source and semantic packets together with the
+private continuation/task/actor helper inventory so later concurrency work has
+one emitted source of truth instead of rederiving boundaries from sidecars,
+stale milestone notes, or probe-local assumptions.
+
 ## Error Execution And Cleanup Source Surface
 
 - authoritative compile-manifest key:

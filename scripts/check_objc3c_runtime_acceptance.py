@@ -131,6 +131,12 @@ RUNTIME_CATEGORY_ATTACHMENT_MERGED_DISPATCH_SURFACE_CONTRACT_ID = (
 RUNTIME_REFLECTION_VISIBILITY_COHERENCE_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1"
 )
+RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.unified.concurrency.source.surface.v1"
+)
+RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.async.task.actor.normalization.completion.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -401,6 +407,9 @@ def compile_fixture_with_args(
     )
     reflection_visibility_coherence_diagnostics_surface = manifest.get(
         "runtime_reflection_visibility_coherence_diagnostics_surface"
+    )
+    unified_concurrency_source_surface = manifest.get(
+        "runtime_unified_concurrency_source_surface"
     )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
@@ -1023,6 +1032,113 @@ def compile_fixture_with_args(
     if object_model_realization_source_surface.get("requires_linked_runtime_probe") is not True:
         raise RuntimeError(
             "runtime_object_model_realization_source_surface must require a linked runtime probe"
+        )
+    if not isinstance(unified_concurrency_source_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_unified_concurrency_source_surface"
+        )
+    if (
+        unified_concurrency_source_surface.get("contract_id")
+        != RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_unified_concurrency_source_surface contract"
+        )
+    expected_unified_concurrency_source_surface_fields = {
+        "compile_manifest_artifact": manifest_path.name,
+        "registration_manifest_artifact": registration_manifest_path.name,
+        "registration_descriptor_artifact": registration_descriptor_path.name,
+        "object_artifact": obj_path.name,
+        "backend_artifact": ll_path.name,
+        "source_surface_model": (
+            "unified-concurrency-source-surface-freezes-live-async-actor-task-source-and-sema-boundaries-before-lowering-runtime-and-public-abi-expansion"
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/runtime/objc3_runtime.h",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_source_fields": [
+            "frontend.pipeline.semantic_surface.objc_concurrency_async_source_closure",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_member_and_isolation_source_closure",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_group_and_cancellation_source_closure",
+            "frontend.pipeline.semantic_surface.objc_concurrency_async_effect_and_suspension_semantic_model",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_executor_and_cancellation_semantic_model",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendable_semantic_model",
+        ],
+        "source_contract_ids": [
+            "objc3c.concurrency.async.source.closure.v1",
+            "objc3c.concurrency.actor.member.isolation.source.closure.v1",
+            "objc3c.concurrency.task.group.cancellation.source.closure.v1",
+            "objc3c.concurrency.async.effect.suspension.semantic.model.v1",
+            "objc3c.concurrency.task.executor.cancellation.semantic.model.v1",
+            "objc3c.concurrency.actor.isolation.sendable.semantic.model.v1",
+        ],
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3",
+            "tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3",
+            "tests/tooling/fixtures/native/task_executor_cancellation_source_closure_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+            "tests/tooling/runtime/task_runtime_lowering_probe.cpp",
+            "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-runtime-abi-widening",
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-concurrency-proof",
+        ],
+    }
+    for field, expected_value in expected_unified_concurrency_source_surface_fields.items():
+        if unified_concurrency_source_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_unified_concurrency_source_surface drifted from {field}"
+            )
+    if (
+        unified_concurrency_source_surface.get("private_concurrency_runtime_boundary")
+        != [
+            "objc3_runtime_allocate_async_continuation_i32",
+            "objc3_runtime_handoff_async_continuation_to_executor_i32",
+            "objc3_runtime_resume_async_continuation_i32",
+            "objc3_runtime_spawn_task_i32",
+            "objc3_runtime_enter_task_group_scope_i32",
+            "objc3_runtime_add_task_group_task_i32",
+            "objc3_runtime_wait_task_group_next_i32",
+            "objc3_runtime_cancel_task_group_i32",
+            "objc3_runtime_task_is_cancelled_i32",
+            "objc3_runtime_task_on_cancel_i32",
+            "objc3_runtime_actor_enter_isolation_thunk_i32",
+            "objc3_runtime_actor_enter_nonisolated_i32",
+            "objc3_runtime_actor_hop_to_executor_i32",
+            "objc3_runtime_actor_record_replay_proof_i32",
+            "objc3_runtime_actor_record_race_guard_i32",
+            "objc3_runtime_actor_bind_executor_i32",
+            "objc3_runtime_actor_mailbox_enqueue_i32",
+            "objc3_runtime_actor_mailbox_drain_next_i32",
+            "objc3_runtime_copy_async_continuation_state_for_testing",
+            "objc3_runtime_copy_task_runtime_state_for_testing",
+            "objc3_runtime_copy_actor_runtime_state_for_testing",
+        ]
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_source_surface drifted from the private concurrency runtime boundary"
+        )
+    if (
+        unified_concurrency_source_surface.get("requires_coupled_registration_manifest")
+        is not True
+        or unified_concurrency_source_surface.get("requires_real_compile_output")
+        is not True
+        or unified_concurrency_source_surface.get("requires_linked_runtime_probe")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_source_surface must require the coupled registration manifest, real compile output, and linked runtime probes"
         )
     if not isinstance(dispatch_and_synthesized_accessor_lowering_surface, dict):
         raise RuntimeError(
@@ -3559,6 +3675,34 @@ def compile_fixture(fixture: Path, out_dir: Path) -> Path:
     return compile_fixture_with_args(fixture, out_dir)
 
 
+def compile_fixture_manifest_only(
+    fixture: Path, out_dir: Path, extra_args: list[str] | None = None
+) -> tuple[Path, subprocess.CompletedProcess[str]]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    result = run(
+        [
+            PWSH,
+            "-NoProfile",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            str(COMPILE_PS1),
+            str(fixture),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+            *(extra_args or []),
+        ]
+    )
+    manifest_path = out_dir / "module.manifest.json"
+    if not manifest_path.is_file():
+        raise RuntimeError(
+            f"fixture compile did not publish {manifest_path} for {fixture}:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
+    return manifest_path, result
+
+
 def compile_fixture_outputs(fixture: Path, out_dir: Path) -> tuple[Path, Path, Path]:
     obj_path = compile_fixture(fixture, out_dir)
     ll_path = out_dir / "module.ll"
@@ -4264,6 +4408,95 @@ def build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface
             "until-a-public-error-abi-is-explicitly-claimed"
         ),
         "authoritative_case_ids": authoritative_case_ids,
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_unified_concurrency_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"unified-concurrency-runtime-architecture"}
+    ]
+    return {
+        "contract_id": RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID,
+        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
+        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
+        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
+        "object_artifact": "<emit-prefix>.obj",
+        "backend_artifact": "<emit-prefix>.ll",
+        "source_surface_model": (
+            "unified-concurrency-source-surface-freezes-live-async-actor-task-source-and-sema-boundaries-before-lowering-runtime-and-public-abi-expansion"
+        ),
+        "source_contract_ids": [
+            "objc3c.concurrency.async.source.closure.v1",
+            "objc3c.concurrency.actor.member.isolation.source.closure.v1",
+            "objc3c.concurrency.task.group.cancellation.source.closure.v1",
+            "objc3c.concurrency.async.effect.suspension.semantic.model.v1",
+            "objc3c.concurrency.task.executor.cancellation.semantic.model.v1",
+            "objc3c.concurrency.actor.isolation.sendable.semantic.model.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/ast/objc3_ast.h",
+            "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/runtime/objc3_runtime.h",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_source_fields": [
+            "frontend.pipeline.semantic_surface.objc_concurrency_async_source_closure",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_member_and_isolation_source_closure",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_group_and_cancellation_source_closure",
+            "frontend.pipeline.semantic_surface.objc_concurrency_async_effect_and_suspension_semantic_model",
+            "frontend.pipeline.semantic_surface.objc_concurrency_task_executor_and_cancellation_semantic_model",
+            "frontend.pipeline.semantic_surface.objc_concurrency_actor_isolation_and_sendable_semantic_model",
+        ],
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_concurrency_runtime_boundary": [
+            "objc3_runtime_allocate_async_continuation_i32",
+            "objc3_runtime_handoff_async_continuation_to_executor_i32",
+            "objc3_runtime_resume_async_continuation_i32",
+            "objc3_runtime_spawn_task_i32",
+            "objc3_runtime_enter_task_group_scope_i32",
+            "objc3_runtime_add_task_group_task_i32",
+            "objc3_runtime_wait_task_group_next_i32",
+            "objc3_runtime_cancel_task_group_i32",
+            "objc3_runtime_task_is_cancelled_i32",
+            "objc3_runtime_task_on_cancel_i32",
+            "objc3_runtime_actor_enter_isolation_thunk_i32",
+            "objc3_runtime_actor_enter_nonisolated_i32",
+            "objc3_runtime_actor_hop_to_executor_i32",
+            "objc3_runtime_actor_record_replay_proof_i32",
+            "objc3_runtime_actor_record_race_guard_i32",
+            "objc3_runtime_actor_bind_executor_i32",
+            "objc3_runtime_actor_mailbox_enqueue_i32",
+            "objc3_runtime_actor_mailbox_drain_next_i32",
+            "objc3_runtime_copy_async_continuation_state_for_testing",
+            "objc3_runtime_copy_task_runtime_state_for_testing",
+            "objc3_runtime_copy_actor_runtime_state_for_testing",
+        ],
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [
+            "tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3",
+            "tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3",
+            "tests/tooling/fixtures/native/task_executor_cancellation_source_closure_positive.objc3",
+        ],
+        "authoritative_probe_paths": [
+            "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+            "tests/tooling/runtime/task_runtime_lowering_probe.cpp",
+            "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+        ],
+        "explicit_non_goals": [
+            "no-public-runtime-abi-widening",
+            "no-milestone-specific-scaffolding",
+            "no-sidecar-only-concurrency-proof",
+        ],
         "requires_coupled_registration_manifest": True,
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,
@@ -6027,6 +6260,138 @@ def check_installation_lifecycle_case(clangxx: str, run_dir: Path) -> CaseResult
             "retained_bootstrap_image_count": payload["post_replay_retained_bootstrap_image_count"],
             "replay_generation": payload["post_replay_replay_generation"],
         },
+    )
+
+
+def check_unified_concurrency_runtime_architecture_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "unified-concurrency-runtime-architecture"
+    fixtures: dict[str, tuple[Path, bool]] = {
+        "async_source": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "async_await_executor_source_closure_positive.objc3",
+            True,
+        ),
+        "actor_source": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "actor_member_isolation_surface_positive.objc3",
+            True,
+        ),
+        "task_source": (
+            ROOT
+            / "tests"
+            / "tooling"
+            / "fixtures"
+            / "native"
+            / "task_executor_cancellation_source_closure_positive.objc3",
+            False,
+        ),
+    }
+    expected_semantic_surfaces = {
+        "async_source": (
+            "objc_concurrency_async_source_closure",
+            "objc3c.concurrency.async.source.closure.v1",
+        ),
+        "actor_source": (
+            "objc_concurrency_actor_member_and_isolation_source_closure",
+            "objc3c.concurrency.actor.member.isolation.source.closure.v1",
+        ),
+        "task_source": (
+            "objc_concurrency_task_group_and_cancellation_source_closure",
+            "objc3c.concurrency.task.group.cancellation.source.closure.v1",
+        ),
+    }
+    surface_summaries: dict[str, Any] = {}
+
+    for fixture_key, (fixture_path, requires_real_compile_output) in fixtures.items():
+        compile_dir = case_dir / fixture_key / "compile"
+        diagnostics_path = compile_dir / "module.diagnostics.txt"
+        if requires_real_compile_output:
+            _, _, manifest_path = compile_fixture_outputs(fixture_path, compile_dir)
+        else:
+            manifest_path, compile_result = compile_fixture_manifest_only(
+                fixture_path, compile_dir
+            )
+            expect(
+                compile_result.returncode != 0,
+                "expected task source closure fixture to remain source-surface-only until later lowering work lands",
+            )
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        semantic_surface_name, expected_contract_id = expected_semantic_surfaces[fixture_key]
+        semantic_surface = (
+            manifest.get("frontend", {})
+            .get("pipeline", {})
+            .get("semantic_surface", {})
+            .get(semantic_surface_name, {})
+        )
+        expect(
+            isinstance(semantic_surface, dict),
+            f"expected {fixture_key} fixture to publish {semantic_surface_name}",
+        )
+        expect(
+            semantic_surface.get("contract_id") == expected_contract_id,
+            f"expected {fixture_key} fixture to preserve {expected_contract_id}",
+        )
+        expect(
+            semantic_surface.get("deterministic_handoff") is True,
+            f"expected {fixture_key} fixture to preserve deterministic_handoff",
+        )
+        expect(
+            semantic_surface.get("ready_for_semantic_expansion") is True,
+            f"expected {fixture_key} fixture to preserve ready_for_semantic_expansion",
+        )
+        surface_summaries[fixture_key] = {
+            "fixture": str(fixture_path.relative_to(ROOT)).replace("\\", "/"),
+            "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "surface": semantic_surface_name,
+            "contract_id": semantic_surface.get("contract_id"),
+        }
+        if not requires_real_compile_output and diagnostics_path.is_file():
+            surface_summaries[fixture_key]["diagnostics"] = str(
+                diagnostics_path.relative_to(ROOT)
+            ).replace("\\", "/")
+        if fixture_key == "async_source":
+            top_level_surface = manifest.get("runtime_unified_concurrency_source_surface", {})
+            expect(
+                isinstance(top_level_surface, dict),
+                "expected async concurrency fixture to publish runtime_unified_concurrency_source_surface",
+            )
+            expect(
+                top_level_surface.get("contract_id")
+                == RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID,
+                "expected concurrency runtime architecture fixture to preserve the unified source surface contract",
+            )
+            expect(
+                top_level_surface.get("source_surface_model")
+                == "unified-concurrency-source-surface-freezes-live-async-actor-task-source-and-sema-boundaries-before-lowering-runtime-and-public-abi-expansion",
+                "expected concurrency runtime architecture fixture to preserve the unified source surface model",
+            )
+            expect(
+                top_level_surface.get("requires_coupled_registration_manifest") is True
+                and top_level_surface.get("requires_real_compile_output") is True
+                and top_level_surface.get("requires_linked_runtime_probe") is True,
+                "expected unified concurrency source surface to remain compile-coupled and probe-backed",
+            )
+            surface_summaries["runtime_surface"] = {
+                "manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+                "contract_id": top_level_surface.get("contract_id"),
+                "source_contract_ids": top_level_surface.get("source_contract_ids"),
+            }
+
+    return CaseResult(
+        case_id="unified-concurrency-runtime-architecture",
+        probe="compile-manifest-runtime-source-surface",
+        fixture="tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3",
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary=surface_summaries,
     )
 
 
@@ -12146,6 +12511,7 @@ def main() -> int:
     results = [
         check_runtime_library_case(clangxx, run_dir),
         check_installation_lifecycle_case(clangxx, run_dir),
+        check_unified_concurrency_runtime_architecture_case(run_dir),
         check_error_execution_cleanup_source_case(run_dir),
         check_catch_filter_finalization_source_case(run_dir),
         check_error_propagation_cleanup_semantics_case(run_dir),
@@ -12207,6 +12573,9 @@ def main() -> int:
         ),
         "runtime_multi_image_startup_ordering_source_surface": (
             build_runtime_multi_image_startup_ordering_source_surface(results)
+        ),
+        "runtime_unified_concurrency_source_surface": (
+            build_runtime_unified_concurrency_source_surface(results)
         ),
         "runtime_error_execution_cleanup_source_surface": (
             build_runtime_error_execution_cleanup_source_surface(results)

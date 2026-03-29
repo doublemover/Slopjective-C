@@ -94,6 +94,24 @@ Multi-image startup ordering source of truth:
   path instead of reconstructing ordering truth from scattered semantic
   fragments or hand-maintained notes
 
+Unified concurrency runtime architecture source of truth:
+
+- compile publication exposes the coupled concurrency source boundary through
+  the emitted compile-manifest key `runtime_unified_concurrency_source_surface`
+- that surface must point at the live async source closure, actor member and
+  isolation source closure, task-group/cancellation source closure, async
+  effect/suspension semantic model, task executor/cancellation semantic model,
+  actor isolation/sendable semantic model, and the authoritative AST/sema/IR/
+  pipeline/runtime code paths that publish those packets
+- that same surface must freeze the private continuation/task/actor runtime
+  helper boundary in `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  and `native/objc3c/src/runtime/objc3_runtime.cpp` without widening the public
+  runtime ABI beyond `native/objc3c/src/runtime/objc3_runtime.h`
+- later lowering, runtime ABI, actor mailbox, executor, and runnable
+  validation work must extend that emitted surface instead of inferring
+  concurrency source truth from probe-local notes, sidecar-only manifests, or
+  milestone-specific helper inventories
+
 Object-model realization source of truth:
 
 - compile publication exposes the coupled realization boundary through the
