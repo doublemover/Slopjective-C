@@ -173,6 +173,9 @@ RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
+RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.package.loading.module.identity.semantics.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -5669,6 +5672,50 @@ def build_runtime_mixed_image_compatibility_interop_semantics_surface(
         ],
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_package_loading_module_identity_semantics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"imported-runtime-packaging-replay"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.runtime-import-surface.json",
+            "<emit-prefix>.cross-module-runtime-link-plan.json",
+            "<emit-prefix>.runtime-registration-manifest.json",
+            "<emit-prefix>.obj",
+        ],
+        "runtime_probe": IMPORTED_RUNTIME_PACKAGING_PROBE,
+        "package_loading_model": (
+            "runtime-package-loading-and-reset-replay-preserve-imported-and-local-module-identities-registration-ordinals-and-realized-class-ownership-through-the-live-runtime"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
+            IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+        ],
+        "authoritative_probe_paths": [IMPORTED_RUNTIME_PACKAGING_PROBE],
+        "requires_runtime_import_surface_artifact": True,
+        "requires_cross_module_link_plan_artifact": True,
+        "requires_linked_runtime_probe": True,
         "requires_real_compile_output": True,
     }
 
@@ -11936,8 +11983,24 @@ def check_imported_runtime_packaging_replay_case(
         "expected cross-module link plan to preserve a two-image runtime topology",
     )
     expect(
+        link_plan.get("module_names_lexicographic")
+        == ["runtimePackagingConsumer", "runtimePackagingProvider"],
+        "expected cross-module link plan to preserve the stable module-name ordering",
+    )
+    expect(
         link_plan.get("direct_import_input_count") == 1,
         "expected cross-module link plan to preserve one direct imported runtime surface",
+    )
+    direct_import_surface_artifact_paths = link_plan.get(
+        "direct_import_surface_artifact_paths"
+    )
+    expect(
+        isinstance(direct_import_surface_artifact_paths, list)
+        and len(direct_import_surface_artifact_paths) == 1
+        and direct_import_surface_artifact_paths[0].endswith(
+            "provider/module.runtime-import-surface.json"
+        ),
+        "expected cross-module link plan to preserve the imported runtime surface artifact path",
     )
     for field_name, expected_value in (
         (
@@ -16822,6 +16885,9 @@ def main() -> int:
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
+        ),
+        "runtime_package_loading_module_identity_semantics_surface": (
+            build_runtime_package_loading_module_identity_semantics_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
