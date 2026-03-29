@@ -34,6 +34,8 @@ This root is not a place for:
 - canonical module names come from `spec/STANDARD_LIBRARY_CONTRACT.md`
 - stability and allowed cross-module dependencies come from `stdlib/stability_policy.json`
 - the checked-in module roots will live under `stdlib/modules/`
+- canonical module names map onto implementation aliases because the current
+  frontend module declaration syntax is identifier-based rather than dotted
 - machine-owned materializations belong under `tmp/artifacts/stdlib/`
 - validation reports belong under `tmp/reports/stdlib/`
 - runnable package staging stays on the existing runnable toolchain bundle flow

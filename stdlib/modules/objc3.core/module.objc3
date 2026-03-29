@@ -1,0 +1,12 @@
+module objc3_core;
+
+let Objc3CoreLanguageRevision = 1;
+let Objc3CoreProfileRevision = 1;
+
+fn objc3_core_language_revision() {
+  return Objc3CoreLanguageRevision;
+}
+
+fn objc3_core_profile_revision() {
+  return Objc3CoreProfileRevision;
+}

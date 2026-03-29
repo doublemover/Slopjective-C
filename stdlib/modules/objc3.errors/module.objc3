@@ -1,0 +1,17 @@
+module objc3_errors;
+
+fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
+  if (value) {
+    return value;
+  } else {
+    return fallback;
+  }
+}
+
+fn objc3_errors_or_throw_code(value: i32, fallback: i32) {
+  if (value) {
+    return value;
+  } else {
+    return fallback;
+  }
+}

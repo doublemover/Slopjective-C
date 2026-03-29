@@ -1,0 +1,9 @@
+module objc3_keypath_smoke;
+
+fn objc3_keypath_apply_index(root: i32, offset: i32) {
+  return root + offset;
+}
+
+fn main() {
+  return objc3_keypath_apply_index(3, 1);
+}

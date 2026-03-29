@@ -93,6 +93,13 @@ def main() -> int:
         return fail("module inventory missing canonical_modules")
 
     inventory_rows: list[dict[str, str]] = []
+    required_extra_fields = (
+        "implementation_module",
+        "workspace_root",
+        "source",
+        "smoke_source",
+        "manifest",
+    )
     for entry in canonical_modules:
         if not isinstance(entry, dict):
             return fail("module inventory entry must be an object")
@@ -101,16 +108,33 @@ def main() -> int:
         required_profile = entry.get("required_profile")
         if not all(isinstance(value, str) and value for value in (module, capability_id, required_profile)):
             return fail("module inventory entry is missing module/capability_id/required_profile")
+        for field in required_extra_fields:
+            value = entry.get(field)
+            if not isinstance(value, str) or not value:
+                return fail(f"module inventory entry {module} is missing {field}")
         inventory_rows.append(
             {
                 "module": module,
+                "implementation_module": str(entry["implementation_module"]),
                 "capability_id": capability_id,
                 "required_profile": required_profile,
+                "workspace_root": str(entry["workspace_root"]),
+                "source": str(entry["source"]),
+                "smoke_source": str(entry["smoke_source"]),
+                "manifest": str(entry["manifest"]),
             }
         )
 
     spec_rows = parse_spec_canonical_modules(spec_text)
-    if spec_rows != inventory_rows:
+    spec_comparison_rows = [
+        {
+            "module": entry["module"],
+            "capability_id": entry["capability_id"],
+            "required_profile": entry["required_profile"],
+        }
+        for entry in inventory_rows
+    ]
+    if spec_rows != spec_comparison_rows:
         return fail("module inventory drifted from spec canonical module table")
 
     layers = stability_policy.get("layers")
@@ -145,6 +169,35 @@ def main() -> int:
                 )
     if covered_modules != inventory_module_names:
         return fail("stability policy module coverage drifted from module inventory")
+
+    for entry in inventory_rows:
+        for path_key in ("workspace_root", "source", "smoke_source", "manifest"):
+            path = ROOT / entry[path_key]
+            if path_key == "workspace_root":
+                if not path.is_dir():
+                    return fail(f"missing module workspace root: {entry[path_key]}")
+            else:
+                if not path.is_file():
+                    return fail(f"missing module artifact: {entry[path_key]}")
+        manifest_payload = load_json(ROOT / entry["manifest"])
+        if manifest_payload.get("contract_id") != "objc3c.stdlib.module.surface.v1":
+            return fail(f"module manifest contract_id drifted for {entry['module']}")
+        if manifest_payload.get("canonical_module") != entry["module"]:
+            return fail(f"module manifest canonical_module drifted for {entry['module']}")
+        if manifest_payload.get("implementation_module") != entry["implementation_module"]:
+            return fail(f"module manifest implementation_module drifted for {entry['module']}")
+        if manifest_payload.get("capability_id") != entry["capability_id"]:
+            return fail(f"module manifest capability_id drifted for {entry['module']}")
+        if manifest_payload.get("workspace_root") != entry["workspace_root"]:
+            return fail(f"module manifest workspace_root drifted for {entry['module']}")
+        if manifest_payload.get("source") != entry["source"]:
+            return fail(f"module manifest source drifted for {entry['module']}")
+        if manifest_payload.get("smoke_source") != entry["smoke_source"]:
+            return fail(f"module manifest smoke_source drifted for {entry['module']}")
+        source_text = (ROOT / entry["source"]).read_text(encoding="utf-8")
+        expected_decl = f"module {entry['implementation_module']};"
+        if expected_decl not in source_text:
+            return fail(f"module source declaration drifted for {entry['module']}")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(

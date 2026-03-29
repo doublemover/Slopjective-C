@@ -1,0 +1,9 @@
+module objc3_concurrency_smoke;
+
+fn objc3_concurrency_spawn_token(seed: i32) {
+  return seed + 1;
+}
+
+fn main() {
+  return objc3_concurrency_spawn_token(2);
+}

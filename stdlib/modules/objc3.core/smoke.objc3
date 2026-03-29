@@ -1,0 +1,9 @@
+module objc3_core_smoke;
+
+fn objc3_core_language_revision() {
+  return 1;
+}
+
+fn main() {
+  return objc3_core_language_revision();
+}

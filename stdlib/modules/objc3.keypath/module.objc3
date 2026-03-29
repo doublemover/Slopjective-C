@@ -1,0 +1,5 @@
+module objc3_keypath;
+
+fn objc3_keypath_apply_index(root: i32, offset: i32) {
+  return root + offset;
+}

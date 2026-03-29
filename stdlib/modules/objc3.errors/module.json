@@ -1,0 +1,15 @@
+{
+  "contract_id": "objc3c.stdlib.module.surface.v1",
+  "schema_version": 1,
+  "canonical_module": "objc3.errors",
+  "implementation_module": "objc3_errors",
+  "capability_id": "objc3.cap.errors",
+  "required_profile": "Core and above",
+  "workspace_root": "stdlib/modules/objc3.errors",
+  "source": "stdlib/modules/objc3.errors/module.objc3",
+  "smoke_source": "stdlib/modules/objc3.errors/smoke.objc3",
+  "exports": [
+    "objc3_errors_ok_or_code",
+    "objc3_errors_or_throw_code"
+  ]
+}

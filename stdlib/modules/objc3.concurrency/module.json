@@ -1,0 +1,15 @@
+{
+  "contract_id": "objc3c.stdlib.module.surface.v1",
+  "schema_version": 1,
+  "canonical_module": "objc3.concurrency",
+  "implementation_module": "objc3_concurrency",
+  "capability_id": "objc3.cap.concurrency",
+  "required_profile": "Core and above",
+  "workspace_root": "stdlib/modules/objc3.concurrency",
+  "source": "stdlib/modules/objc3.concurrency/module.objc3",
+  "smoke_source": "stdlib/modules/objc3.concurrency/smoke.objc3",
+  "exports": [
+    "objc3_concurrency_spawn_token",
+    "objc3_concurrency_cancellation_checkpoint"
+  ]
+}

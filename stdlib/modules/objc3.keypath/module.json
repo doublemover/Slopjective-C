@@ -1,0 +1,14 @@
+{
+  "contract_id": "objc3c.stdlib.module.surface.v1",
+  "schema_version": 1,
+  "canonical_module": "objc3.keypath",
+  "implementation_module": "objc3_keypath",
+  "capability_id": "objc3.cap.keypath",
+  "required_profile": "Core and above",
+  "workspace_root": "stdlib/modules/objc3.keypath",
+  "source": "stdlib/modules/objc3.keypath/module.objc3",
+  "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",
+  "exports": [
+    "objc3_keypath_apply_index"
+  ]
+}

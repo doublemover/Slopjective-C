@@ -5,28 +5,53 @@
   "canonical_modules": [
     {
       "module": "objc3.core",
+      "implementation_module": "objc3_core",
       "capability_id": "objc3.cap.core",
-      "required_profile": "Core and above"
+      "required_profile": "Core and above",
+      "workspace_root": "stdlib/modules/objc3.core",
+      "source": "stdlib/modules/objc3.core/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.core/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.core/module.json"
     },
     {
       "module": "objc3.errors",
+      "implementation_module": "objc3_errors",
       "capability_id": "objc3.cap.errors",
-      "required_profile": "Core and above"
+      "required_profile": "Core and above",
+      "workspace_root": "stdlib/modules/objc3.errors",
+      "source": "stdlib/modules/objc3.errors/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.errors/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.errors/module.json"
     },
     {
       "module": "objc3.concurrency",
+      "implementation_module": "objc3_concurrency",
       "capability_id": "objc3.cap.concurrency",
-      "required_profile": "Core and above"
+      "required_profile": "Core and above",
+      "workspace_root": "stdlib/modules/objc3.concurrency",
+      "source": "stdlib/modules/objc3.concurrency/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.concurrency/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.concurrency/module.json"
     },
     {
       "module": "objc3.keypath",
+      "implementation_module": "objc3_keypath",
       "capability_id": "objc3.cap.keypath",
-      "required_profile": "Core and above"
+      "required_profile": "Core and above",
+      "workspace_root": "stdlib/modules/objc3.keypath",
+      "source": "stdlib/modules/objc3.keypath/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.keypath/module.json"
     },
     {
       "module": "objc3.system",
+      "implementation_module": "objc3_system",
       "capability_id": "objc3.cap.system",
-      "required_profile": "Strict System"
+      "required_profile": "Strict System",
+      "workspace_root": "stdlib/modules/objc3.system",
+      "source": "stdlib/modules/objc3.system/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.system/smoke.objc3",
+      "manifest": "stdlib/modules/objc3.system/module.json"
     }
   ]
 }

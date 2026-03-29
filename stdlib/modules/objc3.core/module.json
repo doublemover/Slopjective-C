@@ -1,0 +1,16 @@
+{
+  "contract_id": "objc3c.stdlib.module.surface.v1",
+  "schema_version": 1,
+  "canonical_module": "objc3.core",
+  "implementation_module": "objc3_core",
+  "capability_id": "objc3.cap.core",
+  "required_profile": "Core and above",
+  "workspace_root": "stdlib/modules/objc3.core",
+  "source": "stdlib/modules/objc3.core/module.objc3",
+  "smoke_source": "stdlib/modules/objc3.core/smoke.objc3",
+  "exports": [
+    "Objc3CoreLanguageRevision",
+    "objc3_core_language_revision",
+    "objc3_core_profile_revision"
+  ]
+}

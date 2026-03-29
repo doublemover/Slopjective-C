@@ -1,0 +1,9 @@
+module objc3_system_smoke;
+
+fn objc3_system_resource_token(seed: i32) {
+  return seed + 4;
+}
+
+fn main() {
+  return objc3_system_resource_token(1);
+}

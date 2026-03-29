@@ -1,0 +1,13 @@
+module objc3_errors_smoke;
+
+fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
+  if (value) {
+    return value;
+  } else {
+    return fallback;
+  }
+}
+
+fn main() {
+  return objc3_errors_ok_or_code(0, 2);
+}

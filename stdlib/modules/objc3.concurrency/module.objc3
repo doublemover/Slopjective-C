@@ -1,0 +1,13 @@
+module objc3_concurrency;
+
+fn objc3_concurrency_spawn_token(seed: i32) {
+  return seed + 1;
+}
+
+fn objc3_concurrency_cancellation_checkpoint(flag: i32) {
+  if (flag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}

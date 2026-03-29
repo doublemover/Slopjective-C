@@ -1,0 +1,14 @@
+{
+  "contract_id": "objc3c.stdlib.module.surface.v1",
+  "schema_version": 1,
+  "canonical_module": "objc3.system",
+  "implementation_module": "objc3_system",
+  "capability_id": "objc3.cap.system",
+  "required_profile": "Strict System",
+  "workspace_root": "stdlib/modules/objc3.system",
+  "source": "stdlib/modules/objc3.system/module.objc3",
+  "smoke_source": "stdlib/modules/objc3.system/smoke.objc3",
+  "exports": [
+    "objc3_system_resource_token"
+  ]
+}
