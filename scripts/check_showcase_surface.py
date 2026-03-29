@@ -16,6 +16,7 @@ RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
 WORKSPACE_CONTRACT_ID = "objc3c.showcase.example.workspace.v1"
 MODULE_DECL_RE = re.compile(r"^\s*module\s+([A-Za-z_][A-Za-z0-9_]*)\s*;", re.MULTILINE)
+SHOWCASE_SUMMARY_CONTRACT_ID = "objc3c.showcase.surface.summary.v1"
 
 
 def fail(message: str) -> int:
@@ -26,6 +27,10 @@ def fail(message: str) -> int:
 def run(command: list[str]) -> int:
     result = subprocess.run(command, cwd=ROOT, check=False)
     return result.returncode
+
+
+def repo_relative(path: Path) -> str:
+    return path.resolve().relative_to(ROOT).as_posix()
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -175,6 +180,10 @@ def main() -> int:
 
     machine_output_root = ROOT / "tmp" / "artifacts" / "showcase"
     machine_output_root.mkdir(parents=True, exist_ok=True)
+    machine_report_root = ROOT / "tmp" / "reports" / "showcase"
+    machine_report_root.mkdir(parents=True, exist_ok=True)
+
+    compile_results: list[dict[str, object]] = []
 
     for entry in selected_examples:
         example_id = entry.get("id")
@@ -206,10 +215,53 @@ def main() -> int:
         ]
         if run(command) != 0:
             return fail(f"compile failed for showcase example {example_id}")
+        required_artifacts = {
+            "workspace_manifest": ROOT / str(entry["workspace_manifest"]),
+            "compile_provenance": out_dir / "module.compile-provenance.json",
+            "llvm_ir": out_dir / "module.ll",
+            "object": out_dir / "module.obj",
+            "manifest": out_dir / "module.manifest.json",
+            "runtime_registration_manifest": out_dir / "module.runtime-registration-manifest.json",
+        }
+        for artifact_label, artifact_path in required_artifacts.items():
+            if not artifact_path.is_file():
+                return fail(
+                    f"missing required showcase artifact {artifact_label} for {example_id}: "
+                    f"{repo_relative(artifact_path)}"
+                )
+        compile_results.append(
+            {
+                "example_id": example_id,
+                "module_name": module_match.group(1),
+                "source": source,
+                "workspace_manifest": str(entry["workspace_manifest"]),
+                "story_capabilities": list(entry.get("story_capabilities", [])),
+                "out_dir": repo_relative(out_dir),
+                "artifacts": {label: repo_relative(path) for label, path in required_artifacts.items()},
+            }
+        )
+        print(f"out_dir: {repo_relative(out_dir)}")
+
+    summary_payload = {
+        "contract_id": SHOWCASE_SUMMARY_CONTRACT_ID,
+        "schema_version": 1,
+        "portfolio_contract_id": payload["contract_id"],
+        "showcase_root": payload["showcase_root"],
+        "machine_output_root": payload["machine_output_root"],
+        "machine_report_root": payload["machine_report_root"],
+        "package_stage_root": payload["package_stage_root"],
+        "selected_example_ids": [
+            entry["id"] for entry in selected_examples if isinstance(entry.get("id"), str)
+        ],
+        "examples": compile_results,
+    }
+    summary_path = machine_report_root / "summary.json"
+    summary_path.write_text(json.dumps(summary_payload, indent=2) + "\n", encoding="utf-8")
 
     selected_ids = ", ".join(
         entry["id"] for entry in selected_examples if isinstance(entry.get("id"), str)
     )
+    print(f"summary_path: {repo_relative(summary_path)}")
     print(f"showcase-surface: OK ({selected_ids})")
     return 0
 

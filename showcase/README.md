@@ -75,7 +75,8 @@ Runtime-backed shared commands used by the showcase surface:
 The live compile path emits object and manifest artifacts under
 `tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.
 Package staging stays under `tmp/pkg/objc3c-native-runnable-toolchain/`, and
-showcase report artifacts stay under `tmp/reports/showcase/`.
+showcase report artifacts stay under `tmp/reports/showcase/`, rooted at
+`tmp/reports/showcase/summary.json`.
 
 ## Explicit Non-Goals
 
