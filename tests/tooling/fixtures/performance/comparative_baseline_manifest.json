@@ -1,0 +1,80 @@
+{
+  "contract_id": "objc3c.performance.comparative.baseline.manifest.v1",
+  "schema_version": 1,
+  "manifest_kind": "comparative-baseline-corpus-and-toolchain-shape",
+  "baseline_entries": [
+    {
+      "baseline_id": "objc2_reference",
+      "language": "objective-c-2",
+      "source": "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
+      "availability_probe": {
+        "tool": "clang",
+        "args": [
+          "--version"
+        ]
+      },
+      "compile_invocation": {
+        "tool": "clang",
+        "args": [
+          "-fsyntax-only",
+          "{source}"
+        ]
+      },
+      "runtime_invocation": null,
+      "supports_runtime_baseline": false
+    },
+    {
+      "baseline_id": "swift_reference",
+      "language": "swift",
+      "source": "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
+      "availability_probe": {
+        "tool": "swiftc",
+        "args": [
+          "--version"
+        ]
+      },
+      "compile_invocation": {
+        "tool": "swiftc",
+        "args": [
+          "{source}",
+          "-o",
+          "{output_exe}"
+        ]
+      },
+      "runtime_invocation": {
+        "tool": "{output_exe}",
+        "args": []
+      },
+      "supports_runtime_baseline": true
+    },
+    {
+      "baseline_id": "cpp_reference",
+      "language": "c++",
+      "source": "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
+      "availability_probe": {
+        "tool": "clang++",
+        "args": [
+          "--version"
+        ]
+      },
+      "compile_invocation": {
+        "tool": "clang++",
+        "args": [
+          "{source}",
+          "-o",
+          "{output_exe}"
+        ]
+      },
+      "runtime_invocation": {
+        "tool": "{output_exe}",
+        "args": []
+      },
+      "supports_runtime_baseline": true
+    }
+  ],
+  "exact_live_paths_for_downstream_work": [
+    "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+    "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+    "tests/tooling/fixtures/performance/benchmark_parameters.json"
+  ]
+}
