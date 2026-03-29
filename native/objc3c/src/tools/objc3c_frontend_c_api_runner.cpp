@@ -10,6 +10,7 @@
 #include <string>
 #include <system_error>
 
+#include "ast/objc3_ast.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_corpus_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h"
@@ -26,6 +27,8 @@ namespace fs = std::filesystem;
 namespace {
 
 constexpr std::size_t kMaxMessageSendArgs = 16;
+constexpr const char *kObjc3RuntimeArcDebugStateSnapshotSymbol =
+    "objc3_runtime_copy_arc_debug_state_for_testing";
 
 struct RunnerOptions {
   fs::path input_path;
@@ -43,6 +46,9 @@ struct RunnerOptions {
   bool emit_object = true;
   std::uint64_t translation_unit_registration_order_ordinal = 0;
   fs::path summary_out;
+  bool dump_summary_json = false;
+  bool dump_observability_json = false;
+  bool dump_runtime_inspector_json = false;
 };
 
 std::string Usage() {
@@ -52,7 +58,8 @@ std::string Usage() {
          ">] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-compat-mode <canonical|legacy>] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] "
-         "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object]";
+         "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object] "
+         "[--dump-summary-json] [--dump-observability-json] [--dump-runtime-inspector-json]";
 }
 
 bool ParseIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
@@ -150,6 +157,12 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.emit_ir = false;
     } else if (arg == "--no-emit-object") {
       options.emit_object = false;
+    } else if (arg == "--dump-summary-json") {
+      options.dump_summary_json = true;
+    } else if (arg == "--dump-observability-json") {
+      options.dump_observability_json = true;
+    } else if (arg == "--dump-runtime-inspector-json") {
+      options.dump_runtime_inspector_json = true;
     } else if (arg == "--help" || arg == "-h") {
       error = Usage();
       return false;
@@ -342,6 +355,163 @@ std::string BuildPowerShellReadCommand(const std::string &path_text) {
   return "Get-Content -Raw " + QuotePowerShellArg(path_text);
 }
 
+std::string BuildObjectInspectionCommand(const std::string &template_command,
+                                         const std::string &object_path_text) {
+  if (!PathExists(object_path_text)) {
+    return "";
+  }
+  const std::string placeholder =
+      kObjc3RuntimeMetadataObjectInspectionObjectRelativePath;
+  std::string command = template_command;
+  const std::size_t placeholder_offset = command.find(placeholder);
+  if (placeholder_offset != std::string::npos) {
+    command.replace(placeholder_offset,
+                    placeholder.size(),
+                    QuotePowerShellArg(object_path_text));
+    return command;
+  }
+  return command + " " + QuotePowerShellArg(object_path_text);
+}
+
+void WriteObservabilityJson(
+    std::ostringstream &out,
+    const std::string &indent,
+    const std::string &summary_path_text,
+    const objc3c_frontend_c_compile_result_t &result,
+    objc3c_frontend_c_status_t status,
+    const std::string &runtime_metadata_binary_path_text) {
+  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const std::string manifest_path_text = OptionalPath(result.manifest_path);
+  const std::string ir_path_text = OptionalPath(result.ir_path);
+  const std::string object_path_text = OptionalPath(result.object_path);
+  const DiagnosticTotals diagnostic_totals = BuildDiagnosticTotals(result);
+  const std::string last_attempted_stage = LastAttemptedStageName(result);
+  const std::string blocking_stage = BlockingStageName(result);
+  const std::string child_indent = indent + "  ";
+  const std::string grandchild_indent = child_indent + "  ";
+  out << "{\n";
+  out << child_indent << "\"status_name\": \"" << StatusName(status) << "\",\n";
+  out << child_indent << "\"last_attempted_stage\": \""
+      << EscapeJsonString(last_attempted_stage) << "\",\n";
+  out << child_indent << "\"blocking_stage\": \""
+      << EscapeJsonString(blocking_stage) << "\",\n";
+  out << child_indent << "\"highest_diagnostic_severity\": \""
+      << HighestDiagnosticSeverity(diagnostic_totals) << "\",\n";
+  out << child_indent << "\"diagnostics_total\": " << diagnostic_totals.total
+      << ",\n";
+  out << child_indent << "\"diagnostics_notes\": " << diagnostic_totals.notes
+      << ",\n";
+  out << child_indent << "\"diagnostics_warnings\": "
+      << diagnostic_totals.warnings << ",\n";
+  out << child_indent << "\"diagnostics_errors\": " << diagnostic_totals.errors
+      << ",\n";
+  out << child_indent << "\"diagnostics_fatals\": " << diagnostic_totals.fatals
+      << ",\n";
+  out << child_indent << "\"artifact_presence\": {\n";
+  out << grandchild_indent << "\"summary\": true,\n";
+  out << grandchild_indent << "\"diagnostics\": "
+      << (PathExists(diagnostics_path_text) ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"manifest\": "
+      << (PathExists(manifest_path_text) ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"ir\": "
+      << (PathExists(ir_path_text) ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"object\": "
+      << (PathExists(object_path_text) ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"runtime_metadata_binary\": "
+      << (!runtime_metadata_binary_path_text.empty() ? "true" : "false")
+      << "\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"dump_commands\": {\n";
+  out << grandchild_indent << "\"summary\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"diagnostics\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"manifest\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"ir\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";
+  out << grandchild_indent << "\"object\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(object_path_text))
+      << "\"\n";
+  out << child_indent << "}\n";
+  out << indent << "}";
+}
+
+void WriteRuntimeInspectorJson(
+    std::ostringstream &out,
+    const std::string &indent,
+    const RunnerOptions &options,
+    const objc3c_frontend_c_compile_result_t &result) {
+  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string child_indent = indent + "  ";
+  const std::string grandchild_indent = child_indent + "  ";
+  const bool available = PathExists(object_path_text);
+  const std::string availability_reason = available
+                                              ? std::string()
+                                              : "object artifact missing or not emitted";
+  out << "{\n";
+  out << child_indent << "\"contract_id\": \""
+      << kObjc3RuntimeMetadataObjectInspectionContractId << "\",\n";
+  out << child_indent << "\"publication_contract_id\": \""
+      << kObjc3RuntimeMetadataSectionPublicationContractId << "\",\n";
+  out << child_indent << "\"available\": "
+      << (available ? "true" : "false") << ",\n";
+  out << child_indent << "\"active_emit_prefix\": \""
+      << EscapeJsonString(options.emit_prefix) << "\",\n";
+  out << child_indent << "\"fixture_path\": \""
+      << EscapeJsonString(kObjc3RuntimeMetadataObjectInspectionFixturePath)
+      << "\",\n";
+  out << child_indent << "\"object_path\": \""
+      << EscapeJsonString(object_path_text) << "\",\n";
+  out << child_indent << "\"section_inventory_row_key\": \""
+      << EscapeJsonString(kObjc3RuntimeMetadataObjectInspectionSectionInventoryRowKey)
+      << "\",\n";
+  out << child_indent << "\"symbol_inventory_row_key\": \""
+      << EscapeJsonString(kObjc3RuntimeMetadataObjectInspectionSymbolInventoryRowKey)
+      << "\",\n";
+  out << child_indent << "\"section_inventory_command\": \""
+      << EscapeJsonString(BuildObjectInspectionCommand(
+             kObjc3RuntimeMetadataObjectInspectionSectionCommand,
+             object_path_text))
+      << "\",\n";
+  out << child_indent << "\"symbol_inventory_command\": \""
+      << EscapeJsonString(BuildObjectInspectionCommand(
+             kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
+             object_path_text))
+      << "\",\n";
+  out << child_indent << "\"arc_debug_state_snapshot_symbol\": \""
+      << kObjc3RuntimeArcDebugStateSnapshotSymbol << "\",\n";
+  out << child_indent << "\"runtime_abi_boundary_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel)
+      << "\",\n";
+  out << child_indent << "\"block_runtime_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiBlockModel)
+      << "\",\n";
+  out << child_indent << "\"arc_runtime_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiArcModel) << "\",\n";
+  out << child_indent << "\"fail_closed_model\": \""
+      << EscapeJsonString(kObjc3RuntimeBlockArcRuntimeAbiFailClosedModel)
+      << "\",\n";
+  out << child_indent << "\"dump_commands\": {\n";
+  out << grandchild_indent << "\"object_sections\": \""
+      << EscapeJsonString(BuildObjectInspectionCommand(
+             kObjc3RuntimeMetadataObjectInspectionSectionCommand,
+             object_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"object_symbols\": \""
+      << EscapeJsonString(BuildObjectInspectionCommand(
+             kObjc3RuntimeMetadataObjectInspectionSymbolCommand,
+             object_path_text))
+      << "\"\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"availability_reason\": \""
+      << EscapeJsonString(availability_reason) << "\"\n";
+  out << indent << "}";
+}
+
 void WriteStageSummaryJson(std::ostringstream &out,
                            const char *name,
                            const objc3c_frontend_c_stage_summary_t &summary,
@@ -378,17 +548,14 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   const fs::path runtime_metadata_binary_path =
       BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
   const std::string summary_path_text = summary_path.generic_string();
-  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
-  const std::string manifest_path_text = OptionalPath(result.manifest_path);
-  const std::string ir_path_text = OptionalPath(result.ir_path);
-  const std::string object_path_text = OptionalPath(result.object_path);
   const std::string runtime_metadata_binary_path_text =
       fs::exists(runtime_metadata_binary_path)
           ? runtime_metadata_binary_path.generic_string()
           : std::string();
-  const DiagnosticTotals diagnostic_totals = BuildDiagnosticTotals(result);
-  const std::string last_attempted_stage = LastAttemptedStageName(result);
-  const std::string blocking_stage = BlockingStageName(result);
+  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const std::string manifest_path_text = OptionalPath(result.manifest_path);
+  const std::string ir_path_text = OptionalPath(result.ir_path);
+  const std::string object_path_text = OptionalPath(result.object_path);
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
@@ -418,33 +585,18 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   WriteStageSummaryJson(out, "lower", result.lower, true);
   WriteStageSummaryJson(out, "emit", result.emit, false);
   out << "  },\n";
-  out << "  \"observability\": {\n";
-  out << "    \"status_name\": \"" << StatusName(status) << "\",\n";
-  out << "    \"last_attempted_stage\": \"" << EscapeJsonString(last_attempted_stage) << "\",\n";
-  out << "    \"blocking_stage\": \"" << EscapeJsonString(blocking_stage) << "\",\n";
-  out << "    \"highest_diagnostic_severity\": \"" << HighestDiagnosticSeverity(diagnostic_totals) << "\",\n";
-  out << "    \"diagnostics_total\": " << diagnostic_totals.total << ",\n";
-  out << "    \"diagnostics_notes\": " << diagnostic_totals.notes << ",\n";
-  out << "    \"diagnostics_warnings\": " << diagnostic_totals.warnings << ",\n";
-  out << "    \"diagnostics_errors\": " << diagnostic_totals.errors << ",\n";
-  out << "    \"diagnostics_fatals\": " << diagnostic_totals.fatals << ",\n";
-  out << "    \"artifact_presence\": {\n";
-  out << "      \"summary\": true,\n";
-  out << "      \"diagnostics\": " << (PathExists(diagnostics_path_text) ? "true" : "false") << ",\n";
-  out << "      \"manifest\": " << (PathExists(manifest_path_text) ? "true" : "false") << ",\n";
-  out << "      \"ir\": " << (PathExists(ir_path_text) ? "true" : "false") << ",\n";
-  out << "      \"object\": " << (PathExists(object_path_text) ? "true" : "false") << ",\n";
-  out << "      \"runtime_metadata_binary\": "
-      << (!runtime_metadata_binary_path_text.empty() ? "true" : "false") << "\n";
-  out << "    },\n";
-  out << "    \"dump_commands\": {\n";
-  out << "      \"summary\": \"" << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text)) << "\",\n";
-  out << "      \"diagnostics\": \"" << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text)) << "\",\n";
-  out << "      \"manifest\": \"" << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text)) << "\",\n";
-  out << "      \"ir\": \"" << EscapeJsonString(BuildPowerShellReadCommand(ir_path_text)) << "\",\n";
-  out << "      \"object\": \"" << EscapeJsonString(BuildPowerShellReadCommand(object_path_text)) << "\"\n";
-  out << "    }\n";
-  out << "  },\n";
+  out << "  \"observability\": ";
+  WriteObservabilityJson(
+      out,
+      "  ",
+      summary_path_text,
+      result,
+      status,
+      runtime_metadata_binary_path_text);
+  out << ",\n";
+  out << "  \"runtime_inspector\": ";
+  WriteRuntimeInspectorJson(out, "  ", options, result);
+  out << ",\n";
   out << "  \"output_contract\": {\n";
   out << "    \"diagnostics_schema_version\": \""
       << kObjc3CliReportingDiagnosticsSchemaVersion << "\",\n";
@@ -740,6 +892,12 @@ int main(int argc, char **argv) {
 
   const fs::path summary_path =
       options.summary_out.empty() ? (options.out_dir / (options.emit_prefix + ".c_api_summary.json")) : options.summary_out;
+  const fs::path runtime_metadata_binary_path =
+      BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
+  const std::string runtime_metadata_binary_path_text =
+      fs::exists(runtime_metadata_binary_path)
+          ? runtime_metadata_binary_path.generic_string()
+          : std::string();
   const bool stage_report_output_contract_ready =
       result.lex.stage == OBJC3C_FRONTEND_STAGE_LEX &&
       result.parse.stage == OBJC3C_FRONTEND_STAGE_PARSE &&
@@ -900,7 +1058,40 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  std::cout << "wrote summary: " << summary_path.generic_string() << "\n";
+  bool emitted_dump = false;
+  const auto emit_dump_json = [&](const std::string &payload) {
+    if (emitted_dump) {
+      std::cout << "\n";
+    }
+    std::cout << payload;
+    emitted_dump = true;
+  };
+  if (options.dump_summary_json || options.dump_observability_json ||
+      options.dump_runtime_inspector_json) {
+    if (options.dump_summary_json) {
+      emit_dump_json(summary_json);
+    }
+    if (options.dump_observability_json) {
+      std::ostringstream dump;
+      WriteObservabilityJson(
+          dump,
+          "",
+          summary_path.generic_string(),
+          result,
+          status,
+          runtime_metadata_binary_path_text);
+      dump << "\n";
+      emit_dump_json(dump.str());
+    }
+    if (options.dump_runtime_inspector_json) {
+      std::ostringstream dump;
+      WriteRuntimeInspectorJson(dump, "", options, result);
+      dump << "\n";
+      emit_dump_json(dump.str());
+    }
+  } else {
+    std::cout << "wrote summary: " << summary_path.generic_string() << "\n";
+  }
   if (!last_error.empty()) {
     std::cerr << last_error << "\n";
   }

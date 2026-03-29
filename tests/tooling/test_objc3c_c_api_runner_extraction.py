@@ -45,7 +45,7 @@ def test_c_api_runner_reports_summary_and_cli_contract() -> None:
 def test_c_api_runner_reports_observability_surface() -> None:
     source = _read(RUNNER_CPP)
 
-    assert '\\"observability\\": {' in source
+    assert '\\"observability\\": ' in source
     assert '\\"status_name\\": \\"' in source
     assert '\\"last_attempted_stage\\": \\"' in source
     assert '\\"blocking_stage\\": \\"' in source
@@ -55,3 +55,18 @@ def test_c_api_runner_reports_observability_surface() -> None:
     assert "BuildDiagnosticTotals" in source
     assert "BuildPowerShellReadCommand" in source
     assert "Get-Content -Raw " in source
+
+
+def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:
+    source = _read(RUNNER_CPP)
+
+    assert "--dump-summary-json" in source
+    assert "--dump-observability-json" in source
+    assert "--dump-runtime-inspector-json" in source
+    assert '\\"runtime_inspector\\": ' in source
+    assert '\\"section_inventory_command\\": \\"' in source
+    assert '\\"symbol_inventory_command\\": \\"' in source
+    assert '\\"arc_debug_state_snapshot_symbol\\": \\"' in source
+    assert "BuildObjectInspectionCommand" in source
+    assert "kObjc3RuntimeMetadataObjectInspectionContractId" in source
+    assert "kObjc3RuntimeBlockArcRuntimeAbiBoundaryModel" in source
