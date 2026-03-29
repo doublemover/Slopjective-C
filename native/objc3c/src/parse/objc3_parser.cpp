@@ -4626,14 +4626,11 @@ static Objc3ConcurrencyReplayRaceGuardProfile BuildConcurrencyReplayRaceGuardPro
   profile.race_guard_sites = race_guard_sites;
   profile.task_handoff_sites = task_handoff_sites;
   profile.actor_isolation_sites = actor_isolation_sites;
-  if (profile.replay_proof_sites >
-      std::numeric_limits<std::size_t>::max() - profile.task_handoff_sites) {
-    profile.concurrency_replay_sites = std::numeric_limits<std::size_t>::max();
-    profile.contract_violation_sites += 1u;
-  } else {
-    profile.concurrency_replay_sites =
-        profile.replay_proof_sites + profile.task_handoff_sites;
-  }
+  profile.concurrency_replay_sites =
+      std::max({profile.replay_proof_sites,
+                profile.race_guard_sites,
+                profile.task_handoff_sites,
+                profile.actor_isolation_sites});
   profile.concurrency_replay_race_guard_sites = profile.concurrency_replay_sites;
   profile.guard_blocked_sites =
       std::min(profile.concurrency_replay_sites, profile.race_guard_sites / 2u);

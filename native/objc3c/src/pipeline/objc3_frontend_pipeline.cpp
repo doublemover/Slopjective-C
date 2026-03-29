@@ -3350,8 +3350,9 @@ Objc3RuntimeExportLegalityBoundary BuildRuntimeExportLegalityBoundary(
   if (boundary.contract_id.empty()) {
     boundary.failure_reason = "runtime export legality contract id is empty";
   } else if (!boundary.sema_type_metadata_handoff_deterministic) {
-    boundary.failure_reason =
-        "semantic type-metadata handoff is not deterministic";
+    boundary.failure_reason = typed_surface.failure_reason.empty()
+                                  ? "semantic type-metadata handoff is not deterministic"
+                                  : typed_surface.failure_reason;
   } else if (!boundary.typed_sema_surface_ready) {
     boundary.failure_reason =
         "typed sema runtime-export handoff is not ready";

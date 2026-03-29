@@ -1,9 +1,19 @@
 module PatchKit;
 
-fn applyPatch(base: i32, delta: i32) {
-  return base + delta;
+extern fn importedPatchHook(selector: SEL) -> i32 __attribute__((objc_foreign, objc_import_module(named("PatchInteropKit"))));
+
+__attribute__((objc_derive(named("Equatable"))))
+@interface PatchNote
+@property (strong, behavior=Observed) id value;
+@end
+
+@implementation PatchNote
+@end
+
+pure fn tracedPatchValue() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef")))) {
+  return 7;
 }
 
-fn main() {
-  return applyPatch(20, 22);
+fn main() -> i32 {
+  return tracedPatchValue();
 }

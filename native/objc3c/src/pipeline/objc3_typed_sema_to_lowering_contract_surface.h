@@ -6,6 +6,7 @@
 #include <string>
 
 #include "pipeline/objc3_frontend_types.h"
+#include "sema/objc3_semantic_passes.h"
 
 inline constexpr std::size_t kObjc3TypedSemaToLoweringCoreFeatureCaseCount = 6u;
 inline constexpr std::size_t kObjc3TypedSemaToLoweringCoreFeatureExpansionCaseCount = 4u;
@@ -649,6 +650,11 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
   surface.semantic_integration_surface_built = pipeline_result.integration_surface.built;
   surface.semantic_type_metadata_handoff_deterministic =
       IsDeterministicSemanticTypeMetadataHandoff(pipeline_result.sema_type_metadata_handoff);
+  const std::string semantic_type_metadata_handoff_failure_reason =
+      surface.semantic_type_metadata_handoff_deterministic
+          ? std::string()
+          : ExplainNonDeterministicSemanticTypeMetadataHandoff(
+                pipeline_result.sema_type_metadata_handoff);
   surface.sema_parity_surface_ready =
       IsReadyObjc3SemaParityContractSurface(pipeline_result.sema_parity_surface);
   surface.sema_parity_surface_deterministic =
@@ -1244,7 +1250,11 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
   if (!surface.semantic_integration_surface_built) {
     surface.failure_reason = "semantic integration surface not built";
   } else if (!surface.semantic_type_metadata_handoff_deterministic) {
-    surface.failure_reason = "semantic type metadata handoff is not deterministic";
+    surface.failure_reason =
+        semantic_type_metadata_handoff_failure_reason.empty()
+            ? "semantic type metadata handoff is not deterministic"
+            : "semantic type metadata handoff is not deterministic: " +
+                  semantic_type_metadata_handoff_failure_reason;
   } else if (!surface.sema_parity_surface_ready) {
     surface.failure_reason = "semantic parity surface is not ready";
   } else if (!surface.sema_parity_surface_deterministic) {

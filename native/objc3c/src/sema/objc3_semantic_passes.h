@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "sema/objc3_sema_contract.h"
@@ -28,6 +29,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3Parse
                                                                 std::vector<std::string> &diagnostics);
 Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3SemanticIntegrationSurface &surface);
 bool IsDeterministicSemanticTypeMetadataHandoff(const Objc3SemanticTypeMetadataHandoff &handoff);
+std::string ExplainNonDeterministicSemanticTypeMetadataHandoff(
+    const Objc3SemanticTypeMetadataHandoff &handoff);
 Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
     const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
     std::size_t max_message_send_args);
