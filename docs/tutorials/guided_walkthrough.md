@@ -64,6 +64,7 @@ That manifest is part of the live showcase surface and should stay aligned with:
 - `docs/tutorials/build_run_verify.md`
 
 The bounded validation surface for this walkthrough is `scripts/check_getting_started_surface.py`.
+The live smoke integration for the same walkthrough is `scripts/check_getting_started_integration.py`.
 
 ## Canonical Inputs
 
@@ -75,6 +76,7 @@ The bounded validation surface for this walkthrough is `scripts/check_getting_st
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
 - `scripts/check_getting_started_surface.py`
+- `scripts/check_getting_started_integration.py`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
 ## Exact Live Paths For Downstream Work
@@ -94,6 +96,7 @@ The bounded validation surface for this walkthrough is `scripts/check_getting_st
 - command truth and validation:
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `scripts/check_getting_started_surface.py`
+  - `scripts/check_getting_started_integration.py`
   - `scripts/check_showcase_surface.py`
 
 ## Explicit Non-Goals

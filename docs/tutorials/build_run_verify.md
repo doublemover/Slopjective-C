@@ -60,6 +60,8 @@ That surface proves:
 - the walkthrough manifest still points at the right showcase examples
 - the walkthrough-selected examples still compile through the normal public compiler path
 
+The live smoke integration for that same surface is implemented in `scripts/check_getting_started_integration.py`.
+
 ## Artifact And Report Expectations
 
 The tutorial workflow is coupled to the existing showcase outputs:
@@ -76,6 +78,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/getting_started.md`
 - `scripts/check_getting_started_surface.py`
+- `scripts/check_getting_started_integration.py`
 - `docs/tutorials/objc2_to_objc3_migration.md`
 - `showcase/README.md`
 - `showcase/portfolio.json`
@@ -99,6 +102,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
   - `scripts/objc3c_public_workflow_runner.py`
 - bounded tutorial validation:
   - `scripts/check_getting_started_surface.py`
+  - `scripts/check_getting_started_integration.py`
 - machine-owned outputs:
   - `tmp/artifacts/showcase/`
   - `tmp/reports/showcase/`
