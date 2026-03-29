@@ -12,12 +12,9 @@ import check_planning_unchecked_checkboxes
 import spec_lint
 
 DEFAULT_INCLUDE_GLOBS = (
-    "spec/planning/active/**/*.md",
+    "docs/reference/legacy_spec_anchor_index.md",
 )
-DEFAULT_EXCLUDE_GLOBS = (
-    "spec/planning/archive/**",
-    "spec/planning/generated/**",
-)
+DEFAULT_EXCLUDE_GLOBS = ()
 DEFAULT_UNCHECKED_CHECKBOX_EXCLUDE_GLOBS = (
     *DEFAULT_EXCLUDE_GLOBS,
 )
@@ -75,8 +72,8 @@ def resolve_scope(
 
 
 def resolve_anchor_scope(lint_paths: list[Path]) -> list[Path]:
-    # Reuse the broader spec anchor universe so planning files can reference
-    # canonical anchors outside `spec/planning/**` without false positives.
+    # Reuse the broader spec anchor universe so the legacy planning redirect
+    # index can still reference canonical anchors outside its own file.
     anchor_paths = spec_lint.iter_spec_files_for_globs(spec_lint.DEFAULT_INCLUDE_GLOBS)
     merged: dict[Path, Path] = {}
     for path in anchor_paths + lint_paths:

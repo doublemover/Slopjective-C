@@ -12,9 +12,9 @@ from urllib.parse import urlparse
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INCLUDE_GLOBS = (
     "spec/*.md",
-    "spec/planning/**/*.md",
     "spec/conformance/**/*.md",
     "spec/governance/**/*.md",
+    "spec/process/**/*.md",
 )
 
 HEADING_WITH_NUMBER_RE = re.compile(r"^(#{1,6})\s+([0-9]+(?:\.[0-9]+)*)\b")

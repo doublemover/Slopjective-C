@@ -213,7 +213,7 @@ def resolve_effective_audit_root(
         if not static_prefix:
             raise ValueError(
                 "invalid --include-glob: each pattern must start with a static "
-                "directory prefix (for example 'spec/planning/**/*.md')."
+                "directory prefix (for example 'docs/reference/**/*.md')."
             )
         if remainder not in allowed_remainders:
             raise ValueError(
@@ -944,7 +944,7 @@ def build_parser() -> argparse.ArgumentParser:
         help=(
             "Optional repository-relative markdown include glob. Repeatable. "
             "Patterns must share one static directory prefix "
-            "(for example: spec/planning/**/*.md)."
+            "(for example: docs/reference/**/*.md)."
         ),
     )
     parser.add_argument(

@@ -88,7 +88,7 @@ def count_open_catalog_tasks(root: Any, *, path: Path) -> int:
             raise ValueError(
                 f"error: catalog snapshot task row {index} in {display_path(path)} missing non-empty 'execution_status'"
             )
-        if status != "closed":
+        if status not in {"closed", "done"}:
             open_count += 1
     return open_count
 

@@ -12,7 +12,7 @@ const args = [
   'tests/tooling/fixtures/bootstrap_readiness/all_zero/catalog.json',
   '--refresh-open-blockers',
   '--open-blockers-root',
-  'spec/planning',
+  'tests/tooling/fixtures/bootstrap_readiness/all_zero',
   '--open-blockers-generated-at-utc',
   '2026-02-25T08:00:00Z',
   '--open-blockers-source',
@@ -20,6 +20,8 @@ const args = [
   '--output-dir',
   'tmp/reports/bootstrap_readiness/ci_fixture_zero_open',
   '--run-spec-lint',
+  '--spec-glob',
+  'docs/reference/legacy_spec_anchor_index.md',
 ];
 
 const completed = spawnSync('python', args, { stdio: 'inherit' });

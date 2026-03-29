@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_MATRIX_PATH = ROOT / "spec/planning/v013_future_work_seed_matrix.md"
-DEFAULT_OUTPUT_PATH = ROOT / "spec/planning/v013_seed_dependency_graph.json"
+DEFAULT_MATRIX_PATH = ROOT / "tmp" / "reports" / "v013_future_work_seed_matrix.md"
+DEFAULT_OUTPUT_PATH = ROOT / "tmp" / "reports" / "v013_seed_dependency_graph.json"
 
 SEED_ID_RE = re.compile(r"^V013-[A-Z]+-[0-9]{2}$")
 EDGE_ID_RE = re.compile(r"^EDGE-V013-[0-9]{3}$")
@@ -160,7 +160,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="generate_seed_batches.py",
         description=(
             "Generate deterministic seed DAG output and batch skeletons from "
-            "spec/planning/v013_future_work_seed_matrix.md."
+            "tmp/reports/v013_future_work_seed_matrix.md."
         ),
     )
     parser.add_argument(
@@ -878,7 +878,7 @@ def build_payload(
                         "family_tag": seed.family,
                         "worklane": seed.worklane,
                         "source_refs": [
-                            "SRC-V013-12 spec/planning/v013_future_work_seed_matrix.md"
+                            "SRC-V013-12 tmp/reports/v013_future_work_seed_matrix.md"
                         ],
                         "depends_on": list(seed.depends_on),
                         "shard_class": seed.shard_class,

@@ -12,8 +12,8 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_GRAPH_PATH = ROOT / "spec/planning/v013_seed_dependency_graph.json"
-DEFAULT_OUTPUT_PATH = ROOT / "spec/planning/v013_seed_issue_payloads.json"
+DEFAULT_GRAPH_PATH = ROOT / "tmp" / "reports" / "v013_seed_dependency_graph.json"
+DEFAULT_OUTPUT_PATH = ROOT / "tmp" / "reports" / "v013_seed_issue_payloads.json"
 
 SEED_ID_RE = re.compile(r"^V013-[A-Z]+-[0-9]{2}$")
 WAVE_ID_RE = re.compile(r"^W[0-9]+$")
@@ -65,7 +65,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="generate_seed_issue_payloads.py",
         description=(
             "Generate deterministic issue payload records from "
-            "spec/planning/v013_seed_dependency_graph.json."
+            "tmp/reports/v013_seed_dependency_graph.json."
         ),
     )
     parser.add_argument(
