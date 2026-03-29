@@ -299,6 +299,8 @@ def main() -> int:
         "npm run inspect:objc3c:runtime",
         "python scripts/objc3c_public_workflow_runner.py trace-compile-stages",
         "npm run trace:objc3c:stages",
+        "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
+        "npm run test:objc3c:developer-tooling",
         "## Runtime Introspection Primitives",
         "objc3_runtime_copy_arc_debug_state_for_testing",
         "runtime_metadata_object_inspection_uses_llvm_objdump",

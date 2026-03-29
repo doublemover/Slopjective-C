@@ -103,6 +103,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - dump the structured compile-stage trace through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
   - `npm run trace:objc3c:stages`
+- run the integrated developer-tooling validation flow:
+  - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
+  - `npm run test:objc3c:developer-tooling`
 - validate compiler/library parity:
   - `python scripts/check_objc3c_library_cli_parity.py`
 - validate runtime/debug ABI and emitted source surfaces:

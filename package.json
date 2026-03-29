@@ -16,6 +16,7 @@
     "test:getting-started": "python scripts/objc3c_public_workflow_runner.py validate-getting-started",
     "test:showcase": "python scripts/objc3c_public_workflow_runner.py validate-showcase",
     "test:showcase:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase",
+    "test:objc3c:developer-tooling": "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",
     "build:site": "python scripts/objc3c_public_workflow_runner.py build-site",
     "build:docs:native": "python scripts/objc3c_public_workflow_runner.py build-native-docs",

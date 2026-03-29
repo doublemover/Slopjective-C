@@ -37,6 +37,7 @@ SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
 SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
+DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
@@ -308,6 +309,10 @@ def action_trace_compile_stages(rest: list[str]) -> int:
         "compile-stage-trace.json",
         rest,
     )
+
+
+def action_validate_developer_tooling(_: list[str]) -> int:
+    return run([sys.executable, str(DEVELOPER_TOOLING_INTEGRATION_PY)])
 
 
 def action_lint_spec(_: list[str]) -> int:
@@ -958,6 +963,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
     "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
+    "validate-developer-tooling": ActionSpec("validate-developer-tooling", "run the integrated developer-tooling inspect and trace validation flow", "python:scripts/check_objc3c_developer_tooling_integration.py", ("test:objc3c:developer-tooling",), validation_tier="repo", guarantee_owner="developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner"),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal + targeted smoke slice", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance, canonical replay, and a bounded smoke slice"),
@@ -1020,6 +1026,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-compile-observability": action_inspect_compile_observability,
     "inspect-runtime-inspector": action_inspect_runtime_inspector,
     "trace-compile-stages": action_trace_compile_stages,
+    "validate-developer-tooling": action_validate_developer_tooling,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,
