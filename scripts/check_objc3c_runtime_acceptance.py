@@ -185,6 +185,9 @@ RUNTIME_IMPORT_VERSION_FEATURE_CLAIM_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
 RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.packaging.bridge.loader.artifact.surface.v1"
 )
+RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.mixed.image.package.lowering.bridge.emission.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -5854,6 +5857,49 @@ def build_runtime_packaging_bridge_loader_artifact_surface(
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,
         "requires_linker_response_artifact": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_mixed_image_package_lowering_bridge_emission_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"mixed-image-package-lowering-bridge-emission"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.ll",
+            "<emit-prefix>.runtime-import-surface.json",
+            "<emit-prefix>.interop-bridge.h",
+            "<emit-prefix>.interop-bridge.modulemap",
+            "<emit-prefix>.interop-bridge.json",
+            "<emit-prefix>.cross-module-runtime-link-plan.json",
+        ],
+        "lowering_model": (
+            "provider-lowering-emits-interop-abi-summary-metadata-and-bridge-call-declarations-while-consumer-packaging-preserves-the-emitted-bridge-boundary-as-a-mixed-image-import"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+            "native/objc3c/src/lower/objc3_lowering_contract.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
+            INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
+        ],
+        "requires_runtime_import_surface_artifact": True,
+        "requires_cross_module_link_plan_artifact": True,
         "requires_real_compile_output": True,
     }
 
@@ -17212,6 +17258,89 @@ def check_runtime_packaging_bridge_loader_artifact_surface_case(
     )
 
 
+def check_mixed_image_package_lowering_bridge_emission_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "mixed-image-package-lowering-bridge-emission"
+    provider_fixture = ROOT / Path(INTEROP_HEADER_MODULE_PROVIDER_FIXTURE)
+    consumer_fixture = ROOT / Path(INTEROP_HEADER_MODULE_CONSUMER_FIXTURE)
+
+    _, provider_ll_path, _ = compile_fixture_outputs_with_args(
+        provider_fixture,
+        case_dir / "provider",
+        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+    )
+    compile_fixture_with_args(
+        consumer_fixture,
+        case_dir / "consumer",
+        [
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(case_dir / "provider" / "module.runtime-import-surface.json"),
+        ],
+    )
+
+    provider_ll = provider_ll_path.read_text(encoding="utf-8")
+    provider_bridge_json = json.loads(
+        ((case_dir / "provider") / "module.interop-bridge.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    link_plan = json.loads(
+        ((case_dir / "consumer") / "module.cross-module-runtime-link-plan.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    for needle, label in (
+        ("interop_interop_lowering_abi_contract", "interop ABI lowering summary"),
+        ("interop_ffi_metadata_interface_preservation", "ffi metadata/interface preservation summary"),
+        ("interop_header_module_and_bridge_generation", "bridge-generation lowering summary"),
+        ("declare i32 @ffiInbound(i32)", "imported bridge declaration"),
+        ("declare i32 @ffiHeaderBridge(i32)", "local bridge declaration"),
+    ):
+        expect(
+            needle in provider_ll,
+            f"expected provider lowering to publish the {label} in LLVM IR",
+        )
+    expect(
+        isinstance(provider_bridge_json.get("foreign_callables"), list)
+        and {entry.get('name') for entry in provider_bridge_json['foreign_callables']}
+        == {"ffiInbound", "ffiHeaderBridge"},
+        "expected provider bridge emission to publish both interop callables",
+    )
+    expect(
+        link_plan.get("interop_header_module_bridge_imported_module_count") == 1
+        and link_plan.get("interop_ffi_imported_module_count") == 1,
+        "expected mixed-image consumer packaging to preserve one imported interop module across both bridge surfaces",
+    )
+    expect(
+        link_plan.get("expected_interop_bridge_artifact_relative_path")
+        == "module.interop-bridge.json"
+        and "m274_header_module_bridge_provider"
+        in link_plan.get("interop_header_module_bridge_imported_module_names_lexicographic", []),
+        "expected mixed-image consumer packaging to preserve the emitted bridge artifact identity",
+    )
+
+    return CaseResult(
+        case_id="mixed-image-package-lowering-bridge-emission",
+        probe="compile-llvm-ir-runtime-import-surface-and-cross-module-link-plan",
+        fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "provider_ll_path": str(provider_ll_path.relative_to(ROOT)).replace(
+                "\\", "/"
+            ),
+            "foreign_callable_count": len(provider_bridge_json.get("foreign_callables", [])),
+            "imported_bridge_module_count": link_plan.get(
+                "interop_header_module_bridge_imported_module_count"
+            ),
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -17241,6 +17370,7 @@ def main() -> int:
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
         check_runtime_packaging_bridge_loader_artifact_surface_case(run_dir),
+        check_mixed_image_package_lowering_bridge_emission_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -17354,6 +17484,9 @@ def main() -> int:
         ),
         "runtime_packaging_bridge_loader_artifact_surface": (
             build_runtime_packaging_bridge_loader_artifact_surface(results)
+        ),
+        "runtime_mixed_image_package_lowering_bridge_emission_surface": (
+            build_runtime_mixed_image_package_lowering_bridge_emission_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
