@@ -16,7 +16,7 @@ BUILD_SCRIPT = ROOT / "scripts" / "build_objc3c_native.ps1"
 SUMMARY_DEFAULT = ROOT / "tmp" / "reports" / "build-helper" / "ensure_objc3c_native_build_summary.json"
 MODE_TO_EXECUTION_MODE = {
     "fast": "binaries-only",
-    "contracts": "packets-binary",
+    "contracts": "contracts-binary",
     "full": "full",
 }
 

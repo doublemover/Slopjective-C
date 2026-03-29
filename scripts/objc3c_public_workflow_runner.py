@@ -115,7 +115,7 @@ def action_build_native_binaries(_: list[str]) -> int:
 
 
 def action_build_native_contracts(_: list[str]) -> int:
-    return pwsh_file(BUILD_PS1, "-ExecutionMode", "packets-binary")
+    return pwsh_file(BUILD_PS1, "-ExecutionMode", "contracts-binary")
 
 
 def action_build_native_full(_: list[str]) -> int:
@@ -802,7 +802,7 @@ def action_proof_objc3c(_: list[str]) -> int:
 ACTION_SPECS: dict[str, ActionSpec] = {
     "build-default": ActionSpec("build-default", "default public build entrypoint", "runner-internal", ("build",)),
     "build-native-binaries": ActionSpec("build-native-binaries", "build native binaries", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native",)),
-    "build-native-contracts": ActionSpec("build-native-contracts", "build native contracts/binaries packet surface", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:contracts",)),
+    "build-native-contracts": ActionSpec("build-native-contracts", "build native contracts/binaries contract-artifact surface", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:contracts",)),
     "build-native-full": ActionSpec("build-native-full", "run full native build", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:full",)),
     "build-native-reconfigure": ActionSpec("build-native-reconfigure", "force native reconfigure build", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:reconfigure",)),
     "build-site": ActionSpec("build-site", "build published site output and format it", "python:scripts/build_site_index.py + npx prettier", ("build:site",)),

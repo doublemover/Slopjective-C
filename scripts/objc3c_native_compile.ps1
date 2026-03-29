@@ -743,7 +743,7 @@ function Invoke-BuildNativeCompiler {
   $buildScript = Join-Path $RepoRoot "scripts/build_objc3c_native.ps1"
   $buildOutput = @(& $buildScript)
   $buildOutputLines = New-Object System.Collections.Generic.List[string]
-  $frontendScaffoldRelativePath = $null
+  $frontendSourceGraphRelativePath = $null
   $frontendInvocationLockRelativePath = $null
   $frontendCoreFeatureExpansionRelativePath = $null
   $frontendEdgeCompatRelativePath = $null
@@ -756,8 +756,8 @@ function Invoke-BuildNativeCompiler {
   foreach ($line in $buildOutput) {
     $lineText = [string]$line
     $buildOutputLines.Add($lineText)
-    if ($lineText.StartsWith("frontend_scaffold=")) {
-      $frontendScaffoldRelativePath = $lineText.Substring("frontend_scaffold=".Length).Trim()
+    if ($lineText.StartsWith("frontend_source_graph=")) {
+      $frontendSourceGraphRelativePath = $lineText.Substring("frontend_source_graph=".Length).Trim()
     }
     if ($lineText.StartsWith("frontend_invocation_lock=")) {
       $frontendInvocationLockRelativePath = $lineText.Substring("frontend_invocation_lock=".Length).Trim()
@@ -790,7 +790,7 @@ function Invoke-BuildNativeCompiler {
   return [pscustomobject]@{
     exit_code = [int]$LASTEXITCODE
     build_output_lines = $buildOutputLines.ToArray()
-    frontend_scaffold_relative_path = $frontendScaffoldRelativePath
+    frontend_source_graph_relative_path = $frontendSourceGraphRelativePath
     frontend_invocation_lock_relative_path = $frontendInvocationLockRelativePath
     frontend_core_feature_expansion_relative_path = $frontendCoreFeatureExpansionRelativePath
     frontend_edge_compat_relative_path = $frontendEdgeCompatRelativePath
@@ -819,16 +819,16 @@ function Resolve-FrontendScaffoldPath {
     [object]$BuildResult
   )
 
-  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
+  $defaultRelativePath = "tmp/artifacts/objc3c-native/frontend_source_graph.json"
   $relativePath = $defaultRelativePath
   if ($null -ne $BuildResult) {
-    $candidatePath = [string]$BuildResult.frontend_scaffold_relative_path
+    $candidatePath = [string]$BuildResult.frontend_source_graph_relative_path
     if (-not [string]::IsNullOrWhiteSpace($candidatePath)) {
       $relativePath = $candidatePath
     }
   }
 
-  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend modular scaffold"
+  return Resolve-RepoBoundPath -RepoRoot $RepoRoot -RelativeOrAbsolutePath $relativePath -Label "frontend source graph"
 }
 
 function Resolve-FrontendInvocationLockPath {

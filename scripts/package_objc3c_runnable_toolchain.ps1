@@ -130,7 +130,7 @@ $requiredRelativeFiles = @(
   "scripts/run_objc3c_native_compile_proof.ps1",
   "scripts/check_objc3c_native_execution_smoke.ps1",
   "scripts/check_objc3c_execution_replay_proof.ps1",
-  "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
+  "tmp/artifacts/objc3c-native/frontend_source_graph.json",
   "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
   "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
   "tmp/artifacts/objc3c-native/frontend_edge_compat.json",
@@ -233,7 +233,7 @@ $manifestPayload = [ordered]@{
   interop_bridge_generation_probe = "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
-    "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
+    "tmp/artifacts/objc3c-native/frontend_source_graph.json",
     "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
     "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
     "tmp/artifacts/objc3c-native/frontend_edge_compat.json",

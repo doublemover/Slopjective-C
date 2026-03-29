@@ -1,5 +1,5 @@
 param(
-  [ValidateSet("full", "binaries-only", "packets-source", "packets-binary", "packets-closeout", "packets-all")]
+  [ValidateSet("full", "binaries-only", "contracts-source", "contracts-binary", "contracts-closeout", "contracts-all")]
   [string]$ExecutionMode = "full",
   [switch]$ForceReconfigure
 )
@@ -81,7 +81,7 @@ if ($null -eq $ninjaTool) { throw "ninja not found. ensure ninja is on PATH" }
 # - native binaries now build through a persistent CMake/Ninja tree rooted at
 #   `tmp/build-objc3c-native`
 # - canonical outputs remain published at `artifacts/bin` and `artifacts/lib`
-# - this script still owns frontend packet generation after the native build
+# - this script still owns frontend contract-artifact generation after the native build
 
 $outDir = Join-Path $repoRoot "artifacts/bin"
 New-Item -ItemType Directory -Force -Path $outDir | Out-Null
@@ -101,8 +101,8 @@ $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.j
 #   behind the public npm build surface
 # - the public npm command taxonomy now maps to:
 #   - build:objc3c-native              => fast binary-build default
-#   - build:objc3c-native:contracts   => source-derived + binary-derived packet path
-#   - build:objc3c-native:full        => binary + full packet-family path
+#   - build:objc3c-native:contracts   => source-derived + binary-derived contract-artifact path
+#   - build:objc3c-native:full        => binary + full contract-artifact family path
 #   - build:objc3c-native:reconfigure => reserved fingerprint refresh/self-heal
 # - direct script callers still default to `full` until the helper/runner
 #   migration tranche lands
@@ -112,13 +112,13 @@ $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.j
 #   tree under `tmp/build-objc3c-native`
 # - final published native artifacts remain under `artifacts/bin` and
 #   `artifacts/lib`
-# - the wrapper still owns frontend packet generation after the native binaries
+# - the wrapper still owns frontend contract-artifact generation after the native binaries
 #   are built
 #
-# M276-C003 packet-dependency-shape anchor:
-# - packet generation is internally classified into source-derived,
+# M276-C003 contract-artifact-dependency-shape anchor:
+# - contract-artifact generation is internally classified into source-derived,
 #   binary-derived, and closeout-derived families
-# - the wrapper can execute those packet families independently without
+# - the wrapper can execute those contract-artifact families independently without
 #   silently re-triggering native binary compilation
 # - public command-surface exposure remains the responsibility of M276-C002
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
@@ -163,7 +163,7 @@ function Test-ExecutionModeRunsNativeBuild {
 function Get-FrontendPacketDefinitions {
   return @(
     [pscustomobject]@{
-      Name = "frontend_scaffold"
+      Name = "frontend_source_graph"
       Family = "source-derived"
       OutputPath = $frontendScaffoldPath
       Dependencies = @()
@@ -173,14 +173,14 @@ function Get-FrontendPacketDefinitions {
       Name = "frontend_invocation_lock"
       Family = "binary-derived"
       OutputPath = $frontendInvocationLockPath
-      Dependencies = @("frontend_scaffold")
+      Dependencies = @("frontend_source_graph")
       RequiresNativeBinaries = $true
     }
     [pscustomobject]@{
       Name = "frontend_core_feature_expansion"
       Family = "binary-derived"
       OutputPath = $frontendCoreFeatureExpansionPath
-      Dependencies = @("frontend_scaffold", "frontend_invocation_lock")
+      Dependencies = @("frontend_source_graph", "frontend_invocation_lock")
       RequiresNativeBinaries = $true
     }
     [pscustomobject]@{
@@ -242,16 +242,16 @@ function Get-SelectedPacketDefinitions {
   )
 
   switch ($Mode) {
-    "packets-source" {
+    "contracts-source" {
       return @($PacketDefinitions | Where-Object { $_.Family -eq "source-derived" })
     }
-    "packets-binary" {
+    "contracts-binary" {
       return @($PacketDefinitions | Where-Object { $_.Family -in @("source-derived", "binary-derived") })
     }
-    "packets-closeout" {
+    "contracts-closeout" {
       return @($PacketDefinitions | Where-Object { $_.Family -in @("source-derived", "binary-derived", "closeout-derived") })
     }
-    "packets-all" {
+    "contracts-all" {
       return @($PacketDefinitions)
     }
     "full" {
@@ -280,7 +280,7 @@ function Assert-FrontendPacketPrerequisites {
     if ($definition.RequiresNativeBinaries) {
       foreach ($binaryPath in @($NativeBinaryPath, $CapiBinaryPath)) {
         if (!(Test-Path -LiteralPath $binaryPath -PathType Leaf)) {
-          throw ("packet family '{0}' requires existing native binaries: {1}" -f $definition.Family, $binaryPath)
+          throw ("contract artifact family '{0}' requires existing native binaries: {1}" -f $definition.Family, $binaryPath)
         }
       }
     }
@@ -290,7 +290,7 @@ function Assert-FrontendPacketPrerequisites {
       }
       $dependency = $PacketDefinitions | Where-Object { $_.Name -eq $dependencyName } | Select-Object -First 1
       if ($null -eq $dependency) {
-        throw ("frontend packet dependency not declared: " + $dependencyName)
+        throw ("frontend contract dependency not declared: " + $dependencyName)
       }
       if (!(Test-Path -LiteralPath $dependency.OutputPath -PathType Leaf)) {
         throw ("packet '{0}' requires existing dependency output '{1}' at {2}" -f $definition.Name, $dependencyName, $dependency.OutputPath)
@@ -325,12 +325,12 @@ function Invoke-FrontendPacketGeneration {
   $selectedFamilies = @($selectedPacketDefinitions | ForEach-Object { $_.Family } | Select-Object -Unique)
   Write-BuildStep ("artifact_generation_mode=" + $Mode)
   Write-BuildStep ("artifact_generation_families=" + ($selectedFamilies -join ","))
-  Write-BuildStep "artifact_generation_start=frontend_contract_packets"
+  Write-BuildStep "artifact_generation_start=frontend_contract_artifacts"
 
   foreach ($definition in $selectedPacketDefinitions) {
     Write-BuildStep ("artifact_generation_packet=" + $definition.Name + ";family=" + $definition.Family)
     switch ($definition.Name) {
-      "frontend_scaffold" {
+      "frontend_source_graph" {
         Write-FrontendModuleScaffoldArtifact `
           -RepoRoot $RepoRoot `
           -OutputPath $frontendScaffoldPath `
@@ -403,12 +403,12 @@ function Invoke-FrontendPacketGeneration {
           -FrontendConformanceCorpusPath $frontendConformanceCorpusPath
       }
       default {
-        throw ("unhandled frontend packet definition: " + $definition.Name)
+        throw ("unhandled frontend contract artifact definition: " + $definition.Name)
       }
     }
   }
 
-  Write-BuildStep "artifact_generation_done=frontend_contract_packets"
+  Write-BuildStep "artifact_generation_done=frontend_contract_artifacts"
 }
 
 function Get-BuildFingerprint {
@@ -704,7 +704,7 @@ function Write-FrontendModuleScaffoldArtifact {
     $name = [string]$module.name
     $sources = @($module.sources)
     if ([string]::IsNullOrWhiteSpace($name) -or $sources.Count -eq 0) {
-      throw "frontend scaffold module metadata is invalid"
+    throw "frontend source graph module metadata is invalid"
     }
     $modulePayload.Add([ordered]@{
       name = $name
@@ -768,18 +768,18 @@ function Write-FrontendInvocationLockArtifact {
     throw "c-api runner missing for invocation lock artifact: $CapiBinaryPath"
   }
   if (!(Test-Path -LiteralPath $FrontendScaffoldPath -PathType Leaf)) {
-    throw "frontend scaffold missing for invocation lock artifact: $FrontendScaffoldPath"
+    throw "frontend source graph missing for invocation lock artifact: $FrontendScaffoldPath"
   }
 
   try {
     $scaffoldPayload = Get-Content -LiteralPath $FrontendScaffoldPath -Raw | ConvertFrom-Json
   } catch {
-    throw "frontend scaffold is not valid JSON for invocation lock artifact: $FrontendScaffoldPath"
+    throw "frontend source graph is not valid JSON for invocation lock artifact: $FrontendScaffoldPath"
   }
 
   $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
   if ([string]$scaffoldPayload.contract_id -ne $expectedScaffoldContractId) {
-    throw "frontend scaffold contract id mismatch for invocation lock artifact: $FrontendScaffoldPath"
+    throw "frontend source graph contract id mismatch for invocation lock artifact: $FrontendScaffoldPath"
   }
 
   $payload = [ordered]@{
@@ -828,7 +828,7 @@ function Write-FrontendCoreFeatureExpansionArtifact {
   )
 
   if (!(Test-Path -LiteralPath $FrontendScaffoldPath -PathType Leaf)) {
-    throw "frontend scaffold missing for core feature expansion artifact: $FrontendScaffoldPath"
+    throw "frontend source graph missing for core feature expansion artifact: $FrontendScaffoldPath"
   }
   if (!(Test-Path -LiteralPath $FrontendInvocationLockPath -PathType Leaf)) {
     throw "frontend invocation lock missing for core feature expansion artifact: $FrontendInvocationLockPath"
@@ -843,7 +843,7 @@ function Write-FrontendCoreFeatureExpansionArtifact {
   try {
     $scaffoldPayload = Get-Content -LiteralPath $FrontendScaffoldPath -Raw | ConvertFrom-Json
   } catch {
-    throw "frontend scaffold is not valid JSON for core feature expansion artifact: $FrontendScaffoldPath"
+    throw "frontend source graph is not valid JSON for core feature expansion artifact: $FrontendScaffoldPath"
   }
 
   try {
@@ -854,7 +854,7 @@ function Write-FrontendCoreFeatureExpansionArtifact {
 
   $expectedScaffoldContractId = "objc3c-frontend-build-invocation-modular-scaffold/parser_build-modular-scaffold-v1"
   if ([string]$scaffoldPayload.contract_id -ne $expectedScaffoldContractId) {
-    throw "frontend scaffold contract id mismatch for core feature expansion artifact: $FrontendScaffoldPath"
+    throw "frontend source graph contract id mismatch for core feature expansion artifact: $FrontendScaffoldPath"
   }
   $expectedInvocationLockContractId = "objc3c-frontend-build-invocation-manifest-guard/parser_build-manifest-guard-v1"
   if ([string]$invocationLockPayload.contract_id -ne $expectedInvocationLockContractId) {
@@ -1575,7 +1575,7 @@ $frontendModules = @(
 $sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModules)
 $runtimeLibrarySourcePath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.cpp"
 $runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.h"
-$frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json"
+$frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_source_graph.json"
 $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
 $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"
 $frontendEdgeCompatPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_edge_compat.json"

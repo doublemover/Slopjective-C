@@ -270,8 +270,8 @@ Behavior:
 | Command | Use when | Result |
 | --- | --- | --- |
 | `npm run build:objc3c-native` | ordinary local native compiler work | refreshes native binaries through the persistent CMake/Ninja tree |
-| `npm run build:objc3c-native:contracts` | packet/checker work that needs the public contract packet surface | refreshes the source-derived plus binary-derived packet surface |
-| `npm run build:objc3c-native:full` | milestone closeout or deliberately broad validation | refreshes native binaries and the full packet family |
+| `npm run build:objc3c-native:contracts` | contract/checker work that needs the public contract-artifact surface | refreshes the source-derived plus binary-derived contract-artifact surface |
+| `npm run build:objc3c-native:full` | deliberately broad validation | refreshes native binaries and the full contract-artifact family |
 | `npm run build:objc3c-native:reconfigure` | toolchain drift, path drift, or stale fingerprint mismatch | forces a fresh configure against `tmp/build-objc3c-native`, then rebuilds binaries |
 
 Build-tree facts:
