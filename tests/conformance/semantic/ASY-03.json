@@ -5,12 +5,12 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-3",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-2-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-2-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-3-2"
   ],
   "source": "id fetchToken(void) async;\ntypedef id (^AsyncProducer)(void) async;\n\nid runProducer(AsyncProducer producer) async {\n    id first = await producer();\n    id second = await fetchToken();\n    return first ? first : second;\n}\n",
   "expect": {

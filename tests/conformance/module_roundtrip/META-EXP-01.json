@@ -5,14 +5,14 @@
   "bucket": "module_roundtrip",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-3",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-2-5",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
-    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-1",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-10-2-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-10-2-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-10-6",
+    "docs/reference/legacy_spec_anchor_index.md#b-6-1",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-2-5-4"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-opt-meta=on --emit-module METAEXP01-A.objcmod --emit-interface METAEXP01-A.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-feature-opt-meta=on --emit-module METAEXP01-B.objcmod --emit-interface METAEXP01-B.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: diff -u METAEXP01-A.obji METAEXP01-B.obji\n// RUN: objc3c --verify-interface METAEXP01-A.objcmod METAEXP01-B.obji %s\n#if !__OBJC3_FEATURE_DERIVE_EQUALITY__\n#error \"META-EXP-01 requires __OBJC3_FEATURE_DERIVE_EQUALITY__\"\n#endif\n#if !__OBJC3_FEATURE_DERIVE_HASH__\n#error \"META-EXP-01 requires __OBJC3_FEATURE_DERIVE_HASH__\"\n#endif\n#if !__OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__\n#error \"META-EXP-01 requires __OBJC3_FEATURE_DERIVE_DEBUGDESCRIPTION__\"\n#endif\n__attribute__((objc_derive(\"DebugDescription\")))\n__attribute__((objc_derive(\"Equality\")))\n__attribute__((objc_derive(\"Hash\")))\n@interface METAEXP01Record : NSObject\n@property (nonatomic) int revision;\n@property (nonatomic, copy) NSString * _Nonnull token;\n@end\n",
   "expect": {
@@ -47,7 +47,7 @@
       "preserved_fields": [
         {
           "field_id": "derive_or_macro_synthesized_declarations",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-1",
           "must_record_in_module_metadata": true,
           "must_emit_in_textual_interface": true
         }

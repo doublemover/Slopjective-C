@@ -5,11 +5,11 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-2-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-2-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-10"
   ],
   "source": "id fetchToken(void) async;\n\nid badMissingAwait(void) async {\n    return fetchToken();\n}\n\nid badAwaitContext(void) {\n    return await fetchToken();\n}\n",
   "expect": {

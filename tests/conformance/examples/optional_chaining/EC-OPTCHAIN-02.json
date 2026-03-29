@@ -5,8 +5,8 @@
   "bucket": "parser",
   "profile": "core",
   "references": [
-    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-2-2",
-    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-7"
+    "docs/reference/legacy_spec_anchor_index.md#f-2-2",
+    "docs/reference/legacy_spec_anchor_index.md#f-5-7"
   ],
   "source": "id accessMaybe(id value) {\n    return value ? .member;\n}\n",
   "expect": {

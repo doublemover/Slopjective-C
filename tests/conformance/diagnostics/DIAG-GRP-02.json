@@ -5,8 +5,8 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-12",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-1"
   ],
   "source": "@interface DIAGGRP02Annotated : NSObject\n- (id _Nonnull)displayName;\n@end\n",
   "expect": {

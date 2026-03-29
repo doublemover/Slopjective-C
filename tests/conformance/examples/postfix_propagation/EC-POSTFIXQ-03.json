@@ -5,8 +5,8 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6-4",
-    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-6"
+    "docs/reference/legacy_spec_anchor_index.md#part-6-6-4",
+    "docs/reference/legacy_spec_anchor_index.md#f-6"
   ],
   "source": "NSString * requiredName(NSString * _Nullable value) {\n    return value?;\n}\n",
   "expect": {

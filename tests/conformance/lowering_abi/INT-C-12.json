@@ -5,14 +5,14 @@
   "bucket": "lowering_abi",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-2-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-2-4",
+    "docs/reference/legacy_spec_anchor_index.md#c-2",
+    "docs/reference/legacy_spec_anchor_index.md#c-4-4",
+    "docs/reference/legacy_spec_anchor_index.md#c-5",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 --emit-module INTC12.objcmod --emit-interface INTC12.obji %s\\n// RUN: objc3c --verify-interface INTC12.objcmod INTC12.obji %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC12Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\n@interface INTC12Service : NSObject\\n- (id _Nullable)compute:(int)token async throws;\\n@end\\n\\nvoid intc12_service_compute_async_c(INTC12Service * _Nonnull service,\\n                                    int token,\\n                                    void * _Nullable context,\\n                                    INTC12Completion _Nonnull completion);\\n\\nSEL intc12_runtime_selector(void) {\\n    return @selector(compute:);\\n}\\n\\ntypedef struct INTC12Probe {\\n    int callbackCount;\\n    objc_async_completion_status_t lastStatus;\\n    id<Error> _Nullable lastError;\\n} INTC12Probe;\\n\\nvoid intc12_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC12Probe *probe = (INTC12Probe *)context;\\n    probe->callbackCount = probe->callbackCount + 1;\\n    probe->lastStatus = status;\\n    probe->lastError = error;\\n    (void)result;\\n}\\n\\nvoid intc12_start_probe(INTC12Service *service, int token, INTC12Probe *probe) {\\n    probe->callbackCount = 0;\\n    intc12_service_compute_async_c(service, token, probe, intc12_probe_callback);\\n}\\n",
   "expect": {
@@ -55,8 +55,8 @@
       "abi_field_stability": [
         {
           "field_id": "interop.objc_method_async_c_thunk_signature",
-          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#part-11-2-4",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "required_shape": "method-exported thunk uses canonical async completion signature and trailing context/completion order",
           "must_match_modes": [
             "debug-o0",
@@ -65,8 +65,8 @@
         },
         {
           "field_id": "objc_selector_surface_vs_async_throws_abi",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-4",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-4-4",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "required_shape": "selector spelling remains source-level while ABI details live in lowered call surface and metadata",
           "must_match_modes": [
             "debug-o0",

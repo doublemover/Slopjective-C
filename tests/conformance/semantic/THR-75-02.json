@@ -5,12 +5,12 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-6",
-    "spec/DECISIONS_LOG.md#decisions-d-002",
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-3",
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-3-7",
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-11"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-6",
+    "docs/reference/legacy_spec_anchor_index.md#decisions-d-002",
+    "docs/reference/legacy_spec_anchor_index.md#part-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-6-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-6-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-6-11"
   ],
   "source": "id typedDecl(void) throws(int);\nid mayFail(void) throws;\n\nid badCall(void) {\n    return mayFail();\n}\n\n@interface ThrowBase : NSObject\n- (id)load throws;\n@end\n\n@interface ThrowMismatch : ThrowBase\n- (id)load;\n@end\n",
   "expect": {

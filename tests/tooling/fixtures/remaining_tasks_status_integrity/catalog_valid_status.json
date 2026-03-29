@@ -37,7 +37,7 @@
     {
       "task_id": "SPT-2002",
       "title": "Blocked alpha lane A",
-      "path": "spec/planning/alpha.md",
+      "path": "spec/planning/a.mdlpha",
       "line": 30,
       "lane": "A",
       "execution_status": "blocked"
@@ -45,7 +45,7 @@
     {
       "task_id": "SPT-2003",
       "title": "Open blocked alpha lane A",
-      "path": "spec/planning/alpha.md",
+      "path": "spec/planning/a.mdlpha",
       "line": 12,
       "lane": "A",
       "execution_status": "open-blocked"
@@ -53,7 +53,7 @@
     {
       "task_id": "SPT-2005",
       "title": "Open alpha lane B",
-      "path": "spec/planning/alpha.md",
+      "path": "spec/planning/a.mdlpha",
       "line": 11,
       "lane": "B",
       "execution_status": "open"

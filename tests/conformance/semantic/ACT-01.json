@@ -5,14 +5,14 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/DECISIONS_LOG.md#decisions-d-011",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#decisions-d-011",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-2-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3"
   ],
   "source": "actor class ACT01Counter : NSObject\n- (int)current;\n- (void)bump;\n@end\n\nint act01_cross_actor_missing_await(ACT01Counter *counter) async {\n    [counter bump];\n    return [counter current];\n}\n\nint act01_cross_actor_with_await(ACT01Counter *counter) async {\n    await [counter bump];\n    return await [counter current];\n}\n",
   "expect": {

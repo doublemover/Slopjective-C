@@ -5,16 +5,16 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-4",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-6",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-1",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-8",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-2-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-2-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-9-1",
+    "docs/reference/legacy_spec_anchor_index.md#c-8",
+    "docs/reference/legacy_spec_anchor_index.md#d",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -DPERFDIRMEM03_BUILD_BASE --emit-module PERFDIRMEM03Base.objcmod --module-name PERFDIRMEM03Base %s\n// RUN: objc3c -fobjc-version=3 --import-module PERFDIRMEM03Base.objcmod -fsyntax-only %s\n#if defined(PERFDIRMEM03_BUILD_BASE)\n__attribute__((objc_direct_members))\n@interface PERFDIRMEM03Base : NSObject\n- (int)dispatchHotPath;\n@end\n#else\n@import PERFDIRMEM03Base;\n@interface PERFDIRMEM03ClientSub : PERFDIRMEM03Base\n- (int)dispatchHotPath;\n@end\n#endif\n",
   "expect": {

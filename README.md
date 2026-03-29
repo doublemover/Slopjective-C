@@ -66,15 +66,15 @@ What is not fully runnable yet:
 - Draft overview section: [Introduction](https://doublemover.github.io/Slopjective-C/#intro)
 - Current implementation / module-boundary status: [Module Metadata and ABI Surface](https://doublemover.github.io/Slopjective-C/#d)
 - Compiler implementation: [`native/objc3c/`](native/objc3c/)
-- Detailed spec source: [`spec/`](spec/)
+- Detailed legacy spec redirects: [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files)
 
-If you only want the high-level picture, read the published site first. If you want the exact language rules, use the files under `spec/`. If you want the implementation, start in `native/objc3c/`.
+If you only want the high-level picture, read the published site first. If you want the exact language rules, use the legacy redirect index under `docs/reference/legacy_spec_anchor_index.md`. If you want the implementation, start in `native/objc3c/`.
 
 ## Repository Layout
 
-- `spec/`
-  - the detailed draft specification
-  - language parts, ABI notes, compatibility rules, conformance material, and planning packets
+- `docs/reference/legacy_spec_anchor_index.md`
+  - compatibility redirects for archived spec, planning, governance, and conformance anchors
+  - use this when older docs, reports, scripts, or conformance metadata still cite the retired `spec/` tree
 - `native/objc3c/`
   - the native compiler, runtime-facing lowering, and toolchain integration work
 - `site/`
@@ -305,31 +305,31 @@ The spec is organized as a small set of cross-cutting reference documents plus t
 
 Start here:
 
-- [Spec root](spec/)
-- [Table of contents](spec/TABLE_OF_CONTENTS.md)
-- [Introduction](spec/INTRODUCTION.md)
-- [Syntax catalog](spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md)
-- [Lowering and runtime contracts](spec/LOWERING_AND_RUNTIME_CONTRACTS.md)
-- [Module metadata and ABI tables](spec/MODULE_METADATA_AND_ABI_TABLES.md)
-- [Conformance profile checklist](spec/CONFORMANCE_PROFILE_CHECKLIST.md)
+- [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files)
+- [Table of contents](docs/reference/legacy_spec_anchor_index.md#table-of-contents)
+- [Introduction](docs/reference/legacy_spec_anchor_index.md#introduction)
+- [Syntax catalog](docs/reference/legacy_spec_anchor_index.md#attribute-and-syntax-catalog)
+- [Lowering and runtime contracts](docs/reference/legacy_spec_anchor_index.md#lowering-and-runtime-contracts)
+- [Module metadata and ABI tables](docs/reference/legacy_spec_anchor_index.md#module-metadata-and-abi-tables)
+- [Conformance profile checklist](docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist)
 
 Language parts:
 
 | Part | Focus |
 | --- | --- |
-| [Part 0](spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md) | Baseline rules, terminology, and normative references |
-| [Part 1](spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md) | Versioning, compatibility, and conformance claims |
-| [Part 2](spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md) | Modules, namespacing, and public API surfaces |
-| [Part 3](spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md) | Types, nullability, optionals, generics, and key paths |
-| [Part 4](spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md) | Ownership, retainable objects, and lifetime rules |
-| [Part 5](spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md) | Control flow, safety constructs, and execution behavior |
-| [Part 6](spec/PART_6_ERRORS_RESULTS_THROWS.md) | Errors, `Result`, and `throws` |
-| [Part 7](spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md) | Async/await, actors, and concurrency rules |
-| [Part 8](spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md) | System programming extensions and low-level features |
-| [Part 9](spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md) | Performance controls and runtime dynamism boundaries |
-| [Part 10](spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md) | Metaprogramming, derives, macros, and property behaviors |
-| [Part 11](spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md) | Interoperability with C, C++, and Swift-facing surfaces |
-| [Part 12](spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md) | Diagnostics, tooling, and conformance testing |
+| [Part 0](docs/reference/legacy_spec_anchor_index.md#part-0-baseline-and-normative-references) | Baseline rules, terminology, and normative references |
+| [Part 1](docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance) | Versioning, compatibility, and conformance claims |
+| [Part 2](docs/reference/legacy_spec_anchor_index.md#part-2-modules-namespacing-api-surfaces) | Modules, namespacing, and public API surfaces |
+| [Part 3](docs/reference/legacy_spec_anchor_index.md#part-3-types-nullability-optionals-generics-keypaths) | Types, nullability, optionals, generics, and key paths |
+| [Part 4](docs/reference/legacy_spec_anchor_index.md#part-4-memory-management-ownership) | Ownership, retainable objects, and lifetime rules |
+| [Part 5](docs/reference/legacy_spec_anchor_index.md#part-5-control-flow-safety-constructs) | Control flow, safety constructs, and execution behavior |
+| [Part 6](docs/reference/legacy_spec_anchor_index.md#part-6-errors-results-throws) | Errors, `Result`, and `throws` |
+| [Part 7](docs/reference/legacy_spec_anchor_index.md#part-7-concurrency-async-await-actors) | Async/await, actors, and concurrency rules |
+| [Part 8](docs/reference/legacy_spec_anchor_index.md#part-8-system-programming-extensions) | System programming extensions and low-level features |
+| [Part 9](docs/reference/legacy_spec_anchor_index.md#part-9-performance-and-dynamism-controls) | Performance controls and runtime dynamism boundaries |
+| [Part 10](docs/reference/legacy_spec_anchor_index.md#part-10-metaprogramming-derives-macros-property-behaviors) | Metaprogramming, derives, macros, and property behaviors |
+| [Part 11](docs/reference/legacy_spec_anchor_index.md#part-11-interoperability-c-cpp-swift) | Interoperability with C, C++, and Swift-facing surfaces |
+| [Part 12](docs/reference/legacy_spec_anchor_index.md#part-12-diagnostics-tooling-tests) | Diagnostics, tooling, and conformance testing |
 
 ## License
 

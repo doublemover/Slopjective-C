@@ -5,11 +5,11 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-5"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M17C037.objcmod --emit-interface M17C037.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M17C037.opt.objcmod --emit-interface M17C037.opt.obji %s\n// RUN: objc3c --verify-interface M17C037.objcmod M17C037.obji --assert-mismatch neg_vector.callback_order:context,status,result,error --assert-mismatch neg_vector.status_error_pair:success+error --assert-mismatch neg_vector.cleanup_count:2:1\n// RUN: objc3c --verify-interface M17C037.opt.objcmod M17C037.opt.obji --assert-mismatch neg_vector.callback_order:context,status,result,error --assert-mismatch neg_vector.status_error_pair:success+error --assert-mismatch neg_vector.cleanup_count:2:1\ntypedef enum M17C037CompletionStatus {\n    M17C037_STATUS_SUCCESS = 0,\n    M17C037_STATUS_ERROR = 1,\n    M17C037_STATUS_CANCELLED = 2\n} M17C037CompletionStatus;\n\ntypedef void (*M17C037Completion)(\n    void * _Nullable context,\n    M17C037CompletionStatus status,\n    id _Nullable result,\n    id<Error> _Nullable error);\n\nvoid M17c037_dispatch(int token,\n                      void * _Nullable context,\n                      M17C037Completion _Nonnull completion);\n",
   "expect": {
@@ -71,9 +71,9 @@
       "abi_field_stability": [
         {
           "field_id": "neg_vector.callback_order",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
-          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
+          "validation_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-5",
           "stability_property": "canonical callback field order mismatch remains an explicit deterministic negative vector",
           "must_match_modes": [
             "debug-o0",
@@ -82,9 +82,9 @@
         },
         {
           "field_id": "neg_vector.status_error_pair",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
-          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
+          "validation_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-5",
           "stability_property": "invalid status/error combinations remain explicit deterministic negative vectors",
           "must_match_modes": [
             "debug-o0",

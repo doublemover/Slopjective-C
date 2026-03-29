@@ -5,13 +5,13 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#c-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 -fsyntax-only %s\nactor class ACT07Gate : NSObject\nnonreentrant - (id _Nonnull)step:(id _Nonnull)seed async;\n@end\n",
   "expect": {
@@ -57,9 +57,9 @@
       "abi_field_stability": [
         {
           "field_id": "actor_reentrancy_control_v1_deferred",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
-          "part7_anchor": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-6",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-6",
+          "part7_anchor": "docs/reference/legacy_spec_anchor_index.md#part-7-7-6",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-1",
           "stability_property": "v1 lowering reserves explicit actor nonreentrancy controls and does not emit active metadata for them",
           "must_match_modes": [
             "debug-o0",

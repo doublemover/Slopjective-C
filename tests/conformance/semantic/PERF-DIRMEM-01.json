@@ -5,14 +5,14 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-6",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-1",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-8",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-2-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-9-1",
+    "docs/reference/legacy_spec_anchor_index.md#c-8",
+    "docs/reference/legacy_spec_anchor_index.md#d",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1"
   ],
   "source": "__attribute__((objc_direct_members))\n@interface PERFDIRMEM01Root : NSObject\n- (int)hotPath;\n@end\n\n@interface PERFDIRMEM01Child : PERFDIRMEM01Root\n- (int)hotPath;\n@end\n",
   "expect": {

@@ -5,14 +5,14 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/DECISIONS_LOG.md#decisions-d-011",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-3-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#decisions-d-011",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-4-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-2-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3"
   ],
   "source": "id awt04_asyncCall(void) async;\nid awt04_mainOnly(id seed) __attribute__((objc_executor(main)));\nid awt04_syncValue(void);\n\nactor class AWT04Counter : NSObject\n- (int)current;\n@end\n\nid awt04_valid_and_unnecessary(AWT04Counter *counter, id seed) async __attribute__((objc_executor(global))) {\n    id first = await awt04_asyncCall();\n    id second = await awt04_mainOnly(seed);\n    int current = await [counter current];\n    id stable = await awt04_syncValue();\n    return current > 0 ? stable : (first ? first : second);\n}\n",
   "expect": {

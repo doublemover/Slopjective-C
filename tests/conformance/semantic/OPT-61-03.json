@@ -5,12 +5,12 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-2-2",
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-3-3-2",
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-2",
-    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-2",
-    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-3-3-2-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-3-3-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-3-7-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-5-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-5-3-4"
   ],
   "source": "id _Nonnull requireValue(id _Nonnull value);\n\nid _Nonnull readLegacy(id! legacyName) {\n    return requireValue(legacyName);\n}\n\nid? readLegacySafely(id! legacyName) {\n    guard let checked = legacyName else {\n        return nil;\n    }\n    return checked;\n}\n",
   "expect": {

@@ -5,12 +5,12 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#b-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3"
   ],
   "source": "actor class ACT04Logger : NSObject\n@property (atomic) int count;\n- (int)snapshot __attribute__((objc_nonisolated));\n@end\n\n@implementation ACT04Logger\n- (int)snapshot {\n    return self.count;\n}\n@end\n",
   "expect": {

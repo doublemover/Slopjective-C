@@ -302,7 +302,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="generate_execution_microtasks.py",
         description=(
-            "Generate markdown for spec/EXECUTION_MICROTASK_BACKLOG.md from "
+            "Generate markdown for docs/reference/legacy_spec_anchor_index.md#execution-microtask-backlog from "
             "a GitHub issues JSON snapshot. When run without generation "
             "arguments, validates catalog execution_status integrity."
         ),
@@ -314,10 +314,10 @@ def build_parser() -> argparse.ArgumentParser:
             "  python scripts/generate_execution_microtasks.py \\\n"
             "    --issues-json tmp/open_issues.json \\\n"
             "    --closed-count 110 \\\n"
-            "    --generated-on 2026-02-23 > spec/EXECUTION_MICROTASK_BACKLOG.md\n\n"
+            "    --generated-on 2026-02-23 > docs/reference/legacy_spec_anchor_index.md#execution-microtask-backlog\n\n"
             "  SOURCE_DATE_EPOCH=1771804800 python scripts/generate_execution_microtasks.py \\\n"
             "    --issues-json tmp/open_issues.json \\\n"
-            "    --closed-count 110 > spec/EXECUTION_MICROTASK_BACKLOG.md\n\n"
+            "    --closed-count 110 > docs/reference/legacy_spec_anchor_index.md#execution-microtask-backlog\n\n"
             "Status-integrity check mode:\n"
             "  python scripts/generate_execution_microtasks.py\n"
             "  python scripts/generate_execution_microtasks.py --allow-missing-status"

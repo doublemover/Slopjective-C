@@ -5,9 +5,9 @@
   "bucket": "module_roundtrip",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-4"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 --emit-module Foo.objcmod --emit-interface Foo.obji %s\n// RUN: objc3c --verify-interface Foo.objcmod Foo.obji --assert-mismatch _Nonnull:_Nullable\n@interface FooAPI : NSObject\n- (id _Nonnull)loadToken;\n@end\n",
   "expect": {

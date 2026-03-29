@@ -5,7 +5,7 @@
   "bucket": "parser",
   "profile": "core",
   "references": [
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7"
+    "docs/reference/legacy_spec_anchor_index.md#part-8-7"
   ],
   "source": "size_t countBytes(borrowed* const uint8_t bytes, size_t length) {\n    return length;\n}\n",
   "expect": {

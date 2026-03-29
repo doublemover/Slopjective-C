@@ -5,9 +5,9 @@
   "bucket": "parser",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-3",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-1-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-1-2-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-1-1"
   ],
   "source": "#pragma objc_language_version(3)\nactor class M03A007Counter : NSObject\n- (int)next;\n@end\n",
   "expect": {

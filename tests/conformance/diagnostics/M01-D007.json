@@ -5,11 +5,11 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-9-2",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "docs/reference/legacy_spec_anchor_index.md#e-3-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-9-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7",
     "spec/planning/compiler/m01/lane_d_m01_scope_freeze.md"
   ],
   "source": "@interface M01D007Box : NSObject\n- (int)fastPath __attribute__((objc_direct));\n@end\n\nint m01d007_negative(M01D007Box *box) {\n    SEL sel = @selector(fastPath);\n    return ((int (*)(id, SEL))objc_msgSend)(box, sel);\n}\n",

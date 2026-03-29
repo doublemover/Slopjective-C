@@ -49,7 +49,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
 
 ### SPT-0002 - [SPT-0002][Lane B] [CORE] Validate parser accepts let bindings in strict mode
 
-- Source: `spec/CONFORMANCE_PROFILE_CHECKLIST.md:3`
+- Source: `docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist:3`
 - Bucket: `conformance-checklist`
 - Lane: `Lane B - Implementation & Tooling`
 - Milestone: `Conformance: Core (E)`
@@ -79,7 +79,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
 
 ### SPT-0003 - [SPT-0003][Lane B] [OPT-CXX] Confirm interop marker appears in emitted metadata
 
-- Source: `spec/CONFORMANCE_PROFILE_CHECKLIST.md:4`
+- Source: `docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist:4`
 - Bucket: `conformance-checklist`
 - Lane: `Lane B - Implementation & Tooling`
 - Milestone: `Conformance: Optional Interop (E)`

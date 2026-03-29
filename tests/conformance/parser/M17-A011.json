@@ -13,9 +13,9 @@
     "sequence": 11
   },
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
-    "spec/PART_5_FRONTEND_PROCESSING_MODEL.md#part-5-3",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-11"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-5-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-11"
   ],
   "source": "#pragma objc_language_version(3)\\n#ifndef __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_CONTRACT_SLICE_S011__\\n#define __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_CONTRACT_SLICE_S011__ 1\\n#endif\\n\\ntypedef struct M17A011_Probe {\\n    int enabled;\\n    int sequence;\\n    int issue;\\n} M17A011_Probe;\\n\\nM17A011_Probe m17a011_probe(void) {\\n#if __OBJC3_FEATURE_RUNTIME_LOWERING_CLOSURE_CORE_STRICT_CONTRACT_SLICE_S011__\\n    M17A011_Probe probe = { 1, 11, 2002 };\\n#else\\n    M17A011_Probe probe = { 0, 11, 2002 };\\n#endif\\n    return probe;\\n}\\n",
   "expect": {

@@ -13,9 +13,9 @@
     "sequence": 7
   },
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-2-4",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-4-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-1-2-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-4-4"
   ],
   "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_FRONTEND_MODE_ROUTING__\n#define __OBJC3_FEATURE_FRONTEND_MODE_ROUTING__ 1\n#endif\n\ntypedef struct M09A007_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M09A007_Probe;\n\nM09A007_Probe m09a007_probe(void) {\n#if __OBJC3_FEATURE_FRONTEND_MODE_ROUTING__\n    M09A007_Probe probe = { 1, 7, 1580 };\n#else\n    M09A007_Probe probe = { 0, 7, 1580 };\n#endif\n    return probe;\n}\n",
   "expect": {

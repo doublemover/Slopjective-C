@@ -5,11 +5,11 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-5",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
-    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-6-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-10-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-10-6",
+    "docs/reference/legacy_spec_anchor_index.md#b-6-2"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-macros=on -fobjc3-macro-reproducible=on -fsyntax-only %s\\n@objc_macro(package=\"SafeFmt\", version=\"2.4.1\")\\nint fmt_without_lock(int value) {\\n    return value;\\n}\\n",
   "expect": {

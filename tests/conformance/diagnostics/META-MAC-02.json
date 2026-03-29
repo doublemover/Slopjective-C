@@ -5,10 +5,10 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10",
-    "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md#part-10-6",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-10-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-12"
   ],
   "source": "@objc_macro(package=\"SafeFmt\", version=\"2.4.1\", lockfile=\"objc3.lock\")\\nint nondeterministic_seed(int value) {\\n    #macro_eval(\"emitTimestamp(now())\")\\n    return value;\\n}\\n",
   "expect": {

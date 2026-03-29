@@ -5,15 +5,15 @@
   "bucket": "module_roundtrip",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-6",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-5-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-5",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-2-5-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-2-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-5-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-6",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-4"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-module SNDXM02.objcmod --emit-interface SNDXM02.obji %s\n// RUN: objc3c --verify-interface SNDXM02-corrupt.objcmod SNDXM02.obji --assert-mismatch sendable.boundary:missing --assert-mismatch sendable.unsafe_marker:missing --assert-mismatch task_spawn_recognition:missing\n__attribute__((objc_unsafe_sendable))\n@interface SNDXM02UnsafeBox : NSObject\n@property (nonatomic) int value;\n@end\n\ntypedef id SNDXM02TaskHandle;\nSNDXM02TaskHandle sndxm02_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\n\nactor class SNDXM02Bridge : NSObject\n- (SNDXM02UnsafeBox * _Nonnull)echo:(SNDXM02UnsafeBox * _Nonnull)value;\n@end\n",
   "expect": {

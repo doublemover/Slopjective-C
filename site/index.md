@@ -8,7 +8,7 @@ layout: default
 _Working draft v0.11_  
 _Last updated: 2026-03-11_
 
-Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: the raw `spec/` corpus remains the detailed source material, but this page is where the project should explain itself cleanly.
+Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: the archived `spec/` corpus now sits behind a compatibility redirect index, but this page is where the project should explain itself cleanly.
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3 object model is still in progress.
 
@@ -29,7 +29,7 @@ Use this page in three passes:
 
 1. Read the status sections below to understand what is real today.
 2. Use the spec map to find the normative area you care about.
-3. Drop into the raw `spec/` files only when you need detailed language rules, ABI notes, or compatibility constraints.
+3. Use the legacy spec redirect index only when you need compatibility links into archived language rules, ABI notes, or compatibility constraints.
 
 ## What Is Implemented and Runnable <a id="intro"></a>
 

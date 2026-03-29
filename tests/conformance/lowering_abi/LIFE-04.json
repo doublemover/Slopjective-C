@@ -5,14 +5,14 @@
   "bucket": "lowering_abi",
   "profile": "strict-system",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
-    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4",
-    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-1",
-    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-4-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-4-4-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-4-4-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6-3"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -O2 -fsyntax-only %s\n@interface LIFE90Box : NSObject\n- (id _Nonnull)payload;\n@end\n\nid _Nonnull life04_with_lifetime_arc(LIFE90Box * _Nonnull box,\n                                     id _Nonnull fallback) {\n    __attribute__((objc_precise_lifetime)) id _Nonnull pinned = fallback;\n    withLifetime(box) {\n        pinned = [box payload];\n    }\n    return pinned;\n}\n",
   "expect": {

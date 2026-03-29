@@ -10,7 +10,7 @@
 - Total tasks: **6**
 - Status counts: `open`=3, `open-blocked`=1, `blocked`=2
 - Lane counts: `A`=3, `B`=3
-- Path counts: `spec/planning/alpha.md`=3, `spec/planning/beta.md`=2, `spec/planning/zeta.md`=1
+- Path counts: `spec/planning/a.mdlpha`=3, `spec/planning/beta.md`=2, `spec/planning/zeta.md`=1
 - Capacity status counts: `pass`=4
 - Dispatch-intake: `pass` (`go`)
 - Overlap conflicts: 0 (max allowed: 0; status=`pass`; intake recommendation: `go`)
@@ -35,14 +35,14 @@ _none_
 
 | task_id | title | lane | status | path | line |
 | --- | --- | --- | --- | --- | --- |
-| `SPT-2003` | Open blocked alpha lane A | `A` | `open-blocked` | `spec/planning/alpha.md` | 12 |
-| `SPT-2002` | Blocked alpha lane A | `A` | `blocked` | `spec/planning/alpha.md` | 30 |
+| `SPT-2003` | Open blocked alpha lane A | `A` | `open-blocked` | `spec/planning/a.mdlpha` | 12 |
+| `SPT-2002` | Blocked alpha lane A | `A` | `blocked` | `spec/planning/a.mdlpha` | 30 |
 | `SPT-2007` | Open beta lane A | `A` | `open` | `spec/planning/beta.md` | 7 |
 
 ## lane `B` (3 tasks)
 
 | task_id | title | lane | status | path | line |
 | --- | --- | --- | --- | --- | --- |
-| `SPT-2005` | Open alpha lane B | `B` | `open` | `spec/planning/alpha.md` | 11 |
+| `SPT-2005` | Open alpha lane B | `B` | `open` | `spec/planning/a.mdlpha` | 11 |
 | `SPT-2008` | Blocked beta lane B | `B` | `blocked` | `spec/planning/beta.md` | 3 |
 | `SPT-2001` | Open zeta lane B | `B` | `open` | `spec/planning/zeta.md` | 8 |

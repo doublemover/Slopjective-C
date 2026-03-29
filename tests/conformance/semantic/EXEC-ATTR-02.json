@@ -5,14 +5,14 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-1",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-1",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-4-3-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#b-3-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-4-3-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-4-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1"
   ],
   "source": "id execattr02_badToken(id seed) __attribute__((objc_executor(ui)));\nid execattr02_badNamed(id seed) __attribute__((objc_executor(named(42))));\n\n@interface EXECATTR02BadPlacement : NSObject\n@property (nonatomic) id token __attribute__((objc_executor(main)));\n@end\n",
   "expect": {

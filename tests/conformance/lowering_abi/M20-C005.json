@@ -5,12 +5,12 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-3",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-5",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-6"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M20C005.objcmod --emit-interface M20C005.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M20C005.opt.objcmod --emit-interface M20C005.opt.obji %s\n// RUN: objc3c --verify-interface M20C005.objcmod M20C005.obji --assert-mismatch metadata.executor_affinity:missing --assert-mismatch metadata.isolation.actor:missing\n// RUN: objc3c --verify-interface M20C005.opt.objcmod M20C005.opt.obji --assert-mismatch metadata.executor_affinity:missing --assert-mismatch metadata.isolation.actor:missing\nactor class M20C005Mailbox : NSObject\n- (id _Nonnull)dequeue;\n- (id _Nullable)cachedToken __attribute__((objc_nonisolated));\n- (id _Nonnull)run:(id _Nonnull)seed async __attribute__((objc_executor(main)));\n@end\n",
   "expect": {
@@ -63,9 +63,9 @@
       "abi_field_stability": [
         {
           "field_id": "metadata.executor_affinity",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-3",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
-          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-3",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-6",
+          "validation_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-5",
           "stability_property": "executor-affinity metadata remains parity-stable for lowering decisions",
           "must_match_modes": [
             "debug-o0",
@@ -74,9 +74,9 @@
         },
         {
           "field_id": "metadata.isolation.actor",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-4",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-6",
-          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-4",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-6",
+          "validation_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-5",
           "stability_property": "actor-isolation metadata remains parity-stable for boundary lowering",
           "must_match_modes": [
             "debug-o0",

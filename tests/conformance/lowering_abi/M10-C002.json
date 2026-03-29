@@ -5,12 +5,12 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#c-5",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-1",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-5"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O0 --emit-module M10C002.objcmod --emit-interface M10C002.obji %s\n// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict -O2 --emit-module M10C002.opt.objcmod --emit-interface M10C002.opt.obji %s\n// RUN: objc3c --verify-interface M10C002.objcmod M10C002.obji --assert-mismatch ir_route.await_resume:ir_route.await_error\n// RUN: objc3c --verify-interface M10C002.opt.objcmod M10C002.opt.obji --assert-mismatch ir_route.await_resume:ir_route.await_error\ntypedef id M10C002TaskHandle;\nid M10c002_await_resume(M10C002TaskHandle handle) async;\nid M10c002_await_error(M10C002TaskHandle handle, id<Error> _Nullable * _Nullable outError) async;\n",
   "expect": {
@@ -63,9 +63,9 @@
       "abi_field_stability": [
         {
           "field_id": "ir_route.await_resume",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
-          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-1",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
+          "validation_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-5",
           "stability_property": "await-resume IR route key maps to one deterministic lowering path",
           "must_match_modes": [
             "debug-o0",
@@ -74,9 +74,9 @@
         },
         {
           "field_id": "ir_route.await_error",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
-          "validation_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-5",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-1",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
+          "validation_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-5",
           "stability_property": "await-error transport route key remains explicit and unambiguous for lowering selection",
           "must_match_modes": [
             "debug-o0",

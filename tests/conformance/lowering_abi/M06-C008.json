@@ -5,11 +5,11 @@
   "bucket": "lowering_abi",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4-2",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-4-4-2",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+    "docs/reference/legacy_spec_anchor_index.md#c-6",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict -O2 -fsyntax-only %s\ntypedef enum M06C008BoundaryStatus {\n    M06C008_BOUNDARY_OK = 0,\n    M06C008_BOUNDARY_PRECONDITION_FAILURE = 1,\n    M06C008_BOUNDARY_POSTCONDITION_FAILURE = 2\n} M06C008BoundaryStatus;\n\ntypedef struct M06C008BoundaryProbe {\n    int callbackCount;\n    int entered;\n    int exited;\n} M06C008BoundaryProbe;\n\nvoid M06c008_invoke_boundary(M06C008BoundaryProbe * _Nonnull probe,\n                             void (^_Nonnull body)(M06C008BoundaryProbe * _Nonnull probe));\n\nM06C008BoundaryStatus M06c008_validate_boundary(M06C008BoundaryProbe * _Nullable probe) {\n    if (probe == nil) {\n        return M06C008_BOUNDARY_PRECONDITION_FAILURE;\n    }\n    if (probe->entered != 1 || probe->exited != 1 || probe->callbackCount != 1) {\n        return M06C008_BOUNDARY_POSTCONDITION_FAILURE;\n    }\n    return M06C008_BOUNDARY_OK;\n}\n",
   "expect": {
@@ -56,8 +56,8 @@
       "abi_field_stability": [
         {
           "field_id": "boundary.precondition.context_nonnull",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-6",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-6",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "stability_property": "boundary context precondition remains explicit and replay-stable",
           "must_match_modes": [
             "debug-o0",
@@ -66,8 +66,8 @@
         },
         {
           "field_id": "boundary.postcondition.exactly_once_callback",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "stability_property": "boundary callback count and enter/exit postconditions remain deterministic",
           "must_match_modes": [
             "debug-o0",

@@ -5,9 +5,9 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3",
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#e-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
     "spec/planning/compiler/m06/lane_b_m06_scope_freeze.md"
   ],
   "source": "id _Nonnull m06b001_require_nonnull(id _Nonnull value);\nid _Nullable m06b001_maybe_value(void);\n\nid _Nonnull m06b001_positive(void) {\n    id _Nullable maybe = m06b001_maybe_value();\n    if (maybe != nil) {\n        return m06b001_require_nonnull(maybe);\n    }\n    return (id _Nonnull)@\"fallback\";\n}\n\nid _Nonnull m06b001_negative(void) {\n    id _Nullable maybe = m06b001_maybe_value();\n    return m06b001_require_nonnull(maybe);\n}\n",

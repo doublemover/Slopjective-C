@@ -5,10 +5,10 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3",
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-2-1",
-    "spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md#part-3-7-1",
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#part-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-3-2-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-3-7-1",
+    "docs/reference/legacy_spec_anchor_index.md#e-3-3"
   ],
   "source": "id _Nonnull takesNonnull(id _Nonnull value);\nid _Nullable sourceMaybe(void);\n\nid _Nonnull mustFail(void) {\n    id _Nullable maybe = sourceMaybe();\n    id _Nonnull forced = maybe;\n    return takesNonnull(maybe);\n}\n",
   "expect": {

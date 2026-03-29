@@ -5,12 +5,12 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-2-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3"
   ],
   "source": "@interface SND04MutableBox : NSObject\n@property (nonatomic) int value;\n@end\n\nactor class SND04Channel : NSObject\n- (void)put:(SND04MutableBox * _Nonnull)value;\n- (SND04MutableBox * _Nonnull)take;\n@end\n\nSND04MutableBox *snd04_cross_actor_boundary(SND04Channel *channel, SND04MutableBox *box) async {\n    await [channel put:box];\n    return await [channel take];\n}\n",
   "expect": {

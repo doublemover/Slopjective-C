@@ -5,8 +5,8 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-3"
+    "docs/reference/legacy_spec_anchor_index.md#part-8-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-8-3"
   ],
   "source": "void (^block)(void) = [take(token), weak self] {\n    consumeToken(token);\n    [self refresh];\n};\n",
   "expect": {

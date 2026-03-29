@@ -5,15 +5,15 @@
   "bucket": "lowering_abi",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-2",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-2-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-6",
+    "docs/reference/legacy_spec_anchor_index.md#c-4",
+    "docs/reference/legacy_spec_anchor_index.md#c-4-1",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2"
   ],
   "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 -O2 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -fobjc-version=3 --emit-module INTCXX06.objcmod --emit-interface INTCXX06.obji %s\n// RUN: objc3c -x objective-c++ --verify-interface INTCXX06.objcmod INTCXX06.obji %s\nstruct INTCXX06Token {\n    int value;\n};\n\nint intcxx06_parse(INTCXX06Token token, const char * _Nonnull text) throws;\nint intcxx06_parse_c(INTCXX06Token token,\n                     const char * _Nonnull text,\n                     id<Error> _Nullable * _Nullable outError);\n\ntypedef struct INTCXX06Probe {\n    int parsedValue;\n    id<Error> _Nullable parsedError;\n} INTCXX06Probe;\n\nvoid intcxx06_run_probe(INTCXX06Token token,\n                        const char * _Nonnull text,\n                        INTCXX06Probe *probe) {\n    probe->parsedError = nil;\n    probe->parsedValue = intcxx06_parse_c(token, text, &probe->parsedError);\n}\n",
   "expect": {
@@ -56,8 +56,8 @@
       "abi_field_stability": [
         {
           "field_id": "interop.objcxx_throws_c_thunk_error_out_shape",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-4-1",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "required_shape": "throws-to-C bridge uses trailing id<Error> _Nullable * _Nullable outError in ObjC++ mode",
           "must_match_modes": [
             "debug-o0",
@@ -66,8 +66,8 @@
         },
         {
           "field_id": "interop.objcxx_throws_no_implicit_cpp_exception_lane",
-          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#part-11-3-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "required_shape": "ObjC 3.0 throws remains distinct from C++ exceptions at ABI boundary unless an explicit bridge is declared",
           "must_match_modes": [
             "debug-o0",

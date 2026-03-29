@@ -5,12 +5,12 @@
   "bucket": "semantic",
   "profile": "strict-system",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-1",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-2",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-6-3",
-    "spec/PART_4_MEMORY_MANAGEMENT_OWNERSHIP.md#part-4-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-6-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-4-4"
   ],
   "source": "void life03_misuse(void) {\n    int ticket = 90;\n    withLifetime(ticket) {\n        (void)ticket;\n    }\n    keepAlive(7);\n}\n",
   "expect": {

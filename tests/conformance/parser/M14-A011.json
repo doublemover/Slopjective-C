@@ -13,9 +13,9 @@
     "sequence": 11
   },
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md#part-1-4-1",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-6-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-1-4-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-6-1"
   ],
   "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_CONTRACT_RELOCK__\n#define __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_CONTRACT_RELOCK__ 1\n#endif\n\ntypedef struct M14A011_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M14A011_Probe;\n\nM14A011_Probe m14a011_probe(void) {\n#if __OBJC3_FEATURE_MODULE_METADATA_SERIALIZATION_TABLE_A_CONTRACT_RELOCK__\n    M14A011_Probe probe = { 1, 11, 1846 };\n#else\n    M14A011_Probe probe = { 0, 11, 1846 };\n#endif\n    return probe;\n}\n",
   "expect": {

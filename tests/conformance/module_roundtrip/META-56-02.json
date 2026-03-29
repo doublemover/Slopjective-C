@@ -5,11 +5,11 @@
   "bucket": "module_roundtrip",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-2",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-5-4",
-    "spec/PART_2_MODULES_NAMESPACING_API_SURFACES.md#part-2-6",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-2-5-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-2-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-4"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 --emit-module META56Mismatch.objcmod --emit-interface META56Mismatch.obji %s\n// RUN: objc3c --verify-interface META56Mismatch.objcmod META56Mismatch.obji --assert-mismatch throws:missing --assert-mismatch async:missing --assert-mismatch objc_executor(main):objc_executor(background) --assert-mismatch objc_direct:dynamic --assert-mismatch objc_nserror:missing\n@interface META56Mismatch : NSObject\n- (id _Nonnull)loadToken;\n@end\n",
   "expect": {

@@ -168,7 +168,7 @@
       "status": "OPEN",
       "owner": "D-OPS",
       "due_date_utc": "2026-02-23",
-      "due_path": "spec/planning/issue_189_readiness_dossier_package.md#issue-189-closeout-comment-template",
+      "due_path": "spec/planning/issue_189_readiness_dossier_package.md",
       "summary": "Final commit-SHA slot for readiness closeout is not yet populated."
     }
   ],

@@ -2,22 +2,22 @@
   "version": 1,
   "entries": [
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
       "token": "<COMMIT_SHA>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
       "token": "<sha-*>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
       "token": "<output>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
       "token": "<yes/no + note>",
       "reason": "Allowed template placeholder for fixture coverage."
     },
@@ -37,7 +37,7 @@
       "reason": "Allowed template placeholder for fixture coverage."
     },
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
       "token": "<DATE>",
       "reason": "Intentionally stale entry for migration test coverage."
     }

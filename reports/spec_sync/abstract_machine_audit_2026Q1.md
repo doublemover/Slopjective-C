@@ -27,14 +27,14 @@ Governance backup owner: doublemover <153689082+doublemover@users.noreply.github
 
 | File                                                           | Command                                    | Result          |
 | -------------------------------------------------------------- | ------------------------------------------ | --------------- | ----------------- | ------------------------------- | ------------------------------- | --------------------------------------------------- | --------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------- | ---------------- | ------------------------------ | ---------------- | ---------------- | --------------- | --------------------------------- |
-| `spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md`                   | `rg -N "\{#am-2-2\}                        | \{#am-4-4\}     | \{#am-5\}         | \{#am-6-1\}                     | \{#am-6-2\}                     | \{#am-6-3\}                                         | \{#am-6-4\}                                         | \{#am-6-5\}     | \{#am-6-6\}                                                                        | \{#am-6-7\}                                    | \{#am-7\}"`      | `PASS AM count=11 expected=11` |
-| `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md`             | `rg -N "\{#part-0-1\}                      | \{#part-0-2-1\} | \{#part-0-2-2\}   | \{#part-0-2-4\}                 | \{#part-0-3-1\}                 | \{#part-0-3-2\}                                     | \{#part-0-4-1\}                                     | \{#part-0-4-6\} | \{#part-0-4-14\}                                                                   | \{#part-0-4-16\}                               | \{#part-0-4-17\} | \{#part-0-4-18\}               | \{#part-0-4-19\} | \{#part-0-4-20\} | \{#part-0-6\}"` | `PASS Part0 count=15 expected=15` |
-| `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md` | `rg -N "\{#part-3-4-1\}                    | \{#part-3-4-2\} | \{#part-3-4-5\}"` | `PASS Part3 count=3 expected=3` |
-| `spec/PART_6_ERRORS_RESULTS_THROWS.md`                         | `rg -N "\{#part-6-3\}                      | \{#part-6-4\}   | \{#part-6-5\}     | \{#part-6-6\}"`                 | `PASS Part6 count=4 expected=4` |
-| `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`                | `rg -N "\{#part-7-3-3\}                    | \{#part-7-6\}   | \{#part-7-9-1\}   | \{#part-7-9-2\}                 | \{#part-7-9-3\}                 | \{#part-7-9-4\}"`                                   | `PASS Part7 count=6 expected=6`                     |
-| `spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md`                 | `rg -N "\{#part-8-1\}                      | \{#part-8-2-3\} | \{#part-8-3\}     | \{#part-8-6\}"`                 | `PASS Part8 count=4 expected=4` |
-| AM matrix/cross-part rows                                      | `rg -n "AM-T0[1-9]                         | AM-T1[0-9]      | Part 3            | Part 6                          | Part 7                          | Part 8" spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md` | `PASS (rows AM-T01..AM-T19 and Part links present)` |
-| Part 0 AM/cross-part terminology links                         | `rg -n "Abstract Machine and Semantic Core | #am             | Part 3            | Part 6                          | Part 7                          | Part 8                                              | shall                                               | must            | ill-formed; diagnostic required" spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md` | `PASS (AM link + requirement wording present)` |
+| `docs/reference/legacy_spec_anchor_index.md#abstract-machine-and-semantic-core`                   | `rg -N "\{#am-2-2\}                        | \{#am-4-4\}     | \{#am-5\}         | \{#am-6-1\}                     | \{#am-6-2\}                     | \{#am-6-3\}                                         | \{#am-6-4\}                                         | \{#am-6-5\}     | \{#am-6-6\}                                                                        | \{#am-6-7\}                                    | \{#am-7\}"`      | `PASS AM count=11 expected=11` |
+| `docs/reference/legacy_spec_anchor_index.md#part-0-baseline-and-normative-references`             | `rg -N "\{#part-0-1\}                      | \{#part-0-2-1\} | \{#part-0-2-2\}   | \{#part-0-2-4\}                 | \{#part-0-3-1\}                 | \{#part-0-3-2\}                                     | \{#part-0-4-1\}                                     | \{#part-0-4-6\} | \{#part-0-4-14\}                                                                   | \{#part-0-4-16\}                               | \{#part-0-4-17\} | \{#part-0-4-18\}               | \{#part-0-4-19\} | \{#part-0-4-20\} | \{#part-0-6\}"` | `PASS Part0 count=15 expected=15` |
+| `docs/reference/legacy_spec_anchor_index.md#part-3-types-nullability-optionals-generics-keypaths` | `rg -N "\{#part-3-4-1\}                    | \{#part-3-4-2\} | \{#part-3-4-5\}"` | `PASS Part3 count=3 expected=3` |
+| `docs/reference/legacy_spec_anchor_index.md#part-6-errors-results-throws`                         | `rg -N "\{#part-6-3\}                      | \{#part-6-4\}   | \{#part-6-5\}     | \{#part-6-6\}"`                 | `PASS Part6 count=4 expected=4` |
+| `docs/reference/legacy_spec_anchor_index.md#part-7-concurrency-async-await-actors`                | `rg -N "\{#part-7-3-3\}                    | \{#part-7-6\}   | \{#part-7-9-1\}   | \{#part-7-9-2\}                 | \{#part-7-9-3\}                 | \{#part-7-9-4\}"`                                   | `PASS Part7 count=6 expected=6`                     |
+| `docs/reference/legacy_spec_anchor_index.md#part-8-system-programming-extensions`                 | `rg -N "\{#part-8-1\}                      | \{#part-8-2-3\} | \{#part-8-3\}     | \{#part-8-6\}"`                 | `PASS Part8 count=4 expected=4` |
+| AM matrix/cross-part rows                                      | `rg -n "AM-T0[1-9]                         | AM-T1[0-9]      | Part 3            | Part 6                          | Part 7                          | Part 8" docs/reference/legacy_spec_anchor_index.md#abstract-machine-and-semantic-core` | `PASS (rows AM-T01..AM-T19 and Part links present)` |
+| Part 0 AM/cross-part terminology links                         | `rg -n "Abstract Machine and Semantic Core | #am             | Part 3            | Part 6                          | Part 7                          | Part 8                                              | shall                                               | must            | ill-formed; diagnostic required" docs/reference/legacy_spec_anchor_index.md#part-0-baseline-and-normative-references` | `PASS (AM link + requirement wording present)` |
 
 ## Delta ledger
 
@@ -49,11 +49,11 @@ Governance backup owner: doublemover <153689082+doublemover@users.noreply.github
 ### AM-AUDIT-2026Q1-01
 
 - Class: `normative conflict`
-- Canonical home: `spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6-6`
+- Canonical home: `docs/reference/legacy_spec_anchor_index.md#part-6-6`
 - Evidence excerpts:
-  - `spec/PART_6_ERRORS_RESULTS_THROWS.md:294`: `T?`: unwrap or early-return `nil` (or throw) depending on surrounding function's declared return/effects.
-  - `spec/PART_6_ERRORS_RESULTS_THROWS.md:337`: If the enclosing function is `throws` or returns `Result<…>`, use of `e?` is ill-formed in v1.
-  - `spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md:242`: using optional propagation to implicitly map into `throws` or `Result` contexts is ill-formed in v1.
+  - `docs/reference/legacy_spec_anchor_index.md#part-6-errors-results-throws:294`: `T?`: unwrap or early-return `nil` (or throw) depending on surrounding function's declared return/effects.
+  - `docs/reference/legacy_spec_anchor_index.md#part-6-errors-results-throws:337`: If the enclosing function is `throws` or returns `Result<…>`, use of `e?` is ill-formed in v1.
+  - `docs/reference/legacy_spec_anchor_index.md#abstract-machine-and-semantic-core:242`: using optional propagation to implicitly map into `throws` or `Result` contexts is ill-formed in v1.
 - Reconciliation direction:
   - Treat Part 6 line-level rule at `#part-6-6` (ill-formed in `throws`/`Result`) plus AM.6.5 as canonical v1 behavior.
   - Remove/clarify the ambiguous parenthetical in the introductory bullet so no nil-to-throw implicit mapping interpretation remains.
@@ -61,22 +61,22 @@ Governance backup owner: doublemover <153689082+doublemover@users.noreply.github
 ### AM-AUDIT-2026Q1-02
 
 - Class: `editorial mismatch`
-- Canonical home: `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md#part-0-4-1`
+- Canonical home: `docs/reference/legacy_spec_anchor_index.md#part-0-4-1`
 - Evidence excerpts:
-  - `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md:96`: Preferred wording in this draft is: **"ill-formed; diagnostic required"**.
-  - `spec/PART_0_BASELINE_AND_NORMATIVE_REFERENCES.md:97`: Parts 1-12 shall use this exact phrase when introducing static prohibitions.
-  - `spec/PART_3_TYPES_NULLABILITY_OPTIONALS_GENERICS_KEYPATHS.md:391`: `?.` is ill-formed in strict mode and diagnosed in permissive mode.
+  - `docs/reference/legacy_spec_anchor_index.md#part-0-baseline-and-normative-references:96`: Preferred wording in this draft is: **"ill-formed; diagnostic required"**.
+  - `docs/reference/legacy_spec_anchor_index.md#part-0-baseline-and-normative-references:97`: Parts 1-12 shall use this exact phrase when introducing static prohibitions.
+  - `docs/reference/legacy_spec_anchor_index.md#part-3-types-nullability-optionals-generics-keypaths:391`: `?.` is ill-formed in strict mode and diagnosed in permissive mode.
 - Reconciliation direction:
   - Normalize prohibition wording in Part 3 to include the exact phrase while keeping existing strict/permissive profile semantics intact.
 
 ### AM-AUDIT-2026Q1-03
 
 - Class: `missing example`
-- Canonical home: `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-5`
+- Canonical home: `docs/reference/legacy_spec_anchor_index.md#part-7-6-5`
 - Evidence excerpts:
-  - `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md:402`: `defer` handlers shall execute exactly once, in LIFO order, when scope exit occurs due to cancellation-driven unwind.
-  - `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md:404`: Async-frame captured objects retained across suspension shall be released when the frame is destroyed, including cancellation unwind.
-  - `spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md:165`: each successfully initialized annotated field is registered for cleanup.
+  - `docs/reference/legacy_spec_anchor_index.md#part-7-concurrency-async-await-actors:402`: `defer` handlers shall execute exactly once, in LIFO order, when scope exit occurs due to cancellation-driven unwind.
+  - `docs/reference/legacy_spec_anchor_index.md#part-7-concurrency-async-await-actors:404`: Async-frame captured objects retained across suspension shall be released when the frame is destroyed, including cancellation unwind.
+  - `docs/reference/legacy_spec_anchor_index.md#part-8-system-programming-extensions:165`: each successfully initialized annotated field is registered for cleanup.
 - Reconciliation direction:
   - Add one worked example under Part 7.9 or Part 8.3 showing `try await` cancellation path with `defer` + `@cleanup` + `keepAlive`, mapped to `AM-T12` and `AM-T14`.
 

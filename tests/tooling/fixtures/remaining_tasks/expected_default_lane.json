@@ -57,7 +57,7 @@
     ],
     "path_counts": [
       {
-        "path": "spec/planning/alpha.md",
+        "path": "spec/planning/a.mdlpha",
         "count": 3
       },
       {
@@ -147,7 +147,7 @@
           "title": "Open blocked alpha lane A",
           "lane": "A",
           "status": "open-blocked",
-          "path": "spec/planning/alpha.md",
+          "path": "spec/planning/a.mdlpha",
           "line": 12
         },
         {
@@ -155,7 +155,7 @@
           "title": "Blocked alpha lane A",
           "lane": "A",
           "status": "blocked",
-          "path": "spec/planning/alpha.md",
+          "path": "spec/planning/a.mdlpha",
           "line": 30
         },
         {
@@ -177,7 +177,7 @@
           "title": "Open alpha lane B",
           "lane": "B",
           "status": "open",
-          "path": "spec/planning/alpha.md",
+          "path": "spec/planning/a.mdlpha",
           "line": 11
         },
         {
@@ -205,7 +205,7 @@
       "title": "Open blocked alpha lane A",
       "lane": "A",
       "status": "open-blocked",
-      "path": "spec/planning/alpha.md",
+      "path": "spec/planning/a.mdlpha",
       "line": 12
     },
     {
@@ -213,7 +213,7 @@
       "title": "Blocked alpha lane A",
       "lane": "A",
       "status": "blocked",
-      "path": "spec/planning/alpha.md",
+      "path": "spec/planning/a.mdlpha",
       "line": 30
     },
     {
@@ -229,7 +229,7 @@
       "title": "Open alpha lane B",
       "lane": "B",
       "status": "open",
-      "path": "spec/planning/alpha.md",
+      "path": "spec/planning/a.mdlpha",
       "line": 11
     },
     {

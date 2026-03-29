@@ -12,7 +12,7 @@
   "spec_baseline": {
     "language_line": "objc3-v1",
     "release_train": "v0.11",
-    "conformance_checklist_ref": "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-2",
+    "conformance_checklist_ref": "docs/reference/legacy_spec_anchor_index.md#e-2",
     "minimum_conformance_suite_version": "0.11.0"
   },
   "profile_claim": {

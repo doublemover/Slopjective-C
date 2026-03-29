@@ -5,10 +5,10 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
-    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-2",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-5"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-5"
   ],
   "source": "int nle74_bad_goto(int value) {\n+loop:\n+    while (value > 0) {\n+        defer {\n+            if (value == 2) {\n+                goto loop;\n+            }\n+            break;\n+        }\n+        value = value - 1;\n+    }\n+    return value;\n+}\n+",
   "expect": {

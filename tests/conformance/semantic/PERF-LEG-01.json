@@ -5,14 +5,14 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-9",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-2-3",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-5-1",
-    "spec/PART_9_PERFORMANCE_AND_DYNAMISM_CONTROLS.md#part-9-7",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-8",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-1"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-9",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-2-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-5-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-9-7",
+    "docs/reference/legacy_spec_anchor_index.md#c-8",
+    "docs/reference/legacy_spec_anchor_index.md#d",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-1"
   ],
   "source": "@interface PERFLEG01Root : NSObject\n- (int)directToken __attribute__((objc_direct));\n@end\n\n@interface PERFLEG01Root (CollidingCategory)\n- (int)directToken;\n@end\n",
   "expect": {

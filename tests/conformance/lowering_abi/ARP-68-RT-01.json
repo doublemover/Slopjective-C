@@ -5,15 +5,15 @@
   "bucket": "lowering_abi",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-4",
-    "spec/DECISIONS_LOG.md#decisions-d-006",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-9-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-4"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#decisions-d-006",
+    "docs/reference/legacy_spec_anchor_index.md#c-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-9-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-12-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-4"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -O2 -fsyntax-only %s\nstatic int arp68_rt01_pool_trace = 0;\nstatic int arp68_rt01_pool_push_count = 0;\nstatic int arp68_rt01_pool_pop_count = 0;\nstatic int arp68_rt01_pool_depth = 0;\nstatic int arp68_rt01_pool_tokens[8];\n\nvoid *objc_autoreleasePoolPush(void) {\n    int slot = arp68_rt01_pool_push_count;\n    arp68_rt01_pool_trace = arp68_rt01_pool_trace * 10 + 1;\n    arp68_rt01_pool_push_count = arp68_rt01_pool_push_count + 1;\n    arp68_rt01_pool_depth = arp68_rt01_pool_depth + 1;\n    if (slot < 8) {\n        arp68_rt01_pool_tokens[slot] = slot + 1;\n        return &arp68_rt01_pool_tokens[slot];\n    }\n    return (void *)0;\n}\n\nvoid objc_autoreleasePoolPop(void *token) {\n    if (token != (void *)0 && arp68_rt01_pool_depth > 0) {\n        arp68_rt01_pool_trace = arp68_rt01_pool_trace * 10 + 2;\n        arp68_rt01_pool_pop_count = arp68_rt01_pool_pop_count + 1;\n        arp68_rt01_pool_depth = arp68_rt01_pool_depth - 1;\n    }\n}\n\nvoid arp68_rt01_reset_pool_trace(void) {\n    arp68_rt01_pool_trace = 0;\n    arp68_rt01_pool_push_count = 0;\n    arp68_rt01_pool_pop_count = 0;\n    arp68_rt01_pool_depth = 0;\n}\n\nint arp68_rt01_pool_trace_snapshot(void) {\n    return arp68_rt01_pool_trace;\n}\n\nint arp68_rt01_pool_push_count_snapshot(void) {\n    return arp68_rt01_pool_push_count;\n}\n\nint arp68_rt01_pool_pop_count_snapshot(void) {\n    return arp68_rt01_pool_pop_count;\n}\n\nint arp68_rt01_pool_contract_ok(void) {\n    return (arp68_rt01_pool_depth == 0 &&\n            arp68_rt01_pool_push_count == arp68_rt01_pool_pop_count) ? 1 : 0;\n}\n\nid arp68_rt01_suspend_once(id value) async;\n\nint arp68_rt01_two_suspend_slices(id seed) async {\n    id stage1 = await arp68_rt01_suspend_once(seed);\n    id stage2 = await arp68_rt01_suspend_once(stage1);\n    return stage2 != nil ? 1 : 0;\n}\n",
   "expect": {

@@ -2,7 +2,7 @@
   "version": 1,
   "entries": [
     {
-      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a_root.md",
+      "path": "tests/tooling/fixtures/planning_placeholders/spec/planning/a.md-root",
       "token": "<COMMIT_SHA>",
       "reason": "   "
     }

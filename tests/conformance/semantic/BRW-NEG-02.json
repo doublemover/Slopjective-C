@@ -5,10 +5,10 @@
   "bucket": "semantic",
   "profile": "strict-system",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-7-4",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-12"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-7-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-12"
   ],
   "source": "typedef struct BRWCell {\n    const char *slot;\n} BRWCell;\n\nBRWCell *brw_make_cell(void);\n\n@interface BRWOwner : NSObject {\n@public\n    const char *ivarSlot;\n}\n@property (nonatomic, assign) const char *propSlot;\n@end\n\nvoid brw_neg02_store_heap_ivar_property(BRWOwner *owner, borrowed const char *bytes) {\n    BRWCell *cell = brw_make_cell();\n    cell->slot = bytes;\n    owner->ivarSlot = bytes;\n    owner.propSlot = bytes;\n}\n",
   "expect": {

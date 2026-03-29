@@ -5,14 +5,14 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-2",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-3-2",
-    "spec/PART_6_ERRORS_RESULTS_THROWS.md#part-6",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-4-1",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-2-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-6",
+    "docs/reference/legacy_spec_anchor_index.md#c-4-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-2"
   ],
   "source": "// RUN: objc3c -x objective-c++ -fobjc-version=3 -fsyntax-only %s\nstruct INTCXX03Token {\n    int value;\n};\n\nint intcxx03_parse(INTCXX03Token token, const char * _Nonnull text) throws;\n\nint intcxx03_parse_c(INTCXX03Token token, const char * _Nonnull text, id<Error> _Nullable * _Nullable outError);\n\nint intcxx03_parse_bad_order(id<Error> _Nullable * _Nullable outError, INTCXX03Token token, const char * _Nonnull text);\n\nint intcxx03_parse_bad_missing(INTCXX03Token token, const char * _Nonnull text);\n",
   "expect": {

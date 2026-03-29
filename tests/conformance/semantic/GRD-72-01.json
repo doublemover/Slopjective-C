@@ -5,9 +5,9 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-5",
-    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-2",
-    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-5-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-5-3-3"
   ],
   "source": "id _Nullable badGuard(id _Nullable maybeName) {\n    guard let name = maybeName else {\n        id fallback = @\"guest\";\n    }\n    return name;\n}\n",
   "expect": {

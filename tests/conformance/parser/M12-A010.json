@@ -13,9 +13,9 @@
     "sequence": 10
   },
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-10",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-10",
-    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-8"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-10",
+    "docs/reference/legacy_spec_anchor_index.md#f-8"
   ],
   "source": "#pragma objc_language_version(3)\n#ifndef __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_REPLAY_DETERMINISM__\n#define __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_REPLAY_DETERMINISM__ 1\n#endif\n\ntypedef struct M12A010_Probe {\n    int enabled;\n    int sequence;\n    int issue;\n} M12A010_Probe;\n\nM12A010_Probe m12a010_probe(void) {\n#if __OBJC3_FEATURE_MODULE_IMPORT_NAME_LOOKUP_REPLAY_DETERMINISM__\n    M12A010_Probe probe = { 1, 10, 1733 };\n#else\n    M12A010_Probe probe = { 0, 10, 1733 };\n#endif\n    return probe;\n}\n",
   "expect": {

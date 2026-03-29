@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- | --- |
 | `EDGE-V013-016` | `V013-REL-02` | `V013-REL-03` | `spec/planning/future_work_v011_carryover.md` | Canonical ledger path is authoritative. | `blocking` |
 | `EDGE-V013-017` | `V013-SPEC-03` | `V013-REL-03` | `reports/spec_sync/abstract_machine_audit_2026Q2.md` | Consume latest audit drift state and unresolved IDs verbatim; no reinterpretation in REL package. | `blocking` |
-| `EDGE-V013-018` | `V013-SPEC-04` | `V013-REL-03` | `spec/planning/v013_profile_gate_delta.md`; `spec/CONFORMANCE_PROFILE_CHECKLIST.md` | Treat profile delta package as decision source. | `blocking` |
+| `EDGE-V013-018` | `V013-SPEC-04` | `V013-REL-03` | `spec/planning/v013_profile_gate_delta.md`; `docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist` | Treat profile delta package as decision source. | `blocking` |
 | `EDGE-V013-019` | `V013-GOV-03` | `V013-REL-03` | `spec/planning/v013_review_board_cadence_quorum_package.md`; `reports/reviews/v013_review_board_calendar.md` | Consume cadence/quorum contract and precomputed deadlines. | `blocking` |
 
 ## 3. Evidence Consolidation Matrix
@@ -36,4 +36,4 @@ Pre-link index for release handoff packet assembly:
 
 | command_id | command | output_excerpt | exit_code | result |
 | --- | --- | --- | ---: | --- |
-| `REL03-CMD-03` | `rg -n "spec/planning/future_work_v011_carryover.md|reports/spec_sync/abstract_machine_audit_2026Q2.md|spec/planning/v013_profile_gate_delta.md|spec/CONFORMANCE_PROFILE_CHECKLIST.md|spec/planning/v013_review_board_cadence_quorum_package.md|reports/reviews/v013_review_board_calendar.md" spec/planning/v013_rel03_signoff_consolidation_package.md` | `matched all required upstream artifact references` | `0` | `PASS` |
+| `REL03-CMD-03` | `rg -n "spec/planning/future_work_v011_carryover.md|reports/spec_sync/abstract_machine_audit_2026Q2.md|spec/planning/v013_profile_gate_delta.md|docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist|spec/planning/v013_review_board_cadence_quorum_package.md|reports/reviews/v013_review_board_calendar.md" spec/planning/v013_rel03_signoff_consolidation_package.md` | `matched all required upstream artifact references` | `0` | `PASS` |

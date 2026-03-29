@@ -9,7 +9,7 @@
   "required_outcome": "required-pass",
   "dependency_ref": "Part0:B-01,B-02,B-03,B-04@spec-baseline",
   "references": [
-    "spec/FUTURE_WORK_V011.md",
+    "docs/reference/legacy_spec_anchor_index.md#future-work-v011",
     "spec/planning/issue_149_lane_a_consolidated_closure_bundle.md",
     "spec/planning/issue_167_seeded_issue_conformance_tests_plan.md"
   ],

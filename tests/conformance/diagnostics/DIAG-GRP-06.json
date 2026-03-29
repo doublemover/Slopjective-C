@@ -5,8 +5,8 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-12",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-12",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3"
   ],
   "source": "actor class DIAGGRP06Actor : NSObject\n- (int)value;\n@end\n\nint diaggrp06_ok(DIAGGRP06Actor *actor) async {\n    return await [actor value];\n}\n",
   "expect": {

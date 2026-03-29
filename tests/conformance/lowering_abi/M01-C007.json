@@ -5,13 +5,13 @@
   "bucket": "lowering_abi",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/DECISIONS_LOG.md#decisions-d-010",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
-    "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-12-2",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#decisions-d-010",
+    "docs/reference/legacy_spec_anchor_index.md#c-5",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-5-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-12-2",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc-arc -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -fobjc-arc -O2 -fsyntax-only %s\nint m01c007_cleanup_counter = 0;\n\nid m01c007_step(id seed) async {\n    return seed;\n}\n\nint m01c007_trace(id seed) async {\n    m01c007_cleanup_counter = 0;\n\n    id live = await m01c007_step(seed);\n    defer { m01c007_cleanup_counter = m01c007_cleanup_counter + 1; };\n\n    id done = await m01c007_step(live);\n    if (done == nil) {\n        return -1;\n    }\n\n    return m01c007_cleanup_counter == 1 ? 1 : -1;\n}\n",
   "expect": {
@@ -55,9 +55,9 @@
       "abi_field_stability": [
         {
           "field_id": "coroutine_frame_lifetime_across_suspend",
-          "decision_anchor": "spec/DECISIONS_LOG.md#decisions-d-010",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-1",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "decision_anchor": "docs/reference/legacy_spec_anchor_index.md#decisions-d-010",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-1",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "stability_property": "values crossing await suspension remain in replay-stable coroutine frame storage",
           "must_match_modes": [
             "debug-o0",
@@ -66,8 +66,8 @@
         },
         {
           "field_id": "coroutine_defer_cleanup_exactly_once",
-          "contract_anchor": "spec/PART_5_CONTROL_FLOW_SAFETY_CONSTRUCTS.md#part-5-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#part-5-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "stability_property": "defer cleanup on coroutine completion executes exactly once after suspension",
           "must_match_modes": [
             "debug-o0",

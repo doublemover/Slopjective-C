@@ -5,8 +5,8 @@
   "bucket": "parser",
   "profile": "core",
   "references": [
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-8-6"
+    "docs/reference/legacy_spec_anchor_index.md#part-8-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-8-6"
   ],
   "source": "void (^block)(void) = [weak self move fd] {\n    use(self);\n    close(fd);\n};\n",
   "expect": {

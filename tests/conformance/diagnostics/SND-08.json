@@ -5,12 +5,12 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-3",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-3",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-5",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-8-6",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#b-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-8-6",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3"
   ],
   "source": "__attribute__((objc_unsafe_sendable))\n@interface SND08UnsafeBox : NSObject\n@property (nonatomic) int value;\n@end\n\ntypedef id SND08TaskHandle;\nSND08TaskHandle snd08_spawn(id (^work)(void) async) __attribute__((objc_task_spawn));\nid snd08_join(SND08TaskHandle handle) async;\nSND08UnsafeBox *snd08_main_hop(SND08UnsafeBox *value) async __attribute__((objc_executor(main)));\n\nactor class SND08Bridge : NSObject\n- (SND08UnsafeBox * _Nonnull)echo:(SND08UnsafeBox * _Nonnull)value;\n@end\n\nid snd08_escape_hatch(SND08Bridge *bridge, SND08UnsafeBox *box) async {\n    SND08TaskHandle task = snd08_spawn(^id(void) async {\n        return box;\n    });\n    SND08UnsafeBox *roundTrip = await [bridge echo:box];\n    SND08UnsafeBox *hopped = await snd08_main_hop(roundTrip);\n    (void)hopped;\n    return await snd08_join(task);\n}\n",
   "expect": {

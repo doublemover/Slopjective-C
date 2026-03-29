@@ -5,11 +5,11 @@
   "bucket": "lowering_abi",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-    "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#c-2",
+    "docs/reference/legacy_spec_anchor_index.md#c-5",
+    "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+    "docs/reference/legacy_spec_anchor_index.md#d-3-2"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\ntypedef int (*M18C013RuntimeHook)(\n    void * _Nullable context,\n    SEL _Nonnull selector,\n    int stateTag,\n    id _Nullable payload,\n    id<Error> _Nullable * _Nullable errorOut);\n\nM18C013RuntimeHook M18c013_resolve_hook(SEL _Nonnull selector);\n\nint M18c013_dispatch(void * _Nullable context,\n                     SEL _Nonnull selector,\n                     int stateTag,\n                     id _Nullable payload) {\n    M18C013RuntimeHook hook = M18c013_resolve_hook(selector);\n    if (hook == 0) {\n        return -1;\n    }\n\n    id<Error> err = nil;\n    int rc = hook(context, selector, stateTag, payload, &err);\n    if (rc == 0 && err == nil) {\n        return 1;\n    }\n    return -1;\n}\n",
   "expect": {
@@ -51,8 +51,8 @@
       "abi_field_stability": [
         {
           "field_id": "runtime_hook.identity_selector_binding",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "required_shape": "runtime hook identity is bound to selector metadata without ambiguity",
           "must_match_modes": [
             "debug-o0",
@@ -61,8 +61,8 @@
         },
         {
           "field_id": "runtime_hook.calling_convention_tuple",
-          "contract_anchor": "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5-2",
-          "table_anchor": "spec/MODULE_METADATA_AND_ABI_TABLES.md#d-3-2",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#c-5-2",
+          "table_anchor": "docs/reference/legacy_spec_anchor_index.md#d-3-2",
           "required_shape": "hook tuple is context -> selector -> stateTag -> payload -> outError",
           "must_match_modes": [
             "debug-o0",

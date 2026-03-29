@@ -5,8 +5,8 @@
   "bucket": "semantic",
   "profile": "strict",
   "references": [
-    "spec/FORMAL_GRAMMAR_AND_PRECEDENCE.md#f-5-6",
-    "spec/ABSTRACT_MACHINE_AND_SEMANTIC_CORE.md#am-6"
+    "docs/reference/legacy_spec_anchor_index.md#f-5-6",
+    "docs/reference/legacy_spec_anchor_index.md#am-6"
   ],
   "source": "id _Nullable nextToken(Client * _Nullable client) async throws {\n    return (try await client?.fetchToken())?;\n}\n",
   "expect": {

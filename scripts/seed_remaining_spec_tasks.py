@@ -473,7 +473,7 @@ def clean_markdown_text(text: str) -> str:
 
 
 def infer_bucket(task: RawTask) -> str:
-    if task.path == "spec/CONFORMANCE_PROFILE_CHECKLIST.md":
+    if task.path == "docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist":
         return "conformance-checklist"
     if task.path == "spec/conformance/profile_release_evidence_checklist.md":
         return "release-evidence"
@@ -643,7 +643,7 @@ def evaluate_definition(task: RawTask, cleaned: str) -> tuple[str, list[str]]:
 
 
 def derive_shard(task: RawTask) -> str:
-    if task.path == "spec/CONFORMANCE_PROFILE_CHECKLIST.md":
+    if task.path == "docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist":
         return "conformance-profile-checklist"
     if task.path == "spec/conformance/profile_release_evidence_checklist.md":
         return "release-evidence-checklist"

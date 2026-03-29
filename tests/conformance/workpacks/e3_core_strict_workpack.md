@@ -7,7 +7,7 @@ issues `#48` through `#79`, grouped by `E.3.1` through `E.3.6`.
 
 - Keep all spec anchor tokens unchanged (for example `#e-3-1`, `#part-1-2`).
 - Use only existing anchors from
-  `spec/CONFORMANCE_PROFILE_CHECKLIST.md` and referenced Part documents.
+  `docs/reference/legacy_spec_anchor_index.md#conformance-profile-checklist` and referenced Part documents.
 - Do not rename test IDs once introduced in this workpack.
 
 ## Parallel Sequencing

@@ -5,9 +5,9 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
-    "spec/PART_1_VERSIONING_COMPATIBILITY_CONFORMANCE.md",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7",
+    "docs/reference/legacy_spec_anchor_index.md#e-3-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-1-versioning-compatibility-conformance",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7",
     "spec/planning/compiler/m05/lane_d_m05_scope_freeze.md"
   ],
   "source": "void m05d004_compare(id lhs, id rhs);`n`nvoid m05d004_negative(void) {`n    m05d004_compare(@\"code=OBJC3-D-OTHER\", @\"expected=OBJC3-D-CONFORMANCE-DIAGNOSTIC-CODE-MISMATCH\");`n}`n",

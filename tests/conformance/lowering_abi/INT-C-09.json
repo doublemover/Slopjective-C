@@ -5,12 +5,12 @@
   "bucket": "lowering_abi",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
-    "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-6-4",
-    "spec/LOWERING_AND_RUNTIME_CONTRACTS.md#c-5"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-2-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-11-2-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-6-4",
+    "docs/reference/legacy_spec_anchor_index.md#c-5"
   ],
   "source": "// RUN: objc3c -fobjc-version=3 -O0 -fsyntax-only %s\\n// RUN: objc3c -fobjc-version=3 -O2 -fsyntax-only %s\\ntypedef enum objc_async_completion_status {\\n    OBJC_ASYNC_COMPLETION_SUCCESS = 0,\\n    OBJC_ASYNC_COMPLETION_ERROR = 1,\\n    OBJC_ASYNC_COMPLETION_CANCELLED = 2\\n} objc_async_completion_status_t;\\n\\ntypedef void (*INTC09Completion)(\\n    void * _Nullable context,\\n    objc_async_completion_status_t status,\\n    id _Nullable result,\\n    id<Error> _Nullable error);\\n\\nid intc09_work(int mode) async throws;\\nvoid intc09_work_async_c(int mode,\\n                         void * _Nullable context,\\n                         INTC09Completion _Nonnull completion);\\n\\ntypedef struct INTC09Probe {\\n    int successSeen;\\n    int errorSeen;\\n    int cancelledSeen;\\n    int invariantViolations;\\n} INTC09Probe;\\n\\nvoid intc09_probe_callback(void * _Nullable context,\\n                           objc_async_completion_status_t status,\\n                           id _Nullable result,\\n                           id<Error> _Nullable error) {\\n    INTC09Probe *probe = (INTC09Probe *)context;\\n    if (status == OBJC_ASYNC_COMPLETION_SUCCESS) {\\n        probe->successSeen = probe->successSeen + 1;\\n        if (error != nil) {\\n            probe->invariantViolations = probe->invariantViolations + 1;\\n        }\\n    } else if (status == OBJC_ASYNC_COMPLETION_ERROR) {\\n        probe->errorSeen = probe->errorSeen + 1;\\n        if (error == nil) {\\n            probe->invariantViolations = probe->invariantViolations + 1;\\n        }\\n    } else if (status == OBJC_ASYNC_COMPLETION_CANCELLED) {\\n        probe->cancelledSeen = probe->cancelledSeen + 1;\\n        if (error == nil) {\\n            probe->invariantViolations = probe->invariantViolations + 1;\\n        }\\n    } else {\\n        probe->invariantViolations = probe->invariantViolations + 1;\\n    }\\n    (void)result;\\n}\\n",
   "expect": {
@@ -52,7 +52,7 @@
       "abi_field_stability": [
         {
           "field_id": "interop.async_c_thunk_status_error_matrix",
-          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-3",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#part-11-2-3",
           "required_shape": "success => error nil; error/cancelled => error non-nil; result ignored unless success",
           "must_match_modes": [
             "debug-o0",
@@ -61,7 +61,7 @@
         },
         {
           "field_id": "interop.async_c_thunk_cancellation_mapping",
-          "contract_anchor": "spec/PART_11_INTEROPERABILITY_C_CPP_SWIFT.md#part-11-2-4",
+          "contract_anchor": "docs/reference/legacy_spec_anchor_index.md#part-11-2-4",
           "required_shape": "cancellation reported as OBJC_ASYNC_COMPLETION_CANCELLED with distinguished cancellation error",
           "must_match_modes": [
             "debug-o0",

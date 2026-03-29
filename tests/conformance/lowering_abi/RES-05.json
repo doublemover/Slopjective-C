@@ -5,13 +5,13 @@
   "bucket": "lowering_abi",
   "profile": "strict-system",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-8",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-1",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3",
-    "spec/PART_8_SYSTEM_PROGRAMMING_EXTENSIONS.md#part-8-3-2",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-6"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-8",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-8-3-2",
+    "docs/reference/legacy_spec_anchor_index.md#part-12",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-6"
   ],
   "source": "// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -fexceptions -O0 -fsyntax-only %s\n// RUN: objc3c -x objective-c++ -std=c++17 -fobjc-version=3 -fobjc-arc -fobjc3-strictness=strict-system -fexceptions -O2 -fsyntax-only %s\ntypedef int res_handle_t;\nstatic int res05_trace = 0;\nstatic int res05_close_count = 0;\n\nvoid res05_close(res_handle_t handle) {\n    if (handle != -1) {\n        res05_trace = res05_trace * 10 + 4;\n        res05_close_count = res05_close_count + 1;\n    }\n}\n\nint res05_unwind_cleanup_once(int shouldThrow) {\n    res05_trace = 0;\n    res05_close_count = 0;\n\n    try {\n        res_handle_t fd __attribute__((objc_resource(close=res05_close, invalid=-1))) = 11;\n        defer { res05_trace = res05_trace * 10 + 9; };\n        if (shouldThrow != 0) {\n            throw 5;\n        }\n        res05_trace = res05_trace * 10 + 1;\n        (void)fd;\n    } catch (...) {\n        res05_trace = res05_trace * 10 + 7;\n    }\n\n    if (res05_close_count != 1) {\n        return -1;\n    }\n\n    return res05_trace;\n}\n",
   "expect": {

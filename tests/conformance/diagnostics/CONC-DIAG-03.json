@@ -5,12 +5,12 @@
   "bucket": "diagnostics",
   "profile": "strict",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-2-1",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-10",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-5-7"
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-2-1",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-10",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-5-7"
   ],
   "source": "actor class CONCDIAG03Worker : NSObject\n- (id _Nonnull)step:(id _Nonnull)seed;\n@end\n\nid concdiag03_suspicious_dynamic_call(CONCDIAG03Worker *worker) async {\n    return [worker performSelector:@selector(step:) withObject:nil];\n}\n",
   "expect": {

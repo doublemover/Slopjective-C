@@ -5,11 +5,11 @@
   "bucket": "semantic",
   "profile": "core",
   "references": [
-    "spec/CONFORMANCE_PROFILE_CHECKLIST.md#e-3-7",
-    "spec/ATTRIBUTE_AND_SYNTAX_CATALOG.md#b-3-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-4",
-    "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md#part-7-7-5",
-    "spec/PART_12_DIAGNOSTICS_TOOLING_TESTS.md#part-12-3-3",
+    "docs/reference/legacy_spec_anchor_index.md#e-3-7",
+    "docs/reference/legacy_spec_anchor_index.md#b-3-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-4",
+    "docs/reference/legacy_spec_anchor_index.md#part-7-7-5",
+    "docs/reference/legacy_spec_anchor_index.md#part-12-3-3",
     "spec/planning/compiler/m01/lane_b_m01_scope_freeze.md"
   ],
   "source": "actor class M01B005Counter : NSObject\n@property (atomic) int count;\n- (int)positiveSnapshot;\n- (int)negativeSnapshot __attribute__((objc_nonisolated));\n@end\n\n@implementation M01B005Counter\n- (int)positiveSnapshot {\n    return self.count;\n}\n\n- (int)negativeSnapshot {\n    return self.count;\n}\n@end\n",
