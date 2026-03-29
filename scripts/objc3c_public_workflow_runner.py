@@ -34,6 +34,7 @@ DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
+SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
@@ -170,6 +171,10 @@ def action_check_showcase_surface(rest: list[str]) -> int:
 
 def action_validate_showcase_runtime(rest: list[str]) -> int:
     return pwsh_file(SHOWCASE_RUNTIME_PS1, *rest)
+
+
+def action_validate_showcase(_: list[str]) -> int:
+    return run([sys.executable, str(SHOWCASE_INTEGRATION_PY)])
 
 
 def action_validate_documentation_surface(_: list[str]) -> int:
@@ -684,6 +689,7 @@ def action_test_ci(_: list[str]) -> int:
         "test-ci",
         [
             ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
+            ("validate-showcase", [sys.executable, str(SHOWCASE_INTEGRATION_PY)]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
@@ -839,6 +845,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
     "check-showcase-surface": ActionSpec("check-showcase-surface", "check the live showcase portfolio and compile its example sources through the public compiler path", "python:scripts/check_showcase_surface.py", ("check:showcase:surface",), validation_tier="repo", guarantee_owner="showcase examples stay compile-coupled, checked in, and tied to the public compiler path", pass_through_args=True),
     "validate-showcase-runtime": ActionSpec("validate-showcase-runtime", "compile, link, and run the checked-in showcase examples through the live runtime launch contract", "pwsh:scripts/check_showcase_runtime.ps1", (), validation_tier="repo", guarantee_owner="showcase examples stay runnable through the real runtime archive and launch-contract wiring", pass_through_args=True),
+    "validate-showcase": ActionSpec("validate-showcase", "run the integrated showcase compile and runtime validation flow", "python:scripts/check_showcase_integration.py", ("test:showcase",), validation_tier="repo", guarantee_owner="showcase examples stay compiled, runnable, and wired into the normal repo validation path"),
     "check-repo-superclean-surface": ActionSpec("check-repo-superclean-surface", "check the build-emitted repo superclean source-of-truth artifact", "python:scripts/check_repo_superclean_surface.py", ("check:repo:surface",), validation_tier="repo", guarantee_owner="native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact"),
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
@@ -895,6 +902,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-documentation-surface": action_check_documentation_surface,
     "check-showcase-surface": action_check_showcase_surface,
     "validate-showcase-runtime": action_validate_showcase_runtime,
+    "validate-showcase": action_validate_showcase,
     "check-repo-superclean-surface": action_check_repo_superclean_surface,
     "validate-documentation-surface": action_validate_documentation_surface,
     "validate-repo-superclean": action_validate_repo_superclean,
