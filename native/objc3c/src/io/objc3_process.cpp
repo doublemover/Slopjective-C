@@ -543,6 +543,52 @@ std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds() {
   return BuildFixedStringVector({"strict", "strict-concurrency", "strict-system"});
 }
 
+std::vector<std::filesystem::path>
+BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix) {
+  return {
+      out_dir / (emit_prefix + ".objc3-release-runtime-claim-matrix.json"),
+      out_dir / (emit_prefix + ".objc3-dashboard-ready-summary.json"),
+      out_dir / (emit_prefix + ".objc3-toolchain-runtime-ga-operations-scaffold.json"),
+  };
+}
+
+bool DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    std::string &error) {
+  error.clear();
+  std::vector<std::string> deprecated_artifacts;
+  for (const auto &path :
+       BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(out_dir, emit_prefix)) {
+    if (std::filesystem::exists(path)) {
+      deprecated_artifacts.push_back(path.filename().string());
+    }
+  }
+  if (deprecated_artifacts.empty()) {
+    return true;
+  }
+
+  std::ostringstream out;
+  out << "deprecated claim/scaffold compatibility sidecar(s) detected next to the live release artifacts: ";
+  for (std::size_t index = 0; index < deprecated_artifacts.size(); ++index) {
+    if (index != 0u) {
+      out << ", ";
+    }
+    out << deprecated_artifacts[index];
+  }
+  out << " (remove them and use the integrated "
+         ".objc3-conformance-publication.json, "
+         ".objc3-conformance-validation.json, "
+         ".objc3-release-evidence-operation.json, "
+         ".objc3-dashboard-status.json, "
+         ".objc3-advanced-feature-gate.json, and "
+         ".objc3-release-candidate-matrix.json artifacts instead)";
+  error = out.str();
+  return false;
+}
+
 bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id) {
   return profile_id == "core" || profile_id == "strict" ||
          profile_id == "strict-concurrency" || profile_id == "strict-system";

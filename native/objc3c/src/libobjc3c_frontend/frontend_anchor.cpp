@@ -515,6 +515,18 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
   const std::string emit_prefix = ResolveEmitPrefix(*options, input_path);
 
   if (has_out_dir) {
+    std::string deprecated_claim_sidecar_error;
+    if (!DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+            out_dir, emit_prefix, deprecated_claim_sidecar_error)) {
+      result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
+      result->process_exit_code = 125;
+      result->success = 0;
+      objc3c_frontend_set_error(context, deprecated_claim_sidecar_error.c_str());
+      return result->status;
+    }
+  }
+
+  if (has_out_dir) {
     const std::filesystem::path diagnostics_out = out_dir / (emit_prefix + ".diagnostics.json");
     std::string io_error;
     if (!WriteTextFile(diagnostics_out, BuildDiagnosticsJson(product.artifact_bundle.diagnostics), io_error)) {

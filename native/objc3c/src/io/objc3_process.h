@@ -517,6 +517,14 @@ int RunIRCompileLLVMDirect(const std::filesystem::path &llc_path,
 std::vector<std::string> BuildObjc3ClaimedConformanceProfileIds();
 std::vector<std::string> BuildObjc3RejectedConformanceProfileIds();
 std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds();
+std::vector<std::filesystem::path>
+BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix);
+bool DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+    const std::filesystem::path &out_dir,
+    const std::string &emit_prefix,
+    std::string &error);
 bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id);
 bool IsObjc3SupportedConformanceFormat(const std::string &format);
 std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(

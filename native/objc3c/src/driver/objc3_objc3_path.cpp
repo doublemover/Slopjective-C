@@ -22,7 +22,7 @@ namespace fs = std::filesystem;
 namespace {
 
 bool TryDeriveConformancePublicationPath(const fs::path &report_path,
-                                        fs::path &publication_path) {
+                                         fs::path &publication_path) {
   const std::string report_name = report_path.filename().string();
   const std::string suffix =
       kObjc3VersionedConformanceReportLoweringArtifactSuffix;
@@ -35,6 +35,20 @@ bool TryDeriveConformancePublicationPath(const fs::path &report_path,
   publication_path =
       BuildConformancePublicationArtifactPath(report_path.parent_path(),
                                              emit_prefix);
+  return true;
+}
+
+bool TryDeriveConformanceEmitPrefix(const fs::path &report_path,
+                                    std::string &emit_prefix) {
+  const std::string report_name = report_path.filename().string();
+  const std::string suffix =
+      kObjc3VersionedConformanceReportLoweringArtifactSuffix;
+  if (report_name.size() <= suffix.size() ||
+      report_name.rfind(suffix) != report_name.size() - suffix.size()) {
+    emit_prefix.clear();
+    return false;
+  }
+  emit_prefix = report_name.substr(0u, report_name.size() - suffix.size());
   return true;
 }
 
@@ -99,6 +113,13 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   }
 
   fs::path publication_path;
+  std::string emit_prefix;
+  if (!TryDeriveConformanceEmitPrefix(cli_options.validate_conformance_report_path,
+                                      emit_prefix)) {
+    std::cerr << "validated artifact must end with "
+              << kObjc3VersionedConformanceReportLoweringArtifactSuffix << "\n";
+    return 125;
+  }
   if (!TryDeriveConformancePublicationPath(
           cli_options.validate_conformance_report_path, publication_path)) {
     std::cerr << "validated artifact must end with "
@@ -108,6 +129,13 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (!fs::exists(publication_path)) {
     std::cerr << "conformance publication artifact not found next to report: "
               << publication_path.string() << "\n";
+    return 125;
+  }
+  std::string deprecated_claim_sidecar_error;
+  if (!DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+          cli_options.validate_conformance_report_path.parent_path(), emit_prefix,
+          deprecated_claim_sidecar_error)) {
+    std::cerr << deprecated_claim_sidecar_error << "\n";
     return 125;
   }
 
@@ -197,6 +225,13 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
 
 int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   try {
+    std::string deprecated_claim_sidecar_error;
+    if (!DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+            cli_options.out_dir, cli_options.emit_prefix,
+            deprecated_claim_sidecar_error)) {
+      std::cerr << deprecated_claim_sidecar_error << "\n";
+      return 125;
+    }
     if (!IsObjc3SupportedConformanceFormat(
             cli_options.emit_objc3_conformance_format)) {
       std::cerr << BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(

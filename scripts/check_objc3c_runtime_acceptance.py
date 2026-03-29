@@ -182,6 +182,9 @@ RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID = (
 RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.strict.profile.claim.implementation.surface.v1"
 )
+RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.scaffold.retirement.deprecated.sidecar.compatibility.diagnostics.surface.v1"
+)
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
@@ -274,6 +277,11 @@ INTEROP_HEADER_MODULE_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
 )
 RELEASE_CLAIMABLE_SURFACE_FIXTURE = "tests/tooling/fixtures/native/hello.objc3"
+DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES = [
+    "module.objc3-release-runtime-claim-matrix.json",
+    "module.objc3-dashboard-ready-summary.json",
+    "module.objc3-toolchain-runtime-ga-operations-scaffold.json",
+]
 INTEROP_HEADER_MODULE_CONSUMER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
 )
@@ -6257,6 +6265,49 @@ def build_runtime_strict_profile_claim_implementation_surface(
         "explicit_non_goals": [
             "no-non-json-publication-claim-yet",
             "no-optional-feature-overclaim-beyond-runtime-capability-report",
+        ],
+        "requires_conformance_validation_artifact": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id
+        in {"scaffold-retirement-deprecated-sidecar-compatibility-diagnostics"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_SCAFFOLD_RETIREMENT_DEPRECATED_SIDECAR_COMPATIBILITY_DIAGNOSTICS_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+            "objc3c.driver.conformance.report.publication.v1",
+            "objc3c.toolchain.conformance.claim.operations.v1",
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.objc3-conformance-report.json",
+            "<emit-prefix>.objc3-conformance-publication.json",
+            "<emit-prefix>.objc3-conformance-validation.json",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/driver/objc3_objc3_path.cpp",
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/libobjc3c_frontend/frontend_anchor.cpp",
+        ],
+        "compatibility_diagnostic_model": (
+            "live-compile-and-validation-fail-closed-when-deprecated-claim-or-scaffold-sidecars-appear-next-to-current-release-artifacts"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
+        "deprecated_sidecar_filenames": DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
+        "explicit_non_goals": [
+            "no-silent-compatibility-with-retired-sidecars",
+            "no-separate-migration-shim-for-deprecated-claim-artifacts",
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
@@ -17624,6 +17675,82 @@ def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
     )
 
 
+def check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "scaffold-retirement-deprecated-sidecar-compatibility-diagnostics"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+
+    compile_deprecated_dir = case_dir / "compile-deprecated"
+    compile_deprecated_dir.mkdir(parents=True, exist_ok=True)
+    for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES:
+        (compile_deprecated_dir / filename).write_text("{}", encoding="utf-8")
+    compile_reject = run(
+        [
+            str(NATIVE_EXE),
+            str(fixture),
+            "--out-dir",
+            str(compile_deprecated_dir),
+            "--emit-prefix",
+            "module",
+        ]
+    )
+    compile_reject_text = (compile_reject.stderr or compile_reject.stdout).strip()
+    expect(
+        compile_reject.returncode != 0,
+        "expected native compile to fail closed when deprecated claim/scaffold sidecars are present",
+    )
+    expect(
+        "deprecated claim/scaffold compatibility sidecar(s) detected"
+        in compile_reject_text,
+        "expected native compile rejection to publish the deprecated sidecar compatibility diagnostic",
+    )
+
+    validate_compile_dir = case_dir / "validate-source"
+    compile_fixture_with_args(fixture, validate_compile_dir)
+    report_path = validate_compile_dir / "module.objc3-conformance-report.json"
+    for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES:
+        (validate_compile_dir / filename).write_text("{}", encoding="utf-8")
+    validate_dir = case_dir / "validate-output"
+    validate_dir.mkdir(parents=True, exist_ok=True)
+    validate_reject = run(
+        [
+            str(NATIVE_EXE),
+            "--validate-objc3-conformance",
+            str(report_path),
+            "--out-dir",
+            str(validate_dir),
+            "--emit-prefix",
+            "module",
+            "--emit-objc3-conformance-format",
+            "json",
+        ]
+    )
+    validate_reject_text = (validate_reject.stderr or validate_reject.stdout).strip()
+    expect(
+        validate_reject.returncode != 0,
+        "expected conformance validation to fail closed when deprecated claim/scaffold sidecars are present next to the validated report",
+    )
+    expect(
+        "deprecated claim/scaffold compatibility sidecar(s) detected"
+        in validate_reject_text,
+        "expected conformance validation rejection to publish the deprecated sidecar compatibility diagnostic",
+    )
+
+    return CaseResult(
+        case_id="scaffold-retirement-deprecated-sidecar-compatibility-diagnostics",
+        probe="compile-and-validate-with-deprecated-claim-sidecars-present",
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "deprecated_sidecar_filenames": DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
+            "compile_reject_returncode": compile_reject.returncode,
+            "validate_reject_returncode": validate_reject.returncode,
+        },
+    )
+
+
 def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
@@ -18466,6 +18593,9 @@ def main() -> int:
         check_strict_profile_feature_claim_source_surface_case(run_dir),
         check_claimability_semantics_release_policy_case(run_dir),
         check_strict_profile_claim_implementation_case(run_dir),
+        check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
+            run_dir
+        ),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -18588,6 +18718,11 @@ def main() -> int:
         ),
         "runtime_strict_profile_claim_implementation_surface": (
             build_runtime_strict_profile_claim_implementation_surface(results)
+        ),
+        "runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface": (
+            build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_surface(
+                results
+            )
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
