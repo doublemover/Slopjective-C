@@ -1,44 +1,55 @@
 module AuroraBoard;
 
-@protocol BoardDebug
+@protocol BoardReadable
+@required
+- (i32) baseScore;
 @property (readonly, getter=tokenValue) id token;
-- (id) tokenValue;
 @end
 
-@interface Tile
+@protocol BoardInspectable <BoardReadable>
+@required
+- (i32) reflectedScore;
+@end
+
+@interface BoardRoot
+- (i32) baseScore;
+@end
+
+@implementation BoardRoot
+- (i32) baseScore {
+  return 7;
+}
+@end
+
+@interface Tile : BoardRoot <BoardReadable>
 @property (assign) i32 row;
 @property (assign) i32 column;
-@property (strong) id title;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
+@property (readonly, getter=tokenValue) id token;
++ (i32) boardBonus;
 @end
 
 @implementation Tile
 @property (assign) i32 row;
 @property (assign) i32 column;
-@property (strong) id title;
-@end
-
-@interface Tile (Debug)<BoardDebug>
-@property (readonly) id shadow;
+@property (nonatomic, getter=currentValue, setter=setCurrentValue:, strong) id value;
 @property (readonly, getter=tokenValue) id token;
-- (id) tokenValue;
-- (id) debugName;
-@end
 
-@implementation Tile (Debug)
-@property (readonly) id shadow;
-@property (readonly, getter=tokenValue) id token;
-- (id) tokenValue {
-  return 7;
-}
-- (id) debugName {
-  return 5;
++ (i32) boardBonus {
+  return 11;
 }
 @end
 
-fn scoreCell(row: i32, column: i32) {
-  return row + column;
+@interface Tile (Inspection) <BoardInspectable>
+- (i32) reflectedScore;
+@end
+
+@implementation Tile (Inspection)
+- (i32) reflectedScore {
+  return 13;
 }
+@end
 
 fn main() {
-  return scoreCell(10, 11) + 12;
+  return 33;
 }

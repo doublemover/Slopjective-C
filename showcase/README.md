@@ -71,6 +71,7 @@ Runtime-backed shared commands used by the showcase surface:
 
 - `npm run test:objc3c:execution-smoke`
 - `npm run test:objc3c:execution-replay-proof`
+- `python scripts/objc3c_public_workflow_runner.py validate-showcase-runtime`
 
 The live compile path emits object and manifest artifacts under
 `tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.
