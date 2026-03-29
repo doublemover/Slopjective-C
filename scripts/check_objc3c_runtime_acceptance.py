@@ -140,6 +140,9 @@ RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID = (
 RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.unified.concurrency.lowering.metadata.surface.v1"
 )
+RUNTIME_UNIFIED_CONCURRENCY_RUNTIME_ABI_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.unified.concurrency.runtime.abi.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -167,6 +170,15 @@ IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE = (
 )
 IMPORTED_RUNTIME_PACKAGING_PROBE = (
     "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+)
+CONTINUATION_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/continuation_runtime_helper_probe.cpp"
+)
+TASK_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/task_runtime_abi_completion_probe.cpp"
+)
+ACTOR_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp"
 )
 CONCURRENCY_ACTOR_PRESERVATION_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3"
@@ -239,6 +251,45 @@ PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_catch_matches_error_i32",
     "objc3_runtime_copy_error_bridge_state_for_testing",
 ]
+PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY = [
+    "objc3_runtime_allocate_async_continuation_i32",
+    "objc3_runtime_handoff_async_continuation_to_executor_i32",
+    "objc3_runtime_resume_async_continuation_i32",
+    "objc3_runtime_spawn_task_i32",
+    "objc3_runtime_enter_task_group_scope_i32",
+    "objc3_runtime_add_task_group_task_i32",
+    "objc3_runtime_wait_task_group_next_i32",
+    "objc3_runtime_cancel_task_group_i32",
+    "objc3_runtime_task_is_cancelled_i32",
+    "objc3_runtime_task_on_cancel_i32",
+    "objc3_runtime_executor_hop_i32",
+    "objc3_runtime_actor_enter_isolation_thunk_i32",
+    "objc3_runtime_actor_enter_nonisolated_i32",
+    "objc3_runtime_actor_hop_to_executor_i32",
+    "objc3_runtime_actor_record_replay_proof_i32",
+    "objc3_runtime_actor_record_race_guard_i32",
+    "objc3_runtime_actor_bind_executor_i32",
+    "objc3_runtime_actor_mailbox_enqueue_i32",
+    "objc3_runtime_actor_mailbox_drain_next_i32",
+    "objc3_runtime_copy_async_continuation_state_for_testing",
+    "objc3_runtime_copy_task_runtime_state_for_testing",
+    "objc3_runtime_copy_actor_runtime_state_for_testing",
+]
+UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY_MODEL = (
+    "private-async-task-and-actor-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
+)
+UNIFIED_CONCURRENCY_CONTINUATION_RUNTIME_MODEL = (
+    "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+)
+UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL = (
+    "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+)
+UNIFIED_CONCURRENCY_ACTOR_RUNTIME_MODEL = (
+    "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints"
+)
+UNIFIED_CONCURRENCY_RUNTIME_FAIL_CLOSED_MODEL = (
+    "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-concurrency-runtime-abi-widening"
+)
 BLOCK_ARC_RUNTIME_ABI_BOUNDARY_MODEL = (
     "private-block-and-arc-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header"
 )
@@ -425,6 +476,9 @@ def compile_fixture_with_args(
     )
     unified_concurrency_lowering_metadata_surface = manifest.get(
         "runtime_unified_concurrency_lowering_metadata_surface"
+    )
+    unified_concurrency_runtime_abi_surface = manifest.get(
+        "runtime_unified_concurrency_runtime_abi_surface"
     )
     registration_descriptor_frontend_closure = semantic_surface.get(
         "objc_runtime_registration_descriptor_frontend_closure",
@@ -1339,6 +1393,95 @@ def compile_fixture_with_args(
     ):
         raise RuntimeError(
             "runtime_unified_concurrency_lowering_metadata_surface must require the coupled registration manifest and real compile output"
+        )
+    if not isinstance(unified_concurrency_runtime_abi_surface, dict):
+        raise RuntimeError(
+            "compiled fixture manifest did not publish runtime_unified_concurrency_runtime_abi_surface"
+        )
+    if (
+        unified_concurrency_runtime_abi_surface.get("contract_id")
+        != RUNTIME_UNIFIED_CONCURRENCY_RUNTIME_ABI_SURFACE_CONTRACT_ID
+    ):
+        raise RuntimeError(
+            "compiled fixture manifest published the wrong runtime_unified_concurrency_runtime_abi_surface contract"
+        )
+    expected_unified_concurrency_runtime_abi_surface_fields = {
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "unified_concurrency_source_surface_contract_id": (
+            RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "async_task_actor_normalization_completion_surface_contract_id": (
+            RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
+        ),
+        "unified_concurrency_lowering_metadata_surface_contract_id": (
+            RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID
+        ),
+        "async_continuation_state_snapshot_symbol": (
+            "objc3_runtime_copy_async_continuation_state_for_testing"
+        ),
+        "task_runtime_state_snapshot_symbol": (
+            "objc3_runtime_copy_task_runtime_state_for_testing"
+        ),
+        "actor_runtime_state_snapshot_symbol": (
+            "objc3_runtime_copy_actor_runtime_state_for_testing"
+        ),
+        "runtime_abi_boundary_model": UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY_MODEL,
+        "continuation_runtime_model": UNIFIED_CONCURRENCY_CONTINUATION_RUNTIME_MODEL,
+        "task_runtime_model": UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL,
+        "actor_runtime_model": UNIFIED_CONCURRENCY_ACTOR_RUNTIME_MODEL,
+        "fail_closed_model": UNIFIED_CONCURRENCY_RUNTIME_FAIL_CLOSED_MODEL,
+        "authoritative_probe_paths": [
+            CONTINUATION_RUNTIME_ABI_PROBE,
+            TASK_RUNTIME_ABI_PROBE,
+            ACTOR_RUNTIME_ABI_PROBE,
+        ],
+    }
+    for field, expected_value in (
+        expected_unified_concurrency_runtime_abi_surface_fields.items()
+    ):
+        if unified_concurrency_runtime_abi_surface.get(field) != expected_value:
+            raise RuntimeError(
+                f"runtime_unified_concurrency_runtime_abi_surface drifted from {field}"
+            )
+    if (
+        unified_concurrency_runtime_abi_surface.get("public_runtime_abi_boundary")
+        != PUBLIC_RUNTIME_ABI_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_runtime_abi_surface drifted from the public runtime ABI boundary"
+        )
+    if (
+        unified_concurrency_runtime_abi_surface.get(
+            "private_unified_concurrency_runtime_abi_boundary"
+        )
+        != PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_runtime_abi_surface drifted from the private concurrency runtime ABI boundary"
+        )
+    if (
+        unified_concurrency_runtime_abi_surface.get(
+            "requires_coupled_registration_manifest"
+        )
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_runtime_abi_surface must require the coupled runtime registration manifest"
+        )
+    if (
+        unified_concurrency_runtime_abi_surface.get("requires_real_compile_output")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_runtime_abi_surface must require real compile output"
+        )
+    if (
+        unified_concurrency_runtime_abi_surface.get("requires_linked_runtime_probe")
+        is not True
+    ):
+        raise RuntimeError(
+            "runtime_unified_concurrency_runtime_abi_surface must require a linked runtime probe"
         )
     if not isinstance(dispatch_and_synthesized_accessor_lowering_surface, dict):
         raise RuntimeError(
@@ -4856,6 +4999,57 @@ def build_runtime_unified_concurrency_lowering_metadata_surface(
     }
 
 
+def build_runtime_unified_concurrency_runtime_abi_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"unified-concurrency-runtime-abi"}
+    ]
+    return {
+        "contract_id": RUNTIME_UNIFIED_CONCURRENCY_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "unified_concurrency_source_surface_contract_id": (
+            RUNTIME_UNIFIED_CONCURRENCY_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "async_task_actor_normalization_completion_surface_contract_id": (
+            RUNTIME_ASYNC_TASK_ACTOR_NORMALIZATION_COMPLETION_SURFACE_CONTRACT_ID
+        ),
+        "unified_concurrency_lowering_metadata_surface_contract_id": (
+            RUNTIME_UNIFIED_CONCURRENCY_LOWERING_METADATA_SURFACE_CONTRACT_ID
+        ),
+        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
+        "private_unified_concurrency_runtime_abi_boundary": (
+            PRIVATE_UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY
+        ),
+        "async_continuation_state_snapshot_symbol": (
+            "objc3_runtime_copy_async_continuation_state_for_testing"
+        ),
+        "task_runtime_state_snapshot_symbol": (
+            "objc3_runtime_copy_task_runtime_state_for_testing"
+        ),
+        "actor_runtime_state_snapshot_symbol": (
+            "objc3_runtime_copy_actor_runtime_state_for_testing"
+        ),
+        "runtime_abi_boundary_model": UNIFIED_CONCURRENCY_RUNTIME_ABI_BOUNDARY_MODEL,
+        "continuation_runtime_model": UNIFIED_CONCURRENCY_CONTINUATION_RUNTIME_MODEL,
+        "task_runtime_model": UNIFIED_CONCURRENCY_TASK_RUNTIME_MODEL,
+        "actor_runtime_model": UNIFIED_CONCURRENCY_ACTOR_RUNTIME_MODEL,
+        "fail_closed_model": UNIFIED_CONCURRENCY_RUNTIME_FAIL_CLOSED_MODEL,
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_probe_paths": [
+            CONTINUATION_RUNTIME_ABI_PROBE,
+            TASK_RUNTIME_ABI_PROBE,
+            ACTOR_RUNTIME_ABI_PROBE,
+        ],
+        "requires_coupled_registration_manifest": True,
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
 def build_runtime_object_model_realization_source_surface(
     results: list[CaseResult],
 ) -> dict[str, Any]:
@@ -7049,6 +7243,137 @@ def check_unified_concurrency_lowering_metadata_surface_case(
         claim_class="compile-coupled-inspection",
         passed=True,
         summary=summary,
+    )
+
+
+def check_unified_concurrency_runtime_abi_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "unified-concurrency-runtime-abi"
+
+    continuation_probe = ROOT / Path(CONTINUATION_RUNTIME_ABI_PROBE)
+    continuation_exe = case_dir / "continuation_runtime_abi_probe.exe"
+    compile_probe(clangxx, continuation_probe, continuation_exe, [])
+    continuation_payload = parse_key_value_output(
+        run_probe(continuation_exe), "unified concurrency continuation runtime ABI probe"
+    )
+    for field_name, expected_value in {
+        "handle": 1,
+        "handed_off": 1,
+        "resumed": 77,
+        "copy_status": 0,
+        "allocation_call_count": 1,
+        "handoff_call_count": 1,
+        "resume_call_count": 1,
+        "live_continuation_handle_count": 0,
+        "last_allocated_continuation_handle": 1,
+        "last_allocated_resume_entry_tag": 41,
+        "last_allocated_executor_tag": 9,
+        "last_handoff_continuation_handle": 1,
+        "last_handoff_executor_tag": 17,
+        "last_resume_continuation_handle": 1,
+        "last_resume_result_value": 77,
+        "last_resume_return_value": 77,
+    }.items():
+        expect(
+            continuation_payload.get(field_name) == expected_value,
+            f"expected unified concurrency continuation runtime ABI probe to preserve {field_name}",
+        )
+
+    task_probe = ROOT / Path(TASK_RUNTIME_ABI_PROBE)
+    task_exe = case_dir / "task_runtime_abi_probe.exe"
+    compile_probe(clangxx, task_probe, task_exe, [])
+    task_payload = parse_key_value_output(
+        run_probe(task_exe), "unified concurrency task runtime ABI probe"
+    )
+    for field_name, expected_value in {
+        "spawn_group": 111,
+        "scope": 1,
+        "add_task": 1,
+        "cancelled": 0,
+        "wait_next": 23,
+        "hop": 23,
+        "cancel_all": 31,
+        "on_cancel": 41,
+        "spawn_detached": 121,
+        "copy_status": 0,
+        "spawn_call_count": 2,
+        "scope_call_count": 1,
+        "add_task_call_count": 1,
+        "wait_next_call_count": 1,
+        "cancel_all_call_count": 1,
+        "cancellation_poll_call_count": 1,
+        "on_cancel_call_count": 1,
+        "executor_hop_call_count": 1,
+        "last_spawn_kind": 2,
+        "last_spawn_executor_tag": 3,
+        "last_wait_next_result": 23,
+        "last_executor_hop_executor_tag": 2,
+        "last_executor_hop_value": 23,
+    }.items():
+        expect(
+            task_payload.get(field_name) == expected_value,
+            f"expected unified concurrency task runtime ABI probe to preserve {field_name}",
+        )
+
+    actor_probe = ROOT / Path(ACTOR_RUNTIME_ABI_PROBE)
+    actor_exe = case_dir / "actor_runtime_abi_probe.exe"
+    compile_probe(clangxx, actor_probe, actor_exe, [])
+    actor_payload = parse_key_value_output(
+        run_probe(actor_exe), "unified concurrency actor runtime ABI probe"
+    )
+    for field_name, expected_value in {
+        "copy_status": 0,
+        "replay": 1,
+        "guard": 1,
+        "isolation": 1,
+        "nonisolated": 5,
+        "hopped": 17,
+        "replay_proof_call_count": 1,
+        "race_guard_call_count": 1,
+        "isolation_thunk_call_count": 1,
+        "nonisolated_entry_call_count": 1,
+        "hop_to_executor_call_count": 1,
+        "last_replay_proof_executor_tag": 1,
+        "last_race_guard_executor_tag": 1,
+        "last_isolation_executor_tag": 1,
+        "last_nonisolated_value": 5,
+        "last_nonisolated_executor_tag": 0,
+        "last_hop_value": 17,
+        "last_hop_executor_tag": 1,
+        "last_hop_result": 17,
+    }.items():
+        expect(
+            actor_payload.get(field_name) == expected_value,
+            f"expected unified concurrency actor runtime ABI probe to preserve {field_name}",
+        )
+
+    return CaseResult(
+        case_id="unified-concurrency-runtime-abi",
+        probe=";".join(
+            [
+                CONTINUATION_RUNTIME_ABI_PROBE,
+                TASK_RUNTIME_ABI_PROBE,
+                ACTOR_RUNTIME_ABI_PROBE,
+            ]
+        ),
+        fixture=None,
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "continuation_probe": CONTINUATION_RUNTIME_ABI_PROBE,
+            "task_probe": TASK_RUNTIME_ABI_PROBE,
+            "actor_probe": ACTOR_RUNTIME_ABI_PROBE,
+            "async_continuation_state_snapshot_symbol": (
+                "objc3_runtime_copy_async_continuation_state_for_testing"
+            ),
+            "task_runtime_state_snapshot_symbol": (
+                "objc3_runtime_copy_task_runtime_state_for_testing"
+            ),
+            "actor_runtime_state_snapshot_symbol": (
+                "objc3_runtime_copy_actor_runtime_state_for_testing"
+            ),
+        },
     )
 
 
@@ -13381,6 +13706,7 @@ def main() -> int:
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
+        check_unified_concurrency_runtime_abi_case(clangxx, run_dir),
         check_error_execution_cleanup_source_case(run_dir),
         check_catch_filter_finalization_source_case(run_dir),
         check_error_propagation_cleanup_semantics_case(run_dir),
@@ -13452,6 +13778,9 @@ def main() -> int:
         ),
         "runtime_unified_concurrency_lowering_metadata_surface": (
             build_runtime_unified_concurrency_lowering_metadata_surface(results)
+        ),
+        "runtime_unified_concurrency_runtime_abi_surface": (
+            build_runtime_unified_concurrency_runtime_abi_surface(results)
         ),
         "runtime_error_execution_cleanup_source_surface": (
             build_runtime_error_execution_cleanup_source_surface(results)

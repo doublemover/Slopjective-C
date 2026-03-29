@@ -1197,6 +1197,24 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3RuntimeUnifiedConcurrencyLoweringMetadataSurfaceContractId =
         "objc3c.runtime.unified.concurrency.lowering.metadata.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyRuntimeAbiSurfaceContractId =
+        "objc3c.runtime.unified.concurrency.runtime.abi.surface.v1";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyRuntimeAbiBoundaryModel =
+        "private-async-task-and-actor-helper-entrypoints-plus-testing-snapshots-define-the-live-runtime-abi-without-widening-the-public-runtime-header";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyContinuationRuntimeModel =
+        "continuation-allocation-handoff-resume-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyTaskRuntimeModel =
+        "task-spawn-group-cancellation-executor-hop-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyActorRuntimeModel =
+        "actor-isolation-nonisolated-hop-replay-race-guard-mailbox-and-testing-snapshots-stay-on-bootstrap-internal-runtime-entrypoints";
+inline constexpr const char
+    *kObjc3RuntimeUnifiedConcurrencyRuntimeAbiFailClosedModel =
+        "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-concurrency-runtime-abi-widening";
 inline constexpr const char *kObjc3RuntimeInstallationAbiSurfaceContractId =
     "objc3c.runtime.installation.abi.surface.v1";
 inline constexpr const char *kObjc3RuntimeLoaderLifecycleSurfaceContractId =
