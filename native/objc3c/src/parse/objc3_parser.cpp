@@ -5889,6 +5889,11 @@ class Objc3Parser {
 
     fn->is_pure = is_pure;
     fn->async_declared = is_async;
+    // ParseFunction finalizes semantic profiles before top-level qualifiers are
+    // copied onto the declaration, so async callables need one final pass after
+    // the real async bit is attached.
+    FinalizeAsyncContinuationProfile(*fn);
+    FinalizeAwaitSuspensionProfile(*fn);
     if (is_extern && !fn->is_prototype) {
       diagnostics_.push_back(MakeDiag(fn->line, fn->column, "O3P104", "missing ';' after extern function declaration"));
       return;
