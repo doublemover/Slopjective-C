@@ -89,7 +89,7 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
         },
     )
     monkeypatch.setattr(benchmark, "tool_versions", lambda: {"python": "3.13.0", "clang": "clang fixture"})
-    monkeypatch.setattr(sys, "argv", ["benchmark_objc3c_performance.py"])
+    monkeypatch.setattr(sys, "argv", ["benchmark_objc3c_performance.py", "--warmup-runs", "1", "--measured-runs", "2"])
 
     exit_code = benchmark.main()
 

@@ -28,6 +28,8 @@ SUMMARY_OUT = ROOT / "tmp" / "reports" / "performance" / "benchmark-summary.json
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary-out", type=Path, default=SUMMARY_OUT)
+    parser.add_argument("--warmup-runs", type=int, default=None)
+    parser.add_argument("--measured-runs", type=int, default=None)
     return parser.parse_args(argv)
 
 
@@ -299,8 +301,10 @@ def main() -> int:
     if not isinstance(workloads, list) or not workloads:
         raise RuntimeError("benchmark portfolio did not publish objc3 workloads")
 
-    warmup_runs = int(policy["sample_policy"]["warmup_runs"])
-    measured_runs = int(policy["sample_policy"]["measured_runs"])
+    warmup_runs = int(args.warmup_runs if args.warmup_runs is not None else policy["sample_policy"]["warmup_runs"])
+    measured_runs = int(
+        args.measured_runs if args.measured_runs is not None else policy["sample_policy"]["measured_runs"]
+    )
     normalization_mode = str(parameters["hardware_profile_capture"]["normalization_mode"])
     compile_root = ROOT / "tmp" / "artifacts" / "performance" / "compile"
     compile_root.mkdir(parents=True, exist_ok=True)

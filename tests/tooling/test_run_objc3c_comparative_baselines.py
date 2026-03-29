@@ -79,7 +79,7 @@ def test_runner_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatch) 
         }
 
     monkeypatch.setattr(runner, "run_timed_step", fake_run_timed_step)
-    monkeypatch.setattr(sys, "argv", ["run_objc3c_comparative_baselines.py"])
+    monkeypatch.setattr(sys, "argv", ["run_objc3c_comparative_baselines.py", "--warmup-runs", "1", "--measured-runs", "2"])
 
     exit_code = runner.main()
 

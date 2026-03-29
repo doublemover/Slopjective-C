@@ -27,6 +27,8 @@ SUMMARY_OUT = ROOT / "tmp" / "reports" / "performance" / "comparative-baselines-
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary-out", type=Path, default=SUMMARY_OUT)
+    parser.add_argument("--warmup-runs", type=int, default=None)
+    parser.add_argument("--measured-runs", type=int, default=None)
     return parser.parse_args(argv)
 
 
@@ -341,8 +343,10 @@ def main() -> int:
     if not isinstance(entries, list) or not entries:
         raise RuntimeError("comparative baseline manifest did not publish baseline_entries")
 
-    warmup_runs = int(policy["sample_policy"]["warmup_runs"])
-    measured_runs = int(policy["sample_policy"]["measured_runs"])
+    warmup_runs = int(args.warmup_runs if args.warmup_runs is not None else policy["sample_policy"]["warmup_runs"])
+    measured_runs = int(
+        args.measured_runs if args.measured_runs is not None else policy["sample_policy"]["measured_runs"]
+    )
     normalization_mode = str(parameters["hardware_profile_capture"]["normalization_mode"])
     profile = machine_profile()
     versions: dict[str, str] = {"python": platform.python_version()}

@@ -106,6 +106,9 @@ The only current claim classes allowed from this surface are:
 - validate the staged runnable benchmark bundle:
   - `python scripts/objc3c_public_workflow_runner.py validate-runnable-performance`
   - `npm run test:objc3c:runnable-performance`
+- run the integrated benchmark foundation validation flow:
+  - `python scripts/objc3c_public_workflow_runner.py validate-performance-foundation`
+  - `npm run test:objc3c:performance`
 - stage the runnable toolchain before packaged benchmark validation:
   - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
   - `npm run package:objc3c-native:runnable-toolchain`
