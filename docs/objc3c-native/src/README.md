@@ -49,6 +49,29 @@ adding sidecar scaffolding:
 - public command surface generation:
   - `scripts/render_objc3c_public_command_surface.py`
 
+## Canonical Naming And Path Rules
+
+Use these naming rules when downstream cleanup work renames or consolidates
+repo surfaces:
+
+- user-facing package entrypoints come from `package.json` and map directly to
+  `scripts/objc3c_public_workflow_runner.py`
+- checked-in generated docs keep one source root each:
+  - `site/index.md` <= `site/src/`
+  - `docs/objc3c-native.md` <= `docs/objc3c-native/src/`
+  - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json` +
+    `scripts/objc3c_public_workflow_runner.py`
+- implementation paths stay under `native/objc3c/`, `scripts/`, and `tests/`
+- transient outputs stay under `tmp/`
+- published binaries and libraries stay under `artifacts/`
+
+Explicit non-goals for naming cleanup:
+
+- inventing second source-of-truth directories,
+- promoting `tmp/` or `artifacts/` paths into canonical doc inputs,
+- reintroducing milestone-coded, stage-coded, or compatibility-alias names as
+  first-class command surfaces.
+
 ## Generated Doc And Machine-Appendix Surface
 
 These surfaces are generated and must stay tied to their canonical inputs:

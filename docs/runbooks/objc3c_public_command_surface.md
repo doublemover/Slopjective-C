@@ -65,6 +65,9 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 
 - Use the package scripts above for normal operator workflows.
 - Treat this file as a generated machine-facing appendix for exact command mapping, not as the reader-facing project introduction.
+- Canonical user-facing command names come from `package.json` and map directly to `scripts/objc3c_public_workflow_runner.py` action names.
+- Canonical checked-in doc outputs are `site/index.md`, `docs/objc3c-native.md`, and `docs/runbooks/objc3c_public_command_surface.md`; edit their source roots instead of the generated files.
+- `native/objc3c/`, `scripts/`, and `tests/` are the live implementation roots; `tmp/` and `artifacts/` are output roots, not naming roots.
 - Composite validation entrypoints write an integrated runner summary to `tmp/reports/objc3c-public-workflow/<action>.json`.
 - Those integrated summaries record the exact child-suite report paths emitted by smoke, replay, runtime-acceptance, and other live validation scripts.
 - `compile:objc3c` and the fixture-backed suite commands accept pass-through arguments for bounded selectors.
