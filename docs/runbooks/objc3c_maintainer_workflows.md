@@ -66,6 +66,15 @@ Developer-tooling entrypoint:
   runtime debug-state inspection, or parity validation without inventing a
   sidecar workflow
 
+Bonus-experience entrypoint:
+
+- `docs/runbooks/objc3c_bonus_experiences.md` is the maintainer boundary for
+  playground, capability-explorer, repro-runner, and template-generator work
+- bonus experiences must layer on the existing public runner, showcase,
+  tutorial, and developer-tooling surfaces instead of inventing a separate app
+  shell
+- use that runbook before widening example, packaging, or inspection flows
+
 ## Build
 
 ```powershell
@@ -105,5 +114,6 @@ npm run test:repo
 - docs stitch/check: `npm run check:docs:native`
 - parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
+- bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.

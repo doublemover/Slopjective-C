@@ -18,6 +18,7 @@ NATIVE_OWNERSHIP_PATH = ROOT / "docs" / "objc3c-native" / "src" / "OWNERSHIP.md"
 NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.md"
 MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 DEVELOPER_TOOLING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_developer_tooling.md"
+BONUS_EXPERIENCES_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_bonus_experiences.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
@@ -260,6 +261,7 @@ def main() -> int:
         "CONTRIBUTING.md",
         "showcase/",
         "docs/runbooks/objc3c_developer_tooling.md",
+        "docs/runbooks/objc3c_bonus_experiences.md",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(
@@ -310,6 +312,36 @@ def main() -> int:
             developer_tooling_runbook,
             token,
             path=DEVELOPER_TOOLING_RUNBOOK_PATH,
+            errors=errors,
+        )
+
+    bonus_experiences_runbook = BONUS_EXPERIENCES_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Bonus Experiences Boundary",
+        "## Working Boundary",
+        "interactive playground flows",
+        "visual runtime inspection and capability-explorer flows",
+        "starter-template and project-generator flows",
+        "## Current Truthful Portfolio",
+        "scripts/objc3c_public_workflow_runner.py",
+        "package.json",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+        "scripts/build_objc3c_native.ps1",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "showcase/portfolio.json",
+        "showcase/auroraBoard/main.objc3",
+        "docs/tutorials/getting_started.md",
+        "docs/runbooks/objc3c_developer_tooling.md",
+        "scripts/check_showcase_integration.py",
+        "scripts/check_getting_started_integration.py",
+        "## Feasibility And Working Model",
+        "## Working Rules For Downstream Issues",
+        "## Explicit Non-Goals",
+    ):
+        require_token(
+            bonus_experiences_runbook,
+            token,
+            path=BONUS_EXPERIENCES_RUNBOOK_PATH,
             errors=errors,
         )
 
