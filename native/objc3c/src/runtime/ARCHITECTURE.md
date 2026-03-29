@@ -158,7 +158,10 @@ Metaprogramming lowering and host-cache source of truth:
   `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`,
   the authoritative AST/IR/io/pipeline code paths, and the compile-coupled
   fixtures `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
-  and `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+  , `tests/tooling/fixtures/native/synthesized_ast_ir_macro_positive.objc3`,
+  `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`,
+  and `tests/tooling/fixtures/native/macro_host_process_provider.objc3`, plus
+  the proof path `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp`
 - later executable expansion, packaged cache reuse, and runtime host work must
   extend that emitted lowering/output boundary instead of reconstructing it
   from sidecar manifests or milestone-local notes

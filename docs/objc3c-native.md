@@ -371,7 +371,11 @@ assumptions.
 - authoritative proof paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/synthesized_ast_ir_macro_positive.objc3`
+    - `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`
     - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+  - probes:
+    - `tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp`
 
 This is the authoritative compile-coupled lowering/output boundary for
 metaprogramming expansion. It freezes the emitted lowering contract,
