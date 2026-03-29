@@ -8,6 +8,9 @@
   "workspace_root": "stdlib/modules/objc3.concurrency",
   "source": "stdlib/modules/objc3.concurrency/module.objc3",
   "smoke_source": "stdlib/modules/objc3.concurrency/smoke.objc3",
+  "api_families": [
+    "unchanged-by-m306"
+  ],
   "exports": [
     "objc3_concurrency_spawn_token",
     "objc3_concurrency_cancellation_checkpoint"

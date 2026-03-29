@@ -12,6 +12,8 @@
   "module_inventory": "stdlib/module_inventory.json",
   "stability_policy": "stdlib/stability_policy.json",
   "package_surface": "stdlib/package_surface.json",
+  "core_architecture": "stdlib/core_architecture.json",
+  "core_runbook": "docs/runbooks/objc3c_stdlib_core.md",
   "working_scope": [
     "checked-in standard-library root",
     "canonical module partition under stdlib/modules",

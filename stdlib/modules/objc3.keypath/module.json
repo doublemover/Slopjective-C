@@ -8,6 +8,10 @@
   "workspace_root": "stdlib/modules/objc3.keypath",
   "source": "stdlib/modules/objc3.keypath/module.objc3",
   "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",
+  "api_families": [
+    "typed-keypath-application",
+    "typed-keypath-text-compatibility"
+  ],
   "exports": [
     "objc3_keypath_apply_index"
   ]

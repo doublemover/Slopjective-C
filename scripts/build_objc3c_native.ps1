@@ -711,7 +711,8 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_developer_tooling.md",
       "docs/runbooks/objc3c_bonus_experiences.md",
       "docs/runbooks/objc3c_performance.md",
-      "docs/runbooks/objc3c_stdlib_foundation.md"
+      "docs/runbooks/objc3c_stdlib_foundation.md",
+      "docs/runbooks/objc3c_stdlib_core.md"
     )
     machine_owned_output_roots = @(
       "tmp",
@@ -854,6 +855,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       module_inventory = "stdlib/module_inventory.json"
       stability_policy = "stdlib/stability_policy.json"
       package_surface = "stdlib/package_surface.json"
+      core_architecture = "stdlib/core_architecture.json"
       source_roots = @(
         "stdlib/README.md",
         "stdlib/modules/objc3.core/module.objc3",

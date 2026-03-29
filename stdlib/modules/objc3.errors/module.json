@@ -8,6 +8,12 @@
   "workspace_root": "stdlib/modules/objc3.errors",
   "source": "stdlib/modules/objc3.errors/module.objc3",
   "smoke_source": "stdlib/modules/objc3.errors/smoke.objc3",
+  "api_families": [
+    "error-identity",
+    "result-shape",
+    "optional-bridge",
+    "text-data-compatibility"
+  ],
   "exports": [
     "objc3_errors_ok_or_code",
     "objc3_errors_or_throw_code"

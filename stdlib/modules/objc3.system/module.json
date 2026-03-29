@@ -8,6 +8,9 @@
   "workspace_root": "stdlib/modules/objc3.system",
   "source": "stdlib/modules/objc3.system/module.objc3",
   "smoke_source": "stdlib/modules/objc3.system/smoke.objc3",
+  "api_families": [
+    "unchanged-by-m306"
+  ],
   "exports": [
     "objc3_system_resource_token"
   ]

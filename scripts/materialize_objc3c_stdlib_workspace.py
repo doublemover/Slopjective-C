@@ -61,7 +61,9 @@ def main() -> int:
         Path("stdlib/module_inventory.json"),
         Path("stdlib/stability_policy.json"),
         Path("stdlib/package_surface.json"),
+        Path("stdlib/core_architecture.json"),
         Path("docs/runbooks/objc3c_stdlib_foundation.md"),
+        Path("docs/runbooks/objc3c_stdlib_core.md"),
         Path("spec/STANDARD_LIBRARY_CONTRACT.md"),
     ]
     for relative in root_files:

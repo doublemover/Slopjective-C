@@ -222,6 +222,8 @@ def main() -> int:
         "## Expected end state",
         "## Public actions",
         "npm run test:stdlib:e2e",
+        "stdlib/core_architecture.json",
+        "docs/runbooks/objc3c_stdlib_core.md",
     ):
         require_token(stdlib_runbook, token, path=STDLIB_RUNBOOK_PATH, errors=errors)
 
@@ -233,9 +235,31 @@ def main() -> int:
         "stdlib/module_inventory.json",
         "stdlib/stability_policy.json",
         "stdlib/package_surface.json",
+        "stdlib/core_architecture.json",
         "## Working model",
     ):
         require_token(stdlib_readme, token, path=STDLIB_README_PATH, errors=errors)
+
+    stdlib_core_runbook_path = ROOT / "docs" / "runbooks" / "objc3c_stdlib_core.md"
+    stdlib_core_runbook = stdlib_core_runbook_path.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Core Stdlib Surface",
+        "## Working boundary",
+        "stdlib/core_architecture.json",
+        "stdlib/modules/objc3.core/",
+        "stdlib/modules/objc3.errors/",
+        "stdlib/modules/objc3.keypath/",
+        "## Core family split",
+        "`objc3.core` owns:",
+        "`objc3.errors` owns:",
+        "`objc3.keypath` remains in scope",
+        "## Expected shipped API families",
+        "profile-revision",
+        "result-shape",
+        "typed-keypath-text-compatibility",
+        "## Explicit non-goals",
+    ):
+        require_token(stdlib_core_runbook, token, path=stdlib_core_runbook_path, errors=errors)
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (

@@ -1,0 +1,58 @@
+{
+  "contract_id": "objc3c.stdlib.core_architecture.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "runbook": "docs/runbooks/objc3c_stdlib_core.md",
+  "scope": "foundation-utility-text-data-collections-option-result-surface",
+  "live_paths": [
+    "stdlib/core_architecture.json",
+    "stdlib/modules/objc3.core/module.objc3",
+    "stdlib/modules/objc3.errors/module.objc3",
+    "stdlib/modules/objc3.keypath/module.objc3",
+    "scripts/check_stdlib_surface.py",
+    "scripts/materialize_objc3c_stdlib_workspace.py",
+    "scripts/run_objc3c_stdlib_workspace_smoke.py",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "api_families": {
+    "objc3.core": [
+      "profile-revision",
+      "capability-query",
+      "option-shape",
+      "string-view",
+      "byte-span",
+      "array-slice",
+      "map-entry"
+    ],
+    "objc3.errors": [
+      "error-identity",
+      "result-shape",
+      "optional-bridge",
+      "text-data-compatibility"
+    ],
+    "objc3.keypath": [
+      "typed-keypath-application",
+      "typed-keypath-text-compatibility"
+    ],
+    "objc3.concurrency": [
+      "unchanged-by-m306"
+    ],
+    "objc3.system": [
+      "unchanged-by-m306"
+    ]
+  },
+  "module_roles": {
+    "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
+    "objc3.errors": "error identity, result helpers, and optional-to-error bridges",
+    "objc3.keypath": "typed key-path helpers that need text/data compatibility naming stability",
+    "objc3.concurrency": "out of scope for M306 beyond existing contract dependencies",
+    "objc3.system": "out of scope for M306 beyond existing contract dependencies"
+  },
+  "non_goals": [
+    "parallel stdlib trees",
+    "milestone-only proof APIs",
+    "moving result/error helpers into objc3.core",
+    "generic ABI claims without live compiler/runtime backing",
+    "widening objc3.system to host core text/data helpers"
+  ]
+}

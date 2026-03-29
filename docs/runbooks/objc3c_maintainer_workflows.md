@@ -91,6 +91,8 @@ Standard-library entrypoint:
 - `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
   the checked-in stdlib root, canonical module inventory, alias mapping, and
   machine-owned stdlib workspace materialization flow
+- `docs/runbooks/objc3c_stdlib_core.md` is the maintainer boundary for the
+  `M306` core utility, text/data, collection, option, and result family split
 - stdlib work must stay on `stdlib/`, `tmp/artifacts/stdlib/`, and
   `tmp/reports/stdlib/` instead of inventing a second library tree or sidecar
   package layout
@@ -139,6 +141,7 @@ npm run test:repo
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 - stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
+- stdlib core boundary: `docs/runbooks/objc3c_stdlib_core.md`
 - stdlib surface check: `npm run check:stdlib:surface`
 - stdlib workspace materialization: `npm run build:objc3c:stdlib`
 - stdlib integration: `npm run test:stdlib`

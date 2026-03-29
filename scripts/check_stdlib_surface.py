@@ -14,6 +14,7 @@ WORKSPACE_PATH = ROOT / "stdlib" / "workspace.json"
 MODULE_INVENTORY_PATH = ROOT / "stdlib" / "module_inventory.json"
 STABILITY_POLICY_PATH = ROOT / "stdlib" / "stability_policy.json"
 PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "package_surface.json"
+CORE_ARCHITECTURE_PATH = ROOT / "stdlib" / "core_architecture.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
@@ -64,6 +65,8 @@ def main() -> int:
         return fail(f"missing stability policy: {repo_rel(STABILITY_POLICY_PATH)}")
     if not PACKAGE_SURFACE_PATH.is_file():
         return fail(f"missing package surface: {repo_rel(PACKAGE_SURFACE_PATH)}")
+    if not CORE_ARCHITECTURE_PATH.is_file():
+        return fail(f"missing core architecture contract: {repo_rel(CORE_ARCHITECTURE_PATH)}")
     if not SPEC_CONTRACT_PATH.is_file():
         return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
 
@@ -71,6 +74,7 @@ def main() -> int:
     inventory = load_json(MODULE_INVENTORY_PATH)
     stability_policy = load_json(STABILITY_POLICY_PATH)
     package_surface = load_json(PACKAGE_SURFACE_PATH)
+    core_architecture = load_json(CORE_ARCHITECTURE_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
@@ -83,6 +87,10 @@ def main() -> int:
         return fail("workspace stability_policy path drifted")
     if workspace.get("package_surface") != "stdlib/package_surface.json":
         return fail("workspace package_surface path drifted")
+    if workspace.get("core_architecture") != "stdlib/core_architecture.json":
+        return fail("workspace core_architecture path drifted")
+    if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
+        return fail("workspace core_runbook path drifted")
     if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
         return fail("module inventory contract_id drifted")
     if inventory.get("schema_version") != 1:
@@ -103,6 +111,8 @@ def main() -> int:
         return fail("package surface module_inventory drifted")
     if package_surface.get("stability_policy") != "stdlib/stability_policy.json":
         return fail("package surface stability_policy drifted")
+    if package_surface.get("core_architecture") != "stdlib/core_architecture.json":
+        return fail("package surface core_architecture drifted")
     if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
         return fail("package surface machine_output_root drifted")
     if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
@@ -111,6 +121,16 @@ def main() -> int:
         return fail("package surface package_stage_root drifted")
     if package_surface.get("import_model") != "implementation-alias-module-declarations-map-to-canonical-spec-module-ids":
         return fail("package surface import_model drifted")
+    if core_architecture.get("contract_id") != "objc3c.stdlib.core_architecture.v1":
+        return fail("core architecture contract_id drifted")
+    if core_architecture.get("schema_version") != 1:
+        return fail("core architecture schema_version drifted")
+    if core_architecture.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("core architecture workspace_contract drifted")
+    if core_architecture.get("runbook") != "docs/runbooks/objc3c_stdlib_core.md":
+        return fail("core architecture runbook drifted")
+    if core_architecture.get("scope") != "foundation-utility-text-data-collections-option-result-surface":
+        return fail("core architecture scope drifted")
 
     canonical_modules = inventory.get("canonical_modules")
     if not isinstance(canonical_modules, list) or not canonical_modules:
@@ -249,6 +269,34 @@ def main() -> int:
             return fail(f"package surface implementation_module drifted for {entry['module']}")
         if package_import["source_declaration"] != expected_decl:
             return fail(f"package surface source_declaration drifted for {entry['module']}")
+        manifest_api_families = manifest_payload.get("api_families")
+        if not isinstance(manifest_api_families, list) or not all(
+            isinstance(value, str) and value for value in manifest_api_families
+        ):
+            return fail(f"module manifest api_families malformed for {entry['module']}")
+
+    architecture_live_paths = core_architecture.get("live_paths")
+    if not isinstance(architecture_live_paths, list) or not architecture_live_paths:
+        return fail("core architecture missing live_paths")
+    for raw_path in architecture_live_paths:
+        if not isinstance(raw_path, str) or not raw_path:
+            return fail("core architecture live_paths entry malformed")
+        path = ROOT / raw_path
+        if not path.exists():
+            return fail(f"core architecture live path missing: {raw_path}")
+
+    architecture_api_families = core_architecture.get("api_families")
+    if not isinstance(architecture_api_families, dict) or not architecture_api_families:
+        return fail("core architecture missing api_families")
+    inventory_modules_by_name = {entry["module"]: entry for entry in inventory_rows}
+    for module_name, families in architecture_api_families.items():
+        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
+            return fail(f"core architecture referenced unknown module {module_name}")
+        if not isinstance(families, list) or not families:
+            return fail(f"core architecture api_families malformed for {module_name}")
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        if manifest_payload.get("api_families") != families:
+            return fail(f"module manifest api_families drifted for {module_name}")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(
@@ -261,10 +309,12 @@ def main() -> int:
                 "module_inventory": repo_rel(MODULE_INVENTORY_PATH),
                 "stability_policy": repo_rel(STABILITY_POLICY_PATH),
                 "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
+                "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
                 "canonical_modules": inventory_rows,
                 "layers": layers,
                 "module_imports": module_imports,
+                "api_families": architecture_api_families,
             },
             indent=2,
         )

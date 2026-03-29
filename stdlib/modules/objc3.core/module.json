@@ -8,6 +8,15 @@
   "workspace_root": "stdlib/modules/objc3.core",
   "source": "stdlib/modules/objc3.core/module.objc3",
   "smoke_source": "stdlib/modules/objc3.core/smoke.objc3",
+  "api_families": [
+    "profile-revision",
+    "capability-query",
+    "option-shape",
+    "string-view",
+    "byte-span",
+    "array-slice",
+    "map-entry"
+  ],
   "exports": [
     "Objc3CoreLanguageRevision",
     "objc3_core_language_revision",
