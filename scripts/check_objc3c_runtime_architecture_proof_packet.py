@@ -65,6 +65,17 @@ SURFACE_KEYS = (
     "runtime_cross_module_metaprogramming_artifact_preservation_surface",
     "runtime_metaprogramming_runtime_abi_cache_surface",
     "runtime_metaprogramming_cache_runtime_integration_implementation_surface",
+    "runtime_cross_module_package_interop_source_surface",
+    "runtime_textual_binary_interface_parity_source_surface",
+    "runtime_mixed_image_compatibility_interop_semantics_surface",
+    "runtime_package_loading_module_identity_semantics_surface",
+    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "runtime_import_version_feature_claim_diagnostics_surface",
+    "runtime_packaging_bridge_loader_artifact_surface",
+    "runtime_mixed_image_package_lowering_bridge_emission_surface",
+    "runtime_cross_language_replay_import_surface_preservation_surface",
+    "runtime_package_loader_bridge_abi_surface",
+    "runtime_package_loading_interop_implementation_surface",
 )
 CLAIM_BOUNDARY_CONTRACT_ID = "objc3c.runtime.execution.claim.boundary.v1"
 
@@ -272,6 +283,39 @@ def main() -> int:
         ],
         "runtime_metaprogramming_cache_runtime_integration_implementation_surface": runtime_acceptance_report[
             "runtime_metaprogramming_cache_runtime_integration_implementation_surface"
+        ],
+        "runtime_cross_module_package_interop_source_surface": runtime_acceptance_report[
+            "runtime_cross_module_package_interop_source_surface"
+        ],
+        "runtime_textual_binary_interface_parity_source_surface": runtime_acceptance_report[
+            "runtime_textual_binary_interface_parity_source_surface"
+        ],
+        "runtime_mixed_image_compatibility_interop_semantics_surface": runtime_acceptance_report[
+            "runtime_mixed_image_compatibility_interop_semantics_surface"
+        ],
+        "runtime_package_loading_module_identity_semantics_surface": runtime_acceptance_report[
+            "runtime_package_loading_module_identity_semantics_surface"
+        ],
+        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": runtime_acceptance_report[
+            "runtime_c_cpp_swift_bridge_compatibility_semantics_surface"
+        ],
+        "runtime_import_version_feature_claim_diagnostics_surface": runtime_acceptance_report[
+            "runtime_import_version_feature_claim_diagnostics_surface"
+        ],
+        "runtime_packaging_bridge_loader_artifact_surface": runtime_acceptance_report[
+            "runtime_packaging_bridge_loader_artifact_surface"
+        ],
+        "runtime_mixed_image_package_lowering_bridge_emission_surface": runtime_acceptance_report[
+            "runtime_mixed_image_package_lowering_bridge_emission_surface"
+        ],
+        "runtime_cross_language_replay_import_surface_preservation_surface": runtime_acceptance_report[
+            "runtime_cross_language_replay_import_surface_preservation_surface"
+        ],
+        "runtime_package_loader_bridge_abi_surface": runtime_acceptance_report[
+            "runtime_package_loader_bridge_abi_surface"
+        ],
+        "runtime_package_loading_interop_implementation_surface": runtime_acceptance_report[
+            "runtime_package_loading_interop_implementation_surface"
         ],
         "runtime_property_atomicity_synthesis_reflection_source_surface": runtime_acceptance_report[
             "runtime_property_atomicity_synthesis_reflection_source_surface"

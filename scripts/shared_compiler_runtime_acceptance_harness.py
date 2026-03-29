@@ -22,7 +22,10 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_BLOCK_ARC_UNIFIED_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_CATCH_FILTER_FINALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_BRIDGING_FILTER_UNWIND_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
     RUNTIME_CROSS_MODULE_METAPROGRAMMING_ARTIFACT_PRESERVATION_SURFACE_CONTRACT_ID,
+    RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_CROSS_LANGUAGE_REPLAY_IMPORT_SURFACE_PRESERVATION_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_LOWERING_UNWIND_BRIDGE_HELPER_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_RUNTIME_ABI_CLEANUP_SURFACE_CONTRACT_ID,
     RUNTIME_ERROR_PROPAGATION_CATCH_CLEANUP_RUNTIME_IMPLEMENTATION_SURFACE_CONTRACT_ID,
@@ -41,6 +44,13 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_OBJECT_MODEL_ABI_QUERY_SURFACE_CONTRACT_ID,
     RUNTIME_OBJECT_MODEL_REALIZATION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
+    RUNTIME_IMPORT_VERSION_FEATURE_CLAIM_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
+    RUNTIME_PACKAGE_LOADING_INTEROP_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+    RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID,
+    RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
+    RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_ACCESSOR_REFLECTION_IMPLEMENTATION_SURFACE_CONTRACT_ID,
     RUNTIME_PROPERTY_IVAR_STORAGE_ACCESSOR_SOURCE_SURFACE_CONTRACT_ID,
@@ -51,6 +61,7 @@ from check_objc3c_runtime_acceptance import (
     RUNTIME_REFLECTION_QUERY_SURFACE_CONTRACT_ID,
     RUNTIME_STORAGE_ACCESSOR_RUNTIME_ABI_SURFACE_CONTRACT_ID,
     RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
+    RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
 )
 
 
@@ -301,6 +312,105 @@ COMMON_SURFACES = (
         ),
     ),
     SurfaceRequirement(
+        "runtime_cross_module_package_interop_source_surface",
+        RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_code_paths",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_textual_binary_interface_parity_source_surface",
+        RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "authoritative_source_fields",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_mixed_image_compatibility_interop_semantics_surface",
+        RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "compatibility_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_package_loading_module_identity_semantics_surface",
+        RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "runtime_probe",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+        RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "compatibility_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_import_version_feature_claim_diagnostics_surface",
+        RUNTIME_IMPORT_VERSION_FEATURE_CLAIM_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "diagnostic_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_packaging_bridge_loader_artifact_surface",
+        RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "artifact_surface_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_mixed_image_package_lowering_bridge_emission_surface",
+        RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "lowering_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_cross_language_replay_import_surface_preservation_surface",
+        RUNTIME_CROSS_LANGUAGE_REPLAY_IMPORT_SURFACE_PRESERVATION_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "preservation_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_package_loader_bridge_abi_surface",
+        RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "runtime_abi_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
+        "runtime_package_loading_interop_implementation_surface",
+        RUNTIME_PACKAGE_LOADING_INTEROP_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        (
+            "source_contract_ids",
+            "implementation_model",
+            "authoritative_case_ids",
+        ),
+    ),
+    SurfaceRequirement(
         "runtime_property_atomicity_synthesis_reflection_source_surface",
         RUNTIME_PROPERTY_ATOMICITY_SYNTHESIS_REFLECTION_SOURCE_SURFACE_CONTRACT_ID,
         (
@@ -548,6 +658,17 @@ def build_harness_surface(selected: Sequence[SuiteEntry]) -> dict[str, Any]:
             RUNTIME_OWNERSHIP_TRANSFER_CAPTURE_FAMILY_SOURCE_SURFACE_CONTRACT_ID,
             RUNTIME_BLOCK_ARC_LOWERING_HELPER_SURFACE_CONTRACT_ID,
             RUNTIME_BLOCK_ARC_RUNTIME_ABI_SURFACE_CONTRACT_ID,
+            RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_IMPORT_VERSION_FEATURE_CLAIM_DIAGNOSTICS_SURFACE_CONTRACT_ID,
+            RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
+            RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
+            RUNTIME_CROSS_LANGUAGE_REPLAY_IMPORT_SURFACE_PRESERVATION_SURFACE_CONTRACT_ID,
+            RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
+            RUNTIME_PACKAGE_LOADING_INTEROP_IMPLEMENTATION_SURFACE_CONTRACT_ID,
             RUNTIME_REALIZATION_LOWERING_REFLECTION_ARTIFACT_SURFACE_CONTRACT_ID,
             RUNTIME_DISPATCH_TABLE_REFLECTION_RECORD_LOWERING_SURFACE_CONTRACT_ID,
             RUNTIME_CROSS_MODULE_REALIZED_METADATA_REPLAY_PRESERVATION_SURFACE_CONTRACT_ID,
@@ -675,6 +796,39 @@ def summarize_report(entry: SuiteEntry, report: dict[str, Any], surfaces: dict[s
         ],
         "runtime_metaprogramming_cache_runtime_integration_implementation_surface": surfaces[
             "runtime_metaprogramming_cache_runtime_integration_implementation_surface"
+        ],
+        "runtime_cross_module_package_interop_source_surface": surfaces[
+            "runtime_cross_module_package_interop_source_surface"
+        ],
+        "runtime_textual_binary_interface_parity_source_surface": surfaces[
+            "runtime_textual_binary_interface_parity_source_surface"
+        ],
+        "runtime_mixed_image_compatibility_interop_semantics_surface": surfaces[
+            "runtime_mixed_image_compatibility_interop_semantics_surface"
+        ],
+        "runtime_package_loading_module_identity_semantics_surface": surfaces[
+            "runtime_package_loading_module_identity_semantics_surface"
+        ],
+        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": surfaces[
+            "runtime_c_cpp_swift_bridge_compatibility_semantics_surface"
+        ],
+        "runtime_import_version_feature_claim_diagnostics_surface": surfaces[
+            "runtime_import_version_feature_claim_diagnostics_surface"
+        ],
+        "runtime_packaging_bridge_loader_artifact_surface": surfaces[
+            "runtime_packaging_bridge_loader_artifact_surface"
+        ],
+        "runtime_mixed_image_package_lowering_bridge_emission_surface": surfaces[
+            "runtime_mixed_image_package_lowering_bridge_emission_surface"
+        ],
+        "runtime_cross_language_replay_import_surface_preservation_surface": surfaces[
+            "runtime_cross_language_replay_import_surface_preservation_surface"
+        ],
+        "runtime_package_loader_bridge_abi_surface": surfaces[
+            "runtime_package_loader_bridge_abi_surface"
+        ],
+        "runtime_package_loading_interop_implementation_surface": surfaces[
+            "runtime_package_loading_interop_implementation_surface"
         ],
         "runtime_property_atomicity_synthesis_reflection_source_surface": surfaces[
             "runtime_property_atomicity_synthesis_reflection_source_surface"

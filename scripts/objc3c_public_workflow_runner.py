@@ -43,6 +43,8 @@ RUNNABLE_STORAGE_REFLECTION_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_ru
 RUNNABLE_STORAGE_REFLECTION_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_storage_reflection_end_to_end.py"
 RUNNABLE_ERROR_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_error_conformance.py"
 RUNNABLE_ERROR_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_error_end_to_end.py"
+RUNNABLE_INTEROP_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_interop_conformance.py"
+RUNNABLE_INTEROP_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_interop_end_to_end.py"
 RUNNABLE_METAPROGRAMMING_CONFORMANCE_PY = ROOT / "scripts" / "check_objc3c_runnable_metaprogramming_conformance.py"
 RUNNABLE_METAPROGRAMMING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_metaprogramming_end_to_end.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
@@ -392,6 +394,22 @@ def write_composite_validation_report(
         payload["runtime_metaprogramming_cache_runtime_integration_implementation_surface"] = (
             runtime_metaprogramming_cache_runtime_integration_implementation_surface
         )
+    for surface_key in (
+        "runtime_cross_module_package_interop_source_surface",
+        "runtime_textual_binary_interface_parity_source_surface",
+        "runtime_mixed_image_compatibility_interop_semantics_surface",
+        "runtime_package_loading_module_identity_semantics_surface",
+        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+        "runtime_import_version_feature_claim_diagnostics_surface",
+        "runtime_packaging_bridge_loader_artifact_surface",
+        "runtime_mixed_image_package_lowering_bridge_emission_surface",
+        "runtime_cross_language_replay_import_surface_preservation_surface",
+        "runtime_package_loader_bridge_abi_surface",
+        "runtime_package_loading_interop_implementation_surface",
+    ):
+        surface = load_surface_from_report(steps, surface_key)
+        if surface is not None:
+            payload[surface_key] = surface
     runtime_property_atomicity_synthesis_reflection_source_surface = load_surface_from_report(
         steps, "runtime_property_atomicity_synthesis_reflection_source_surface"
     )
@@ -590,6 +608,14 @@ def action_validate_runnable_error(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_ERROR_E2E_PY)])
 
 
+def action_validate_interop_conformance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_INTEROP_CONFORMANCE_PY)])
+
+
+def action_validate_runnable_interop(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_INTEROP_E2E_PY)])
+
+
 def action_validate_metaprogramming_conformance(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_METAPROGRAMMING_CONFORMANCE_PY)])
 
@@ -669,6 +695,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-runnable-storage-reflection": ActionSpec("validate-runnable-storage-reflection", "validate runnable storage/reflection execution end to end from the package root", "python:scripts/check_objc3c_runnable_storage_reflection_end_to_end.py", ("test:objc3c:runnable-storage-reflection",), validation_tier="full", guarantee_owner="packaged compile, storage/reflection probe execution, smoke, and replay from the staged runnable toolchain bundle"),
     "validate-error-conformance": ActionSpec("validate-error-conformance", "validate runnable error conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_error_conformance.py", ("test:objc3c:error-conformance",), validation_tier="full", guarantee_owner="integrated error conformance over the live runtime architecture workflow"),
     "validate-runnable-error": ActionSpec("validate-runnable-error", "validate runnable error execution end to end from the package root", "python:scripts/check_objc3c_runnable_error_end_to_end.py", ("test:objc3c:runnable-error",), validation_tier="full", guarantee_owner="packaged compile, error probe execution, smoke, and replay from the staged runnable toolchain bundle"),
+    "validate-interop-conformance": ActionSpec("validate-interop-conformance", "validate runnable mixed-module and interop conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_interop_conformance.py", ("test:objc3c:interop-conformance",), validation_tier="full", guarantee_owner="integrated mixed-module runtime packaging and interop conformance over the live runtime architecture workflow"),
+    "validate-runnable-interop": ActionSpec("validate-runnable-interop", "validate runnable mixed-module and interop execution end to end from the package root", "python:scripts/check_objc3c_runnable_interop_end_to_end.py", ("test:objc3c:runnable-interop",), validation_tier="full", guarantee_owner="packaged compile, interop probe execution, smoke, and replay from the staged runnable toolchain bundle"),
     "validate-metaprogramming-conformance": ActionSpec("validate-metaprogramming-conformance", "validate runnable metaprogramming conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_metaprogramming_conformance.py", ("test:objc3c:metaprogramming-conformance",), validation_tier="full", guarantee_owner="integrated metaprogramming conformance over the live runtime architecture workflow"),
     "validate-runnable-metaprogramming": ActionSpec("validate-runnable-metaprogramming", "validate runnable metaprogramming execution end to end from the package root", "python:scripts/check_objc3c_runnable_metaprogramming_end_to_end.py", ("test:objc3c:runnable-metaprogramming",), validation_tier="full", guarantee_owner="packaged compile, metaprogramming probe execution, smoke, and replay from the staged runnable toolchain bundle"),
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
@@ -710,6 +738,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runnable-storage-reflection": action_validate_runnable_storage_reflection,
     "validate-error-conformance": action_validate_error_conformance,
     "validate-runnable-error": action_validate_runnable_error,
+    "validate-interop-conformance": action_validate_interop_conformance,
+    "validate-runnable-interop": action_validate_runnable_interop,
     "validate-metaprogramming-conformance": action_validate_metaprogramming_conformance,
     "validate-runnable-metaprogramming": action_validate_runnable_metaprogramming,
     "test-fixture-matrix": action_test_fixture_matrix,
