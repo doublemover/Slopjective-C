@@ -191,6 +191,9 @@ RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID = (
 RUNTIME_CROSS_LANGUAGE_REPLAY_IMPORT_SURFACE_PRESERVATION_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.cross.language.replay.import.surface.preservation.surface.v1"
 )
+RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.package.loader.bridge.abi.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -257,6 +260,12 @@ INTEROP_HEADER_MODULE_PROVIDER_FIXTURE = (
 )
 INTEROP_HEADER_MODULE_CONSUMER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+)
+INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
+)
+INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE = (
+    "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
 )
 CONCURRENCY_ACTOR_PRESERVATION_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3"
@@ -5942,6 +5951,39 @@ def build_runtime_cross_language_replay_import_surface_preservation_surface(
         ],
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_package_loader_bridge_abi_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"runtime-package-loader-bridge-abi"}
+    ]
+    return {
+        "contract_id": RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
+        "source_contract_ids": [
+            RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
+            RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
+        ],
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "authoritative_case_ids": authoritative_case_ids,
+        "runtime_abi_model": (
+            "private-runtime-snapshots-publish-package-loader-topology-and-bridge-generation-readiness-through-the-live-runtime-library-without-public-abi-widening"
+        ),
+        "authoritative_code_paths": [
+            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+            "native/objc3c/src/runtime/objc3_runtime.cpp",
+        ],
+        "authoritative_probe_paths": [
+            INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
+            INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
+        ],
+        "requires_linked_runtime_probe": True,
         "requires_real_compile_output": True,
     }
 
@@ -17473,6 +17515,77 @@ def check_cross_language_replay_import_surface_preservation_case(
     )
 
 
+def check_runtime_package_loader_bridge_abi_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "runtime-package-loader-bridge-abi"
+
+    packaging_probe = ROOT / Path(INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE)
+    packaging_exe = case_dir / "bridge_packaging_toolchain_probe.exe"
+    compile_probe(clangxx, packaging_probe, packaging_exe, [])
+    packaging_payload = parse_key_value_output(
+        run_probe(packaging_exe), "runtime package-loader packaging-topology ABI probe"
+    )
+    for field_name, expected_value in {
+        "copy_status": 0,
+        "packaging_topology_ready": 1,
+        "operator_visible_evidence_ready": 1,
+        "header_generation_ready": 0,
+        "module_generation_ready": 0,
+        "bridge_generation_ready": 0,
+        "deterministic": 1,
+    }.items():
+        expect(
+            packaging_payload.get(field_name) == expected_value,
+            f"expected runtime package-loader ABI probe to preserve {field_name}",
+        )
+
+    bridge_probe = ROOT / Path(INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE)
+    bridge_exe = case_dir / "header_module_bridge_generation_probe.exe"
+    compile_probe(clangxx, bridge_probe, bridge_exe, [])
+    bridge_payload = parse_key_value_output(
+        run_probe(bridge_exe), "runtime bridge-generation ABI probe"
+    )
+    for field_name, expected_value in {
+        "copy_status": 0,
+        "runtime_generation_ready": 1,
+        "cross_module_packaging_ready": 1,
+        "header_generation_ready": 1,
+        "module_generation_ready": 1,
+        "bridge_generation_ready": 1,
+        "deterministic": 1,
+    }.items():
+        expect(
+            bridge_payload.get(field_name) == expected_value,
+            f"expected runtime bridge-generation ABI probe to preserve {field_name}",
+        )
+    expect(
+        bridge_payload.get("header_artifact_relative_path") == "module.interop-bridge.h"
+        and bridge_payload.get("module_artifact_relative_path")
+        == "module.interop-bridge.modulemap"
+        and bridge_payload.get("bridge_artifact_relative_path")
+        == "module.interop-bridge.json",
+        "expected runtime bridge-generation ABI probe to preserve the bridge artifact paths",
+    )
+
+    return CaseResult(
+        case_id="runtime-package-loader-bridge-abi",
+        probe="linked-runtime-abi-probes",
+        fixture=None,
+        claim_class="runtime-linked-execution",
+        passed=True,
+        summary={
+            "packaging_topology_ready": packaging_payload.get(
+                "packaging_topology_ready"
+            ),
+            "bridge_generation_ready": bridge_payload.get("bridge_generation_ready"),
+            "header_artifact_relative_path": bridge_payload.get(
+                "header_artifact_relative_path"
+            ),
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -17504,6 +17617,7 @@ def main() -> int:
         check_runtime_packaging_bridge_loader_artifact_surface_case(run_dir),
         check_mixed_image_package_lowering_bridge_emission_case(run_dir),
         check_cross_language_replay_import_surface_preservation_case(run_dir),
+        check_runtime_package_loader_bridge_abi_case(clangxx, run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -17625,6 +17739,9 @@ def main() -> int:
             build_runtime_cross_language_replay_import_surface_preservation_surface(
                 results
             )
+        ),
+        "runtime_package_loader_bridge_abi_surface": (
+            build_runtime_package_loader_bridge_abi_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
