@@ -26,6 +26,27 @@ Use this page in three passes:
 2. Use the spec map to find the normative area you care about.
 3. Use the legacy spec redirect index only when you need compatibility links into archived language rules, ABI notes, or compatibility constraints.
 
+## Quick Routes {#toc-quick-routes}
+
+| If you want to... | Start here |
+| --- | --- |
+| understand what already works | [At a Glance](#toc-status-scope-note) |
+| see the runnable subset | [What Is Implemented and Runnable](#intro) |
+| understand what is still missing | [What Remains](#status-remaining) |
+| find the right draft section | [Specification Map](#toc-front-matter) |
+| build and validate the implementation | `README.md` |
+| inspect the native implementation boundary | `docs/objc3c-native.md` and `native/objc3c/` |
+| follow old spec links | `docs/reference/legacy_spec_anchor_index.md` |
+
+## Reader Promises {#toc-reader-promises}
+
+This page follows a strict public-doc model:
+
+- status before aspiration,
+- plain language before internal jargon,
+- direct links before repo scavenger hunts,
+- and current implementation truth before historical narrative.
+
 ## What Is Implemented and Runnable {#intro}
 
 The current native toolchain can compile and run a real subset of Objective-C 3.0:

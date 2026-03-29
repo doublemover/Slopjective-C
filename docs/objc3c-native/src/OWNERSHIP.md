@@ -33,3 +33,20 @@ This file defines source ownership for generated `docs/objc3c-native.md`.
 - Changes must be reviewed by the primary owner for each touched fragment.
 - Cross-fragment changes require at least one reviewer from `compiler/docs`.
 - PR description must include regeneration command and check output status.
+
+## Public Doc Style And Accessibility Rules
+
+When fragments affect `README.md`, `site/index.md`, or `docs/objc3c-native.md`,
+review against these rules:
+
+- state current support and current gaps plainly,
+- prefer short lead paragraphs and structured lists over long dense narrative,
+- explain implementation jargon in the same section that introduces it,
+- keep machine-only report inventories in generated runbooks or `tmp/`, not in reader-facing lead sections,
+- give readers the next exact file or command when sending them deeper into the repo.
+
+Reject changes that make the reader infer:
+
+- whether a feature is real or aspirational,
+- whether a path is human-facing or machine-facing,
+- or whether a section is current implementation truth versus archived compatibility material.
