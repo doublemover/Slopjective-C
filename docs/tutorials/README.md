@@ -17,7 +17,7 @@ Use it for reader-facing material that teaches someone how to:
   - verify the repo with `Fresh Setup` and `First Working Session`
   - then use `showcase/README.md` and `showcase/`
 - tutorial path:
-  - start here
+  - start with `docs/tutorials/getting_started.md`
   - then use `showcase/README.md` plus the checked-in example sources in `showcase/`
 - migration path:
   - use this directory for ObjC2-to-ObjC3 and Swift/C++ comparison guides
@@ -36,6 +36,7 @@ The live teaching surface is intentionally narrow.
   - `site/src/index.body.md`
 - tutorial and migration narrative:
   - `docs/tutorials/`
+  - `docs/tutorials/getting_started.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - runnable walkthrough examples:
   - `showcase/README.md`
@@ -52,6 +53,7 @@ Later issues in this milestone should edit these live paths directly:
 
 - tutorial map and audience routing:
   - `docs/tutorials/README.md`
+  - `docs/tutorials/getting_started.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `README.md`
   - `site/src/index.body.md`

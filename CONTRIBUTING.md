@@ -9,6 +9,7 @@ Use these files as the live contributor-facing surface:
 - `README.md`
 - `CONTRIBUTING.md`
 - `docs/tutorials/README.md`
+- `docs/tutorials/getting_started.md`
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
@@ -27,6 +28,7 @@ Treat these as the canonical roots for normal contribution work:
   - `README.md`
   - `CONTRIBUTING.md`
   - `docs/tutorials/README.md`
+  - `docs/tutorials/getting_started.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `showcase/`
   - `site/src/`

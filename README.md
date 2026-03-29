@@ -68,6 +68,7 @@ Use the shortest path that matches what you are trying to do.
 | --- | --- | --- |
 | understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
 | build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
+| follow the runnable tutorial path | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md) | compile one example first, then use the showcase surface |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md) | then follow the showcase examples that back the comparison |
 | contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |
 | inspect runnable showcase examples | [showcase/README.md](showcase/README.md) | compile them through `npm run compile:objc3c -- ...` or the showcase surface check |
@@ -136,6 +137,7 @@ Explicit non-goals for cleanup work:
 - `docs/tutorials/`
   - reader-facing tutorials, migration guides, and teaching-material boundaries
   - keep tutorial narrative compile-coupled to the checked-in showcase examples and public command surface
+  - getting-started work starts in `docs/tutorials/getting_started.md`
   - ObjC2/Swift/C++ comparison work starts in `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `docs/reference/legacy_spec_anchor_index.md`
   - compatibility redirects for archived spec, planning, governance, and conformance anchors

@@ -19,6 +19,7 @@ NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.
 MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
+GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
 COMPARISON_README_PATH = ROOT / "docs" / "tutorials" / "objc2_swift_cpp_comparison.md"
 
 
@@ -55,6 +56,7 @@ def main() -> int:
         "README.md",
         "CONTRIBUTING.md",
         "docs/tutorials/README.md",
+        "docs/tutorials/getting_started.md",
         "docs/tutorials/objc2_swift_cpp_comparison.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "docs/runbooks/objc3c_maintainer_workflows.md",
@@ -96,6 +98,27 @@ def main() -> int:
     ):
         require_token(tutorial_readme, token, path=TUTORIAL_README_PATH, errors=errors)
 
+    getting_started = GETTING_STARTED_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# Getting Started With The Runnable Subset",
+        "## Teaching Model",
+        "## Step 1 Verify The Toolchain",
+        "npm run build:objc3c-native",
+        "npm run test:fast",
+        "## Step 2 Compile One Runnable Example",
+        "showcase/auroraBoard/main.objc3",
+        "## Step 3 Use The Showcase Surface As The Tutorial Backbone",
+        "npm run check:showcase:surface",
+        "npm run test:showcase",
+        "## Step 4 Choose The Next Learning Path",
+        "docs/runbooks/objc3c_public_command_surface.md",
+        "## Canonical Inputs",
+        "## Exact Live Paths For Downstream Work",
+        "scripts/check_documentation_surface.py",
+        "## Explicit Non-Goals",
+    ):
+        require_token(getting_started, token, path=GETTING_STARTED_PATH, errors=errors)
+
     comparison_readme = COMPARISON_README_PATH.read_text(encoding="utf-8")
     for token in (
         "# ObjC2 Swift And C++ Comparison Surface",
@@ -118,6 +141,7 @@ def main() -> int:
         "## Language Parts {#toc-parts}",
         "[README.md](../README.md)",
         "[docs/tutorials/README.md](../docs/tutorials/README.md)",
+        "[docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md)",
         "[docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",
         "[legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
