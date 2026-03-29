@@ -2,7 +2,7 @@
 
 This runbook is generated from the live public workflow runner metadata.
 
-- Current public script count: `40`
+- Current public script count: `41`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 
@@ -32,6 +32,7 @@ This runbook is generated from the live public workflow runner metadata.
 | `test:objc3c:block-arc-conformance` | `validate-block-arc-conformance` | `full` | `integrated block/ARC conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_block_arc_conformance.py` |
 | `test:objc3c:runnable-block-arc` | `validate-runnable-block-arc` | `full` | `packaged compile, block/ARC probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_block_arc_end_to_end.py` |
 | `test:objc3c:concurrency-conformance` | `validate-concurrency-conformance` | `full` | `integrated async/task/executor/actor conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_concurrency_conformance.py` |
+| `test:objc3c:runnable-concurrency` | `validate-runnable-concurrency` | `full` | `packaged compile, concurrency probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_concurrency_end_to_end.py` |
 | `test:objc3c:object-model-conformance` | `validate-object-model-conformance` | `full` | `integrated object-model conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_conformance.py` |
 | `test:objc3c:storage-reflection-conformance` | `validate-storage-reflection-conformance` | `full` | `integrated storage/accessor/reflection conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_storage_reflection_conformance.py` |
 | `test:objc3c:runnable-object-model` | `validate-runnable-object-model` | `full` | `packaged compile, object-model probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_end_to_end.py` |
