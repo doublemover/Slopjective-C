@@ -5081,6 +5081,36 @@ int objc3_runtime_copy_release_candidate_claim_snapshot_for_testing(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int objc3_runtime_copy_release_candidate_evidence_state_for_testing(
+    objc3_runtime_release_candidate_evidence_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  snapshot->validation_artifact_ready = 1;
+  snapshot->release_evidence_operation_ready = 1;
+  snapshot->dashboard_status_ready = 1;
+  snapshot->advanced_feature_gate_ready = 1;
+  snapshot->release_candidate_matrix_ready = 1;
+  snapshot->deprecated_paths_shutdown = 1;
+  snapshot->deterministic = 1;
+  snapshot->validation_artifact_name = "module.objc3-conformance-validation.json";
+  snapshot->release_evidence_operation_artifact_name =
+      "module.objc3-release-evidence-operation.json";
+  snapshot->dashboard_status_artifact_name = "module.objc3-dashboard-status.json";
+  snapshot->advanced_feature_gate_artifact_name =
+      "module.objc3-advanced-feature-gate.json";
+  snapshot->release_candidate_matrix_artifact_name =
+      "module.objc3-release-candidate-matrix.json";
+  snapshot->validation_model =
+      "driver-validates-versioned-conformance-report-and-publication-sidecars-before-toolchain-consumption";
+  snapshot->release_bundle_model =
+      "validation-completes-the-final-claim-publication-bundle-over-the-live-validation-release-evidence-dashboard-gate-and-release-candidate-artifacts";
+  snapshot->deprecated_path_shutdown_model =
+      "deprecated-claim-matrix-dashboard-ready-summary-and-toolchain-runtime-ga-scaffold-paths-remain-retired-and-fail-closed";
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing(
     objc3_runtime_interop_bridge_generation_snapshot *snapshot) {
   if (snapshot == nullptr) {

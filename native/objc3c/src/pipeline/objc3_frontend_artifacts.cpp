@@ -24409,6 +24409,33 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"requires_real_compile_output\":true"
            << ",\"requires_linked_runtime_probe\":true"
            << "},\n";
+  manifest << "  \"runtime_final_release_evidence_descaffolding_implementation_surface\":{\"contract_id\":\""
+           << kObjc3RuntimeFinalReleaseEvidenceDescaffoldingImplementationSurfaceContractId
+           << "\",\"runtime_release_candidate_claim_abi_surface_contract_id\":\""
+           << kObjc3RuntimeReleaseCandidateClaimAbiSurfaceContractId
+           << "\",\"public_header_path\":\""
+           << runtime_bootstrap_api.public_header_path
+           << "\",\"internal_header_path\":\""
+           << kObjc3RuntimeBootstrapInternalHeaderPath
+           << "\",\"private_release_candidate_evidence_testing_boundary\":[\""
+           << kObjc3RuntimeReleaseCandidateEvidenceSnapshotSymbol << "\"]"
+           << ",\"release_candidate_evidence_snapshot_symbol\":\""
+           << kObjc3RuntimeReleaseCandidateEvidenceSnapshotSymbol
+           << "\",\"release_candidate_evidence_snapshot_type\":\""
+           << kObjc3RuntimeReleaseCandidateEvidenceSnapshotType
+           << "\",\"validation_artifact_name\":\"module.objc3-conformance-validation.json\""
+           << ",\"release_evidence_operation_artifact_name\":\"module.objc3-release-evidence-operation.json\""
+           << ",\"dashboard_status_artifact_name\":\"module.objc3-dashboard-status.json\""
+           << ",\"advanced_feature_gate_artifact_name\":\"module.objc3-advanced-feature-gate.json\""
+           << ",\"release_candidate_matrix_artifact_name\":\"module.objc3-release-candidate-matrix.json\""
+           << ",\"authoritative_probe_path\":\""
+           << kObjc3RuntimeReleaseCandidateEvidenceProbePath
+           << "\",\"implementation_model\":\""
+           << kObjc3RuntimeReleaseCandidateEvidenceImplementationModel
+           << "\""
+           << ",\"requires_real_compile_output\":true"
+           << ",\"requires_linked_runtime_probe\":true"
+           << "},\n";
   manifest << "  \"lowering_id_class_sel_object_pointer_typecheck\":{\"replay_key\":\""
            << id_class_sel_object_pointer_typecheck_replay_key
            << "\",\"lane_contract\":\"" << kObjc3IdClassSelObjectPointerTypecheckLaneContract

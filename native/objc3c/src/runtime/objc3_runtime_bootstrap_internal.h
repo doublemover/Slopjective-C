@@ -728,6 +728,25 @@ typedef struct objc3_runtime_release_candidate_claim_snapshot {
 } objc3_runtime_release_candidate_claim_snapshot;
 int objc3_runtime_copy_release_candidate_claim_snapshot_for_testing(
     objc3_runtime_release_candidate_claim_snapshot *snapshot);
+typedef struct objc3_runtime_release_candidate_evidence_state_snapshot {
+  uint64_t validation_artifact_ready;
+  uint64_t release_evidence_operation_ready;
+  uint64_t dashboard_status_ready;
+  uint64_t advanced_feature_gate_ready;
+  uint64_t release_candidate_matrix_ready;
+  uint64_t deprecated_paths_shutdown;
+  uint64_t deterministic;
+  const char *validation_artifact_name;
+  const char *release_evidence_operation_artifact_name;
+  const char *dashboard_status_artifact_name;
+  const char *advanced_feature_gate_artifact_name;
+  const char *release_candidate_matrix_artifact_name;
+  const char *validation_model;
+  const char *release_bundle_model;
+  const char *deprecated_path_shutdown_model;
+} objc3_runtime_release_candidate_evidence_state_snapshot;
+int objc3_runtime_copy_release_candidate_evidence_state_for_testing(
+    objc3_runtime_release_candidate_evidence_state_snapshot *snapshot);
 typedef struct objc3_runtime_interop_bridge_generation_snapshot {
   uint64_t runtime_generation_ready;
   uint64_t cross_module_packaging_ready;

@@ -195,6 +195,9 @@ RUNTIME_FINAL_CLAIM_PUBLICATION_DEPRECATED_PATH_SHUTDOWN_SURFACE_CONTRACT_ID = (
 RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.release.candidate.claim.abi.surface.v1"
 )
+RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.final.release.evidence.descaffolding.implementation.surface.v1"
+)
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
@@ -301,6 +304,9 @@ INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE = (
 RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE = (
     "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp"
 )
+RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE = (
+    "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp"
+)
 INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE = (
     "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
 )
@@ -351,6 +357,9 @@ RUNTIME_LOADER_TESTING_BOUNDARY = [
 ]
 PRIVATE_RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_copy_release_candidate_claim_snapshot_for_testing",
+]
+PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY = [
+    "objc3_runtime_copy_release_candidate_evidence_state_for_testing",
 ]
 PRIVATE_BLOCK_ARC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_promote_block_i32",
@@ -6475,6 +6484,53 @@ def build_runtime_release_candidate_claim_abi_surface(
         ),
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_probe_paths": [RELEASE_CANDIDATE_CLAIM_RUNTIME_ABI_PROBE],
+        "requires_real_compile_output": True,
+        "requires_linked_runtime_probe": True,
+    }
+
+
+def build_runtime_final_release_evidence_descaffolding_implementation_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"final-release-evidence-descaffolding-implementation"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID
+        ),
+        "runtime_release_candidate_claim_abi_surface_contract_id": (
+            RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID
+        ),
+        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
+        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
+        "private_release_candidate_evidence_testing_boundary": (
+            PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY
+        ),
+        "release_candidate_evidence_snapshot_symbol": (
+            "objc3_runtime_copy_release_candidate_evidence_state_for_testing"
+        ),
+        "release_candidate_evidence_snapshot_type": (
+            "objc3_runtime_release_candidate_evidence_state_snapshot"
+        ),
+        "validation_artifact_name": "module.objc3-conformance-validation.json",
+        "release_evidence_operation_artifact_name": (
+            "module.objc3-release-evidence-operation.json"
+        ),
+        "dashboard_status_artifact_name": "module.objc3-dashboard-status.json",
+        "advanced_feature_gate_artifact_name": (
+            "module.objc3-advanced-feature-gate.json"
+        ),
+        "release_candidate_matrix_artifact_name": (
+            "module.objc3-release-candidate-matrix.json"
+        ),
+        "implementation_model": (
+            "private-release-candidate-evidence-snapshot-freezes-the-live-validation-release-evidence-dashboard-gate-matrix-and-deprecated-path-shutdown-implementation-boundary"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_probe_paths": [RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE],
         "requires_real_compile_output": True,
         "requires_linked_runtime_probe": True,
     }
@@ -18251,6 +18307,129 @@ def check_release_candidate_runtime_claim_abi_case(
     )
 
 
+def check_final_release_evidence_descaffolding_implementation_case(
+    clangxx: str, run_dir: Path
+) -> CaseResult:
+    case_dir = run_dir / "final-release-evidence-descaffolding-implementation"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+    compile_dir = case_dir / "compile"
+    compile_fixture_with_args(fixture, compile_dir)
+
+    report_path = compile_dir / "module.objc3-conformance-report.json"
+    validate_dir = case_dir / "validate"
+    validate_dir.mkdir(parents=True, exist_ok=True)
+    validation = run(
+        [
+            str(NATIVE_EXE),
+            "--validate-objc3-conformance",
+            str(report_path),
+            "--out-dir",
+            str(validate_dir),
+            "--emit-prefix",
+            "module",
+            "--emit-objc3-conformance-format",
+            "json",
+        ]
+    )
+    expect(
+        validation.returncode == 0,
+        "expected conformance validation to succeed for the final release evidence implementation case",
+    )
+
+    manifest = json.loads((compile_dir / "module.manifest.json").read_text(encoding="utf-8"))
+    implementation_surface = manifest.get(
+        "runtime_final_release_evidence_descaffolding_implementation_surface"
+    )
+    expect(
+        isinstance(implementation_surface, dict),
+        "expected compiled fixture manifest to publish runtime_final_release_evidence_descaffolding_implementation_surface",
+    )
+    expect(
+        implementation_surface.get("contract_id")
+        == RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        "expected compiled fixture manifest to publish the final release evidence descaffolding implementation surface contract",
+    )
+    expect(
+        implementation_surface.get("runtime_release_candidate_claim_abi_surface_contract_id")
+        == RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
+        "expected final release evidence implementation surface to depend on the release-candidate claim ABI surface",
+    )
+    expect(
+        implementation_surface.get("private_release_candidate_evidence_testing_boundary")
+        == PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
+        "expected final release evidence implementation surface to preserve the private evidence snapshot boundary",
+    )
+    expect(
+        implementation_surface.get("validation_artifact_name")
+        == "module.objc3-conformance-validation.json"
+        and implementation_surface.get("release_evidence_operation_artifact_name")
+        == "module.objc3-release-evidence-operation.json"
+        and implementation_surface.get("dashboard_status_artifact_name")
+        == "module.objc3-dashboard-status.json"
+        and implementation_surface.get("advanced_feature_gate_artifact_name")
+        == "module.objc3-advanced-feature-gate.json"
+        and implementation_surface.get("release_candidate_matrix_artifact_name")
+        == "module.objc3-release-candidate-matrix.json",
+        "expected final release evidence implementation surface to publish the final artifact inventory",
+    )
+
+    validate_artifacts = sorted(path.name for path in validate_dir.glob("module.objc3-*.json"))
+    expect(
+        validate_artifacts
+        == [
+            "module.objc3-advanced-feature-gate.json",
+            "module.objc3-conformance-validation.json",
+            "module.objc3-dashboard-status.json",
+            "module.objc3-release-candidate-matrix.json",
+            "module.objc3-release-evidence-operation.json",
+        ],
+        "expected validation output to preserve the final release evidence artifact inventory",
+    )
+
+    probe = ROOT / Path(RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE)
+    exe_path = case_dir / "release_candidate_evidence_runtime_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [])
+    payload = parse_key_value_output(
+        run_probe(exe_path), "release-candidate evidence runtime probe"
+    )
+    expect(
+        payload.get("copy_status") == 0
+        and payload.get("validation_artifact_ready") == 1
+        and payload.get("release_evidence_operation_ready") == 1
+        and payload.get("dashboard_status_ready") == 1
+        and payload.get("advanced_feature_gate_ready") == 1
+        and payload.get("release_candidate_matrix_ready") == 1
+        and payload.get("deprecated_paths_shutdown") == 1
+        and payload.get("deterministic") == 1,
+        "expected final release evidence runtime probe to publish a ready deterministic implementation snapshot",
+    )
+    expect(
+        payload.get("validation_artifact_name")
+        == "module.objc3-conformance-validation.json"
+        and payload.get("release_evidence_operation_artifact_name")
+        == "module.objc3-release-evidence-operation.json"
+        and payload.get("dashboard_status_artifact_name")
+        == "module.objc3-dashboard-status.json"
+        and payload.get("advanced_feature_gate_artifact_name")
+        == "module.objc3-advanced-feature-gate.json"
+        and payload.get("release_candidate_matrix_artifact_name")
+        == "module.objc3-release-candidate-matrix.json",
+        "expected final release evidence runtime probe to preserve the final artifact inventory",
+    )
+
+    return CaseResult(
+        case_id="final-release-evidence-descaffolding-implementation",
+        probe=RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE,
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "validate_artifacts": validate_artifacts,
+            "validation_model": payload.get("validation_model"),
+        },
+    )
+
+
 def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
@@ -19099,6 +19278,9 @@ def main() -> int:
         check_claim_publication_dashboard_schema_surface_case(run_dir),
         check_final_claim_publication_deprecated_path_shutdown_case(run_dir),
         check_release_candidate_runtime_claim_abi_case(clangxx, run_dir),
+        check_final_release_evidence_descaffolding_implementation_case(
+            clangxx, run_dir
+        ),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -19237,6 +19419,11 @@ def main() -> int:
         ),
         "runtime_release_candidate_claim_abi_surface": (
             build_runtime_release_candidate_claim_abi_surface(results)
+        ),
+        "runtime_final_release_evidence_descaffolding_implementation_surface": (
+            build_runtime_final_release_evidence_descaffolding_implementation_surface(
+                results
+            )
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
