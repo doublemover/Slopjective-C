@@ -63,6 +63,8 @@ That manifest is part of the live showcase surface and should stay aligned with:
 - `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/build_run_verify.md`
 
+The bounded validation surface for this walkthrough is `scripts/check_getting_started_surface.py`.
+
 ## Canonical Inputs
 
 - `docs/tutorials/guided_walkthrough.md`
@@ -72,6 +74,7 @@ That manifest is part of the live showcase surface and should stay aligned with:
 - `showcase/auroraBoard/main.objc3`
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
+- `scripts/check_getting_started_surface.py`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
 ## Exact Live Paths For Downstream Work
@@ -90,6 +93,7 @@ That manifest is part of the live showcase surface and should stay aligned with:
   - `showcase/patchKit/main.objc3`
 - command truth and validation:
   - `docs/runbooks/objc3c_public_command_surface.md`
+  - `scripts/check_getting_started_surface.py`
   - `scripts/check_showcase_surface.py`
 
 ## Explicit Non-Goals

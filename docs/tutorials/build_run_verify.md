@@ -50,6 +50,16 @@ npm run test:showcase:e2e
 
 If you want the ordered example sequence after these commands are clear, continue to `docs/tutorials/guided_walkthrough.md`.
 
+## Validation Surface
+
+The bounded getting-started validation contract is implemented in `scripts/check_getting_started_surface.py`.
+
+That surface proves:
+
+- the reader-facing documentation structure is still intact
+- the walkthrough manifest still points at the right showcase examples
+- the walkthrough-selected examples still compile through the normal public compiler path
+
 ## Artifact And Report Expectations
 
 The tutorial workflow is coupled to the existing showcase outputs:
@@ -65,6 +75,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/getting_started.md`
+- `scripts/check_getting_started_surface.py`
 - `docs/tutorials/objc2_to_objc3_migration.md`
 - `showcase/README.md`
 - `showcase/portfolio.json`
@@ -86,9 +97,12 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `scripts/objc3c_public_workflow_runner.py`
+- bounded tutorial validation:
+  - `scripts/check_getting_started_surface.py`
 - machine-owned outputs:
   - `tmp/artifacts/showcase/`
   - `tmp/reports/showcase/`
+  - `tmp/reports/tutorials/`
   - `tmp/pkg/objc3c-native-runnable-toolchain/`
 
 ## Explicit Non-Goals
