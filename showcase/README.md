@@ -23,6 +23,7 @@ Shared live tooling:
 - `package.json`
 - `scripts/objc3c_public_workflow_runner.py`
 - `docs/tutorials/build_run_verify.md`
+- `docs/tutorials/guided_walkthrough.md`
 - `scripts/objc3c_native_compile.ps1`
 - `scripts/check_showcase_surface.py`
 - `scripts/check_objc3c_native_execution_smoke.ps1`
@@ -61,6 +62,7 @@ Selection model:
 The checked-in showcase contract is rooted at `showcase/portfolio.json`.
 Each example directory also carries its own checked-in workspace contract at
 `showcase/<example-id>/workspace.json`.
+The ordered tutorial asset for this same surface is `showcase/tutorial_walkthrough.json`.
 
 The tutorial-facing command and artifact map for this same surface lives in
 `docs/tutorials/build_run_verify.md`.

@@ -14,7 +14,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
+GUIDED_WALKTHROUGH = ROOT / "showcase" / "tutorial_walkthrough.json"
 WORKSPACE_CONTRACT_ID = "objc3c.showcase.example.workspace.v1"
+GUIDED_WALKTHROUGH_CONTRACT_ID = "objc3c.showcase.tutorial.walkthrough.v1"
 MODULE_DECL_RE = re.compile(r"^\s*module\s+([A-Za-z_][A-Za-z0-9_]*)\s*;", re.MULTILINE)
 SHOWCASE_SUMMARY_CONTRACT_ID = "objc3c.showcase.surface.summary.v1"
 
@@ -101,6 +103,23 @@ def main() -> int:
         "execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
     }:
         return fail("build_run_package_surface drifted")
+    tutorial_build_run_verify_surface = payload.get("tutorial_build_run_verify_surface")
+    if tutorial_build_run_verify_surface != {
+        "getting_started_readme": "docs/tutorials/getting_started.md",
+        "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
+        "migration_readme": "docs/tutorials/objc2_to_objc3_migration.md",
+        "build_native_entrypoint": "build:objc3c-native",
+        "compile_entrypoint": "compile:objc3c",
+        "surface_check_entrypoint": "check:showcase:surface",
+        "integrated_validation_entrypoint": "test:showcase",
+        "packaged_validation_entrypoint": "test:showcase:e2e",
+        "artifact_root": "tmp/artifacts/showcase",
+        "report_root": "tmp/reports/showcase",
+        "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+    }:
+        return fail("tutorial_build_run_verify_surface drifted")
+    if payload.get("guided_walkthrough_manifest") != "showcase/tutorial_walkthrough.json":
+        return fail("guided_walkthrough_manifest drifted")
     runtime_presentation_surface = payload.get("runtime_presentation_surface")
     if runtime_presentation_surface != {
         "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
@@ -121,6 +140,59 @@ def main() -> int:
     ids = [entry.get("id") for entry in examples if isinstance(entry, dict)]
     if ids != ["auroraBoard", "signalMesh", "patchKit"]:
         return fail("example ids drifted")
+
+    if not GUIDED_WALKTHROUGH.is_file():
+        return fail(f"missing guided walkthrough manifest: {repo_relative(GUIDED_WALKTHROUGH)}")
+    walkthrough_payload = json.loads(GUIDED_WALKTHROUGH.read_text(encoding="utf-8"))
+    if walkthrough_payload.get("contract_id") != GUIDED_WALKTHROUGH_CONTRACT_ID:
+        return fail("guided walkthrough contract_id drifted")
+    if walkthrough_payload.get("schema_version") != 1:
+        return fail("guided walkthrough schema_version drifted")
+    if walkthrough_payload.get("tutorial_readme") != "docs/tutorials/guided_walkthrough.md":
+        return fail("guided walkthrough tutorial_readme drifted")
+    if walkthrough_payload.get("build_run_verify_readme") != "docs/tutorials/build_run_verify.md":
+        return fail("guided walkthrough build_run_verify_readme drifted")
+    if walkthrough_payload.get("portfolio_contract") != "showcase/portfolio.json":
+        return fail("guided walkthrough portfolio_contract drifted")
+    walkthrough_steps = walkthrough_payload.get("steps")
+    if walkthrough_steps != [
+        {
+            "id": "build-native",
+            "public_entrypoint": "build:objc3c-native",
+        },
+        {
+            "id": "compile-auroraBoard",
+            "public_entrypoint": "compile:objc3c",
+            "example_id": "auroraBoard",
+            "source": "showcase/auroraBoard/main.objc3",
+            "artifact_root": "tmp/artifacts/showcase/auroraBoard",
+        },
+        {
+            "id": "compile-signalMesh",
+            "public_entrypoint": "compile:objc3c",
+            "example_id": "signalMesh",
+            "source": "showcase/signalMesh/main.objc3",
+            "artifact_root": "tmp/artifacts/showcase/signalMesh",
+        },
+        {
+            "id": "compile-patchKit",
+            "public_entrypoint": "compile:objc3c",
+            "example_id": "patchKit",
+            "source": "showcase/patchKit/main.objc3",
+            "artifact_root": "tmp/artifacts/showcase/patchKit",
+        },
+        {
+            "id": "check-showcase-surface",
+            "public_entrypoint": "check:showcase:surface",
+            "report_root": "tmp/reports/showcase",
+        },
+        {
+            "id": "validate-showcase",
+            "public_entrypoint": "test:showcase",
+            "report_root": "tmp/reports/showcase",
+        },
+    ]:
+        return fail("guided walkthrough steps drifted")
 
     requested_ids = set(args.example)
     if requested_ids:

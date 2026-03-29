@@ -48,6 +48,8 @@ Use the packaged surface only when you need the staged runnable bundle:
 npm run test:showcase:e2e
 ```
 
+If you want the ordered example sequence after these commands are clear, continue to `docs/tutorials/guided_walkthrough.md`.
+
 ## Artifact And Report Expectations
 
 The tutorial workflow is coupled to the existing showcase outputs:
@@ -61,6 +63,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 ## Canonical Inputs
 
 - `docs/tutorials/build_run_verify.md`
+- `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/getting_started.md`
 - `docs/tutorials/objc2_to_objc3_migration.md`
 - `showcase/README.md`
@@ -73,6 +76,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 
 - tutorial command narrative:
   - `docs/tutorials/build_run_verify.md`
+  - `docs/tutorials/guided_walkthrough.md`
   - `docs/tutorials/getting_started.md`
   - `docs/tutorials/README.md`
 - checked-in workflow contract:

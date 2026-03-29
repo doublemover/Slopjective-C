@@ -1,0 +1,48 @@
+{
+  "contract_id": "objc3c.showcase.tutorial.walkthrough.v1",
+  "schema_version": 1,
+  "tutorial_readme": "docs/tutorials/guided_walkthrough.md",
+  "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
+  "portfolio_contract": "showcase/portfolio.json",
+  "steps": [
+    {
+      "id": "build-native",
+      "public_entrypoint": "build:objc3c-native"
+    },
+    {
+      "id": "compile-auroraBoard",
+      "public_entrypoint": "compile:objc3c",
+      "example_id": "auroraBoard",
+      "source": "showcase/auroraBoard/main.objc3",
+      "artifact_root": "tmp/artifacts/showcase/auroraBoard"
+    },
+    {
+      "id": "compile-signalMesh",
+      "public_entrypoint": "compile:objc3c",
+      "example_id": "signalMesh",
+      "source": "showcase/signalMesh/main.objc3",
+      "artifact_root": "tmp/artifacts/showcase/signalMesh"
+    },
+    {
+      "id": "compile-patchKit",
+      "public_entrypoint": "compile:objc3c",
+      "example_id": "patchKit",
+      "source": "showcase/patchKit/main.objc3",
+      "artifact_root": "tmp/artifacts/showcase/patchKit"
+    },
+    {
+      "id": "check-showcase-surface",
+      "public_entrypoint": "check:showcase:surface",
+      "report_root": "tmp/reports/showcase"
+    },
+    {
+      "id": "validate-showcase",
+      "public_entrypoint": "test:showcase",
+      "report_root": "tmp/reports/showcase"
+    }
+  ],
+  "explicit_non_goals": [
+    "no tutorial-only command wrapper",
+    "no walkthrough step outside showcase or the public command surface"
+  ]
+}

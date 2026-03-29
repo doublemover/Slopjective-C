@@ -44,6 +44,7 @@
     "report_root": "tmp/reports/showcase",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain"
   },
+  "guided_walkthrough_manifest": "showcase/tutorial_walkthrough.json",
   "runtime_presentation_surface": {
     "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
     "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",

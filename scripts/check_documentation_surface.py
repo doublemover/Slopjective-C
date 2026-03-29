@@ -21,6 +21,7 @@ PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_comman
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
 BUILD_RUN_VERIFY_PATH = ROOT / "docs" / "tutorials" / "build_run_verify.md"
+GUIDED_WALKTHROUGH_PATH = ROOT / "docs" / "tutorials" / "guided_walkthrough.md"
 MIGRATION_GUIDE_PATH = ROOT / "docs" / "tutorials" / "objc2_to_objc3_migration.md"
 COMPARISON_README_PATH = ROOT / "docs" / "tutorials" / "objc2_swift_cpp_comparison.md"
 
@@ -60,6 +61,7 @@ def main() -> int:
         "docs/tutorials/README.md",
         "docs/tutorials/getting_started.md",
         "docs/tutorials/build_run_verify.md",
+        "docs/tutorials/guided_walkthrough.md",
         "docs/tutorials/objc2_to_objc3_migration.md",
         "docs/tutorials/objc2_swift_cpp_comparison.md",
         "docs/runbooks/objc3c_public_command_surface.md",
@@ -145,6 +147,26 @@ def main() -> int:
     ):
         require_token(build_run_verify, token, path=BUILD_RUN_VERIFY_PATH, errors=errors)
 
+    guided_walkthrough = GUIDED_WALKTHROUGH_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# Guided Showcase Walkthrough",
+        "## Walkthrough Boundary",
+        "## Walkthrough Steps",
+        "npm run build:objc3c-native",
+        "npm run compile:objc3c -- showcase/auroraBoard/main.objc3",
+        "npm run compile:objc3c -- showcase/signalMesh/main.objc3",
+        "npm run compile:objc3c -- showcase/patchKit/main.objc3",
+        "npm run check:showcase:surface",
+        "npm run test:showcase",
+        "## Walkthrough Assets",
+        "showcase/tutorial_walkthrough.json",
+        "## Canonical Inputs",
+        "## Exact Live Paths For Downstream Work",
+        "scripts/check_showcase_surface.py",
+        "## Explicit Non-Goals",
+    ):
+        require_token(guided_walkthrough, token, path=GUIDED_WALKTHROUGH_PATH, errors=errors)
+
     migration_guide = MIGRATION_GUIDE_PATH.read_text(encoding="utf-8")
     for token in (
         "# ObjC2 To ObjC3 Migration Guide",
@@ -188,6 +210,7 @@ def main() -> int:
         "[docs/tutorials/README.md](../docs/tutorials/README.md)",
         "[docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md)",
         "[docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)",
+        "[docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)",
         "[docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)",
         "[docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",

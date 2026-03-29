@@ -19,6 +19,7 @@ Use it for reader-facing material that teaches someone how to:
 - tutorial path:
   - start with `docs/tutorials/getting_started.md`
   - use `docs/tutorials/build_run_verify.md` for the exact command and artifact flow
+  - use `docs/tutorials/guided_walkthrough.md` for the ordered example pass
   - then use `showcase/README.md` plus the checked-in example sources in `showcase/`
 - migration path:
   - use this directory for ObjC2-to-ObjC3 and Swift/C++ comparison guides
@@ -40,6 +41,7 @@ The live teaching surface is intentionally narrow.
   - `docs/tutorials/`
   - `docs/tutorials/getting_started.md`
   - `docs/tutorials/build_run_verify.md`
+  - `docs/tutorials/guided_walkthrough.md`
   - `docs/tutorials/objc2_to_objc3_migration.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - runnable walkthrough examples:
@@ -59,6 +61,7 @@ Later issues in this milestone should edit these live paths directly:
   - `docs/tutorials/README.md`
   - `docs/tutorials/getting_started.md`
   - `docs/tutorials/build_run_verify.md`
+  - `docs/tutorials/guided_walkthrough.md`
   - `docs/tutorials/objc2_to_objc3_migration.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `README.md`
