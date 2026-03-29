@@ -660,6 +660,90 @@ function Get-RepoRelativePath {
   return $relative.Replace('\', '/')
 }
 
+function Write-RepoSupercleanSourceOfTruthArtifact {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$RepoRoot,
+    [Parameter(Mandatory = $true)]
+    [string]$OutputPath,
+    [Parameter(Mandatory = $true)]
+    [string]$ExecutionMode,
+    [Parameter(Mandatory = $true)]
+    [string]$CompileCommandsPath,
+    [Parameter(Mandatory = $true)]
+    [string]$NativeExecutablePath,
+    [Parameter(Mandatory = $true)]
+    [string]$FrontendCapiRunnerPath,
+    [Parameter(Mandatory = $true)]
+    [string]$RuntimeLibraryPath,
+    [Parameter(Mandatory = $true)]
+    [object[]]$FrontendDefinitions
+  )
+
+  $payload = [ordered]@{
+    contract_id = "objc3c-repo-superclean-source-of-truth/build-wrapper-generated-surface-v1"
+    schema_version = 1
+    surface_kind = "native-build-wrapper-generated-source-of-truth"
+    build_wrapper = "scripts/build_objc3c_native.ps1"
+    execution_mode = $ExecutionMode
+    implementation_roots = @(
+      "native/objc3c",
+      "scripts",
+      "tests"
+    )
+    checked_in_doc_sources = @(
+      "README.md",
+      "site/src",
+      "docs/objc3c-native/src",
+      "package.json"
+    )
+    generated_checked_in_outputs = @(
+      "site/index.md",
+      "docs/objc3c-native.md",
+      "docs/runbooks/objc3c_public_command_surface.md"
+    )
+    machine_owned_output_roots = @(
+      "tmp",
+      "artifacts"
+    )
+    package_entrypoints = [ordered]@{
+      build_native = "build:objc3c-native"
+      build_contracts = "build:objc3c-native:contracts"
+      build_full = "build:objc3c-native:full"
+      build_reconfigure = "build:objc3c-native:reconfigure"
+      build_site = "build:site"
+      check_site = "check:site"
+      build_native_docs = "build:docs:native"
+      build_public_command_surface = "build:docs:commands"
+      test_fast = "test:fast"
+      test_ci = "test:ci"
+      test_docs = "test:docs"
+    }
+    native_build_outputs = [ordered]@{
+      native_executable = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $NativeExecutablePath
+      frontend_c_api_runner = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $FrontendCapiRunnerPath
+      runtime_library = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $RuntimeLibraryPath
+      compile_commands = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath $CompileCommandsPath
+    }
+    frontend_contract_artifacts = @(
+      $FrontendDefinitions | ForEach-Object {
+        [ordered]@{
+          name = [string]$_.Name
+          family = [string]$_.Family
+          artifact_path = Get-RepoRelativePath -RootPath $RepoRoot -TargetPath ([string]$_.OutputPath)
+        }
+      }
+    )
+    explicit_non_goals = @(
+      "no milestone-coded command aliases",
+      "no secondary source-of-truth directories",
+      "no generated-output hand edits"
+    )
+  }
+
+  Write-JsonArtifactFile -OutputPath $OutputPath -Payload $payload -Depth 8
+}
+
 function Get-FrontendSharedSourcesFromModules {
   param([object[]]$Modules)
 
@@ -1585,6 +1669,7 @@ $frontendRecoveryDeterminismHardeningPath = Join-Path $repoRoot "tmp/artifacts/o
 $frontendConformanceMatrixPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_matrix.json"
 $frontendConformanceCorpusPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json"
 $frontendIntegrationCloseoutPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_integration_closeout.json"
+$repoSupercleanSurfacePath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
 
 $nativeSources = @(
   "native/objc3c/src/main.cpp"
@@ -1672,6 +1757,16 @@ Invoke-FrontendPacketGeneration `
   -Modules $frontendModules `
   -SharedSources $sharedSources
 
+Write-RepoSupercleanSourceOfTruthArtifact `
+  -RepoRoot $repoRoot `
+  -OutputPath $repoSupercleanSurfacePath `
+  -ExecutionMode $ExecutionMode `
+  -CompileCommandsPath $compileCommandsPath `
+  -NativeExecutablePath $outExe `
+  -FrontendCapiRunnerPath $outCapiExe `
+  -RuntimeLibraryPath $outRuntimeLib `
+  -FrontendDefinitions $frontendPacketDefinitions
+
 if (Test-Path -LiteralPath $outExe -PathType Leaf) {
   Write-Output ("built=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $outExe))
 }
@@ -1686,3 +1781,4 @@ foreach ($packetDefinition in $frontendPacketDefinitions) {
     Write-Output ($packetDefinition.Name + "=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $packetDefinition.OutputPath))
   }
 }
+Write-Output ("repo_superclean_surface=" + (Get-RepoRelativePath -RootPath $repoRoot -TargetPath $repoSupercleanSurfacePath))

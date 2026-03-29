@@ -282,6 +282,8 @@ Build-tree facts:
   - `tmp/build-objc3c-native/compile_commands.json`
 - fingerprint:
   - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`
+- repo superclean source-of-truth artifact:
+  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 
 Fingerprint inputs:
 

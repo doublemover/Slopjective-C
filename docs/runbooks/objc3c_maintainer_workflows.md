@@ -38,6 +38,7 @@ Use these roots directly when cleaning or renaming repo surfaces:
 - machine-owned outputs only:
   - `tmp/`
   - `artifacts/`
+  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` is the build-emitted source-of-truth artifact for the repo superclean surface
 
 Do not add milestone-specific wrappers, sidecar compatibility files, or
 parallel source-of-truth copies when changing these surfaces.
