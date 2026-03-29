@@ -176,6 +176,9 @@ RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
 RUNTIME_PACKAGE_LOADING_MODULE_IDENTITY_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.package.loading.module.identity.semantics.surface.v1"
 )
+RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.c.cpp.swift.bridge.compatibility.semantics.surface.v1"
+)
 RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID = "objc3c.runtime.acceptance.suite.surface.v1"
 RUNTIME_INSTALLATION_ABI_SURFACE_CONTRACT_ID = "objc3c.runtime.installation.abi.surface.v1"
 RUNTIME_LOADER_LIFECYCLE_SURFACE_CONTRACT_ID = "objc3c.runtime.loader.lifecycle.surface.v1"
@@ -239,6 +242,9 @@ INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE = (
 )
 INTEROP_HEADER_MODULE_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
+)
+INTEROP_HEADER_MODULE_CONSUMER_FIXTURE = (
+    "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
 )
 CONCURRENCY_ACTOR_PRESERVATION_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3"
@@ -5716,6 +5722,48 @@ def build_runtime_package_loading_module_identity_semantics_surface(
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,
         "requires_linked_runtime_probe": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"c-cpp-swift-bridge-compatibility-semantics"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID
+        ),
+        "source_contract_ids": [
+            RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID,
+            RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID,
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.runtime-import-surface.json",
+            "<emit-prefix>.cross-module-runtime-link-plan.json",
+            "<emit-prefix>.interop-bridge.h",
+            "<emit-prefix>.interop-bridge.modulemap",
+            "<emit-prefix>.interop-bridge.json",
+        ],
+        "compatibility_model": (
+            "c-cpp-and-swift-facing-interop-annotations-survive-provider-emission-consumer-import-and-cross-module-link-planning-without-bridge-shape-drift"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_code_paths": [
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+        ],
+        "authoritative_fixture_paths": [
+            INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
+            INTEROP_HEADER_MODULE_CONSUMER_FIXTURE,
+        ],
+        "requires_runtime_import_surface_artifact": True,
+        "requires_cross_module_link_plan_artifact": True,
         "requires_real_compile_output": True,
     }
 
@@ -16758,6 +16806,137 @@ def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> Cas
     )
 
 
+def check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "c-cpp-swift-bridge-compatibility-semantics"
+    provider_fixture = ROOT / Path(INTEROP_HEADER_MODULE_PROVIDER_FIXTURE)
+    consumer_fixture = ROOT / Path(INTEROP_HEADER_MODULE_CONSUMER_FIXTURE)
+
+    provider_compile_dir = case_dir / "provider"
+    compile_fixture_with_args(
+        provider_fixture,
+        provider_compile_dir,
+        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+    )
+    provider_import_surface = json.loads(
+        (provider_compile_dir / "module.runtime-import-surface.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    provider_bridge_header = (provider_compile_dir / "module.interop-bridge.h").read_text(
+        encoding="utf-8"
+    )
+    provider_bridge_json = json.loads(
+        (provider_compile_dir / "module.interop-bridge.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    provider_ffi_surface = provider_import_surface.get(
+        "objc_interop_foreign_surface_interface_and_module_preservation", {}
+    )
+    provider_bridge_surface = provider_import_surface.get(
+        "objc_interop_header_module_and_bridge_generation", {}
+    )
+
+    expect(
+        provider_ffi_surface.get("local_foreign_callable_count") == 2
+        and provider_ffi_surface.get("local_cpp_name_annotation_count") == 2
+        and provider_ffi_surface.get("local_header_name_annotation_count") == 2
+        and provider_ffi_surface.get("local_swift_name_annotation_count") == 1,
+        "expected provider import surface to preserve the C/C++/Swift-facing annotation counts",
+    )
+    expect(
+        provider_bridge_surface.get("local_import_module_names_lexicographic")
+        == ['"BridgeProviderKit"'],
+        "expected provider bridge-generation surface to preserve the import-module name",
+    )
+    expect(
+        "ffiHeaderBridge" in provider_bridge_header
+        and "BridgeProviderExtrasShim" in provider_bridge_header
+        and "ffiInbound" in provider_bridge_header
+        and "BridgeProvider.forward" in provider_bridge_header,
+        "expected generated bridge header to preserve the C, C++, and Swift-facing bridge names",
+    )
+    expect(
+        isinstance(provider_bridge_json.get("foreign_callables"), list)
+        and len(provider_bridge_json["foreign_callables"]) == 2,
+        "expected provider bridge json to publish two foreign callables",
+    )
+
+    consumer_compile_dir = case_dir / "consumer"
+    compile_fixture_with_args(
+        consumer_fixture,
+        consumer_compile_dir,
+        [
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+            "--objc3-import-runtime-surface",
+            str(provider_compile_dir / "module.runtime-import-surface.json"),
+        ],
+    )
+    link_plan = json.loads(
+        (
+            consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
+        ).read_text(encoding="utf-8")
+    )
+    imported_modules = link_plan.get("imported_modules", [])
+    expect(
+        isinstance(imported_modules, list) and len(imported_modules) == 1,
+        "expected bridge-compatibility consumer compile to publish one imported module",
+    )
+    imported_module = imported_modules[0]
+    expect(
+        link_plan.get("interop_ffi_imported_module_count") == 1
+        and link_plan.get("interop_header_module_bridge_imported_module_count") == 1,
+        "expected consumer link plan to preserve one imported ffi/bridge provider module",
+    )
+    expect(
+        imported_module.get("interop_ffi_local_interface_annotation_sites") == 12
+        and imported_module.get("interop_ffi_local_metadata_preservation_sites") == 2,
+        "expected consumer link plan to preserve the imported C/C++/Swift annotation footprint",
+    )
+    expect(
+        imported_module.get("interop_header_module_bridge_local_foreign_callable_count")
+        == 2
+        and imported_module.get("interop_bridge_header_artifact_relative_path")
+        == "module.interop-bridge.h"
+        and imported_module.get("interop_bridge_module_artifact_relative_path")
+        == "module.interop-bridge.modulemap"
+        and imported_module.get("interop_bridge_artifact_relative_path")
+        == "module.interop-bridge.json",
+        "expected consumer link plan to preserve the imported bridge callable count and artifact paths",
+    )
+    expect(
+        imported_module.get("interop_ffi_preservation_contract_id")
+        == "objc3c.interop.foreign.surface.interface.preservation.v1"
+        and imported_module.get("interop_header_module_bridge_contract_id")
+        == "objc3c.interop.header.module.and.bridge.generation.v1",
+        "expected consumer link plan to preserve the imported ffi and bridge contracts",
+    )
+
+    return CaseResult(
+        case_id="c-cpp-swift-bridge-compatibility-semantics",
+        probe="compile-runtime-import-surface-bridge-artifacts-and-cross-module-link-plan",
+        fixture=INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "provider_module_name": provider_import_surface.get("module_name"),
+            "foreign_callable_count": provider_ffi_surface.get(
+                "local_foreign_callable_count"
+            ),
+            "cpp_name_annotation_count": provider_ffi_surface.get(
+                "local_cpp_name_annotation_count"
+            ),
+            "swift_name_annotation_count": provider_ffi_surface.get(
+                "local_swift_name_annotation_count"
+            ),
+            "bridge_imported_module_count": link_plan.get(
+                "interop_header_module_bridge_imported_module_count"
+            ),
+        },
+    )
+
+
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -16784,6 +16963,7 @@ def main() -> int:
         check_cross_module_runtime_package_interop_source_surface_case(run_dir),
         check_textual_binary_interface_parity_source_surface_case(run_dir),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
+        check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_unified_concurrency_runtime_architecture_case(run_dir),
         check_async_task_actor_normalization_completion_case(run_dir),
         check_unified_concurrency_lowering_metadata_surface_case(run_dir),
@@ -16888,6 +17068,9 @@ def main() -> int:
         ),
         "runtime_package_loading_module_identity_semantics_surface": (
             build_runtime_package_loading_module_identity_semantics_surface(results)
+        ),
+        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": (
+            build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(results)
         ),
         "runtime_unified_concurrency_source_surface": (
             build_runtime_unified_concurrency_source_surface(results)
