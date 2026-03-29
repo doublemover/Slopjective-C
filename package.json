@@ -55,6 +55,7 @@
     "check:docs:native": "python scripts/objc3c_public_workflow_runner.py check-native-docs",
     "check:docs:commands": "python scripts/objc3c_public_workflow_runner.py check-public-command-surface",
     "check:docs:surface": "python scripts/objc3c_public_workflow_runner.py check-documentation-surface",
+    "check:showcase:surface": "python scripts/objc3c_public_workflow_runner.py check-showcase-surface",
     "check:repo:surface": "python scripts/objc3c_public_workflow_runner.py check-repo-superclean-surface",
     "check:release-evidence": "python scripts/check_release_evidence.py",
     "check:task-hygiene": "python scripts/ci/run_task_hygiene_gate.py",

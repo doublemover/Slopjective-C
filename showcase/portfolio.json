@@ -1,0 +1,51 @@
+{
+  "contract_id": "objc3c.showcase.portfolio.surface.v1",
+  "schema_version": 1,
+  "portfolio_kind": "live-runnable-example-portfolio",
+  "showcase_root": "showcase",
+  "machine_output_root": "tmp/artifacts/showcase",
+  "public_entrypoints": {
+    "build_native": "build:objc3c-native",
+    "compile_example": "compile:objc3c",
+    "check_surface": "check:showcase:surface",
+    "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain"
+  },
+  "examples": [
+    {
+      "id": "auroraBoard",
+      "title": "auroraBoard",
+      "source": "showcase/auroraBoard/main.objc3",
+      "story_capabilities": [
+        "categories",
+        "reflection",
+        "synthesized-behaviors"
+      ]
+    },
+    {
+      "id": "signalMesh",
+      "title": "signalMesh",
+      "source": "showcase/signalMesh/main.objc3",
+      "story_capabilities": [
+        "status-bridging",
+        "actors",
+        "runtime-messaging"
+      ]
+    },
+    {
+      "id": "patchKit",
+      "title": "patchKit",
+      "source": "showcase/patchKit/main.objc3",
+      "story_capabilities": [
+        "derives",
+        "macros",
+        "property-behaviors",
+        "interop"
+      ]
+    }
+  ],
+  "explicit_non_goals": [
+    "no showcase-only compiler wrappers",
+    "no generated example sources under tmp",
+    "no screenshot-only demos"
+  ]
+}

@@ -32,6 +32,7 @@ NATIVE_DOCS_PY = ROOT / "scripts" / "build_objc3c_native_docs.py"
 PUBLIC_COMMAND_SURFACE_PY = ROOT / "scripts" / "render_objc3c_public_command_surface.py"
 DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
+SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
@@ -160,6 +161,10 @@ def action_check_documentation_surface(_: list[str]) -> int:
 
 def action_check_repo_superclean_surface(_: list[str]) -> int:
     return run([sys.executable, str(REPO_SUPERCLEAN_SURFACE_PY)])
+
+
+def action_check_showcase_surface(_: list[str]) -> int:
+    return run([sys.executable, str(SHOWCASE_SURFACE_PY)])
 
 
 def action_validate_documentation_surface(_: list[str]) -> int:
@@ -827,6 +832,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py", ("build:docs:commands",)),
     "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", ("check:docs:commands",), validation_tier="docs", guarantee_owner="operator-facing machine appendix stays in sync with the live workflow runner and package scripts"),
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
+    "check-showcase-surface": ActionSpec("check-showcase-surface", "check the live showcase portfolio and compile its example sources through the public compiler path", "python:scripts/check_showcase_surface.py", ("check:showcase:surface",), validation_tier="repo", guarantee_owner="showcase examples stay compile-coupled, checked in, and tied to the public compiler path"),
     "check-repo-superclean-surface": ActionSpec("check-repo-superclean-surface", "check the build-emitted repo superclean source-of-truth artifact", "python:scripts/check_repo_superclean_surface.py", ("check:repo:surface",), validation_tier="repo", guarantee_owner="native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact"),
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
@@ -881,6 +887,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-public-command-surface": action_build_public_command_surface,
     "check-public-command-surface": action_check_public_command_surface,
     "check-documentation-surface": action_check_documentation_surface,
+    "check-showcase-surface": action_check_showcase_surface,
     "check-repo-superclean-surface": action_check_repo_superclean_surface,
     "validate-documentation-surface": action_validate_documentation_surface,
     "validate-repo-superclean": action_validate_repo_superclean,
