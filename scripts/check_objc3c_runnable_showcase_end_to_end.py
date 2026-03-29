@@ -139,6 +139,8 @@ def main() -> int:
     expect(isinstance(showcase_examples, list) and showcase_examples, "package manifest did not publish showcase examples")
     bonus_experience_surfaces = manifest.get("bonus_experience_surfaces")
     expect(isinstance(bonus_experience_surfaces, dict), "package manifest did not publish bonus experience surface metadata")
+    bonus_tool_integration_surface = manifest.get("bonus_tool_integration_surface")
+    expect(isinstance(bonus_tool_integration_surface, dict), "package manifest did not publish bonus-tool integration surface metadata")
     expect(
         bonus_experience_surfaces.get("playground", {}).get("public_actions") == [
             "materialize-playground-workspace",
@@ -159,8 +161,13 @@ def main() -> int:
         in bonus_experience_surfaces.get("template_and_demo_harness", {}).get("source_roots", []),
         "package manifest template/demo surface did not publish getting_started.md",
     )
+    expect(
+        bonus_tool_integration_surface.get("portfolio_contract") == "showcase/portfolio.json",
+        "package manifest bonus-tool integration surface drifted from showcase/portfolio.json",
+    )
     command_surfaces = manifest.get("command_surfaces", {})
     expect(command_surfaces.get("build_playground") == "npm run build:objc3c:playground", "package manifest missing build_playground command surface")
+    expect(command_surfaces.get("inspect_bonus_tools") == "npm run inspect:objc3c:bonus-tools", "package manifest missing inspect_bonus_tools command surface")
     expect(command_surfaces.get("inspect_playground") == "npm run inspect:objc3c:playground", "package manifest missing inspect_playground command surface")
     expect(command_surfaces.get("inspect_benchmark") == "npm run inspect:objc3c:benchmark", "package manifest missing inspect_benchmark command surface")
     expect(command_surfaces.get("inspect_capabilities") == "npm run inspect:objc3c:capabilities", "package manifest missing inspect_capabilities command surface")

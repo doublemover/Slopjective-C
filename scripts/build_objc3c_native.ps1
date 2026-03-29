@@ -795,6 +795,22 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         )
       }
     }
+    bonus_tool_integration_surface = [ordered]@{
+      source_of_truth_artifact = "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+      report_root = "tmp/reports/objc3c-public-workflow"
+      package_stage_root = "tmp/pkg/objc3c-native-runnable-toolchain"
+      portfolio_contract = "showcase/portfolio.json"
+      guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
+      public_actions = @(
+        "inspect-bonus-tool-integration",
+        "materialize-playground-workspace",
+        "benchmark-runtime-inspector",
+        "validate-showcase",
+        "validate-runnable-showcase",
+        "validate-getting-started",
+        "package-runnable-toolchain"
+      )
+    }
     frontend_contract_artifacts = @(
       $FrontendDefinitions | ForEach-Object {
         [ordered]@{

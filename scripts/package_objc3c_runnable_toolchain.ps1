@@ -290,6 +290,7 @@ $manifestPayload = [ordered]@{
   )
   repo_superclean_surface = $repoSupercleanSurfaceRelativePath
   bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
+  bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
   tutorial_guides = @(
     "docs/tutorials/getting_started.md",
@@ -302,6 +303,7 @@ $manifestPayload = [ordered]@{
     package = "npm run package:objc3c-native:runnable-toolchain"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
     build_playground = "npm run build:objc3c:playground"
+    inspect_bonus_tools = "npm run inspect:objc3c:bonus-tools"
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
     inspect_capabilities = "npm run inspect:objc3c:capabilities"

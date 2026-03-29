@@ -116,6 +116,9 @@ real implementation exists.
 - stage the runnable toolchain and package manifest surface:
   - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
   - `npm run package:objc3c-native:runnable-toolchain`
+- inspect the live integrated bonus-tool surface:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-bonus-tool-integration`
+  - `npm run inspect:objc3c:bonus-tools`
 - dump the live playground and repro payload:
   - `python scripts/objc3c_public_workflow_runner.py inspect-playground-repro`
   - `npm run inspect:objc3c:playground`

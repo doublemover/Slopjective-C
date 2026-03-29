@@ -70,6 +70,9 @@ PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow
 PLAYGROUND_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "playground"
 PLAYGROUND_REPORT_ROOT = ROOT / "tmp" / "reports" / "playground"
 PLAYGROUND_WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"
+REPO_SUPERCLEAN_SOURCE_OF_TRUTH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "repo_superclean_source_of_truth.json"
+SHOWCASE_PORTFOLIO_JSON = ROOT / "showcase" / "portfolio.json"
+SHOWCASE_TUTORIAL_WALKTHROUGH_JSON = ROOT / "showcase" / "tutorial_walkthrough.json"
 
 
 @dataclass(frozen=True)
@@ -498,6 +501,40 @@ def action_validate_developer_tooling(_: list[str]) -> int:
 
 def action_benchmark_runtime_inspector(rest: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_INSPECTOR_BENCHMARK_PY), *rest])
+
+
+def action_inspect_bonus_tool_integration(_: list[str]) -> int:
+    rc = execute_registered_action("build-native-contracts", [])
+    if rc != 0:
+        return rc
+    if not REPO_SUPERCLEAN_SOURCE_OF_TRUTH.is_file():
+        print(
+            f"missing source-of-truth artifact: {REPO_SUPERCLEAN_SOURCE_OF_TRUTH.relative_to(ROOT).as_posix()}",
+            file=sys.stderr,
+        )
+        return 1
+    source_of_truth = json.loads(REPO_SUPERCLEAN_SOURCE_OF_TRUTH.read_text(encoding="utf-8"))
+    portfolio = json.loads(SHOWCASE_PORTFOLIO_JSON.read_text(encoding="utf-8"))
+    walkthrough = json.loads(SHOWCASE_TUTORIAL_WALKTHROUGH_JSON.read_text(encoding="utf-8"))
+    integration_surface = source_of_truth.get("bonus_tool_integration_surface")
+    if not isinstance(integration_surface, dict):
+        print("repo superclean artifact missing bonus_tool_integration_surface", file=sys.stderr)
+        return 1
+    dump_path = PUBLIC_WORKFLOW_REPORT_ROOT / "bonus-tool-integration.json"
+    dump_path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "contract_id": "objc3c.bonus.tool.integration.surface.v1",
+        "schema_version": 1,
+        "source_of_truth_artifact": REPO_SUPERCLEAN_SOURCE_OF_TRUTH.relative_to(ROOT).as_posix(),
+        "integration_surface": integration_surface,
+        "bonus_experience_surfaces": source_of_truth.get("bonus_experience_surfaces", {}),
+        "showcase_portfolio_contract_id": portfolio.get("contract_id"),
+        "guided_walkthrough_contract_id": walkthrough.get("contract_id"),
+    }
+    dump_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {dump_path.relative_to(ROOT).as_posix()}")
+    print(f"dump_path: {dump_path.relative_to(ROOT).as_posix()}")
+    return 0
 
 
 def action_lint_spec(_: list[str]) -> int:
@@ -1158,6 +1195,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
     "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
     "benchmark-runtime-inspector": ActionSpec("benchmark-runtime-inspector", "measure the live runtime-inspector and capability-explorer workflow and write a reproducible benchmark report", "python:scripts/benchmark_objc3c_runtime_inspector.py", ("inspect:objc3c:benchmark",), validation_tier="repo", guarantee_owner="runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts", pass_through_args=True),
+    "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
     "validate-developer-tooling": ActionSpec("validate-developer-tooling", "run the integrated developer-tooling inspect and trace validation flow", "python:scripts/check_objc3c_developer_tooling_integration.py", ("test:objc3c:developer-tooling",), validation_tier="repo", guarantee_owner="developer-facing inspect and trace commands stay executable, artifact-backed, and tied to the live frontend runner"),
     "lint-spec": ActionSpec("lint-spec", "run spec lint", "python:scripts/spec_lint.py", ("lint:spec",)),
@@ -1225,6 +1263,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-compile-observability": action_inspect_compile_observability,
     "inspect-runtime-inspector": action_inspect_runtime_inspector,
     "benchmark-runtime-inspector": action_benchmark_runtime_inspector,
+    "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "trace-compile-stages": action_trace_compile_stages,
     "validate-developer-tooling": action_validate_developer_tooling,
     "lint-spec": action_lint_spec,

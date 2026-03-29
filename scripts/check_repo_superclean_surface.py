@@ -171,6 +171,27 @@ def main() -> int:
         "bonus_experience_surfaces drifted",
         errors,
     )
+    expect(
+        payload.get("bonus_tool_integration_surface")
+        == {
+            "source_of_truth_artifact": "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+            "report_root": "tmp/reports/objc3c-public-workflow",
+            "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+            "portfolio_contract": "showcase/portfolio.json",
+            "guided_walkthrough_manifest": "showcase/tutorial_walkthrough.json",
+            "public_actions": [
+                "inspect-bonus-tool-integration",
+                "materialize-playground-workspace",
+                "benchmark-runtime-inspector",
+                "validate-showcase",
+                "validate-runnable-showcase",
+                "validate-getting-started",
+                "package-runnable-toolchain",
+            ],
+        },
+        "bonus_tool_integration_surface drifted",
+        errors,
+    )
 
     frontend_contract_artifacts = payload.get("frontend_contract_artifacts", [])
     expect(isinstance(frontend_contract_artifacts, list) and frontend_contract_artifacts, "frontend_contract_artifacts missing", errors)
