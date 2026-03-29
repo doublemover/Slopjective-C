@@ -107,6 +107,9 @@ real implementation exists.
 - compile one checked-in source through the public compiler path:
   - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
   - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+- dump the live playground and repro payload:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-playground-repro`
+  - `npm run inspect:objc3c:playground`
 - dump the current playground/repro observability payload:
   - `python scripts/objc3c_public_workflow_runner.py inspect-compile-observability`
   - `npm run inspect:objc3c:observability`

@@ -48,6 +48,7 @@ struct RunnerOptions {
   fs::path summary_out;
   bool dump_summary_json = false;
   bool dump_observability_json = false;
+  bool dump_playground_repro_json = false;
   bool dump_runtime_inspector_json = false;
   bool dump_stage_trace_json = false;
 };
@@ -60,8 +61,8 @@ std::string Usage() {
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object] "
-         "[--dump-summary-json] [--dump-observability-json] [--dump-runtime-inspector-json] "
-         "[--dump-stage-trace-json]";
+         "[--dump-summary-json] [--dump-observability-json] [--dump-playground-repro-json] "
+         "[--dump-runtime-inspector-json] [--dump-stage-trace-json]";
 }
 
 bool ParseIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
@@ -163,6 +164,8 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.dump_summary_json = true;
     } else if (arg == "--dump-observability-json") {
       options.dump_observability_json = true;
+    } else if (arg == "--dump-playground-repro-json") {
+      options.dump_playground_repro_json = true;
     } else if (arg == "--dump-runtime-inspector-json") {
       options.dump_runtime_inspector_json = true;
     } else if (arg == "--dump-stage-trace-json") {
@@ -377,6 +380,63 @@ std::string BuildObjectInspectionCommand(const std::string &template_command,
   return command + " " + QuotePowerShellArg(object_path_text);
 }
 
+std::string BuildFrontendRunnerReproCommand(const RunnerOptions &options,
+                                            const fs::path &summary_path,
+                                            bool dump_playground_repro_json) {
+  std::ostringstream command;
+  command << "& "
+          << QuotePowerShellArg(
+                 (fs::path("artifacts") / "bin" /
+                  "objc3c-frontend-c-api-runner.exe")
+                     .generic_string());
+  command << " " << QuotePowerShellArg(options.input_path.generic_string());
+  command << " --out-dir " << QuotePowerShellArg(options.out_dir.generic_string());
+  command << " --emit-prefix " << QuotePowerShellArg(options.emit_prefix);
+  command << " --clang " << QuotePowerShellArg(options.clang_path.generic_string());
+  command << " --llc " << QuotePowerShellArg(options.llc_path.generic_string());
+  command << " --summary-out "
+          << QuotePowerShellArg(summary_path.generic_string());
+  command << " --objc3-ir-object-backend "
+          << QuotePowerShellArg(options.ir_object_backend ==
+                                        OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
+                                    ? "llvm-direct"
+                                    : "clang");
+  command << " --objc3-compat-mode "
+          << QuotePowerShellArg(options.compatibility_mode ==
+                                        OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY
+                                    ? "legacy"
+                                    : "canonical");
+  if (options.migration_assist) {
+    command << " --objc3-migration-assist";
+  }
+  if (options.max_message_send_args != 0) {
+    command << " --objc3-max-message-args "
+            << std::to_string(options.max_message_send_args);
+  }
+  if (!options.runtime_dispatch_symbol.empty()) {
+    command << " --objc3-runtime-dispatch-symbol "
+            << QuotePowerShellArg(options.runtime_dispatch_symbol);
+  }
+  if (options.translation_unit_registration_order_ordinal != 0) {
+    command << " --objc3-bootstrap-registration-order-ordinal "
+            << std::to_string(
+                   options.translation_unit_registration_order_ordinal);
+  }
+  if (!options.emit_manifest) {
+    command << " --no-emit-manifest";
+  }
+  if (!options.emit_ir) {
+    command << " --no-emit-ir";
+  }
+  if (!options.emit_object) {
+    command << " --no-emit-object";
+  }
+  if (dump_playground_repro_json) {
+    command << " --dump-playground-repro-json";
+  }
+  return command.str();
+}
+
 void WriteObservabilityJson(
     std::ostringstream &out,
     const std::string &indent,
@@ -561,6 +621,7 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "],\n";
   out << grandchild_indent << "\"public_actions\": [\n";
   out << grandchild_indent << "  \"compile-objc3c\",\n";
+  out << grandchild_indent << "  \"inspect-playground-repro\",\n";
   out << grandchild_indent << "  \"inspect-compile-observability\",\n";
   out << grandchild_indent << "  \"trace-compile-stages\"\n";
   out << grandchild_indent << "],\n";
@@ -570,7 +631,13 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "  \"diagnostics\": \""
       << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text)) << "\",\n";
   out << grandchild_indent << "  \"manifest\": \""
-      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text)) << "\"\n";
+      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text)) << "\",\n";
+  out << grandchild_indent << "  \"repro_runner\": \""
+      << EscapeJsonString(
+             BuildFrontendRunnerReproCommand(options,
+                                            fs::path(summary_path_text),
+                                            true))
+      << "\"\n";
   out << grandchild_indent << "}\n";
   out << child_indent << "},\n";
   out << child_indent << "\"runtime_inspector_and_capability_explorer\": {\n";
@@ -607,6 +674,95 @@ void WriteBonusExperiencesJson(
   out << grandchild_indent << "  \"validate-runnable-showcase\",\n";
   out << grandchild_indent << "  \"validate-getting-started\"\n";
   out << grandchild_indent << "]\n";
+  out << child_indent << "}\n";
+  out << indent << "}";
+}
+
+void WritePlaygroundReproJson(
+    std::ostringstream &out,
+    const std::string &indent,
+    const RunnerOptions &options,
+    const objc3c_frontend_c_compile_result_t &result,
+    const std::string &summary_path_text) {
+  const char *backend_name =
+      options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
+          ? "llvm-direct"
+          : "clang";
+  const char *compatibility_mode_name =
+      options.compatibility_mode == OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY
+          ? "legacy"
+          : "canonical";
+  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const std::string manifest_path_text = OptionalPath(result.manifest_path);
+  const std::string ir_path_text = OptionalPath(result.ir_path);
+  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string child_indent = indent + "  ";
+  const std::string grandchild_indent = child_indent + "  ";
+
+  out << "{\n";
+  out << child_indent << "\"contract_id\": "
+      << "\"objc3c.playground.repro.surface.v1\",\n";
+  out << child_indent << "\"available\": "
+      << (result.emit.attempted != 0 ? "true" : "false") << ",\n";
+  out << child_indent << "\"source_path\": \""
+      << EscapeJsonString(options.input_path.generic_string()) << "\",\n";
+  out << child_indent << "\"summary_path\": \""
+      << EscapeJsonString(summary_path_text) << "\",\n";
+  out << child_indent << "\"artifact_root\": "
+      << "\"tmp/artifacts/compilation/objc3c-native\",\n";
+  out << child_indent << "\"artifact_paths\": {\n";
+  out << grandchild_indent << "\"diagnostics\": \""
+      << EscapeJsonString(diagnostics_path_text) << "\",\n";
+  out << grandchild_indent << "\"manifest\": \""
+      << EscapeJsonString(manifest_path_text) << "\",\n";
+  out << grandchild_indent << "\"ir\": \""
+      << EscapeJsonString(ir_path_text) << "\",\n";
+  out << grandchild_indent << "\"object\": \""
+      << EscapeJsonString(object_path_text) << "\"\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"compile_profile\": {\n";
+  out << grandchild_indent << "\"ir_object_backend\": \""
+      << backend_name << "\",\n";
+  out << grandchild_indent << "\"compatibility_mode\": \""
+      << compatibility_mode_name << "\",\n";
+  out << grandchild_indent << "\"migration_assist\": "
+      << (options.migration_assist ? "true" : "false") << ",\n";
+  out << grandchild_indent << "\"max_message_send_args\": "
+      << options.max_message_send_args << ",\n";
+  out << grandchild_indent << "\"runtime_dispatch_symbol\": \""
+      << EscapeJsonString(options.runtime_dispatch_symbol) << "\",\n";
+  out << grandchild_indent
+      << "\"translation_unit_registration_order_ordinal\": "
+      << options.translation_unit_registration_order_ordinal << "\n";
+  out << child_indent << "},\n";
+  out << child_indent << "\"public_actions\": [\n";
+  out << child_indent << "  \"compile-objc3c\",\n";
+  out << child_indent << "  \"inspect-playground-repro\",\n";
+  out << child_indent << "  \"inspect-compile-observability\",\n";
+  out << child_indent << "  \"trace-compile-stages\"\n";
+  out << child_indent << "],\n";
+  out << child_indent << "\"showcase_examples\": [\n";
+  out << child_indent << "  \"showcase/auroraBoard/main.objc3\",\n";
+  out << child_indent << "  \"showcase/signalMesh/main.objc3\",\n";
+  out << child_indent << "  \"showcase/patchKit/main.objc3\",\n";
+  out << child_indent << "  \"tests/tooling/fixtures/native/hello.objc3\"\n";
+  out << child_indent << "],\n";
+  out << child_indent << "\"dump_commands\": {\n";
+  out << grandchild_indent << "\"summary\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(summary_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"diagnostics\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(diagnostics_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"manifest\": \""
+      << EscapeJsonString(BuildPowerShellReadCommand(manifest_path_text))
+      << "\",\n";
+  out << grandchild_indent << "\"repro_runner\": \""
+      << EscapeJsonString(
+             BuildFrontendRunnerReproCommand(options,
+                                            fs::path(summary_path_text),
+                                            true))
+      << "\"\n";
   out << child_indent << "}\n";
   out << indent << "}";
 }
@@ -1193,6 +1349,7 @@ int main(int argc, char **argv) {
     emitted_dump = true;
   };
   if (options.dump_summary_json || options.dump_observability_json ||
+      options.dump_playground_repro_json ||
       options.dump_runtime_inspector_json || options.dump_stage_trace_json) {
     if (options.dump_summary_json) {
       emit_dump_json(summary_json);
@@ -1206,6 +1363,13 @@ int main(int argc, char **argv) {
           result,
           status,
           runtime_metadata_binary_path_text);
+      dump << "\n";
+      emit_dump_json(dump.str());
+    }
+    if (options.dump_playground_repro_json) {
+      std::ostringstream dump;
+      WritePlaygroundReproJson(
+          dump, "", options, result, summary_path.generic_string());
       dump << "\n";
       emit_dump_json(dump.str());
     }

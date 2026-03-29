@@ -27,6 +27,7 @@
     "build:objc3c-native:reconfigure": "python scripts/objc3c_public_workflow_runner.py build-native-reconfigure",
     "package:objc3c-native:runnable-toolchain": "python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain",
     "compile:objc3c": "python scripts/objc3c_public_workflow_runner.py compile-objc3c",
+    "inspect:objc3c:playground": "python scripts/objc3c_public_workflow_runner.py inspect-playground-repro",
     "inspect:objc3c:observability": "python scripts/objc3c_public_workflow_runner.py inspect-compile-observability",
     "inspect:objc3c:runtime": "python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector",
     "trace:objc3c:stages": "python scripts/objc3c_public_workflow_runner.py trace-compile-stages",

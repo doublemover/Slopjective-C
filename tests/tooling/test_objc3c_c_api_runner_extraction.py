@@ -62,6 +62,7 @@ def test_c_api_runner_reports_runtime_inspector_and_dump_flags() -> None:
 
     assert "--dump-summary-json" in source
     assert "--dump-observability-json" in source
+    assert "--dump-playground-repro-json" in source
     assert "--dump-runtime-inspector-json" in source
     assert "--dump-stage-trace-json" in source
     assert '\\"runtime_inspector\\": ' in source
@@ -89,3 +90,15 @@ def test_c_api_runner_reports_bonus_experience_boundary_surface() -> None:
     assert "inspect-compile-observability" in source
     assert "inspect-runtime-inspector" in source
     assert "validate-showcase" in source
+
+
+def test_c_api_runner_reports_playground_repro_surface() -> None:
+    source = _read(RUNNER_CPP)
+
+    assert "WritePlaygroundReproJson" in source
+    assert "BuildFrontendRunnerReproCommand" in source
+    assert "objc3c.playground.repro.surface.v1" in source
+    assert '\\"compile_profile\\": {' in source
+    assert '\\"showcase_examples\\": [' in source
+    assert '\\"repro_runner\\": \\"' in source
+    assert "inspect-playground-repro" in source
