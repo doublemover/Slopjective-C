@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import subprocess
 import sys
@@ -24,7 +25,27 @@ def run(command: list[str]) -> int:
     return result.returncode
 
 
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Validate the live showcase example surface through the public compiler path."
+    )
+    parser.add_argument(
+        "--example",
+        action="append",
+        default=[],
+        help="Compile only the named showcase example id. Repeatable.",
+    )
+    parser.add_argument(
+        "--capability",
+        action="append",
+        default=[],
+        help="Compile only showcase examples advertising the named story capability. Repeatable.",
+    )
+    return parser.parse_args(argv)
+
+
 def main() -> int:
+    args = parse_args(sys.argv[1:])
     if not PORTFOLIO.is_file():
         return fail(f"missing showcase portfolio: {PORTFOLIO}")
 
@@ -55,15 +76,55 @@ def main() -> int:
     if ids != ["auroraBoard", "signalMesh", "patchKit"]:
         return fail("example ids drifted")
 
+    requested_ids = set(args.example)
+    if requested_ids:
+        unknown_ids = sorted(requested_ids.difference(ids))
+        if unknown_ids:
+            return fail(f"unknown showcase example ids: {', '.join(unknown_ids)}")
+
+    requested_capabilities = set(args.capability)
+    known_capabilities = {
+        capability
+        for entry in examples
+        if isinstance(entry, dict)
+        for capability in entry.get("story_capabilities", [])
+        if isinstance(capability, str)
+    }
+    if requested_capabilities:
+        unknown_capabilities = sorted(requested_capabilities.difference(known_capabilities))
+        if unknown_capabilities:
+            return fail(
+                f"unknown showcase capabilities: {', '.join(unknown_capabilities)}"
+            )
+
+    selected_examples: list[dict[str, object]] = []
+    for entry in examples:
+        if not isinstance(entry, dict):
+            return fail("example entry must be an object")
+        example_id = entry.get("id")
+        if not isinstance(example_id, str):
+            return fail("example entry missing id/source")
+        capabilities = {
+            capability
+            for capability in entry.get("story_capabilities", [])
+            if isinstance(capability, str)
+        }
+        if requested_ids and example_id not in requested_ids:
+            continue
+        if requested_capabilities and not (capabilities & requested_capabilities):
+            continue
+        selected_examples.append(entry)
+
+    if not selected_examples:
+        return fail("selection produced no showcase examples")
+
     if run([sys.executable, str(RUNNER), "build-native-binaries"]) != 0:
         return fail("build-native-binaries failed")
 
     machine_output_root = ROOT / "tmp" / "artifacts" / "showcase"
     machine_output_root.mkdir(parents=True, exist_ok=True)
 
-    for entry in examples:
-        if not isinstance(entry, dict):
-            return fail("example entry must be an object")
+    for entry in selected_examples:
         example_id = entry.get("id")
         source = entry.get("source")
         if not isinstance(example_id, str) or not isinstance(source, str):
@@ -85,7 +146,10 @@ def main() -> int:
         if run(command) != 0:
             return fail(f"compile failed for showcase example {example_id}")
 
-    print("showcase-surface: OK")
+    selected_ids = ", ".join(
+        entry["id"] for entry in selected_examples if isinstance(entry.get("id"), str)
+    )
+    print(f"showcase-surface: OK ({selected_ids})")
     return 0
 
 

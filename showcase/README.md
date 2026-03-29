@@ -40,6 +40,14 @@ These examples must stay small and compile through the live native compiler
 path. Later issues can expand the sources, but they must keep the same repo
 roots and public command surface.
 
+Selection model:
+
+- compile the full portfolio with `npm run check:showcase:surface`
+- compile one named example with
+  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --example auroraBoard`
+- compile by story capability with
+  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --capability actors`
+
 ## Explicit Non-Goals
 
 - screenshots or image-only demos
