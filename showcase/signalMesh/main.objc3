@@ -1,14 +1,47 @@
 module SignalMesh;
 
-fn foldStatus(seed: i32) {
-  let state = seed + 3;
-  if (state > 5) {
-    return state;
-  } else {
-    return 5;
+extern fn task_runtime_cancelled_value() -> i32;
+
+fn bridgeStatus(seed: i32) {
+  return seed + 4;
+}
+
+async fn dispatchStatus(seed: i32) -> i32 __attribute__((objc_executor(named("com.example.signalmesh")))) {
+  if (task_runtime_cancelled_value()) {
+    return 0;
   }
+  return bridgeStatus(seed);
+}
+
+@interface SignalMeshBox
+- (i32) loadStatus async __attribute__((objc_executor(main)));
+- (i32) currentStatus;
++ (i32) sharedStatus;
+@end
+
+@implementation SignalMeshBox
+- (i32) loadStatus async __attribute__((objc_executor(main))) {
+  return await dispatchStatus(5);
+}
+
+- (i32) currentStatus {
+  return 9;
+}
+
++ (i32) sharedStatus {
+  return 4;
+}
+@end
+
+fn foldStatus(seed: i32) {
+  let state = seed + [SignalMeshBox sharedStatus];
+  if (state > 10) {
+    return state;
+  }
+  return 10;
 }
 
 fn main() {
-  return foldStatus(4);
+  let box = [[SignalMeshBox alloc] init];
+  return foldStatus([box currentStatus]);
 }
