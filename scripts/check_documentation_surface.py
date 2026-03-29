@@ -18,6 +18,7 @@ NATIVE_OWNERSHIP_PATH = ROOT / "docs" / "objc3c-native" / "src" / "OWNERSHIP.md"
 NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.md"
 MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
+TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 
 
 def require_token(text: str, token: str, *, path: Path, errors: list[str]) -> None:
@@ -38,6 +39,7 @@ def main() -> int:
         "## Superclean Boundary",
         "published site",
         "CONTRIBUTING.md",
+        "docs/tutorials/",
         "showcase/README.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "Canonical roots:",
@@ -51,6 +53,7 @@ def main() -> int:
         "## Repo Boundary",
         "README.md",
         "CONTRIBUTING.md",
+        "docs/tutorials/README.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "docs/runbooks/objc3c_maintainer_workflows.md",
         "showcase/",
@@ -77,6 +80,20 @@ def main() -> int:
     ):
         require_token(showcase_readme, token, path=SHOWCASE_README_PATH, errors=errors)
 
+    tutorial_readme = TUTORIAL_README_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# Tutorials And Migration Guides",
+        "## Learning Paths",
+        "## Canonical Inputs",
+        "docs/tutorials/",
+        "showcase/README.md",
+        "showcase/portfolio.json",
+        "## Exact Live Paths For Downstream Work",
+        "scripts/check_documentation_surface.py",
+        "## Explicit Non-Goals",
+    ):
+        require_token(tutorial_readme, token, path=TUTORIAL_README_PATH, errors=errors)
+
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (
         "## At a Glance {#toc-status-scope-note}",
@@ -85,6 +102,7 @@ def main() -> int:
         "## Specification Map {#toc-front-matter}",
         "## Language Parts {#toc-parts}",
         "[README.md](../README.md)",
+        "[docs/tutorials/README.md](../docs/tutorials/README.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",
         "[legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
     ):
@@ -120,6 +138,7 @@ def main() -> int:
         "## Superclean Working Boundary",
         "implementation roots:",
         "generated checked-in outputs:",
+        "docs/tutorials/",
         "CONTRIBUTING.md",
         "showcase/",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",

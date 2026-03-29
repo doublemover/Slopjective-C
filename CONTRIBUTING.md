@@ -8,6 +8,7 @@ Use these files as the live contributor-facing surface:
 
 - `README.md`
 - `CONTRIBUTING.md`
+- `docs/tutorials/README.md`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
 Use `docs/runbooks/objc3c_maintainer_workflows.md` only when you need the
@@ -24,6 +25,7 @@ Treat these as the canonical roots for normal contribution work:
 - canonical doc inputs:
   - `README.md`
   - `CONTRIBUTING.md`
+  - `docs/tutorials/`
   - `showcase/`
   - `site/src/`
   - `docs/objc3c-native/src/`

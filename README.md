@@ -80,6 +80,8 @@ Documentation boundary:
   - `README.md`
   - `CONTRIBUTING.md`
   - `site/index.md`
+- learning paths and migration guides:
+  - `docs/tutorials/`
 - user-facing runnable examples:
   - `showcase/`
 - implementation-facing narrative:
@@ -130,6 +132,9 @@ Explicit non-goals for cleanup work:
 
 ## Repository Layout
 
+- `docs/tutorials/`
+  - reader-facing tutorials, migration guides, and teaching-material boundaries
+  - keep tutorial narrative compile-coupled to the checked-in showcase examples and public command surface
 - `docs/reference/legacy_spec_anchor_index.md`
   - compatibility redirects for archived spec, planning, governance, and conformance anchors
   - use this when older docs, reports, scripts, or conformance metadata still cite the retired `spec/` tree
@@ -334,6 +339,7 @@ Use package scripts for normal work. The common ones are:
 - `npm run build:docs:native`
 - `npm run build:docs:commands`
 - `npm run compile:objc3c -- ...`
+- `npm run test:showcase`
 - `npm run test:fast`
 - `npm run test:smoke`
 - `npm run test:ci`

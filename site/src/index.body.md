@@ -33,6 +33,7 @@ Use this page in three passes:
 | understand what already works | [At a Glance](#toc-status-scope-note) |
 | see the runnable subset | [What Is Implemented and Runnable](#intro) |
 | understand what is still missing | [What Remains](#status-remaining) |
+| follow the reader-facing learning path | [docs/tutorials/README.md](../docs/tutorials/README.md) |
 | find the right draft section | [Specification Map](#toc-front-matter) |
 | build and validate the implementation | [README.md](../README.md) |
 | inspect the native implementation boundary | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/` |
@@ -45,7 +46,8 @@ This page follows a strict public-doc model:
 - status before aspiration,
 - plain language before internal jargon,
 - direct links before repo scavenger hunts,
-- and current implementation truth before historical narrative.
+- current implementation truth before historical narrative,
+- and tutorial routing through checked-in learning paths and showcase sources instead of archived planning material.
 
 ## What Is Implemented and Runnable {#intro}
 
