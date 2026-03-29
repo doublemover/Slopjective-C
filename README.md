@@ -79,6 +79,7 @@ The repository now has three live documentation audiences. Use the right one fir
 | First-time reader | [site/index.md](site/index.md) | project overview, implementation status, spec map | `tmp/`, `reports/`, historical spec redirects unless you need compatibility links |
 | Builder / evaluator | [README.md](README.md) | setup, build commands, validation entrypoints, repository layout | deep runtime/source fragments until you need implementation detail |
 | Implementer / maintainer | [docs/objc3c-native.md](docs/objc3c-native.md) and [`native/objc3c/`](native/objc3c/) | native compiler/runtime boundaries, emitted artifacts, live proof paths | archived milestone closeout material |
+| Operator / automation | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | exact package-script to runner-action mapping and generated operator notes | narrative onboarding and project explanation |
 
 Documentation working boundary:
 
@@ -88,6 +89,9 @@ Documentation working boundary:
 - implementation-facing docs surface:
   - `docs/objc3c-native.md`
   - `docs/objc3c-native/src/*.md`
+- generated operator-facing surface:
+  - `docs/runbooks/objc3c_public_command_surface.md`
+  - `scripts/render_objc3c_public_command_surface.py`
 - compatibility-only redirect surface:
   - `docs/reference/legacy_spec_anchor_index.md`
 - machine-owned or proof-owned surfaces, not user-facing onboarding:

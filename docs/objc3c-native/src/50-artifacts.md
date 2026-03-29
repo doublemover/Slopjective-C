@@ -32,6 +32,31 @@ The live native build publishes:
 - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - `artifacts/lib/objc3_runtime.lib`
 
+## Human Versus Machine Surface
+
+Reader-facing documentation should explain what these artifacts mean and when
+they are trustworthy. Machine-facing documentation should carry exact file
+inventories, runner mappings, and generated proof/report paths.
+
+Use these live paths:
+
+- human-facing implementation narrative:
+  - `README.md`
+  - `site/index.md`
+  - `docs/objc3c-native.md`
+- generated operator and machine-facing appendix:
+  - `docs/runbooks/objc3c_public_command_surface.md`
+  - `scripts/render_objc3c_public_command_surface.py`
+- generated proof/report outputs:
+  - `tmp/reports/`
+  - `tmp/artifacts/`
+
+Non-goals for human-facing docs:
+
+- dumping `tmp/` artifact inventories inline,
+- mirroring generated runbooks by hand,
+- using raw report paths as the primary way to explain the toolchain.
+
 ## Native Output Truth
 
 Treat these as authoritative only when they come from a real compiler invocation:

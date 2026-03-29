@@ -1,10 +1,12 @@
 # Objective-C 3 Public Command Surface
 
 This runbook is generated from the live public workflow runner metadata.
+It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
 - Current public script count: `48`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
+- Generator path: `scripts/render_objc3c_public_command_surface.py`
 
 ## Commands
 
@@ -55,6 +57,7 @@ This runbook is generated from the live public workflow runner metadata.
 ## Operator Notes
 
 - Use the package scripts above for normal operator workflows.
+- Treat this file as a generated machine-facing appendix for exact command mapping, not as the reader-facing project introduction.
 - Composite validation entrypoints write an integrated runner summary to `tmp/reports/objc3c-public-workflow/<action>.json`.
 - Those integrated summaries record the exact child-suite report paths emitted by smoke, replay, runtime-acceptance, and other live validation scripts.
 - `compile:objc3c` and the fixture-backed suite commands accept pass-through arguments for bounded selectors.
