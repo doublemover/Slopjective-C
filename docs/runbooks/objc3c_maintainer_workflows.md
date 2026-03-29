@@ -141,5 +141,6 @@ npm run test:repo
 - stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
 - stdlib surface check: `npm run check:stdlib:surface`
 - stdlib workspace materialization: `npm run build:objc3c:stdlib`
+- stdlib integration: `npm run test:stdlib`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.

@@ -42,3 +42,9 @@ The `M305` implementation path should leave behind:
 - a machine-readable workspace contract under `stdlib/`
 - runner/package integration through the existing public command surface
 - runnable validation rooted in the existing package and compile workflow
+
+## Public actions
+
+- `npm run check:stdlib:surface`
+- `npm run build:objc3c:stdlib`
+- `npm run test:stdlib`

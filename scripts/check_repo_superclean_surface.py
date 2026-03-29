@@ -87,6 +87,7 @@ def main() -> int:
             "build_public_command_surface": "build:docs:commands",
             "build_stdlib": "build:objc3c:stdlib",
             "check_stdlib_surface": "check:stdlib:surface",
+            "test_stdlib": "test:stdlib",
             "test_fast": "test:fast",
             "test_ci": "test:ci",
             "test_docs": "test:docs",
@@ -255,6 +256,7 @@ def main() -> int:
             "public_actions": [
                 "check-stdlib-surface",
                 "materialize-stdlib-workspace",
+                "validate-stdlib-foundation",
                 "package-runnable-toolchain",
             ],
         },

@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `80`
+- Current public script count: `81`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -35,6 +35,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `compile:objc3c` | `compile-objc3c` | `-` | `-` | `pass-through` | `pwsh:scripts/objc3c_native_compile.ps1` |
 | `build:objc3c:playground` | `materialize-playground-workspace` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `build:objc3c:stdlib` | `materialize-stdlib-workspace` | `repo` | `stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root` | `pass-through` | `python:scripts/materialize_objc3c_stdlib_workspace.py` |
+| `test:stdlib` | `validate-stdlib-foundation` | `repo` | `stdlib boundary contracts, workspace materialization, and smoke compilation stay executable on the live public workflow` | `fixed-shape` | `python:scripts/check_objc3c_stdlib_foundation_integration.py` |
 | `inspect:objc3c:capabilities` | `inspect-capability-explorer` | `repo` | `capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts` | `pass-through` | `python:scripts/probe_objc3c_llvm_capabilities.py` |
 | `inspect:objc3c:playground` | `inspect-playground-repro` | `repo` | `playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:observability` | `inspect-compile-observability` | `repo` | `developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
@@ -54,7 +55,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:smoke` | `test-smoke` | `smoke` | `full execution smoke corpus` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
+| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, stdlib validation, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
