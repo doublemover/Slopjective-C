@@ -139,6 +139,7 @@ Explicit non-goals for cleanup work:
   - reader-facing tutorials, migration guides, and teaching-material boundaries
   - keep tutorial narrative compile-coupled to the checked-in showcase examples and public command surface
   - getting-started work starts in `docs/tutorials/getting_started.md`
+  - tutorial command flow is defined in `docs/tutorials/build_run_verify.md`
   - migration work starts in `docs/tutorials/objc2_to_objc3_migration.md`
   - ObjC2/Swift/C++ comparison work starts in `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `docs/reference/legacy_spec_anchor_index.md`

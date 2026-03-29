@@ -31,6 +31,19 @@
     "execution_smoke_entrypoint": "test:objc3c:execution-smoke",
     "execution_replay_entrypoint": "test:objc3c:execution-replay-proof"
   },
+  "tutorial_build_run_verify_surface": {
+    "getting_started_readme": "docs/tutorials/getting_started.md",
+    "build_run_verify_readme": "docs/tutorials/build_run_verify.md",
+    "migration_readme": "docs/tutorials/objc2_to_objc3_migration.md",
+    "build_native_entrypoint": "build:objc3c-native",
+    "compile_entrypoint": "compile:objc3c",
+    "surface_check_entrypoint": "check:showcase:surface",
+    "integrated_validation_entrypoint": "test:showcase",
+    "packaged_validation_entrypoint": "test:showcase:e2e",
+    "artifact_root": "tmp/artifacts/showcase",
+    "report_root": "tmp/reports/showcase",
+    "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain"
+  },
   "runtime_presentation_surface": {
     "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
     "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",

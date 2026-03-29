@@ -62,6 +62,7 @@ Use `showcase/README.md` and `showcase/portfolio.json` as the example map:
 
 Choose the next document based on the question you actually have:
 
+- if you need the exact build, run, and verify flow, continue to `docs/tutorials/build_run_verify.md`
 - if you need migration language, continue to `docs/tutorials/objc2_swift_cpp_comparison.md`
 - if you need runnable example context, continue to `showcase/README.md`
 - if you need exact command mapping, use `docs/runbooks/objc3c_public_command_surface.md`
@@ -72,6 +73,7 @@ Choose the next document based on the question you actually have:
 This getting-started tutorial should stay coupled to these live inputs:
 
 - `docs/tutorials/getting_started.md`
+- `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/README.md`
 - `README.md`
 - `site/src/index.body.md`
@@ -86,6 +88,7 @@ This getting-started tutorial should stay coupled to these live inputs:
 
 - tutorial narrative and reader sequencing:
   - `docs/tutorials/getting_started.md`
+  - `docs/tutorials/build_run_verify.md`
   - `docs/tutorials/README.md`
 - onboarding and public routing:
   - `README.md`
