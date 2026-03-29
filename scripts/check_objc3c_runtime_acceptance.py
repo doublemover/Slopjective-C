@@ -6599,7 +6599,7 @@ def check_async_task_actor_normalization_completion_case(run_dir: Path) -> CaseR
             / "fixtures"
             / "native"
             / "task_executor_cancellation_semantic_model_positive.objc3",
-            False,
+            True,
             "objc_concurrency_task_executor_and_cancellation_semantic_model",
             "objc_concurrency_task_runtime_lowering_contract",
         ),

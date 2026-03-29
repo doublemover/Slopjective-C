@@ -6292,6 +6292,12 @@ class Objc3Parser {
     target.task_runtime_gate_blocked_sites = source.task_runtime_gate_blocked_sites;
     target.task_runtime_contract_violation_sites =
         source.task_runtime_contract_violation_sites;
+    target.task_runtime_cancellation_normalized_sites =
+        source.task_runtime_cancellation_normalized_sites;
+    target.task_runtime_cancellation_gate_blocked_sites =
+        source.task_runtime_cancellation_gate_blocked_sites;
+    target.task_runtime_cancellation_contract_violation_sites =
+        source.task_runtime_cancellation_contract_violation_sites;
     target.task_runtime_cancellation_profile =
         source.task_runtime_cancellation_profile;
     target.concurrency_replay_race_guard_profile_is_normalized =
@@ -8052,6 +8058,11 @@ class Objc3Parser {
     fn.task_runtime_normalized_sites = profile.normalized_sites;
     fn.task_runtime_gate_blocked_sites = profile.gate_blocked_sites;
     fn.task_runtime_contract_violation_sites = profile.contract_violation_sites;
+    fn.task_runtime_cancellation_normalized_sites = profile.normalized_sites;
+    fn.task_runtime_cancellation_gate_blocked_sites =
+        profile.gate_blocked_sites;
+    fn.task_runtime_cancellation_contract_violation_sites =
+        profile.contract_violation_sites;
     fn.deterministic_task_runtime_cancellation_handoff =
         profile.deterministic_task_runtime_cancellation_handoff;
     fn.task_runtime_cancellation_profile = BuildTaskRuntimeCancellationProfile(
@@ -8090,6 +8101,11 @@ class Objc3Parser {
     method.task_runtime_normalized_sites = profile.normalized_sites;
     method.task_runtime_gate_blocked_sites = profile.gate_blocked_sites;
     method.task_runtime_contract_violation_sites = profile.contract_violation_sites;
+    method.task_runtime_cancellation_normalized_sites = profile.normalized_sites;
+    method.task_runtime_cancellation_gate_blocked_sites =
+        profile.gate_blocked_sites;
+    method.task_runtime_cancellation_contract_violation_sites =
+        profile.contract_violation_sites;
     method.deterministic_task_runtime_cancellation_handoff =
         profile.deterministic_task_runtime_cancellation_handoff;
     method.task_runtime_cancellation_profile = BuildTaskRuntimeCancellationProfile(
