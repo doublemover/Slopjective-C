@@ -93,6 +93,8 @@ Standard-library entrypoint:
   machine-owned stdlib workspace materialization flow
 - `docs/runbooks/objc3c_stdlib_core.md` is the maintainer boundary for the
   `M306` core utility, text/data, collection, option, and result family split
+- `stdlib/semantic_policy.json` is the checked-in compatibility contract for
+  stable helper meaning and module semver across the core stdlib surface
 - stdlib work must stay on `stdlib/`, `tmp/artifacts/stdlib/`, and
   `tmp/reports/stdlib/` instead of inventing a second library tree or sidecar
   package layout

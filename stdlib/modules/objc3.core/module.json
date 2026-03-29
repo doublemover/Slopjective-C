@@ -5,6 +5,11 @@
   "implementation_module": "objc3_core",
   "capability_id": "objc3.cap.core",
   "required_profile": "Core and above",
+  "module_semver": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
   "workspace_root": "stdlib/modules/objc3.core",
   "source": "stdlib/modules/objc3.core/module.objc3",
   "smoke_source": "stdlib/modules/objc3.core/smoke.objc3",

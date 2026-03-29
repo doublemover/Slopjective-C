@@ -5,6 +5,11 @@
   "implementation_module": "objc3_keypath",
   "capability_id": "objc3.cap.keypath",
   "required_profile": "Core and above",
+  "module_semver": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
   "workspace_root": "stdlib/modules/objc3.keypath",
   "source": "stdlib/modules/objc3.keypath/module.objc3",
   "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",

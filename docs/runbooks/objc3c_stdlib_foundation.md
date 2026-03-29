@@ -22,6 +22,7 @@ Authoritative inputs:
 - `stdlib/README.md`
 - `stdlib/workspace.json`
 - `stdlib/core_architecture.json`
+- `stdlib/semantic_policy.json`
 - `docs/runbooks/objc3c_stdlib_core.md`
 - `scripts/objc3c_public_workflow_runner.py`
 - `scripts/package_objc3c_runnable_toolchain.ps1`

@@ -23,6 +23,7 @@ Exact live implementation paths for downstream work:
 - `stdlib/modules/objc3.core/module.objc3`
 - `stdlib/modules/objc3.errors/module.objc3`
 - `stdlib/modules/objc3.keypath/module.objc3`
+- `stdlib/semantic_policy.json`
 - `stdlib/modules/objc3.core/module.json`
 - `stdlib/modules/objc3.errors/module.json`
 - `stdlib/modules/objc3.keypath/module.json`
@@ -112,6 +113,18 @@ modules without updating the checked-in architecture contract.
 - `objc3_keypath_apply_index`
 - `objc3_keypath_component_count`
 - `objc3_keypath_text_compatibility_score`
+
+## Semantic guarantees
+
+- all `M306` helpers remain deterministic and side-effect free
+- option and presence helpers use `0` for absent and nonzero for present
+- `objc3_errors_result_ok_tag` stays `1` and
+  `objc3_errors_result_err_tag` stays `2` within major version `1`
+- text/data helpers preserve the caller-provided counts instead of claiming
+  allocation, ownership, or transcoding semantics
+- module semver metadata stays `1.0.0` for the initial core stdlib surface
+- additive helper growth is allowed, but moving helper families between modules
+  is a breaking change
 
 ## Explicit non-goals
 

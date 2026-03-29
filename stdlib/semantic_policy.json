@@ -1,0 +1,66 @@
+{
+  "contract_id": "objc3c.stdlib.semantic_policy.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "core_architecture": "stdlib/core_architecture.json",
+  "module_semver": {
+    "objc3.core": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "objc3.errors": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "objc3.concurrency": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "objc3.keypath": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    },
+    "objc3.system": {
+      "major": 1,
+      "minor": 0,
+      "patch": 0
+    }
+  },
+  "compatibility_rules": [
+    "required export names remain stable within stdlib major version 1",
+    "result tag numeric identity remains stable within stdlib major version 1",
+    "text/data helper meaning remains count-and-presence preserving within stdlib major version 1",
+    "helpers may grow additively, but exported families must not move between modules without updating the checked-in contracts"
+  ],
+  "core_semantics": {
+    "option_presence_encoding": "0-means-none-nonzero-means-some",
+    "capability_query_encoding": "0-means-missing-nonzero-means-present",
+    "string_view_length": "returns the provided unit count unchanged",
+    "byte_span_length": "returns the provided byte count unchanged",
+    "array_count": "returns the provided element count unchanged",
+    "map_entry_present": "0-means-absent-nonzero-means-present"
+  },
+  "error_semantics": {
+    "result_ok_tag": 1,
+    "result_err_tag": 2,
+    "result_is_ok": "returns 1 only when tag equals result_ok_tag",
+    "ok_or_code": "returns value when nonzero, otherwise fallback",
+    "or_throw_code": "returns value when nonzero, otherwise fallback",
+    "text_data_compatibility_score": "returns unit_count plus byte_count"
+  },
+  "keypath_semantics": {
+    "apply_index": "returns root plus offset",
+    "component_count": "returns root plus offset until runtime-backed keypath storage lands",
+    "text_compatibility_score": "returns component_count plus text_units"
+  },
+  "non_goals": [
+    "allocator or ownership ABI claims",
+    "runtime-backed string or bytes storage in M306-B001",
+    "generic collection ABI promises",
+    "moving error bridges into objc3.core"
+  ]
+}

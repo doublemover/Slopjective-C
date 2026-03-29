@@ -5,6 +5,11 @@
   "implementation_module": "objc3_errors",
   "capability_id": "objc3.cap.errors",
   "required_profile": "Core and above",
+  "module_semver": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
   "workspace_root": "stdlib/modules/objc3.errors",
   "source": "stdlib/modules/objc3.errors/module.objc3",
   "smoke_source": "stdlib/modules/objc3.errors/smoke.objc3",

@@ -15,6 +15,7 @@ MODULE_INVENTORY_PATH = ROOT / "stdlib" / "module_inventory.json"
 STABILITY_POLICY_PATH = ROOT / "stdlib" / "stability_policy.json"
 PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "package_surface.json"
 CORE_ARCHITECTURE_PATH = ROOT / "stdlib" / "core_architecture.json"
+SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
@@ -67,6 +68,8 @@ def main() -> int:
         return fail(f"missing package surface: {repo_rel(PACKAGE_SURFACE_PATH)}")
     if not CORE_ARCHITECTURE_PATH.is_file():
         return fail(f"missing core architecture contract: {repo_rel(CORE_ARCHITECTURE_PATH)}")
+    if not SEMANTIC_POLICY_PATH.is_file():
+        return fail(f"missing semantic policy contract: {repo_rel(SEMANTIC_POLICY_PATH)}")
     if not SPEC_CONTRACT_PATH.is_file():
         return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
 
@@ -75,6 +78,7 @@ def main() -> int:
     stability_policy = load_json(STABILITY_POLICY_PATH)
     package_surface = load_json(PACKAGE_SURFACE_PATH)
     core_architecture = load_json(CORE_ARCHITECTURE_PATH)
+    semantic_policy = load_json(SEMANTIC_POLICY_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
@@ -89,6 +93,8 @@ def main() -> int:
         return fail("workspace package_surface path drifted")
     if workspace.get("core_architecture") != "stdlib/core_architecture.json":
         return fail("workspace core_architecture path drifted")
+    if workspace.get("semantic_policy") != "stdlib/semantic_policy.json":
+        return fail("workspace semantic_policy path drifted")
     if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
         return fail("workspace core_runbook path drifted")
     if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
@@ -113,6 +119,8 @@ def main() -> int:
         return fail("package surface stability_policy drifted")
     if package_surface.get("core_architecture") != "stdlib/core_architecture.json":
         return fail("package surface core_architecture drifted")
+    if package_surface.get("semantic_policy") != "stdlib/semantic_policy.json":
+        return fail("package surface semantic_policy drifted")
     if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
         return fail("package surface machine_output_root drifted")
     if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
@@ -131,6 +139,14 @@ def main() -> int:
         return fail("core architecture runbook drifted")
     if core_architecture.get("scope") != "foundation-utility-text-data-collections-option-result-surface":
         return fail("core architecture scope drifted")
+    if semantic_policy.get("contract_id") != "objc3c.stdlib.semantic_policy.v1":
+        return fail("semantic policy contract_id drifted")
+    if semantic_policy.get("schema_version") != 1:
+        return fail("semantic policy schema_version drifted")
+    if semantic_policy.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("semantic policy workspace_contract drifted")
+    if semantic_policy.get("core_architecture") != "stdlib/core_architecture.json":
+        return fail("semantic policy core_architecture drifted")
 
     canonical_modules = inventory.get("canonical_modules")
     if not isinstance(canonical_modules, list) or not canonical_modules:
@@ -254,6 +270,8 @@ def main() -> int:
             return fail(f"module manifest capability_id drifted for {entry['module']}")
         if manifest_payload.get("workspace_root") != entry["workspace_root"]:
             return fail(f"module manifest workspace_root drifted for {entry['module']}")
+        if manifest_payload.get("module_semver") != semantic_policy.get("module_semver", {}).get(entry["module"]):
+            return fail(f"module manifest module_semver drifted for {entry['module']}")
         if manifest_payload.get("source") != entry["source"]:
             return fail(f"module manifest source drifted for {entry['module']}")
         if manifest_payload.get("smoke_source") != entry["smoke_source"]:
@@ -319,6 +337,23 @@ def main() -> int:
         if manifest_payload.get("exports") != required_exports:
             return fail(f"module manifest exports drifted for {module_name}")
 
+    semantic_module_semver = semantic_policy.get("module_semver")
+    if not isinstance(semantic_module_semver, dict) or not semantic_module_semver:
+        return fail("semantic policy missing module_semver")
+    for module_name, version_payload in semantic_module_semver.items():
+        if module_name not in inventory_modules_by_name:
+            return fail(f"semantic policy referenced unknown module {module_name}")
+        if not isinstance(version_payload, dict):
+            return fail(f"semantic policy module_semver malformed for {module_name}")
+        if version_payload != {"major": 1, "minor": 0, "patch": 0}:
+            return fail(f"semantic policy module_semver drifted for {module_name}")
+
+    error_semantics = semantic_policy.get("error_semantics")
+    if not isinstance(error_semantics, dict):
+        return fail("semantic policy missing error_semantics")
+    if error_semantics.get("result_ok_tag") != 1 or error_semantics.get("result_err_tag") != 2:
+        return fail("semantic policy result tag values drifted")
+
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(
         json.dumps(
@@ -331,12 +366,14 @@ def main() -> int:
                 "stability_policy": repo_rel(STABILITY_POLICY_PATH),
                 "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
                 "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
+                "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
                 "canonical_modules": inventory_rows,
                 "layers": layers,
                 "module_imports": module_imports,
                 "api_families": architecture_api_families,
                 "required_exports": architecture_required_exports,
+                "module_semver": semantic_module_semver,
             },
             indent=2,
         )

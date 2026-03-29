@@ -236,6 +236,7 @@ def main() -> int:
         "stdlib/stability_policy.json",
         "stdlib/package_surface.json",
         "stdlib/core_architecture.json",
+        "stdlib/semantic_policy.json",
         "## Working model",
     ):
         require_token(stdlib_readme, token, path=STDLIB_README_PATH, errors=errors)
@@ -249,6 +250,7 @@ def main() -> int:
         "stdlib/modules/objc3.core/",
         "stdlib/modules/objc3.errors/",
         "stdlib/modules/objc3.keypath/",
+        "stdlib/semantic_policy.json",
         "## Core family split",
         "`objc3.core` owns:",
         "`objc3.errors` owns:",
@@ -261,6 +263,9 @@ def main() -> int:
         "objc3_core_string_view_length",
         "objc3_errors_text_data_compatibility_score",
         "objc3_keypath_text_compatibility_score",
+        "## Semantic guarantees",
+        "result_err_tag` stays `2`",
+        "module semver metadata stays `1.0.0`",
         "## Explicit non-goals",
     ):
         require_token(stdlib_core_runbook, token, path=stdlib_core_runbook_path, errors=errors)

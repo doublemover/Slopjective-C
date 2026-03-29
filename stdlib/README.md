@@ -13,6 +13,7 @@ Live stdlib work must stay on these paths:
 - `stdlib/stability_policy.json`
 - `stdlib/package_surface.json`
 - `stdlib/core_architecture.json`
+- `stdlib/semantic_policy.json`
 - `stdlib/modules/`
 - `docs/runbooks/objc3c_stdlib_foundation.md`
 - `docs/runbooks/objc3c_stdlib_core.md`
@@ -39,6 +40,8 @@ This root is not a place for:
 - import/package alias mapping comes from `stdlib/package_surface.json`
 - `stdlib/core_architecture.json` defines the `M306` ownership split for
   foundational utility, text/data, collection, option, and result families
+- `stdlib/semantic_policy.json` defines the observable compatibility and helper
+  semantics for the current core stdlib surface
 - the checked-in module roots will live under `stdlib/modules/`
 - canonical module names map onto implementation aliases because the current
   frontend module declaration syntax is identifier-based rather than dotted

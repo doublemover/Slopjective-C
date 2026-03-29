@@ -243,6 +243,7 @@ def main() -> int:
             "stability_policy": "stdlib/stability_policy.json",
             "package_surface": "stdlib/package_surface.json",
             "core_architecture": "stdlib/core_architecture.json",
+            "semantic_policy": "stdlib/semantic_policy.json",
             "source_roots": [
                 "stdlib/README.md",
                 "stdlib/modules/objc3.core/module.objc3",

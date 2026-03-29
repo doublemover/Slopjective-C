@@ -5,6 +5,11 @@
   "implementation_module": "objc3_system",
   "capability_id": "objc3.cap.system",
   "required_profile": "Strict System",
+  "module_semver": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
   "workspace_root": "stdlib/modules/objc3.system",
   "source": "stdlib/modules/objc3.system/module.objc3",
   "smoke_source": "stdlib/modules/objc3.system/smoke.objc3",
