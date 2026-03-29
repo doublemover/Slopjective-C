@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -13,6 +14,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
+WORKSPACE_CONTRACT_ID = "objc3c.showcase.example.workspace.v1"
+MODULE_DECL_RE = re.compile(r"^\s*module\s+([A-Za-z_][A-Za-z0-9_]*)\s*;", re.MULTILINE)
 
 
 def fail(message: str) -> int:
@@ -126,6 +129,9 @@ def main() -> int:
         example_id = entry.get("id")
         if not isinstance(example_id, str):
             return fail("example entry missing id/source")
+        workspace_manifest = entry.get("workspace_manifest")
+        if not isinstance(workspace_manifest, str):
+            return fail(f"example entry missing workspace_manifest for {example_id}")
         capabilities = {
             capability
             for capability in entry.get("story_capabilities", [])
@@ -135,7 +141,31 @@ def main() -> int:
             continue
         if requested_capabilities and not (capabilities & requested_capabilities):
             continue
-        selected_examples.append(entry)
+        workspace_manifest_path = ROOT / workspace_manifest
+        if not workspace_manifest_path.is_file():
+            return fail(f"missing showcase workspace manifest: {workspace_manifest}")
+        workspace_payload = json.loads(workspace_manifest_path.read_text(encoding="utf-8"))
+        if workspace_payload.get("contract_id") != WORKSPACE_CONTRACT_ID:
+            return fail(f"workspace manifest contract drifted for {example_id}")
+        if workspace_payload.get("schema_version") != 1:
+            return fail(f"workspace manifest schema drifted for {example_id}")
+        if workspace_payload.get("example_id") != example_id:
+            return fail(f"workspace manifest example_id drifted for {example_id}")
+        if workspace_payload.get("workspace_root") != f"showcase/{example_id}":
+            return fail(f"workspace manifest workspace_root drifted for {example_id}")
+        if workspace_payload.get("entry_source") != entry.get("source"):
+            return fail(f"workspace manifest entry_source drifted for {example_id}")
+        if workspace_payload.get("emit_prefix") != "module":
+            return fail(f"workspace manifest emit_prefix drifted for {example_id}")
+        if workspace_payload.get("artifact_root") != f"tmp/artifacts/showcase/{example_id}":
+            return fail(f"workspace manifest artifact_root drifted for {example_id}")
+        if workspace_payload.get("package_stage_root") != f"showcase/{example_id}":
+            return fail(f"workspace manifest package_stage_root drifted for {example_id}")
+        if workspace_payload.get("story_capabilities") != entry.get("story_capabilities"):
+            return fail(f"workspace manifest story_capabilities drifted for {example_id}")
+        entry_with_workspace = dict(entry)
+        entry_with_workspace["_workspace_payload"] = workspace_payload
+        selected_examples.append(entry_with_workspace)
 
     if not selected_examples:
         return fail("selection produced no showcase examples")
@@ -154,6 +184,15 @@ def main() -> int:
         source_path = ROOT / source
         if not source_path.is_file():
             return fail(f"missing showcase source: {source}")
+        source_text = source_path.read_text(encoding="utf-8")
+        module_match = MODULE_DECL_RE.search(source_text)
+        if module_match is None:
+            return fail(f"missing module declaration in showcase source: {source}")
+        workspace_payload = entry.get("_workspace_payload")
+        if not isinstance(workspace_payload, dict):
+            return fail(f"missing selected workspace payload for {example_id}")
+        if workspace_payload.get("module_name") != module_match.group(1):
+            return fail(f"workspace manifest module_name drifted for {example_id}")
         out_dir = machine_output_root / example_id
         command = [
             sys.executable,

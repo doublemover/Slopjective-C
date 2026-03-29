@@ -1,0 +1,16 @@
+{
+  "contract_id": "objc3c.showcase.example.workspace.v1",
+  "schema_version": 1,
+  "example_id": "signalMesh",
+  "module_name": "SignalMesh",
+  "workspace_root": "showcase/signalMesh",
+  "entry_source": "showcase/signalMesh/main.objc3",
+  "emit_prefix": "module",
+  "artifact_root": "tmp/artifacts/showcase/signalMesh",
+  "package_stage_root": "showcase/signalMesh",
+  "story_capabilities": [
+    "status-bridging",
+    "actors",
+    "runtime-messaging"
+  ]
+}

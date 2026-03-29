@@ -32,6 +32,7 @@
       "id": "auroraBoard",
       "title": "auroraBoard",
       "source": "showcase/auroraBoard/main.objc3",
+      "workspace_manifest": "showcase/auroraBoard/workspace.json",
       "story_capabilities": [
         "categories",
         "reflection",
@@ -42,6 +43,7 @@
       "id": "signalMesh",
       "title": "signalMesh",
       "source": "showcase/signalMesh/main.objc3",
+      "workspace_manifest": "showcase/signalMesh/workspace.json",
       "story_capabilities": [
         "status-bridging",
         "actors",
@@ -52,6 +54,7 @@
       "id": "patchKit",
       "title": "patchKit",
       "source": "showcase/patchKit/main.objc3",
+      "workspace_manifest": "showcase/patchKit/workspace.json",
       "story_capabilities": [
         "derives",
         "macros",

@@ -1,0 +1,17 @@
+{
+  "contract_id": "objc3c.showcase.example.workspace.v1",
+  "schema_version": 1,
+  "example_id": "patchKit",
+  "module_name": "PatchKit",
+  "workspace_root": "showcase/patchKit",
+  "entry_source": "showcase/patchKit/main.objc3",
+  "emit_prefix": "module",
+  "artifact_root": "tmp/artifacts/showcase/patchKit",
+  "package_stage_root": "showcase/patchKit",
+  "story_capabilities": [
+    "derives",
+    "macros",
+    "property-behaviors",
+    "interop"
+  ]
+}

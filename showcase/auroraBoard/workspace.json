@@ -1,0 +1,16 @@
+{
+  "contract_id": "objc3c.showcase.example.workspace.v1",
+  "schema_version": 1,
+  "example_id": "auroraBoard",
+  "module_name": "AuroraBoard",
+  "workspace_root": "showcase/auroraBoard",
+  "entry_source": "showcase/auroraBoard/main.objc3",
+  "emit_prefix": "module",
+  "artifact_root": "tmp/artifacts/showcase/auroraBoard",
+  "package_stage_root": "showcase/auroraBoard",
+  "story_capabilities": [
+    "categories",
+    "reflection",
+    "synthesized-behaviors"
+  ]
+}

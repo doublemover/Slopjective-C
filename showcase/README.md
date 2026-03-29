@@ -12,8 +12,11 @@ Canonical checked-in inputs:
 - `showcase/README.md`
 - `showcase/portfolio.json`
 - `showcase/auroraBoard/main.objc3`
+- `showcase/auroraBoard/workspace.json`
 - `showcase/signalMesh/main.objc3`
+- `showcase/signalMesh/workspace.json`
 - `showcase/patchKit/main.objc3`
+- `showcase/patchKit/workspace.json`
 
 Shared live tooling:
 
@@ -55,6 +58,8 @@ Selection model:
 ## Build Run Package Surface
 
 The checked-in showcase contract is rooted at `showcase/portfolio.json`.
+Each example directory also carries its own checked-in workspace contract at
+`showcase/<example-id>/workspace.json`.
 
 Build and artifact entrypoints:
 
