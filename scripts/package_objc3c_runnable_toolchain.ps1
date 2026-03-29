@@ -142,6 +142,9 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+  "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+  "scripts/check_release_evidence.py",
+  "spec/conformance/release_evidence_gate_maintenance.md",
   "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
   "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
   "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
@@ -153,6 +156,9 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
   "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp",
   "tests/tooling/runtime/header_module_bridge_generation_probe.cpp",
+  "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp",
+  "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp",
+  "tests/tooling/fixtures/native/hello.objc3",
   "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
   "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
   "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
@@ -196,6 +202,12 @@ $manifestPayload = [ordered]@{
   canonical_runnable_fixture = "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3"
   runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+  release_evidence_dashboard_schema = "schemas/objc3-conformance-dashboard-status-v1.schema.json"
+  release_evidence_gate_script = "scripts/check_release_evidence.py"
+  release_evidence_runbook = "spec/conformance/release_evidence_gate_maintenance.md"
+  release_candidate_fixture = "tests/tooling/fixtures/native/hello.objc3"
+  release_candidate_claim_probe = "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp"
+  release_candidate_evidence_probe = "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp"
   object_model_probe = "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
   block_arc_fixture = "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
   block_arc_runtime_abi_probe = "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp"
