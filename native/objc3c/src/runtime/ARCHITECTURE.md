@@ -133,7 +133,9 @@ Metaprogramming semantic source of truth:
   source dependency contracts, the authoritative AST/sema/pipeline code paths,
   and the compile-coupled fixtures
   `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
-  and `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+  , `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`,
+  `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3`,
+  and `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3`
 - later lowering, cross-module preservation, cache integration, and runtime
   hook work must extend that emitted semantic boundary instead of rebuilding
   metaprogramming semantics from sidecars, probe-local notes, or milestone

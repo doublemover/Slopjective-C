@@ -252,6 +252,13 @@ packet instead of inventing a second package/provenance inventory.
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/derive_expansion_inventory_positive.objc3`
+    - `tests/tooling/fixtures/native/property_behavior_legality_positive.objc3`
+    - `tests/tooling/fixtures/native/derive_expansion_inventory_negative_unsupported.objc3`
+    - `tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3`
+    - `tests/tooling/fixtures/native/property_behavior_legality_negative_nonobject.objc3`
+    - `tests/tooling/fixtures/native/property_behavior_legality_negative_protocol_observed.objc3`
+    - `tests/tooling/fixtures/native/property_behavior_legality_negative_projected_writable.objc3`
 
 This is the authoritative compile-coupled semantic boundary for derive markers,
 macro package/provenance markers, and property-behavior source completion. It

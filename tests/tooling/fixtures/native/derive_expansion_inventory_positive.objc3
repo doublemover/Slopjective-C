@@ -1,4 +1,4 @@
-module m273DeriveExpansionInventory;
+module DeriveExpansionInventory;
 
 __attribute__((objc_derive(named("Equatable"))))
 @interface EquatableWidget
