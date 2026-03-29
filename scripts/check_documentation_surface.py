@@ -20,6 +20,7 @@ MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workf
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
+MIGRATION_GUIDE_PATH = ROOT / "docs" / "tutorials" / "objc2_to_objc3_migration.md"
 COMPARISON_README_PATH = ROOT / "docs" / "tutorials" / "objc2_swift_cpp_comparison.md"
 
 
@@ -57,6 +58,7 @@ def main() -> int:
         "CONTRIBUTING.md",
         "docs/tutorials/README.md",
         "docs/tutorials/getting_started.md",
+        "docs/tutorials/objc2_to_objc3_migration.md",
         "docs/tutorials/objc2_swift_cpp_comparison.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "docs/runbooks/objc3c_maintainer_workflows.md",
@@ -119,6 +121,25 @@ def main() -> int:
     ):
         require_token(getting_started, token, path=GETTING_STARTED_PATH, errors=errors)
 
+    migration_guide = MIGRATION_GUIDE_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# ObjC2 To ObjC3 Migration Guide",
+        "## Migration Boundary",
+        "## Step 1 Keep The Familiar ObjC Shape, Drop The Implicit Assumptions",
+        "showcase/auroraBoard/main.objc3",
+        "## Step 3 Treat Swift-Facing Async And Imported Hooks As Explicit Interop Contracts",
+        "showcase/signalMesh/main.objc3",
+        "showcase/patchKit/main.objc3",
+        "npm run check:showcase:surface",
+        "npm run test:showcase",
+        "## Recommended Reading Order",
+        "## Canonical Inputs",
+        "## Exact Live Paths For Downstream Work",
+        "scripts/check_documentation_surface.py",
+        "## Explicit Non-Goals",
+    ):
+        require_token(migration_guide, token, path=MIGRATION_GUIDE_PATH, errors=errors)
+
     comparison_readme = COMPARISON_README_PATH.read_text(encoding="utf-8")
     for token in (
         "# ObjC2 Swift And C++ Comparison Surface",
@@ -142,6 +163,7 @@ def main() -> int:
         "[README.md](../README.md)",
         "[docs/tutorials/README.md](../docs/tutorials/README.md)",
         "[docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md)",
+        "[docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)",
         "[docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",
         "[legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",

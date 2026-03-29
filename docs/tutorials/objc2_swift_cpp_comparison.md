@@ -8,6 +8,8 @@ Use it to explain Objective-C 3 choices against:
 - Swift-facing API and ownership expectations,
 - and C/C++ interop boundary expectations.
 
+Start with `docs/tutorials/objc2_to_objc3_migration.md` when you need the actual migration sequence. Use this file for the broader comparison boundary after the runnable examples and migration path are already clear.
+
 ## Comparison Boundary
 
 This comparison surface should stay grounded in checked-in implementation truth.
@@ -22,6 +24,7 @@ This comparison surface should stay grounded in checked-in implementation truth.
 Downstream comparison and migration work should use these live inputs directly:
 
 - `docs/tutorials/objc2_swift_cpp_comparison.md`
+- `docs/tutorials/objc2_to_objc3_migration.md`
 - `docs/tutorials/README.md`
 - `README.md`
 - `site/src/index.body.md`
@@ -34,6 +37,7 @@ Downstream comparison and migration work should use these live inputs directly:
 ## Exact Live Paths For Downstream Work
 
 - comparison narrative and migration language:
+  - `docs/tutorials/objc2_to_objc3_migration.md`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `docs/tutorials/README.md`
 - onboarding and public routing:
