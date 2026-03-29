@@ -75,6 +75,17 @@ Bonus-experience entrypoint:
   shell
 - use that runbook before widening example, packaging, or inspection flows
 
+Performance-benchmark entrypoint:
+
+- `docs/runbooks/objc3c_performance.md` is the maintainer boundary for
+  benchmark taxonomy, comparative baseline workloads, telemetry packets, and
+  normalization policy
+- performance work must stay on the existing public runner, native compiler,
+  showcase, and runnable package surfaces instead of inventing a sidecar
+  measurement app or spreadsheet workflow
+- use that runbook before widening benchmark claims, baseline corpus inputs, or
+  packaged validation flows
+
 ## Build
 
 ```powershell
@@ -115,5 +126,6 @@ npm run test:repo
 - parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
+- performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.

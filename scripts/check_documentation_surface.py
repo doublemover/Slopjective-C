@@ -19,6 +19,7 @@ NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.
 MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 DEVELOPER_TOOLING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_developer_tooling.md"
 BONUS_EXPERIENCES_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_bonus_experiences.md"
+PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_performance.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
@@ -262,6 +263,7 @@ def main() -> int:
         "showcase/",
         "docs/runbooks/objc3c_developer_tooling.md",
         "docs/runbooks/objc3c_bonus_experiences.md",
+        "docs/runbooks/objc3c_performance.md",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(
@@ -365,6 +367,43 @@ def main() -> int:
             bonus_experiences_runbook,
             token,
             path=BONUS_EXPERIENCES_RUNBOOK_PATH,
+            errors=errors,
+        )
+
+    performance_runbook = PERFORMANCE_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Performance Benchmark Boundary",
+        "## Working Boundary",
+        "compiler compile-latency benchmark flows",
+        "comparative baseline workloads for ObjC2, Swift, and C++",
+        "telemetry packets, normalization logic, and benchmark claim output",
+        "## Benchmark Taxonomy And Claim Classes",
+        "local-measurement",
+        "toolchain-comparison",
+        "availability-limited",
+        "non-portable",
+        "## Exact Live Implementation Paths",
+        "scripts/objc3c_public_workflow_runner.py",
+        "scripts/build_objc3c_native.ps1",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "showcase/portfolio.json",
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+        "## Exact Live Artifact And Output Paths",
+        "tmp/artifacts/performance/",
+        "tmp/reports/performance/",
+        "tmp/pkg/objc3c-native-runnable-toolchain/",
+        "## Exact Live Commands",
+        "python scripts/objc3c_public_workflow_runner.py build-native-binaries",
+        "python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain",
+        "## Exact Live Paths For Downstream Work",
+        "docs/runbooks/objc3c_performance.md",
+        "## Explicit Non-Goals",
+    ):
+        require_token(
+            performance_runbook,
+            token,
+            path=PERFORMANCE_RUNBOOK_PATH,
             errors=errors,
         )
 

@@ -62,6 +62,7 @@ def main() -> int:
             "docs/runbooks/objc3c_maintainer_workflows.md",
             "docs/runbooks/objc3c_developer_tooling.md",
             "docs/runbooks/objc3c_bonus_experiences.md",
+            "docs/runbooks/objc3c_performance.md",
         ],
         "maintainer_runbooks drifted",
         errors,

@@ -708,7 +708,8 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
     maintainer_runbooks = @(
       "docs/runbooks/objc3c_maintainer_workflows.md",
       "docs/runbooks/objc3c_developer_tooling.md",
-      "docs/runbooks/objc3c_bonus_experiences.md"
+      "docs/runbooks/objc3c_bonus_experiences.md",
+      "docs/runbooks/objc3c_performance.md"
     )
     machine_owned_output_roots = @(
       "tmp",
