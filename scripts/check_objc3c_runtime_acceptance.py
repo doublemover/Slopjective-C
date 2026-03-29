@@ -170,6 +170,9 @@ RUNTIME_CROSS_MODULE_PACKAGE_INTEROP_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_TEXTUAL_BINARY_INTERFACE_PARITY_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.textual.binary.interface.parity.source.surface.v1"
 )
+RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.claimable.surface.residual.non.claimable.gaps.source.surface.v1"
+)
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
@@ -261,6 +264,7 @@ INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE = (
 INTEROP_HEADER_MODULE_PROVIDER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
 )
+RELEASE_CLAIMABLE_SURFACE_FIXTURE = "tests/tooling/fixtures/native/hello.objc3"
 INTEROP_HEADER_MODULE_CONSUMER_FIXTURE = (
     "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
 )
@@ -6026,6 +6030,79 @@ def build_runtime_package_loading_interop_implementation_surface(
         "requires_runtime_import_surface_artifact": True,
         "requires_cross_module_link_plan_artifact": True,
         "requires_linked_runtime_probe": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"claimable-surface-residual-non-claimable-gaps-source-surface"}
+    ]
+    return {
+        "contract_id": (
+            RUNTIME_CLAIMABLE_SURFACE_RESIDUAL_NON_CLAIMABLE_GAPS_SOURCE_SURFACE_CONTRACT_ID
+        ),
+        "compile_artifact_set": [
+            "<emit-prefix>.manifest.json",
+            "<emit-prefix>.objc3-conformance-report.json",
+            "<emit-prefix>.objc3-conformance-publication.json",
+            "<emit-prefix>.objc3-advanced-feature-gate.json",
+            "<emit-prefix>.objc3-release-candidate-matrix.json",
+        ],
+        "source_contract_ids": [
+            "objc3c.versioned.conformance.report.lowering.v1",
+            "objc3c.compatibility.strictness.claim.semantics.v1",
+            "objc3c.feature.claim.strictness.truth.surface.v1",
+            "objc3c.runtime.capability.reporting.v1",
+            "objc3c.driver.conformance.report.publication.v1",
+            "objc3c.tooling.integrated.advanced.feature.gate.v1",
+            "objc3c.tooling.release.candidate.execution.matrix.v1",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/driver/objc3_objc3_path.cpp",
+            "native/objc3c/src/io/objc3_manifest_artifacts.cpp",
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "scripts/publish_release_runtime_claim_matrix.py",
+        ],
+        "authoritative_source_fields": [
+            "module.objc3-conformance-report.json.runnable_feature_claim_ids",
+            "module.objc3-conformance-report.json.source_only_feature_claim_ids",
+            "module.objc3-conformance-report.json.unsupported_feature_claim_ids",
+            "module.objc3-conformance-report.json.runtime_capability_report.claimed_profile_ids",
+            "module.objc3-conformance-report.json.runtime_capability_report.not_claimed_profile_ids",
+            "module.objc3-conformance-publication.json.selected_profile",
+            "module.objc3-conformance-publication.json.rejected_profile_ids",
+            "module.objc3-advanced-feature-gate.json.targeted_profile_ids",
+            "module.objc3-release-candidate-matrix.json.targeted_profile_ids",
+        ],
+        "claim_surface_model": (
+            "one-compile-coupled-conformance-report-publication-and-release-sidecar-set-defines-the-current-claimable-core-surface-and-the-residual-non-claimable-gaps"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
+        "residual_non_claimable_gap_ids": [
+            "strict",
+            "strict-concurrency",
+            "strict-system",
+            "throws",
+            "async-await",
+            "actors",
+            "blocks",
+            "arc",
+        ],
+        "explicit_non_goals": [
+            "no-sidecar-only-claim-boundary",
+            "no-strict-profile-overclaim-without-live-selection-support",
+            "no-release-claim-widening-without-coupled-native-cli-publication",
+        ],
+        "requires_conformance_report_artifact": True,
+        "requires_conformance_publication_artifact": True,
+        "requires_release_gate_artifacts": True,
         "requires_real_compile_output": True,
     }
 
@@ -16917,6 +16994,145 @@ def check_textual_binary_interface_parity_source_surface_case(
     )
 
 
+def check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
+    run_dir: Path,
+) -> CaseResult:
+    case_dir = run_dir / "claimable-surface-residual-non-claimable-gaps-source-surface"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+    compile_dir = case_dir / "compile"
+    compile_fixture_with_args(fixture, compile_dir)
+
+    report = json.loads(
+        (compile_dir / "module.objc3-conformance-report.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    publication = json.loads(
+        (compile_dir / "module.objc3-conformance-publication.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    advanced_feature_gate = json.loads(
+        (compile_dir / "module.objc3-advanced-feature-gate.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    release_candidate_matrix = json.loads(
+        (compile_dir / "module.objc3-release-candidate-matrix.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    runtime_capability_report = report.get("runtime_capability_report", {})
+
+    expected_gap_ids = [
+        "strict",
+        "strict-concurrency",
+        "strict-system",
+        "throws",
+        "async-await",
+        "actors",
+        "blocks",
+        "arc",
+    ]
+
+    expect(
+        report.get("contract_id") == "objc3c.versioned.conformance.report.lowering.v1",
+        "expected native compile to publish the versioned conformance report sidecar",
+    )
+    expect(
+        publication.get("contract_id")
+        == "objc3c.driver.conformance.report.publication.v1",
+        "expected native compile to publish the conformance publication sidecar",
+    )
+    expect(
+        runtime_capability_report.get("contract_id")
+        == "objc3c.runtime.capability.reporting.v1",
+        "expected conformance report to embed the runtime capability report",
+    )
+    expect(
+        advanced_feature_gate.get("contract_id")
+        == "objc3c.tooling.integrated.advanced.feature.gate.v1",
+        "expected native compile to publish the advanced feature gate sidecar",
+    )
+    expect(
+        release_candidate_matrix.get("contract_id")
+        == "objc3c.tooling.release.candidate.execution.matrix.v1",
+        "expected native compile to publish the release-candidate matrix sidecar",
+    )
+    expect(
+        publication.get("selected_profile") == "core"
+        and publication.get("selected_profile_supported") is True
+        and publication.get("supported_profile_ids") == ["core"],
+        "expected native publication to claim only the core profile today",
+    )
+    expect(
+        publication.get("rejected_profile_ids") == expected_gap_ids[:3],
+        "expected native publication to reject strict, strict-concurrency, and strict-system today",
+    )
+    expect(
+        runtime_capability_report.get("claimed_profile_ids") == ["core"]
+        and runtime_capability_report.get("not_claimed_profile_ids")
+        == expected_gap_ids[:3],
+        "expected runtime capability report to publish one claimed core profile and three non-claimed strict profiles",
+    )
+    expect(
+        report.get("unsupported_feature_claim_ids")
+        == [
+            "unsupported:strictness-selection",
+            "unsupported:strict-concurrency-selection",
+            "unsupported:throws",
+            "unsupported:async-await",
+            "unsupported:actors",
+            "unsupported:blocks",
+            "unsupported:arc",
+        ],
+        "expected versioned conformance report to publish the residual unsupported claim inventory",
+    )
+    optional_feature_statuses = {
+        entry.get("id"): entry.get("status")
+        for entry in runtime_capability_report.get("optional_features", [])
+        if isinstance(entry, dict)
+    }
+    expect(
+        optional_feature_statuses
+        == {
+            "throws": "not-claimed",
+            "async-await": "not-claimed",
+            "actors": "not-claimed",
+            "blocks": "not-claimed",
+            "arc": "not-claimed",
+        },
+        "expected runtime capability report to publish the residual optional non-claimable gaps",
+    )
+    expect(
+        advanced_feature_gate.get("targeted_profile_ids") == expected_gap_ids[:3]
+        and release_candidate_matrix.get("targeted_profile_ids")
+        == expected_gap_ids[:3],
+        "expected release gate sidecars to target the future strict-profile rows without claiming them today",
+    )
+    expect(
+        release_candidate_matrix.get("advanced_feature_gate_artifact")
+        == "module.objc3-advanced-feature-gate.json",
+        "expected release-candidate matrix to stay coupled to the advanced feature gate artifact",
+    )
+
+    return CaseResult(
+        case_id="claimable-surface-residual-non-claimable-gaps-source-surface",
+        probe="compile-conformance-report-publication-runtime-capability-and-release-gate-sidecars",
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "claimed_profiles": runtime_capability_report.get("claimed_profile_ids"),
+            "rejected_profiles": publication.get("rejected_profile_ids"),
+            "unsupported_feature_claim_ids": report.get(
+                "unsupported_feature_claim_ids"
+            ),
+            "optional_non_claimable_features": sorted(optional_feature_statuses),
+        },
+    )
+
+
 def check_mixed_image_compatibility_interop_semantics_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "mixed-image-compatibility-interop-semantics"
     provider_fixture = ROOT / Path(INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE)
@@ -17753,6 +17969,9 @@ def main() -> int:
         check_live_metaprogramming_cache_runtime_integration_case(clangxx, run_dir),
         check_cross_module_runtime_package_interop_source_surface_case(run_dir),
         check_textual_binary_interface_parity_source_surface_case(run_dir),
+        check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
+            run_dir
+        ),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -17861,6 +18080,11 @@ def main() -> int:
         ),
         "runtime_textual_binary_interface_parity_source_surface": (
             build_runtime_textual_binary_interface_parity_source_surface(results)
+        ),
+        "runtime_claimable_surface_residual_non_claimable_gaps_source_surface": (
+            build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface(
+                results
+            )
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)
