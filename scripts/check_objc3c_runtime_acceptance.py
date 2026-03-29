@@ -179,6 +179,9 @@ RUNTIME_STRICT_PROFILE_FEATURE_CLAIM_SOURCE_SURFACE_CONTRACT_ID = (
 RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.claimability.semantics.release.policy.surface.v1"
 )
+RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID = (
+    "objc3c.runtime.strict.profile.claim.implementation.surface.v1"
+)
 RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1"
 )
@@ -6092,9 +6095,6 @@ def build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
         "residual_non_claimable_gap_ids": [
-            "strict",
-            "strict-concurrency",
-            "strict-system",
             "throws",
             "async-await",
             "actors",
@@ -6209,7 +6209,6 @@ def build_runtime_claimability_semantics_release_policy_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
         "negative_operator_commands": [
-            "--objc3-conformance-profile strict",
             "--emit-objc3-conformance-format yaml",
         ],
         "explicit_non_goals": [
@@ -6219,6 +6218,47 @@ def build_runtime_claimability_semantics_release_policy_surface(
         ],
         "requires_conformance_validation_artifact": True,
         "requires_release_gate_artifacts": True,
+        "requires_real_compile_output": True,
+    }
+
+
+def build_runtime_strict_profile_claim_implementation_surface(
+    results: list[CaseResult],
+) -> dict[str, Any]:
+    authoritative_case_ids = [
+        result.case_id
+        for result in results
+        if result.case_id in {"strict-profile-claim-implementation"}
+    ]
+    return {
+        "contract_id": RUNTIME_STRICT_PROFILE_CLAIM_IMPLEMENTATION_SURFACE_CONTRACT_ID,
+        "source_contract_ids": [
+            RUNTIME_CLAIMABILITY_SEMANTICS_RELEASE_POLICY_SURFACE_CONTRACT_ID,
+            "objc3c.driver.conformance.report.publication.v1",
+            "objc3c.toolchain.conformance.claim.operations.v1",
+            "objc3c.runtime.capability.reporting.v1",
+        ],
+        "compile_artifact_set": [
+            "<emit-prefix>.objc3-conformance-report.json",
+            "<emit-prefix>.objc3-conformance-publication.json",
+            "<emit-prefix>.objc3-conformance-validation.json",
+        ],
+        "authoritative_code_paths": [
+            "native/objc3c/src/driver/objc3_objc3_path.cpp",
+            "native/objc3c/src/io/objc3_process.cpp",
+            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        ],
+        "claim_implementation_model": (
+            "strict-strict-concurrency-and-strict-system-compile-publish-and-validate-through-the-same-native-cli-claim-surface-as-core"
+        ),
+        "authoritative_case_ids": authoritative_case_ids,
+        "authoritative_fixture_paths": [RELEASE_CLAIMABLE_SURFACE_FIXTURE],
+        "claimed_profile_ids": ["core", "strict", "strict-concurrency", "strict-system"],
+        "explicit_non_goals": [
+            "no-non-json-publication-claim-yet",
+            "no-optional-feature-overclaim-beyond-runtime-capability-report",
+        ],
+        "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
     }
 
@@ -17140,15 +17180,12 @@ def check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
     )
     runtime_capability_report = report.get("runtime_capability_report", {})
 
-    expected_gap_ids = [
+    expected_optional_gap_ids = ["throws", "async-await", "actors", "blocks", "arc"]
+    expected_claimed_profiles = [
+        "core",
         "strict",
         "strict-concurrency",
         "strict-system",
-        "throws",
-        "async-await",
-        "actors",
-        "blocks",
-        "arc",
     ]
 
     expect(
@@ -17178,18 +17215,17 @@ def check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
     expect(
         publication.get("selected_profile") == "core"
         and publication.get("selected_profile_supported") is True
-        and publication.get("supported_profile_ids") == ["core"],
-        "expected native publication to claim only the core profile today",
+        and publication.get("supported_profile_ids") == expected_claimed_profiles,
+        "expected native publication to publish all currently claimable profiles while defaulting to core",
     )
     expect(
-        publication.get("rejected_profile_ids") == expected_gap_ids[:3],
-        "expected native publication to reject strict, strict-concurrency, and strict-system today",
+        publication.get("rejected_profile_ids") == [],
+        "expected native publication to stop reporting any rejected built-in profiles",
     )
     expect(
-        runtime_capability_report.get("claimed_profile_ids") == ["core"]
-        and runtime_capability_report.get("not_claimed_profile_ids")
-        == expected_gap_ids[:3],
-        "expected runtime capability report to publish one claimed core profile and three non-claimed strict profiles",
+        runtime_capability_report.get("claimed_profile_ids") == expected_claimed_profiles
+        and runtime_capability_report.get("not_claimed_profile_ids") == [],
+        "expected runtime capability report to publish all currently claimable profiles and no residual profile gaps",
     )
     expect(
         report.get("unsupported_feature_claim_ids")
@@ -17221,10 +17257,11 @@ def check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
         "expected runtime capability report to publish the residual optional non-claimable gaps",
     )
     expect(
-        advanced_feature_gate.get("targeted_profile_ids") == expected_gap_ids[:3]
+        advanced_feature_gate.get("targeted_profile_ids")
+        == expected_claimed_profiles[1:]
         and release_candidate_matrix.get("targeted_profile_ids")
-        == expected_gap_ids[:3],
-        "expected release gate sidecars to target the future strict-profile rows without claiming them today",
+        == expected_claimed_profiles[1:],
+        "expected release gate sidecars to keep targeting the advanced strict profiles after they become claimable",
     )
     expect(
         release_candidate_matrix.get("advanced_feature_gate_artifact")
@@ -17240,11 +17277,11 @@ def check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
         passed=True,
         summary={
             "claimed_profiles": runtime_capability_report.get("claimed_profile_ids"),
-            "rejected_profiles": publication.get("rejected_profile_ids"),
+            "selected_profile": publication.get("selected_profile"),
             "unsupported_feature_claim_ids": report.get(
                 "unsupported_feature_claim_ids"
             ),
-            "optional_non_claimable_features": sorted(optional_feature_statuses),
+            "optional_non_claimable_features": expected_optional_gap_ids,
         },
     )
 
@@ -17331,6 +17368,12 @@ def check_strict_profile_feature_claim_source_surface_case(
         "expected compatibility semantics to preserve a ready fail-closed strict-profile boundary",
     )
     expect(
+        publication.get("supported_profile_ids")
+        == ["core", "strict", "strict-concurrency", "strict-system"]
+        and publication.get("rejected_profile_ids") == [],
+        "expected publication to preserve the full strict-profile claim set once claim implementation lands",
+    )
+    expect(
         publication.get("advanced_feature_targeted_profile_ids")
         == expected_targeted_profiles
         and advanced_feature_gate.get("targeted_profile_ids")
@@ -17404,27 +17447,16 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
         release_candidate_matrix_path.read_text(encoding="utf-8")
     )
 
-    strict_reject = run(
-        [
-            str(NATIVE_EXE),
-            str(fixture),
-            "--out-dir",
-            str(case_dir / "strict-reject"),
-            "--emit-prefix",
-            "module",
-            "--objc3-conformance-profile",
-            "strict",
-        ]
+    strict_compile_dir = case_dir / "strict"
+    compile_fixture_with_args(
+        fixture,
+        strict_compile_dir,
+        ["--objc3-conformance-profile", "strict"],
     )
-    strict_text = (strict_reject.stderr or strict_reject.stdout).strip()
-    expect(
-        strict_reject.returncode != 0,
-        "expected strict conformance profile selection to fail closed",
-    )
-    expect(
-        "claimed profiles: core; targeted release-evidence profiles: strict, strict-concurrency, strict-system"
-        in strict_text,
-        "expected strict profile rejection to publish the centralized claim policy diagnostic",
+    strict_publication = json.loads(
+        (strict_compile_dir / "module.objc3-conformance-publication.json").read_text(
+            encoding="utf-8"
+        )
     )
 
     yaml_reject = run(
@@ -17451,15 +17483,26 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
     )
 
     expect(
+        strict_publication.get("selected_profile") == "strict"
+        and strict_publication.get("selected_profile_supported") is True,
+        "expected strict profile selection to publish through the centralized claim policy",
+    )
+    expect(
         publication.get("supported_profile_ids") == ["core"]
-        and publication.get("rejected_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"],
+        or publication.get("supported_profile_ids")
+        == ["core", "strict", "strict-concurrency", "strict-system"],
+        "expected conformance publication to preserve a recognized live claim policy profile set",
+    )
+    expect(
+        publication.get("supported_profile_ids")
+        == ["core", "strict", "strict-concurrency", "strict-system"]
+        and publication.get("rejected_profile_ids") == [],
         "expected conformance publication to preserve the centralized live claim policy profile sets",
     )
     expect(
-        validation_payload.get("supported_profile_ids") == ["core"]
-        and validation_payload.get("rejected_profile_ids")
-        == ["strict", "strict-concurrency", "strict-system"],
+        validation_payload.get("supported_profile_ids")
+        == ["core", "strict", "strict-concurrency", "strict-system"]
+        and validation_payload.get("rejected_profile_ids") == [],
         "expected conformance validation to preserve the centralized live claim policy profile sets",
     )
     expect(
@@ -17486,9 +17529,98 @@ def check_claimability_semantics_release_policy_case(run_dir: Path) -> CaseResul
             "targeted_profile_ids": publication.get(
                 "advanced_feature_targeted_profile_ids"
             ),
-            "strict_reject_returncode": strict_reject.returncode,
+            "strict_selected_profile": strict_publication.get("selected_profile"),
             "yaml_reject_returncode": yaml_reject.returncode,
         },
+    )
+
+
+def check_strict_profile_claim_implementation_case(run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "strict-profile-claim-implementation"
+    fixture = ROOT / Path(RELEASE_CLAIMABLE_SURFACE_FIXTURE)
+    claimed_profiles = ["strict", "strict-concurrency", "strict-system"]
+    supported_profiles = ["core", "strict", "strict-concurrency", "strict-system"]
+    summaries: list[dict[str, Any]] = []
+
+    for profile in claimed_profiles:
+        compile_dir = case_dir / profile
+        compile_fixture_with_args(
+            fixture,
+            compile_dir,
+            ["--objc3-conformance-profile", profile],
+        )
+        report_path = compile_dir / "module.objc3-conformance-report.json"
+        publication_path = compile_dir / "module.objc3-conformance-publication.json"
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        publication = json.loads(publication_path.read_text(encoding="utf-8"))
+
+        validation_dir = compile_dir / "validate"
+        validation_dir.mkdir(parents=True, exist_ok=True)
+        validation = run(
+            [
+                str(NATIVE_EXE),
+                "--validate-objc3-conformance",
+                str(report_path),
+                "--out-dir",
+                str(validation_dir),
+                "--emit-prefix",
+                "module",
+                "--emit-objc3-conformance-format",
+                "json",
+            ]
+        )
+        expect(
+            validation.returncode == 0,
+            f"expected {profile} conformance validation to succeed",
+        )
+        validation_payload = json.loads(
+            (validation_dir / "module.objc3-conformance-validation.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        expect(
+            publication.get("selected_profile") == profile
+            and publication.get("selected_profile_supported") is True,
+            f"expected publication to claim the selected {profile} profile",
+        )
+        expect(
+            publication.get("supported_profile_ids") == supported_profiles
+            and publication.get("rejected_profile_ids") == [],
+            f"expected publication to preserve the fully claimed profile inventory for {profile}",
+        )
+        expect(
+            validation_payload.get("selected_profile") == profile
+            and validation_payload.get("selected_profile_supported") is True,
+            f"expected validation to preserve the selected {profile} profile",
+        )
+        expect(
+            validation_payload.get("supported_profile_ids") == supported_profiles
+            and validation_payload.get("rejected_profile_ids") == [],
+            f"expected validation to preserve the fully claimed profile inventory for {profile}",
+        )
+        expect(
+            report.get("runtime_capability_report", {}).get("claimed_profile_ids")
+            == supported_profiles
+            and report.get("runtime_capability_report", {}).get("not_claimed_profile_ids")
+            == [],
+            f"expected runtime capability report to preserve the fully claimed profile inventory for {profile}",
+        )
+        summaries.append(
+            {
+                "profile": profile,
+                "selected_profile": publication.get("selected_profile"),
+                "supported_profile_ids": publication.get("supported_profile_ids"),
+            }
+        )
+
+    return CaseResult(
+        case_id="strict-profile-claim-implementation",
+        probe="compile-publication-validation-and-runtime-capability-report-for-claimed-strict-profiles",
+        fixture=RELEASE_CLAIMABLE_SURFACE_FIXTURE,
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={"profiles": summaries},
     )
 
 
@@ -18333,6 +18465,7 @@ def main() -> int:
         ),
         check_strict_profile_feature_claim_source_surface_case(run_dir),
         check_claimability_semantics_release_policy_case(run_dir),
+        check_strict_profile_claim_implementation_case(run_dir),
         check_mixed_image_compatibility_interop_semantics_case(run_dir),
         check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
         check_import_version_feature_claim_diagnostics_case(run_dir),
@@ -18452,6 +18585,9 @@ def main() -> int:
         ),
         "runtime_claimability_semantics_release_policy_surface": (
             build_runtime_claimability_semantics_release_policy_surface(results)
+        ),
+        "runtime_strict_profile_claim_implementation_surface": (
+            build_runtime_strict_profile_claim_implementation_surface(results)
         ),
         "runtime_mixed_image_compatibility_interop_semantics_surface": (
             build_runtime_mixed_image_compatibility_interop_semantics_surface(results)

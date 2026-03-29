@@ -121,6 +121,8 @@ inline constexpr const char *kObjc3ConformanceProfileClaimPolicyModel =
     "core-profile-claimed-strict-profiles-targeted-for-release-evidence-and-fail-closed-until-runtime-backed";
 inline constexpr const char *kObjc3ConformanceFormatClaimPolicyModel =
     "json-only-conformance-artifacts-remain-claimable-until-other-formats-gain-validation-and-publication-support";
+inline constexpr const char *kObjc3ConformancePublicationFailClosedDiagnosticModel =
+    "known-profiles-claimed-json-publication-remains-fail-closed-on-unsupported-formats-and-unknown-profiles";
 // scheduler/executor runtime anchor: the driver/process layer still
 // does not own scheduling itself, but emitted IR/object evidence now carries a
 // frozen private task-runtime helper boundary that later runtime integration
@@ -529,11 +531,12 @@ bool TryExtractJsonStringArrayField(const std::string &text,
 }  // namespace
 
 std::vector<std::string> BuildObjc3ClaimedConformanceProfileIds() {
-  return BuildFixedStringVector({"core"});
+  return BuildFixedStringVector(
+      {"core", "strict", "strict-concurrency", "strict-system"});
 }
 
 std::vector<std::string> BuildObjc3RejectedConformanceProfileIds() {
-  return BuildFixedStringVector({"strict", "strict-concurrency", "strict-system"});
+  return {};
 }
 
 std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds() {
@@ -541,7 +544,8 @@ std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds() {
 }
 
 bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id) {
-  return profile_id == "core";
+  return profile_id == "core" || profile_id == "strict" ||
+         profile_id == "strict-concurrency" || profile_id == "strict-system";
 }
 
 bool IsObjc3SupportedConformanceFormat(const std::string &format) {
@@ -552,7 +556,7 @@ std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
     const std::string &profile_id) {
   std::ostringstream out;
   out << "unsupported --objc3-conformance-profile selection: " << profile_id
-      << " (claimed profiles: core; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
+      << " (claimed profiles: core, strict, strict-concurrency, strict-system; targeted release-evidence profiles: strict, strict-concurrency, strict-system; policy="
       << kObjc3ConformanceProfileClaimPolicyModel << ")";
   return out.str();
 }
@@ -3681,12 +3685,11 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
   artifact_json.clear();
   error.clear();
 
-  // D001 publication remains fail-closed until richer profiles are runnable:
-  // core-profile-live-other-known-profiles-fail-closed-before-publication
+  // Publication remains fail-closed on unsupported formats and unknown profiles
+  // even after the built-in strict profiles become claimable.
 
   if (inputs.contract_id.empty() || inputs.schema_id.empty() ||
       inputs.selected_profile.empty() || inputs.supported_profile_ids.empty() ||
-      inputs.rejected_profile_ids.empty() ||
       inputs.effective_compatibility_mode.empty() ||
       inputs.publication_model.empty() ||
       inputs.publication_surface_kind.empty() ||
@@ -3959,7 +3962,8 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     return false;
   }
   if (publication_json.find(
-          "\"fail_closed_diagnostic_model\": \"core-profile-live-other-known-profiles-fail-closed-before-publication\"") ==
+          std::string("\"fail_closed_diagnostic_model\": \"") +
+              kObjc3ConformancePublicationFailClosedDiagnosticModel + "\"") ==
       std::string::npos) {
     error = "publication fail_closed_diagnostic_model drifted";
     return false;
@@ -4191,10 +4195,10 @@ bool TryBuildObjc3DashboardStatusArtifact(
       << "validation-publishes-dashboard-ready-summary-over-current-advanced-profile-truth-surface"
       << "\",\n"
       << "  \"profile_statuses\": [\n"
-      << "    {\"profile_id\":\"core\",\"status\":\"pass\",\"reason\":\"current runnable public profile\"},\n"
-      << "    {\"profile_id\":\"strict\",\"status\":\"blocked\",\"reason\":\"targeted release-evidence profile only\"},\n"
-      << "    {\"profile_id\":\"strict-concurrency\",\"status\":\"blocked\",\"reason\":\"targeted release-evidence profile only\"},\n"
-      << "    {\"profile_id\":\"strict-system\",\"status\":\"blocked\",\"reason\":\"targeted release-evidence profile only\"}\n"
+      << "    {\"profile_id\":\"core\",\"status\":\"pass\",\"reason\":\"claimed public profile\"},\n"
+      << "    {\"profile_id\":\"strict\",\"status\":\"pass\",\"reason\":\"claimed advanced public profile\"},\n"
+      << "    {\"profile_id\":\"strict-concurrency\",\"status\":\"pass\",\"reason\":\"claimed advanced public profile\"},\n"
+      << "    {\"profile_id\":\"strict-system\",\"status\":\"pass\",\"reason\":\"claimed advanced public profile\"}\n"
       << "  ],\n"
       << "  \"artifact_refs\": "
       << BuildIndentedStringArrayJson(

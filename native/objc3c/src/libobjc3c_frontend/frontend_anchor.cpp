@@ -725,7 +725,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                      "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
                  .publication_surface_kind = "frontend-c-api",
                  .fail_closed_diagnostic_model =
-                     "core-profile-live-other-known-profiles-fail-closed-before-publication",
+                     "known-profiles-claimed-json-publication-remains-fail-closed-on-unsupported-formats-and-unknown-profiles",
                  .lowered_report_contract_id =
                      "objc3c.versioned.conformance.report.lowering.v1",
                  .runtime_capability_contract_id =

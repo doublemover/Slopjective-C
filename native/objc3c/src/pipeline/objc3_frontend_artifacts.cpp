@@ -9644,18 +9644,18 @@ std::string BuildVersionedConformanceReportLoweringSummaryJson(
 std::string BuildRuntimeCapabilityProfilesJson() {
   return "["
          "{\"id\":\"core\",\"status\":\"claimed\"},"
-         "{\"id\":\"strict\",\"status\":\"not-claimed\"},"
-         "{\"id\":\"strict-concurrency\",\"status\":\"not-claimed\"},"
-         "{\"id\":\"strict-system\",\"status\":\"not-claimed\"}"
+         "{\"id\":\"strict\",\"status\":\"claimed\"},"
+         "{\"id\":\"strict-concurrency\",\"status\":\"claimed\"},"
+         "{\"id\":\"strict-system\",\"status\":\"claimed\"}"
          "]";
 }
 
 std::vector<std::string> BuildClaimedConformanceProfileIds() {
-  return {"core"};
+  return {"core", "strict", "strict-concurrency", "strict-system"};
 }
 
 std::vector<std::string> BuildNotClaimedConformanceProfileIds() {
-  return {"strict", "strict-concurrency", "strict-system"};
+  return {};
 }
 
 std::string BuildRuntimeCapabilityOptionalFeaturesJson() {
@@ -10062,9 +10062,9 @@ std::string BuildPublicConformanceProfilesJson() {
   };
   constexpr ProfileEntry kProfiles[] = {
       {"core", "claimed"},
-      {"strict", "not-claimed"},
-      {"strict-concurrency", "not-claimed"},
-      {"strict-system", "not-claimed"},
+      {"strict", "claimed"},
+      {"strict-concurrency", "claimed"},
+      {"strict-system", "claimed"},
   };
   constexpr std::size_t kProfileCount = sizeof(kProfiles) / sizeof(kProfiles[0]);
   std::ostringstream out;

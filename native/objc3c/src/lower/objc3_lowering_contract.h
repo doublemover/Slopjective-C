@@ -1323,7 +1323,7 @@ inline constexpr const char *kObjc3RuntimeCapabilityReportingSchemaId =
 inline constexpr const char *kObjc3RuntimeCapabilityReportingSurfacePath =
     "frontend.pipeline.semantic_surface.objc_runtime_capability_report";
 inline constexpr const char *kObjc3RuntimeCapabilityReportingProfileModel =
-    "core-profile-claimed-strict-profiles-not-claimed-until-runtime-backed";
+    "core-and-strict-profiles-claimed-while-optional-feature-gaps-remain-not-claimed-until-runtime-backed";
 inline constexpr const char *kObjc3RuntimeCapabilityReportingOptionalFeatureModel =
     "unsupported-runtime-feature-ids-lower-into-not-claimed-public-optional-features";
 inline constexpr const char *kObjc3RuntimeCapabilityReportingVersionModel =
