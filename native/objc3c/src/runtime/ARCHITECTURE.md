@@ -112,6 +112,23 @@ Unified concurrency runtime architecture source of truth:
   concurrency source truth from probe-local notes, sidecar-only manifests, or
   milestone-specific helper inventories
 
+Async/task/actor normalization completion source of truth:
+
+- compile publication exposes the normalized concurrency semantic-to-lowering
+  boundary through the emitted compile-manifest key
+  `runtime_async_task_actor_normalization_completion_surface`
+- that surface must point at the live async effect/suspension semantic model,
+  task executor/cancellation semantic model, actor isolation/sendable semantic
+  model, continuation ABI/async lowering contract, task runtime lowering
+  contract, and actor lowering/metadata contract
+- that same surface freezes the exact lowering lane contract ids and the shared
+  AST/sema/IR/pipeline/runtime code paths that downstream runtime issues must
+  consume, while keeping public runtime ABI widening and runnable task/actor
+  execution claims out of scope
+- later task runtime, actor mailbox, executor, and runnable validation work
+  must extend that emitted normalization surface instead of inventing a second
+  semantic-to-lowering handoff or probe-local contract inventory
+
 Object-model realization source of truth:
 
 - compile publication exposes the coupled realization boundary through the

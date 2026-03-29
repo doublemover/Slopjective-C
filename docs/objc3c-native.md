@@ -285,6 +285,48 @@ private continuation/task/actor helper inventory so later concurrency work has
 one emitted source of truth instead of rederiving boundaries from sidecars,
 stale milestone notes, or probe-local assumptions.
 
+## Async/Task/Actor Normalization Completion Surface
+
+- authoritative compile-manifest key:
+  - `runtime_async_task_actor_normalization_completion_surface`
+- authoritative normalized semantic inputs:
+  - `objc3c.concurrency.async.effect.suspension.semantic.model.v1`
+  - `objc3c.concurrency.task.executor.cancellation.semantic.model.v1`
+  - `objc3c.concurrency.actor.isolation.sendable.semantic.model.v1`
+- authoritative lowering contracts:
+  - `objc3c.concurrency.continuation.abi.async.lowering.contract.v1`
+  - `objc3c.concurrency.task.runtime.lowering.contract.v1`
+  - `objc3c.concurrency.actor.lowering.and.metadata.contract.v1`
+- authoritative lowering lane contracts:
+  - `objc3c.async.continuation.lowering.v1`
+  - `objc3c.await.lowering.suspension.state.lowering.v1`
+  - `objc3c.task.runtime.interop.cancellation.lowering.v1`
+  - `objc3c.concurrency.replay.race.guard.lowering.v1`
+  - `objc3c.actor.lowering.metadata.contract.v1`
+  - `objc3c.actor.isolation.sendability.lowering.v1`
+- authoritative live code paths:
+  - `native/objc3c/src/ast/objc3_ast.h`
+  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
+  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+- authoritative proof paths:
+  - fixtures:
+    - `tests/tooling/fixtures/native/async_lowering_positive.objc3`
+    - `tests/tooling/fixtures/native/actor_isolation_sendable_semantic_model_positive.objc3`
+    - `tests/tooling/fixtures/native/task_executor_cancellation_semantic_model_positive.objc3`
+  - probes:
+    - `tests/tooling/runtime/continuation_runtime_helper_probe.cpp`
+    - `tests/tooling/runtime/task_runtime_lowering_probe.cpp`
+    - `tests/tooling/runtime/actor_lowering_runtime_probe.cpp`
+
+This is the authoritative normalized semantic-to-lowering boundary for async
+effects, tasks, executors, actors, and sendability. It freezes the exact
+semantic packets and lowering contracts that later runtime issues must consume
+without widening the public runtime ABI or pretending runnable task/actor
+execution has already landed.
+
 ## Error Execution And Cleanup Source Surface
 
 - authoritative compile-manifest key:
