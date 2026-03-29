@@ -68,6 +68,7 @@ Use the shortest path that matches what you are trying to do.
 | --- | --- | --- |
 | understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
 | build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
+| compare ObjC3 against ObjC2, Swift, or C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md) | then follow the showcase examples that back the comparison |
 | contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |
 | inspect runnable showcase examples | [showcase/README.md](showcase/README.md) | compile them through `npm run compile:objc3c -- ...` or the showcase surface check |
 | inspect implementation boundaries | [docs/objc3c-native.md](docs/objc3c-native.md) | then open `native/objc3c/` |
@@ -135,6 +136,7 @@ Explicit non-goals for cleanup work:
 - `docs/tutorials/`
   - reader-facing tutorials, migration guides, and teaching-material boundaries
   - keep tutorial narrative compile-coupled to the checked-in showcase examples and public command surface
+  - ObjC2/Swift/C++ comparison work starts in `docs/tutorials/objc2_swift_cpp_comparison.md`
 - `docs/reference/legacy_spec_anchor_index.md`
   - compatibility redirects for archived spec, planning, governance, and conformance anchors
   - use this when older docs, reports, scripts, or conformance metadata still cite the retired `spec/` tree

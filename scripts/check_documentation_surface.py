@@ -19,6 +19,7 @@ NATIVE_FRAGMENT_README_PATH = ROOT / "docs" / "objc3c-native" / "src" / "README.
 MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
+COMPARISON_README_PATH = ROOT / "docs" / "tutorials" / "objc2_swift_cpp_comparison.md"
 
 
 def require_token(text: str, token: str, *, path: Path, errors: list[str]) -> None:
@@ -54,6 +55,7 @@ def main() -> int:
         "README.md",
         "CONTRIBUTING.md",
         "docs/tutorials/README.md",
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
         "docs/runbooks/objc3c_public_command_surface.md",
         "docs/runbooks/objc3c_maintainer_workflows.md",
         "showcase/",
@@ -94,6 +96,19 @@ def main() -> int:
     ):
         require_token(tutorial_readme, token, path=TUTORIAL_README_PATH, errors=errors)
 
+    comparison_readme = COMPARISON_README_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# ObjC2 Swift And C++ Comparison Surface",
+        "## Comparison Boundary",
+        "## Canonical Inputs",
+        "showcase/patchKit/main.objc3",
+        "showcase/signalMesh/main.objc3",
+        "## Exact Live Paths For Downstream Work",
+        "scripts/check_documentation_surface.py",
+        "## Explicit Non-Goals",
+    ):
+        require_token(comparison_readme, token, path=COMPARISON_README_PATH, errors=errors)
+
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (
         "## At a Glance {#toc-status-scope-note}",
@@ -103,6 +118,7 @@ def main() -> int:
         "## Language Parts {#toc-parts}",
         "[README.md](../README.md)",
         "[docs/tutorials/README.md](../docs/tutorials/README.md)",
+        "[docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",
         "[legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
     ):

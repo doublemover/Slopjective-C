@@ -22,6 +22,7 @@ Use it for reader-facing material that teaches someone how to:
 - migration path:
   - use this directory for ObjC2-to-ObjC3 and Swift/C++ comparison guides
   - keep examples compile-coupled to the live toolchain and showcase sources
+  - start with `docs/tutorials/objc2_swift_cpp_comparison.md`
 - contributor path:
   - use `CONTRIBUTING.md` for repo-change instructions
   - use `docs/runbooks/objc3c_maintainer_workflows.md` only for maintainer-only workflow maps
@@ -35,6 +36,7 @@ The live teaching surface is intentionally narrow.
   - `site/src/index.body.md`
 - tutorial and migration narrative:
   - `docs/tutorials/`
+  - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - runnable walkthrough examples:
   - `showcase/README.md`
   - `showcase/portfolio.json`
@@ -50,6 +52,7 @@ Later issues in this milestone should edit these live paths directly:
 
 - tutorial map and audience routing:
   - `docs/tutorials/README.md`
+  - `docs/tutorials/objc2_swift_cpp_comparison.md`
   - `README.md`
   - `site/src/index.body.md`
 - walkthrough and runnable teaching material:

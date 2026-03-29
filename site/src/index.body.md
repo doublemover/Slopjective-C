@@ -34,6 +34,7 @@ Use this page in three passes:
 | see the runnable subset | [What Is Implemented and Runnable](#intro) |
 | understand what is still missing | [What Remains](#status-remaining) |
 | follow the reader-facing learning path | [docs/tutorials/README.md](../docs/tutorials/README.md) |
+| compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
 | find the right draft section | [Specification Map](#toc-front-matter) |
 | build and validate the implementation | [README.md](../README.md) |
 | inspect the native implementation boundary | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/` |
