@@ -60,50 +60,36 @@ What is not fully runnable yet:
 - full ARC automation,
 - advanced language features such as `throws`, async/await, tasks, actors, macros, and broader interop closure.
 
-## Where to Start
+## Start Here
 
-- Public overview: [https://doublemover.github.io/Slopjective-C/](https://doublemover.github.io/Slopjective-C/)
-- Draft overview section: [Introduction](https://doublemover.github.io/Slopjective-C/#intro)
-- Current implementation / module-boundary status: [Module Metadata and ABI Surface](https://doublemover.github.io/Slopjective-C/#d)
-- Compiler implementation: [`native/objc3c/`](native/objc3c/)
-- Detailed legacy spec redirects: [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files)
+Use the shortest path that matches what you are trying to do.
 
-If you only want the high-level picture, read the published site first. If you want the exact language rules, use the legacy redirect index under `docs/reference/legacy_spec_anchor_index.md`. If you want the implementation, start in `native/objc3c/`.
+| If you want to... | Start here | Then do this |
+| --- | --- | --- |
+| understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
+| build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
+| inspect implementation boundaries | [docs/objc3c-native.md](docs/objc3c-native.md) | then open `native/objc3c/` |
+| run exact package-script workflows | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing |
+| follow old spec links or archived anchors | [legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) | use this only for compatibility lookups |
 
-## Documentation Audience Map
+Documentation boundary:
 
-The repository now has three live documentation audiences. Use the right one first.
-
-| Audience | Start here | Use it for | Stay out of |
-| --- | --- | --- | --- |
-| First-time reader | [site/index.md](site/index.md) | project overview, implementation status, spec map | `tmp/`, `reports/`, historical spec redirects unless you need compatibility links |
-| Builder / evaluator | [README.md](README.md) | setup, build commands, validation entrypoints, repository layout | deep runtime/source fragments until you need implementation detail |
-| Implementer / maintainer | [docs/objc3c-native.md](docs/objc3c-native.md) and [`native/objc3c/`](native/objc3c/) | native compiler/runtime boundaries, emitted artifacts, live proof paths | archived milestone closeout material |
-| Operator / automation | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | exact package-script to runner-action mapping and generated operator notes | narrative onboarding and project explanation |
-
-Documentation working boundary:
-
-- public onboarding surface:
+- human-facing onboarding:
   - `README.md`
   - `site/index.md`
-- implementation-facing docs surface:
+- implementation-facing narrative:
   - `docs/objc3c-native.md`
   - `docs/objc3c-native/src/*.md`
-- generated operator-facing surface:
+- generated operator appendix:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/render_objc3c_public_command_surface.py`
-- compatibility-only redirect surface:
+- compatibility-only redirect layer:
   - `docs/reference/legacy_spec_anchor_index.md`
-- machine-owned or proof-owned surfaces, not user-facing onboarding:
+- machine-owned outputs, not onboarding:
   - `tmp/`
   - `artifacts/`
   - `reports/`
 
-Explicit non-goals for the public onboarding surface:
-
-- do not make new readers navigate archived milestone material,
-- do not treat generated proof artifacts as primary documentation,
-- do not force users through the legacy redirect index unless they need old links or exact archived anchors.
+If you are new to the repo, stay out of `tmp/` and the legacy redirect index until you actually need them.
 
 ## Repository Layout
 
@@ -188,6 +174,41 @@ Expected artifacts:
 - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - `artifacts/lib/objc3_runtime.lib`
 
+## First Working Session
+
+If the goal is simply to prove the repo is alive, use this order:
+
+1. Build the native compiler:
+
+```powershell
+npm run build:objc3c-native
+```
+
+2. Build the public site overview:
+
+```powershell
+npm run build:spec
+```
+
+3. Compile the canonical hello fixture:
+
+```powershell
+npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module
+```
+
+4. Run the bounded default validation:
+
+```powershell
+npm run test:fast
+```
+
+5. If you need execution smoke, set `llc.exe` only when it is not already on `PATH`:
+
+```powershell
+$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
+npm run test:objc3c:execution-smoke
+```
+
 ## Native Build Surface
 
 Current live build/test surface:
@@ -258,73 +279,22 @@ CI and closeout semantics:
 
 ## Public Command Surface
 
-Use these package scripts for normal operator workflows:
+Use package scripts for normal work. The common ones are:
 
-- `npm run build`
 - `npm run build:objc3c-native`
-- `npm run build:objc3c-native:contracts`
-- `npm run build:objc3c-native:full`
-- `npm run build:objc3c-native:reconfigure`
 - `npm run build:spec`
 - `npm run compile:objc3c -- ...`
-- `npm run lint:spec`
-- `npm run test`
+- `npm run test:fast`
 - `npm run test:smoke`
 - `npm run test:ci`
-- `npm run test:objc3c`
-- `npm run test:objc3c:execution-smoke`
-- `npm run test:objc3c:execution-replay-proof`
-- `npm run test:objc3c:full`
 - `npm run package:objc3c-native:runnable-toolchain`
-- `npm run proof:objc3c`
 
-No additional package-script compatibility aliases remain supported.
-Maintainer-only package scripts are limited to repo hygiene, task hygiene, and boundary checks.
-Prefer the public package-script surface over direct Python or PowerShell invocations when a public wrapper already exists.
-`native/objc3c/` is the only supported compiler implementation root. The earlier
-prototype Python compiler surface has been retired into the governance archive
-and is not an operator path.
-The documented public package commands are thin wrappers over
-`scripts/objc3c_public_workflow_runner.py`.
-See `docs/runbooks/objc3c_public_command_surface.md` for the synchronized
-command/action/backend reference.
-Maintainers should use `docs/runbooks/objc3c_maintainer_workflows.md` for the
-canonical operator workflow map.
+Rules:
 
-## Quickstart
-
-Build the public site overview:
-
-```powershell
-npm run build:spec
-```
-
-Check that the generated site is up to date:
-
-```powershell
-python scripts/build_site_index.py --check
-```
-
-Build the native compiler:
-
-```powershell
-npm run build:objc3c-native
-```
-
-Compile the basic native hello-world fixture:
-
-```powershell
-npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module
-```
-
-Run the native execution smoke suite:
-
-```powershell
-$env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
-npm run test:objc3c:execution-smoke
-```
-
-If `llc.exe` is already on `PATH`, you can omit `OBJC3C_NATIVE_EXECUTION_LLC_PATH`.
+- prefer the public `npm run ...` surface over direct Python or PowerShell when a wrapper already exists,
+- treat `native/objc3c/` as the only supported compiler implementation root,
+- use `docs/runbooks/objc3c_public_command_surface.md` for the synchronized command/action/backend reference,
+- use `docs/runbooks/objc3c_maintainer_workflows.md` for maintainer-only workflow maps.
 
 ## Other Useful Commands
 
