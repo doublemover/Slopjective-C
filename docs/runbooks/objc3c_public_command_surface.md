@@ -2,7 +2,7 @@
 
 This runbook is generated from the live public workflow runner metadata.
 
-- Current public script count: `43`
+- Current public script count: `45`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 
@@ -39,6 +39,8 @@ This runbook is generated from the live public workflow runner metadata.
 | `test:objc3c:runnable-storage-reflection` | `validate-runnable-storage-reflection` | `full` | `packaged compile, storage/reflection probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_storage_reflection_end_to_end.py` |
 | `test:objc3c:error-conformance` | `validate-error-conformance` | `full` | `integrated error conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_error_conformance.py` |
 | `test:objc3c:runnable-error` | `validate-runnable-error` | `full` | `packaged compile, error probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_error_end_to_end.py` |
+| `test:objc3c:interop-conformance` | `validate-interop-conformance` | `full` | `integrated mixed-module runtime packaging and interop conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_conformance.py` |
+| `test:objc3c:runnable-interop` | `validate-runnable-interop` | `full` | `packaged compile, interop probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_end_to_end.py` |
 | `test:objc3c:metaprogramming-conformance` | `validate-metaprogramming-conformance` | `full` | `integrated metaprogramming conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_conformance.py` |
 | `test:objc3c:runnable-metaprogramming` | `validate-runnable-metaprogramming` | `full` | `packaged compile, metaprogramming probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_end_to_end.py` |
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive corpus artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |

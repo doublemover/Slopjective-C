@@ -151,6 +151,8 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
   "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
   "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
+  "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp",
+  "tests/tooling/runtime/header_module_bridge_generation_probe.cpp",
   "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
   "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
   "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
@@ -162,7 +164,11 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
   "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
   "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
-  "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
+  "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+  "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+  "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+  "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+  "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -207,6 +213,12 @@ $manifestPayload = [ordered]@{
   metaprogramming_runtime_fixture = "tests/tooling/fixtures/native/macro_host_process_provider.objc3"
   metaprogramming_runtime_consumer_fixture = "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
   metaprogramming_runtime_probe = "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
+  interop_runtime_fixture = "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3"
+  interop_runtime_consumer_fixture = "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3"
+  interop_header_bridge_fixture = "tests/tooling/fixtures/native/header_module_bridge_provider.objc3"
+  interop_header_bridge_consumer_fixture = "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+  interop_packaging_probe = "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
+  interop_bridge_generation_probe = "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
   execution_fixture_root = "tests/tooling/fixtures/native/execution"
   frontend_contract_artifacts = @(
     "tmp/artifacts/objc3c-native/frontend_modular_scaffold.json",
