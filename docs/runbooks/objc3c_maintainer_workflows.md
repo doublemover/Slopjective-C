@@ -7,7 +7,7 @@ checked into the repo:
 
 - public site:
   - source: `site/src/index.body.md`
-  - build/check: `npm run build:spec` / `npm run check:spec:generated`
+  - build/check: `npm run build:site` / `npm run check:site`
 - native implementation doc:
   - source: `docs/objc3c-native/src/*.md`
   - build/check: `npm run build:docs:native` / `npm run check:docs:native`

@@ -1,4 +1,4 @@
-name: Publish Spec
+name: Publish Site
 
 on:
   push:
@@ -55,8 +55,8 @@ jobs:
           python-version: "3.12"
       - name: Install Node dependencies
         run: npm ci
-      - name: Stitch documents
-        run: npm run build:spec
+      - name: Build published site surface
+        run: npm run build:site
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:

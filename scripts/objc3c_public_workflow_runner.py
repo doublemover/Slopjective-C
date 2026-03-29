@@ -126,14 +126,14 @@ def action_build_native_reconfigure(_: list[str]) -> int:
     return pwsh_file(BUILD_PS1, "-ExecutionMode", "binaries-only", "-ForceReconfigure")
 
 
-def action_build_spec(_: list[str]) -> int:
+def action_build_site(_: list[str]) -> int:
     rc = run([sys.executable, str(SITE_PY)])
     if rc != 0:
         return rc
     return run([NPX, "prettier", "--write", "site/index.md"])
 
 
-def action_check_site_index(_: list[str]) -> int:
+def action_check_site(_: list[str]) -> int:
     return run([sys.executable, str(SITE_PY), "--check"])
 
 
@@ -805,8 +805,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-native-contracts": ActionSpec("build-native-contracts", "build native contracts/binaries packet surface", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:contracts",)),
     "build-native-full": ActionSpec("build-native-full", "run full native build", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:full",)),
     "build-native-reconfigure": ActionSpec("build-native-reconfigure", "force native reconfigure build", "pwsh:scripts/build_objc3c_native.ps1", ("build:objc3c-native:reconfigure",)),
-    "build-spec": ActionSpec("build-spec", "build site/spec output and format it", "python:scripts/build_site_index.py + npx prettier", ("build:spec",)),
-    "check-site-index": ActionSpec("check-site-index", "check generated site output for drift", "python:scripts/build_site_index.py --check", ("check:spec:generated",), validation_tier="docs", guarantee_owner="published site index generation stays in sync with site/src inputs"),
+    "build-site": ActionSpec("build-site", "build published site output and format it", "python:scripts/build_site_index.py + npx prettier", ("build:site",)),
+    "check-site": ActionSpec("check-site", "check generated site output for drift", "python:scripts/build_site_index.py --check", ("check:site",), validation_tier="docs", guarantee_owner="published site index generation stays in sync with site/src inputs"),
     "build-native-docs": ActionSpec("build-native-docs", "build the generated native implementation docs", "python:scripts/build_objc3c_native_docs.py", ("build:docs:native",)),
     "check-native-docs": ActionSpec("check-native-docs", "check generated native implementation docs for drift", "python:scripts/build_objc3c_native_docs.py --check", ("check:docs:native",), validation_tier="docs", guarantee_owner="generated native implementation documentation stays in sync with docs/objc3c-native/src inputs"),
     "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py", ("build:docs:commands",)),
@@ -857,8 +857,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-native-contracts": action_build_native_contracts,
     "build-native-full": action_build_native_full,
     "build-native-reconfigure": action_build_native_reconfigure,
-    "build-spec": action_build_spec,
-    "check-site-index": action_check_site_index,
+    "build-site": action_build_site,
+    "check-site": action_check_site,
     "build-native-docs": action_build_native_docs,
     "check-native-docs": action_check_native_docs,
     "build-public-command-surface": action_build_public_command_surface,

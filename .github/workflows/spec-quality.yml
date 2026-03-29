@@ -1,4 +1,4 @@
-name: Spec Quality
+name: Site And Spec Quality
 
 on:
   pull_request:
@@ -19,8 +19,8 @@ jobs:
           python-version: "3.12"
       - name: Enforce generated-only objc3c-native docs drift contract
         run: python scripts/build_objc3c_native_docs.py --check
-      - name: Enforce generated-only site index drift contract
-        run: python scripts/build_site_index.py --check
+      - name: Enforce generated-only published site drift contract
+        run: npm run check:site
       - name: Enforce M135 direct-LLVM packet/docs contract
         run: python scripts/check_m135_direct_llvm_contract.py
       - name: Install Node dependencies

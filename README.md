@@ -216,7 +216,7 @@ npm run build:objc3c-native
 2. Build the public site overview:
 
 ```powershell
-npm run build:spec
+npm run build:site
 ```
 
 Optional generated-doc refreshes:
@@ -318,7 +318,7 @@ CI and closeout semantics:
 Use package scripts for normal work. The common ones are:
 
 - `npm run build:objc3c-native`
-- `npm run build:spec`
+- `npm run build:site`
 - `npm run build:docs:native`
 - `npm run build:docs:commands`
 - `npm run compile:objc3c -- ...`
@@ -339,7 +339,7 @@ Rules:
 Rebuild the generated site output with the standard package script:
 
 ```powershell
-npm run build:spec
+npm run build:site
 ```
 
 ## Spec Structure

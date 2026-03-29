@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 SEQUENCE = [
     ('task-hygiene', [sys.executable, 'scripts/ci/check_task_hygiene.py']),
     ('dependency-boundaries', [sys.executable, 'scripts/check_objc3c_dependency_boundaries.py', '--strict']),
-    ('site-index-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-site-index']),
+    ('site-index-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-site']),
     ('native-docs-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-native-docs']),
     ('public-command-surface-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-public-command-surface']),
     ('documentation-surface', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-documentation-surface']),

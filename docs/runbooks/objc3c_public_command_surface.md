@@ -17,8 +17,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c-native:contracts` | `build-native-contracts` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:full` | `build-native-full` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:reconfigure` | `build-native-reconfigure` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
-| `build:spec` | `build-spec` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py + npx prettier` |
-| `check:spec:generated` | `check-site-index` | `docs` | `published site index generation stays in sync with site/src inputs` | `fixed-shape` | `python:scripts/build_site_index.py --check` |
+| `build:site` | `build-site` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py + npx prettier` |
+| `check:site` | `check-site` | `docs` | `published site index generation stays in sync with site/src inputs` | `fixed-shape` | `python:scripts/build_site_index.py --check` |
 | `build:docs:native` | `build-native-docs` | `-` | `-` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py` |
 | `check:docs:native` | `check-native-docs` | `docs` | `generated native implementation documentation stays in sync with docs/objc3c-native/src inputs` | `fixed-shape` | `python:scripts/build_objc3c_native_docs.py --check` |
 | `build:docs:commands` | `build-public-command-surface` | `-` | `-` | `fixed-shape` | `python:scripts/render_objc3c_public_command_surface.py` |

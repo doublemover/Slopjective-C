@@ -13,7 +13,7 @@
     "test:ci": "python scripts/objc3c_public_workflow_runner.py test-ci",
     "test:docs": "python scripts/objc3c_public_workflow_runner.py validate-documentation-surface",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",
-    "build:spec": "python scripts/objc3c_public_workflow_runner.py build-spec",
+    "build:site": "python scripts/objc3c_public_workflow_runner.py build-site",
     "build:docs:native": "python scripts/objc3c_public_workflow_runner.py build-native-docs",
     "build:docs:commands": "python scripts/objc3c_public_workflow_runner.py build-public-command-surface",
     "build:objc3c-native": "python scripts/objc3c_public_workflow_runner.py build-native-binaries",
@@ -50,7 +50,7 @@
     "test:objc3c:full": "python scripts/objc3c_public_workflow_runner.py test-full",
     "test:objc3c:nightly": "python scripts/objc3c_public_workflow_runner.py test-nightly",
     "lint:spec": "python scripts/objc3c_public_workflow_runner.py lint-spec",
-    "check:spec:generated": "python scripts/objc3c_public_workflow_runner.py check-site-index",
+    "check:site": "python scripts/objc3c_public_workflow_runner.py check-site",
     "check:docs:native": "python scripts/objc3c_public_workflow_runner.py check-native-docs",
     "check:docs:commands": "python scripts/objc3c_public_workflow_runner.py check-public-command-surface",
     "check:docs:surface": "python scripts/objc3c_public_workflow_runner.py check-documentation-surface",
@@ -60,6 +60,6 @@
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "format:md": "prettier --write \"**/*.md\"",
     "check:md": "prettier --check \"**/*.md\"",
-    "check:md:all": "npm run build:spec && npm run check:md"
+    "check:md:all": "npm run build:site && npm run check:md"
   }
 }
