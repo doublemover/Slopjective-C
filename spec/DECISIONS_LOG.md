@@ -530,7 +530,7 @@ surface would recreate the over-claim problem `M264` is intended to remove.
 
 ---
 
-## D-022: Driver publication and profile selection stay fail-closed until richer conformance operations land {#decisions-d-022}
+## D-022: Driver publication and profile selection stay fail-closed until richer conformance operations land {#decisions-d-022-driver-publication-profile-selection}
 
 **Decision:** The native driver shall expose a conformance profile selection
 surface, but the currently runnable profile remains `core`. Known future
@@ -556,7 +556,7 @@ that unimplemented profiles are selectable today.
 
 ---
 
-## D-023: Emit/validate conformance operations consume the shipped JSON sidecars only {#decisions-d-023}
+## D-023: Emit/validate conformance operations consume the shipped JSON sidecars only {#decisions-d-023-emit-validate-conformance-operations}
 
 **Decision:** The native toolchain shall expose explicit conformance operator
 commands equivalent to `--emit-objc3-conformance`,
@@ -713,7 +713,7 @@ recognized surface as implementation-complete.
 
 ---
 
-## D-020: Lowered versioned conformance reports must remain bounded to the truthful frontend claim surface {#decisions-d-020}
+## D-020: Lowered versioned conformance reports must remain bounded to the truthful frontend claim surface {#decisions-d-020-lowered-versioned-conformance-reports}
 
 **Decision:** The native `objc3c` lowering path shall publish one machine-readable
 versioned conformance-report sidecar derived from the already-truthful frontend
@@ -782,3 +782,4 @@ That means the Part 9 conformance gate remains tied to the published D002 runtim
 `M272-E002` keeps the milestone closeout truthful by replaying the existing `M272-A002` through `M272-E001` proof chain and freezing one explicit runnable matrix rather than inventing a new runtime or publication boundary.
 
 That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic fallback caching on top of the same `M272-D002` evidence surface.
+

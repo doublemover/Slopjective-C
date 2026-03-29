@@ -2,15 +2,15 @@
 
 _Working draft v0.11   last updated 2026 02 23_
 
-## AM.0 Purpose and scope {#am 0}
+## AM.0 Purpose and scope {#am-0}
 
 This document defines the unified abstract machine rules that span:
 
-  [Part 3](#part 3) (optionals and optional chaining),
-  [Part 5](#part 5) (control flow exits and `defer`),
-  [Part 6](#part 6) (throws/try/propagation),
-  [Part 7](#part 7) (async/await),
-  [Part 8](#part 8) (defer and resource cleanup).
+  [Part 3](#part-3) (optionals and optional chaining),
+  [Part 5](#part-5) (control flow exits and `defer`),
+  [Part 6](#part-6) (throws/try/propagation),
+  [Part 7](#part-7) (async/await),
+  [Part 8](#part-8) (defer and resource cleanup).
 
 This document is normative for cross part behavior. Part specific rules remain normative for construct local typing and syntax.
 
@@ -57,17 +57,17 @@ Current implementation note:
   application/runtime behavior, and the broader Part 3 surface remain future
   work.
 
-### AM.0.1 Normative anchor map {#am 0 1}
+### AM.0.1 Normative anchor map {#am-0-1}
 
 This document composes construct local rules from the following sections:
 
-  [Part 3](#part 3): [§3.3.2](#part 3 3 2), [§3.3.4](#part 3 3 4), [§3.4.1](#part 3 4 1), [§3.4.2](#part 3 4 2), [§3.4.2.4](#part 3 4 2 4).
-  [Part 5](#part 5): [§5.2](#part 5 2), [§5.2.4](#part 5 2 4), [§5.3.2](#part 5 3 2), [§5.4.3](#part 5 4 3).
-  [Part 6](#part 6): [§6.5.3](#part 6 5 3), [§6.5.4](#part 6 5 4), [§6.6](#part 6 6), [§6.6.4](#part 6 6 4).
-  [Part 7](#part 7): [§7.3](#part 7 3), [§7.6.5](#part 7 6 5), [§7.9.1](#part 7 9 1), [§7.9.2](#part 7 9 2), [§7.9.3](#part 7 9 3), [§7.9.4](#part 7 9 4).
-  [Part 8](#part 8): [§8.1](#part 8 1), [§8.2.3](#part 8 2 3), [§8.3](#part 8 3), [§8.6](#part 8 6), [§8.8.3](#part 8 8 3).
+  [Part 3](#part-3): [§3.3.2](#part-3-3-2), [§3.3.4](#part-3-3-4), [§3.4.1](#part-3-4-1), [§3.4.2](#part-3-4-2), [§3.4.2.4](#part-3-4-2-4).
+  [Part 5](#part-5): [§5.2](#part-5-2), [§5.2.4](#part-5-2-4), [§5.3.2](#part-5-3-2), [§5.4.3](#part-5-4-3).
+  [Part 6](#part-6): [§6.5.3](#part-6-5-3), [§6.5.4](#part-6-5-4), [§6.6](#part-6-6), [§6.6.4](#part-6-6-4).
+  [Part 7](#part-7): [§7.3](#part-7-3), [§7.6.5](#part-7-6-5), [§7.9.1](#part-7-9-1), [§7.9.2](#part-7-9-2), [§7.9.3](#part-7-9-3), [§7.9.4](#part-7-9-4).
+  [Part 8](#part-8): [§8.1](#part-8-1), [§8.2.3](#part-8-2-3), [§8.3](#part-8-3), [§8.6](#part-8-6), [§8.8.3](#part-8-8-3).
 
-## AM.1 Abstract machine state {#am 1}
+## AM.1 Abstract machine state {#am-1}
 
 For a running function/task, the abstract machine tracks:
 
@@ -77,22 +77,22 @@ For a running function/task, the abstract machine tracks:
   for `async` functions, an async frame that stores values live across suspension;
   for Objective C runtimes with autorelease semantics, the implicit autorelease pool for the current task execution slice.
 
-### AM.1.1 Full expression boundary {#am 1 1}
+### AM.1.1 Full expression boundary {#am-1-1}
 
 A full expression boundary is the point where temporaries that are not lifetime extended may be destroyed.
 
-### AM.1.2 Scope exit action stack {#am 1 2}
+### AM.1.2 Scope exit action stack {#am-1-2}
 
 A scope exit action stack contains actions registered by:
 
-  executed `defer` statements ([Part 5](#part 5) [§5.2](#part 5 2));
-  successful initialization of cleanup/resource locals ([Part 8](#part 8) [§8.3](#part 8 3)).
+  executed `defer` statements ([Part 5](#part-5) [§5.2](#part-5-2));
+  successful initialization of cleanup/resource locals ([Part 8](#part-8) [§8.3](#part-8-3)).
 
 Actions execute only when the scope exits; mere suspension at `await` is not scope exit.
 
-## AM.2 Expression evaluation order contract {#am 2}
+## AM.2 Expression evaluation order contract {#am-2}
 
-### AM.2.1 Baseline preserved {#am 2 1}
+### AM.2.1 Baseline preserved {#am-2-1}
 
 Objective C 3.0 does not globally replace baseline C/Objective C evaluation order rules.
 
@@ -100,24 +100,24 @@ Unless a rule in this specification explicitly adds ordering, ordinary C/Objecti
 
 In particular, Objective C 3.0 does not add a universal left to right argument evaluation guarantee for ordinary C calls or ordinary Objective C message sends.
 
-### AM.2.2 Additional ObjC 3.0 guarantees (normative delta) {#am 2 2}
+### AM.2.2 Additional ObjC 3.0 guarantees (normative delta) {#am-2-2}
 
 Objective C 3.0 adds the following ordering/single evaluation guarantees relative to the baseline:
 
 | Construct                              | Added guarantee                                                                                                                   | Primary source                              |
 |                                        |                                                                                                                                   |                                             |
-| `x?.p`                                 | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed.                         | [Part 3](#part 3) [§3.4.1.2](#part 3 4 1 2) |
-| `[receiver? sel:arg1 other:arg2]`      | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part 3) [§3.4.2.4](#part 3 4 2 4) |
-| `a ?? b`                               | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`.                                       | [Part 3](#part 3) [§3.3.4.2](#part 3 3 4 2) |
-| `e?` (postfix propagation)             | `e` shall be evaluated exactly once before deciding unwrap vs early exit.                                                         | [Part 6](#part 6) [§6.6](#part 6 6)         |
-| `if let` / `guard let` binding lists   | Binding expressions shall be evaluated left to right.                                                                             | [Part 3](#part 3) [§3.3.2.2](#part 3 3 2 2) |
-| `guard` condition lists                | Conditions shall be evaluated left to right.                                                                                      | [Part 5](#part 5) [§5.3.2](#part 5 3 2)     |
-| `match (expr)`                         | `expr` shall be evaluated exactly once; case tests are top to bottom.                                                             | [Part 5](#part 5) [§5.4.3](#part 5 4 3)     |
-| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left to right at block creation time.                                                            | [Part 8](#part 8) [§8.8.3](#part 8 8 3)     |
+| `x?.p`                                 | `x` shall be evaluated exactly once; if `x == nil`, result is `nil` and property access is not performed.                         | [Part 3](#part-3) [§3.4.1.2](#part-3-4-1-2) |
+| `[receiver? sel:arg1 other:arg2]`      | `receiver` shall be evaluated exactly once; if `receiver == nil`, argument expressions shall not be evaluated and no send occurs. | [Part 3](#part-3) [§3.4.2.4](#part-3-4-2-4) |
+| `a ?? b`                               | `a` shall be evaluated first and exactly once; `b` shall be evaluated only if `a` is `nil`.                                       | [Part 3](#part-3) [§3.3.4.2](#part-3-3-4-2) |
+| `e?` (postfix propagation)             | `e` shall be evaluated exactly once before deciding unwrap vs early exit.                                                         | [Part 6](#part-6) [§6.6](#part-6-6)         |
+| `if let` / `guard let` binding lists   | Binding expressions shall be evaluated left to right.                                                                             | [Part 3](#part-3) [§3.3.2.2](#part-3-3-2-2) |
+| `guard` condition lists                | Conditions shall be evaluated left to right.                                                                                      | [Part 5](#part-5) [§5.3.2](#part-5-3-2)     |
+| `match (expr)`                         | `expr` shall be evaluated exactly once; case tests are top to bottom.                                                             | [Part 5](#part-5) [§5.4.3](#part-5-4-3)     |
+| Block capture list `[cap1, cap2, ...]` | Capture items shall be evaluated left to right at block creation time.                                                            | [Part 8](#part-8) [§8.8.3](#part-8-8-3)     |
 
 No other new global expression order guarantees are introduced in v1.
 
-### AM.2.3 Suspension sequencing boundary {#am 2 3}
+### AM.2.3 Suspension sequencing boundary {#am-2-3}
 
 For `await e`:
 
@@ -125,27 +125,27 @@ For `await e`:
   evaluation that is sequenced after `await` shall not occur until resumption;
   lowering shall not duplicate user subexpression evaluation solely due to suspend/resume transformation.
 
-### AM.2.4 Where ObjC 3.0 changes baseline guarantees {#am 2 4}
+### AM.2.4 Where ObjC 3.0 changes baseline guarantees {#am-2-4}
 
-Relative to baseline C/Objective C, ObjC 3.0 adds only the explicit guarantees listed in [AM.2.2](#am 2 2), plus cross construct composition guarantees in [AM.4.4](#am 4 4), [AM.5](#am 5), and [AM.6](#am 6).
+Relative to baseline C/Objective C, ObjC 3.0 adds only the explicit guarantees listed in [AM.2.2](#am-2-2), plus cross construct composition guarantees in [AM.4.4](#am-4-4), [AM.5](#am-5), and [AM.6](#am-6).
 
 Outside those sections, evaluation order and sequencing remain baseline/implementation defined as in ordinary C/Objective C.
 
-## AM.3 Temporaries and lifetime rules {#am 3}
+## AM.3 Temporaries and lifetime rules {#am-3}
 
-### AM.3.1 Base lifetime rule {#am 3 1}
+### AM.3.1 Base lifetime rule {#am-3-1}
 
 A temporary created during expression evaluation shall remain valid until at least the end of its containing full expression, unless a rule below extends it further.
 
-### AM.3.2 Lifetime extension points {#am 3 2}
+### AM.3.2 Lifetime extension points {#am-3-2}
 
 A temporary or local lifetime is extended when required by:
 
-  explicit lifetime controls (`withLifetime`, `keepAlive`, precise lifetime annotations in [Part 8](#part 8));
+  explicit lifetime controls (`withLifetime`, `keepAlive`, precise lifetime annotations in [Part 8](#part-8));
   capture into storage that outlives the full expression (for example block captures);
-  async suspension requirements in [AM.3.3](#am 3 3).
+  async suspension requirements in [AM.3.3](#am-3-3).
 
-### AM.3.3 Values live across `await` {#am 3 3}
+### AM.3.3 Values live across `await` {#am-3-3}
 
 Any value needed after a potentially suspending `await` shall be materialized in async frame storage and kept alive across suspension.
 
@@ -156,16 +156,16 @@ For ARC managed values:
 
 Values proven dead before suspension may be released before suspension unless prohibited by precise lifetime rules.
 
-### AM.3.4 Hidden temporaries in short circuit forms {#am 3 4}
+### AM.3.4 Hidden temporaries in short circuit forms {#am-3-4}
 
 Hidden temporaries used to implement `?.`, optional send, `??`, `try?`, and postfix `?` shall:
 
   preserve exactly once evaluation guarantees; and
-  not outlive the enclosing full expression unless required by [AM.3.3](#am 3 3) or explicit lifetime controls.
+  not outlive the enclosing full expression unless required by [AM.3.3](#am-3-3) or explicit lifetime controls.
 
-## AM.4 Cleanup stack behavior {#am 4}
+## AM.4 Cleanup stack behavior {#am-4}
 
-### AM.4.1 Registration {#am 4 1}
+### AM.4.1 Registration {#am-4-1}
 
 Within a lexical scope, scope exit actions are registered when:
 
@@ -174,25 +174,25 @@ Within a lexical scope, scope exit actions are registered when:
 
 Registration is dynamic: code paths not executed do not register actions.
 
-### AM.4.2 Exit triggers {#am 4 2}
+### AM.4.2 Exit triggers {#am-4-2}
 
 Scope exit actions run when leaving the scope via:
 
   fallthrough to scope end;
   `return`, `break`, `continue`, or `goto` leaving the scope;
   structured error propagation (`throw`, `try` propagation, postfix `?` early exit);
-  cancellation unwind paths defined by [Part 7](#part 7);
+  cancellation unwind paths defined by [Part 7](#part-7);
   exception unwinding paths that run language cleanups.
 
 Non local transfers that bypass cleanups (for example `longjmp` across cleanup scopes) are outside guarantees and are undefined unless the platform ABI explicitly guarantees cleanup execution.
 
-### AM.4.3 Per scope execution order {#am 4 3}
+### AM.4.3 Per scope execution order {#am-4-3}
 
 For a scope `S`, registered scope exit actions shall execute in reverse registration order (LIFO).
 
 For exits that leave multiple nested scopes, scopes are processed from innermost to outermost, applying LIFO within each scope.
 
-### AM.4.4 Ordering with implicit ARC releases {#am 4 4}
+### AM.4.4 Ordering with implicit ARC releases {#am-4-4}
 
 In each exiting scope:
 
@@ -201,7 +201,7 @@ In each exiting scope:
 
 Relative order among implicit ARC releases is baseline/implementation defined unless specified elsewhere, but all such releases are sequenced after scope exit actions in the same scope.
 
-## AM.5 Unified scope exit algorithm {#am 5}
+## AM.5 Unified scope exit algorithm {#am-5}
 
 When control leaves scope `S`, a conforming implementation shall behave as if by:
 
@@ -211,9 +211,9 @@ When control leaves scope `S`, a conforming implementation shall behave as if by
 
 This algorithm applies uniformly for normal return, throw paths, postfix propagation early exits, and cancellation unwind.
 
-## AM.6 `await` interaction rules {#am 6}
+## AM.6 `await` interaction rules {#am-6}
 
-### AM.6.1 `await` and scope exit actions {#am 6 1}
+### AM.6.1 `await` and scope exit actions {#am-6-1}
 
 Encountering `await` is not scope exit.
 
@@ -225,17 +225,17 @@ Therefore, suspension at `await` shall not by itself execute:
 
 Those actions execute only when their lexical scope actually exits.
 
-### AM.6.2 `await` and ARC lifetime boundaries {#am 6 2}
+### AM.6.2 `await` and ARC lifetime boundaries {#am-6-2}
 
 At a potentially suspending `await`:
 
-  values needed after resumption shall be preserved in the async frame ([AM.3.3](#am 3 3));
+  values needed after resumption shall be preserved in the async frame ([AM.3.3](#am-3-3));
   values dead before suspension may be released before suspension;
   precise lifetime rules still prohibit early release when such annotations/constructs apply.
 
-When a scope eventually exits, defer/resource cleanup ordering relative to ARC remains governed by [AM.4.4](#am 4 4).
+When a scope eventually exits, defer/resource cleanup ordering relative to ARC remains governed by [AM.4.4](#am-4-4).
 
-### AM.6.3 `await` and autorelease pools {#am 6 3}
+### AM.6.3 `await` and autorelease pools {#am-6-3}
 
 On Objective C runtimes with autorelease semantics:
 
@@ -247,15 +247,15 @@ If an `await` completes synchronously without suspension, draining at that point
 
 Autorelease pool draining is not scope exit and shall not trigger scope exit actions by itself.
 
-### AM.6.4 `await` with `try`/`throws` {#am 6 4}
+### AM.6.4 `await` with `try`/`throws` {#am-6-4}
 
 `try await e` is the canonical composed form for `async throws` calls.
 
 If the awaited operation throws:
 
   the throw is observed at the `await` expression;
-  propagation follows [Part 6](#part 6) rules; and
-  all exited scopes run scope exit actions and ARC releases per [AM.5](#am 5).
+  propagation follows [Part 6](#part-6) rules; and
+  all exited scopes run scope exit actions and ARC releases per [AM.5](#am-5).
 
 For `try? await e`:
 
@@ -266,23 +266,23 @@ For `try? await e`:
 For `try! await e`:
 
   success yields the value;
-  throw traps as specified in [Part 6](#part 6); no additional post trap ordering guarantees are required.
+  throw traps as specified in [Part 6](#part-6); no additional post trap ordering guarantees are required.
 
-### AM.6.5 `await` with postfix propagation `?` {#am 6 5}
+### AM.6.5 `await` with postfix propagation `?` {#am-6-5}
 
 For forms equivalent to `(await e)?`:
 
 1. evaluate `await e` first (including any suspension/resumption);
 2. apply postfix propagation semantics to the resulting carrier value.
 
-If propagation triggers early exit (`return nil`, `return Err(...)`, or `throw ...`), scope exit proceeds under [AM.5](#am 5).
+If propagation triggers early exit (`return nil`, `return Err(...)`, or `throw ...`), scope exit proceeds under [AM.5](#am-5).
 
-Carrier restrictions from [Part 6](#part 6) remain in force:
+Carrier restrictions from [Part 6](#part-6) remain in force:
 
   optional propagation is valid only in optional returning functions;
   using optional propagation to implicitly map into `throws` or `Result` contexts is ill formed in v1.
 
-### AM.6.6 `await` with optional chaining and optional send {#am 6 6}
+### AM.6.6 `await` with optional chaining and optional send {#am-6-6}
 
 For `await x?.p`:
 
@@ -298,26 +298,26 @@ For `await [receiver? sel:arg1 other:arg2]`:
 
 Applying `await` to a path proven non suspending is permitted and may be diagnosed as unnecessary in strict modes.
 
-### AM.6.7 Composed `await`/`try`/propagation ordering {#am 6 7}
+### AM.6.7 Composed `await`/`try`/propagation ordering {#am-6-7}
 
 For composed forms such as `return (try? await x?.f())?;` in an optional returning `async` function, implementations shall preserve the following abstract order:
 
 1. Evaluate `x` exactly once.
-2. Apply optional chaining/send short circuit rules ([AM.2.2](#am 2 2)):
+2. Apply optional chaining/send short circuit rules ([AM.2.2](#am-2-2)):
      if `x == nil`, yield `nil` for the chained/send expression, skip chained argument/member evaluation, and do not suspend on that path;
      if `x != nil`, evaluate the non `nil` path normally (including any potentially suspending operation).
 3. Apply `await` to the selected non `nil` path evaluation (if any), with possible suspension/resumption.
-4. Apply `try`/`try?`/`try!` semantics ([AM.6.4](#am 6 4)).
-5. Apply postfix propagation `?` to the resulting carrier value ([AM.6.5](#am 6 5)).
-6. If propagation early exits, run scope exit and ARC ordering per [AM.5](#am 5).
+4. Apply `try`/`try?`/`try!` semantics ([AM.6.4](#am-6-4)).
+5. Apply postfix propagation `?` to the resulting carrier value ([AM.6.5](#am-6-5)).
+6. If propagation early exits, run scope exit and ARC ordering per [AM.5](#am-5).
 
-Replacing `try?` with `try` preserves steps 1 3; if a throw occurs at step 4, propagation at step 5 is not reached and unwind follows [AM.5](#am 5).
+Replacing `try?` with `try` preserves steps 1 3; if a throw occurs at step 4, propagation at step 5 is not reached and unwind follows [AM.5](#am-5).
 
-## AM.7 Conformance test matrix (normative minimum) {#am 7}
+## AM.7 Conformance test matrix (normative minimum) {#am-7}
 
 A conforming implementation shall provide tests equivalent in coverage to the following matrix.
 
-### AM.7.1 Matrix {#am 7 1}
+### AM.7.1 Matrix {#am-7-1}
 
 | ID     | Combination under test                                                     | Required outcome                                                                                                                                                    |
 |        |                                                                            |                                                                                                                                                                     |
@@ -341,13 +341,13 @@ A conforming implementation shall provide tests equivalent in coverage to the fo
 | AM T18 | `defer` + `return (try await x?.f())?;` with `x == nil` path               | Nil short circuit occurs before suspension; no throw occurs on nil path; postfix propagation early exits `nil` and executes scope cleanups once.                    |
 | AM T19 | `defer` + `return (try? await [r? m:sideEffect()])?;` with `r == nil` path | `r` evaluated once; `sideEffect()` not evaluated; no send and no suspension on nil path; early exit still executes defer/cleanup in AM.5 order.                     |
 
-### AM.7.2 Static diagnostics required by matrix {#am 7 2}
+### AM.7.2 Static diagnostics required by matrix {#am-7-2}
 
 At minimum, matrix coverage shall include diagnostics for:
 
   potentially suspending operations used without `await`;
   invalid optional postfix propagation carrier context;
-  optional chaining/send restrictions from [Part 3](#part 3) (including scalar/struct restriction).
+  optional chaining/send restrictions from [Part 3](#part-3) (including scalar/struct restriction).
 ## M265 cross module optional and key path preservation
 
 Imported runtime surfaces now preserve the live optional/key path boundary
@@ -1268,3 +1268,4 @@ M275-E002 release-candidate execution matrix note:
 - the matrix sidecar stays bounded to milestone-closeout publication truth and
   remains pinned to the existing emitted report/publication/gate/validation
   sidecar family
+
