@@ -58,6 +58,10 @@ def main() -> int:
         return fail("showcase_root drifted")
     if payload.get("machine_output_root") != "tmp/artifacts/showcase":
         return fail("machine_output_root drifted")
+    if payload.get("machine_report_root") != "tmp/reports/showcase":
+        return fail("machine_report_root drifted")
+    if payload.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
+        return fail("package_stage_root drifted")
 
     entrypoints = payload.get("public_entrypoints")
     if entrypoints != {
@@ -65,8 +69,26 @@ def main() -> int:
         "compile_example": "compile:objc3c",
         "check_surface": "check:showcase:surface",
         "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain",
+        "execution_smoke": "test:objc3c:execution-smoke",
+        "execution_replay": "test:objc3c:execution-replay-proof",
     }:
         return fail("public_entrypoints drifted")
+
+    build_run_package_surface = payload.get("build_run_package_surface")
+    if build_run_package_surface != {
+        "emit_prefix": "module",
+        "workspace_layout": "checked-in showcase directories rooted at showcase/<example-id>",
+        "artifact_root": "tmp/artifacts/showcase",
+        "report_root": "tmp/reports/showcase",
+        "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+        "build_native_entrypoint": "build:objc3c-native",
+        "compile_entrypoint": "compile:objc3c",
+        "surface_check_entrypoint": "check:showcase:surface",
+        "package_entrypoint": "package:objc3c-native:runnable-toolchain",
+        "execution_smoke_entrypoint": "test:objc3c:execution-smoke",
+        "execution_replay_entrypoint": "test:objc3c:execution-replay-proof",
+    }:
+        return fail("build_run_package_surface drifted")
 
     examples = payload.get("examples")
     if not isinstance(examples, list) or len(examples) != 3:

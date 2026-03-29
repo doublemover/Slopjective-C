@@ -21,10 +21,14 @@ Shared live tooling:
 - `scripts/objc3c_public_workflow_runner.py`
 - `scripts/objc3c_native_compile.ps1`
 - `scripts/check_showcase_surface.py`
+- `scripts/check_objc3c_native_execution_smoke.ps1`
+- `scripts/check_objc3c_execution_replay_proof.ps1`
 
 Machine-owned outputs only:
 
 - `tmp/artifacts/showcase/`
+- `tmp/reports/showcase/`
+- `tmp/pkg/objc3c-native-runnable-toolchain/`
 - `tmp/reports/objc3c-public-workflow/`
 
 ## Portfolio Stories
@@ -47,6 +51,26 @@ Selection model:
   `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --example auroraBoard`
 - compile by story capability with
   `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --capability actors`
+
+## Build Run Package Surface
+
+The checked-in showcase contract is rooted at `showcase/portfolio.json`.
+
+Build and artifact entrypoints:
+
+- `npm run build:objc3c-native`
+- `npm run check:showcase:surface`
+- `npm run package:objc3c-native:runnable-toolchain`
+
+Runtime-backed shared commands used by the showcase surface:
+
+- `npm run test:objc3c:execution-smoke`
+- `npm run test:objc3c:execution-replay-proof`
+
+The live compile path emits object and manifest artifacts under
+`tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.
+Package staging stays under `tmp/pkg/objc3c-native-runnable-toolchain/`, and
+showcase report artifacts stay under `tmp/reports/showcase/`.
 
 ## Explicit Non-Goals
 
