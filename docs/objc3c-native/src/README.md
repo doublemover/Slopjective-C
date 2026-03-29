@@ -49,6 +49,26 @@ adding sidecar scaffolding:
 - public command surface generation:
   - `scripts/render_objc3c_public_command_surface.py`
 
+## Generated Doc And Machine-Appendix Surface
+
+These surfaces are generated and must stay tied to their canonical inputs:
+
+- human-facing generated implementation doc:
+  - output: `docs/objc3c-native.md`
+  - sources: `docs/objc3c-native/src/*.md`
+  - generator: `python scripts/build_objc3c_native_docs.py`
+- human-facing generated public site:
+  - output: `site/index.md`
+  - sources: `site/src/index.body.md`, `site/src/index.contract.json`
+  - generator: `python scripts/build_site_index.py`
+- machine-facing generated operator appendix:
+  - output: `docs/runbooks/objc3c_public_command_surface.md`
+  - sources: `package.json`, `scripts/objc3c_public_workflow_runner.py`
+  - generator: `python scripts/render_objc3c_public_command_surface.py`
+
+Generated proof and report outputs under `tmp/` are evidence, not canonical
+documentation sources.
+
 Explicit non-goals for this fragment tree:
 
 - historical roadmap narration,

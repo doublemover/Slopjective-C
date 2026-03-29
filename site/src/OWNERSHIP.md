@@ -29,3 +29,25 @@ This file defines source ownership for generated `site/index.md`.
 - Contract or policy changes in `site/src/*` require `compiler/docs` review.
 - Anchor or status-model changes in `site/src/index.body.md` require `compiler/docs` review.
 - PR description must include regeneration command and drift-check result.
+
+## Generated Surface Boundary
+
+Treat these as the live documentation-generation surfaces:
+
+- human-facing generated site:
+  - `site/src/index.body.md`
+  - `site/src/index.contract.json`
+  - `python scripts/build_site_index.py`
+  - `site/index.md`
+- human-facing generated native implementation doc:
+  - `docs/objc3c-native/src/*.md`
+  - `python scripts/build_objc3c_native_docs.py`
+  - `docs/objc3c-native.md`
+- machine-facing generated operator appendix:
+  - `package.json`
+  - `scripts/objc3c_public_workflow_runner.py`
+  - `python scripts/render_objc3c_public_command_surface.py`
+  - `docs/runbooks/objc3c_public_command_surface.md`
+
+`tmp/reports/` and `tmp/artifacts/` remain generated proof/evidence outputs, not
+canonical documentation sources.
