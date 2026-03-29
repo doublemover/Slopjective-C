@@ -45,6 +45,8 @@ PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_performance.py"
 COMPARATIVE_BASELINES_PY = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
 RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
 PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
+STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
+MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
@@ -189,6 +191,14 @@ def action_check_repo_superclean_surface(_: list[str]) -> int:
 
 def action_check_showcase_surface(rest: list[str]) -> int:
     return run([sys.executable, str(SHOWCASE_SURFACE_PY), *rest])
+
+
+def action_check_stdlib_surface(_: list[str]) -> int:
+    return run([sys.executable, str(STDLIB_SURFACE_PY)])
+
+
+def action_materialize_stdlib_workspace(rest: list[str]) -> int:
+    return run([sys.executable, str(MATERIALIZE_STDLIB_PY), *rest])
 
 
 def action_validate_showcase_runtime(rest: list[str]) -> int:
@@ -1221,6 +1231,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", ("check:docs:commands",), validation_tier="docs", guarantee_owner="operator-facing machine appendix stays in sync with the live workflow runner and package scripts"),
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
     "check-showcase-surface": ActionSpec("check-showcase-surface", "check the live showcase portfolio and compile its example sources through the public compiler path", "python:scripts/check_showcase_surface.py", ("check:showcase:surface",), validation_tier="repo", guarantee_owner="showcase examples stay compile-coupled, checked in, and tied to the public compiler path", pass_through_args=True),
+    "check-stdlib-surface": ActionSpec("check-stdlib-surface", "check the checked-in stdlib boundary contracts, canonical module inventory, and alias mapping", "python:scripts/check_stdlib_surface.py", ("check:stdlib:surface",), validation_tier="repo", guarantee_owner="stdlib roots, canonical module inventory, and package alias mapping stay checked in and coherent"),
     "validate-showcase-runtime": ActionSpec("validate-showcase-runtime", "compile, link, and run the checked-in showcase examples through the live runtime launch contract", "pwsh:scripts/check_showcase_runtime.ps1", (), validation_tier="repo", guarantee_owner="showcase examples stay runnable through the real runtime archive and launch-contract wiring", pass_through_args=True),
     "validate-showcase": ActionSpec("validate-showcase", "run the integrated showcase compile and runtime validation flow", "python:scripts/check_showcase_integration.py", ("test:showcase",), validation_tier="repo", guarantee_owner="showcase examples stay compiled, runnable, and wired into the normal repo validation path"),
     "validate-runnable-showcase": ActionSpec("validate-runnable-showcase", "run packaged showcase compile link and execution validation from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_showcase_end_to_end.py", ("test:showcase:e2e",), validation_tier="full", guarantee_owner="showcase examples stay publishable and runnable from the staged runnable toolchain bundle"),
@@ -1230,6 +1241,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
     "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets", pass_through_args=True),
+    "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", ("build:objc3c:stdlib",), validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root", pass_through_args=True),
     "inspect-capability-explorer": ActionSpec("inspect-capability-explorer", "probe LLVM and backend-routing capability state through the live capability explorer surface", "python:scripts/probe_objc3c_llvm_capabilities.py", ("inspect:objc3c:capabilities",), validation_tier="repo", guarantee_owner="capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts", pass_through_args=True),
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:playground",), validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
@@ -1296,6 +1308,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-public-command-surface": action_check_public_command_surface,
     "check-documentation-surface": action_check_documentation_surface,
     "check-showcase-surface": action_check_showcase_surface,
+    "check-stdlib-surface": action_check_stdlib_surface,
     "validate-showcase-runtime": action_validate_showcase_runtime,
     "validate-showcase": action_validate_showcase,
     "validate-runnable-showcase": action_validate_runnable_showcase,
@@ -1305,6 +1318,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-repo-superclean": action_validate_repo_superclean,
     "compile-objc3c": action_compile_objc3c,
     "materialize-playground-workspace": action_materialize_playground_workspace,
+    "materialize-stdlib-workspace": action_materialize_stdlib_workspace,
     "inspect-capability-explorer": action_inspect_capability_explorer,
     "inspect-playground-repro": action_inspect_playground_repro,
     "inspect-compile-observability": action_inspect_compile_observability,

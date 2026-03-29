@@ -46,7 +46,7 @@ def main() -> int:
     )
     expect(
         payload.get("checked_in_doc_sources")
-        == ["README.md", "CONTRIBUTING.md", "showcase", "site/src", "docs/objc3c-native/src", "docs/runbooks", "package.json"],
+        == ["README.md", "CONTRIBUTING.md", "showcase", "stdlib", "site/src", "docs/objc3c-native/src", "docs/runbooks", "package.json"],
         "checked_in_doc_sources drifted",
         errors,
     )
@@ -63,6 +63,7 @@ def main() -> int:
             "docs/runbooks/objc3c_developer_tooling.md",
             "docs/runbooks/objc3c_bonus_experiences.md",
             "docs/runbooks/objc3c_performance.md",
+            "docs/runbooks/objc3c_stdlib_foundation.md",
         ],
         "maintainer_runbooks drifted",
         errors,
@@ -84,6 +85,8 @@ def main() -> int:
             "check_site": "check:site",
             "build_native_docs": "build:docs:native",
             "build_public_command_surface": "build:docs:commands",
+            "build_stdlib": "build:objc3c:stdlib",
+            "check_stdlib_surface": "check:stdlib:surface",
             "test_fast": "test:fast",
             "test_ci": "test:ci",
             "test_docs": "test:docs",
@@ -227,6 +230,35 @@ def main() -> int:
             ],
         },
         "performance_benchmark_surface drifted",
+        errors,
+    )
+    expect(
+        payload.get("stdlib_foundation_surface")
+        == {
+            "workspace_contract": "stdlib/workspace.json",
+            "module_inventory": "stdlib/module_inventory.json",
+            "stability_policy": "stdlib/stability_policy.json",
+            "package_surface": "stdlib/package_surface.json",
+            "source_roots": [
+                "stdlib/README.md",
+                "stdlib/modules/objc3.core/module.objc3",
+                "stdlib/modules/objc3.errors/module.objc3",
+                "stdlib/modules/objc3.concurrency/module.objc3",
+                "stdlib/modules/objc3.keypath/module.objc3",
+                "stdlib/modules/objc3.system/module.objc3",
+            ],
+            "report_roots": [
+                "tmp/artifacts/stdlib",
+                "tmp/reports/stdlib",
+                "tmp/pkg/objc3c-native-runnable-toolchain",
+            ],
+            "public_actions": [
+                "check-stdlib-surface",
+                "materialize-stdlib-workspace",
+                "package-runnable-toolchain",
+            ],
+        },
+        "stdlib_foundation_surface drifted",
         errors,
     )
 

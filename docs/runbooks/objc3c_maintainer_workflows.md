@@ -86,6 +86,17 @@ Performance-benchmark entrypoint:
 - use that runbook before widening benchmark claims, baseline corpus inputs, or
   packaged validation flows
 
+Standard-library entrypoint:
+
+- `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
+  the checked-in stdlib root, canonical module inventory, alias mapping, and
+  machine-owned stdlib workspace materialization flow
+- stdlib work must stay on `stdlib/`, `tmp/artifacts/stdlib/`, and
+  `tmp/reports/stdlib/` instead of inventing a second library tree or sidecar
+  package layout
+- use the public runner actions for stdlib surface checking and workspace
+  materialization before widening package or integration flows
+
 ## Build
 
 ```powershell
@@ -127,5 +138,8 @@ npm run test:repo
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
+- stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
+- stdlib surface check: `npm run check:stdlib:surface`
+- stdlib workspace materialization: `npm run build:objc3c:stdlib`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.

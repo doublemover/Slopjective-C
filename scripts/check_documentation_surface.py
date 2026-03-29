@@ -20,6 +20,8 @@ MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workf
 DEVELOPER_TOOLING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_developer_tooling.md"
 BONUS_EXPERIENCES_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_bonus_experiences.md"
 PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_performance.md"
+STDLIB_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_foundation.md"
+STDLIB_README_PATH = ROOT / "stdlib" / "README.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
@@ -208,6 +210,30 @@ def main() -> int:
         "## Explicit Non-Goals",
     ):
         require_token(comparison_readme, token, path=COMPARISON_README_PATH, errors=errors)
+
+    stdlib_runbook = STDLIB_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Standard Library Foundation",
+        "## Working boundary",
+        "stdlib/",
+        "tmp/artifacts/stdlib/",
+        "tmp/reports/stdlib/",
+        "## Non-goals",
+        "## Expected end state",
+    ):
+        require_token(stdlib_runbook, token, path=STDLIB_RUNBOOK_PATH, errors=errors)
+
+    stdlib_readme = STDLIB_README_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Standard Library",
+        "## Boundary",
+        "stdlib/workspace.json",
+        "stdlib/module_inventory.json",
+        "stdlib/stability_policy.json",
+        "stdlib/package_surface.json",
+        "## Working model",
+    ):
+        require_token(stdlib_readme, token, path=STDLIB_README_PATH, errors=errors)
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (
