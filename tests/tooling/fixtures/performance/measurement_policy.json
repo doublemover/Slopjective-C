@@ -1,0 +1,41 @@
+{
+  "contract_id": "objc3c.performance.measurement.policy.v1",
+  "schema_version": 1,
+  "policy_kind": "fair-measurement-and-claimability",
+  "sample_policy": {
+    "warmup_runs": 1,
+    "measured_runs": 5,
+    "clock_source": "wall-clock-monotonic-per-step",
+    "capture_raw_samples": true
+  },
+  "comparison_policy": {
+    "same_machine_required": true,
+    "same_input_family_required": true,
+    "same_checked_in_source_required": true,
+    "capture_exact_commands": true,
+    "capture_tool_versions": true
+  },
+  "availability_policy": {
+    "missing_toolchain_result": "availability-limited",
+    "missing_runtime_support_result": "availability-limited",
+    "omission_without_report_entry": false
+  },
+  "claimability_policy": {
+    "allowed_claim_classes": [
+      "local-measurement",
+      "toolchain-comparison",
+      "availability-limited",
+      "non-portable"
+    ],
+    "disallowed_claim_classes": [
+      "cross-machine-universal",
+      "screenshot-derived",
+      "hand-normalized-without-raw-samples"
+    ]
+  },
+  "exact_live_paths_for_downstream_work": [
+    "docs/runbooks/objc3c_performance.md",
+    "tests/tooling/fixtures/performance/measurement_policy.json",
+    "tests/tooling/fixtures/performance/benchmark_portfolio.json"
+  ]
+}
