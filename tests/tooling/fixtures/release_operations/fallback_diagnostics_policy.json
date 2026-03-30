@@ -1,0 +1,39 @@
+{
+  "contract_id": "objc3c.release.operations.fallback.diagnostics.policy.v1",
+  "schema_version": 1,
+  "diagnostic_classes": [
+    {
+      "diagnostic_id": "abi-major-mismatch",
+      "severity": "error",
+      "trigger": "requested update crosses major ABI line",
+      "required_action": "block upgrade and require same-major rollback channel"
+    },
+    {
+      "diagnostic_id": "runtime-metadata-fallback",
+      "severity": "warn",
+      "trigger": "candidate or preview channel requires runtime compatibility shim behavior",
+      "required_action": "publish runtime-fallback-required warning and rollback guidance"
+    },
+    {
+      "diagnostic_id": "data-format-migration-required",
+      "severity": "warn",
+      "trigger": "offline bundle or installer receipt format changes across minor lines",
+      "required_action": "publish data-format-fallback-required warning and explicit install-root backup guidance"
+    },
+    {
+      "diagnostic_id": "deprecated-channel-selected",
+      "severity": "warn",
+      "trigger": "requested channel is outside its support window",
+      "required_action": "publish deprecated-channel warning and recommend stable rollback"
+    }
+  ],
+  "rollback_primitives": [
+    "local-installer",
+    "offline-bundle"
+  ],
+  "forbidden_behaviors": [
+    "silent cross-major upgrade",
+    "warning-free preview promotion",
+    "rollback path omission"
+  ]
+}

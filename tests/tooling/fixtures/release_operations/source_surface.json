@@ -18,7 +18,8 @@
     "scripts/build_objc3c_package_channels.py",
     "docs/runbooks/objc3c_maintainer_workflows.md",
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
-    "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/release-operations",
@@ -30,5 +31,6 @@
     "no second payload lineage"
   ],
   "compatibility_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
-  "update_channel_policy": "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+  "update_channel_policy": "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+  "fallback_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json"
 }
