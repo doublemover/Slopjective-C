@@ -61,6 +61,7 @@
     "inspect:objc3c:benchmark": "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector",
     "inspect:objc3c:performance": "python scripts/objc3c_public_workflow_runner.py benchmark-performance",
     "inspect:objc3c:runtime-performance": "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance",
+    "inspect:objc3c:compiler-throughput": "python scripts/objc3c_public_workflow_runner.py benchmark-compiler-throughput",
     "inspect:objc3c:comparative-baselines": "python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines",
     "inspect:objc3c:public-conformance:scorecard": "python scripts/objc3c_public_workflow_runner.py build-public-conformance-scorecard",
     "inspect:objc3c:capabilities": "python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer",

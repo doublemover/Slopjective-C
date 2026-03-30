@@ -197,6 +197,7 @@ Disallowed optimization moves:
 
 - benchmark the live direct-compile throughput and wrapper cache surface:
   - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_perf_budget.ps1`
+  - `python scripts/objc3c_public_workflow_runner.py benchmark-compiler-throughput`
 - build the compile-coupled docs generators used by this milestone:
   - `python scripts/build_objc3c_native_docs.py`
   - `python scripts/render_objc3c_public_command_surface.py`

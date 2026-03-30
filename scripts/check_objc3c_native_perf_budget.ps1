@@ -24,6 +24,8 @@ $runId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
 $perfRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/perf-budget"
 $runDir = Join-Path $perfRoot $runId
 $summaryPath = Join-Path $runDir "summary.json"
+$reportRoot = Join-Path $repoRoot "tmp/reports/compiler-throughput"
+$reportPath = Join-Path $reportRoot "benchmark-summary.json"
 $defaultMaxElapsedMs = 4000
 $defaultPerFixtureBudgetMs = 150
 $defaultWindowsLaunchOverheadPerFixtureMs = 450
@@ -880,6 +882,8 @@ $summary = [ordered]@{
   results = $results
 }
 $summary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $summaryPath -Encoding utf8
+New-Item -ItemType Directory -Force -Path $reportRoot | Out-Null
+$summary | ConvertTo-Json -Depth 10 | Set-Content -LiteralPath $reportPath -Encoding utf8
 
 $run1HitValue = if ($null -ne $cacheProof.run1) { [bool]$cacheProof.run1.cache_hit } else { $false }
 $run2HitValue = if ($null -ne $cacheProof.run2) { [bool]$cacheProof.run2.cache_hit } else { $false }
@@ -889,6 +893,7 @@ Write-Output ("timing_gate: enforced={0} violated={1}" -f $timingGateEnforced, $
 Write-Output ("cache_proof: status={0} run1_hit={1} run2_hit={2}" -f $cacheProof.status, $run1HitValue, $run2HitValue)
 Write-Output ("summary: total={0} passed={1} failed={2}" -f $total, $passedCount, $failedCount)
 Write-Output ("summary_path: {0}" -f (Get-RepoRelativePath -Path $summaryPath -Root $repoRoot))
+Write-Output ("report_path: {0}" -f (Get-RepoRelativePath -Path $reportPath -Root $repoRoot))
 if ($budgetBreached -and -not $timingGateEnforced) {
   Write-Output ("warning: timing budget breached but enforcement disabled (set OBJC3C_NATIVE_PERF_ENFORCE_TIMING_GATE=1 to fail-closed)")
 }
