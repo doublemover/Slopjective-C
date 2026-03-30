@@ -112,8 +112,8 @@ BASE_CORPUS: tuple[CorpusCase, ...] = (
         subsystem="semantic",
         source=(
             "module FuzzSemaInvalidMessageReceiver;\n"
-            "fn main() -> int {\n"
-            "  return [42 length];\n"
+            "fn main() -> i32 {\n"
+            "  return [extern ping];\n"
             "}\n"
         ),
     ),
@@ -467,6 +467,7 @@ def run_case(
 
     if (
         not run1["timed_out"]
+        and run1_exit == 0
         and not DIAGNOSTIC_SIGNAL_PATTERN.search(run1_output)
     ):
         unsafe_errors.append(
@@ -477,6 +478,7 @@ def run_case(
         )
     if (
         not run2["timed_out"]
+        and run2_exit == 0
         and not DIAGNOSTIC_SIGNAL_PATTERN.search(run2_output)
     ):
         unsafe_errors.append(

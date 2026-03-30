@@ -33,9 +33,9 @@
       "source_path": "tests/tooling/fixtures/native/guard_binding_missing_exit_negative.objc3"
     },
     {
-      "case_id": "sema_do_catch_fail_closed",
-      "subsystem": "semantic",
-      "source_path": "tests/tooling/fixtures/native/do_catch_fail_closed_negative.objc3"
+      "case_id": "parser_message_receiver_qualifier_extern",
+      "subsystem": "parser",
+      "source_path": "tests/tooling/fixtures/native/recovery/negative/negative_misplaced_qualifier_message_receiver_extern.objc3"
     }
   ]
 }

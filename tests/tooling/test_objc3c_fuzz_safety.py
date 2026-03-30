@@ -87,7 +87,7 @@ def test_manifest_cases_are_loaded_from_checked_in_sources() -> None:
         "sema_break_outside_control_flow",
         "sema_continue_outside_loop",
         "sema_guard_binding_missing_exit",
-        "sema_do_catch_fail_closed",
+        "parser_message_receiver_qualifier_extern",
     ]
     assert all(case.source.strip() for case in manifest_cases)
 
