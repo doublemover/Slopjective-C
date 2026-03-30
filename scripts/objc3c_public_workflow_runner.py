@@ -42,6 +42,7 @@ DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_to
 BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
 PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_performance.py"
+RUNTIME_PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_performance.py"
 COMPARATIVE_BASELINES_PY = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
 RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
 PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
@@ -572,6 +573,10 @@ def action_benchmark_runtime_inspector(rest: list[str]) -> int:
 
 def action_benchmark_performance(rest: list[str]) -> int:
     return run([sys.executable, str(PERFORMANCE_BENCHMARK_PY), *rest])
+
+
+def action_benchmark_runtime_performance(rest: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_PERFORMANCE_BENCHMARK_PY), *rest])
 
 
 def action_benchmark_comparative_baselines(rest: list[str]) -> int:
@@ -1428,6 +1433,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
     "benchmark-runtime-inspector": ActionSpec("benchmark-runtime-inspector", "measure the live runtime-inspector and capability-explorer workflow and write a reproducible benchmark report", "python:scripts/benchmark_objc3c_runtime_inspector.py", ("inspect:objc3c:benchmark",), validation_tier="repo", guarantee_owner="runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts", pass_through_args=True),
     "benchmark-performance": ActionSpec("benchmark-performance", "measure the checked-in objc3 showcase workloads and write reproducible compile/runtime telemetry packets", "python:scripts/benchmark_objc3c_performance.py", ("inspect:objc3c:performance",), validation_tier="repo", guarantee_owner="objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets", pass_through_args=True),
+    "benchmark-runtime-performance": ActionSpec("benchmark-runtime-performance", "measure the live runtime startup dispatch reflection and ownership hot paths and write reproducible telemetry packets", "python:scripts/benchmark_objc3c_runtime_performance.py", ("inspect:objc3c:runtime-performance",), validation_tier="repo", guarantee_owner="runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots", pass_through_args=True),
     "benchmark-comparative-baselines": ActionSpec("benchmark-comparative-baselines", "measure the checked-in ObjC2 Swift and C++ baseline workloads and write reproducible comparison telemetry packets", "python:scripts/run_objc3c_comparative_baselines.py", ("inspect:objc3c:comparative-baselines",), validation_tier="repo", guarantee_owner="comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states", pass_through_args=True),
     "validate-runnable-performance": ActionSpec("validate-runnable-performance", "validate the staged runnable toolchain performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_performance_end_to_end.py", ("test:objc3c:runnable-performance",), validation_tier="full", guarantee_owner="packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "validate-performance-foundation": ActionSpec("validate-performance-foundation", "run the integrated benchmark and comparative baseline validation flow", "python:scripts/check_objc3c_performance_integration.py", ("test:objc3c:performance",), validation_tier="repo", guarantee_owner="benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle"),
@@ -1534,6 +1540,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-runtime-inspector": action_inspect_runtime_inspector,
     "benchmark-runtime-inspector": action_benchmark_runtime_inspector,
     "benchmark-performance": action_benchmark_performance,
+    "benchmark-runtime-performance": action_benchmark_runtime_performance,
     "benchmark-comparative-baselines": action_benchmark_comparative_baselines,
     "validate-runnable-performance": action_validate_runnable_performance,
     "validate-performance-foundation": action_validate_performance_foundation,

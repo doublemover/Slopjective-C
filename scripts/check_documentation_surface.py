@@ -20,6 +20,7 @@ MAINTAINER_WORKFLOW_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workf
 DEVELOPER_TOOLING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_developer_tooling.md"
 BONUS_EXPERIENCES_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_bonus_experiences.md"
 PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_performance.md"
+RUNTIME_PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_runtime_performance.md"
 STDLIB_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_foundation.md"
 STDLIB_README_PATH = ROOT / "stdlib" / "README.md"
 STDLIB_PROGRAM_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_program.md"
@@ -506,6 +507,7 @@ def main() -> int:
         "docs/runbooks/objc3c_developer_tooling.md",
         "docs/runbooks/objc3c_bonus_experiences.md",
         "docs/runbooks/objc3c_performance.md",
+        "docs/runbooks/objc3c_runtime_performance.md",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(
@@ -657,6 +659,45 @@ def main() -> int:
             performance_runbook,
             token,
             path=PERFORMANCE_RUNBOOK_PATH,
+            errors=errors,
+        )
+
+    runtime_performance_runbook = RUNTIME_PERFORMANCE_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Runtime Performance Boundary",
+        "## Working Boundary",
+        "startup registration and replay costs",
+        "selector lookup and dispatch cache behavior",
+        "property/reflection query hot paths",
+        "runtime performance summaries, regression artifacts, and packaged validation",
+        "## Runtime Hot-Path Taxonomy",
+        "startup-installation",
+        "dispatch-cache",
+        "reflection-query",
+        "ownership-helpers",
+        "runtime-counter-snapshot",
+        "## Exact Live Implementation Paths",
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+        "scripts/check_objc3c_runtime_acceptance.py",
+        "scripts/benchmark_objc3c_runtime_performance.py",
+        "tests/tooling/fixtures/runtime_performance/source_surface.json",
+        "## Exact Live Artifact And Output Paths",
+        "tmp/artifacts/runtime-performance/",
+        "tmp/reports/runtime-performance/",
+        "## Exact Live Commands",
+        "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance",
+        "npm run inspect:objc3c:runtime-performance",
+        "python scripts/objc3c_public_workflow_runner.py validate-runtime-performance",
+        "npm run test:objc3c:runtime-performance",
+        "python scripts/objc3c_public_workflow_runner.py validate-runnable-runtime-performance",
+        "npm run test:objc3c:runnable-runtime-performance",
+        "## Explicit Non-Goals",
+    ):
+        require_token(
+            runtime_performance_runbook,
+            token,
+            path=RUNTIME_PERFORMANCE_RUNBOOK_PATH,
             errors=errors,
         )
 

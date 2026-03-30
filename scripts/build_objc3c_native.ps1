@@ -730,6 +730,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_developer_tooling.md",
       "docs/runbooks/objc3c_bonus_experiences.md",
       "docs/runbooks/objc3c_performance.md",
+      "docs/runbooks/objc3c_runtime_performance.md",
       "docs/runbooks/objc3c_stress_validation.md",
       "docs/runbooks/objc3c_stdlib_foundation.md",
       "docs/runbooks/objc3c_stdlib_core.md",
@@ -750,6 +751,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       build_public_command_surface = "build:docs:commands"
       build_stdlib = "build:objc3c:stdlib"
       check_stdlib_surface = "check:stdlib:surface"
+      inspect_runtime_performance = "inspect:objc3c:runtime-performance"
       test_stdlib = "test:stdlib"
       test_stdlib_e2e = "test:stdlib:e2e"
       test_fast = "test:fast"
@@ -868,6 +870,36 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "benchmark-performance",
         "benchmark-comparative-baselines",
         "validate-runnable-performance",
+        "package-runnable-toolchain"
+      )
+    }
+    runtime_performance_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_runtime_performance.md"
+      source_surface_contract = "tests/tooling/fixtures/runtime_performance/source_surface.json"
+      workload_manifest = "tests/tooling/fixtures/runtime_performance/workload_manifest.json"
+      artifact_surface_contract = "tests/tooling/fixtures/runtime_performance/artifact_surface.json"
+      optimization_policy = "tests/tooling/fixtures/runtime_performance/optimization_policy.json"
+      telemetry_schema = "schemas/objc3c-runtime-performance-telemetry-v1.schema.json"
+      source_readme = "tests/tooling/fixtures/runtime_performance/README.md"
+      source_roots = @(
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+        "scripts/benchmark_objc3c_runtime_performance.py",
+        "scripts/check_objc3c_runtime_acceptance.py",
+        "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+        "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+      )
+      report_roots = @(
+        "tmp/artifacts/runtime-performance",
+        "tmp/reports/runtime-performance",
+        "tmp/pkg/objc3c-native-runnable-toolchain"
+      )
+      public_actions = @(
+        "inspect-runtime-inspector",
+        "benchmark-runtime-performance",
         "package-runnable-toolchain"
       )
     }

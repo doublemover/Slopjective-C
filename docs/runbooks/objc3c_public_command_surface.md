@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `109`
+- Current public script count: `110`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -47,6 +47,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:runtime` | `inspect-runtime-inspector` | `repo` | `developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:benchmark` | `benchmark-runtime-inspector` | `repo` | `runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_inspector.py` |
 | `inspect:objc3c:performance` | `benchmark-performance` | `repo` | `objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets` | `pass-through` | `python:scripts/benchmark_objc3c_performance.py` |
+| `inspect:objc3c:runtime-performance` | `benchmark-runtime-performance` | `repo` | `runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_performance.py` |
 | `inspect:objc3c:comparative-baselines` | `benchmark-comparative-baselines` | `repo` | `comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states` | `pass-through` | `python:scripts/run_objc3c_comparative_baselines.py` |
 | `test:objc3c:runnable-performance` | `validate-runnable-performance` | `full` | `packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_performance_end_to_end.py` |
 | `test:objc3c:performance` | `validate-performance-foundation` | `repo` | `benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_performance_integration.py` |

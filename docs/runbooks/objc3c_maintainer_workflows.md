@@ -86,6 +86,17 @@ Performance-benchmark entrypoint:
 - use that runbook before widening benchmark claims, baseline corpus inputs, or
   packaged validation flows
 
+Runtime-performance entrypoint:
+
+- `docs/runbooks/objc3c_runtime_performance.md` is the maintainer boundary for
+  startup/dispatch/reflection/ownership hot-path measurement, runtime counter
+  snapshots, and runnable runtime-performance validation
+- runtime-performance work must stay on the existing runtime library, runtime
+  acceptance probes, public workflow runner, and runnable package surfaces
+  instead of inventing a benchmark-only runtime shim or sidecar report flow
+- use that runbook before widening runtime hot-path claims, counter fields, or
+  packaged runtime-performance validation
+
 Stress-validation entrypoint:
 
 - `docs/runbooks/objc3c_stress_validation.md` is the maintainer boundary for
@@ -175,6 +186,7 @@ npm run test:repo
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
+- runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
 - external validation source-surface check: `python scripts/check_external_validation_source_surface.py`
