@@ -52,6 +52,7 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def main() -> int:
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     materialize_result = run_capture([sys.executable, str(MATERIALIZER)])
     if materialize_result.returncode != 0:
         raise RuntimeError("stdlib workspace materialization failed")
@@ -66,6 +67,7 @@ def main() -> int:
     lowering_import_surface_path = ROOT / str(workspace_contract["lowering_import_surface"])
     lowering_import_surface = load_json(lowering_import_surface_path)
     artifact_root = ROOT / str(lowering_import_surface["smoke_artifact_root"])
+    artifact_run_root = artifact_root / run_id
     artifact_filenames = lowering_import_surface["artifact_filenames"]
     modules = workspace_summary.get("modules")
     if not isinstance(modules, list) or not modules:
@@ -77,7 +79,7 @@ def main() -> int:
             raise RuntimeError("stdlib materializer summary published a malformed module entry")
         canonical_module = str(module["canonical_module"])
         smoke_source = workspace_root / str(module["smoke_source"])
-        compile_root = artifact_root / canonical_module.replace(".", "_")
+        compile_root = artifact_run_root / canonical_module.replace(".", "_")
         compile_root.mkdir(parents=True, exist_ok=True)
         compile_result = run_capture(
             [
@@ -128,6 +130,7 @@ def main() -> int:
                 "workspace_root": repo_rel(workspace_root),
                 "materialized_workspace_summary": summary_path_text,
                 "lowering_import_surface": repo_rel(lowering_import_surface_path),
+                "smoke_artifact_root": repo_rel(artifact_run_root),
                 "compile_results": compile_results,
             },
             indent=2,

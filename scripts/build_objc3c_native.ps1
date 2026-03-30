@@ -151,7 +151,26 @@ function Write-JsonArtifactFile {
   $tempPath = Join-Path $parent ('.' + $leaf + '.' + [Guid]::NewGuid().ToString('N') + '.tmp')
   $json = $Payload | ConvertTo-Json -Depth $Depth
   Set-Content -LiteralPath $tempPath -Value $json -Encoding utf8
-  Move-Item -LiteralPath $tempPath -Destination $OutputPath -Force
+  $overwriteMoveMethod = [System.IO.File].GetMethod("Move", [Type[]]@([string], [string], [bool]))
+  $maxAttempts = 12
+  for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+    try {
+      if ($null -ne $overwriteMoveMethod) {
+        [System.IO.File]::Move($tempPath, $OutputPath, $true)
+      }
+      else {
+        [System.IO.File]::Copy($tempPath, $OutputPath, $true)
+        Remove-Item -LiteralPath $tempPath -Force
+      }
+      return
+    }
+    catch {
+      if ($attempt -eq $maxAttempts) {
+        throw
+      }
+      Start-Sleep -Milliseconds 100
+    }
+  }
 }
 
 function Test-ExecutionModeRunsNativeBuild {
