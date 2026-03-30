@@ -147,6 +147,10 @@ Current checked-in source-surface check:
 - `python scripts/check_external_validation_source_surface.py`
 - `tests/tooling/fixtures/external_validation/source_surface.json`
 
+Current intake and replay tooling:
+
+- `python scripts/run_objc3c_external_validation_replay.py`
+
 ## Claim Boundary
 
 External credibility claims are only valid when they resolve back to:

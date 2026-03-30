@@ -119,7 +119,7 @@ def main() -> int:
         return fail("intake manifest entries drifted")
     allowed_trust_states = set(trust_policy["allowed_trust_states"])
     allowed_surfaces = {"conformance-case", "replay-contract"}
-    allowed_families = {"parser", "diagnostics", "module-roundtrip"}
+    allowed_families = {"parser", "module-roundtrip"}
     intake_entry_summaries: list[dict[str, Any]] = []
     for entry in entries:
         if not isinstance(entry, dict):

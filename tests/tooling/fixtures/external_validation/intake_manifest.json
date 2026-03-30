@@ -18,19 +18,20 @@
       "replay_script": "scripts/check_objc3c_parser_replay_proof.ps1"
     },
     {
-      "fixture_id": "ecosystem_aggregate_resource_field_rejection",
+      "fixture_id": "ecosystem_module_import_graph_replay",
       "trust_state": "accepted",
-      "normalized_surface": "conformance-case",
-      "family": "diagnostics",
+      "normalized_surface": "replay-contract",
+      "family": "module-roundtrip",
       "provenance": {
         "origin": "ecosystem-report",
         "captured_at_utc": "2026-03-29T00:00:00Z",
         "captured_by": "maintainer-normalization-pass",
         "license": "reviewed excerpt",
-        "normalized_from": "external aggregate-resource field example normalized onto the checked-in diagnostics rejection case"
+        "normalized_from": "external module import graph reproduction normalized onto the checked-in replay contract"
       },
-      "normalized_case_path": "tests/conformance/diagnostics/AGR-NEG-01.json",
-      "replay_script": "scripts/check_objc3c_diagnostics_replay_proof.ps1"
+      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_module_import_graph_contract/replay_run_1/module.manifest.json",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1",
+      "coverage_anchor": "tests/conformance/module_roundtrip/manifest.json"
     },
     {
       "fixture_id": "ecosystem_cross_module_conformance_replay",
