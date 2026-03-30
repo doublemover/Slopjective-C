@@ -83,6 +83,47 @@ It currently divides the live surface into:
 - `command-surface-generation`
 - `tier-overlap-audit`
 
+## Validation Tier Map
+
+The authoritative tier map is checked in at
+`tests/tooling/fixtures/compiler_throughput/validation_tier_map.json`.
+
+The live ownership split is:
+
+- `test-fast`
+  - bounded smoke slice
+  - runtime acceptance and ABI/accessor proof
+  - canonical replay/native-truth proof
+- `test-smoke`
+  - compile, link, and run execution behavior over the full runnable smoke
+    corpus
+- `test-recovery`
+  - positive recovery compile success
+  - negative recovery compile failure and deterministic diagnostics replay
+- `test-full`
+  - developer-facing default composite without the recovery fan-out
+- `test-nightly`
+  - non-default heavyweight coverage:
+    - recovery
+    - broad positive fixture matrix
+    - static negative expectation header/token enforcement
+    - conformance/stress/external/public/runtime-performance integrations
+
+One authoritative owner per guarantee:
+
+- compile/link/run execution behavior:
+  - `test-execution-smoke`
+- recovery compile success and deterministic diagnostics behavior:
+  - `test-recovery`
+- replay/native-truth proof:
+  - `test-execution-replay`
+- runtime acceptance and ABI/accessor proof:
+  - `test-runtime-acceptance`
+- negative expectation header enforcement:
+  - `test-negative-expectations`
+- broad positive recovery artifact sanity:
+  - `test-fixture-matrix`
+
 ## Exact Live Implementation Paths
 
 - compile/build wrappers:
@@ -104,6 +145,7 @@ It currently divides the live surface into:
 - checked-in throughput metadata:
   - `tests/tooling/fixtures/compiler_throughput/source_surface.json`
   - `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
+  - `tests/tooling/fixtures/compiler_throughput/validation_tier_map.json`
 
 ## Explicit Non-Goals
 

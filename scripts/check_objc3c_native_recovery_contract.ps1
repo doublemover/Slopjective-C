@@ -16,6 +16,11 @@ $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $compileWrapperScript = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
 $pwsh = if (Get-Command pwsh -ErrorAction SilentlyContinue) { "pwsh" } elseif (Get-Command powershell -ErrorAction SilentlyContinue) { "powershell" } else { "pwsh" }
 
+# Suite ownership: this script is the authoritative owner for positive recovery
+# compile success and negative recovery deterministic diagnostics replay. Other
+# suites may consume its summary, but they must not recompile the same recovery
+# negative corpus just to restate pass/fail.
+
 & $buildScript -ExecutionMode binaries-only
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 

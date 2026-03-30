@@ -18,6 +18,9 @@ $proofDir = Join-Path $proofRoot $proofRunId
 $summaryPath = Join-Path $proofDir "summary.json"
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $compileScript = Join-Path $repoRoot "scripts/objc3c_native_compile.ps1"
+# Suite ownership: this script is the authoritative owner for replay and
+# native-output truth. It must stay on the canonical proof corpus instead of
+# re-running the full smoke corpus.
 $defaultNativeExe = Join-Path $repoRoot "artifacts/bin/objc3c-native.exe"
 $configuredNativeExe = $env:OBJC3C_NATIVE_EXECUTABLE
 $nativeExe = if ([string]::IsNullOrWhiteSpace($configuredNativeExe)) { $defaultNativeExe } else { $configuredNativeExe }

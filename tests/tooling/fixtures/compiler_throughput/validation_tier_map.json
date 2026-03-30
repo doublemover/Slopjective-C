@@ -1,0 +1,55 @@
+{
+  "contract_id": "objc3c.compiler.throughput.validation.tier.map.v1",
+  "schema_version": 1,
+  "tiers": [
+    {
+      "tier": "fast",
+      "public_action": "test-fast",
+      "guarantees": [
+        "bounded smoke slice",
+        "runtime acceptance and ABI/accessor proof",
+        "canonical replay/native-truth proof"
+      ]
+    },
+    {
+      "tier": "smoke",
+      "public_action": "test-smoke",
+      "guarantees": [
+        "compile/link/run execution behavior over the full runnable smoke corpus"
+      ]
+    },
+    {
+      "tier": "recovery",
+      "public_action": "test-recovery",
+      "guarantees": [
+        "positive recovery compile success",
+        "negative recovery compile failure and deterministic diagnostics replay"
+      ]
+    },
+    {
+      "tier": "full",
+      "public_action": "test-full",
+      "guarantees": [
+        "developer-facing default composite without recovery fan-out"
+      ]
+    },
+    {
+      "tier": "nightly",
+      "public_action": "test-nightly",
+      "guarantees": [
+        "recovery",
+        "broad positive fixture matrix",
+        "static negative expectation header/token enforcement",
+        "cross-cutting integration validations"
+      ]
+    }
+  ],
+  "guarantee_owners": {
+    "compile_link_run_execution_behavior": "test-execution-smoke",
+    "recovery_compile_success_and_deterministic_diagnostics": "test-recovery",
+    "replay_and_native_output_truth": "test-execution-replay",
+    "runtime_acceptance_and_abi_accessor_proof": "test-runtime-acceptance",
+    "negative_expectation_header_enforcement": "test-negative-expectations",
+    "broad_positive_recovery_artifact_sanity": "test-fixture-matrix"
+  }
+}

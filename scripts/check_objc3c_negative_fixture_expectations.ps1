@@ -14,6 +14,11 @@ $fixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery/negati
 $diagnosticHeaderPattern = '(?mi)^\s*//\s*Expected diagnostic code\(s\):\s*(.+?)\s*$'
 $diagnosticCodePattern = 'O3[A-Z]\d{3}'
 
+# Suite ownership: this script owns static negative-fixture expectation
+# metadata/header enforcement only. It intentionally does not recompile the
+# negative recovery corpus because deterministic compile diagnostics belong to
+# the recovery contract suite.
+
 function Get-ExpectedDiagnosticCodes {
   param(
     [string]$FixturePath

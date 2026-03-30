@@ -38,6 +38,13 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 - `test-recovery`: recovery compile success and deterministic diagnostics replay as a non-default heavy path
 - `test-full`: smoke, runtime acceptance, and replay/native-truth proof without the recovery fan-out
 - `test-nightly`: full validation plus recovery, positive fixture-matrix, and static negative-expectation sweeps
+- authoritative guarantee owners:
+  - `test-execution-smoke`: compile/link/run execution behavior
+  - `test-recovery`: recovery compile success and deterministic diagnostics replay
+  - `test-execution-replay`: replay and native-output truth
+  - `test-runtime-acceptance`: runtime acceptance and ABI/accessor proof
+  - `test-negative-expectations`: negative expectation header and token enforcement
+  - `test-fixture-matrix`: broad positive recovery artifact sanity
 - `test:objc3c:runtime-architecture`: full public workflow plus runtime architecture proof-packet alignment
 - dependency-boundary enforcement
 - compact task-hygiene enforcement

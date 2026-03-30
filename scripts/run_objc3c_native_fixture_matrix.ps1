@@ -23,6 +23,10 @@ $hadFatalError = $false
 $fatalErrorMessage = ""
 $selectedPositiveCount = 0
 
+# Suite ownership: this script owns the broad positive recovery artifact-sanity
+# sweep only. Recovery pass/fail and negative diagnostics ownership stays on the
+# dedicated recovery contract suite.
+
 function Get-RepoRelativePath {
   param(
     [string]$Path,

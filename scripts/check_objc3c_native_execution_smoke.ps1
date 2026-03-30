@@ -18,6 +18,10 @@ $negativeFixtureDir = Join-Path $repoRoot "tests/tooling/fixtures/native/executi
 $defaultRuntimeLibrary = Join-Path $repoRoot "artifacts/lib/objc3_runtime.lib"
 $buildScript = Join-Path $repoRoot "scripts/build_objc3c_native.ps1"
 $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
+# Suite ownership: this script is the authoritative owner for compile/link/run
+# execution behavior. Recovery, replay/native-truth, runtime acceptance, and
+# negative-fixture header enforcement must stay on their dedicated suites so the
+# public runner can remove duplicate heavy recompilation.
 # M259-A001 runnable-sample-surface anchor: execution smoke remains the
 # scalar/core corpus boundary rooted at tests/tooling/fixtures/native/execution.
 # Broader object/property/import-module samples stay frozen as separate proof
