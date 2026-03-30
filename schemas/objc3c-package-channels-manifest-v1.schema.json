@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-package-channels-manifest-v1.schema.json",
+  "title": "objc3c Package Channels Manifest",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "platform_id",
+    "package_root",
+    "implemented_channels",
+    "portable_archive",
+    "installer_archive",
+    "offline_archive"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.packaging.channels.summary.v1" },
+    "generated_at_utc": { "type": "string" },
+    "status": { "const": "PASS" },
+    "platform_id": { "type": "string" },
+    "package_root": { "type": "string" },
+    "implemented_channels": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 3
+    },
+    "portable_archive": { "type": "string" },
+    "installer_archive": { "type": "string" },
+    "offline_archive": { "type": "string" }
+  }
+}

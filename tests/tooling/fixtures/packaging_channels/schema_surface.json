@@ -1,0 +1,7 @@
+{
+  "contract_id": "objc3c.packaging.channels.schema.surface.v1",
+  "schemas": [
+    "schemas/objc3c-package-channels-manifest-v1.schema.json",
+    "schemas/objc3c-package-install-receipt-v1.schema.json"
+  ]
+}

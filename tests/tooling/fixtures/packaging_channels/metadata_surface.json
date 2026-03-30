@@ -1,0 +1,22 @@
+{
+  "contract_id": "objc3c.packaging.channels.metadata.surface.v1",
+  "package_channels_manifest": "schemas/objc3c-package-channels-manifest-v1.schema.json",
+  "install_receipt": "schemas/objc3c-package-install-receipt-v1.schema.json",
+  "required_manifest_fields": [
+    "contract_id",
+    "generated_at_utc",
+    "platform_id",
+    "package_root",
+    "implemented_channels",
+    "portable_archive",
+    "installer_archive",
+    "offline_archive"
+  ],
+  "required_receipt_fields": [
+    "contract_id",
+    "install_root",
+    "install_home",
+    "bootstrap_script",
+    "installed_at_utc"
+  ]
+}
