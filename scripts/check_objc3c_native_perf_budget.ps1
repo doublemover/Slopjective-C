@@ -411,6 +411,14 @@ $cacheProof = [ordered]@{
   run2 = $null
   artifacts = [ordered]@{}
 }
+$cacheInvalidationProof = [ordered]@{
+  executed = $false
+  status = "FAIL"
+  detail = "not_executed"
+  fixture = ""
+  run1 = $null
+  run2 = $null
+}
 
 Push-Location $repoRoot
 try {
@@ -628,6 +636,67 @@ try {
     hit_sha256 = $hitHashes
   }
   Write-Output ("cache-proof PASS fixture={0} fixture_kind={1} run1_hit={2} run2_hit={3}" -f $cacheFixtureRel, $cacheFixtureKind, $run1Hit, $run2Hit)
+
+  $invalidationDir = Join-Path $runDir "cache-invalidation"
+  $invalidationSource = Join-Path $invalidationDir $cacheFixture.Name
+  New-Item -ItemType Directory -Force -Path $invalidationDir | Out-Null
+  Copy-Item -LiteralPath $cacheFixture.FullName -Destination $invalidationSource -Force
+
+  $invalidationRun1Dir = Join-Path $invalidationDir "run1"
+  $invalidationRun2Dir = Join-Path $invalidationDir "run2"
+  $invalidationRun1Log = Join-Path $invalidationDir "run1.log"
+  $invalidationRun2Log = Join-Path $invalidationDir "run2.log"
+
+  $invalidationArgs = @($invalidationSource, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $invalidationRun1Dir)
+  if ($cacheFixture.Extension -eq ".objc3") {
+    $invalidationArgs += @("--objc3-ir-object-backend", "clang")
+  }
+  $invalidationRun1 = Invoke-TimedWrapperCommand `
+    -ScriptPath $compileScript `
+    -ScriptArguments $invalidationArgs `
+    -LogPath $invalidationRun1Log
+  if ($invalidationRun1.exit_code -ne 0) {
+    throw "perf-budget FAIL: cache-invalidation run1 failed with exit code $($invalidationRun1.exit_code)"
+  }
+  $invalidationRun1Hit = Parse-CacheHitFlag -OutputText $invalidationRun1.output_text -RunLabel "cache-invalidation run1"
+
+  Add-Content -LiteralPath $invalidationSource -Value "// cache invalidation probe mutation"
+
+  $invalidationArgs2 = @($invalidationSource, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $invalidationRun2Dir)
+  if ($cacheFixture.Extension -eq ".objc3") {
+    $invalidationArgs2 += @("--objc3-ir-object-backend", "clang")
+  }
+  $invalidationRun2 = Invoke-TimedWrapperCommand `
+    -ScriptPath $compileScript `
+    -ScriptArguments $invalidationArgs2 `
+    -LogPath $invalidationRun2Log
+  if ($invalidationRun2.exit_code -ne 0) {
+    throw "perf-budget FAIL: cache-invalidation run2 failed with exit code $($invalidationRun2.exit_code)"
+  }
+  $invalidationRun2Hit = Parse-CacheHitFlag -OutputText $invalidationRun2.output_text -RunLabel "cache-invalidation run2"
+  if ($invalidationRun2Hit) {
+    throw "perf-budget FAIL: cache-invalidation run2 expected cache_hit=false after source mutation"
+  }
+
+  $cacheInvalidationProof.executed = $true
+  $cacheInvalidationProof.status = "PASS"
+  $cacheInvalidationProof.detail = "source mutation invalidated wrapper cache key"
+  $cacheInvalidationProof.fixture = (Get-RepoRelativePath -Path $cacheFixture.FullName -Root $repoRoot)
+  $cacheInvalidationProof.run1 = [ordered]@{
+    elapsed_ms = $invalidationRun1.elapsed_ms
+    exit_code = $invalidationRun1.exit_code
+    cache_hit = $invalidationRun1Hit
+    log = (Get-RepoRelativePath -Path $invalidationRun1Log -Root $repoRoot)
+    out_dir = (Get-RepoRelativePath -Path $invalidationRun1Dir -Root $repoRoot)
+  }
+  $cacheInvalidationProof.run2 = [ordered]@{
+    elapsed_ms = $invalidationRun2.elapsed_ms
+    exit_code = $invalidationRun2.exit_code
+    cache_hit = $invalidationRun2Hit
+    log = (Get-RepoRelativePath -Path $invalidationRun2Log -Root $repoRoot)
+    out_dir = (Get-RepoRelativePath -Path $invalidationRun2Dir -Root $repoRoot)
+  }
+  Write-Output ("cache-invalidation PASS fixture={0} run1_hit={1} run2_hit={2}" -f $cacheFixtureRel, $invalidationRun1Hit, $invalidationRun2Hit)
 } catch {
   $hadFatalError = $true
   $fatalErrorMessage = $_.Exception.Message
@@ -677,6 +746,7 @@ $summary = [ordered]@{
   build_executed = $buildExecuted
   build_elapsed_ms = $buildElapsedMs
   cache_proof = $cacheProof
+  cache_invalidation_proof = $cacheInvalidationProof
   total = $total
   passed = $passedCount
   failed = $failedCount
