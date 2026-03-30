@@ -4,6 +4,7 @@
   "workspace_contract": "stdlib/workspace.json",
   "package_surface": "stdlib/package_surface.json",
   "advanced_architecture": "stdlib/advanced_architecture.json",
+  "stdlib_readme": "stdlib/README.md",
   "runbook": "docs/runbooks/objc3c_stdlib_program.md",
   "site_entry": "site/src/index.body.md",
   "tutorial_readme": "docs/tutorials/README.md",
@@ -50,6 +51,11 @@
       "id": "auroraBoard",
       "source": "showcase/auroraBoard/main.objc3",
       "workspace_manifest": "showcase/auroraBoard/workspace.json",
+      "stdlib_followup_modules": [
+        "objc3.core",
+        "objc3.errors",
+        "objc3.keypath"
+      ],
       "story_capabilities": [
         "categories",
         "reflection",
@@ -60,6 +66,10 @@
       "id": "signalMesh",
       "source": "showcase/signalMesh/main.objc3",
       "workspace_manifest": "showcase/signalMesh/workspace.json",
+      "stdlib_followup_modules": [
+        "objc3.concurrency",
+        "objc3.system"
+      ],
       "story_capabilities": [
         "status-bridging",
         "actor-shaped-messaging",
@@ -70,6 +80,10 @@
       "id": "patchKit",
       "source": "showcase/patchKit/main.objc3",
       "workspace_manifest": "showcase/patchKit/workspace.json",
+      "stdlib_followup_modules": [
+        "objc3.keypath",
+        "objc3.system"
+      ],
       "story_capabilities": [
         "derives",
         "macros",

@@ -61,6 +61,11 @@
       "title": "auroraBoard",
       "source": "showcase/auroraBoard/main.objc3",
       "workspace_manifest": "showcase/auroraBoard/workspace.json",
+      "stdlib_followup_modules": [
+        "objc3.core",
+        "objc3.errors",
+        "objc3.keypath"
+      ],
       "story_capabilities": [
         "categories",
         "reflection",
@@ -72,6 +77,10 @@
       "title": "signalMesh",
       "source": "showcase/signalMesh/main.objc3",
       "workspace_manifest": "showcase/signalMesh/workspace.json",
+      "stdlib_followup_modules": [
+        "objc3.concurrency",
+        "objc3.system"
+      ],
       "story_capabilities": [
         "status-bridging",
         "actor-shaped-messaging",
@@ -83,6 +92,10 @@
       "title": "patchKit",
       "source": "showcase/patchKit/main.objc3",
       "workspace_manifest": "showcase/patchKit/workspace.json",
+      "stdlib_followup_modules": [
+        "objc3.keypath",
+        "objc3.system"
+      ],
       "story_capabilities": [
         "derives",
         "macros",

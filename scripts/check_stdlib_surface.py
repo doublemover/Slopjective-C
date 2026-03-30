@@ -623,6 +623,8 @@ def main() -> int:
         return fail("program surface package_surface drifted")
     if program_surface.get("advanced_architecture") != "stdlib/advanced_architecture.json":
         return fail("program surface advanced_architecture drifted")
+    if program_surface.get("stdlib_readme") != "stdlib/README.md":
+        return fail("program surface stdlib_readme drifted")
     if program_surface.get("runbook") != "docs/runbooks/objc3c_stdlib_program.md":
         return fail("program surface runbook drifted")
     if program_surface.get("site_entry") != "site/src/index.body.md":
@@ -681,6 +683,7 @@ def main() -> int:
 
     program_live_paths = (
         "runbook",
+        "stdlib_readme",
         "site_entry",
         "tutorial_readme",
         "getting_started_readme",
@@ -714,6 +717,7 @@ def main() -> int:
         demo_id = entry.get("id")
         source = entry.get("source")
         workspace_manifest = entry.get("workspace_manifest")
+        stdlib_followup_modules = entry.get("stdlib_followup_modules")
         story_capabilities = entry.get("story_capabilities")
         if not isinstance(demo_id, str) or not demo_id:
             return fail("program surface capability demo id is malformed")
@@ -721,6 +725,10 @@ def main() -> int:
             return fail(f"program surface source is malformed for {demo_id}")
         if not isinstance(workspace_manifest, str) or not workspace_manifest:
             return fail(f"program surface workspace_manifest is malformed for {demo_id}")
+        if not isinstance(stdlib_followup_modules, list) or not all(
+            isinstance(value, str) and value for value in stdlib_followup_modules
+        ):
+            return fail(f"program surface stdlib_followup_modules are malformed for {demo_id}")
         if not isinstance(story_capabilities, list) or not all(
             isinstance(value, str) and value for value in story_capabilities
         ):
@@ -736,8 +744,13 @@ def main() -> int:
             return fail(f"program surface source drifted for {demo_id}")
         if showcase_entry.get("workspace_manifest") != workspace_manifest:
             return fail(f"program surface workspace_manifest drifted for {demo_id}")
+        if showcase_entry.get("stdlib_followup_modules") != stdlib_followup_modules:
+            return fail(f"program surface stdlib_followup_modules drifted for {demo_id}")
         if showcase_entry.get("story_capabilities") != story_capabilities:
             return fail(f"program surface story_capabilities drifted for {demo_id}")
+        for module_name in stdlib_followup_modules:
+            if module_name not in inventory_module_names:
+                return fail(f"program surface referenced unknown stdlib module {module_name} for {demo_id}")
 
     advanced_helper_modules = advanced_helper_package_surface.get("advanced_helper_modules")
     if not isinstance(advanced_helper_modules, list) or len(advanced_helper_modules) != 3:

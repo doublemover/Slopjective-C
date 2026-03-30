@@ -14,6 +14,10 @@
     "property-behaviors",
     "interop"
   ],
+  "stdlib_followup_modules": [
+    "objc3.keypath",
+    "objc3.system"
+  ],
   "runtime_surface": {
     "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
     "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",

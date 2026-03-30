@@ -67,12 +67,20 @@ Use `showcase/README.md` and `showcase/portfolio.json` as the example map:
 - `signalMesh` for actor-shaped messaging, status bridging, and runtime messaging
 - `patchKit` for derives, macros, property behaviors, and interop
 
+Stdlib follow-up modules after the first compile:
+
+- `auroraBoard` -> `objc3.core`, `objc3.errors`, `objc3.keypath`
+- `signalMesh` -> `objc3.concurrency`, `objc3.system`
+- `patchKit` -> `objc3.keypath`, `objc3.system`
+
 If the first compile worked and you already know your question, branch
 immediately:
 
 - stay on `auroraBoard` if the question starts with ObjC2 object-model habits
 - move to `signalMesh` if the question is about messaging or actor-shaped flows
 - move to `patchKit` if the question is about macros, derives, or interop
+- then use `stdlib/README.md` if you want the checked-in stdlib module surface
+  that backs the same story
 
 ## Step 4 Choose The Next Learning Path
 

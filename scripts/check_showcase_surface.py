@@ -254,8 +254,15 @@ def main() -> int:
             return fail(f"workspace manifest artifact_root drifted for {example_id}")
         if workspace_payload.get("package_stage_root") != f"showcase/{example_id}":
             return fail(f"workspace manifest package_stage_root drifted for {example_id}")
+        stdlib_followup_modules = workspace_payload.get("stdlib_followup_modules")
+        if not isinstance(stdlib_followup_modules, list) or not all(
+            isinstance(value, str) and value for value in stdlib_followup_modules
+        ):
+            return fail(f"workspace manifest stdlib_followup_modules malformed for {example_id}")
         if workspace_payload.get("story_capabilities") != entry.get("story_capabilities"):
             return fail(f"workspace manifest story_capabilities drifted for {example_id}")
+        if stdlib_followup_modules != entry.get("stdlib_followup_modules"):
+            return fail(f"workspace manifest stdlib_followup_modules drifted for {example_id}")
         runtime_surface = workspace_payload.get("runtime_surface")
         if runtime_surface != {
             "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",

@@ -13,6 +13,7 @@ that later issues must edit directly.
 Live `M308` work must stay on these paths:
 
 - `stdlib/program_surface.json`
+- `stdlib/README.md`
 - `stdlib/package_surface.json`
 - `stdlib/README.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
@@ -72,13 +73,17 @@ of inventing a second examples tree inside `stdlib/`.
 
 - `showcase/auroraBoard/main.objc3` for categories, reflection, and synthesized
   behaviors
+  - stdlib follow-up modules: `objc3.core`, `objc3.errors`, `objc3.keypath`
 - `showcase/signalMesh/main.objc3` for actor-shaped messaging, status bridging,
   and runtime messaging
+  - stdlib follow-up modules: `objc3.concurrency`, `objc3.system`
 - `showcase/patchKit/main.objc3` for derives, macros, property behaviors, and
   interop
+  - stdlib follow-up modules: `objc3.keypath`, `objc3.system`
 - `docs/tutorials/getting_started.md` for the first runnable reader path
 - `docs/tutorials/objc2_swift_cpp_comparison.md` for migration and comparison
   framing
+- `stdlib/README.md` for the checked-in stdlib surface behind those same stories
 
 ## Exact Live Artifact And Output Paths
 

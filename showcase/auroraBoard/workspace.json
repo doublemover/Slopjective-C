@@ -13,6 +13,11 @@
     "reflection",
     "synthesized-behaviors"
   ],
+  "stdlib_followup_modules": [
+    "objc3.core",
+    "objc3.errors",
+    "objc3.keypath"
+  ],
   "runtime_surface": {
     "launch_contract_helper": "scripts/objc3c_runtime_launch_contract.ps1",
     "runtime_library_resolution_model": "registration-manifest-runtime-archive-path-is-authoritative",

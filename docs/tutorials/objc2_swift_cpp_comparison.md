@@ -24,6 +24,13 @@ matches the capability in question:
 The comparison text should explain the current runnable and compile-coupled
 surface, not an imagined future language.
 
+Stdlib follow-up after the comparison examples:
+
+- `signalMesh` -> `objc3.concurrency`, `objc3.system`
+- `patchKit` -> `objc3.keypath`, `objc3.system`
+- use `stdlib/README.md` when you need the checked-in stdlib boundary behind the
+  same examples
+
 ## Comparison Boundary
 
 This comparison surface should stay grounded in checked-in implementation truth.

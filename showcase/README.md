@@ -13,14 +13,20 @@ Choose the story that matches the question before you read deeper docs:
   - use this when the question starts with categories, reflection, or synthesized behaviors
   - pair it with `docs/tutorials/getting_started.md`
   - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for forward-mapping ObjC2 habits
+  - stdlib follow-up modules: `objc3.core`, `objc3.errors`, `objc3.keypath`
 - `signalMesh`
   - use this when the question is about actor-shaped messaging, status bridging, or runtime messaging
   - pair it with `docs/tutorials/guided_walkthrough.md`
   - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md` for Swift-facing comparison framing
+  - stdlib follow-up modules: `objc3.concurrency`, `objc3.system`
 - `patchKit`
   - use this when the question is about derives, macros, property behaviors, or interop
   - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md`
   - use it when the question is about feature shape rather than the smallest possible first compile
+  - stdlib follow-up modules: `objc3.keypath`, `objc3.system`
+
+Use `stdlib/README.md` after choosing the example when you want the checked-in
+stdlib module surface that matches the same story.
 
 ## Portfolio Boundary
 
@@ -57,10 +63,13 @@ Machine-owned outputs only:
 
 - `auroraBoard`
   - target story: categories, reflection, synthesized behaviors
+  - stdlib follow-up: `objc3.core`, `objc3.errors`, `objc3.keypath`
 - `signalMesh`
   - target story: status bridging, actor-shaped messaging, runtime messaging
+  - stdlib follow-up: `objc3.concurrency`, `objc3.system`
 - `patchKit`
   - target story: derives, macros, property behaviors, interop
+  - stdlib follow-up: `objc3.keypath`, `objc3.system`
 
 These examples must stay small and compile through the live native compiler
 path. Later issues can expand the sources, but they must keep the same repo

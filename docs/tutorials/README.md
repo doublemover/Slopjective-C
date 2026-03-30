@@ -30,14 +30,20 @@ Use the example that best matches the capability you care about:
   - use it for categories, reflection, and synthesized behaviors
   - pair it with `docs/tutorials/getting_started.md`
   - pair it with `docs/tutorials/objc2_to_objc3_migration.md` when the question starts from ObjC2 habits
+  - stdlib follow-up modules: `objc3.core`, `objc3.errors`, `objc3.keypath`
 - `signalMesh`
   - use it for actor-shaped messaging, status bridging, and runtime messaging
   - pair it with `docs/tutorials/guided_walkthrough.md`
   - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md` when the question is "what does this look like relative to Swift-style concurrency expectations?"
+  - stdlib follow-up modules: `objc3.concurrency`, `objc3.system`
 - `patchKit`
   - use it for derives, macros, property behaviors, and interop
   - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md`
   - use it when the question is about feature shape rather than the smallest possible first compile
+  - stdlib follow-up modules: `objc3.keypath`, `objc3.system`
+
+Use `stdlib/README.md` after choosing the example when you want the checked-in
+module boundary that sits behind the same teaching path.
 
 ## Learning Paths
 
