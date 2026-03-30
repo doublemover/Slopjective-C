@@ -898,6 +898,8 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "check-stdlib-surface",
         "materialize-stdlib-workspace",
         "validate-stdlib-foundation",
+        "validate-stdlib-advanced",
+        "validate-runnable-stdlib-advanced",
         "validate-runnable-stdlib-foundation",
         "package-runnable-toolchain"
       )
