@@ -42,6 +42,25 @@ Independent replay means:
 - replay uses the live compiler/runtime path
 - the emitted summary can be traced back to a checked-in fixture contract
 
+## Trust And Triage Policy
+
+Checked-in policy contract:
+
+- `tests/tooling/fixtures/external_validation/trust_policy.json`
+
+Allowed trust states:
+
+- `candidate`
+- `accepted`
+- `quarantined`
+- `rejected`
+
+Fail-closed rule:
+
+- external evidence is publishable only when it reaches `accepted`
+- missing provenance, replay nondeterminism, or unresolved disclosure risk must
+  hold the fixture in `quarantined` or `rejected`
+
 ## Explicit Non-Goals
 
 - no separate external-fixture compiler harness

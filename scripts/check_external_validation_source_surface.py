@@ -67,13 +67,29 @@ def main() -> int:
         return fail("source_readme drifted")
     if surface.get("source_check_script") != "scripts/check_external_validation_source_surface.py":
         return fail("source_check_script drifted")
+    if surface.get("trust_policy") != "tests/tooling/fixtures/external_validation/trust_policy.json":
+        return fail("trust_policy drifted")
     if surface.get("checked_in_roots") != EXPECTED_ROOTS:
         return fail("checked_in_roots drifted")
 
     require_path("docs/runbooks/objc3c_external_validation.md", kind="runbook")
     require_path("tests/tooling/fixtures/external_validation/README.md", kind="source readme")
+    trust_policy_path = require_path(
+        "tests/tooling/fixtures/external_validation/trust_policy.json",
+        kind="trust policy",
+    )
     for root in EXPECTED_ROOTS:
         require_path(root, kind="checked-in root")
+
+    trust_policy = load_json(trust_policy_path)
+    if trust_policy.get("contract_id") != "objc3c.external_validation.trust.policy.v1":
+        return fail("trust policy contract_id drifted")
+    if trust_policy.get("schema_version") != 1:
+        return fail("trust policy schema_version drifted")
+    if trust_policy.get("allowed_trust_states") != ["candidate", "accepted", "quarantined", "rejected"]:
+        return fail("trust policy allowed_trust_states drifted")
+    if trust_policy.get("publishable_trust_states") != ["accepted"]:
+        return fail("trust policy publishable_trust_states drifted")
 
     families = surface.get("source_families")
     if not isinstance(families, list) or len(families) != len(EXPECTED_FAMILY_IDS):
@@ -118,6 +134,7 @@ def main() -> int:
         "source_surface_contract": repo_rel(SOURCE_SURFACE),
         "runbook": surface["runbook"],
         "source_check_script": surface["source_check_script"],
+        "trust_policy": surface["trust_policy"],
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
     }

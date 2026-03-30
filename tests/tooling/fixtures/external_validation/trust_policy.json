@@ -1,0 +1,32 @@
+{
+  "contract_id": "objc3c.external_validation.trust.policy.v1",
+  "schema_version": 1,
+  "allowed_trust_states": [
+    "candidate",
+    "accepted",
+    "quarantined",
+    "rejected"
+  ],
+  "publishable_trust_states": [
+    "accepted"
+  ],
+  "required_provenance_fields": [
+    "origin",
+    "captured_at_utc",
+    "captured_by",
+    "license",
+    "normalized_from"
+  ],
+  "fail_closed_rules": [
+    "fixtures with missing provenance stay quarantined or rejected",
+    "fixtures with nondeterministic replay stay quarantined until normalized replay passes",
+    "fixtures with unresolved security or disclosure uncertainty cannot reach accepted state",
+    "ecosystem-facing credibility claims are only publishable for accepted fixtures"
+  ],
+  "triage_priorities": {
+    "p0-security-or-license": "security licensing or disclosure uncertainty blocks acceptance immediately",
+    "p1-replay-break": "accepted external evidence no longer replays on the live compiler or runtime path",
+    "p2-normalization-gap": "fixture provenance family mapping or replay rooting is incomplete",
+    "p3-publication-gap": "publication metadata is incomplete but the fixture is still locally reproducible"
+  }
+}
