@@ -100,6 +100,30 @@ Suite partitions:
 - `interop`: module_roundtrip and examples
 - `tracking_only`: spec_open_issues and workpacks
 
+## Longitudinal Retention Policy
+
+Retained suite classes:
+
+- `profile-minimum-basis`
+- `runtime-regression-basis`
+- `module-roundtrip-basis`
+- `example-adoption-basis`
+
+Retention windows:
+
+- `profile-minimum-basis`: retain indefinitely while the profile remains claimable
+- `runtime-regression-basis`: retain indefinitely once it closes a lowering or ABI regression
+- `module-roundtrip-basis`: retain until the interface and metadata format revs intentionally
+- `example-adoption-basis`: retain while the reader-facing tutorial or showcase path remains public
+
+Eviction rule:
+
+- a retained suite can only be removed by replacing it with a stricter or broader successor that preserves the same traceability target
+
+Reporting expectation:
+
+- longitudinal suites must remain visible as a distinct retained partition in generated coverage outputs
+
 ## Audited Surface
 
 Runtime and lowering coverage already resolves through:
