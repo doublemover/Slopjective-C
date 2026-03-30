@@ -17,6 +17,7 @@ from typing import Callable
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 DEFAULT_OUT_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-native" / "fuzz-safety"
+DEFAULT_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "parser_sema_fuzz_manifest.json"
 MODE = "objc3c-fuzz-safety-v1"
 SCHEMA_VERSION = "objc3c-fuzz-safety-report.v1"
 
@@ -174,7 +175,43 @@ def parse_generated_at_utc(value: str | None) -> str:
     return candidate
 
 
-def build_corpus(max_cases: int | None) -> list[CorpusCase]:
+def load_manifest_cases(manifest_path: Path) -> list[CorpusCase]:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise InputError(f"manifest did not contain an object: {display_path(manifest_path)}")
+    if payload.get("contract_id") != "objc3c.stress.parser-sema-fuzz.manifest.v1":
+        raise InputError(f"manifest contract_id drifted: {display_path(manifest_path)}")
+    cases_payload = payload.get("cases")
+    if not isinstance(cases_payload, list) or not cases_payload:
+        raise InputError(f"manifest missing non-empty cases list: {display_path(manifest_path)}")
+
+    cases: list[CorpusCase] = []
+    for entry in cases_payload:
+        if not isinstance(entry, dict):
+            raise InputError(f"manifest contains a non-object case: {display_path(manifest_path)}")
+        case_id = entry.get("case_id")
+        subsystem = entry.get("subsystem")
+        source_path = entry.get("source_path")
+        if not isinstance(case_id, str) or not case_id:
+            raise InputError(f"manifest case missing case_id: {display_path(manifest_path)}")
+        if subsystem not in {"parser", "semantic"}:
+            raise InputError(f"manifest case {case_id} has invalid subsystem")
+        if not isinstance(source_path, str) or not source_path:
+            raise InputError(f"manifest case {case_id} missing source_path")
+        resolved_source = (ROOT / source_path).resolve()
+        if not resolved_source.is_file():
+            raise InputError(f"manifest case {case_id} references missing file {source_path}")
+        cases.append(
+            CorpusCase(
+                case_id=case_id,
+                subsystem=subsystem,
+                source=normalize_text(resolved_source.read_text(encoding="utf-8")),
+            )
+        )
+    return cases
+
+
+def build_corpus(max_cases: int | None, *, manifest_path: Path = DEFAULT_MANIFEST) -> list[CorpusCase]:
     cases: dict[str, CorpusCase] = {}
     for base in BASE_CORPUS:
         cases[base.case_id] = base
@@ -188,6 +225,8 @@ def build_corpus(max_cases: int | None) -> list[CorpusCase]:
                 subsystem=base.subsystem,
                 source=mutated,
             )
+    for manifest_case in load_manifest_cases(manifest_path):
+        cases[manifest_case.case_id] = manifest_case
     ordered = [cases[key] for key in sorted(cases)]
     if max_cases is not None:
         return ordered[:max_cases]
@@ -218,6 +257,12 @@ def build_parser() -> argparse.ArgumentParser:
         type=Path,
         default=DEFAULT_OUT_ROOT,
         help=f"Output root for corpus/log artifacts (default: {display_path(DEFAULT_OUT_ROOT)}).",
+    )
+    parser.add_argument(
+        "--manifest",
+        type=Path,
+        default=DEFAULT_MANIFEST,
+        help=f"Checked-in parser/sema fuzz manifest (default: {display_path(DEFAULT_MANIFEST)}).",
     )
     parser.add_argument(
         "--timeout-sec",
@@ -251,6 +296,9 @@ def validate_inputs(args: argparse.Namespace) -> None:
     compiler = args.compiler.resolve()
     if not compiler.exists() or not compiler.is_file():
         raise InputError(f"compiler not found: {display_path(compiler)}")
+    manifest = args.manifest.resolve()
+    if not manifest.exists() or not manifest.is_file():
+        raise InputError(f"manifest not found: {display_path(manifest)}")
 
     if args.python_launcher is not None:
         launcher = args.python_launcher.resolve()
@@ -471,12 +519,14 @@ def evaluate(
     *,
     compiler_command: list[str],
     out_root: Path,
+    manifest_path: Path,
     timeout_sec: float,
     max_cases: int | None,
     generated_at_utc: str,
 ) -> dict[str, object]:
     out_root.mkdir(parents=True, exist_ok=True)
-    corpus = build_corpus(max_cases=max_cases)
+    manifest_cases = load_manifest_cases(manifest_path)
+    corpus = build_corpus(max_cases=max_cases, manifest_path=manifest_path)
     results = [
         run_case(
             case=case,
@@ -519,8 +569,10 @@ def evaluate(
             "out_root": display_path(out_root),
         },
         "corpus_strategy": {
-            "strategy_id": "objc3c-malformed-corpus-v1",
+            "strategy_id": "objc3c-malformed-corpus-with-manifest-v2",
             "base_case_count": len(BASE_CORPUS),
+            "manifest_path": display_path(manifest_path),
+            "manifest_case_count": len(manifest_cases),
             "mutation_rules": [rule.name for rule in MUTATION_RULES],
             "deterministic_ordering": "case_id-lexicographic",
         },
@@ -572,6 +624,7 @@ def main(argv: list[str] | None = None) -> int:
         summary = evaluate(
             compiler_command=compiler_command,
             out_root=args.out_root.resolve(),
+            manifest_path=args.manifest.resolve(),
             timeout_sec=float(args.timeout_sec),
             max_cases=args.max_cases,
             generated_at_utc=generated_at_utc,

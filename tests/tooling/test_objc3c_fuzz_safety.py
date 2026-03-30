@@ -62,7 +62,7 @@ def test_corpus_strategy_is_deterministic_and_contains_parser_and_semantic_cases
     second = run_objc3c_fuzz_safety.build_corpus(max_cases=None)
 
     assert first == second
-    assert len(first) >= 24
+    assert len(first) >= 31
 
     case_ids = [item.case_id for item in first]
     assert case_ids == sorted(case_ids)
@@ -70,6 +70,26 @@ def test_corpus_strategy_is_deterministic_and_contains_parser_and_semantic_cases
     assert any(item.subsystem == "parser" for item in first)
     assert any(item.subsystem == "semantic" for item in first)
     assert all(item.source.strip() for item in first)
+    assert "parser_reject_trailing_comma_param" in case_ids
+    assert "sema_break_outside_control_flow" in case_ids
+
+
+def test_manifest_cases_are_loaded_from_checked_in_sources() -> None:
+    manifest_cases = run_objc3c_fuzz_safety.load_manifest_cases(
+        run_objc3c_fuzz_safety.DEFAULT_MANIFEST
+    )
+    case_ids = [case.case_id for case in manifest_cases]
+
+    assert case_ids == [
+        "parser_reject_trailing_comma_param",
+        "parser_reject_post_comma_nondecl",
+        "parser_reject_i32_pointer_param",
+        "sema_break_outside_control_flow",
+        "sema_continue_outside_loop",
+        "sema_guard_binding_missing_exit",
+        "sema_do_catch_fail_closed",
+    ]
+    assert all(case.source.strip() for case in manifest_cases)
 
 
 def test_contract_mode_happy_path_is_deterministic(tmp_path: Path) -> None:
@@ -105,7 +125,9 @@ def test_contract_mode_happy_path_is_deterministic(tmp_path: Path) -> None:
     assert payload["status"] == "PASS"
     assert payload["violation_count"] == 0
     assert payload["config"]["case_count"] == 8
-    assert payload["corpus_strategy"]["strategy_id"] == "objc3c-malformed-corpus-v1"
+    assert payload["corpus_strategy"]["strategy_id"] == "objc3c-malformed-corpus-with-manifest-v2"
+    assert payload["corpus_strategy"]["manifest_path"] == "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json"
+    assert payload["corpus_strategy"]["manifest_case_count"] == 7
 
 
 def test_contract_mode_fails_on_zero_exit_for_malformed_inputs(tmp_path: Path) -> None:
