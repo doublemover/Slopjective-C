@@ -126,6 +126,15 @@
     "eviction_rule": "a retained suite can only be removed by replacing it with a stricter or broader successor that preserves the same traceability target",
     "reporting_expectation": "longitudinal suites must remain visible as a distinct retained partition in generated coverage outputs"
   },
+  "artifact_surface": {
+    "surface_summary": "tmp/reports/conformance/corpus-surface-summary.json",
+    "coverage_index": "tmp/reports/conformance/corpus-index.json",
+    "integration_summary": "tmp/reports/conformance/corpus-integration-summary.json",
+    "runnable_end_to_end_summary": "tmp/reports/conformance/corpus-runnable-end-to-end-summary.json",
+    "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+    "artifact_root": "tmp/artifacts/conformance",
+    "report_root": "tmp/reports/conformance"
+  },
   "audit_surface": {
     "runtime_and_lowering_coverage": [
       "tests/conformance/lowering_abi/manifest.json",

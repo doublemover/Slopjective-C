@@ -124,6 +124,21 @@ Reporting expectation:
 
 - longitudinal suites must remain visible as a distinct retained partition in generated coverage outputs
 
+## Artifact Surface
+
+Stable machine-owned outputs:
+
+- surface summary: `tmp/reports/conformance/corpus-surface-summary.json`
+- coverage index: `tmp/reports/conformance/corpus-index.json`
+- integration summary: `tmp/reports/conformance/corpus-integration-summary.json`
+- runnable end-to-end summary: `tmp/reports/conformance/corpus-runnable-end-to-end-summary.json`
+
+Stable machine-owned roots:
+
+- artifact root: `tmp/artifacts/conformance`
+- report root: `tmp/reports/conformance`
+- package stage root: `tmp/pkg/objc3c-native-runnable-toolchain`
+
 ## Audited Surface
 
 Runtime and lowering coverage already resolves through:
