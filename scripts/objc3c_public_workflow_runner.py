@@ -93,6 +93,12 @@ UPDATE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_update_manifest.py"
 RELEASE_OPERATIONS_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_release_operations_metadata.py"
 RELEASE_OPERATIONS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_release_operations_integration.py"
 RELEASE_OPERATIONS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_release_operations_end_to_end.py"
+DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_distribution_credibility_source_surface.py"
+DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_distribution_credibility_schema_surface.py"
+DISTRIBUTION_CREDIBILITY_DASHBOARD_PY = ROOT / "scripts" / "build_objc3c_distribution_credibility_dashboard.py"
+DISTRIBUTION_CREDIBILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_distribution_trust_report.py"
+DISTRIBUTION_CREDIBILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_integration.py"
+DISTRIBUTION_CREDIBILITY_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -874,6 +880,39 @@ def action_validate_release_operations_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(RELEASE_OPERATIONS_END_TO_END_PY)])
 
 
+def action_check_distribution_credibility_surface(_: list[str]) -> int:
+    return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY)])
+
+
+def action_check_distribution_credibility_schema_surface(_: list[str]) -> int:
+    return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY)])
+
+
+def action_build_distribution_credibility_dashboard(_: list[str]) -> int:
+    return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_DASHBOARD_PY)])
+
+
+def action_publish_distribution_credibility(_: list[str]) -> int:
+    return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_PUBLICATION_PY)])
+
+
+def action_validate_distribution_credibility(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-distribution-credibility",
+        [
+            ("validate-release-operations", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-operations"]),
+            ("check-distribution-credibility-surface", [sys.executable, str(DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY)]),
+            ("check-distribution-credibility-schema-surface", [sys.executable, str(DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY)]),
+            ("build-distribution-credibility-dashboard", [sys.executable, str(DISTRIBUTION_CREDIBILITY_DASHBOARD_PY)]),
+            ("publish-distribution-credibility", [sys.executable, str(DISTRIBUTION_CREDIBILITY_PUBLICATION_PY)]),
+        ],
+    )
+
+
+def action_validate_distribution_credibility_end_to_end(_: list[str]) -> int:
+    return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_END_TO_END_PY)])
+
+
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     rc = execute_registered_action("build-native-contracts", [])
     if rc != 0:
@@ -1564,6 +1603,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("validate-release-foundation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-foundation"]),
             ("validate-packaging-channels", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-packaging-channels"]),
             ("validate-release-operations", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-operations"]),
+            ("validate-distribution-credibility", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-distribution-credibility"]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1671,6 +1711,12 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "publish-release-operations": ActionSpec("publish-release-operations", "publish the machine-owned release-operations compatibility report and channel catalog", "python:scripts/publish_objc3c_release_operations_metadata.py", ("publish:objc3c:release-operations",), validation_tier="repo", guarantee_owner="release-operations publication stays traceable to the checked-in compatibility, warning, and fallback policy contracts"),
     "validate-release-operations": ActionSpec("validate-release-operations", "run the integrated release-operations workflow", "runner-internal + direct release-operations commands", ("test:objc3c:release-operations",), validation_tier="nightly", guarantee_owner="versioning, compatibility warnings, rollback guidance, and update metadata stay executable on the live release surfaces"),
     "validate-release-operations-end-to-end": ActionSpec("validate-release-operations-end-to-end", "validate release-operations entrypoints, generated metadata, and packaged channel references end to end", "python:scripts/check_objc3c_release_operations_end_to_end.py", ("test:objc3c:release-operations:e2e",), validation_tier="full", guarantee_owner="release-operations metadata stays coherent with the live package-channel artifacts and rollback paths"),
+    "check-distribution-credibility-surface": ActionSpec("check-distribution-credibility-surface", "validate the checked-in distribution-credibility source surface", "python:scripts/check_distribution_credibility_source_surface.py", ("check:objc3c:distribution-credibility:surface",), validation_tier="repo", guarantee_owner="distribution credibility only publishes from the checked-in trust-signal, install-doc, operator, and drill contracts"),
+    "check-distribution-credibility-schema-surface": ActionSpec("check-distribution-credibility-schema-surface", "validate the checked-in distribution-credibility schema surface", "python:scripts/check_distribution_credibility_schema_surface.py", ("check:objc3c:distribution-credibility:schemas",), validation_tier="repo", guarantee_owner="distribution dashboard and trust-report artifacts stay on checked-in schema contracts"),
+    "build-distribution-credibility-dashboard": ActionSpec("build-distribution-credibility-dashboard", "build the machine-owned distribution credibility dashboard from the live release artifacts", "python:scripts/build_objc3c_distribution_credibility_dashboard.py", ("inspect:objc3c:distribution-credibility",), validation_tier="repo", guarantee_owner="distribution credibility summaries stay tied to the live release-foundation, packaging-channel, release-operations, and release-evidence surfaces"),
+    "publish-distribution-credibility": ActionSpec("publish-distribution-credibility", "publish the machine-owned distribution trust report artifacts", "python:scripts/publish_objc3c_distribution_trust_report.py", ("publish:objc3c:distribution-credibility",), validation_tier="repo", guarantee_owner="distribution trust reporting stays derived from the live release drill artifacts and checked-in credibility policies"),
+    "validate-distribution-credibility": ActionSpec("validate-distribution-credibility", "run the integrated distribution-credibility workflow", "runner-internal + direct distribution-credibility commands", ("test:objc3c:distribution-credibility",), validation_tier="nightly", guarantee_owner="distribution trust signals and release-drill reporting stay executable on the live shipped release surfaces"),
+    "validate-distribution-credibility-end-to-end": ActionSpec("validate-distribution-credibility-end-to-end", "validate distribution trust-report publication and evidence linkage end to end", "python:scripts/check_objc3c_distribution_credibility_end_to_end.py", ("test:objc3c:distribution-credibility:e2e",), validation_tier="full", guarantee_owner="distribution credibility artifacts stay coherent with the live package-channel and release-operations evidence paths"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1806,6 +1852,12 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "publish-release-operations": action_publish_release_operations,
     "validate-release-operations": action_validate_release_operations,
     "validate-release-operations-end-to-end": action_validate_release_operations_end_to_end,
+    "check-distribution-credibility-surface": action_check_distribution_credibility_surface,
+    "check-distribution-credibility-schema-surface": action_check_distribution_credibility_schema_surface,
+    "build-distribution-credibility-dashboard": action_build_distribution_credibility_dashboard,
+    "publish-distribution-credibility": action_publish_distribution_credibility,
+    "validate-distribution-credibility": action_validate_distribution_credibility,
+    "validate-distribution-credibility-end-to-end": action_validate_distribution_credibility_end_to_end,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,

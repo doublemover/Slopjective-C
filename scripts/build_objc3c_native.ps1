@@ -729,6 +729,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_maintainer_workflows.md",
       "docs/runbooks/objc3c_developer_tooling.md",
       "docs/runbooks/objc3c_bonus_experiences.md",
+      "docs/runbooks/objc3c_distribution_credibility.md",
       "docs/runbooks/objc3c_performance.md",
       "docs/runbooks/objc3c_performance_governance.md",
       "docs/runbooks/objc3c_packaging_channels.md",
@@ -772,6 +773,12 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       publish_release_operations = "publish:objc3c:release-operations"
       test_release_operations = "test:objc3c:release-operations"
       test_release_operations_e2e = "test:objc3c:release-operations:e2e"
+      check_distribution_credibility_surface = "check:objc3c:distribution-credibility:surface"
+      check_distribution_credibility_schemas = "check:objc3c:distribution-credibility:schemas"
+      inspect_distribution_credibility = "inspect:objc3c:distribution-credibility"
+      publish_distribution_credibility = "publish:objc3c:distribution-credibility"
+      test_distribution_credibility = "test:objc3c:distribution-credibility"
+      test_distribution_credibility_e2e = "test:objc3c:distribution-credibility:e2e"
       inspect_runtime_performance = "inspect:objc3c:runtime-performance"
       test_runtime_performance = "test:objc3c:runtime-performance"
       test_runtime_performance_e2e = "test:objc3c:runnable-runtime-performance"
@@ -1096,6 +1103,42 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "publish-release-operations",
         "validate-release-operations",
         "validate-release-operations-end-to-end"
+      )
+    }
+    distribution_credibility_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_distribution_credibility.md"
+      source_surface_contract = "tests/tooling/fixtures/distribution_credibility/source_surface.json"
+      trust_signal_architecture = "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json"
+      install_release_doc_surface = "tests/tooling/fixtures/distribution_credibility/install_release_doc_surface.json"
+      operator_release_policy = "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json"
+      release_drill_policy = "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json"
+      artifact_surface = "tests/tooling/fixtures/distribution_credibility/artifact_surface.json"
+      workflow_surface = "tests/tooling/fixtures/distribution_credibility/workflow_surface.json"
+      schema_surface = "tests/tooling/fixtures/distribution_credibility/schema_surface.json"
+      dashboard_schema = "schemas/objc3c-distribution-credibility-dashboard-v1.schema.json"
+      trust_report_schema = "schemas/objc3c-distribution-trust-report-v1.schema.json"
+      source_roots = @(
+        "scripts/check_distribution_credibility_source_surface.py",
+        "scripts/check_distribution_credibility_schema_surface.py",
+        "scripts/build_objc3c_distribution_credibility_dashboard.py",
+        "scripts/publish_objc3c_distribution_trust_report.py",
+        "scripts/check_objc3c_distribution_credibility_integration.py",
+        "scripts/check_objc3c_distribution_credibility_end_to_end.py",
+        "scripts/check_release_evidence.py",
+        "scripts/publish_objc3c_release_operations_metadata.py"
+      )
+      report_roots = @(
+        "tmp/reports/distribution-credibility",
+        "tmp/artifacts/distribution-credibility",
+        "tmp/reports/objc3c-public-workflow"
+      )
+      public_actions = @(
+        "check-distribution-credibility-surface",
+        "check-distribution-credibility-schema-surface",
+        "build-distribution-credibility-dashboard",
+        "publish-distribution-credibility",
+        "validate-distribution-credibility",
+        "validate-distribution-credibility-end-to-end"
       )
     }
     stress_validation_surface = [ordered]@{

@@ -277,6 +277,13 @@ npm run test:repo
 - release operations publication: `npm run publish:objc3c:release-operations`
 - integrated release operations workflow: `npm run test:objc3c:release-operations`
 - release operations end-to-end proof: `npm run test:objc3c:release-operations:e2e`
+- distribution credibility boundary: `docs/runbooks/objc3c_distribution_credibility.md`
+- distribution credibility source-surface check: `npm run check:objc3c:distribution-credibility:surface`
+- distribution credibility schema check: `npm run check:objc3c:distribution-credibility:schemas`
+- distribution credibility dashboard build: `npm run inspect:objc3c:distribution-credibility`
+- distribution credibility publication: `npm run publish:objc3c:distribution-credibility`
+- integrated distribution credibility workflow: `npm run test:objc3c:distribution-credibility`
+- distribution credibility end-to-end proof: `npm run test:objc3c:distribution-credibility:e2e`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
 - runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
 - integrated runtime performance validation: `npm run test:objc3c:runtime-performance`
