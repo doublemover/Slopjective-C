@@ -1,0 +1,33 @@
+{
+  "contract_id": "objc3c.release.operations.compatibility.claim.policy.v1",
+  "schema_version": 1,
+  "claim_classes": [
+    {
+      "claim_id": "same-major-stable-upgrade",
+      "allowed_channels": ["stable", "candidate"],
+      "allowed_scope": "same-major only",
+      "requires_machine_warning": false,
+      "disallowed_phrases": ["forever compatible", "zero-risk upgrade"]
+    },
+    {
+      "claim_id": "preview-upgrade",
+      "allowed_channels": ["preview"],
+      "allowed_scope": "best-effort only",
+      "requires_machine_warning": true,
+      "required_phrase": "preview compatibility is qualified"
+    },
+    {
+      "claim_id": "cross-major-upgrade",
+      "allowed_channels": [],
+      "allowed_scope": "forbidden",
+      "requires_machine_warning": true,
+      "required_phrase": "cross-major upgrade is unsupported in this milestone"
+    }
+  ],
+  "forbidden_claims": [
+    "background auto-update",
+    "package-manager parity",
+    "cross-major forward compatibility",
+    "manual waiver-only compatibility status"
+  ]
+}

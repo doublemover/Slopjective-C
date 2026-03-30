@@ -16,7 +16,8 @@
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/build_objc3c_package_channels.py",
-    "docs/runbooks/objc3c_maintainer_workflows.md"
+    "docs/runbooks/objc3c_maintainer_workflows.md",
+    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/release-operations",
@@ -26,5 +27,6 @@
     "no hosted updater",
     "no package-manager-specific upgrade flow",
     "no second payload lineage"
-  ]
+  ],
+  "compatibility_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json"
 }
