@@ -244,6 +244,7 @@ def main() -> int:
             "package_surface": "stdlib/package_surface.json",
             "core_architecture": "stdlib/core_architecture.json",
             "semantic_policy": "stdlib/semantic_policy.json",
+            "lowering_import_surface": "stdlib/lowering_import_surface.json",
             "source_roots": [
                 "stdlib/README.md",
                 "stdlib/modules/objc3.core/module.objc3",

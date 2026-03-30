@@ -6,6 +6,7 @@
   "stability_policy": "stdlib/stability_policy.json",
   "core_architecture": "stdlib/core_architecture.json",
   "semantic_policy": "stdlib/semantic_policy.json",
+  "lowering_import_surface": "stdlib/lowering_import_surface.json",
   "machine_output_root": "tmp/artifacts/stdlib",
   "machine_report_root": "tmp/reports/stdlib",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",

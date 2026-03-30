@@ -14,7 +14,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 MATERIALIZER = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
-ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "stdlib" / "smoke"
+WORKSPACE_CONTRACT_PATH = ROOT / "stdlib" / "workspace.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "stdlib" / "workspace-smoke-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.workspace.smoke.summary.v1"
 
@@ -62,6 +62,11 @@ def main() -> int:
 
     workspace_root = ROOT / workspace_root_text
     workspace_summary = load_json(ROOT / summary_path_text)
+    workspace_contract = load_json(WORKSPACE_CONTRACT_PATH)
+    lowering_import_surface_path = ROOT / str(workspace_contract["lowering_import_surface"])
+    lowering_import_surface = load_json(lowering_import_surface_path)
+    artifact_root = ROOT / str(lowering_import_surface["smoke_artifact_root"])
+    artifact_filenames = lowering_import_surface["artifact_filenames"]
     modules = workspace_summary.get("modules")
     if not isinstance(modules, list) or not modules:
         raise RuntimeError("stdlib materializer summary did not publish modules")
@@ -72,7 +77,7 @@ def main() -> int:
             raise RuntimeError("stdlib materializer summary published a malformed module entry")
         canonical_module = str(module["canonical_module"])
         smoke_source = workspace_root / str(module["smoke_source"])
-        compile_root = ARTIFACT_ROOT / canonical_module.replace(".", "_")
+        compile_root = artifact_root / canonical_module.replace(".", "_")
         compile_root.mkdir(parents=True, exist_ok=True)
         compile_result = run_capture(
             [
@@ -88,8 +93,13 @@ def main() -> int:
         )
         if compile_result.returncode != 0:
             raise RuntimeError(f"stdlib smoke compile failed for {canonical_module}")
-        manifest_path = compile_root / "module.manifest.json"
-        registration_manifest_path = compile_root / "module.runtime-registration-manifest.json"
+        object_path = compile_root / str(artifact_filenames["object"])
+        manifest_path = compile_root / str(artifact_filenames["compile_manifest"])
+        registration_manifest_path = compile_root / str(
+            artifact_filenames["runtime_registration_manifest"]
+        )
+        if not object_path.is_file():
+            raise RuntimeError(f"stdlib smoke compile did not publish {repo_rel(object_path)}")
         if not manifest_path.is_file():
             raise RuntimeError(f"stdlib smoke compile did not publish {repo_rel(manifest_path)}")
         if not registration_manifest_path.is_file():
@@ -101,6 +111,7 @@ def main() -> int:
                 "canonical_module": canonical_module,
                 "smoke_source": repo_rel(smoke_source),
                 "artifact_root": repo_rel(compile_root),
+                "object": repo_rel(object_path),
                 "manifest": repo_rel(manifest_path),
                 "registration_manifest": repo_rel(registration_manifest_path),
             }
@@ -116,6 +127,7 @@ def main() -> int:
                 "status": "PASS",
                 "workspace_root": repo_rel(workspace_root),
                 "materialized_workspace_summary": summary_path_text,
+                "lowering_import_surface": repo_rel(lowering_import_surface_path),
                 "compile_results": compile_results,
             },
             indent=2,

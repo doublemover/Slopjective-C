@@ -16,6 +16,7 @@ STABILITY_POLICY_PATH = ROOT / "stdlib" / "stability_policy.json"
 PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "package_surface.json"
 CORE_ARCHITECTURE_PATH = ROOT / "stdlib" / "core_architecture.json"
 SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
+LOWERING_IMPORT_SURFACE_PATH = ROOT / "stdlib" / "lowering_import_surface.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
@@ -70,6 +71,8 @@ def main() -> int:
         return fail(f"missing core architecture contract: {repo_rel(CORE_ARCHITECTURE_PATH)}")
     if not SEMANTIC_POLICY_PATH.is_file():
         return fail(f"missing semantic policy contract: {repo_rel(SEMANTIC_POLICY_PATH)}")
+    if not LOWERING_IMPORT_SURFACE_PATH.is_file():
+        return fail(f"missing lowering/import surface contract: {repo_rel(LOWERING_IMPORT_SURFACE_PATH)}")
     if not SPEC_CONTRACT_PATH.is_file():
         return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
 
@@ -79,6 +82,7 @@ def main() -> int:
     package_surface = load_json(PACKAGE_SURFACE_PATH)
     core_architecture = load_json(CORE_ARCHITECTURE_PATH)
     semantic_policy = load_json(SEMANTIC_POLICY_PATH)
+    lowering_import_surface = load_json(LOWERING_IMPORT_SURFACE_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
@@ -95,6 +99,8 @@ def main() -> int:
         return fail("workspace core_architecture path drifted")
     if workspace.get("semantic_policy") != "stdlib/semantic_policy.json":
         return fail("workspace semantic_policy path drifted")
+    if workspace.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
+        return fail("workspace lowering_import_surface path drifted")
     if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
         return fail("workspace core_runbook path drifted")
     if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
@@ -121,6 +127,8 @@ def main() -> int:
         return fail("package surface core_architecture drifted")
     if package_surface.get("semantic_policy") != "stdlib/semantic_policy.json":
         return fail("package surface semantic_policy drifted")
+    if package_surface.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
+        return fail("package surface lowering_import_surface drifted")
     if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
         return fail("package surface machine_output_root drifted")
     if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
@@ -147,6 +155,26 @@ def main() -> int:
         return fail("semantic policy workspace_contract drifted")
     if semantic_policy.get("core_architecture") != "stdlib/core_architecture.json":
         return fail("semantic policy core_architecture drifted")
+    if lowering_import_surface.get("contract_id") != "objc3c.stdlib.lowering_import_surface.v1":
+        return fail("lowering/import surface contract_id drifted")
+    if lowering_import_surface.get("schema_version") != 1:
+        return fail("lowering/import surface schema_version drifted")
+    if lowering_import_surface.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("lowering/import surface workspace_contract drifted")
+    if lowering_import_surface.get("package_surface") != "stdlib/package_surface.json":
+        return fail("lowering/import surface package_surface drifted")
+    if lowering_import_surface.get("module_inventory") != "stdlib/module_inventory.json":
+        return fail("lowering/import surface module_inventory drifted")
+    if lowering_import_surface.get("smoke_runner") != "scripts/run_objc3c_stdlib_workspace_smoke.py":
+        return fail("lowering/import surface smoke_runner drifted")
+    if lowering_import_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
+        return fail("lowering/import surface machine_output_root drifted")
+    if lowering_import_surface.get("machine_report_root") != "tmp/reports/stdlib":
+        return fail("lowering/import surface machine_report_root drifted")
+    if lowering_import_surface.get("materialized_workspace_root") != "tmp/artifacts/stdlib/workspace":
+        return fail("lowering/import surface materialized_workspace_root drifted")
+    if lowering_import_surface.get("smoke_artifact_root") != "tmp/artifacts/stdlib/smoke":
+        return fail("lowering/import surface smoke_artifact_root drifted")
 
     canonical_modules = inventory.get("canonical_modules")
     if not isinstance(canonical_modules, list) or not canonical_modules:
@@ -370,6 +398,31 @@ def main() -> int:
     ):
         return fail("semantic policy text_compatibility_diagnostic drifted")
 
+    artifact_filenames = lowering_import_surface.get("artifact_filenames")
+    if artifact_filenames != {
+        "object": "module.obj",
+        "compile_manifest": "module.manifest.json",
+        "runtime_registration_manifest": "module.runtime-registration-manifest.json",
+    }:
+        return fail("lowering/import surface artifact_filenames drifted")
+
+    import_surface = lowering_import_surface.get("import_surface")
+    if import_surface != {
+        "model": "canonical-spec-module-ids-map-to-identifier-safe-implementation-module-declarations",
+        "module_imports_source": "stdlib/package_surface.json",
+        "identity_fields": ["canonical_module", "implementation_module", "source_declaration"],
+    }:
+        return fail("lowering/import surface import_surface drifted")
+
+    if lowering_import_surface.get("public_actions") != [
+        "check-stdlib-surface",
+        "materialize-stdlib-workspace",
+        "validate-stdlib-foundation",
+        "validate-runnable-stdlib-foundation",
+        "package-runnable-toolchain",
+    ]:
+        return fail("lowering/import surface public_actions drifted")
+
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(
         json.dumps(
@@ -383,6 +436,7 @@ def main() -> int:
                 "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
                 "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
                 "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
+                "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
                 "canonical_modules": inventory_rows,
                 "layers": layers,
@@ -390,6 +444,7 @@ def main() -> int:
                 "api_families": architecture_api_families,
                 "required_exports": architecture_required_exports,
                 "module_semver": semantic_module_semver,
+                "artifact_filenames": artifact_filenames,
             },
             indent=2,
         )

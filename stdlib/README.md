@@ -14,6 +14,7 @@ Live stdlib work must stay on these paths:
 - `stdlib/package_surface.json`
 - `stdlib/core_architecture.json`
 - `stdlib/semantic_policy.json`
+- `stdlib/lowering_import_surface.json`
 - `stdlib/modules/`
 - `docs/runbooks/objc3c_stdlib_foundation.md`
 - `docs/runbooks/objc3c_stdlib_core.md`
@@ -42,6 +43,8 @@ This root is not a place for:
   foundational utility, text/data, collection, option, and result families
 - `stdlib/semantic_policy.json` defines the observable compatibility and helper
   semantics for the current core stdlib surface
+- `stdlib/lowering_import_surface.json` defines the real smoke-compile artifact
+  names, import identity fields, and machine-owned lowering roots
 - the checked-in module roots will live under `stdlib/modules/`
 - canonical module names map onto implementation aliases because the current
   frontend module declaration syntax is identifier-based rather than dotted

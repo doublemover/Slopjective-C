@@ -220,9 +220,13 @@ def main() -> int:
         "tmp/reports/stdlib/",
         "## Non-goals",
         "## Expected end state",
+        "## Lowering And Import Artifact Surface",
         "## Public actions",
         "npm run test:stdlib:e2e",
         "stdlib/core_architecture.json",
+        "stdlib/lowering_import_surface.json",
+        "module.runtime-registration-manifest.json",
+        "identifier-safe implementation module declarations",
         "docs/runbooks/objc3c_stdlib_core.md",
     ):
         require_token(stdlib_runbook, token, path=STDLIB_RUNBOOK_PATH, errors=errors)
@@ -237,6 +241,8 @@ def main() -> int:
         "stdlib/package_surface.json",
         "stdlib/core_architecture.json",
         "stdlib/semantic_policy.json",
+        "stdlib/lowering_import_surface.json",
+        "machine-owned lowering roots",
         "## Working model",
     ):
         require_token(stdlib_readme, token, path=STDLIB_README_PATH, errors=errors)
