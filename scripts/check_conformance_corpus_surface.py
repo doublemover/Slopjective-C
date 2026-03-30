@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS_SURFACE_PATH = ROOT / "tests" / "conformance" / "corpus_surface.json"
+LONGITUDINAL_SUITES_PATH = ROOT / "tests" / "conformance" / "longitudinal_suites.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "conformance" / "corpus-surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.conformance.corpus.surface.summary.v1"
 EXPECTED_PRIMARY_BUCKETS = [
@@ -114,6 +115,7 @@ def main() -> int:
     require_path("tests/conformance/README.md", kind="suite readme")
     require_path("tests/conformance/COVERAGE_MAP.md", kind="coverage map")
     require_path("docs/runbooks/objc3c_conformance_corpus.md", kind="runbook")
+    require_path("tests/conformance/longitudinal_suites.json", kind="longitudinal suite manifest")
 
     taxonomy = surface.get("taxonomy")
     if not isinstance(taxonomy, dict):
@@ -142,6 +144,51 @@ def main() -> int:
     if artifact_surface.get("coverage_index") != "tmp/reports/conformance/corpus-index.json":
         return fail("artifact_surface.coverage_index drifted")
 
+    longitudinal_policy = surface.get("longitudinal_policy")
+    if not isinstance(longitudinal_policy, dict):
+        return fail("longitudinal_policy is missing")
+    if longitudinal_policy.get("suite_manifest") != "tests/conformance/longitudinal_suites.json":
+        return fail("longitudinal_policy.suite_manifest drifted")
+
+    longitudinal_payload = load_json(LONGITUDINAL_SUITES_PATH)
+    if longitudinal_payload.get("contract_id") != "objc3c.conformance.longitudinal_suites.v1":
+        return fail("longitudinal_suites contract_id drifted")
+    if longitudinal_payload.get("schema_version") != 1:
+        return fail("longitudinal_suites schema_version drifted")
+    retained_suites = longitudinal_payload.get("retained_suites")
+    if not isinstance(retained_suites, list) or not retained_suites:
+        return fail("longitudinal_suites retained_suites is missing")
+
+    retained_summary: list[dict[str, Any]] = []
+    known_buckets = set(required_manifest_keys)
+    known_suite_classes = set(longitudinal_policy.get("retained_suite_classes", []))
+    for entry in retained_suites:
+        if not isinstance(entry, dict):
+            return fail("longitudinal_suites contains a non-object entry")
+        suite_id = entry.get("suite_id")
+        suite_class = entry.get("suite_class")
+        bucket = entry.get("bucket")
+        manifest = entry.get("manifest")
+        traceability_targets = entry.get("traceability_targets")
+        if not all(isinstance(value, str) and value for value in (suite_id, suite_class, bucket, manifest)):
+            return fail("longitudinal_suites entry is missing suite_id/suite_class/bucket/manifest")
+        if bucket not in known_buckets:
+            return fail(f"longitudinal_suites references unknown bucket {bucket}")
+        if suite_class not in known_suite_classes:
+            return fail(f"longitudinal_suites references unknown suite_class {suite_class}")
+        if not isinstance(traceability_targets, list) or not traceability_targets:
+            return fail(f"longitudinal_suites entry {suite_id} is missing traceability_targets")
+        require_path(manifest, kind=f"longitudinal manifest reference for {suite_id}")
+        retained_summary.append(
+            {
+                "suite_id": suite_id,
+                "suite_class": suite_class,
+                "bucket": bucket,
+                "manifest": manifest,
+                "traceability_targets": traceability_targets,
+            }
+        )
+
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -156,6 +203,7 @@ def main() -> int:
         "gap_priority_model": surface.get("gap_priority_model"),
         "suite_partitions": surface.get("suite_partitions"),
         "longitudinal_policy": surface.get("longitudinal_policy"),
+        "retained_suite_summary": retained_summary,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

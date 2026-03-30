@@ -111,6 +111,7 @@
     ]
   },
   "longitudinal_policy": {
+    "suite_manifest": "tests/conformance/longitudinal_suites.json",
     "retained_suite_classes": [
       "profile-minimum-basis",
       "runtime-regression-basis",

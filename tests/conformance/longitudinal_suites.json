@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.conformance.longitudinal_suites.v1",
+  "schema_version": 1,
+  "retained_suites": [
+    {
+      "suite_id": "core-profile-basis",
+      "suite_class": "profile-minimum-basis",
+      "bucket": "parser",
+      "manifest": "tests/conformance/parser/manifest.json",
+      "traceability_targets": [
+        "TUV-01",
+        "M16-A001",
+        "M20-A008"
+      ]
+    },
+    {
+      "suite_id": "runtime-regression-basis",
+      "suite_class": "runtime-regression-basis",
+      "bucket": "lowering_abi",
+      "manifest": "tests/conformance/lowering_abi/manifest.json",
+      "traceability_targets": [
+        "ARC-67-01",
+        "ACT-05",
+        "LIFE-05"
+      ]
+    },
+    {
+      "suite_id": "module-roundtrip-basis",
+      "suite_class": "module-roundtrip-basis",
+      "bucket": "module_roundtrip",
+      "manifest": "tests/conformance/module_roundtrip/manifest.json",
+      "traceability_targets": [
+        "MOD-53-01",
+        "ACT-08",
+        "INT-SWIFT-05"
+      ]
+    },
+    {
+      "suite_id": "example-adoption-basis",
+      "suite_class": "example-adoption-basis",
+      "bucket": "examples",
+      "manifest": "tests/conformance/examples/manifest.json",
+      "traceability_targets": [
+        "optional_chaining",
+        "cross_feature",
+        "reification_outcomes"
+      ]
+    }
+  ]
+}

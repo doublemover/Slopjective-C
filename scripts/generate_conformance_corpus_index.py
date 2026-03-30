@@ -13,6 +13,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS_SURFACE_PATH = ROOT / "tests" / "conformance" / "corpus_surface.json"
+LONGITUDINAL_SUITES_PATH = ROOT / "tests" / "conformance" / "longitudinal_suites.json"
 INDEX_PATH = ROOT / "tmp" / "reports" / "conformance" / "corpus-index.json"
 INDEX_CONTRACT_ID = "objc3c.conformance.corpus.index.v1"
 FAMILY_ROW_RE = re.compile(r"^\|\s*`(?P<family>[^`]+)`\s*\|\s*`(?P<lane>[^`]+)`\s*\|\s*`(?P<buckets>[^`]+)`\s*\|$")
@@ -95,6 +96,7 @@ def main() -> int:
         return 1
 
     surface = load_json(CORPUS_SURFACE_PATH)
+    longitudinal_payload = load_json(LONGITUDINAL_SUITES_PATH)
     taxonomy = surface.get("taxonomy", {})
     manifest_inventory = taxonomy.get("manifest_inventory", {})
     if not isinstance(manifest_inventory, dict):
@@ -109,6 +111,22 @@ def main() -> int:
         manifest_path = ROOT / str(manifest_relative)
         manifest_summaries.append(summarize_manifest(bucket, manifest_path))
 
+    retained_suites = longitudinal_payload.get("retained_suites", [])
+    retained_partition: list[dict[str, Any]] = []
+    for entry in retained_suites:
+        if not isinstance(entry, dict):
+            continue
+        retained_partition.append(
+            {
+                "suite_id": entry.get("suite_id"),
+                "suite_class": entry.get("suite_class"),
+                "bucket": entry.get("bucket"),
+                "manifest": entry.get("manifest"),
+                "traceability_targets": entry.get("traceability_targets"),
+            }
+        )
+    retained_partition.sort(key=lambda entry: str(entry.get("suite_id") or ""))
+
     payload = {
         "contract_id": INDEX_CONTRACT_ID,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -119,6 +137,7 @@ def main() -> int:
         "gap_priority_model": surface.get("gap_priority_model"),
         "suite_partitions": surface.get("suite_partitions"),
         "longitudinal_policy": surface.get("longitudinal_policy"),
+        "retained_partition": retained_partition,
         "audit_surface": surface.get("audit_surface"),
         "family_rows": family_rows,
         "manifest_summaries": manifest_summaries,

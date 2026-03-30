@@ -42,6 +42,7 @@ Machine-readable indexes:
 - `tests/conformance/semantic/manifest.json`
 - `tests/conformance/lowering_abi/manifest.json`
 - `tests/conformance/module_roundtrip/manifest.json`
+- `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)
 

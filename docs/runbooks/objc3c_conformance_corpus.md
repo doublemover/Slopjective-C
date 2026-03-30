@@ -104,6 +104,7 @@ Suite partitions:
 
 Retained suite classes:
 
+- manifest: `tests/conformance/longitudinal_suites.json`
 - `profile-minimum-basis`
 - `runtime-regression-basis`
 - `module-roundtrip-basis`
