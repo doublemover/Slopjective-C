@@ -20,6 +20,7 @@
       "source_paths": [
         "scripts/run_objc3c_fuzz_safety.py",
         "scripts/run_objc3c_stress_minimization.py",
+        "scripts/run_objc3c_stress_crash_triage.py",
         "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
         "tests/tooling/fixtures/stress/minimization_manifest.json",
         "tests/tooling/fixtures/stress/safety_policy.json",

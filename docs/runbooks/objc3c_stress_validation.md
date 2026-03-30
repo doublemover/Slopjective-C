@@ -79,6 +79,7 @@ Downstream work must preserve these rules:
   - `scripts/run_objc3c_lowering_runtime_stress.py`
   - `scripts/run_objc3c_mixed_module_differential.py`
   - `scripts/run_objc3c_stress_minimization.py`
+  - `scripts/run_objc3c_stress_crash_triage.py`
   - `scripts/check_objc3c_native_execution_smoke.ps1`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
   - `scripts/check_objc3c_runtime_acceptance.py`
@@ -132,6 +133,8 @@ Downstream work must preserve these rules:
   - `python scripts/run_objc3c_mixed_module_differential.py`
 - run the deterministic reducer/minimization pass over failing checked-in seeds:
   - `python scripts/run_objc3c_stress_minimization.py`
+- build crash-signature indexes and replay requests from the current minimized corpus:
+  - `python scripts/run_objc3c_stress_crash_triage.py`
 - validate the checked-in stress source contract:
   - `python scripts/check_stress_source_surface.py`
 - run the current executable smoke and replay proof paths:
