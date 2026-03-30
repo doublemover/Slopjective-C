@@ -17,6 +17,7 @@
     "cache_invalidation_proof",
     "macro_host_cache_proof",
     "docs_generation_proof",
+    "workload_summary",
     "results"
   ]
 }

@@ -874,6 +874,30 @@ $summary = [ordered]@{
   cache_invalidation_proof = $cacheInvalidationProof
   macro_host_cache_proof = $macroHostProof
   docs_generation_proof = $docsGenerationProof
+  workload_summary = [ordered]@{
+    direct_compile_fixture_count = $total
+    direct_compile_total_elapsed_ms = $totalElapsedMs
+    cache_proof_elapsed_ms = if ($cacheProof.executed -and $null -ne $cacheProof.run1 -and $null -ne $cacheProof.run2) {
+      [Math]::Round(([double]$cacheProof.run1.elapsed_ms + [double]$cacheProof.run2.elapsed_ms), 3)
+    } else {
+      0.0
+    }
+    cache_invalidation_elapsed_ms = if ($cacheInvalidationProof.executed -and $null -ne $cacheInvalidationProof.run1 -and $null -ne $cacheInvalidationProof.run2) {
+      [Math]::Round(([double]$cacheInvalidationProof.run1.elapsed_ms + [double]$cacheInvalidationProof.run2.elapsed_ms), 3)
+    } else {
+      0.0
+    }
+    macro_host_cache_elapsed_ms = if ($macroHostProof.executed -and $null -ne $macroHostProof.run1 -and $null -ne $macroHostProof.run2) {
+      [Math]::Round(([double]$macroHostProof.run1.elapsed_ms + [double]$macroHostProof.run2.elapsed_ms), 3)
+    } else {
+      0.0
+    }
+    docs_generation_elapsed_ms = if ($docsGenerationProof.executed -and $null -ne $docsGenerationProof.native_docs -and $null -ne $docsGenerationProof.public_command_surface) {
+      [Math]::Round(([double]$docsGenerationProof.native_docs.elapsed_ms + [double]$docsGenerationProof.public_command_surface.elapsed_ms), 3)
+    } else {
+      0.0
+    }
+  }
   total = $total
   passed = $passedCount
   failed = $failedCount
