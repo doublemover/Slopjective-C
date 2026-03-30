@@ -115,6 +115,27 @@ of inventing a second examples tree inside `stdlib/`.
 - the package model stays the shared `tmp/pkg/objc3c-native-runnable-toolchain/`
   bundle rather than a second stdlib-only publish format
 
+## Live Workflow Surface
+
+The live stdlib publish and adoption workflow is currently a composition of
+existing public actions, not a parallel milestone-only wrapper.
+
+Integration flow:
+- `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
+- `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
+- `python scripts/objc3c_public_workflow_runner.py validate-showcase`
+- `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
+
+Release-facing flow:
+- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
+- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+
+Report roots:
+- `tmp/reports/stdlib/`
+- `tmp/reports/showcase/`
+- `tmp/reports/tutorials/`
+
 ## Exact Live Commands
 
 - `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`

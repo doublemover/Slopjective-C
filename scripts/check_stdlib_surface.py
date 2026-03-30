@@ -671,12 +671,31 @@ def main() -> int:
         "stdlib_program_examples",
     ]:
         return fail("program surface staged_manifest_fields drifted")
+    if program_surface.get("workflow_surface") != {
+        "report_root": "tmp/reports/stdlib",
+        "showcase_report_root": "tmp/reports/showcase",
+        "tutorial_report_root": "tmp/reports/tutorials",
+        "integration_actions": [
+            "check-documentation-surface",
+            "validate-getting-started",
+            "validate-showcase",
+            "inspect-capability-explorer",
+        ],
+        "release_actions": [
+            "validate-stdlib-foundation",
+            "validate-runnable-stdlib-foundation",
+            "package-runnable-toolchain",
+        ],
+    }:
+        return fail("program surface workflow_surface drifted")
     if program_surface.get("public_actions") != [
         "check-documentation-surface",
         "check-showcase-surface",
         "validate-getting-started",
         "validate-showcase",
         "validate-runnable-showcase",
+        "validate-stdlib-foundation",
+        "validate-runnable-stdlib-foundation",
         "inspect-capability-explorer",
         "package-runnable-toolchain",
     ]:
@@ -687,6 +706,8 @@ def main() -> int:
         "validate_getting_started": "npm run test:getting-started",
         "validate_showcase": "npm run test:showcase",
         "validate_runnable_showcase": "npm run test:showcase:e2e",
+        "validate_stdlib_foundation": "npm run test:stdlib",
+        "validate_runnable_stdlib_foundation": "npm run test:stdlib:e2e",
         "inspect_capability_explorer": "npm run inspect:objc3c:capabilities",
         "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
     }:
