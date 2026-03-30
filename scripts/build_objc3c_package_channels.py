@@ -147,7 +147,7 @@ def bootstrap_script_text() -> str:
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
-$installRoot = Split-Path -Parent $PSScriptRoot
+$installRoot = $PSScriptRoot
 $toolchainHome = Join-Path $installRoot "objc3c"
 $binPath = Join-Path $toolchainHome "artifacts/bin"
 
@@ -182,7 +182,7 @@ New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
 Expand-Archive -LiteralPath $installerArchive -DestinationPath $installerImageRoot -Force
 
 & $installerScript -InstallRoot $InstallRoot -Force
-if ($LASTEXITCODE -ne 0) {
+if (-not $?) {
   exit $LASTEXITCODE
 }
 

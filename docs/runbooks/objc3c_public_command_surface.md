@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `127`
+- Current public script count: `132`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -91,6 +91,11 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:release-manifest` | `build-release-manifest` | `repo` | `release payload selection and reproducibility proof stay tied to the live runnable package manifest and release-evidence boundary` | `fixed-shape` | `python:scripts/build_objc3c_release_manifest.py` |
 | `publish:objc3c:release-provenance` | `publish-release-provenance` | `repo` | `release provenance publication stays traceable to the live release manifest, package manifest, and release-evidence index` | `fixed-shape` | `python:scripts/publish_objc3c_release_provenance.py` |
 | `test:objc3c:release-foundation` | `validate-release-foundation` | `nightly` | `release taxonomy, reproducible package assembly, and provenance publication stay executable on the live runnable package surface` | `fixed-shape` | `runner-internal + direct release foundation commands` |
+| `check:objc3c:packaging-channels:surface` | `check-packaging-channels-surface` | `repo` | `packaging-channel publication stays rooted in checked-in channel, platform, and installer policy contracts` | `fixed-shape` | `python:scripts/check_packaging_channels_source_surface.py` |
+| `check:objc3c:packaging-channels:schemas` | `check-packaging-channels-schema-surface` | `repo` | `packaging-channel and install-receipt artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_packaging_channels_schema_surface.py` |
+| `package:objc3c:channels` | `build-package-channels` | `repo` | `package channels stay derived from the live runnable package and release-foundation artifacts` | `fixed-shape` | `python:scripts/build_objc3c_package_channels.py` |
+| `test:objc3c:packaging-channels` | `validate-packaging-channels` | `nightly` | `portable archive installer image and offline bundle generation stay executable on the live release surface` | `fixed-shape` | `runner-internal + direct packaging-channel commands` |
+| `test:objc3c:packaging-channels:e2e` | `validate-packaging-channels-end-to-end` | `full` | `packaging-channel artifacts stay installable rollback-safe and offline-bootstrappable under temp-owned roots` | `fixed-shape` | `python:scripts/check_objc3c_packaging_channels_end_to_end.py` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
