@@ -731,6 +731,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_bonus_experiences.md",
       "docs/runbooks/objc3c_performance.md",
       "docs/runbooks/objc3c_performance_governance.md",
+      "docs/runbooks/objc3c_release_foundation.md",
       "docs/runbooks/objc3c_runtime_performance.md",
       "docs/runbooks/objc3c_stress_validation.md",
       "docs/runbooks/objc3c_stdlib_foundation.md",
@@ -755,6 +756,9 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       inspect_performance_dashboard = "inspect:objc3c:performance-dashboard"
       publish_performance_report = "publish:objc3c:performance-report"
       test_performance_governance = "test:objc3c:performance-governance"
+      inspect_release_manifest = "inspect:objc3c:release-manifest"
+      publish_release_provenance = "publish:objc3c:release-provenance"
+      test_release_foundation = "test:objc3c:release-foundation"
       inspect_runtime_performance = "inspect:objc3c:runtime-performance"
       test_runtime_performance = "test:objc3c:runtime-performance"
       test_runtime_performance_e2e = "test:objc3c:runnable-runtime-performance"
@@ -974,6 +978,42 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "validate-performance-governance",
         "validate-performance-governance-integration",
         "validate-performance-governance-end-to-end"
+      )
+    }
+    release_foundation_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_release_foundation.md"
+      source_surface_contract = "tests/tooling/fixtures/release_foundation/source_surface.json"
+      artifact_taxonomy = "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json"
+      distribution_trust_model = "tests/tooling/fixtures/release_foundation/distribution_trust_model.json"
+      distribution_audit = "tests/tooling/fixtures/release_foundation/distribution_audit.json"
+      reproducibility_policy = "tests/tooling/fixtures/release_foundation/reproducibility_policy.json"
+      release_payload_policy = "tests/tooling/fixtures/release_foundation/release_payload_policy.json"
+      provenance_policy = "tests/tooling/fixtures/release_foundation/provenance_policy.json"
+      workflow_surface = "tests/tooling/fixtures/release_foundation/workflow_surface.json"
+      schema_surface = "tests/tooling/fixtures/release_foundation/schema_surface.json"
+      release_manifest_schema = "schemas/objc3c-release-manifest-v1.schema.json"
+      release_sbom_schema = "schemas/objc3c-release-sbom-v1.schema.json"
+      release_attestation_schema = "schemas/objc3c-release-attestation-v1.schema.json"
+      source_roots = @(
+        "scripts/check_release_foundation_source_surface.py",
+        "scripts/check_release_foundation_schema_surface.py",
+        "scripts/build_objc3c_release_manifest.py",
+        "scripts/publish_objc3c_release_provenance.py",
+        "scripts/check_objc3c_release_foundation_integration.py",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "scripts/check_release_evidence.py"
+      )
+      report_roots = @(
+        "tmp/reports/release-foundation",
+        "tmp/artifacts/release-foundation",
+        "tmp/pkg/objc3c-release-foundation"
+      )
+      public_actions = @(
+        "check-release-foundation-surface",
+        "check-release-foundation-schema-surface",
+        "build-release-manifest",
+        "publish-release-provenance",
+        "validate-release-foundation"
       )
     }
     stress_validation_surface = [ordered]@{

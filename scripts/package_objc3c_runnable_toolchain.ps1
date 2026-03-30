@@ -207,6 +207,7 @@ $requiredRelativeFiles = @(
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
   "docs/runbooks/objc3c_public_command_surface.md",
+  "docs/runbooks/objc3c_release_foundation.md",
   "docs/runbooks/objc3c_runtime_performance.md",
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
@@ -233,7 +234,15 @@ $requiredRelativeFiles = @(
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+  "schemas/objc3c-release-manifest-v1.schema.json",
+  "schemas/objc3c-release-sbom-v1.schema.json",
+  "schemas/objc3c-release-attestation-v1.schema.json",
   "scripts/check_release_evidence.py",
+  "scripts/check_release_foundation_source_surface.py",
+  "scripts/check_release_foundation_schema_surface.py",
+  "scripts/build_objc3c_release_manifest.py",
+  "scripts/publish_objc3c_release_provenance.py",
+  "scripts/check_objc3c_release_foundation_integration.py",
   "scripts/check_conformance_suite.ps1",
   "scripts/check_conformance_corpus_surface.py",
   "scripts/generate_conformance_corpus_index.py",
@@ -255,6 +264,15 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp",
   "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp",
   "tests/tooling/fixtures/native/hello.objc3",
+  "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json",
+  "tests/tooling/fixtures/release_foundation/distribution_trust_model.json",
+  "tests/tooling/fixtures/release_foundation/distribution_audit.json",
+  "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
+  "tests/tooling/fixtures/release_foundation/release_payload_policy.json",
+  "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+  "tests/tooling/fixtures/release_foundation/source_surface.json",
+  "tests/tooling/fixtures/release_foundation/schema_surface.json",
+  "tests/tooling/fixtures/release_foundation/workflow_surface.json",
   "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
   "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
   "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
@@ -439,6 +457,7 @@ $manifestPayload = [ordered]@{
   bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
+  release_foundation_surface = $repoSupercleanSurfacePayload["release_foundation_surface"]
   runtime_performance_surface = $repoSupercleanSurfacePayload["runtime_performance_surface"]
   compiler_throughput_surface = $repoSupercleanSurfacePayload["compiler_throughput_surface"]
   conformance_corpus_surface = $repoSupercleanSurfacePayload["conformance_corpus_surface"]
@@ -532,6 +551,7 @@ $manifestPayload = [ordered]@{
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
     inspect_performance = "npm run inspect:objc3c:performance"
+    inspect_release_manifest = "npm run inspect:objc3c:release-manifest"
     inspect_runtime_performance = "npm run inspect:objc3c:runtime-performance"
     inspect_compiler_throughput = "npm run inspect:objc3c:compiler-throughput"
     inspect_comparative_baselines = "npm run inspect:objc3c:comparative-baselines"
@@ -547,6 +567,10 @@ $manifestPayload = [ordered]@{
     runtime_performance_e2e = "npm run test:objc3c:runnable-runtime-performance"
     compiler_throughput = "npm run test:objc3c:compiler-throughput"
     compiler_throughput_e2e = "npm run test:objc3c:runnable-compiler-throughput"
+    check_release_foundation_surface = "npm run check:objc3c:release-foundation:surface"
+    check_release_foundation_schema_surface = "npm run check:objc3c:release-foundation:schemas"
+    release_foundation = "npm run test:objc3c:release-foundation"
+    publish_release_provenance = "npm run publish:objc3c:release-provenance"
     runnable_performance = "npm run test:objc3c:runnable-performance"
     showcase = "npm run test:showcase"
     showcase_e2e = "npm run test:showcase:e2e"
