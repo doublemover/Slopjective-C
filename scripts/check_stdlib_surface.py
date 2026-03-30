@@ -647,6 +647,30 @@ def main() -> int:
         return fail("program surface machine_report_root drifted")
     if program_surface.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
         return fail("program surface package_stage_root drifted")
+    if (
+        program_surface.get("publish_model")
+        != "shared-runnable-toolchain-bundle-carries-live-stdlib-docs-tutorials-site-and-showcase-surfaces"
+    ):
+        return fail("program surface publish_model drifted")
+    if program_surface.get("publish_inputs") != [
+        "stdlib/README.md",
+        "docs/runbooks/objc3c_stdlib_program.md",
+        "docs/tutorials/README.md",
+        "docs/tutorials/getting_started.md",
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "showcase/README.md",
+        "showcase/portfolio.json",
+        "showcase/tutorial_walkthrough.json",
+        "site/src/index.body.md",
+    ]:
+        return fail("program surface publish_inputs drifted")
+    if program_surface.get("staged_manifest_fields") != [
+        "stdlib_program_surface",
+        "stdlib_program_command_surfaces",
+        "stdlib_program_publish_inputs",
+        "stdlib_program_examples",
+    ]:
+        return fail("program surface staged_manifest_fields drifted")
     if program_surface.get("public_actions") != [
         "check-documentation-surface",
         "check-showcase-surface",
@@ -698,6 +722,14 @@ def main() -> int:
             return fail(f"program surface {path_key} is malformed")
         if not (ROOT / raw_path).exists():
             return fail(f"program surface live path missing: {raw_path}")
+    publish_inputs = program_surface.get("publish_inputs")
+    if not isinstance(publish_inputs, list) or not publish_inputs:
+        return fail("program surface publish_inputs missing")
+    for raw_path in publish_inputs:
+        if not isinstance(raw_path, str) or not raw_path:
+            return fail("program surface publish_inputs contains malformed path")
+        if not (ROOT / raw_path).exists():
+            return fail(f"program surface publish input missing: {raw_path}")
 
     capability_demo_examples = program_surface.get("capability_demo_examples")
     if not isinstance(capability_demo_examples, list) or len(capability_demo_examples) != 3:

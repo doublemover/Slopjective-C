@@ -904,6 +904,37 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "package-runnable-toolchain"
       )
     }
+    stdlib_program_surface = [ordered]@{
+      program_contract = "stdlib/program_surface.json"
+      stdlib_readme = "stdlib/README.md"
+      runbook = "docs/runbooks/objc3c_stdlib_program.md"
+      site_entry = "site/src/index.body.md"
+      publish_inputs = @(
+        "stdlib/README.md",
+        "docs/runbooks/objc3c_stdlib_program.md",
+        "docs/tutorials/README.md",
+        "docs/tutorials/getting_started.md",
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "showcase/README.md",
+        "showcase/portfolio.json",
+        "showcase/tutorial_walkthrough.json",
+        "site/src/index.body.md"
+      )
+      report_roots = @(
+        "tmp/artifacts/stdlib",
+        "tmp/reports/stdlib",
+        "tmp/pkg/objc3c-native-runnable-toolchain"
+      )
+      public_actions = @(
+        "check-documentation-surface",
+        "check-showcase-surface",
+        "validate-getting-started",
+        "validate-showcase",
+        "validate-runnable-showcase",
+        "inspect-capability-explorer",
+        "package-runnable-toolchain"
+      )
+    }
     frontend_contract_artifacts = @(
       $FrontendDefinitions | ForEach-Object {
         [ordered]@{

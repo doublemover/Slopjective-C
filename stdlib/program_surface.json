@@ -16,6 +16,24 @@
   "machine_output_root": "tmp/artifacts/stdlib",
   "machine_report_root": "tmp/reports/stdlib",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "publish_model": "shared-runnable-toolchain-bundle-carries-live-stdlib-docs-tutorials-site-and-showcase-surfaces",
+  "publish_inputs": [
+    "stdlib/README.md",
+    "docs/runbooks/objc3c_stdlib_program.md",
+    "docs/tutorials/README.md",
+    "docs/tutorials/getting_started.md",
+    "docs/tutorials/objc2_swift_cpp_comparison.md",
+    "showcase/README.md",
+    "showcase/portfolio.json",
+    "showcase/tutorial_walkthrough.json",
+    "site/src/index.body.md"
+  ],
+  "staged_manifest_fields": [
+    "stdlib_program_surface",
+    "stdlib_program_command_surfaces",
+    "stdlib_program_publish_inputs",
+    "stdlib_program_examples"
+  ],
   "public_actions": [
     "check-documentation-surface",
     "check-showcase-surface",

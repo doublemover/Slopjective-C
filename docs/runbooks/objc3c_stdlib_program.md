@@ -93,6 +93,28 @@ of inventing a second examples tree inside `stdlib/`.
 - `tmp/reports/showcase/`
 - `tmp/pkg/objc3c-native-runnable-toolchain/`
 
+## Publish And Package Surface
+
+- `stdlib/program_surface.json` is the checked-in contract for the stdlib
+  program publish surface
+- `publish_inputs` must stay rooted in the live reader-facing paths:
+  - `stdlib/README.md`
+  - `docs/runbooks/objc3c_stdlib_program.md`
+  - `docs/tutorials/README.md`
+  - `docs/tutorials/getting_started.md`
+  - `docs/tutorials/objc2_swift_cpp_comparison.md`
+  - `showcase/README.md`
+  - `showcase/portfolio.json`
+  - `showcase/tutorial_walkthrough.json`
+  - `site/src/index.body.md`
+- `staged_manifest_fields` for the shared runnable bundle are:
+  - `stdlib_program_surface`
+  - `stdlib_program_command_surfaces`
+  - `stdlib_program_publish_inputs`
+  - `stdlib_program_examples`
+- the package model stays the shared `tmp/pkg/objc3c-native-runnable-toolchain/`
+  bundle rather than a second stdlib-only publish format
+
 ## Exact Live Commands
 
 - `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
