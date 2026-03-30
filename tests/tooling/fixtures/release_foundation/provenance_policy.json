@@ -1,0 +1,36 @@
+{
+  "contract_id": "objc3c.release.foundation.provenance.policy.v1",
+  "surface_kind": "sbom-attestation-and-source-stamping-strategy",
+  "sbom_contract_id": "objc3c.release.foundation.sbom.v1",
+  "attestation_contract_id": "objc3c.release.foundation.attestation.v1",
+  "required_sbom_component_groups": [
+    "native-binaries",
+    "runtime-library",
+    "scripts-and-runbooks",
+    "showcase-and-tutorials",
+    "stdlib",
+    "conformance-and-evidence"
+  ],
+  "required_attestation_bindings": [
+    "release_manifest_sha256",
+    "release_payload_digest_sha256",
+    "package_manifest_sha256",
+    "sbom_sha256",
+    "repo_superclean_surface_sha256",
+    "release_evidence_index_sha256"
+  ],
+  "required_source_stamp_fields": [
+    "git_commit",
+    "git_tree_dirty",
+    "package_root",
+    "package_manifest_path",
+    "release_manifest_path",
+    "sbom_path",
+    "attestation_path"
+  ],
+  "publication_outputs": [
+    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
+    "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json"
+  ]
+}
