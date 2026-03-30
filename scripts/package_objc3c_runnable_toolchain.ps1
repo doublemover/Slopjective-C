@@ -238,6 +238,9 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_foundation_surface"))
 $stdlibLoweringImportSurfaceRelativePath = "stdlib/lowering_import_surface.json"
 $stdlibLoweringImportSurfacePath = Join-Path $packageRoot ($stdlibLoweringImportSurfaceRelativePath.Replace('/', '\'))
 $stdlibLoweringImportSurfacePayload = Get-Content -LiteralPath $stdlibLoweringImportSurfacePath -Raw | ConvertFrom-Json -AsHashtable
+$stdlibAdvancedHelperPackageSurfaceRelativePath = "stdlib/advanced_helper_package_surface.json"
+$stdlibAdvancedHelperPackageSurfacePath = Join-Path $packageRoot ($stdlibAdvancedHelperPackageSurfaceRelativePath.Replace('/', '\'))
+$stdlibAdvancedHelperPackageSurfacePayload = Get-Content -LiteralPath $stdlibAdvancedHelperPackageSurfacePath -Raw | ConvertFrom-Json -AsHashtable
 
 $manifestPayload = [ordered]@{
   contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
@@ -335,8 +338,12 @@ $manifestPayload = [ordered]@{
   stdlib_package_surface = "stdlib/package_surface.json"
   stdlib_advanced_architecture = "stdlib/advanced_architecture.json"
   stdlib_lowering_import_surface = $stdlibLoweringImportSurfaceRelativePath
+  stdlib_advanced_helper_package_surface = $stdlibAdvancedHelperPackageSurfaceRelativePath
   stdlib_lowering_artifact_filenames = $stdlibLoweringImportSurfacePayload["artifact_filenames"]
   stdlib_import_surface = $stdlibLoweringImportSurfacePayload["import_surface"]
+  advanced_helper_modules = $stdlibAdvancedHelperPackageSurfacePayload["advanced_helper_modules"]
+  advanced_helper_command_surfaces = $stdlibAdvancedHelperPackageSurfacePayload["advanced_helper_command_surfaces"]
+  advanced_helper_profile_gates = $stdlibAdvancedHelperPackageSurfacePayload["advanced_helper_profile_gates"]
   stdlib_modules = @(
     [ordered]@{
       canonical_module = "objc3.core"

@@ -102,6 +102,9 @@ def main() -> int:
     stability_policy = package_root / normalize_rel_path(str(manifest["stdlib_stability_policy"]))
     package_surface = package_root / normalize_rel_path(str(manifest["stdlib_package_surface"]))
     lowering_import_surface = package_root / normalize_rel_path(str(manifest["stdlib_lowering_import_surface"]))
+    advanced_helper_package_surface = package_root / normalize_rel_path(
+        str(manifest["stdlib_advanced_helper_package_surface"])
+    )
 
     for path in (
         compile_wrapper,
@@ -111,11 +114,13 @@ def main() -> int:
         stability_policy,
         package_surface,
         lowering_import_surface,
+        advanced_helper_package_surface,
     ):
         expect(path.is_file(), f"packaged runnable toolchain missing required stdlib file {path}")
 
     package_surface_payload = load_json(package_surface)
     lowering_import_surface_payload = load_json(lowering_import_surface)
+    advanced_helper_package_surface_payload = load_json(advanced_helper_package_surface)
     expect(
         package_surface_payload.get("workspace_contract") == "stdlib/workspace.json",
         "packaged stdlib package surface drifted from the checked-in workspace contract",
@@ -125,6 +130,10 @@ def main() -> int:
         "packaged stdlib package surface drifted from the lowering/import surface contract",
     )
     expect(
+        package_surface_payload.get("advanced_helper_package_surface") == "stdlib/advanced_helper_package_surface.json",
+        "packaged stdlib package surface drifted from the advanced helper package contract",
+    )
+    expect(
         manifest.get("stdlib_lowering_artifact_filenames")
         == lowering_import_surface_payload.get("artifact_filenames"),
         "package manifest stdlib lowering artifact inventory drifted",
@@ -132,6 +141,24 @@ def main() -> int:
     expect(
         manifest.get("stdlib_import_surface") == lowering_import_surface_payload.get("import_surface"),
         "package manifest stdlib import surface drifted",
+    )
+    expect(
+        stdlib_surface.get("advanced_helper_package_surface") == "stdlib/advanced_helper_package_surface.json",
+        "package manifest stdlib surface missing advanced helper package surface",
+    )
+    expect(
+        manifest.get("advanced_helper_modules") == advanced_helper_package_surface_payload.get("advanced_helper_modules"),
+        "package manifest advanced helper module inventory drifted",
+    )
+    expect(
+        manifest.get("advanced_helper_command_surfaces")
+        == advanced_helper_package_surface_payload.get("advanced_helper_command_surfaces"),
+        "package manifest advanced helper command surfaces drifted",
+    )
+    expect(
+        manifest.get("advanced_helper_profile_gates")
+        == advanced_helper_package_surface_payload.get("advanced_helper_profile_gates"),
+        "package manifest advanced helper profile gates drifted",
     )
 
     artifact_filenames = lowering_import_surface_payload["artifact_filenames"]
@@ -212,8 +239,14 @@ def main() -> int:
             "stability_policy": repo_rel(stability_policy),
             "package_surface": repo_rel(package_surface),
             "lowering_import_surface": repo_rel(lowering_import_surface),
+            "advanced_helper_package_surface": repo_rel(advanced_helper_package_surface),
             "artifact_filenames": artifact_filenames,
             "import_surface": lowering_import_surface_payload["import_surface"],
+        },
+        "advanced_helper_surface": {
+            "modules": manifest["advanced_helper_modules"],
+            "command_surfaces": manifest["advanced_helper_command_surfaces"],
+            "profile_gates": manifest["advanced_helper_profile_gates"],
         },
         "compile_results": compile_results,
         "steps": [

@@ -879,8 +879,10 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       advanced_architecture = "stdlib/advanced_architecture.json"
       semantic_policy = "stdlib/semantic_policy.json"
       lowering_import_surface = "stdlib/lowering_import_surface.json"
+      advanced_helper_package_surface = "stdlib/advanced_helper_package_surface.json"
       source_roots = @(
         "stdlib/README.md",
+        "stdlib/advanced_helper_package_surface.json",
         "stdlib/modules/objc3.core/module.objc3",
         "stdlib/modules/objc3.errors/module.objc3",
         "stdlib/modules/objc3.concurrency/module.objc3",
