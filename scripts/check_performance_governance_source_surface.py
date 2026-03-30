@@ -71,6 +71,8 @@ def main() -> int:
     require_path(surface["claim_policy"], kind="claim policy")
     require_path(surface["breach_triage_policy"], kind="breach triage policy")
     require_path(surface["lab_policy"], kind="lab policy")
+    require_path(surface["waiver_registry"], kind="waiver registry")
+    require_path(surface["workflow_surface"], kind="workflow surface")
     require_path(surface["schema_surface"], kind="schema surface")
 
     checked_in_sources = surface.get("checked_in_sources")

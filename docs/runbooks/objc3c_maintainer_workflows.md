@@ -86,6 +86,19 @@ Performance-benchmark entrypoint:
 - use that runbook before widening benchmark claims, baseline corpus inputs, or
   packaged validation flows
 
+Performance-governance entrypoint:
+
+- `docs/runbooks/objc3c_performance_governance.md` is the maintainer boundary
+  for budget contracts, regression classification, dashboard derivation,
+  waivers, and publishable performance evidence
+- performance governance must stay on the existing performance benchmark,
+  compiler-throughput, runtime-performance, public runner, and checked-in
+  schema surfaces instead of inventing a second dashboard spreadsheet or
+  sidecar release report
+- use the public runner actions for source-surface checking, schema checking,
+  dashboard derivation, and publication before widening release-performance
+  claims or waiver semantics
+
 Runtime-performance entrypoint:
 
 - `docs/runbooks/objc3c_runtime_performance.md` is the maintainer boundary for
@@ -200,6 +213,14 @@ npm run test:repo
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
+- performance governance boundary: `docs/runbooks/objc3c_performance_governance.md`
+- performance governance source-surface check: `npm run check:objc3c:performance-governance:surface`
+- performance governance schema check: `npm run check:objc3c:performance-governance:schemas`
+- performance governance dashboard build: `npm run inspect:objc3c:performance-dashboard`
+- performance governance publication: `npm run publish:objc3c:performance-report`
+- integrated performance governance workflow: `npm run test:objc3c:performance-governance`
+- performance governance integration proof: `npm run test:objc3c:performance-governance:integration`
+- performance governance end-to-end proof: `npm run test:objc3c:performance-governance:e2e`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
 - runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
 - integrated runtime performance validation: `npm run test:objc3c:runtime-performance`

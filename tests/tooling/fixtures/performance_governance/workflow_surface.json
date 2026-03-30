@@ -1,0 +1,27 @@
+{
+  "contract_id": "objc3c.performance.governance.workflow.surface.v1",
+  "validate_action": "validate-performance-governance",
+  "integration_action": "validate-performance-governance-integration",
+  "end_to_end_action": "validate-performance-governance-end-to-end",
+  "public_scripts": [
+    "test:objc3c:performance-governance",
+    "test:objc3c:performance-governance:integration",
+    "test:objc3c:performance-governance:e2e",
+    "inspect:objc3c:performance-dashboard",
+    "publish:objc3c:performance-report"
+  ],
+  "release_evidence_paths": [
+    "tmp/reports/performance-governance/dashboard-summary.json",
+    "tmp/reports/performance-governance/public-summary.json",
+    "tmp/artifacts/performance-governance/dashboard/performance-dashboard.json",
+    "tmp/artifacts/performance-governance/badge/performance-status-badge.json",
+    "tmp/artifacts/performance-governance/report/performance-report.md"
+  ],
+  "upstream_validate_actions": [
+    "validate-performance-foundation",
+    "validate-compiler-throughput",
+    "validate-runtime-performance"
+  ],
+  "ci_action": "test-ci",
+  "nightly_action": "test-nightly"
+}
