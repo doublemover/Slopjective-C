@@ -730,6 +730,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_developer_tooling.md",
       "docs/runbooks/objc3c_bonus_experiences.md",
       "docs/runbooks/objc3c_performance.md",
+      "docs/runbooks/objc3c_performance_governance.md",
       "docs/runbooks/objc3c_runtime_performance.md",
       "docs/runbooks/objc3c_stress_validation.md",
       "docs/runbooks/objc3c_stdlib_foundation.md",
@@ -751,6 +752,9 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       build_public_command_surface = "build:docs:commands"
       build_stdlib = "build:objc3c:stdlib"
       check_stdlib_surface = "check:stdlib:surface"
+      inspect_performance_dashboard = "inspect:objc3c:performance-dashboard"
+      publish_performance_report = "publish:objc3c:performance-report"
+      test_performance_governance = "test:objc3c:performance-governance"
       inspect_runtime_performance = "inspect:objc3c:runtime-performance"
       test_runtime_performance = "test:objc3c:runtime-performance"
       test_runtime_performance_e2e = "test:objc3c:runnable-runtime-performance"
@@ -935,6 +939,41 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "validate-compiler-throughput",
         "validate-runnable-compiler-throughput",
         "package-runnable-toolchain"
+      )
+    }
+    performance_governance_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_performance_governance.md"
+      source_surface_contract = "tests/tooling/fixtures/performance_governance/source_surface.json"
+      budget_model = "tests/tooling/fixtures/performance_governance/budget_model.json"
+      claim_policy = "tests/tooling/fixtures/performance_governance/claim_policy.json"
+      breach_triage_policy = "tests/tooling/fixtures/performance_governance/breach_triage_policy.json"
+      lab_policy = "tests/tooling/fixtures/performance_governance/lab_policy.json"
+      waiver_registry = "tests/tooling/fixtures/performance_governance/waivers.json"
+      workflow_surface = "tests/tooling/fixtures/performance_governance/workflow_surface.json"
+      schema_surface = "tests/tooling/fixtures/performance_governance/schema_surface.json"
+      dashboard_schema = "schemas/objc3c-performance-dashboard-summary-v1.schema.json"
+      public_report_schema = "schemas/objc3c-performance-public-report-v1.schema.json"
+      source_roots = @(
+        "scripts/check_performance_governance_source_surface.py",
+        "scripts/check_performance_governance_schema_surface.py",
+        "scripts/build_objc3c_performance_dashboard.py",
+        "scripts/publish_objc3c_performance_report.py",
+        "scripts/check_objc3c_performance_governance_integration.py",
+        "scripts/check_objc3c_performance_governance_end_to_end.py"
+      )
+      report_roots = @(
+        "tmp/reports/performance-governance",
+        "tmp/artifacts/performance-governance",
+        "tmp/reports/objc3c-public-workflow"
+      )
+      public_actions = @(
+        "check-performance-governance-surface",
+        "check-performance-governance-schema-surface",
+        "build-performance-dashboard",
+        "publish-performance-report",
+        "validate-performance-governance",
+        "validate-performance-governance-integration",
+        "validate-performance-governance-end-to-end"
       )
     }
     stress_validation_surface = [ordered]@{

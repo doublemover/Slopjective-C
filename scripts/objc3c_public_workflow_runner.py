@@ -71,6 +71,12 @@ PUBLIC_CONFORMANCE_SCORECARD_PY = ROOT / "scripts" / "build_objc3c_public_confor
 PUBLIC_CONFORMANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_public_conformance_report.py"
 PUBLIC_CONFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_integration.py"
 PUBLIC_CONFORMANCE_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_end_to_end.py"
+PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_performance_governance_source_surface.py"
+PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_performance_governance_schema_surface.py"
+PERFORMANCE_GOVERNANCE_DASHBOARD_PY = ROOT / "scripts" / "build_objc3c_performance_dashboard.py"
+PERFORMANCE_GOVERNANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_performance_report.py"
+PERFORMANCE_GOVERNANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_governance_integration.py"
+PERFORMANCE_GOVERNANCE_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_performance_governance_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -721,6 +727,45 @@ def action_validate_public_conformance_reporting_end_to_end(_: list[str]) -> int
     return run([sys.executable, str(PUBLIC_CONFORMANCE_END_TO_END_PY)])
 
 
+def action_check_performance_governance_surface(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY)])
+
+
+def action_check_performance_governance_schema_surface(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY)])
+
+
+def action_build_performance_dashboard(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_DASHBOARD_PY)])
+
+
+def action_publish_performance_report(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_REPORT_PY)])
+
+
+def action_validate_performance_governance(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-performance-governance",
+        [
+            ("validate-performance-foundation", [sys.executable, str(PERFORMANCE_INTEGRATION_PY)]),
+            ("validate-compiler-throughput", [sys.executable, str(COMPILER_THROUGHPUT_INTEGRATION_PY)]),
+            ("validate-runtime-performance", [sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)]),
+            ("check-performance-governance-surface", [sys.executable, str(PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY)]),
+            ("check-performance-governance-schema-surface", [sys.executable, str(PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY)]),
+            ("build-performance-dashboard", [sys.executable, str(PERFORMANCE_GOVERNANCE_DASHBOARD_PY)]),
+            ("publish-performance-report", [sys.executable, str(PERFORMANCE_GOVERNANCE_REPORT_PY)]),
+        ],
+    )
+
+
+def action_validate_performance_governance_integration(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_INTEGRATION_PY)])
+
+
+def action_validate_performance_governance_end_to_end(_: list[str]) -> int:
+    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_END_TO_END_PY)])
+
+
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     rc = execute_registered_action("build-native-contracts", [])
     if rc != 0:
@@ -1265,6 +1310,7 @@ def action_test_ci(_: list[str]) -> int:
             ("validate-stdlib-foundation", [sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)]),
             ("validate-stdlib-advanced", [sys.executable, str(STDLIB_ADVANCED_INTEGRATION_PY)]),
             ("validate-stdlib-program", [sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)]),
+            ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
@@ -1406,8 +1452,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("validate-stress", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-stress"]),
             ("validate-external-validation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-external-validation"]),
             ("validate-public-conformance-reporting", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-public-conformance-reporting"]),
-            ("validate-runtime-performance", [sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)]),
-            ("validate-compiler-throughput", [sys.executable, str(COMPILER_THROUGHPUT_INTEGRATION_PY)]),
+            ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1492,6 +1537,13 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-public-conformance-reporting": ActionSpec("validate-public-conformance-reporting", "run the integrated public-conformance reporting workflow", "runner-internal + direct public reporting commands", ("test:objc3c:public-conformance",), validation_tier="repo", guarantee_owner="public conformance reporting source policy schema scorecard and publication flows stay executable on the live workflow"),
     "validate-public-conformance-reporting-integration": ActionSpec("validate-public-conformance-reporting-integration", "validate the integrated public-conformance reporting workflow report and child artifacts", "python:scripts/check_objc3c_public_conformance_reporting_integration.py", ("test:objc3c:public-conformance:integration",), validation_tier="repo", guarantee_owner="integrated public conformance reporting artifacts stay coherent across source, schema, scorecard, and publication outputs"),
     "validate-public-conformance-reporting-end-to-end": ActionSpec("validate-public-conformance-reporting-end-to-end", "validate public-conformance reporting entrypoints, command-surface sync, and nightly wiring", "python:scripts/check_objc3c_public_conformance_reporting_end_to_end.py", ("test:objc3c:public-conformance:e2e",), validation_tier="repo", guarantee_owner="public conformance reporting entrypoints and nightly wiring stay coherent with the integrated reporting artifacts"),
+    "check-performance-governance-surface": ActionSpec("check-performance-governance-surface", "validate the checked-in performance governance source surface", "python:scripts/check_performance_governance_source_surface.py", ("check:objc3c:performance-governance:surface",), validation_tier="repo", guarantee_owner="performance governance only publishes from the checked-in benchmark, policy, and reporting sources"),
+    "check-performance-governance-schema-surface": ActionSpec("check-performance-governance-schema-surface", "validate the checked-in performance governance schema surface", "python:scripts/check_performance_governance_schema_surface.py", ("check:objc3c:performance-governance:schemas",), validation_tier="repo", guarantee_owner="performance dashboard and public report artifacts stay on checked-in schema contracts"),
+    "build-performance-dashboard": ActionSpec("build-performance-dashboard", "derive the live performance governance dashboard from checked-in budgets and live benchmark summaries", "python:scripts/build_objc3c_performance_dashboard.py", ("inspect:objc3c:performance-dashboard",), validation_tier="repo", guarantee_owner="performance governance dashboard derivation stays tied to the live benchmark, throughput, and runtime summaries"),
+    "publish-performance-report": ActionSpec("publish-performance-report", "publish the live performance governance report artifacts and summary", "python:scripts/publish_objc3c_performance_report.py", ("publish:objc3c:performance-report",), validation_tier="repo", guarantee_owner="performance governance publication stays traceable to the checked-in policy contracts and live dashboard summary"),
+    "validate-performance-governance": ActionSpec("validate-performance-governance", "run the integrated performance governance workflow", "runner-internal + direct performance governance commands", ("test:objc3c:performance-governance",), validation_tier="repo", guarantee_owner="performance governance budgets, drift diagnostics, dashboard derivation, and report publication stay executable on the live performance surfaces"),
+    "validate-performance-governance-integration": ActionSpec("validate-performance-governance-integration", "validate the integrated performance governance workflow report and child artifacts", "python:scripts/check_objc3c_performance_governance_integration.py", ("test:objc3c:performance-governance:integration",), validation_tier="repo", guarantee_owner="integrated performance governance artifacts stay coherent across source, schema, dashboard, and publication outputs"),
+    "validate-performance-governance-end-to-end": ActionSpec("validate-performance-governance-end-to-end", "validate performance governance entrypoints, command-surface sync, and ci/nightly wiring", "python:scripts/check_objc3c_performance_governance_end_to_end.py", ("test:objc3c:performance-governance:e2e",), validation_tier="repo", guarantee_owner="performance governance entrypoints and ci/nightly wiring stay coherent with the integrated reporting artifacts"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1502,7 +1554,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal", ("test",)),
     "test-fast": ActionSpec("test-fast", "fast public validation entrypoint", "runner-internal + targeted smoke slice", ("test:fast",), validation_tier="fast", guarantee_owner="runtime acceptance, canonical replay, and a bounded smoke slice"),
     "test-smoke": ActionSpec("test-smoke", "developer smoke validation entrypoint", "runner-internal", ("test:smoke",), validation_tier="smoke", guarantee_owner="full execution smoke corpus"),
-    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",), validation_tier="ci", guarantee_owner="task hygiene, developer-tooling integration, stdlib foundation, advanced, and program validation, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation"),
+    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",), validation_tier="ci", guarantee_owner="task hygiene, developer-tooling integration, bonus-experience validation, stdlib validation, performance governance reporting, runtime acceptance, canonical replay, and full execution smoke validation"),
     "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",), validation_tier="recovery", guarantee_owner="recovery compile success and deterministic recovery diagnostics", pass_through_args=True),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
@@ -1529,7 +1581,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive dispatch fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive dispatch and artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
-    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus runtime-performance benchmarking, conformance corpus indexing, recovery, and broad corpus sweeps"),
+    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus performance governance reporting, conformance corpus indexing, recovery, and broad corpus sweeps"),
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1", ("package:objc3c-native:runnable-toolchain",)),
     "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1", ("proof:objc3c",)),
 }
@@ -1604,6 +1656,13 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-public-conformance-reporting": action_validate_public_conformance_reporting,
     "validate-public-conformance-reporting-integration": action_validate_public_conformance_reporting_integration,
     "validate-public-conformance-reporting-end-to-end": action_validate_public_conformance_reporting_end_to_end,
+    "check-performance-governance-surface": action_check_performance_governance_surface,
+    "check-performance-governance-schema-surface": action_check_performance_governance_schema_surface,
+    "build-performance-dashboard": action_build_performance_dashboard,
+    "publish-performance-report": action_publish_performance_report,
+    "validate-performance-governance": action_validate_performance_governance,
+    "validate-performance-governance-integration": action_validate_performance_governance_integration,
+    "validate-performance-governance-end-to-end": action_validate_performance_governance_end_to_end,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,

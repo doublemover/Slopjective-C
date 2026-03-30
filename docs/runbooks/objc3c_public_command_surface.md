@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `115`
+- Current public script count: `122`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -79,6 +79,13 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:public-conformance` | `validate-public-conformance-reporting` | `repo` | `public conformance reporting source policy schema scorecard and publication flows stay executable on the live workflow` | `fixed-shape` | `runner-internal + direct public reporting commands` |
 | `test:objc3c:public-conformance:integration` | `validate-public-conformance-reporting-integration` | `repo` | `integrated public conformance reporting artifacts stay coherent across source, schema, scorecard, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_public_conformance_reporting_integration.py` |
 | `test:objc3c:public-conformance:e2e` | `validate-public-conformance-reporting-end-to-end` | `repo` | `public conformance reporting entrypoints and nightly wiring stay coherent with the integrated reporting artifacts` | `fixed-shape` | `python:scripts/check_objc3c_public_conformance_reporting_end_to_end.py` |
+| `check:objc3c:performance-governance:surface` | `check-performance-governance-surface` | `repo` | `performance governance only publishes from the checked-in benchmark, policy, and reporting sources` | `fixed-shape` | `python:scripts/check_performance_governance_source_surface.py` |
+| `check:objc3c:performance-governance:schemas` | `check-performance-governance-schema-surface` | `repo` | `performance dashboard and public report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_performance_governance_schema_surface.py` |
+| `inspect:objc3c:performance-dashboard` | `build-performance-dashboard` | `repo` | `performance governance dashboard derivation stays tied to the live benchmark, throughput, and runtime summaries` | `fixed-shape` | `python:scripts/build_objc3c_performance_dashboard.py` |
+| `publish:objc3c:performance-report` | `publish-performance-report` | `repo` | `performance governance publication stays traceable to the checked-in policy contracts and live dashboard summary` | `fixed-shape` | `python:scripts/publish_objc3c_performance_report.py` |
+| `test:objc3c:performance-governance` | `validate-performance-governance` | `repo` | `performance governance budgets, drift diagnostics, dashboard derivation, and report publication stay executable on the live performance surfaces` | `fixed-shape` | `runner-internal + direct performance governance commands` |
+| `test:objc3c:performance-governance:integration` | `validate-performance-governance-integration` | `repo` | `integrated performance governance artifacts stay coherent across source, schema, dashboard, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_integration.py` |
+| `test:objc3c:performance-governance:e2e` | `validate-performance-governance-end-to-end` | `repo` | `performance governance entrypoints and ci/nightly wiring stay coherent with the integrated reporting artifacts` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_end_to_end.py` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
@@ -89,7 +96,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:smoke` | `test-smoke` | `smoke` | `full execution smoke corpus` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, stdlib foundation, advanced, and program validation, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
+| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, bonus-experience validation, stdlib validation, performance governance reporting, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
@@ -116,7 +123,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive dispatch and artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
-| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus runtime-performance benchmarking, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
+| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus performance governance reporting, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `-` | `-` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `proof:objc3c` | `proof-objc3c` | `-` | `-` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
 
