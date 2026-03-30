@@ -4,10 +4,58 @@ fn objc3_concurrency_spawn_token(seed: i32) {
   return seed + 1;
 }
 
+fn objc3_concurrency_child_spawn_token(seed: i32) {
+  return seed + 1;
+}
+
+fn objc3_concurrency_detached_spawn_token(seed: i32) {
+  return seed + 2;
+}
+
+fn objc3_concurrency_join_status(result_code: i32, cancelled: i32) {
+  if (cancelled) {
+    return 2;
+  } else {
+    return result_code;
+  }
+}
+
+fn objc3_concurrency_task_group_scope_depth(parent_depth: i32, child_tasks: i32) {
+  if (child_tasks < 0) {
+    return parent_depth;
+  } else {
+    return parent_depth + child_tasks;
+  }
+}
+
+fn objc3_concurrency_cancellation_query(flag: i32) {
+  if (flag) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
 fn objc3_concurrency_cancellation_checkpoint(flag: i32) {
   if (flag) {
     return 1;
   } else {
     return 0;
+  }
+}
+
+fn objc3_concurrency_executor_hop_token(current_executor: i32, target_executor: i32) {
+  if (target_executor) {
+    return target_executor;
+  } else {
+    return current_executor;
+  }
+}
+
+fn objc3_concurrency_actor_mailbox_token(actor_seed: i32, pending_messages: i32) {
+  if (pending_messages < 0) {
+    return actor_seed;
+  } else {
+    return actor_seed + pending_messages;
   }
 }

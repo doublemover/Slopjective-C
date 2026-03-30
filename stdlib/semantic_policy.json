@@ -76,7 +76,14 @@
   },
   "concurrency_semantics": {
     "spawn_token": "returns seed plus 1 as the current deterministic child-spawn token placeholder",
+    "child_spawn_token": "returns seed plus 1 as the structured child-spawn helper token",
+    "detached_spawn_token": "returns seed plus 2 as the detached-spawn helper token",
+    "join_status": "returns the provided result code unless cancelled is nonzero, in which case it returns 2",
+    "task_group_scope_depth": "returns parent_depth plus child_tasks when child_tasks is nonnegative, otherwise parent_depth",
+    "cancellation_query": "returns 1 when the provided flag is nonzero and 0 otherwise",
     "cancellation_checkpoint": "returns 1 when the provided flag is nonzero and 0 otherwise",
+    "executor_hop_token": "returns target_executor when nonzero, otherwise current_executor",
+    "actor_mailbox_token": "returns actor_seed plus pending_messages when pending_messages is nonnegative, otherwise actor_seed",
     "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation and executor-hop helpers may grow additively inside objc3.concurrency",
     "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
   },

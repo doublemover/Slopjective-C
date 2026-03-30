@@ -23,6 +23,13 @@
   ],
   "exports": [
     "objc3_concurrency_spawn_token",
-    "objc3_concurrency_cancellation_checkpoint"
+    "objc3_concurrency_child_spawn_token",
+    "objc3_concurrency_detached_spawn_token",
+    "objc3_concurrency_join_status",
+    "objc3_concurrency_task_group_scope_depth",
+    "objc3_concurrency_cancellation_query",
+    "objc3_concurrency_cancellation_checkpoint",
+    "objc3_concurrency_executor_hop_token",
+    "objc3_concurrency_actor_mailbox_token"
   ]
 }

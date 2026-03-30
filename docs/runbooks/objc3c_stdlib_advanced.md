@@ -91,7 +91,14 @@ the checked-in architecture contract.
 `objc3.concurrency` currently exports:
 
 - `objc3_concurrency_spawn_token`
+- `objc3_concurrency_child_spawn_token`
+- `objc3_concurrency_detached_spawn_token`
+- `objc3_concurrency_join_status`
+- `objc3_concurrency_task_group_scope_depth`
+- `objc3_concurrency_cancellation_query`
 - `objc3_concurrency_cancellation_checkpoint`
+- `objc3_concurrency_executor_hop_token`
+- `objc3_concurrency_actor_mailbox_token`
 
 `objc3.keypath` currently exports:
 
@@ -116,6 +123,23 @@ the checked-in architecture contract.
 
 - `objc3_concurrency_spawn_token` returns `seed + 1` as the current
   deterministic child-spawn token placeholder
+- `objc3_concurrency_child_spawn_token` returns `seed + 1` for structured
+  child spawns while `objc3_concurrency_detached_spawn_token` returns
+  `seed + 2` for detached work
+- `objc3_concurrency_join_status` returns the provided result code unless the
+  cancellation flag is set, in which case it returns the stable cancellation
+  status code `2`
+- `objc3_concurrency_task_group_scope_depth` preserves the parent depth when
+  asked to add a negative child count and otherwise returns
+  `parent_depth + child_tasks`
+- `objc3_concurrency_cancellation_query` and
+  `objc3_concurrency_cancellation_checkpoint` both return `1` only when the
+  provided cancellation flag is nonzero
+- `objc3_concurrency_executor_hop_token` returns the target executor when one
+  is provided and otherwise preserves the current executor token
+- `objc3_concurrency_actor_mailbox_token` returns `actor_seed +
+  pending_messages` for nonnegative message counts and otherwise preserves the
+  actor seed
 - `objc3_concurrency_cancellation_checkpoint` returns `1` only when the
   provided cancellation flag is nonzero
 - key-path helpers preserve caller-visible component counts and compatibility
