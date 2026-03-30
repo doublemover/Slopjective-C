@@ -1,0 +1,96 @@
+{
+  "contract_id": "objc3c.performance.governance.budget.model.v1",
+  "surface_kind": "release-ready-performance-budget-model",
+  "report_root": "tmp/reports/performance-governance",
+  "artifact_root": "tmp/artifacts/performance-governance",
+  "budget_families": [
+    {
+      "budget_id": "compile-throughput",
+      "summary_path": "tmp/reports/compiler-throughput/benchmark-summary.json",
+      "metric_ids": [
+        "cold_compile_wall_clock_ms",
+        "cache_hit_wall_clock_ms",
+        "incremental_invalidation_wall_clock_ms",
+        "docs_generation_wall_clock_ms"
+      ],
+      "warning_ratio_ceiling": 1.05,
+      "blocking_ratio_ceiling": 1.15,
+      "minimum_sample_count": 1,
+      "required_status": "PASS"
+    },
+    {
+      "budget_id": "runtime-hot-path",
+      "summary_path": "tmp/reports/runtime-performance/benchmark-summary.json",
+      "metric_ids": [
+        "startup_wall_clock_ms",
+        "dispatch_wall_clock_ms",
+        "reflection_wall_clock_ms",
+        "ownership_wall_clock_ms"
+      ],
+      "warning_ratio_ceiling": 1.05,
+      "blocking_ratio_ceiling": 1.12,
+      "minimum_sample_count": 1,
+      "required_status": "PASS"
+    },
+    {
+      "budget_id": "comparative-baseline",
+      "summary_path": "tmp/reports/performance/comparative-baselines-summary.json",
+      "metric_ids": [
+        "objc3c_compile_wall_clock_ms",
+        "objc2_compile_wall_clock_ms",
+        "swift_compile_wall_clock_ms",
+        "cpp_compile_wall_clock_ms"
+      ],
+      "warning_ratio_ceiling": 1.1,
+      "blocking_ratio_ceiling": 1.25,
+      "minimum_sample_count": 1,
+      "required_status": "PASS"
+    },
+    {
+      "budget_id": "publication-freshness",
+      "summary_path": "tmp/reports/performance/benchmark-summary.json",
+      "metric_ids": [
+        "report_freshness_hours"
+      ],
+      "warning_ratio_ceiling": 1.0,
+      "blocking_ratio_ceiling": 1.0,
+      "maximum_report_age_hours": 24,
+      "required_status": "PASS"
+    }
+  ],
+  "breach_taxonomy": [
+    {
+      "breach_id": "hard-regression",
+      "severity": "blocking",
+      "operator_action": "block-release-and-refresh-evidence"
+    },
+    {
+      "breach_id": "soft-regression",
+      "severity": "warning",
+      "operator_action": "publish-with-caution-or-fix-before-release"
+    },
+    {
+      "breach_id": "coverage-gap",
+      "severity": "blocking",
+      "operator_action": "rebuild-missing-upstream-evidence"
+    },
+    {
+      "breach_id": "environment-drift",
+      "severity": "blocking",
+      "operator_action": "re-run-on-approved-lab-profile"
+    },
+    {
+      "breach_id": "waived-regression",
+      "severity": "caution",
+      "operator_action": "publish-with-explicit-waiver"
+    }
+  ],
+  "required_paths": [
+    "docs/runbooks/objc3c_performance_governance.md",
+    "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "tests/tooling/fixtures/performance_governance/source_surface.json",
+    "tests/tooling/fixtures/performance_governance/claim_policy.json",
+    "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+    "tests/tooling/fixtures/performance_governance/lab_policy.json"
+  ]
+}
