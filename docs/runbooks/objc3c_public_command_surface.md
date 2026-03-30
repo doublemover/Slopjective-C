@@ -89,7 +89,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive corpus artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
-| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus recovery and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
+| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `-` | `-` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `proof:objc3c` | `proof-objc3c` | `-` | `-` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
 

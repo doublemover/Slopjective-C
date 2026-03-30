@@ -50,6 +50,7 @@ Live validation entrypoints:
 
 - `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
+- `python scripts/objc3c_public_workflow_runner.py test-nightly`
 
 ## Cross-module preservation requirements
 

@@ -149,6 +149,7 @@ Current live scripts:
 - legacy suite gate: `scripts/check_conformance_suite.ps1`
 - integrated validation: `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
 - runnable packaged validation: `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
+- nightly umbrella integration: `python scripts/objc3c_public_workflow_runner.py test-nightly`
 
 Checked-in references:
 

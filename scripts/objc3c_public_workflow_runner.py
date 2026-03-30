@@ -1245,6 +1245,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+            ("validate-conformance-corpus", [sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1339,7 +1340,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
-    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus recovery and broad corpus sweeps"),
+    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus conformance corpus indexing, recovery, and broad corpus sweeps"),
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1", ("package:objc3c-native:runnable-toolchain",)),
     "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1", ("proof:objc3c",)),
 }
