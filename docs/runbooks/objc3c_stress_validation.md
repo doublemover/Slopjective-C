@@ -44,6 +44,10 @@ The checked-in safety policy for this milestone lives at:
 
 - `tests/tooling/fixtures/stress/safety_policy.json`
 
+The checked-in machine-owned artifact and minimization surface lives at:
+
+- `tests/tooling/fixtures/stress/artifact_surface.json`
+
 Downstream work must preserve these rules:
 
 - prefer checked-in fixtures, deterministic mutations, and replay-backed seeds
@@ -96,6 +100,8 @@ Downstream work must preserve these rules:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
 - checked-in stress source summary:
   - `tmp/reports/stress/source-surface-summary.json`
+- checked-in stress artifact/minimization contract:
+  - `tests/tooling/fixtures/stress/artifact_surface.json`
 - current machine-owned fuzz root:
   - `tmp/artifacts/objc3c-native/fuzz-safety/`
 - existing machine-owned validation roots that downstream work must reuse:
@@ -106,6 +112,11 @@ Downstream work must preserve these rules:
 - new machine-owned stress roots for downstream `M302` issues:
   - `tmp/artifacts/stress/`
   - `tmp/reports/stress/`
+- machine-owned reducer and triage roots that downstream work must populate:
+  - `tmp/artifacts/stress/failures/`
+  - `tmp/artifacts/stress/minimized/`
+  - `tmp/artifacts/stress/replays/`
+  - `tmp/artifacts/stress/triage/`
 
 ## Exact Live Commands
 
@@ -139,6 +150,7 @@ Downstream work must preserve these rules:
 - fixture and corpus ownership:
   - `tests/tooling/fixtures/stress/source_surface.json`
   - `tests/tooling/fixtures/stress/safety_policy.json`
+  - `tests/tooling/fixtures/stress/artifact_surface.json`
   - `tests/tooling/fixtures/native/`
   - `tests/tooling/fixtures/objc3c/`
   - `tests/conformance/corpus_surface.json`

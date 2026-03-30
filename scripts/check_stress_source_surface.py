@@ -62,11 +62,18 @@ def main() -> int:
         return fail("stress source surface source_check_script drifted")
     if surface.get("safety_policy") != "tests/tooling/fixtures/stress/safety_policy.json":
         return fail("stress source surface safety_policy drifted")
+    if surface.get("artifact_surface") != "tests/tooling/fixtures/stress/artifact_surface.json":
+        return fail("stress source surface artifact_surface drifted")
 
     require_path("docs/runbooks/objc3c_stress_validation.md", kind="runbook")
     require_path("tests/tooling/fixtures/stress/README.md", kind="stress README")
     safety_policy_path = require_path("tests/tooling/fixtures/stress/safety_policy.json", kind="stress safety policy")
+    artifact_surface_path = require_path(
+        "tests/tooling/fixtures/stress/artifact_surface.json",
+        kind="stress artifact surface",
+    )
     safety_policy = load_json(safety_policy_path)
+    artifact_surface = load_json(artifact_surface_path)
     if safety_policy.get("policy_id") != "objc3c.stress.validation.safety-policy.v1":
         return fail("stress safety policy_id drifted")
     if safety_policy.get("schema_version") != 1:
@@ -82,6 +89,34 @@ def main() -> int:
     ):
         if key not in safety_policy:
             return fail(f"stress safety policy missing {key}")
+    if artifact_surface.get("contract_id") != "objc3c.stress.artifact.surface.v1":
+        return fail("stress artifact surface contract_id drifted")
+    if artifact_surface.get("schema_version") != 1:
+        return fail("stress artifact surface schema_version drifted")
+    for key in (
+        "machine_owned_artifact_roots",
+        "machine_owned_report_roots",
+        "summary_reports",
+        "failure_capsule_required_artifacts",
+        "reducer_session_required_artifacts",
+        "triage_required_artifacts",
+        "artifact_rules",
+    ):
+        if key not in artifact_surface:
+            return fail(f"stress artifact surface missing {key}")
+    for root_key in ("machine_owned_artifact_roots", "machine_owned_report_roots"):
+        roots = artifact_surface.get(root_key)
+        if not isinstance(roots, list) or not roots:
+            return fail(f"stress artifact surface {root_key} drifted")
+        for relative_path in roots:
+            if not isinstance(relative_path, str) or not relative_path.startswith("tmp/"):
+                return fail(f"stress artifact surface {root_key} contains an invalid path")
+    summary_reports = artifact_surface.get("summary_reports")
+    if not isinstance(summary_reports, dict) or not summary_reports:
+        return fail("stress artifact surface summary_reports drifted")
+    for relative_path in summary_reports.values():
+        if not isinstance(relative_path, str) or not relative_path.startswith("tmp/reports/stress/"):
+            return fail("stress artifact surface summary_reports contains an invalid path")
 
     checked_in_roots = surface.get("checked_in_roots")
     if not isinstance(checked_in_roots, list) or not checked_in_roots:
@@ -133,8 +168,12 @@ def main() -> int:
         "runbook": surface["runbook"],
         "source_check_script": surface["source_check_script"],
         "safety_policy": repo_rel(safety_policy_path),
+        "artifact_surface": repo_rel(artifact_surface_path),
         "checked_in_root_count": len(checked_in_roots),
         "required_guard_count": len(safety_policy["required_guards"]),
+        "machine_owned_artifact_root_count": len(artifact_surface["machine_owned_artifact_roots"]),
+        "machine_owned_report_root_count": len(artifact_surface["machine_owned_report_roots"]),
+        "summary_report_count": len(artifact_surface["summary_reports"]),
         "family_summaries": family_summaries,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -241,6 +241,7 @@ def main() -> int:
         payload.get("stress_validation_surface")
         == {
             "source_surface_contract": "tests/tooling/fixtures/stress/source_surface.json",
+            "artifact_surface_contract": "tests/tooling/fixtures/stress/artifact_surface.json",
             "source_readme": "tests/tooling/fixtures/stress/README.md",
             "safety_policy": "tests/tooling/fixtures/stress/safety_policy.json",
             "runbook": "docs/runbooks/objc3c_stress_validation.md",

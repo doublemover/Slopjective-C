@@ -5,6 +5,7 @@
   "source_root": "tests/tooling/fixtures/stress",
   "source_check_script": "scripts/check_stress_source_surface.py",
   "safety_policy": "tests/tooling/fixtures/stress/safety_policy.json",
+  "artifact_surface": "tests/tooling/fixtures/stress/artifact_surface.json",
   "checked_in_roots": [
     "tests/tooling/fixtures/stress",
     "tests/tooling/fixtures/native",

@@ -1,0 +1,44 @@
+{
+  "contract_id": "objc3c.stress.artifact.surface.v1",
+  "schema_version": 1,
+  "machine_owned_artifact_roots": [
+    "tmp/artifacts/stress/failures",
+    "tmp/artifacts/stress/minimized",
+    "tmp/artifacts/stress/replays",
+    "tmp/artifacts/stress/triage",
+    "tmp/artifacts/stress/lowering-runtime",
+    "tmp/artifacts/stress/mixed-module-differential"
+  ],
+  "machine_owned_report_roots": [
+    "tmp/reports/stress"
+  ],
+  "summary_reports": {
+    "source_surface": "tmp/reports/stress/source-surface-summary.json",
+    "lowering_runtime": "tmp/reports/stress/lowering-runtime-stress-summary.json",
+    "mixed_module_differential": "tmp/reports/stress/mixed-module-differential-summary.json",
+    "minimization": "tmp/reports/stress/minimization-summary.json",
+    "crash_triage": "tmp/reports/stress/crash-triage-summary.json"
+  },
+  "failure_capsule_required_artifacts": [
+    "source.objc3",
+    "invocation.json",
+    "failure-summary.json",
+    "stable-signature.json"
+  ],
+  "reducer_session_required_artifacts": [
+    "candidate.objc3",
+    "reducer-plan.json",
+    "reduced-summary.json"
+  ],
+  "triage_required_artifacts": [
+    "signature-index.json",
+    "case-index.json",
+    "triage-summary.json"
+  ],
+  "artifact_rules": [
+    "machine-owned stress outputs must stay under tmp/artifacts/stress or tmp/reports/stress",
+    "stable failure signatures must be recorded before reducer output is claimable",
+    "checked-in fixture roots must remain immutable inputs",
+    "replay and reducer summaries must point back to machine-owned copied inputs instead of checked-in paths being edited in place"
+  ]
+}

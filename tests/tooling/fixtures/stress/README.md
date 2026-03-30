@@ -16,3 +16,6 @@ The authoritative inventory lives in `tests/tooling/fixtures/stress/source_surfa
 
 The checked-in safety policy lives in
 `tests/tooling/fixtures/stress/safety_policy.json`.
+
+The checked-in machine-owned artifact and minimization contract lives in
+`tests/tooling/fixtures/stress/artifact_surface.json`.
