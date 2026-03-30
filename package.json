@@ -30,6 +30,7 @@
     "test:objc3c:stress": "python scripts/objc3c_public_workflow_runner.py validate-stress",
     "test:objc3c:stress:integration": "python scripts/objc3c_public_workflow_runner.py validate-stress-integration",
     "test:objc3c:stress:e2e": "python scripts/objc3c_public_workflow_runner.py validate-stress-end-to-end",
+    "test:objc3c:external-validation": "python scripts/objc3c_public_workflow_runner.py validate-external-validation",
     "test:objc3c:external-validation:replay": "python scripts/objc3c_public_workflow_runner.py test-external-validation-replay",
     "test:stdlib": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation",
     "test:stdlib:program": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-program",

@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `100`
+- Current public script count: `101`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -64,6 +64,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:external-validation:surface` | `check-external-validation-surface` | `repo` | `external validation stays rooted in checked-in trust, intake, quarantine, and artifact contracts` | `fixed-shape` | `python:scripts/check_external_validation_source_surface.py` |
 | `test:objc3c:external-validation:replay` | `test-external-validation-replay` | `repo` | `accepted external evidence keeps replaying through the live parser and execution proof surfaces` | `fixed-shape` | `python:scripts/run_objc3c_external_validation_replay.py` |
 | `publish:objc3c:external-repro-corpus` | `publish-external-repro-corpus` | `repo` | `accepted and quarantined external evidence stays publishable as a machine-owned corpus summary rooted in the replay drill` | `fixed-shape` | `python:scripts/publish_objc3c_external_repro_corpus.py` |
+| `test:objc3c:external-validation` | `validate-external-validation` | `repo` | `external evidence intake, replay, and publication stay executable on the live workflow` | `fixed-shape` | `runner-internal + direct external validation commands` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |

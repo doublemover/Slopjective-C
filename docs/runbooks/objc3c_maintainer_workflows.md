@@ -167,6 +167,7 @@ npm run test:repo
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
 - external validation source-surface check: `python scripts/check_external_validation_source_surface.py`
+- integrated external validation drill: `npm run test:objc3c:external-validation`
 - external validation replay drill: `npm run test:objc3c:external-validation:replay`
 - external repro publication: `npm run publish:objc3c:external-repro-corpus`
 - stress source-surface check: `npm run check:stress:surface`
