@@ -10,7 +10,7 @@
   "package_stage_root": "showcase/signalMesh",
   "story_capabilities": [
     "status-bridging",
-    "actors",
+    "actor-shaped-messaging",
     "runtime-messaging"
   ],
   "runtime_surface": {
@@ -22,6 +22,6 @@
   },
   "presentation": {
     "title": "signalMesh",
-    "headline": "status bridging, actors, runtime messaging"
+    "headline": "status bridging, actor-shaped messaging, runtime messaging"
   }
 }

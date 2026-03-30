@@ -64,7 +64,7 @@ npm run test:showcase
 Use `showcase/README.md` and `showcase/portfolio.json` as the example map:
 
 - `auroraBoard` for categories, reflection, and synthesized behaviors
-- `signalMesh` for actors, status bridging, and runtime messaging
+- `signalMesh` for actor-shaped messaging, status bridging, and runtime messaging
 - `patchKit` for derives, macros, property behaviors, and interop
 
 If the first compile worked and you already know your question, branch

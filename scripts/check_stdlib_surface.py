@@ -665,6 +665,19 @@ def main() -> int:
         "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
     }:
         return fail("program surface command_surfaces drifted")
+    if program_surface.get("onboarding_policy") != {
+        "entry_order": [
+            "repo-health",
+            "single-example-compile",
+            "showcase-example-selection",
+            "migration-or-comparison-doc",
+        ],
+        "runnable_claim_rule": "only capabilities backed by checked-in compile and shared validation flows may be presented as runnable-now stories",
+        "comparison_claim_rule": "not-yet-runnable capabilities must be framed as actor-shaped comparison or migration guidance rather than runnable parity claims",
+        "command_truth_rule": "package.json and scripts/objc3c_public_workflow_runner.py define the authoritative public commands",
+        "machine_noise_rule": "tmp artifacts and legacy redirect material may not appear as the primary onboarding route",
+    }:
+        return fail("program surface onboarding_policy drifted")
 
     program_live_paths = (
         "runbook",

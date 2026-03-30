@@ -41,6 +41,17 @@ The live stdlib adoption surface currently routes through:
 Capability-driven demos should keep using the existing showcase sources instead
 of inventing a second examples tree inside `stdlib/`.
 
+## Onboarding And Capability-Story Policy
+
+- only capabilities backed by checked-in compile and shared validation flows may
+  be presented as runnable-now stories
+- not-yet-runnable capabilities must be framed as actor-shaped comparison or
+  migration guidance rather than runnable parity claims
+- `package.json` and `scripts/objc3c_public_workflow_runner.py` remain the
+  authoritative command truth
+- `tmp/` artifacts and legacy redirects may not become the primary onboarding
+  route
+
 ## Exact Live Implementation Paths
 
 - `stdlib/program_surface.json`
@@ -61,8 +72,8 @@ of inventing a second examples tree inside `stdlib/`.
 
 - `showcase/auroraBoard/main.objc3` for categories, reflection, and synthesized
   behaviors
-- `showcase/signalMesh/main.objc3` for actors, status bridging, and runtime
-  messaging
+- `showcase/signalMesh/main.objc3` for actor-shaped messaging, status bridging,
+  and runtime messaging
 - `showcase/patchKit/main.objc3` for derives, macros, property behaviors, and
   interop
 - `docs/tutorials/getting_started.md` for the first runnable reader path

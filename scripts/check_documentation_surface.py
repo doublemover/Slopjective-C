@@ -37,6 +37,11 @@ def require_token(text: str, token: str, *, path: Path, errors: list[str]) -> No
         errors.append(f"{path.relative_to(ROOT).as_posix()}: missing required token {token!r}")
 
 
+def forbid_token(text: str, token: str, *, path: Path, errors: list[str]) -> None:
+    if token in text:
+        errors.append(f"{path.relative_to(ROOT).as_posix()}: forbidden token present {token!r}")
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -86,33 +91,57 @@ def main() -> int:
     for token in (
         "# Showcase Examples",
         "## Portfolio Boundary",
+        "## Capability-First Entry Points",
         "showcase/portfolio.json",
         "showcase/auroraBoard/main.objc3",
         "showcase/signalMesh/main.objc3",
         "showcase/patchKit/main.objc3",
+        "actor-shaped messaging",
         "scripts/check_showcase_surface.py",
         "tmp/artifacts/showcase/",
         "## Explicit Non-Goals",
     ):
         require_token(showcase_readme, token, path=SHOWCASE_README_PATH, errors=errors)
+    forbid_token(
+        showcase_readme,
+        "target story: status bridging, actors, runtime messaging",
+        path=SHOWCASE_README_PATH,
+        errors=errors,
+    )
+    forbid_token(
+        showcase_readme,
+        "--capability actors",
+        path=SHOWCASE_README_PATH,
+        errors=errors,
+    )
 
     tutorial_readme = TUTORIAL_README_PATH.read_text(encoding="utf-8")
     for token in (
         "# Tutorials And Migration Guides",
         "## Learning Paths",
+        "## Start Here By Goal",
+        "## Capability-Backed Routes",
         "## Canonical Inputs",
         "docs/tutorials/",
         "showcase/README.md",
         "showcase/portfolio.json",
+        "actor-shaped messaging",
         "## Exact Live Paths For Downstream Work",
         "scripts/check_documentation_surface.py",
         "## Explicit Non-Goals",
     ):
         require_token(tutorial_readme, token, path=TUTORIAL_README_PATH, errors=errors)
+    forbid_token(
+        tutorial_readme,
+        "use it for actors, status bridging, and runtime messaging",
+        path=TUTORIAL_README_PATH,
+        errors=errors,
+    )
 
     getting_started = GETTING_STARTED_PATH.read_text(encoding="utf-8")
     for token in (
         "# Getting Started With The Runnable Subset",
+        "## What This Tutorial Proves",
         "## Teaching Model",
         "## Step 1 Verify The Toolchain",
         "npm run build:objc3c-native",
@@ -124,12 +153,19 @@ def main() -> int:
         "npm run test:showcase",
         "## Step 4 Choose The Next Learning Path",
         "docs/runbooks/objc3c_public_command_surface.md",
+        "actor-shaped messaging",
         "## Canonical Inputs",
         "## Exact Live Paths For Downstream Work",
         "scripts/check_documentation_surface.py",
         "## Explicit Non-Goals",
     ):
         require_token(getting_started, token, path=GETTING_STARTED_PATH, errors=errors)
+    forbid_token(
+        getting_started,
+        "`signalMesh` for actors, status bridging, and runtime messaging",
+        path=GETTING_STARTED_PATH,
+        errors=errors,
+    )
 
     build_run_verify = BUILD_RUN_VERIFY_PATH.read_text(encoding="utf-8")
     for token in (
@@ -202,10 +238,13 @@ def main() -> int:
     comparison_readme = COMPARISON_README_PATH.read_text(encoding="utf-8")
     for token in (
         "# ObjC2 Swift And C++ Comparison Surface",
+        "## Start With The Capability That Matches The Question",
         "## Comparison Boundary",
+        "## Current Truthful Comparison Shape",
         "## Canonical Inputs",
         "showcase/patchKit/main.objc3",
         "showcase/signalMesh/main.objc3",
+        "actor-shaped workflow",
         "## Exact Live Paths For Downstream Work",
         "scripts/check_documentation_surface.py",
         "## Explicit Non-Goals",
@@ -341,6 +380,9 @@ def main() -> int:
         "docs/tutorials/objc2_swift_cpp_comparison.md",
         "showcase/README.md",
         "showcase/portfolio.json",
+        "## Onboarding And Capability-Story Policy",
+        "runnable-now stories",
+        "actor-shaped comparison or",
         "showcase/tutorial_walkthrough.json",
         "site/src/index.body.md",
         "## Current Truthful Portfolio",
@@ -366,6 +408,12 @@ def main() -> int:
         "## Explicit Non-Goals",
     ):
         require_token(stdlib_program_runbook, token, path=STDLIB_PROGRAM_RUNBOOK_PATH, errors=errors)
+    forbid_token(
+        stdlib_program_runbook,
+        "for actors, status bridging, and runtime",
+        path=STDLIB_PROGRAM_RUNBOOK_PATH,
+        errors=errors,
+    )
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (

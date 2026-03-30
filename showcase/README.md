@@ -14,7 +14,7 @@ Choose the story that matches the question before you read deeper docs:
   - pair it with `docs/tutorials/getting_started.md`
   - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for forward-mapping ObjC2 habits
 - `signalMesh`
-  - use this when the question is about actors, status bridging, or runtime messaging
+  - use this when the question is about actor-shaped messaging, status bridging, or runtime messaging
   - pair it with `docs/tutorials/guided_walkthrough.md`
   - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md` for Swift-facing comparison framing
 - `patchKit`
@@ -58,7 +58,7 @@ Machine-owned outputs only:
 - `auroraBoard`
   - target story: categories, reflection, synthesized behaviors
 - `signalMesh`
-  - target story: status bridging, actors, runtime messaging
+  - target story: status bridging, actor-shaped messaging, runtime messaging
 - `patchKit`
   - target story: derives, macros, property behaviors, interop
 
@@ -72,7 +72,7 @@ Selection model:
 - compile one named example with
   `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --example auroraBoard`
 - compile by story capability with
-  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --capability actors`
+  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --capability actor-shaped-messaging`
 
 ## Build Run Package Surface
 

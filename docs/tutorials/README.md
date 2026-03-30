@@ -31,7 +31,7 @@ Use the example that best matches the capability you care about:
   - pair it with `docs/tutorials/getting_started.md`
   - pair it with `docs/tutorials/objc2_to_objc3_migration.md` when the question starts from ObjC2 habits
 - `signalMesh`
-  - use it for actors, status bridging, and runtime messaging
+  - use it for actor-shaped messaging, status bridging, and runtime messaging
   - pair it with `docs/tutorials/guided_walkthrough.md`
   - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md` when the question is "what does this look like relative to Swift-style concurrency expectations?"
 - `patchKit`

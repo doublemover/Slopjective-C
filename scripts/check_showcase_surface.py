@@ -268,7 +268,7 @@ def main() -> int:
         presentation = workspace_payload.get("presentation")
         expected_headlines = {
             "auroraBoard": "categories, reflection, synthesized behaviors",
-            "signalMesh": "status bridging, actors, runtime messaging",
+            "signalMesh": "status bridging, actor-shaped messaging, runtime messaging",
             "patchKit": "derives, macros, property behaviors, interop",
         }
         if presentation != {
