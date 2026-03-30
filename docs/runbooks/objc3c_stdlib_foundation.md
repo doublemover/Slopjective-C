@@ -63,6 +63,39 @@ path:
 It also freezes the import identity handoff between canonical spec module names
 and identifier-safe implementation module declarations.
 
+## Exact Live Implementation Paths
+
+- `scripts/check_stdlib_surface.py`
+- `scripts/materialize_objc3c_stdlib_workspace.py`
+- `scripts/run_objc3c_stdlib_workspace_smoke.py`
+- `scripts/check_objc3c_stdlib_foundation_integration.py`
+- `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
+- `scripts/package_objc3c_runnable_toolchain.ps1`
+- `scripts/objc3c_public_workflow_runner.py`
+
+## Exact Live Artifact And Output Paths
+
+- `tmp/artifacts/stdlib/workspace/`
+- `tmp/artifacts/stdlib/smoke/`
+- `tmp/reports/stdlib/surface-summary.json`
+- `tmp/reports/stdlib/workspace-smoke-summary.json`
+- `tmp/reports/stdlib/integration-summary.json`
+- `tmp/reports/stdlib/runnable-end-to-end-summary.json`
+- `tmp/pkg/objc3c-native-runnable-toolchain/`
+
+## Exact Live Commands
+
+- `python scripts/objc3c_public_workflow_runner.py check-stdlib-surface`
+- `npm run check:stdlib:surface`
+- `python scripts/objc3c_public_workflow_runner.py materialize-stdlib-workspace`
+- `npm run build:objc3c:stdlib`
+- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
+- `npm run test:stdlib`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
+- `npm run test:stdlib:e2e`
+- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+- `npm run package:objc3c-native:runnable-toolchain`
+
 ## Public actions
 
 - `npm run check:stdlib:surface`
