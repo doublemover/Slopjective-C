@@ -1,0 +1,310 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3c-performance-dashboard-summary-v1.schema.json",
+  "title": "ObjC 3 Performance Governance Dashboard Summary (v1)",
+  "description": "Machine-readable performance governance dashboard derived from live benchmark summaries and checked-in budget policy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "budget_model_path",
+    "claim_policy_path",
+    "breach_triage_policy_path",
+    "lab_policy_path",
+    "upstream_reports",
+    "release_status",
+    "claim_ready",
+    "budget_family_summaries",
+    "breaches",
+    "waivers",
+    "environment_drift",
+    "blocking_breach_count",
+    "warning_breach_count",
+    "failures"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c.performance.governance.dashboard.summary.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "budget_model_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "claim_policy_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "breach_triage_policy_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "lab_policy_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "upstream_reports": {
+      "type": "object",
+      "additionalProperties": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "release_status": {
+      "type": "string",
+      "enum": [
+        "release-ready",
+        "caution",
+        "blocked"
+      ]
+    },
+    "claim_ready": {
+      "type": "boolean"
+    },
+    "budget_family_summaries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "budget_id",
+          "child_report_path",
+          "report_status",
+          "metric_summaries"
+        ],
+        "properties": {
+          "budget_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "child_report_path": {
+            "$ref": "#/$defs/repoPath"
+          },
+          "report_status": {
+            "type": "string",
+            "enum": [
+              "PASS",
+              "FAIL",
+              "MISSING"
+            ]
+          },
+          "metric_summaries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/metricSummary"
+            }
+          }
+        }
+      }
+    },
+    "breaches": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/breach"
+      }
+    },
+    "waivers": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/waiver"
+      }
+    },
+    "environment_drift": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "machine_profiles_consistent",
+        "stale_report_paths",
+        "issues"
+      ],
+      "properties": {
+        "machine_profiles_consistent": {
+          "type": "boolean"
+        },
+        "stale_report_paths": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/repoPath"
+          }
+        },
+        "issues": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "blocking_breach_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "warning_breach_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3
+      }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._\\-/]+$"
+    },
+    "numericValue": {
+      "type": [
+        "integer",
+        "number"
+      ]
+    },
+    "metricSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "comparison",
+        "observed_value"
+      ],
+      "properties": {
+        "metric_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "comparison": {
+          "type": "string",
+          "enum": [
+            "max",
+            "min"
+          ]
+        },
+        "observed_value": {
+          "$ref": "#/$defs/numericValue"
+        },
+        "warning_value": {
+          "$ref": "#/$defs/numericValue"
+        },
+        "blocking_value": {
+          "$ref": "#/$defs/numericValue"
+        },
+        "breach_id": {
+          "type": "string"
+        }
+      }
+    },
+    "breach": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "budget_id",
+        "metric_id",
+        "breach_id",
+        "severity",
+        "operator_action",
+        "child_report_path",
+        "classification"
+      ],
+      "properties": {
+        "budget_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "metric_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "breach_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "blocking",
+            "warning",
+            "caution"
+          ]
+        },
+        "operator_action": {
+          "type": "string",
+          "minLength": 3
+        },
+        "child_report_path": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "classification": {
+          "type": "string",
+          "minLength": 3
+        },
+        "observed_value": {
+          "$ref": "#/$defs/numericValue"
+        },
+        "allowed_value": {
+          "$ref": "#/$defs/numericValue"
+        },
+        "waived": {
+          "type": "boolean"
+        }
+      }
+    },
+    "waiver": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "waiver_id",
+        "status",
+        "budget_id",
+        "breach_id",
+        "owner",
+        "expires_at_utc"
+      ],
+      "properties": {
+        "waiver_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "active",
+            "expired",
+            "superseded"
+          ]
+        },
+        "budget_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "metric_id": {
+          "type": "string"
+        },
+        "breach_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 3
+        },
+        "expires_at_utc": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}

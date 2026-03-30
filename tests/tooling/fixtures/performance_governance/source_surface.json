@@ -6,6 +6,7 @@
   "claim_policy": "tests/tooling/fixtures/performance_governance/claim_policy.json",
   "breach_triage_policy": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
   "lab_policy": "tests/tooling/fixtures/performance_governance/lab_policy.json",
+  "schema_surface": "tests/tooling/fixtures/performance_governance/schema_surface.json",
   "upstream_reports": [
     "tmp/reports/performance/benchmark-summary.json",
     "tmp/reports/performance/comparative-baselines-summary.json",
@@ -19,6 +20,7 @@
     "docs/runbooks/objc3c_compiler_throughput.md",
     "docs/runbooks/objc3c_runtime_performance.md",
     "docs/runbooks/objc3c_performance_governance.md",
+    "tests/tooling/fixtures/performance_governance/schema_surface.json",
     "tests/tooling/fixtures/performance/benchmark_portfolio.json",
     "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
     "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",

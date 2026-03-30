@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3c-performance-public-report-v1.schema.json",
+  "title": "ObjC 3 Performance Public Report Summary (v1)",
+  "description": "Machine-readable performance public report projection over the live performance governance dashboard.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "dashboard_summary_path",
+    "report_markdown_path",
+    "badge_path",
+    "release_status",
+    "claim_ready",
+    "headline",
+    "summary_lines",
+    "evidence_paths"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c.performance.governance.public.summary.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "source_surface_summary_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "schema_surface_summary_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "dashboard_summary_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "report_markdown_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "badge_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "release_status": {
+      "type": "string",
+      "enum": [
+        "release-ready",
+        "caution",
+        "blocked"
+      ]
+    },
+    "claim_ready": {
+      "type": "boolean"
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 8
+    },
+    "summary_lines": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 3
+      }
+    },
+    "evidence_paths": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "#/$defs/repoPath"
+      }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._\\-/]+$"
+    }
+  }
+}
