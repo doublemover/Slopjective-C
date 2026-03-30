@@ -21,6 +21,7 @@ DEVELOPER_TOOLING_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_developer_
 BONUS_EXPERIENCES_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_bonus_experiences.md"
 PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_performance.md"
 RUNTIME_PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_runtime_performance.md"
+COMPILER_THROUGHPUT_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_compiler_throughput.md"
 STDLIB_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_foundation.md"
 STDLIB_README_PATH = ROOT / "stdlib" / "README.md"
 STDLIB_PROGRAM_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_program.md"
@@ -508,6 +509,7 @@ def main() -> int:
         "docs/runbooks/objc3c_bonus_experiences.md",
         "docs/runbooks/objc3c_performance.md",
         "docs/runbooks/objc3c_runtime_performance.md",
+        "docs/runbooks/objc3c_compiler_throughput.md",
         "Do not add milestone-specific wrappers, sidecar compatibility files, or",
     ):
         require_token(
@@ -700,6 +702,43 @@ def main() -> int:
             runtime_performance_runbook,
             token,
             path=RUNTIME_PERFORMANCE_RUNBOOK_PATH,
+            errors=errors,
+        )
+
+    compiler_throughput_runbook = COMPILER_THROUGHPUT_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Compiler Throughput Boundary",
+        "## Working Boundary",
+        "incremental build cache reuse and invalidation behavior",
+        "macro-host cache publication and compile-coupled docs generation cost",
+        "heavyweight validation-tier ownership and duplicate compile removal",
+        "## Throughput Taxonomy",
+        "compile-cold",
+        "compile-cache-hit",
+        "incremental-invalidation",
+        "macro-host-runtime-boundary",
+        "docs-generation",
+        "validation-tier-overlap",
+        "## Exact Live Implementation Paths",
+        "scripts/check_objc3c_native_perf_budget.ps1",
+        "scripts/check_objc3c_compiler_throughput_integration.py",
+        "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+        "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+        "tests/tooling/fixtures/compiler_throughput/validation_tier_map.json",
+        "tests/tooling/fixtures/compiler_throughput/optimization_policy.json",
+        "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
+        "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
+        "## Exact Live Artifact And Output Paths",
+        "tmp/artifacts/objc3c-native/perf-budget/",
+        "tmp/reports/compiler-throughput/",
+        "## Exact Live Commands",
+        "python scripts/objc3c_public_workflow_runner.py benchmark-compiler-throughput",
+        "## Explicit Non-Goals",
+    ):
+        require_token(
+            compiler_throughput_runbook,
+            token,
+            path=COMPILER_THROUGHPUT_RUNBOOK_PATH,
             errors=errors,
         )
 

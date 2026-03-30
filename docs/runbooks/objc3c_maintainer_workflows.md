@@ -97,6 +97,20 @@ Runtime-performance entrypoint:
 - use that runbook before widening runtime hot-path claims, counter fields, or
   packaged runtime-performance validation
 
+Compiler-throughput entrypoint:
+
+- `docs/runbooks/objc3c_compiler_throughput.md` is the maintainer boundary for
+  direct native compile throughput, wrapper cache proof, incremental
+  invalidation, macro-host cache publication, docs-generation cost, and
+  heavyweight validation-tier ownership
+- compiler-throughput work must stay on the existing native compiler
+  executable, compile wrapper, public workflow runner, native docs generators,
+  and runnable package surfaces instead of inventing a second benchmark harness
+  or spreadsheet-only workflow
+- use the public runner actions for compiler-throughput benchmarking and
+  integrated validation before widening timing claims, cache semantics, or
+  packaged throughput validation
+
 Stress-validation entrypoint:
 
 - `docs/runbooks/objc3c_stress_validation.md` is the maintainer boundary for
@@ -190,6 +204,10 @@ npm run test:repo
 - runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
 - integrated runtime performance validation: `npm run test:objc3c:runtime-performance`
 - runnable runtime performance validation: `npm run test:objc3c:runnable-runtime-performance`
+- compiler throughput boundary: `docs/runbooks/objc3c_compiler_throughput.md`
+- compiler throughput benchmark: `npm run inspect:objc3c:compiler-throughput`
+- integrated compiler throughput validation: `npm run test:objc3c:compiler-throughput`
+- runnable compiler throughput validation: `npm run test:objc3c:runnable-compiler-throughput`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
 - external validation source-surface check: `python scripts/check_external_validation_source_surface.py`

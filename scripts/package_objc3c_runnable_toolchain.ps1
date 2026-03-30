@@ -171,6 +171,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_conformance_corpus.md",
+  "docs/runbooks/objc3c_compiler_throughput.md",
   "docs/runbooks/objc3c_runtime_performance.md",
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
@@ -180,6 +181,7 @@ $requiredRelativeFiles = @(
   "docs/tutorials/guided_walkthrough.md",
   "site/src/index.body.md",
   "scripts/probe_objc3c_llvm_capabilities.py",
+  "scripts/check_objc3c_native_perf_budget.ps1",
   "scripts/benchmark_objc3c_runtime_performance.py",
   "scripts/check_objc3c_runtime_acceptance.py",
   "tmp/artifacts/objc3c-native/frontend_source_graph.json",
@@ -244,6 +246,12 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
   "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
   "schemas/objc3c-performance-telemetry-v1.schema.json",
+  "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+  "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+  "tests/tooling/fixtures/compiler_throughput/validation_tier_map.json",
+  "tests/tooling/fixtures/compiler_throughput/optimization_policy.json",
+  "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
+  "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
   "tests/tooling/fixtures/runtime_performance/source_surface.json",
   "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
   "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
@@ -283,6 +291,9 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surfac
 }
 if (-not $repoSupercleanSurfacePayload.ContainsKey("runtime_performance_surface")) {
   throw "runnable toolchain package FAIL: missing runtime_performance_surface in $repoSupercleanSurfaceRelativePath"
+}
+if (-not $repoSupercleanSurfacePayload.ContainsKey("compiler_throughput_surface")) {
+  throw "runnable toolchain package FAIL: missing compiler_throughput_surface in $repoSupercleanSurfaceRelativePath"
 }
 if (-not $repoSupercleanSurfacePayload.ContainsKey("conformance_corpus_surface")) {
   throw "runnable toolchain package FAIL: missing conformance_corpus_surface in $repoSupercleanSurfaceRelativePath"
@@ -392,6 +403,7 @@ $manifestPayload = [ordered]@{
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
   runtime_performance_surface = $repoSupercleanSurfacePayload["runtime_performance_surface"]
+  compiler_throughput_surface = $repoSupercleanSurfacePayload["compiler_throughput_surface"]
   conformance_corpus_surface = $repoSupercleanSurfacePayload["conformance_corpus_surface"]
   conformance_suite_readme = "tests/conformance/README.md"
   conformance_coverage_map = "tests/conformance/COVERAGE_MAP.md"
@@ -484,6 +496,7 @@ $manifestPayload = [ordered]@{
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
     inspect_performance = "npm run inspect:objc3c:performance"
     inspect_runtime_performance = "npm run inspect:objc3c:runtime-performance"
+    inspect_compiler_throughput = "npm run inspect:objc3c:compiler-throughput"
     inspect_comparative_baselines = "npm run inspect:objc3c:comparative-baselines"
     inspect_capabilities = "npm run inspect:objc3c:capabilities"
     inspect_runtime = "npm run inspect:objc3c:runtime"
@@ -495,6 +508,8 @@ $manifestPayload = [ordered]@{
     stdlib_e2e = "npm run test:stdlib:e2e"
     runtime_performance = "npm run test:objc3c:runtime-performance"
     runtime_performance_e2e = "npm run test:objc3c:runnable-runtime-performance"
+    compiler_throughput = "npm run test:objc3c:compiler-throughput"
+    compiler_throughput_e2e = "npm run test:objc3c:runnable-compiler-throughput"
     runnable_performance = "npm run test:objc3c:runnable-performance"
     showcase = "npm run test:showcase"
     showcase_e2e = "npm run test:showcase:e2e"

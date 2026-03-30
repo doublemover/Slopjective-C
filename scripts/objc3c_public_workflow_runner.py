@@ -44,6 +44,8 @@ BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experie
 RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
 PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_performance.py"
 RUNTIME_PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_performance.py"
+COMPILER_THROUGHPUT_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_compiler_throughput_integration.py"
+RUNNABLE_COMPILER_THROUGHPUT_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_compiler_throughput_end_to_end.py"
 COMPARATIVE_BASELINES_PY = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
 RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
 PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
@@ -1374,6 +1376,14 @@ def action_benchmark_compiler_throughput(rest: list[str]) -> int:
     return pwsh_file(COMPILER_THROUGHPUT_PS1, *rest)
 
 
+def action_validate_compiler_throughput(_: list[str]) -> int:
+    return run([sys.executable, str(COMPILER_THROUGHPUT_INTEGRATION_PY)])
+
+
+def action_validate_runnable_compiler_throughput(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_COMPILER_THROUGHPUT_E2E_PY)])
+
+
 def action_test_full(_: list[str]) -> int:
     return run_composite_validation(
         "test-full",
@@ -1397,6 +1407,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("validate-external-validation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-external-validation"]),
             ("validate-public-conformance-reporting", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-public-conformance-reporting"]),
             ("validate-runtime-performance", [sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)]),
+            ("validate-compiler-throughput", [sys.executable, str(COMPILER_THROUGHPUT_INTEGRATION_PY)]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1451,6 +1462,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "benchmark-performance": ActionSpec("benchmark-performance", "measure the checked-in objc3 showcase workloads and write reproducible compile/runtime telemetry packets", "python:scripts/benchmark_objc3c_performance.py", ("inspect:objc3c:performance",), validation_tier="repo", guarantee_owner="objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets", pass_through_args=True),
     "benchmark-runtime-performance": ActionSpec("benchmark-runtime-performance", "measure the live runtime startup dispatch reflection and ownership hot paths and write reproducible telemetry packets", "python:scripts/benchmark_objc3c_runtime_performance.py", ("inspect:objc3c:runtime-performance",), validation_tier="repo", guarantee_owner="runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots", pass_through_args=True),
     "benchmark-compiler-throughput": ActionSpec("benchmark-compiler-throughput", "measure direct native compile throughput, wrapper cache proof, cache invalidation, macro-host cache publication, and docs-generation cost", "pwsh:scripts/check_objc3c_native_perf_budget.ps1", ("inspect:objc3c:compiler-throughput",), validation_tier="repo", guarantee_owner="compiler-throughput telemetry stays tied to the live native compiler executable, wrapper cache contract, macro-host artifact path, and checked-in docs generators", pass_through_args=True),
+    "validate-compiler-throughput": ActionSpec("validate-compiler-throughput", "run the integrated compiler-throughput benchmark and cache-proof validation flow", "python:scripts/check_objc3c_compiler_throughput_integration.py", ("test:objc3c:compiler-throughput",), validation_tier="repo", guarantee_owner="compiler-throughput benchmark outputs stay executable across the live native compiler, wrapper cache proof, macro-host artifact path, and docs generators"),
+    "validate-runnable-compiler-throughput": ActionSpec("validate-runnable-compiler-throughput", "validate the staged runnable compiler-throughput surface end to end from the package root", "python:scripts/check_objc3c_runnable_compiler_throughput_end_to_end.py", ("test:objc3c:runnable-compiler-throughput",), validation_tier="full", guarantee_owner="packaged compiler-throughput fixtures, contracts, benchmark script, and command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "validate-runtime-performance": ActionSpec("validate-runtime-performance", "run the integrated runtime hot-path benchmark and packaged validation flow", "python:scripts/check_objc3c_runtime_performance_integration.py", ("test:objc3c:runtime-performance",), validation_tier="repo", guarantee_owner="runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle"),
     "validate-runnable-runtime-performance": ActionSpec("validate-runnable-runtime-performance", "validate the staged runnable runtime-performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_runtime_performance_end_to_end.py", ("test:objc3c:runnable-runtime-performance",), validation_tier="full", guarantee_owner="packaged runtime-performance fixtures, contracts, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "benchmark-comparative-baselines": ActionSpec("benchmark-comparative-baselines", "measure the checked-in ObjC2 Swift and C++ baseline workloads and write reproducible comparison telemetry packets", "python:scripts/run_objc3c_comparative_baselines.py", ("inspect:objc3c:comparative-baselines",), validation_tier="repo", guarantee_owner="comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states", pass_through_args=True),
@@ -1561,6 +1574,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "benchmark-performance": action_benchmark_performance,
     "benchmark-runtime-performance": action_benchmark_runtime_performance,
     "benchmark-compiler-throughput": action_benchmark_compiler_throughput,
+    "validate-compiler-throughput": action_validate_compiler_throughput,
+    "validate-runnable-compiler-throughput": action_validate_runnable_compiler_throughput,
     "validate-runtime-performance": action_validate_runtime_performance,
     "validate-runnable-runtime-performance": action_validate_runnable_runtime_performance,
     "benchmark-comparative-baselines": action_benchmark_comparative_baselines,

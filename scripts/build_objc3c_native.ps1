@@ -907,6 +907,36 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "package-runnable-toolchain"
       )
     }
+    compiler_throughput_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_compiler_throughput.md"
+      source_surface_contract = "tests/tooling/fixtures/compiler_throughput/source_surface.json"
+      workload_manifest = "tests/tooling/fixtures/compiler_throughput/workload_manifest.json"
+      validation_tier_map = "tests/tooling/fixtures/compiler_throughput/validation_tier_map.json"
+      optimization_policy = "tests/tooling/fixtures/compiler_throughput/optimization_policy.json"
+      artifact_surface_contract = "tests/tooling/fixtures/compiler_throughput/artifact_surface.json"
+      summary_schema = "schemas/objc3c-compiler-throughput-summary-v1.schema.json"
+      source_roots = @(
+        "scripts/check_objc3c_native_perf_budget.ps1",
+        "scripts/check_objc3c_native_execution_smoke.ps1",
+        "scripts/check_objc3c_native_recovery_contract.ps1",
+        "scripts/check_objc3c_execution_replay_proof.ps1",
+        "scripts/run_objc3c_native_fixture_matrix.ps1",
+        "scripts/check_objc3c_negative_fixture_expectations.ps1",
+        "scripts/build_objc3c_native_docs.py",
+        "scripts/render_objc3c_public_command_surface.py"
+      )
+      report_roots = @(
+        "tmp/artifacts/objc3c-native/perf-budget",
+        "tmp/reports/compiler-throughput",
+        "tmp/pkg/objc3c-native-runnable-toolchain"
+      )
+      public_actions = @(
+        "benchmark-compiler-throughput",
+        "validate-compiler-throughput",
+        "validate-runnable-compiler-throughput",
+        "package-runnable-toolchain"
+      )
+    }
     stress_validation_surface = [ordered]@{
       source_surface_contract = "tests/tooling/fixtures/stress/source_surface.json"
       artifact_surface_contract = "tests/tooling/fixtures/stress/artifact_surface.json"
