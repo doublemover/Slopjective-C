@@ -154,6 +154,12 @@ npm run test:repo
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
+- stress source-surface check: `npm run check:stress:surface`
+- parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
+- lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`
+- mixed-module differential stress: `npm run test:objc3c:mixed-module-differential`
+- stress minimization: `npm run test:objc3c:stress-minimization`
+- stress crash triage: `npm run test:objc3c:stress-crash-triage`
 - stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
 - stdlib core boundary: `docs/runbooks/objc3c_stdlib_core.md`
 - stdlib surface check: `npm run check:stdlib:surface`

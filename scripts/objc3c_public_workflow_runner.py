@@ -47,6 +47,12 @@ RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performa
 PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
+STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
+FUZZ_SAFETY_PY = ROOT / "scripts" / "run_objc3c_fuzz_safety.py"
+LOWERING_RUNTIME_STRESS_PY = ROOT / "scripts" / "run_objc3c_lowering_runtime_stress.py"
+MIXED_MODULE_DIFFERENTIAL_PY = ROOT / "scripts" / "run_objc3c_mixed_module_differential.py"
+STRESS_MINIMIZATION_PY = ROOT / "scripts" / "run_objc3c_stress_minimization.py"
+STRESS_CRASH_TRIAGE_PY = ROOT / "scripts" / "run_objc3c_stress_crash_triage.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -574,6 +580,30 @@ def action_validate_conformance_corpus(_: list[str]) -> int:
 
 def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_CONFORMANCE_CORPUS_E2E_PY)])
+
+
+def action_check_stress_surface(_: list[str]) -> int:
+    return run([sys.executable, str(STRESS_SOURCE_SURFACE_PY)])
+
+
+def action_test_fuzz_safety(rest: list[str]) -> int:
+    return run([sys.executable, str(FUZZ_SAFETY_PY), *rest])
+
+
+def action_test_lowering_runtime_stress(rest: list[str]) -> int:
+    return run([sys.executable, str(LOWERING_RUNTIME_STRESS_PY), *rest])
+
+
+def action_test_mixed_module_differential(rest: list[str]) -> int:
+    return run([sys.executable, str(MIXED_MODULE_DIFFERENTIAL_PY), *rest])
+
+
+def action_test_stress_minimization(rest: list[str]) -> int:
+    return run([sys.executable, str(STRESS_MINIMIZATION_PY), *rest])
+
+
+def action_test_stress_crash_triage(rest: list[str]) -> int:
+    return run([sys.executable, str(STRESS_CRASH_TRIAGE_PY), *rest])
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1303,6 +1333,12 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-performance-foundation": ActionSpec("validate-performance-foundation", "run the integrated benchmark and comparative baseline validation flow", "python:scripts/check_objc3c_performance_integration.py", ("test:objc3c:performance",), validation_tier="repo", guarantee_owner="benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle"),
     "validate-conformance-corpus": ActionSpec("validate-conformance-corpus", "run the integrated conformance corpus taxonomy indexing and legacy gate-surface validation flow", "python:scripts/check_objc3c_conformance_corpus_integration.py", ("test:objc3c:conformance-corpus",), validation_tier="repo", guarantee_owner="conformance corpus taxonomy, retained longitudinal suites, coverage indexing, and legacy gate surfaces stay executable on the live public workflow"),
     "validate-runnable-conformance-corpus": ActionSpec("validate-runnable-conformance-corpus", "validate the staged runnable conformance corpus package surface end to end", "python:scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py", ("test:objc3c:runnable-conformance-corpus",), validation_tier="full", guarantee_owner="packaged conformance corpus contracts, retained longitudinal suites, and legacy gate surfaces stay reproducible from the staged runnable toolchain bundle"),
+    "check-stress-surface": ActionSpec("check-stress-surface", "validate the checked-in fuzz, stress, minimization, and triage source surface", "python:scripts/check_stress_source_surface.py", ("check:stress:surface",), validation_tier="repo", guarantee_owner="stress source roots, machine-owned artifact boundaries, and checked-in minimization contracts stay explicit and coherent"),
+    "test-fuzz-safety": ActionSpec("test-fuzz-safety", "run the deterministic malformed-input parser/sema stress gate", "python:scripts/run_objc3c_fuzz_safety.py", ("test:objc3c:fuzz-safety",), validation_tier="repo", guarantee_owner="malformed parser/sema inputs stay fail-closed and deterministic through the live compiler path", pass_through_args=True),
+    "test-lowering-runtime-stress": ActionSpec("test-lowering-runtime-stress", "run the bounded lowering/runtime stress harness over checked-in fixtures", "python:scripts/run_objc3c_lowering_runtime_stress.py", ("test:objc3c:lowering-runtime-stress",), validation_tier="repo", guarantee_owner="lowering-heavy compile paths and execution-smoke subsets stay runnable through the live compiler and runtime path", pass_through_args=True),
+    "test-mixed-module-differential": ActionSpec("test-mixed-module-differential", "run mixed-module and import/export differential stress validation", "python:scripts/run_objc3c_mixed_module_differential.py", ("test:objc3c:mixed-module-differential",), validation_tier="repo", guarantee_owner="provider-consumer import/export and mixed-image surfaces stay executable on the live runtime acceptance path", pass_through_args=True),
+    "test-stress-minimization": ActionSpec("test-stress-minimization", "reduce failing checked-in malformed inputs into machine-owned replay capsules", "python:scripts/run_objc3c_stress_minimization.py", ("test:objc3c:stress-minimization",), validation_tier="repo", guarantee_owner="deterministic reducer output stays tied to checked-in failing inputs and live compiler signatures", pass_through_args=True),
+    "test-stress-crash-triage": ActionSpec("test-stress-crash-triage", "build crash-signature triage indexes and replay requests from minimized stress cases", "python:scripts/run_objc3c_stress_crash_triage.py", ("test:objc3c:stress-crash-triage",), validation_tier="repo", guarantee_owner="crash-signature grouping and replay requests stay derived from machine-owned minimized stress artifacts", pass_through_args=True),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1388,6 +1424,12 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-performance-foundation": action_validate_performance_foundation,
     "validate-conformance-corpus": action_validate_conformance_corpus,
     "validate-runnable-conformance-corpus": action_validate_runnable_conformance_corpus,
+    "check-stress-surface": action_check_stress_surface,
+    "test-fuzz-safety": action_test_fuzz_safety,
+    "test-lowering-runtime-stress": action_test_lowering_runtime_stress,
+    "test-mixed-module-differential": action_test_mixed_module_differential,
+    "test-stress-minimization": action_test_stress_minimization,
+    "test-stress-crash-triage": action_test_stress_crash_triage,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,

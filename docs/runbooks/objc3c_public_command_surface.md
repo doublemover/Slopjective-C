@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `88`
+- Current public script count: `94`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -52,6 +52,12 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:performance` | `validate-performance-foundation` | `repo` | `benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_performance_integration.py` |
 | `test:objc3c:conformance-corpus` | `validate-conformance-corpus` | `repo` | `conformance corpus taxonomy, retained longitudinal suites, coverage indexing, and legacy gate surfaces stay executable on the live public workflow` | `fixed-shape` | `python:scripts/check_objc3c_conformance_corpus_integration.py` |
 | `test:objc3c:runnable-conformance-corpus` | `validate-runnable-conformance-corpus` | `full` | `packaged conformance corpus contracts, retained longitudinal suites, and legacy gate surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py` |
+| `check:stress:surface` | `check-stress-surface` | `repo` | `stress source roots, machine-owned artifact boundaries, and checked-in minimization contracts stay explicit and coherent` | `fixed-shape` | `python:scripts/check_stress_source_surface.py` |
+| `test:objc3c:fuzz-safety` | `test-fuzz-safety` | `repo` | `malformed parser/sema inputs stay fail-closed and deterministic through the live compiler path` | `pass-through` | `python:scripts/run_objc3c_fuzz_safety.py` |
+| `test:objc3c:lowering-runtime-stress` | `test-lowering-runtime-stress` | `repo` | `lowering-heavy compile paths and execution-smoke subsets stay runnable through the live compiler and runtime path` | `pass-through` | `python:scripts/run_objc3c_lowering_runtime_stress.py` |
+| `test:objc3c:mixed-module-differential` | `test-mixed-module-differential` | `repo` | `provider-consumer import/export and mixed-image surfaces stay executable on the live runtime acceptance path` | `pass-through` | `python:scripts/run_objc3c_mixed_module_differential.py` |
+| `test:objc3c:stress-minimization` | `test-stress-minimization` | `repo` | `deterministic reducer output stays tied to checked-in failing inputs and live compiler signatures` | `pass-through` | `python:scripts/run_objc3c_stress_minimization.py` |
+| `test:objc3c:stress-crash-triage` | `test-stress-crash-triage` | `repo` | `crash-signature grouping and replay requests stay derived from machine-owned minimized stress artifacts` | `pass-through` | `python:scripts/run_objc3c_stress_crash_triage.py` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
