@@ -24,6 +24,9 @@ SUPPORTED_PLATFORMS = ROOT / "tests" / "tooling" / "fixtures" / "packaging_chann
 INSTALLER_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "installer_policy.json"
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "package-channels"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
+RELEASE_FOUNDATION_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
+RELEASE_FOUNDATION_SBOM = ROOT / "tmp" / "artifacts" / "release-foundation" / "sbom" / "objc3c-release-sbom.json"
+RELEASE_FOUNDATION_ATTESTATION = ROOT / "tmp" / "artifacts" / "release-foundation" / "attestation" / "objc3c-release-attestation.json"
 
 
 def repo_rel(path: Path) -> str:
@@ -156,6 +159,36 @@ Write-Output ("objc3c_bin: " + $binPath)
 """
 
 
+def offline_bootstrap_script_text() -> str:
+    return """param(
+  [Parameter(Mandatory = $true)][string]$InstallRoot
+)
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+$bundleRoot = $PSScriptRoot
+$stagingRoot = Join-Path $bundleRoot "staging"
+$installerArchive = Join-Path $bundleRoot "channels/objc3c-windows-x64-installer.zip"
+$installerImageRoot = Join-Path $stagingRoot "installer-image"
+$installerScript = Join-Path $installerImageRoot "Install-objc3c.ps1"
+
+if (Test-Path -LiteralPath $installerImageRoot) {
+  Remove-Item -LiteralPath $installerImageRoot -Recurse -Force
+}
+New-Item -ItemType Directory -Force -Path $stagingRoot | Out-Null
+Expand-Archive -LiteralPath $installerArchive -DestinationPath $installerImageRoot -Force
+
+& $installerScript -InstallRoot $InstallRoot -Force
+if ($LASTEXITCODE -ne 0) {
+  exit $LASTEXITCODE
+}
+
+Write-Output ("offline_bundle_root: " + $bundleRoot)
+Write-Output ("installer_archive: " + $installerArchive)
+"""
+
+
 def main() -> int:
     load_json(SOURCE_SURFACE)
     supported_platforms = load_json(SUPPORTED_PLATFORMS)
@@ -195,6 +228,21 @@ def main() -> int:
     installer_archive = installer_root / "objc3c-windows-x64-installer.zip"
     zip_directory(installer_image_root, installer_archive)
 
+    offline_root = build_root / "offline"
+    offline_bundle_root = offline_root / "bundle"
+    channels_root = offline_bundle_root / "channels"
+    evidence_root = offline_bundle_root / "release-foundation"
+    channels_root.mkdir(parents=True, exist_ok=True)
+    evidence_root.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(portable_archive, channels_root / portable_archive.name)
+    shutil.copy2(installer_archive, channels_root / installer_archive.name)
+    shutil.copy2(RELEASE_FOUNDATION_MANIFEST, evidence_root / RELEASE_FOUNDATION_MANIFEST.name)
+    shutil.copy2(RELEASE_FOUNDATION_SBOM, evidence_root / RELEASE_FOUNDATION_SBOM.name)
+    shutil.copy2(RELEASE_FOUNDATION_ATTESTATION, evidence_root / RELEASE_FOUNDATION_ATTESTATION.name)
+    write_text(offline_bundle_root / "OfflineBootstrap-objc3c.ps1", offline_bootstrap_script_text())
+    offline_archive = offline_root / "objc3c-windows-x64-offline-bundle.zip"
+    zip_directory(offline_bundle_root, offline_archive)
+
     payload = {
         "contract_id": "objc3c.packaging.channels.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -204,7 +252,9 @@ def main() -> int:
         "portable_archive": repo_rel(portable_archive),
         "installer_image_root": repo_rel(installer_image_root),
         "installer_archive": repo_rel(installer_archive),
-        "implemented_channels": ["portable-archive", "local-installer"],
+        "offline_bundle_root": repo_rel(offline_bundle_root),
+        "offline_archive": repo_rel(offline_archive),
+        "implemented_channels": ["portable-archive", "local-installer", "offline-bundle"],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
