@@ -1,0 +1,60 @@
+{
+  "contract_id": "objc3c.performance.governance.breach.triage.policy.v1",
+  "surface_kind": "budget-breach-diagnosis-and-triage-policy",
+  "required_diagnosis_fields": [
+    "budget_id",
+    "metric_id",
+    "breach_id",
+    "severity",
+    "operator_action",
+    "child_report_path",
+    "classification",
+    "ratio",
+    "observed_value",
+    "allowed_value"
+  ],
+  "classifications": [
+    {
+      "classification": "code-regression",
+      "allowed_breach_ids": [
+        "hard-regression",
+        "soft-regression",
+        "waived-regression"
+      ]
+    },
+    {
+      "classification": "coverage-gap",
+      "allowed_breach_ids": [
+        "coverage-gap"
+      ]
+    },
+    {
+      "classification": "environment-drift",
+      "allowed_breach_ids": [
+        "environment-drift"
+      ]
+    }
+  ],
+  "severity_bands": [
+    {
+      "severity": "blocking",
+      "requires_release_stop": true,
+      "requires_fresh_rerun": true
+    },
+    {
+      "severity": "warning",
+      "requires_release_stop": false,
+      "requires_fresh_rerun": false
+    },
+    {
+      "severity": "caution",
+      "requires_release_stop": false,
+      "requires_fresh_rerun": false
+    }
+  ],
+  "required_paths": [
+    "docs/runbooks/objc3c_performance_governance.md",
+    "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+    "tmp/reports/performance-governance/dashboard-summary.json"
+  ]
+}
