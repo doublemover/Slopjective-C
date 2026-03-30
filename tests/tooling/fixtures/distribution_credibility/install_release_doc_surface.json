@@ -1,0 +1,21 @@
+{
+  "contract_id": "objc3c.distribution.credibility.install.release.doc.surface.v1",
+  "schema_version": 1,
+  "primary_docs": [
+    "README.md",
+    "docs/tutorials/getting_started.md",
+    "docs/tutorials/build_run_verify.md"
+  ],
+  "release_docs": [
+    "docs/runbooks/objc3c_packaging_channels.md",
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_release_foundation.md"
+  ],
+  "trust_report_inputs": [
+    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tmp/reports/package-channels/end-to-end-summary.json",
+    "tmp/reports/release-operations/end-to-end-summary.json",
+    "tmp/reports/release_evidence/evidence-index.json"
+  ],
+  "claim_boundary": "distribution credibility claims must stay consistent with the checked-in install docs and machine-owned release artifacts"
+}

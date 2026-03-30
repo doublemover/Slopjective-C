@@ -40,6 +40,20 @@ Trust signals are additive summaries, not a new source of truth. The canonical
 artifact lineage remains the shipped runnable package, its package channels, and
 their attached release-operation metadata.
 
+## Install Docs And Trust Report Inputs
+
+The user-facing install and release-document inputs for this milestone are:
+
+- `README.md` for the top-level product description
+- `docs/tutorials/getting_started.md` for first-run operator expectations
+- `docs/tutorials/build_run_verify.md` for build and validation expectations
+- `docs/runbooks/objc3c_packaging_channels.md` for installable channel behavior
+- `docs/runbooks/objc3c_release_operations.md` for versioning, update, and rollback metadata
+
+The trust report must be derived from those checked-in docs plus the live release
+artifacts. It must not become a separate narrative program that drifts away from
+the shipped install and recovery surfaces.
+
 ## Publication Surface
 
 This milestone must leave behind:
