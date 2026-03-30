@@ -73,6 +73,8 @@ def main() -> int:
         return fail("intake_manifest drifted")
     if surface.get("quarantine_manifest") != "tests/tooling/fixtures/external_validation/quarantine_manifest.json":
         return fail("quarantine_manifest drifted")
+    if surface.get("artifact_surface") != "tests/tooling/fixtures/external_validation/artifact_surface.json":
+        return fail("artifact_surface drifted")
     if surface.get("checked_in_roots") != EXPECTED_ROOTS:
         return fail("checked_in_roots drifted")
 
@@ -89,6 +91,10 @@ def main() -> int:
     quarantine_manifest_path = require_path(
         "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
         kind="quarantine manifest",
+    )
+    artifact_surface_path = require_path(
+        "tests/tooling/fixtures/external_validation/artifact_surface.json",
+        kind="artifact surface",
     )
     for root in EXPECTED_ROOTS:
         require_path(root, kind="checked-in root")
@@ -218,6 +224,16 @@ def main() -> int:
             }
         )
 
+    artifact_surface = load_json(artifact_surface_path)
+    if artifact_surface.get("contract_id") != "objc3c.external_validation.artifact.surface.v1":
+        return fail("artifact surface contract_id drifted")
+    if artifact_surface.get("schema_version") != 1:
+        return fail("artifact surface schema_version drifted")
+    if artifact_surface.get("artifact_root") != "tmp/artifacts/external-validation":
+        return fail("artifact surface artifact_root drifted")
+    if artifact_surface.get("report_root") != "tmp/reports/external-validation":
+        return fail("artifact surface report_root drifted")
+
     families = surface.get("source_families")
     if not isinstance(families, list) or len(families) != len(EXPECTED_FAMILY_IDS):
         return fail("source_families drifted")
@@ -264,6 +280,7 @@ def main() -> int:
         "trust_policy": surface["trust_policy"],
         "intake_manifest": surface["intake_manifest"],
         "quarantine_manifest": surface["quarantine_manifest"],
+        "artifact_surface": surface["artifact_surface"],
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
         "intake_entry_summaries": intake_entry_summaries,

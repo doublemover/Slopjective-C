@@ -8,6 +8,7 @@
   "trust_policy": "tests/tooling/fixtures/external_validation/trust_policy.json",
   "intake_manifest": "tests/tooling/fixtures/external_validation/intake_manifest.json",
   "quarantine_manifest": "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/external_validation/artifact_surface.json",
   "checked_in_roots": [
     "tests/tooling/fixtures/external_validation",
     "tests/tooling/fixtures/objc3c",
@@ -25,6 +26,7 @@
         "tests/tooling/fixtures/external_validation/trust_policy.json",
         "tests/tooling/fixtures/external_validation/intake_manifest.json",
         "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+        "tests/tooling/fixtures/external_validation/artifact_surface.json",
         "tests/tooling/fixtures/objc3c",
         "tests/conformance/corpus_surface.json",
         "tests/conformance/longitudinal_suites.json",

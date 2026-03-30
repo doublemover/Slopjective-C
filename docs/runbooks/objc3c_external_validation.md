@@ -91,6 +91,26 @@ Compatibility rules:
 - escalation targets must stay explicit so later tooling can route unresolved
   evidence without inventing a sidecar review workflow
 
+## Artifact Surface
+
+Checked-in artifact contract:
+
+- `tests/tooling/fixtures/external_validation/artifact_surface.json`
+
+Stable machine-owned roots:
+
+- `tmp/artifacts/external-validation/`
+- `tmp/reports/external-validation/`
+
+Stable machine-owned summaries:
+
+- `tmp/reports/external-validation/source-surface-summary.json`
+- `tmp/reports/external-validation/intake-replay-summary.json`
+- `tmp/reports/external-validation/publication-summary.json`
+- `tmp/reports/external-validation/drill-summary.json`
+- `tmp/reports/external-validation/integration-summary.json`
+- `tmp/reports/external-validation/end-to-end-summary.json`
+
 ## Explicit Non-Goals
 
 - no separate external-fixture compiler harness

@@ -1,0 +1,14 @@
+{
+  "contract_id": "objc3c.external_validation.artifact.surface.v1",
+  "schema_version": 1,
+  "artifact_root": "tmp/artifacts/external-validation",
+  "report_root": "tmp/reports/external-validation",
+  "intake_runs_root": "tmp/artifacts/external-validation/intake",
+  "publication_root": "tmp/artifacts/external-validation/publication",
+  "source_surface_summary": "tmp/reports/external-validation/source-surface-summary.json",
+  "intake_replay_summary": "tmp/reports/external-validation/intake-replay-summary.json",
+  "publication_summary": "tmp/reports/external-validation/publication-summary.json",
+  "drill_summary": "tmp/reports/external-validation/drill-summary.json",
+  "integration_summary": "tmp/reports/external-validation/integration-summary.json",
+  "end_to_end_summary": "tmp/reports/external-validation/end-to-end-summary.json"
+}
