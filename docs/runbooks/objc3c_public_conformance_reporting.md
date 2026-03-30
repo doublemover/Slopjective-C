@@ -133,3 +133,7 @@ it must stay on this boundary.
 - schema summary: `tmp/reports/public-conformance/schema-surface-summary.json`
 - scorecard builder: `python scripts/build_objc3c_public_conformance_scorecard.py`
 - scorecard summary: `tmp/reports/public-conformance/scorecard-summary.json`
+- publication builder: `python scripts/publish_objc3c_public_conformance_report.py`
+- public summary: `tmp/reports/public-conformance/public-summary.json`
+- published scorecard artifact: `tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json`
+- published badge artifact: `tmp/artifacts/public-conformance/badge/public-conformance-badge.json`
