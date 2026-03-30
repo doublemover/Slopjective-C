@@ -140,6 +140,19 @@ Stable machine-owned roots:
 - report root: `tmp/reports/conformance`
 - package stage root: `tmp/pkg/objc3c-native-runnable-toolchain`
 
+## Live Workflow Surface
+
+Current live scripts:
+
+- surface check: `scripts/check_conformance_corpus_surface.py`
+- coverage index generation: `scripts/generate_conformance_corpus_index.py`
+- legacy suite gate: `scripts/check_conformance_suite.ps1`
+
+Checked-in references:
+
+- coverage map: `tests/conformance/COVERAGE_MAP.md`
+- longitudinal manifest: `tests/conformance/longitudinal_suites.json`
+
 ## Audited Surface
 
 Runtime and lowering coverage already resolves through:

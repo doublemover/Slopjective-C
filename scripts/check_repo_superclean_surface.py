@@ -334,6 +334,33 @@ def main() -> int:
         "stdlib_program_surface drifted",
         errors,
     )
+    expect(
+        payload.get("conformance_corpus_surface")
+        == {
+            "corpus_contract": "tests/conformance/corpus_surface.json",
+            "suite_readme": "tests/conformance/README.md",
+            "coverage_map": "tests/conformance/COVERAGE_MAP.md",
+            "runbook": "docs/runbooks/objc3c_conformance_corpus.md",
+            "longitudinal_manifest": "tests/conformance/longitudinal_suites.json",
+            "report_roots": [
+                "tmp/artifacts/conformance",
+                "tmp/reports/conformance",
+                "tmp/pkg/objc3c-native-runnable-toolchain",
+            ],
+            "workflow_surface": {
+                "report_root": "tmp/reports/conformance",
+                "artifact_root": "tmp/artifacts/conformance",
+                "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+                "surface_check_script": "scripts/check_conformance_corpus_surface.py",
+                "coverage_index_script": "scripts/generate_conformance_corpus_index.py",
+                "legacy_suite_gate_script": "scripts/check_conformance_suite.ps1",
+                "coverage_map": "tests/conformance/COVERAGE_MAP.md",
+                "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json",
+            },
+        },
+        "conformance_corpus_surface drifted",
+        errors,
+    )
 
     frontend_contract_artifacts = payload.get("frontend_contract_artifacts", [])
     expect(isinstance(frontend_contract_artifacts, list) and frontend_contract_artifacts, "frontend_contract_artifacts missing", errors)

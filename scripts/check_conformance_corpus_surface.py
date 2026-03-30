@@ -143,6 +143,19 @@ def main() -> int:
         return fail("artifact_surface.surface_summary drifted")
     if artifact_surface.get("coverage_index") != "tmp/reports/conformance/corpus-index.json":
         return fail("artifact_surface.coverage_index drifted")
+    workflow_surface = surface.get("workflow_surface")
+    expected_workflow_surface = {
+        "report_root": "tmp/reports/conformance",
+        "artifact_root": "tmp/artifacts/conformance",
+        "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+        "surface_check_script": "scripts/check_conformance_corpus_surface.py",
+        "coverage_index_script": "scripts/generate_conformance_corpus_index.py",
+        "legacy_suite_gate_script": "scripts/check_conformance_suite.ps1",
+        "coverage_map": "tests/conformance/COVERAGE_MAP.md",
+        "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json",
+    }
+    if workflow_surface != expected_workflow_surface:
+        return fail("workflow_surface drifted")
 
     longitudinal_policy = surface.get("longitudinal_policy")
     if not isinstance(longitudinal_policy, dict):
@@ -203,6 +216,7 @@ def main() -> int:
         "gap_priority_model": surface.get("gap_priority_model"),
         "suite_partitions": surface.get("suite_partitions"),
         "longitudinal_policy": surface.get("longitudinal_policy"),
+        "workflow_surface": workflow_surface,
         "retained_suite_summary": retained_summary,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

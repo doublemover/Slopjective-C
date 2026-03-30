@@ -136,6 +136,16 @@
     "artifact_root": "tmp/artifacts/conformance",
     "report_root": "tmp/reports/conformance"
   },
+  "workflow_surface": {
+    "report_root": "tmp/reports/conformance",
+    "artifact_root": "tmp/artifacts/conformance",
+    "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+    "surface_check_script": "scripts/check_conformance_corpus_surface.py",
+    "coverage_index_script": "scripts/generate_conformance_corpus_index.py",
+    "legacy_suite_gate_script": "scripts/check_conformance_suite.ps1",
+    "coverage_map": "tests/conformance/COVERAGE_MAP.md",
+    "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json"
+  },
   "audit_surface": {
     "runtime_and_lowering_coverage": [
       "tests/conformance/lowering_abi/manifest.json",

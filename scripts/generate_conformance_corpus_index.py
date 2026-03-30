@@ -137,6 +137,7 @@ def main() -> int:
         "gap_priority_model": surface.get("gap_priority_model"),
         "suite_partitions": surface.get("suite_partitions"),
         "longitudinal_policy": surface.get("longitudinal_policy"),
+        "workflow_surface": surface.get("workflow_surface"),
         "retained_partition": retained_partition,
         "audit_surface": surface.get("audit_surface"),
         "family_rows": family_rows,
