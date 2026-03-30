@@ -32,13 +32,24 @@
     ],
     "objc3.keypath": [
       "typed-keypath-application",
-      "typed-keypath-text-compatibility"
+      "typed-keypath-text-compatibility",
+      "typed-keypath-metadata",
+      "reflection-interop",
+      "runtime-composition-adapter"
     ],
     "objc3.concurrency": [
-      "unchanged-by-m306"
+      "structured-child-spawn",
+      "detached-spawn",
+      "join-and-wait",
+      "task-group-scope",
+      "cancellation-observation",
+      "executor-hop"
     ],
     "objc3.system": [
-      "unchanged-by-m306"
+      "resource-cleanup",
+      "borrowed-lifetime-hook",
+      "strict-system-diagnostics",
+      "runtime-composition-hook"
     ]
   },
   "required_exports": {
@@ -92,8 +103,8 @@
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
     "objc3.errors": "error identity, result helpers, and optional-to-error bridges",
     "objc3.keypath": "typed key-path helpers that need text/data compatibility naming stability",
-    "objc3.concurrency": "out of scope for M306 beyond existing contract dependencies",
-    "objc3.system": "out of scope for M306 beyond existing contract dependencies"
+    "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the M307 advanced-helper contract",
+    "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the M307 advanced-helper contract"
   },
   "non_goals": [
     "parallel stdlib trees",

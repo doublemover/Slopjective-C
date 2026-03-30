@@ -14,7 +14,12 @@
   "source": "stdlib/modules/objc3.concurrency/module.objc3",
   "smoke_source": "stdlib/modules/objc3.concurrency/smoke.objc3",
   "api_families": [
-    "unchanged-by-m306"
+    "structured-child-spawn",
+    "detached-spawn",
+    "join-and-wait",
+    "task-group-scope",
+    "cancellation-observation",
+    "executor-hop"
   ],
   "exports": [
     "objc3_concurrency_spawn_token",

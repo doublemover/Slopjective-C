@@ -15,7 +15,10 @@
   "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3",
   "api_families": [
     "typed-keypath-application",
-    "typed-keypath-text-compatibility"
+    "typed-keypath-text-compatibility",
+    "typed-keypath-metadata",
+    "reflection-interop",
+    "runtime-composition-adapter"
   ],
   "exports": [
     "objc3_keypath_apply_index",

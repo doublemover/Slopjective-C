@@ -232,10 +232,12 @@ def main() -> int:
         "## Public actions",
         "npm run test:stdlib:e2e",
         "stdlib/core_architecture.json",
+        "stdlib/advanced_architecture.json",
         "stdlib/lowering_import_surface.json",
         "module.runtime-registration-manifest.json",
         "identifier-safe implementation module declarations",
         "docs/runbooks/objc3c_stdlib_core.md",
+        "docs/runbooks/objc3c_stdlib_advanced.md",
     ):
         require_token(stdlib_runbook, token, path=STDLIB_RUNBOOK_PATH, errors=errors)
 
@@ -248,8 +250,10 @@ def main() -> int:
         "stdlib/stability_policy.json",
         "stdlib/package_surface.json",
         "stdlib/core_architecture.json",
+        "stdlib/advanced_architecture.json",
         "stdlib/semantic_policy.json",
         "stdlib/lowering_import_surface.json",
+        "docs/runbooks/objc3c_stdlib_advanced.md",
         "machine-owned lowering roots",
         "## Working model",
     ):
@@ -290,6 +294,32 @@ def main() -> int:
         "## Explicit non-goals",
     ):
         require_token(stdlib_core_runbook, token, path=stdlib_core_runbook_path, errors=errors)
+
+    stdlib_advanced_runbook_path = ROOT / "docs" / "runbooks" / "objc3c_stdlib_advanced.md"
+    stdlib_advanced_runbook = stdlib_advanced_runbook_path.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Advanced Stdlib Helper Surface",
+        "## Working boundary",
+        "stdlib/advanced_architecture.json",
+        "stdlib/modules/objc3.concurrency/",
+        "stdlib/modules/objc3.keypath/",
+        "stdlib/modules/objc3.system/",
+        "## Advanced family split",
+        "`objc3.concurrency` owns:",
+        "`objc3.keypath` owns:",
+        "`objc3.system` owns:",
+        "## Expected shipped API families",
+        "structured-child-spawn",
+        "reflection-interop",
+        "runtime-composition-hook",
+        "## Exact checked-in source surface",
+        "objc3_concurrency_spawn_token",
+        "objc3_keypath_component_count",
+        "objc3_system_resource_token",
+        "## Layering rules",
+        "## Explicit non-goals",
+    ):
+        require_token(stdlib_advanced_runbook, token, path=stdlib_advanced_runbook_path, errors=errors)
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (

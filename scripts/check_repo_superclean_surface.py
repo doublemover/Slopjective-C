@@ -65,6 +65,7 @@ def main() -> int:
             "docs/runbooks/objc3c_performance.md",
             "docs/runbooks/objc3c_stdlib_foundation.md",
             "docs/runbooks/objc3c_stdlib_core.md",
+            "docs/runbooks/objc3c_stdlib_advanced.md",
         ],
         "maintainer_runbooks drifted",
         errors,
@@ -243,6 +244,7 @@ def main() -> int:
             "stability_policy": "stdlib/stability_policy.json",
             "package_surface": "stdlib/package_surface.json",
             "core_architecture": "stdlib/core_architecture.json",
+            "advanced_architecture": "stdlib/advanced_architecture.json",
             "semantic_policy": "stdlib/semantic_policy.json",
             "lowering_import_surface": "stdlib/lowering_import_surface.json",
             "source_roots": [

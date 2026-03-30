@@ -333,6 +333,7 @@ $manifestPayload = [ordered]@{
   stdlib_module_inventory = "stdlib/module_inventory.json"
   stdlib_stability_policy = "stdlib/stability_policy.json"
   stdlib_package_surface = "stdlib/package_surface.json"
+  stdlib_advanced_architecture = "stdlib/advanced_architecture.json"
   stdlib_lowering_import_surface = $stdlibLoweringImportSurfaceRelativePath
   stdlib_lowering_artifact_filenames = $stdlibLoweringImportSurfacePayload["artifact_filenames"]
   stdlib_import_surface = $stdlibLoweringImportSurfacePayload["import_surface"]

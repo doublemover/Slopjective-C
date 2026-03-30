@@ -14,7 +14,10 @@
   "source": "stdlib/modules/objc3.system/module.objc3",
   "smoke_source": "stdlib/modules/objc3.system/smoke.objc3",
   "api_families": [
-    "unchanged-by-m306"
+    "resource-cleanup",
+    "borrowed-lifetime-hook",
+    "strict-system-diagnostics",
+    "runtime-composition-hook"
   ],
   "exports": [
     "objc3_system_resource_token"

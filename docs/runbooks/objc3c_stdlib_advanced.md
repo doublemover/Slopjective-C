@@ -72,6 +72,7 @@ The checked-in architecture contract requires these families to stay visible:
   - `executor-hop`
 - `objc3.keypath`
   - `typed-keypath-application`
+  - `typed-keypath-text-compatibility`
   - `typed-keypath-metadata`
   - `reflection-interop`
   - `runtime-composition-adapter`

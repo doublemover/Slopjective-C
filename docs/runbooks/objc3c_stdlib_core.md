@@ -54,8 +54,9 @@ Exact live implementation paths for downstream work:
 `objc3.keypath` remains in scope only where typed key-path helpers need
 text/data compatibility adapters or metadata naming stability.
 
-`objc3.concurrency` and `objc3.system` are not widened by `M306` beyond
-dependencies already claimed by the standard-library contract.
+`objc3.concurrency` and `objc3.system` remain part of the shared stdlib
+inventory, but their advanced helper-family ownership lives in
+`docs/runbooks/objc3c_stdlib_advanced.md` instead of this runbook.
 
 ## Expected shipped API families
 

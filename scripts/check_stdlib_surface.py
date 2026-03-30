@@ -15,6 +15,7 @@ MODULE_INVENTORY_PATH = ROOT / "stdlib" / "module_inventory.json"
 STABILITY_POLICY_PATH = ROOT / "stdlib" / "stability_policy.json"
 PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "package_surface.json"
 CORE_ARCHITECTURE_PATH = ROOT / "stdlib" / "core_architecture.json"
+ADVANCED_ARCHITECTURE_PATH = ROOT / "stdlib" / "advanced_architecture.json"
 SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
 LOWERING_IMPORT_SURFACE_PATH = ROOT / "stdlib" / "lowering_import_surface.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
@@ -69,6 +70,8 @@ def main() -> int:
         return fail(f"missing package surface: {repo_rel(PACKAGE_SURFACE_PATH)}")
     if not CORE_ARCHITECTURE_PATH.is_file():
         return fail(f"missing core architecture contract: {repo_rel(CORE_ARCHITECTURE_PATH)}")
+    if not ADVANCED_ARCHITECTURE_PATH.is_file():
+        return fail(f"missing advanced architecture contract: {repo_rel(ADVANCED_ARCHITECTURE_PATH)}")
     if not SEMANTIC_POLICY_PATH.is_file():
         return fail(f"missing semantic policy contract: {repo_rel(SEMANTIC_POLICY_PATH)}")
     if not LOWERING_IMPORT_SURFACE_PATH.is_file():
@@ -81,6 +84,7 @@ def main() -> int:
     stability_policy = load_json(STABILITY_POLICY_PATH)
     package_surface = load_json(PACKAGE_SURFACE_PATH)
     core_architecture = load_json(CORE_ARCHITECTURE_PATH)
+    advanced_architecture = load_json(ADVANCED_ARCHITECTURE_PATH)
     semantic_policy = load_json(SEMANTIC_POLICY_PATH)
     lowering_import_surface = load_json(LOWERING_IMPORT_SURFACE_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
@@ -97,12 +101,16 @@ def main() -> int:
         return fail("workspace package_surface path drifted")
     if workspace.get("core_architecture") != "stdlib/core_architecture.json":
         return fail("workspace core_architecture path drifted")
+    if workspace.get("advanced_architecture") != "stdlib/advanced_architecture.json":
+        return fail("workspace advanced_architecture path drifted")
     if workspace.get("semantic_policy") != "stdlib/semantic_policy.json":
         return fail("workspace semantic_policy path drifted")
     if workspace.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
         return fail("workspace lowering_import_surface path drifted")
     if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
         return fail("workspace core_runbook path drifted")
+    if workspace.get("advanced_runbook") != "docs/runbooks/objc3c_stdlib_advanced.md":
+        return fail("workspace advanced_runbook path drifted")
     if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
         return fail("module inventory contract_id drifted")
     if inventory.get("schema_version") != 1:
@@ -125,6 +133,8 @@ def main() -> int:
         return fail("package surface stability_policy drifted")
     if package_surface.get("core_architecture") != "stdlib/core_architecture.json":
         return fail("package surface core_architecture drifted")
+    if package_surface.get("advanced_architecture") != "stdlib/advanced_architecture.json":
+        return fail("package surface advanced_architecture drifted")
     if package_surface.get("semantic_policy") != "stdlib/semantic_policy.json":
         return fail("package surface semantic_policy drifted")
     if package_surface.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
@@ -147,6 +157,18 @@ def main() -> int:
         return fail("core architecture runbook drifted")
     if core_architecture.get("scope") != "foundation-utility-text-data-collections-option-result-surface":
         return fail("core architecture scope drifted")
+    if advanced_architecture.get("contract_id") != "objc3c.stdlib.advanced_architecture.v1":
+        return fail("advanced architecture contract_id drifted")
+    if advanced_architecture.get("schema_version") != 1:
+        return fail("advanced architecture schema_version drifted")
+    if advanced_architecture.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("advanced architecture workspace_contract drifted")
+    if advanced_architecture.get("foundation_contract") != "stdlib/core_architecture.json":
+        return fail("advanced architecture foundation_contract drifted")
+    if advanced_architecture.get("runbook") != "docs/runbooks/objc3c_stdlib_advanced.md":
+        return fail("advanced architecture runbook drifted")
+    if advanced_architecture.get("scope") != "advanced-helper-concurrency-reflection-interop-runtime-composition-surface":
+        return fail("advanced architecture scope drifted")
     if semantic_policy.get("contract_id") != "objc3c.stdlib.semantic_policy.v1":
         return fail("semantic policy contract_id drifted")
     if semantic_policy.get("schema_version") != 1:
@@ -341,6 +363,16 @@ def main() -> int:
         if not path.exists():
             return fail(f"core architecture live path missing: {raw_path}")
 
+    advanced_live_paths = advanced_architecture.get("live_paths")
+    if not isinstance(advanced_live_paths, list) or not advanced_live_paths:
+        return fail("advanced architecture missing live_paths")
+    for raw_path in advanced_live_paths:
+        if not isinstance(raw_path, str) or not raw_path:
+            return fail("advanced architecture live_paths entry malformed")
+        path = ROOT / raw_path
+        if not path.exists():
+            return fail(f"advanced architecture live path missing: {raw_path}")
+
     architecture_api_families = core_architecture.get("api_families")
     if not isinstance(architecture_api_families, dict) or not architecture_api_families:
         return fail("core architecture missing api_families")
@@ -364,6 +396,30 @@ def main() -> int:
         manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
         if manifest_payload.get("exports") != required_exports:
             return fail(f"module manifest exports drifted for {module_name}")
+
+    advanced_api_families = advanced_architecture.get("api_families")
+    if not isinstance(advanced_api_families, dict) or not advanced_api_families:
+        return fail("advanced architecture missing api_families")
+    for module_name, families in advanced_api_families.items():
+        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
+            return fail(f"advanced architecture referenced unknown module {module_name}")
+        if not isinstance(families, list) or not families:
+            return fail(f"advanced architecture api_families malformed for {module_name}")
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        if manifest_payload.get("api_families") != families:
+            return fail(f"module manifest advanced api_families drifted for {module_name}")
+
+    advanced_required_exports = advanced_architecture.get("required_exports")
+    if not isinstance(advanced_required_exports, dict) or not advanced_required_exports:
+        return fail("advanced architecture missing required_exports")
+    for module_name, required_exports in advanced_required_exports.items():
+        if not isinstance(module_name, str) or module_name not in inventory_modules_by_name:
+            return fail(f"advanced architecture required_exports referenced unknown module {module_name}")
+        if not isinstance(required_exports, list) or not required_exports:
+            return fail(f"advanced architecture required_exports malformed for {module_name}")
+        manifest_payload = load_json(ROOT / inventory_modules_by_name[module_name]["manifest"])
+        if manifest_payload.get("exports") != required_exports:
+            return fail(f"module manifest advanced exports drifted for {module_name}")
 
     semantic_module_semver = semantic_policy.get("module_semver")
     if not isinstance(semantic_module_semver, dict) or not semantic_module_semver:
@@ -435,6 +491,7 @@ def main() -> int:
                 "stability_policy": repo_rel(STABILITY_POLICY_PATH),
                 "package_surface": repo_rel(PACKAGE_SURFACE_PATH),
                 "core_architecture": repo_rel(CORE_ARCHITECTURE_PATH),
+                "advanced_architecture": repo_rel(ADVANCED_ARCHITECTURE_PATH),
                 "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
                 "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
@@ -442,7 +499,9 @@ def main() -> int:
                 "layers": layers,
                 "module_imports": module_imports,
                 "api_families": architecture_api_families,
+                "advanced_api_families": advanced_api_families,
                 "required_exports": architecture_required_exports,
+                "advanced_required_exports": advanced_required_exports,
                 "module_semver": semantic_module_semver,
                 "artifact_filenames": artifact_filenames,
             },
