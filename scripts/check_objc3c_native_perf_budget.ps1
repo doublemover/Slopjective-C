@@ -28,6 +28,10 @@ $defaultMaxElapsedMs = 4000
 $defaultPerFixtureBudgetMs = 150
 $defaultWindowsLaunchOverheadPerFixtureMs = 450
 $defaultNonWindowsLaunchOverheadPerFixtureMs = 0
+$macroHostFixture = Join-Path $repoRoot "tests/tooling/fixtures/native/macro_host_process_provider.objc3"
+$nativeDocsScript = Join-Path $repoRoot "scripts/build_objc3c_native_docs.py"
+$commandSurfaceScript = Join-Path $repoRoot "scripts/render_objc3c_public_command_surface.py"
+$pythonCommand = if (Get-Command python -ErrorAction SilentlyContinue) { "python" } else { "python" }
 
 function Read-JsonObject {
   param([string]$Path)
@@ -419,6 +423,22 @@ $cacheInvalidationProof = [ordered]@{
   run1 = $null
   run2 = $null
 }
+$macroHostProof = [ordered]@{
+  executed = $false
+  status = "FAIL"
+  detail = "not_executed"
+  fixture = ""
+  run1 = $null
+  run2 = $null
+  cache_artifact = ""
+}
+$docsGenerationProof = [ordered]@{
+  executed = $false
+  status = "FAIL"
+  detail = "not_executed"
+  native_docs = $null
+  public_command_surface = $null
+}
 
 Push-Location $repoRoot
 try {
@@ -697,6 +717,109 @@ try {
     out_dir = (Get-RepoRelativePath -Path $invalidationRun2Dir -Root $repoRoot)
   }
   Write-Output ("cache-invalidation PASS fixture={0} run1_hit={1} run2_hit={2}" -f $cacheFixtureRel, $invalidationRun1Hit, $invalidationRun2Hit)
+
+  if (!(Test-Path -LiteralPath $macroHostFixture -PathType Leaf)) {
+    throw "perf-budget FAIL: missing macro-host fixture at $macroHostFixture"
+  }
+  $macroHostDir = Join-Path $runDir "macro-host-cache"
+  $macroHostRun1Dir = Join-Path $macroHostDir "run1"
+  $macroHostRun2Dir = Join-Path $macroHostDir "run2"
+  $macroHostRun1Log = Join-Path $macroHostDir "run1.log"
+  $macroHostRun2Log = Join-Path $macroHostDir "run2.log"
+  New-Item -ItemType Directory -Force -Path $macroHostDir | Out-Null
+  $macroEmitPrefix = "macrohost_{0}" -f $runId.Replace("_", "")
+
+  $macroHostArgs = @($macroHostFixture, "--use-cache", "--emit-prefix", $macroEmitPrefix, "--out-dir", $macroHostRun1Dir, "--objc3-ir-object-backend", "clang")
+  $macroHostRun1 = Invoke-TimedWrapperCommand `
+    -ScriptPath $compileScript `
+    -ScriptArguments $macroHostArgs `
+    -LogPath $macroHostRun1Log
+  if ($macroHostRun1.exit_code -ne 0) {
+    throw "perf-budget FAIL: macro-host cache run1 failed with exit code $($macroHostRun1.exit_code)"
+  }
+  $macroHostRun1Hit = Parse-CacheHitFlag -OutputText $macroHostRun1.output_text -RunLabel "macro-host cache run1"
+
+  $macroHostArgs2 = @($macroHostFixture, "--use-cache", "--emit-prefix", $macroEmitPrefix, "--out-dir", $macroHostRun2Dir, "--objc3-ir-object-backend", "clang")
+  $macroHostRun2 = Invoke-TimedWrapperCommand `
+    -ScriptPath $compileScript `
+    -ScriptArguments $macroHostArgs2 `
+    -LogPath $macroHostRun2Log
+  if ($macroHostRun2.exit_code -ne 0) {
+    throw "perf-budget FAIL: macro-host cache run2 failed with exit code $($macroHostRun2.exit_code)"
+  }
+  $macroHostRun2Hit = Parse-CacheHitFlag -OutputText $macroHostRun2.output_text -RunLabel "macro-host cache run2"
+  if (!$macroHostRun2Hit) {
+    throw "perf-budget FAIL: macro-host cache run2 expected cache_hit=true"
+  }
+
+  $macroHostArtifact = Join-Path $macroHostRun2Dir "$macroEmitPrefix.metaprogramming-macro-host-cache.json"
+  if (!(Test-Path -LiteralPath $macroHostArtifact -PathType Leaf)) {
+    $macroHostArtifact = Join-Path $macroHostRun2Dir "module.metaprogramming-macro-host-cache.json"
+  }
+  if (!(Test-Path -LiteralPath $macroHostArtifact -PathType Leaf)) {
+    throw "perf-budget FAIL: macro-host cache compile did not publish a metaprogramming host-cache artifact"
+  }
+
+  $macroHostProof.executed = $true
+  $macroHostProof.status = "PASS"
+  $macroHostProof.detail = "macro-host cache artifact published through the live wrapper path"
+  $macroHostProof.fixture = (Get-RepoRelativePath -Path $macroHostFixture -Root $repoRoot)
+  $macroHostProof.run1 = [ordered]@{
+    elapsed_ms = $macroHostRun1.elapsed_ms
+    exit_code = $macroHostRun1.exit_code
+    cache_hit = $macroHostRun1Hit
+    log = (Get-RepoRelativePath -Path $macroHostRun1Log -Root $repoRoot)
+    out_dir = (Get-RepoRelativePath -Path $macroHostRun1Dir -Root $repoRoot)
+  }
+  $macroHostProof.run2 = [ordered]@{
+    elapsed_ms = $macroHostRun2.elapsed_ms
+    exit_code = $macroHostRun2.exit_code
+    cache_hit = $macroHostRun2Hit
+    log = (Get-RepoRelativePath -Path $macroHostRun2Log -Root $repoRoot)
+    out_dir = (Get-RepoRelativePath -Path $macroHostRun2Dir -Root $repoRoot)
+  }
+  $macroHostProof.cache_artifact = (Get-RepoRelativePath -Path $macroHostArtifact -Root $repoRoot)
+  Write-Output ("macro-host-cache PASS fixture={0} run1_hit={1} run2_hit={2}" -f $macroHostProof.fixture, $macroHostRun1Hit, $macroHostRun2Hit)
+
+  if (!(Test-Path -LiteralPath $nativeDocsScript -PathType Leaf)) {
+    throw "perf-budget FAIL: missing native docs generator at $nativeDocsScript"
+  }
+  if (!(Test-Path -LiteralPath $commandSurfaceScript -PathType Leaf)) {
+    throw "perf-budget FAIL: missing public command surface generator at $commandSurfaceScript"
+  }
+  $docsDir = Join-Path $runDir "docs-generation"
+  New-Item -ItemType Directory -Force -Path $docsDir | Out-Null
+  $nativeDocsLog = Join-Path $docsDir "native-docs.log"
+  $commandSurfaceLog = Join-Path $docsDir "public-command-surface.log"
+  $nativeDocsRun = Invoke-TimedNativeCommand `
+    -Command $pythonCommand `
+    -Arguments @($nativeDocsScript) `
+    -LogPath $nativeDocsLog
+  if ($nativeDocsRun.exit_code -ne 0) {
+    throw "perf-budget FAIL: native docs generation failed with exit code $($nativeDocsRun.exit_code)"
+  }
+  $commandSurfaceRun = Invoke-TimedNativeCommand `
+    -Command $pythonCommand `
+    -Arguments @($commandSurfaceScript) `
+    -LogPath $commandSurfaceLog
+  if ($commandSurfaceRun.exit_code -ne 0) {
+    throw "perf-budget FAIL: public command surface generation failed with exit code $($commandSurfaceRun.exit_code)"
+  }
+
+  $docsGenerationProof.executed = $true
+  $docsGenerationProof.status = "PASS"
+  $docsGenerationProof.detail = "checked-in docs generators executed on the live repo surface"
+  $docsGenerationProof.native_docs = [ordered]@{
+    elapsed_ms = $nativeDocsRun.elapsed_ms
+    exit_code = $nativeDocsRun.exit_code
+    log = (Get-RepoRelativePath -Path $nativeDocsLog -Root $repoRoot)
+  }
+  $docsGenerationProof.public_command_surface = [ordered]@{
+    elapsed_ms = $commandSurfaceRun.elapsed_ms
+    exit_code = $commandSurfaceRun.exit_code
+    log = (Get-RepoRelativePath -Path $commandSurfaceLog -Root $repoRoot)
+  }
+  Write-Output ("docs-generation PASS native_docs_ms={0} command_surface_ms={1}" -f $nativeDocsRun.elapsed_ms, $commandSurfaceRun.elapsed_ms)
 } catch {
   $hadFatalError = $true
   $fatalErrorMessage = $_.Exception.Message
@@ -747,6 +870,8 @@ $summary = [ordered]@{
   build_elapsed_ms = $buildElapsedMs
   cache_proof = $cacheProof
   cache_invalidation_proof = $cacheInvalidationProof
+  macro_host_cache_proof = $macroHostProof
+  docs_generation_proof = $docsGenerationProof
   total = $total
   passed = $passedCount
   failed = $failedCount
