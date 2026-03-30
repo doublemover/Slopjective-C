@@ -724,12 +724,6 @@ RuntimeMethodReturnKind ClassifyRuntimeReturnType(const char *return_type_name);
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name);
 
-void RefreshSelectorHandlePointersUnlocked(RuntimeState &state) {
-  for (SelectorSlot &slot : state.selector_slots) {
-    slot.handle.selector = slot.spelling_storage.c_str();
-  }
-}
-
 void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.method_cache.clear();
   state.method_cache_hit_count = 0;
@@ -2278,6 +2272,49 @@ const char *DescribeResolvedImplementationKind(
   return "";
 }
 
+std::size_t EstimateSeedableMethodEntriesForMethodList(
+    const EmittedMethodListRef *method_list_ref) {
+  if (method_list_ref == nullptr || method_list_ref->count == 0 ||
+      method_list_ref->method_list == nullptr) {
+    return 0;
+  }
+  const auto *header =
+      static_cast<const EmittedMethodListHeader *>(method_list_ref->method_list);
+  if (header == nullptr || header->count != method_list_ref->count) {
+    return 0;
+  }
+  const EmittedMethodListEntry *entries = MethodListEntries(header);
+  std::size_t count = 0;
+  for (std::uint64_t index = 0; index < header->count; ++index) {
+    const EmittedMethodListEntry &entry = entries[index];
+    if (entry.selector == nullptr || entry.owner_identity == nullptr ||
+        entry.return_type_name == nullptr || entry.has_body == 0 ||
+        entry.implementation == nullptr || entry.parameter_count > 4) {
+      continue;
+    }
+    if (ClassifyRuntimeReturnType(entry.return_type_name) ==
+        RuntimeMethodReturnKind::Unsupported) {
+      continue;
+    }
+    ++count;
+  }
+  return count;
+}
+
+void ReserveMethodCacheForFastPathSeedUnlocked(RuntimeState &state) {
+  std::size_t reserve_count = state.method_cache.size();
+  for (const RealizedClassNode &node : state.realized_class_nodes) {
+    if (node.bundle == nullptr) {
+      continue;
+    }
+    reserve_count += EstimateSeedableMethodEntriesForMethodList(
+        node.bundle->class_record.method_list_ref);
+    reserve_count += EstimateSeedableMethodEntriesForMethodList(
+        node.bundle->metaclass_record.method_list_ref);
+  }
+  state.method_cache.reserve(reserve_count);
+}
+
 void SeedDispatchIntentFastPathCacheForMethodListUnlocked(
     RuntimeState &state, const RealizedClassNode &node,
     const EmittedClassRecord &record, DispatchFamily family,
@@ -2356,6 +2393,7 @@ void SeedDispatchIntentFastPathCacheUnlocked(RuntimeState &state) {
   // rebuild now pre-seeds deterministic cache entries for safe implementation-
   // backed direct/final/sealed methods so the first live dispatch can hit the
   // runtime cache without paying a slow-path lookup.
+  ReserveMethodCacheForFastPathSeedUnlocked(state);
   for (const RealizedClassNode &node : state.realized_class_nodes) {
     if (node.bundle == nullptr) {
       continue;
@@ -2961,8 +2999,8 @@ const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector
   SelectorSlot slot;
   slot.spelling_storage = selector;
   state.selector_slots.push_back(std::move(slot));
-  RefreshSelectorHandlePointersUnlocked(state);
   SelectorSlot &stored = state.selector_slots.back();
+  stored.handle.selector = stored.spelling_storage.c_str();
   stored.handle.stable_id = static_cast<std::uint64_t>(state.selector_slots.size());
   const std::size_t index = state.selector_slots.size() - 1u;
   state.selector_index_by_name.emplace(stored.spelling_storage, index);
@@ -2994,8 +3032,8 @@ bool MaterializeSelectorLookupEntryUnlocked(RuntimeState &state,
     slot.first_selector_pool_index = selector_pool_index;
     slot.last_selector_pool_index = selector_pool_index;
     state.selector_slots.push_back(std::move(slot));
-    RefreshSelectorHandlePointersUnlocked(state);
     SelectorSlot &stored = state.selector_slots.back();
+    stored.handle.selector = stored.spelling_storage.c_str();
     stored.handle.stable_id =
         static_cast<std::uint64_t>(state.selector_slots.size());
     state.selector_index_by_name.emplace(stored.spelling_storage,
