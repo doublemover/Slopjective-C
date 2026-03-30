@@ -58,7 +58,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:smoke` | `test-smoke` | `smoke` | `full execution smoke corpus` | `fixed-shape` | `runner-internal` |
-| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, stdlib validation, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
+| `test:ci` | `test-ci` | `ci` | `task hygiene, developer-tooling integration, stdlib foundation and advanced validation, bonus-experience validation, runtime acceptance, canonical replay, and full execution smoke validation` | `fixed-shape` | `runner-internal + direct task hygiene` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
