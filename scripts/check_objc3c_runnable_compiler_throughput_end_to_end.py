@@ -56,8 +56,8 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 def main() -> int:
-    run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    package_root = ROOT / "tmp" / "pkg" / "objc3c-compiler-throughput-e2e" / run_id
+    run_id = datetime.now().strftime("%m%d%H%M%S")
+    package_root = ROOT / "tmp" / "pkg" / "ct" / run_id
     manifest_path = package_root / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
     summary_out = package_root / "tmp" / "reports" / "compiler-throughput" / "benchmark-summary.json"
 

@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `112`
+- Current public script count: `115`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -48,6 +48,9 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:benchmark` | `benchmark-runtime-inspector` | `repo` | `runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_inspector.py` |
 | `inspect:objc3c:performance` | `benchmark-performance` | `repo` | `objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets` | `pass-through` | `python:scripts/benchmark_objc3c_performance.py` |
 | `inspect:objc3c:runtime-performance` | `benchmark-runtime-performance` | `repo` | `runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_performance.py` |
+| `inspect:objc3c:compiler-throughput` | `benchmark-compiler-throughput` | `repo` | `compiler-throughput telemetry stays tied to the live native compiler executable, wrapper cache contract, macro-host artifact path, and checked-in docs generators` | `pass-through` | `pwsh:scripts/check_objc3c_native_perf_budget.ps1` |
+| `test:objc3c:compiler-throughput` | `validate-compiler-throughput` | `repo` | `compiler-throughput benchmark outputs stay executable across the live native compiler, wrapper cache proof, macro-host artifact path, and docs generators` | `fixed-shape` | `python:scripts/check_objc3c_compiler_throughput_integration.py` |
+| `test:objc3c:runnable-compiler-throughput` | `validate-runnable-compiler-throughput` | `full` | `packaged compiler-throughput fixtures, contracts, benchmark script, and command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_compiler_throughput_end_to_end.py` |
 | `test:objc3c:runtime-performance` | `validate-runtime-performance` | `repo` | `runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_runtime_performance_integration.py` |
 | `test:objc3c:runnable-runtime-performance` | `validate-runnable-runtime-performance` | `full` | `packaged runtime-performance fixtures, contracts, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_runtime_performance_end_to_end.py` |
 | `inspect:objc3c:comparative-baselines` | `benchmark-comparative-baselines` | `repo` | `comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states` | `pass-through` | `python:scripts/run_objc3c_comparative_baselines.py` |
@@ -110,7 +113,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:runnable-metaprogramming` | `validate-runnable-metaprogramming` | `full` | `packaged compile, metaprogramming probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_end_to_end.py` |
 | `test:objc3c:release-candidate-conformance` | `validate-release-candidate-conformance` | `full` | `integrated public-claims strict-profile and release-candidate conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_release_candidate_conformance.py` |
 | `test:objc3c:runnable-release-candidate` | `validate-runnable-release-candidate` | `full` | `packaged compile, release-candidate validation, runtime probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_release_candidate_end_to_end.py` |
-| `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive corpus artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
+| `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive dispatch and artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus runtime-performance benchmarking, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |

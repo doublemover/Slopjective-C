@@ -137,6 +137,36 @@ function Get-RepoRelativeConformanceFiles {
   )
 }
 
+function Get-RepoRelativeNativeDocsFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $docsRoot = Join-Path $RepoRoot "docs/objc3c-native"
+  if (!(Test-Path -LiteralPath $docsRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: missing native docs root $docsRoot"
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $docsRoot -Recurse -File |
+      Sort-Object -Property FullName |
+      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
+  )
+}
+
+function Get-RepoRelativeRecoveryPositiveFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $recoveryRoot = Join-Path $RepoRoot "tests/tooling/fixtures/native/recovery/positive"
+  if (!(Test-Path -LiteralPath $recoveryRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: missing recovery-positive root $recoveryRoot"
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $recoveryRoot -Recurse -File |
+      Sort-Object -Property FullName |
+      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
+  )
+}
+
 if (!(Test-Path -LiteralPath $buildScript -PathType Leaf)) {
   throw "runnable toolchain package FAIL: missing build script $buildScript"
 }
@@ -152,15 +182,19 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 $requiredRelativeFiles = @(
+  "package.json",
   "artifacts/bin/objc3c-native.exe",
   "artifacts/bin/objc3c-frontend-c-api-runner.exe",
   "artifacts/lib/objc3_runtime.lib",
   "scripts/build_objc3c_native.ps1",
   "scripts/objc3c_native_compile.ps1",
+  "scripts/objc3c_public_workflow_runner.py",
   "scripts/objc3c_runtime_launch_contract.ps1",
   "scripts/run_objc3c_native_compile_proof.ps1",
   "scripts/check_objc3c_native_execution_smoke.ps1",
   "scripts/check_objc3c_execution_replay_proof.ps1",
+  "scripts/build_objc3c_native_docs.py",
+  "scripts/render_objc3c_public_command_surface.py",
   "showcase/README.md",
   "showcase/portfolio.json",
   "showcase/tutorial_walkthrough.json",
@@ -172,6 +206,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
+  "docs/runbooks/objc3c_public_command_surface.md",
   "docs/runbooks/objc3c_runtime_performance.md",
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
@@ -261,10 +296,12 @@ $requiredRelativeFiles = @(
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
+$nativeDocsFiles = @(Get-RepoRelativeNativeDocsFiles -RepoRoot $repoRoot)
+$recoveryPositiveFiles = @(Get-RepoRelativeRecoveryPositiveFiles -RepoRoot $repoRoot)
 $stdlibFiles = @(Get-RepoRelativeStdlibFiles -RepoRoot $repoRoot)
 $conformanceFiles = @(Get-RepoRelativeConformanceFiles -RepoRoot $repoRoot)
 $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
-foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $stdlibFiles + $conformanceFiles)) {
+foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $nativeDocsFiles + $recoveryPositiveFiles + $stdlibFiles + $conformanceFiles)) {
   Copy-RepoRelativeFile -RepoRoot $repoRoot -PackageRoot $packageRoot -RelativePath $relativePath | Out-Null
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }

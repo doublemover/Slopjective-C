@@ -511,7 +511,7 @@ try {
   foreach ($fixture in $fixtures) {
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
     $hash = Get-ShortHash -Value $fixtureRel
-    $caseDir = Join-Path $runDir ("fixture_{0}_{1}" -f $hash, $fixture.BaseName)
+    $caseDir = Join-Path $runDir ("fixture_{0}" -f $hash)
     $compileLog = Join-Path $caseDir "compile.log"
     New-Item -ItemType Directory -Force -Path $caseDir | Out-Null
 
@@ -561,24 +561,23 @@ try {
     Write-Output ("[{0}] {1} elapsed_ms={2} ({3})" -f $statusToken, $fixtureRel, $run.elapsed_ms, $detail)
   }
 
-  $cacheFixture = $null
-  if ($dispatchFixtureCount -gt 0) {
-    $cacheFixture = @($fixtures | Where-Object { $dispatchFixturePathSet.Contains($_.FullName) } | Select-Object -First 1)[0]
-  }
+  $cacheFixture = @($fixtures | Where-Object { $_.Extension -eq ".objc3" } | Select-Object -First 1)[0]
   if ($null -eq $cacheFixture) {
-    $cacheFixture = $fixtures[0]
+    throw "perf-budget FAIL: cache-proof requires at least one .objc3 fixture so the live compile-wrapper contract can publish the runtime registration manifest"
   }
   $cacheFixtureRel = Get-RepoRelativePath -Path $cacheFixture.FullName -Root $repoRoot
   $cacheFixtureKind = if ($dispatchFixturePathSet.Contains($cacheFixture.FullName)) { "dispatch-positive" } else { "recovery-positive" }
-  $emitPrefix = "cacheproof_{0}" -f $runId.Replace("_", "")
+  $emitPrefix = "module"
   $cacheDir = Join-Path $runDir "cache-proof"
   $missDir = Join-Path $cacheDir "miss"
   $hitDir = Join-Path $cacheDir "hit"
   New-Item -ItemType Directory -Force -Path $cacheDir | Out-Null
+  $cacheFixtureSource = Join-Path $cacheDir $cacheFixture.Name
+  Copy-Item -LiteralPath $cacheFixture.FullName -Destination $cacheFixtureSource -Force
 
   $run1Log = Join-Path $cacheDir "run1.log"
   $run2Log = Join-Path $cacheDir "run2.log"
-  $cacheScriptArgs = @($cacheFixture.FullName, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $missDir)
+  $cacheScriptArgs = @($cacheFixtureSource, "--use-cache", "--out-dir", $missDir)
   if ($cacheFixture.Extension -eq ".objc3") {
     $cacheScriptArgs += @("--objc3-ir-object-backend", "clang")
   }
@@ -594,7 +593,7 @@ try {
     throw "perf-budget FAIL: cache-proof run1 expected cache_hit=false, observed true"
   }
 
-  $cacheScriptArgsHit = @($cacheFixture.FullName, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $hitDir)
+  $cacheScriptArgsHit = @($cacheFixtureSource, "--use-cache", "--out-dir", $hitDir)
   if ($cacheFixture.Extension -eq ".objc3") {
     $cacheScriptArgsHit += @("--objc3-ir-object-backend", "clang")
   }
@@ -669,7 +668,7 @@ try {
   $invalidationRun1Log = Join-Path $invalidationDir "run1.log"
   $invalidationRun2Log = Join-Path $invalidationDir "run2.log"
 
-  $invalidationArgs = @($invalidationSource, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $invalidationRun1Dir)
+  $invalidationArgs = @($invalidationSource, "--use-cache", "--out-dir", $invalidationRun1Dir)
   if ($cacheFixture.Extension -eq ".objc3") {
     $invalidationArgs += @("--objc3-ir-object-backend", "clang")
   }
@@ -684,7 +683,7 @@ try {
 
   Add-Content -LiteralPath $invalidationSource -Value "// cache invalidation probe mutation"
 
-  $invalidationArgs2 = @($invalidationSource, "--use-cache", "--emit-prefix", $emitPrefix, "--out-dir", $invalidationRun2Dir)
+  $invalidationArgs2 = @($invalidationSource, "--use-cache", "--out-dir", $invalidationRun2Dir)
   if ($cacheFixture.Extension -eq ".objc3") {
     $invalidationArgs2 += @("--objc3-ir-object-backend", "clang")
   }
@@ -729,9 +728,11 @@ try {
   $macroHostRun1Log = Join-Path $macroHostDir "run1.log"
   $macroHostRun2Log = Join-Path $macroHostDir "run2.log"
   New-Item -ItemType Directory -Force -Path $macroHostDir | Out-Null
-  $macroEmitPrefix = "macrohost_{0}" -f $runId.Replace("_", "")
+  $macroHostFixtureSource = Join-Path $macroHostDir (Split-Path -Leaf $macroHostFixture)
+  Copy-Item -LiteralPath $macroHostFixture -Destination $macroHostFixtureSource -Force
+  $macroEmitPrefix = "module"
 
-  $macroHostArgs = @($macroHostFixture, "--use-cache", "--emit-prefix", $macroEmitPrefix, "--out-dir", $macroHostRun1Dir, "--objc3-ir-object-backend", "clang")
+  $macroHostArgs = @($macroHostFixtureSource, "--use-cache", "--out-dir", $macroHostRun1Dir, "--objc3-ir-object-backend", "clang")
   $macroHostRun1 = Invoke-TimedWrapperCommand `
     -ScriptPath $compileScript `
     -ScriptArguments $macroHostArgs `
@@ -741,7 +742,7 @@ try {
   }
   $macroHostRun1Hit = Parse-CacheHitFlag -OutputText $macroHostRun1.output_text -RunLabel "macro-host cache run1"
 
-  $macroHostArgs2 = @($macroHostFixture, "--use-cache", "--emit-prefix", $macroEmitPrefix, "--out-dir", $macroHostRun2Dir, "--objc3-ir-object-backend", "clang")
+  $macroHostArgs2 = @($macroHostFixtureSource, "--use-cache", "--out-dir", $macroHostRun2Dir, "--objc3-ir-object-backend", "clang")
   $macroHostRun2 = Invoke-TimedWrapperCommand `
     -ScriptPath $compileScript `
     -ScriptArguments $macroHostArgs2 `
