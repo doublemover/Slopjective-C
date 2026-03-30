@@ -89,7 +89,10 @@
       "objc3_keypath_apply_index",
       "objc3_keypath_component_count",
       "objc3_keypath_text_compatibility_score",
-      "objc3_keypath_text_compatibility_diagnostic"
+      "objc3_keypath_text_compatibility_diagnostic",
+      "objc3_keypath_metadata_token",
+      "objc3_keypath_reflection_interop_token",
+      "objc3_keypath_runtime_composition_token"
     ],
     "objc3.concurrency": [
       "objc3_concurrency_spawn_token",
@@ -103,7 +106,11 @@
       "objc3_concurrency_actor_mailbox_token"
     ],
     "objc3.system": [
-      "objc3_system_resource_token"
+      "objc3_system_resource_token",
+      "objc3_system_cleanup_token",
+      "objc3_system_lifetime_borrow_token",
+      "objc3_system_diagnostics_gate_token",
+      "objc3_system_runtime_composition_token"
     ]
   },
   "module_roles": {

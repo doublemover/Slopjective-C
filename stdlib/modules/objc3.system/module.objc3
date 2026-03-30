@@ -3,3 +3,31 @@ module objc3_system;
 fn objc3_system_resource_token(seed: i32) {
   return seed + 4;
 }
+
+fn objc3_system_cleanup_token(seed: i32, cleanup_count: i32) {
+  if (cleanup_count < 0) {
+    return seed + 4;
+  } else {
+    return seed + 4 + cleanup_count;
+  }
+}
+
+fn objc3_system_lifetime_borrow_token(seed: i32, borrow_depth: i32) {
+  if (borrow_depth < 0) {
+    return seed + 4;
+  } else {
+    return seed + 4 + borrow_depth;
+  }
+}
+
+fn objc3_system_diagnostics_gate_token(required_profile: i32, observed_profile: i32) {
+  if (observed_profile < required_profile) {
+    return 30704;
+  } else {
+    return 0;
+  }
+}
+
+fn objc3_system_runtime_composition_token(seed: i32, helper_token: i32) {
+  return seed + 4 + helper_token;
+}

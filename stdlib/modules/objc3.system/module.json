@@ -20,6 +20,10 @@
     "runtime-composition-hook"
   ],
   "exports": [
-    "objc3_system_resource_token"
+    "objc3_system_resource_token",
+    "objc3_system_cleanup_token",
+    "objc3_system_lifetime_borrow_token",
+    "objc3_system_diagnostics_gate_token",
+    "objc3_system_runtime_composition_token"
   ]
 }

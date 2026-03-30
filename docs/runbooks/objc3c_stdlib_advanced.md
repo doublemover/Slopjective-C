@@ -106,10 +106,17 @@ the checked-in architecture contract.
 - `objc3_keypath_component_count`
 - `objc3_keypath_text_compatibility_score`
 - `objc3_keypath_text_compatibility_diagnostic`
+- `objc3_keypath_metadata_token`
+- `objc3_keypath_reflection_interop_token`
+- `objc3_keypath_runtime_composition_token`
 
 `objc3.system` currently exports:
 
 - `objc3_system_resource_token`
+- `objc3_system_cleanup_token`
+- `objc3_system_lifetime_borrow_token`
+- `objc3_system_diagnostics_gate_token`
+- `objc3_system_runtime_composition_token`
 
 ## Layering rules
 
@@ -144,8 +151,20 @@ the checked-in architecture contract.
   provided cancellation flag is nonzero
 - key-path helpers preserve caller-visible component counts and compatibility
   diagnostics instead of inventing reflection-owned storage
+- `objc3_keypath_metadata_token` returns `root + component_count`, while
+  `objc3_keypath_reflection_interop_token` and
+  `objc3_keypath_runtime_composition_token` preserve the base component count
+  when the imported or reflected count is negative
 - `objc3.system` remains profile-gated to Strict System claims and its helper
   hooks do not become unconditional core imports
+- `objc3_system_cleanup_token` and `objc3_system_lifetime_borrow_token`
+  preserve the base `seed + 4` token when the requested cleanup or borrow depth
+  is negative
+- `objc3_system_diagnostics_gate_token` returns the stable strict-system
+  diagnostic code `30704` when the observed profile is lower than the required
+  profile
+- `objc3_system_runtime_composition_token` returns `seed + 4 + helper_token`
+  for explicit runtime-composition helper chaining
 - moving advanced helper families between canonical modules is a breaking change
 - changing the required profile gate for an existing advanced helper module is a
   breaking change

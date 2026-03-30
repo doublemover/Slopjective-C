@@ -20,9 +20,32 @@ fn objc3_keypath_text_compatibility_diagnostic(component_count: i32, text_units:
   }
 }
 
+fn objc3_keypath_metadata_token(root: i32, component_count: i32) {
+  return root + component_count;
+}
+
+fn objc3_keypath_reflection_interop_token(component_count: i32, reflected_components: i32) {
+  if (reflected_components < 0) {
+    return component_count;
+  } else {
+    return component_count + reflected_components;
+  }
+}
+
+fn objc3_keypath_runtime_composition_token(component_count: i32, imported_components: i32) {
+  if (imported_components < 0) {
+    return component_count;
+  } else {
+    return component_count + imported_components;
+  }
+}
+
 fn main() {
   return objc3_keypath_apply_index(3, 1)
     + objc3_keypath_component_count(2, 2)
     + objc3_keypath_text_compatibility_score(1, 4)
-    + objc3_keypath_text_compatibility_diagnostic(4, 2);
+    + objc3_keypath_text_compatibility_diagnostic(4, 2)
+    + objc3_keypath_metadata_token(5, 2)
+    + objc3_keypath_reflection_interop_token(3, 4)
+    + objc3_keypath_runtime_composition_token(2, 6);
 }

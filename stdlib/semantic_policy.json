@@ -72,7 +72,10 @@
     "text_compatibility_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
     "typed_keypath_metadata": "remains count-and-component preserving until runtime-backed keypath metadata lands",
     "reflection_interop": "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries",
-    "runtime_composition_adapter": "must not invent ownership or allocation semantics beyond the checked-in keypath component and compatibility helpers"
+    "runtime_composition_adapter": "must not invent ownership or allocation semantics beyond the checked-in keypath component and compatibility helpers",
+    "metadata_token": "returns root plus component_count",
+    "reflection_interop_token": "returns component_count when reflected_components is negative, otherwise component_count plus reflected_components",
+    "runtime_composition_token": "returns component_count when imported_components is negative, otherwise component_count plus imported_components"
   },
   "concurrency_semantics": {
     "spawn_token": "returns seed plus 1 as the current deterministic child-spawn token placeholder",
@@ -89,6 +92,10 @@
   },
   "system_semantics": {
     "resource_token": "returns seed plus 4 as the current deterministic strict-system resource token placeholder",
+    "cleanup_token": "returns seed plus 4 plus cleanup_count when cleanup_count is nonnegative, otherwise seed plus 4",
+    "lifetime_borrow_token": "returns seed plus 4 plus borrow_depth when borrow_depth is nonnegative, otherwise seed plus 4",
+    "diagnostics_gate_token": "returns 30704 when observed_profile is lower than required_profile and 0 otherwise",
+    "runtime_composition_token": "returns seed plus 4 plus helper_token",
     "profile_gate": "objc3.system helpers remain reserved for Strict System claims and must not become unconditional Core imports",
     "runtime_composition_hook": "strict-system runtime-composition helpers must be explicit profile-gated entrypoints rather than implicit side effects in core helpers",
     "layering_rule": "objc3.system may depend on objc3.core objc3.errors objc3.concurrency and objc3.keypath but those modules may not depend on objc3.system"
