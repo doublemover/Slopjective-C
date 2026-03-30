@@ -118,16 +118,24 @@ of inventing a second examples tree inside `stdlib/`.
 ## Live Workflow Surface
 
 The live stdlib publish and adoption workflow is currently a composition of
-existing public actions, not a parallel milestone-only wrapper.
+existing public actions, with dedicated top-level wrappers now exposed for the
+full program surface.
+
+Top-level workflow entrypoints:
+- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
+- `npm run test:stdlib:program`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
+- `npm run test:stdlib:program:e2e`
 
 Integration flow:
 - `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
 - `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
 - `python scripts/objc3c_public_workflow_runner.py validate-showcase`
+- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
 - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
 
 Release-facing flow:
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
 - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
 
@@ -148,6 +156,10 @@ Report roots:
 - `npm run test:showcase`
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
 - `npm run test:showcase:e2e`
+- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
+- `npm run test:stdlib:program`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
+- `npm run test:stdlib:program:e2e`
 - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
 - `npm run inspect:objc3c:capabilities`
 - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`

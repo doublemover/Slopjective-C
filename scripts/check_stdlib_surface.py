@@ -675,14 +675,17 @@ def main() -> int:
         "report_root": "tmp/reports/stdlib",
         "showcase_report_root": "tmp/reports/showcase",
         "tutorial_report_root": "tmp/reports/tutorials",
+        "integration_entrypoint": "validate-stdlib-program",
+        "packaged_validation_entrypoint": "validate-runnable-stdlib-program",
         "integration_actions": [
             "check-documentation-surface",
             "validate-getting-started",
             "validate-showcase",
+            "validate-stdlib-foundation",
             "inspect-capability-explorer",
         ],
         "release_actions": [
-            "validate-stdlib-foundation",
+            "validate-runnable-showcase",
             "validate-runnable-stdlib-foundation",
             "package-runnable-toolchain",
         ],
@@ -696,6 +699,8 @@ def main() -> int:
         "validate-runnable-showcase",
         "validate-stdlib-foundation",
         "validate-runnable-stdlib-foundation",
+        "validate-stdlib-program",
+        "validate-runnable-stdlib-program",
         "inspect-capability-explorer",
         "package-runnable-toolchain",
     ]:
@@ -708,6 +713,8 @@ def main() -> int:
         "validate_runnable_showcase": "npm run test:showcase:e2e",
         "validate_stdlib_foundation": "npm run test:stdlib",
         "validate_runnable_stdlib_foundation": "npm run test:stdlib:e2e",
+        "validate_stdlib_program": "npm run test:stdlib:program",
+        "validate_runnable_stdlib_program": "npm run test:stdlib:program:e2e",
         "inspect_capability_explorer": "npm run inspect:objc3c:capabilities",
         "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
     }:
