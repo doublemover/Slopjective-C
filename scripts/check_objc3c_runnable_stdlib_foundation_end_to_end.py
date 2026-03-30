@@ -101,15 +101,40 @@ def main() -> int:
     module_inventory = package_root / normalize_rel_path(str(manifest["stdlib_module_inventory"]))
     stability_policy = package_root / normalize_rel_path(str(manifest["stdlib_stability_policy"]))
     package_surface = package_root / normalize_rel_path(str(manifest["stdlib_package_surface"]))
+    lowering_import_surface = package_root / normalize_rel_path(str(manifest["stdlib_lowering_import_surface"]))
 
-    for path in (compile_wrapper, runtime_library, workspace_manifest, module_inventory, stability_policy, package_surface):
+    for path in (
+        compile_wrapper,
+        runtime_library,
+        workspace_manifest,
+        module_inventory,
+        stability_policy,
+        package_surface,
+        lowering_import_surface,
+    ):
         expect(path.is_file(), f"packaged runnable toolchain missing required stdlib file {path}")
 
     package_surface_payload = load_json(package_surface)
+    lowering_import_surface_payload = load_json(lowering_import_surface)
     expect(
         package_surface_payload.get("workspace_contract") == "stdlib/workspace.json",
         "packaged stdlib package surface drifted from the checked-in workspace contract",
     )
+    expect(
+        package_surface_payload.get("lowering_import_surface") == "stdlib/lowering_import_surface.json",
+        "packaged stdlib package surface drifted from the lowering/import surface contract",
+    )
+    expect(
+        manifest.get("stdlib_lowering_artifact_filenames")
+        == lowering_import_surface_payload.get("artifact_filenames"),
+        "package manifest stdlib lowering artifact inventory drifted",
+    )
+    expect(
+        manifest.get("stdlib_import_surface") == lowering_import_surface_payload.get("import_surface"),
+        "package manifest stdlib import surface drifted",
+    )
+
+    artifact_filenames = lowering_import_surface_payload["artifact_filenames"]
 
     compile_results: list[dict[str, Any]] = []
     for module in stdlib_modules:
@@ -141,9 +166,11 @@ def main() -> int:
         if compile_result.returncode != 0:
             raise RuntimeError(f"packaged compile wrapper failed for stdlib module {canonical_module}")
 
-        object_path = compile_dir / "module.obj"
-        compile_manifest_path = compile_dir / "module.manifest.json"
-        registration_manifest_path = compile_dir / "module.runtime-registration-manifest.json"
+        object_path = compile_dir / str(artifact_filenames["object"])
+        compile_manifest_path = compile_dir / str(artifact_filenames["compile_manifest"])
+        registration_manifest_path = compile_dir / str(
+            artifact_filenames["runtime_registration_manifest"]
+        )
         expect(object_path.is_file(), f"packaged stdlib smoke compile did not publish {object_path}")
         expect(compile_manifest_path.is_file(), f"packaged stdlib smoke compile did not publish {compile_manifest_path}")
         expect(registration_manifest_path.is_file(), f"packaged stdlib smoke compile did not publish {registration_manifest_path}")
@@ -184,6 +211,9 @@ def main() -> int:
             "module_inventory": repo_rel(module_inventory),
             "stability_policy": repo_rel(stability_policy),
             "package_surface": repo_rel(package_surface),
+            "lowering_import_surface": repo_rel(lowering_import_surface),
+            "artifact_filenames": artifact_filenames,
+            "import_surface": lowering_import_surface_payload["import_surface"],
         },
         "compile_results": compile_results,
         "steps": [

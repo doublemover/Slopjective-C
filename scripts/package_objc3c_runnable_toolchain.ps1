@@ -235,6 +235,10 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_foundation_surface"))
   throw "runnable toolchain package FAIL: missing stdlib_foundation_surface in $repoSupercleanSurfaceRelativePath"
 }
 
+$stdlibLoweringImportSurfaceRelativePath = "stdlib/lowering_import_surface.json"
+$stdlibLoweringImportSurfacePath = Join-Path $packageRoot ($stdlibLoweringImportSurfaceRelativePath.Replace('/', '\'))
+$stdlibLoweringImportSurfacePayload = Get-Content -LiteralPath $stdlibLoweringImportSurfacePath -Raw | ConvertFrom-Json -AsHashtable
+
 $manifestPayload = [ordered]@{
   contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
   schema_version = 1
@@ -329,6 +333,9 @@ $manifestPayload = [ordered]@{
   stdlib_module_inventory = "stdlib/module_inventory.json"
   stdlib_stability_policy = "stdlib/stability_policy.json"
   stdlib_package_surface = "stdlib/package_surface.json"
+  stdlib_lowering_import_surface = $stdlibLoweringImportSurfaceRelativePath
+  stdlib_lowering_artifact_filenames = $stdlibLoweringImportSurfacePayload["artifact_filenames"]
+  stdlib_import_surface = $stdlibLoweringImportSurfacePayload["import_surface"]
   stdlib_modules = @(
     [ordered]@{
       canonical_module = "objc3.core"
