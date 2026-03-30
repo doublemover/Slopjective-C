@@ -489,6 +489,9 @@ try {
     claim_boundary = [ordered]@{
       contract_id = "objc3c.runtime.execution.claim.boundary.v1"
       authoritative_claim_class = "compile-coupled-replay-proof"
+      proof_corpus_model = "canonical-native-truth-corpus"
+      canonical_case_ids = @($proofCases | ForEach-Object { [string]$_.case_id })
+      execution_smoke_rerun_removed = $true
       compile_output_truthfulness_contract_id = "objc3c.native.compile.output.truthfulness.v1"
       registration_manifest_truth_required = $true
       authoritative_evidence = @(

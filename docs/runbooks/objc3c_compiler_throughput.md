@@ -149,6 +149,9 @@ Allowed optimization moves:
 - prebuild native binaries once before heavyweight suite loops and fail closed
   if the compiler disappears mid-run instead of silently rebuilding inside the
   corpus
+- shrink replay/native-truth proof to a canonical case set instead of
+  rerunning the full smoke corpus when smoke already owns broad execution
+  behavior
 - keep packaged validation on the same live scripts and checked-in fixtures
 
 Disallowed optimization moves:
