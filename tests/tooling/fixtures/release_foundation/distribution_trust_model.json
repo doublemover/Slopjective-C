@@ -1,0 +1,33 @@
+{
+  "contract_id": "objc3c.release.foundation.distribution.trust.model.v1",
+  "surface_kind": "distribution-trust-model",
+  "trusted_inputs": [
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/build_objc3c_native.ps1",
+    "scripts/check_release_evidence.py",
+    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
+    "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json"
+  ],
+  "trusted_generation_modes": [
+    "repo-local runnable package assembly",
+    "repo-local release-evidence index generation",
+    "repo-local release manifest, sbom, and attestation derivation"
+  ],
+  "distribution_claims_allowed": [
+    "repo-local staged runnable bundle",
+    "machine-generated payload manifest and digests",
+    "machine-generated provenance publication over the selected payload"
+  ],
+  "distribution_claims_rejected": [
+    "system installer",
+    "package-manager publication",
+    "notarization or signing-service trust",
+    "cross-platform reproducibility guarantee",
+    "network-hosted release registry guarantee"
+  ],
+  "manual_only_inputs_rejected": [
+    "spreadsheet-maintained digest lists",
+    "hand-written attestation blobs",
+    "manually curated payload inclusion lists outside checked-in contracts"
+  ]
+}
