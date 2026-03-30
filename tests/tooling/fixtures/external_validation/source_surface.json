@@ -1,0 +1,55 @@
+{
+  "contract_id": "objc3c.external_validation.source.surface.v1",
+  "schema_version": 1,
+  "runbook": "docs/runbooks/objc3c_external_validation.md",
+  "source_root": "tests/tooling/fixtures/external_validation",
+  "source_readme": "tests/tooling/fixtures/external_validation/README.md",
+  "source_check_script": "scripts/check_external_validation_source_surface.py",
+  "checked_in_roots": [
+    "tests/tooling/fixtures/external_validation",
+    "tests/tooling/fixtures/objc3c",
+    "tests/conformance",
+    "docs/runbooks"
+  ],
+  "source_families": [
+    {
+      "family_id": "intake-normalization-boundary",
+      "coverage_goal": "normalize accepted external evidence onto checked-in fixture and conformance roots instead of inventing a second corpus",
+      "source_paths": [
+        "docs/runbooks/objc3c_external_validation.md",
+        "tests/tooling/fixtures/external_validation/README.md",
+        "tests/tooling/fixtures/external_validation/source_surface.json",
+        "tests/tooling/fixtures/objc3c",
+        "tests/conformance/corpus_surface.json",
+        "tests/conformance/longitudinal_suites.json",
+        "docs/runbooks/objc3c_conformance_corpus.md"
+      ]
+    },
+    {
+      "family_id": "independent-replay-proofs",
+      "coverage_goal": "accepted external fixtures must replay through the live parser diagnostics lowering and execution proof paths",
+      "source_paths": [
+        "scripts/check_objc3c_parser_replay_proof.ps1",
+        "scripts/check_objc3c_diagnostics_replay_proof.ps1",
+        "scripts/check_objc3c_lowering_replay_proof.ps1",
+        "scripts/check_objc3c_execution_replay_proof.ps1",
+        "tests/conformance/parser/manifest.json",
+        "tests/conformance/diagnostics/manifest.json",
+        "tests/conformance/lowering_abi/manifest.json",
+        "tests/conformance/module_roundtrip/manifest.json",
+        "tests/tooling/fixtures/objc3c"
+      ]
+    },
+    {
+      "family_id": "packaged-reproducibility-surface",
+      "coverage_goal": "external credibility claims must terminate in the same integrated and packaged corpus validation surfaces used for internal claims",
+      "source_paths": [
+        "scripts/check_objc3c_conformance_corpus_integration.py",
+        "scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "docs/runbooks/objc3c_conformance_corpus.md",
+        "tests/conformance/corpus_surface.json"
+      ]
+    }
+  ]
+}

@@ -166,6 +166,7 @@ npm run test:repo
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
+- external validation source-surface check: `python scripts/check_external_validation_source_surface.py`
 - stress source-surface check: `npm run check:stress:surface`
 - parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
 - lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`

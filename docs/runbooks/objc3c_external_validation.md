@@ -73,6 +73,11 @@ Packaged reproducibility surfaces:
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 - `scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py`
 
+Current checked-in source-surface check:
+
+- `python scripts/check_external_validation_source_surface.py`
+- `tests/tooling/fixtures/external_validation/source_surface.json`
+
 ## Claim Boundary
 
 External credibility claims are only valid when they resolve back to:
