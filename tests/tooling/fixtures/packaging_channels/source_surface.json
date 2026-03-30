@@ -3,12 +3,16 @@
   "runbook": "docs/runbooks/objc3c_packaging_channels.md",
   "channel_architecture": "tests/tooling/fixtures/packaging_channels/channel_architecture.json",
   "supported_platforms": "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+  "installer_policy": "tests/tooling/fixtures/packaging_channels/installer_policy.json",
+  "metadata_surface": "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+  "schema_surface": "tests/tooling/fixtures/packaging_channels/schema_surface.json",
   "checked_in_sources": [
     "docs/runbooks/objc3c_packaging_channels.md",
     "docs/runbooks/objc3c_release_foundation.md",
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_release_manifest.py",
-    "scripts/publish_objc3c_release_provenance.py"
+    "scripts/publish_objc3c_release_provenance.py",
+    "scripts/build_objc3c_package_channels.py"
   ],
   "machine_owned_output_roots": [
     "tmp/artifacts/package-channels",

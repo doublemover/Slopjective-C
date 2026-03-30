@@ -22,6 +22,8 @@ RELEASE_PROVENANCE_PY = ROOT / "scripts" / "publish_objc3c_release_provenance.py
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "source_surface.json"
 SUPPORTED_PLATFORMS = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "supported_platforms.json"
 INSTALLER_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "installer_policy.json"
+METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "metadata_surface.json"
+SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "schema_surface.json"
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "package-channels"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 RELEASE_FOUNDATION_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
@@ -193,6 +195,8 @@ def main() -> int:
     load_json(SOURCE_SURFACE)
     supported_platforms = load_json(SUPPORTED_PLATFORMS)
     load_json(INSTALLER_POLICY)
+    metadata_surface = load_json(METADATA_SURFACE)
+    load_json(SCHEMA_SURFACE)
 
     run([sys.executable, str(RELEASE_MANIFEST_PY)])
     run([sys.executable, str(RELEASE_PROVENANCE_PY)])
@@ -243,18 +247,43 @@ def main() -> int:
     offline_archive = offline_root / "objc3c-windows-x64-offline-bundle.zip"
     zip_directory(offline_bundle_root, offline_archive)
 
-    payload = {
+    manifest_payload = {
         "contract_id": "objc3c.packaging.channels.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "PASS",
         "platform_id": supported_platforms["default_platform_id"],
         "package_root": repo_rel(package_root),
         "portable_archive": repo_rel(portable_archive),
+        "installer_archive": repo_rel(installer_archive),
+        "offline_archive": repo_rel(offline_archive),
+        "installer_image_root": repo_rel(installer_image_root),
+        "offline_bundle_root": repo_rel(offline_bundle_root),
+        "implemented_channels": ["portable-archive", "local-installer", "offline-bundle"],
+        "release_foundation_artifacts": {
+            "manifest": repo_rel(RELEASE_FOUNDATION_MANIFEST),
+            "sbom": repo_rel(RELEASE_FOUNDATION_SBOM),
+            "attestation": repo_rel(RELEASE_FOUNDATION_ATTESTATION),
+        },
+    }
+    for field_name in metadata_surface["required_manifest_fields"]:
+        if field_name not in manifest_payload:
+            raise RuntimeError(f"package-channels manifest missing required field {field_name}")
+    manifest_path = build_root / "objc3c-package-channels-manifest.json"
+    write_text(manifest_path, json.dumps(manifest_payload, indent=2) + "\n")
+
+    payload = {
+        "contract_id": "objc3c.packaging.channels.summary.report.v1",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "status": "PASS",
+        "platform_id": supported_platforms["default_platform_id"],
+        "package_root": repo_rel(package_root),
+        "manifest_path": repo_rel(manifest_path),
+        "portable_archive": repo_rel(portable_archive),
         "installer_image_root": repo_rel(installer_image_root),
         "installer_archive": repo_rel(installer_archive),
         "offline_bundle_root": repo_rel(offline_bundle_root),
         "offline_archive": repo_rel(offline_archive),
-        "implemented_channels": ["portable-archive", "local-installer", "offline-bundle"],
+        "implemented_channels": manifest_payload["implemented_channels"],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
