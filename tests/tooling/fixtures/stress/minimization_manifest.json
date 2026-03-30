@@ -1,0 +1,21 @@
+{
+  "contract_id": "objc3c.stress.minimization.manifest.v1",
+  "schema_version": 1,
+  "cases": [
+    {
+      "case_id": "parser_reject_trailing_comma_param",
+      "subsystem": "parser",
+      "source_path": "tests/tooling/fixtures/parser_conformance_corpus/reject_trailing_comma_param.objc3"
+    },
+    {
+      "case_id": "parser_reject_post_comma_nondecl",
+      "subsystem": "parser",
+      "source_path": "tests/tooling/fixtures/parser_conformance_corpus/reject_post_comma_nondecl.objc3"
+    },
+    {
+      "case_id": "sema_break_outside_control_flow",
+      "subsystem": "semantic",
+      "source_path": "tests/tooling/fixtures/native/break_outside_control_flow_negative.objc3"
+    }
+  ]
+}

@@ -19,7 +19,9 @@
       "coverage_goal": "deterministic malformed-input parser and semantic fail-closed coverage through the live compiler path",
       "source_paths": [
         "scripts/run_objc3c_fuzz_safety.py",
+        "scripts/run_objc3c_stress_minimization.py",
         "tests/tooling/fixtures/stress/parser_sema_fuzz_manifest.json",
+        "tests/tooling/fixtures/stress/minimization_manifest.json",
         "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/test_objc3c_fuzz_safety.py",
         "tests/tooling/fixtures/parser_conformance_corpus/manifest.json",

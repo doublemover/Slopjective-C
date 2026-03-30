@@ -78,6 +78,7 @@ Downstream work must preserve these rules:
   - `scripts/run_objc3c_fuzz_safety.py`
   - `scripts/run_objc3c_lowering_runtime_stress.py`
   - `scripts/run_objc3c_mixed_module_differential.py`
+  - `scripts/run_objc3c_stress_minimization.py`
   - `scripts/check_objc3c_native_execution_smoke.ps1`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
   - `scripts/check_objc3c_runtime_acceptance.py`
@@ -129,6 +130,8 @@ Downstream work must preserve these rules:
   - `python scripts/run_objc3c_lowering_runtime_stress.py`
 - run the mixed-module and import/export differential stress harness:
   - `python scripts/run_objc3c_mixed_module_differential.py`
+- run the deterministic reducer/minimization pass over failing checked-in seeds:
+  - `python scripts/run_objc3c_stress_minimization.py`
 - validate the checked-in stress source contract:
   - `python scripts/check_stress_source_surface.py`
 - run the current executable smoke and replay proof paths:
