@@ -1,0 +1,46 @@
+{
+  "contract_id": "objc3c.release.operations.upgrade.path.surface.v1",
+  "schema_version": 1,
+  "migration_guides": [
+    "docs/tutorials/getting_started.md",
+    "docs/tutorials/build_run_verify.md",
+    "docs/tutorials/guided_walkthrough.md",
+    "docs/tutorials/objc2_to_objc3_migration.md"
+  ],
+  "upstream_runbooks": [
+    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_packaging_channels.md",
+    "docs/runbooks/objc3c_release_operations.md"
+  ],
+  "upgrade_path_classes": [
+    {
+      "path_id": "stable-to-stable-patch",
+      "from": "1.0.x",
+      "to": "1.0.x",
+      "compatibility": "in-place",
+      "requires_warning": false,
+      "rollback_channel": "local-installer"
+    },
+    {
+      "path_id": "stable-to-candidate-minor",
+      "from": "1.0.x",
+      "to": "1.1.0-rc.x",
+      "compatibility": "qualified",
+      "requires_warning": true,
+      "rollback_channel": "local-installer"
+    },
+    {
+      "path_id": "stable-to-preview-minor",
+      "from": "1.0.x",
+      "to": "1.2.0-preview.x",
+      "compatibility": "best-effort",
+      "requires_warning": true,
+      "rollback_channel": "offline-bundle"
+    }
+  ],
+  "required_channel_inputs": [
+    "portable-archive",
+    "local-installer",
+    "offline-bundle"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "contract_id": "objc3c.release.operations.source.surface.v1",
+  "surface_kind": "release-operations-source-surface",
+  "schema_version": 1,
+  "runbook": "docs/runbooks/objc3c_release_operations.md",
+  "versioning_model": "tests/tooling/fixtures/release_operations/versioning_model.json",
+  "upgrade_path_surface": "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
+  "checked_in_sources": [
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_packaging_channels.md",
+    "docs/tutorials/getting_started.md",
+    "docs/tutorials/build_run_verify.md",
+    "docs/tutorials/guided_walkthrough.md",
+    "docs/tutorials/objc2_to_objc3_migration.md",
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/build_objc3c_release_manifest.py",
+    "scripts/build_objc3c_package_channels.py",
+    "docs/runbooks/objc3c_maintainer_workflows.md"
+  ],
+  "machine_owned_output_roots": [
+    "tmp/reports/release-operations",
+    "tmp/artifacts/release-operations"
+  ],
+  "explicit_non_goals": [
+    "no hosted updater",
+    "no package-manager-specific upgrade flow",
+    "no second payload lineage"
+  ]
+}

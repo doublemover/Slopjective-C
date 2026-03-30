@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.release.operations.versioning.model.v1",
+  "schema_version": 1,
+  "current_stable_version": "1.0.0",
+  "current_candidate_version": "1.1.0-rc.1",
+  "current_preview_version": "1.2.0-preview.1",
+  "semantic_versioning_rule": "major=breaking minor=additive patch=repair",
+  "supported_major_line": 1,
+  "current_minor_line": 0,
+  "support_windows": {
+    "stable": {
+      "status": "supported",
+      "supported_minor_lines": [
+        "1.0"
+      ],
+      "upgrade_from": [
+        "1.0.x"
+      ],
+      "downgrade_to": []
+    },
+    "candidate": {
+      "status": "supported-for-release-drills",
+      "supported_minor_lines": [
+        "1.0",
+        "1.1"
+      ],
+      "upgrade_from": [
+        "1.0.x",
+        "1.1.0-rc.x"
+      ],
+      "downgrade_to": [
+        "1.0.x"
+      ]
+    },
+    "preview": {
+      "status": "best-effort",
+      "supported_minor_lines": [
+        "1.2"
+      ],
+      "upgrade_from": [
+        "1.0.x",
+        "1.1.x",
+        "1.2.0-preview.x"
+      ],
+      "downgrade_to": [
+        "1.0.x",
+        "1.1.x"
+      ]
+    }
+  },
+  "forbidden_claims": [
+    "cross-major forward compatibility",
+    "indefinite support window",
+    "hosted auto-update service"
+  ]
+}
