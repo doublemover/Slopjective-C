@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `138`
+- Current public script count: `144`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -102,6 +102,12 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `publish:objc3c:release-operations` | `publish-release-operations` | `repo` | `release-operations publication stays traceable to the checked-in compatibility, warning, and fallback policy contracts` | `fixed-shape` | `python:scripts/publish_objc3c_release_operations_metadata.py` |
 | `test:objc3c:release-operations` | `validate-release-operations` | `nightly` | `versioning, compatibility warnings, rollback guidance, and update metadata stay executable on the live release surfaces` | `fixed-shape` | `runner-internal + direct release-operations commands` |
 | `test:objc3c:release-operations:e2e` | `validate-release-operations-end-to-end` | `full` | `release-operations metadata stays coherent with the live package-channel artifacts and rollback paths` | `fixed-shape` | `python:scripts/check_objc3c_release_operations_end_to_end.py` |
+| `check:objc3c:distribution-credibility:surface` | `check-distribution-credibility-surface` | `repo` | `distribution credibility only publishes from the checked-in trust-signal, install-doc, operator, and drill contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_source_surface.py` |
+| `check:objc3c:distribution-credibility:schemas` | `check-distribution-credibility-schema-surface` | `repo` | `distribution dashboard and trust-report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_distribution_credibility_schema_surface.py` |
+| `inspect:objc3c:distribution-credibility` | `build-distribution-credibility-dashboard` | `repo` | `distribution credibility summaries stay tied to the live release-foundation, packaging-channel, release-operations, and release-evidence surfaces` | `fixed-shape` | `python:scripts/build_objc3c_distribution_credibility_dashboard.py` |
+| `publish:objc3c:distribution-credibility` | `publish-distribution-credibility` | `repo` | `distribution trust reporting stays derived from the live release drill artifacts and checked-in credibility policies` | `fixed-shape` | `python:scripts/publish_objc3c_distribution_trust_report.py` |
+| `test:objc3c:distribution-credibility` | `validate-distribution-credibility` | `nightly` | `distribution trust signals and release-drill reporting stay executable on the live shipped release surfaces` | `fixed-shape` | `runner-internal + direct distribution-credibility commands` |
+| `test:objc3c:distribution-credibility:e2e` | `validate-distribution-credibility-end-to-end` | `full` | `distribution credibility artifacts stay coherent with the live package-channel and release-operations evidence paths` | `fixed-shape` | `python:scripts/check_objc3c_distribution_credibility_end_to_end.py` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
