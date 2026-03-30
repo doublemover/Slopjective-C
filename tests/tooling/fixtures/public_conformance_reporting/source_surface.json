@@ -5,6 +5,7 @@
   "source_root": "tests/tooling/fixtures/public_conformance_reporting",
   "source_readme": "tests/tooling/fixtures/public_conformance_reporting/README.md",
   "source_check_script": "scripts/check_public_conformance_reporting_source_surface.py",
+  "stability_policy": "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",
     "tests/tooling/fixtures/external_validation",
@@ -19,6 +20,7 @@
       "coverage_goal": "public reporting must terminate in the live checked-in corpus and coverage-index contracts instead of a dashboard-only summary",
       "source_paths": [
         "docs/runbooks/objc3c_public_conformance_reporting.md",
+        "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
         "docs/runbooks/objc3c_conformance_corpus.md",
         "tests/conformance/corpus_surface.json",
         "tests/conformance/longitudinal_suites.json",
@@ -55,4 +57,3 @@
     }
   ]
 }
-

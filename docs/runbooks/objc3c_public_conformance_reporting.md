@@ -58,6 +58,25 @@ following:
 Public reporting must fail closed when upstream evidence is missing, stale,
 quarantined, or not traceable to a checked-in validation family.
 
+## Credibility And Stability Policy
+
+Checked-in policy contract:
+
+- `tests/tooling/fixtures/public_conformance_reporting/stability_policy.json`
+
+Current public score semantics:
+
+- `claim-ready`: score `95-100`; all required upstream evidence passed and no
+  blocked evidence was promoted into the public claim set
+- `provisional`: score `70-94`; the report remains publishable but carries
+  caution because some non-blocking credibility deductions were applied
+- `blocked`: score `0-69`; upstream evidence or schema anchors are missing, or
+  a required credibility gate failed
+
+The score is not a free-standing marketing metric. It is a compact projection
+over the live conformance corpus, external-validation, and checked-in
+schema/release anchors.
+
 ## Explicit Non-Goals
 
 - no spreadsheet-only or prose-only claim publication path

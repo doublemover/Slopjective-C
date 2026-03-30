@@ -76,13 +76,35 @@ def main() -> int:
         return fail("source_readme drifted")
     if surface.get("source_check_script") != "scripts/check_public_conformance_reporting_source_surface.py":
         return fail("source_check_script drifted")
+    if surface.get("stability_policy") != "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json":
+        return fail("stability_policy drifted")
     if surface.get("checked_in_roots") != EXPECTED_ROOTS:
         return fail("checked_in_roots drifted")
 
     require_path("docs/runbooks/objc3c_public_conformance_reporting.md", kind="runbook")
     require_path("tests/tooling/fixtures/public_conformance_reporting/README.md", kind="source readme")
+    policy_path = require_path(
+        "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
+        kind="stability policy",
+    )
     for root in EXPECTED_ROOTS:
         require_path(root, kind="checked-in root")
+
+    policy = load_json(policy_path)
+    if policy.get("contract_id") != "objc3c.public_conformance_reporting.stability.policy.v1":
+        return fail("stability policy contract_id drifted")
+    if policy.get("schema_version") != 1:
+        return fail("stability policy schema_version drifted")
+    if policy.get("allowed_public_statuses") != ["pass", "caution", "blocked"]:
+        return fail("stability policy allowed_public_statuses drifted")
+    if policy.get("allowed_badges") != ["claim-ready", "provisional", "blocked"]:
+        return fail("stability policy allowed_badges drifted")
+    score_bands = policy.get("score_bands")
+    if not isinstance(score_bands, list) or len(score_bands) != 3:
+        return fail("stability policy score_bands drifted")
+    fail_closed_conditions = policy.get("fail_closed_conditions")
+    if not isinstance(fail_closed_conditions, list) or len(fail_closed_conditions) < 4:
+        return fail("stability policy fail_closed_conditions drifted")
 
     families = surface.get("source_families")
     if not isinstance(families, list) or len(families) != len(EXPECTED_FAMILY_IDS):
@@ -127,6 +149,7 @@ def main() -> int:
         "source_surface_contract": repo_rel(SOURCE_SURFACE),
         "runbook": surface["runbook"],
         "source_check_script": surface["source_check_script"],
+        "stability_policy": surface["stability_policy"],
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
     }

@@ -1,0 +1,60 @@
+{
+  "contract_id": "objc3c.public_conformance_reporting.stability.policy.v1",
+  "schema_version": 1,
+  "allowed_public_statuses": [
+    "pass",
+    "caution",
+    "blocked"
+  ],
+  "allowed_badges": [
+    "claim-ready",
+    "provisional",
+    "blocked"
+  ],
+  "score_bands": [
+    {
+      "band_id": "claim-ready",
+      "min_score": 95,
+      "max_score": 100,
+      "badge": "claim-ready",
+      "public_status": "pass"
+    },
+    {
+      "band_id": "provisional",
+      "min_score": 70,
+      "max_score": 94,
+      "badge": "provisional",
+      "public_status": "caution"
+    },
+    {
+      "band_id": "blocked",
+      "min_score": 0,
+      "max_score": 69,
+      "badge": "blocked",
+      "public_status": "blocked"
+    }
+  ],
+  "scoring_weights": {
+    "conformance_corpus": 55,
+    "external_validation": 30,
+    "schema_and_release_anchors": 15
+  },
+  "minimum_claimability": {
+    "retained_suite_count": 4,
+    "manifest_summary_count": 7,
+    "accepted_fixture_count": 1
+  },
+  "deductions": {
+    "redacted_fixture_penalty": 2,
+    "blocked_fixture_penalty": 5,
+    "missing_retained_suite_penalty": 5,
+    "missing_manifest_summary_penalty": 2
+  },
+  "fail_closed_conditions": [
+    "corpus integration summary must report PASS",
+    "external validation integration summary must report PASS",
+    "checked-in dashboard and release-evidence schema anchors must exist",
+    "public reporting cannot promote quarantined or blocked evidence into claim-ready status"
+  ]
+}
+
