@@ -22,6 +22,7 @@
     "test:bonus-experiences:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-bonus-experiences",
     "test:stdlib": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation",
     "test:stdlib:advanced": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced",
+    "test:stdlib:advanced:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-advanced",
     "test:stdlib:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation",
     "build": "python scripts/objc3c_public_workflow_runner.py build-default",
     "build:site": "python scripts/objc3c_public_workflow_runner.py build-site",

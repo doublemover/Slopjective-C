@@ -187,7 +187,9 @@ The advanced-helper slice now owns a dedicated public validation action instead
 of hiding behind the generic stdlib label:
 
 - `npm run test:stdlib:advanced`
+- `npm run test:stdlib:advanced:e2e`
 - `python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-advanced`
 
 That workflow must continue to:
 
@@ -196,3 +198,5 @@ That workflow must continue to:
 - prove the exact advanced-helper module subset from
   `stdlib/advanced_helper_package_surface.json`
 - write machine-owned reports under `tmp/reports/stdlib/`
+- preserve the same advanced-helper command surface from the staged runnable
+  toolchain bundle
