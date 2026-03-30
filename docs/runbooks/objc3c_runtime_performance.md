@@ -78,6 +78,10 @@ The current bottleneck map is:
   - `tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp`
   - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
   - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
+- workload manifest and checked-in boundary metadata:
+  - `tests/tooling/fixtures/runtime_performance/source_surface.json`
+  - `tests/tooling/fixtures/runtime_performance/workload_manifest.json`
+  - `tests/tooling/fixtures/runtime_performance/README.md`
 
 ## Exact Live Artifact And Output Paths
 

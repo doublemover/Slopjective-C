@@ -1,0 +1,101 @@
+{
+  "contract_id": "objc3c.runtime.performance.workload.manifest.v1",
+  "schema_version": 1,
+  "manifest_kind": "startup-dispatch-reflection-ownership-runtime-workloads",
+  "benchmark_root": "tests/tooling/fixtures/runtime_performance",
+  "artifact_root": "tmp/artifacts/runtime-performance",
+  "report_root": "tmp/reports/runtime-performance",
+  "runtime_acceptance_report": "tmp/reports/runtime/acceptance/summary.json",
+  "runtime_acceptance_script": "scripts/check_objc3c_runtime_acceptance.py",
+  "authoritative_runtime_code_paths": [
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime.h",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+  ],
+  "workload_families": [
+    {
+      "workload_id": "startup-installation",
+      "acceptance_case_id": "installation-lifecycle",
+      "probe": "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+      "hot_path_family": "startup-installation",
+      "measured_fields": [
+        "fixture_compile_ms",
+        "probe_link_ms",
+        "probe_run_ms",
+        "case_total_ms"
+      ]
+    },
+    {
+      "workload_id": "dispatch-cache",
+      "acceptance_case_id": "dispatch-fast-path",
+      "probe": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      "hot_path_family": "dispatch-cache",
+      "measured_fields": [
+        "baseline_cache_entry_count",
+        "baseline_fast_path_seed_count",
+        "mixed_first_dispatch_path",
+        "mixed_second_dispatch_path",
+        "fallback_first_dispatch_path",
+        "fallback_second_dispatch_path"
+      ]
+    },
+    {
+      "workload_id": "reflection-query",
+      "acceptance_case_id": "realization-lookup-reflection-runtime",
+      "probe": "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+      "hot_path_family": "reflection-query",
+      "measured_fields": [
+        "realized_class_count",
+        "reflectable_property_count",
+        "method_cache_entry_count",
+        "last_queried_protocol_name"
+      ]
+    },
+    {
+      "workload_id": "ownership-helpers",
+      "acceptance_case_id": "arc-property-helper-abi",
+      "probe": "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+      "hot_path_family": "ownership-helpers",
+      "measured_fields": [
+        "inside_retain_call_count",
+        "inside_current_property_exchange_count",
+        "after_autoreleasepool_pop_count",
+        "after_release_call_count"
+      ]
+    },
+    {
+      "workload_id": "storage-ownership-reflection",
+      "acceptance_case_id": "storage-ownership-reflection",
+      "probe": "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+      "fixture": "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+      "hot_path_family": "ownership-helpers",
+      "measured_fields": [
+        "owned_value",
+        "weak_value",
+        "reflected_property_count",
+        "ownership_runtime_hook_profile"
+      ]
+    }
+  ],
+  "exact_live_commands": [
+    "python scripts/objc3c_public_workflow_runner.py build-native-binaries",
+    "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance",
+    "python scripts/objc3c_public_workflow_runner.py validate-runtime-performance",
+    "python scripts/objc3c_public_workflow_runner.py validate-runnable-runtime-performance"
+  ],
+  "exact_live_paths_for_downstream_work": [
+    "docs/runbooks/objc3c_runtime_performance.md",
+    "tests/tooling/fixtures/runtime_performance/source_surface.json",
+    "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+    "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+  ]
+}
