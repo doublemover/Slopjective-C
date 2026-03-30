@@ -324,6 +324,13 @@ foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $n
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }
 
+$stagedRelativePaths = @(
+  Get-ChildItem -LiteralPath $packageRoot -Recurse -File |
+    Where-Object { $_.FullName -ne $manifestPath } |
+    Sort-Object -Property FullName |
+    ForEach-Object { (Get-RepoRelativePathCompat -RootPath $packageRoot -TargetPath $_.FullName).Replace('\', '/') }
+)
+
 $packagedNativeExecutablePath = Join-Path $packageRoot "artifacts\bin\objc3c-native.exe"
 $packagedFrontendRunnerPath = Join-Path $packageRoot "artifacts\bin\objc3c-frontend-c-api-runner.exe"
 $packagedRuntimeLibraryPath = Join-Path $packageRoot "artifacts\lib\objc3_runtime.lib"
@@ -584,8 +591,8 @@ $manifestPayload = [ordered]@{
     "no cross-platform packaging claim",
     "no toolchain auto-provisioning claim"
   )
-  copied_files = @($copiedRelativePaths | Sort-Object)
-  copied_file_count = $copiedRelativePaths.Count
+  copied_files = @($stagedRelativePaths)
+  copied_file_count = $stagedRelativePaths.Count
 }
 
 $manifestPayload | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $manifestPath -Encoding utf8

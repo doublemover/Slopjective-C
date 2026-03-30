@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `122`
+- Current public script count: `127`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -86,6 +86,11 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:performance-governance` | `validate-performance-governance` | `repo` | `performance governance budgets, drift diagnostics, dashboard derivation, and report publication stay executable on the live performance surfaces` | `fixed-shape` | `runner-internal + direct performance governance commands` |
 | `test:objc3c:performance-governance:integration` | `validate-performance-governance-integration` | `repo` | `integrated performance governance artifacts stay coherent across source, schema, dashboard, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_integration.py` |
 | `test:objc3c:performance-governance:e2e` | `validate-performance-governance-end-to-end` | `repo` | `performance governance entrypoints and ci/nightly wiring stay coherent with the integrated reporting artifacts` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_end_to_end.py` |
+| `check:objc3c:release-foundation:surface` | `check-release-foundation-surface` | `repo` | `release foundation only publishes from the checked-in release taxonomy, trust, payload, and provenance contracts` | `fixed-shape` | `python:scripts/check_release_foundation_source_surface.py` |
+| `check:objc3c:release-foundation:schemas` | `check-release-foundation-schema-surface` | `repo` | `release manifest, sbom, and attestation artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_release_foundation_schema_surface.py` |
+| `inspect:objc3c:release-manifest` | `build-release-manifest` | `repo` | `release payload selection and reproducibility proof stay tied to the live runnable package manifest and release-evidence boundary` | `fixed-shape` | `python:scripts/build_objc3c_release_manifest.py` |
+| `publish:objc3c:release-provenance` | `publish-release-provenance` | `repo` | `release provenance publication stays traceable to the live release manifest, package manifest, and release-evidence index` | `fixed-shape` | `python:scripts/publish_objc3c_release_provenance.py` |
+| `test:objc3c:release-foundation` | `validate-release-foundation` | `nightly` | `release taxonomy, reproducible package assembly, and provenance publication stay executable on the live runnable package surface` | `fixed-shape` | `runner-internal + direct release foundation commands` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
@@ -123,7 +128,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive dispatch and artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
-| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus performance governance reporting, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
+| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus performance governance reporting, release-foundation publication, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `-` | `-` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `proof:objc3c` | `proof-objc3c` | `-` | `-` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
 
