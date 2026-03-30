@@ -82,6 +82,7 @@ def main() -> int:
 
     command_surfaces = manifest.get("command_surfaces", {})
     stdlib_surface = manifest.get("stdlib_foundation_surface", {})
+    stdlib_program_surface = manifest.get("stdlib_program_surface", {})
     stdlib_modules = manifest.get("stdlib_modules", [])
 
     expect(command_surfaces.get("build_stdlib") == "npm run build:objc3c:stdlib", "package manifest missing build_stdlib command surface")
@@ -89,14 +90,22 @@ def main() -> int:
     expect(command_surfaces.get("stdlib") == "npm run test:stdlib", "package manifest missing stdlib command surface")
     expect(command_surfaces.get("stdlib_e2e") == "npm run test:stdlib:e2e", "package manifest missing stdlib_e2e command surface")
     expect(isinstance(stdlib_surface, dict), "package manifest missing stdlib_foundation_surface")
+    expect(isinstance(stdlib_program_surface, dict), "package manifest missing stdlib_program_surface")
     expect(
         "validate-runnable-stdlib-foundation" in stdlib_surface.get("public_actions", []),
         "package manifest stdlib surface missing validate-runnable-stdlib-foundation",
+    )
+    expect(
+        "package-runnable-toolchain" in stdlib_program_surface.get("public_actions", []),
+        "package manifest stdlib program surface missing package-runnable-toolchain",
     )
     expect(isinstance(stdlib_modules, list) and stdlib_modules, "package manifest missing stdlib_modules")
 
     compile_wrapper = package_root / normalize_rel_path(str(manifest["compile_wrapper"]))
     runtime_library = package_root / normalize_rel_path(str(manifest["runtime_library"]))
+    stdlib_program_contract = package_root / normalize_rel_path(str(manifest["stdlib_program_contract"]))
+    stdlib_program_runbook = package_root / normalize_rel_path(str(manifest["stdlib_program_runbook"]))
+    stdlib_program_site_entry = package_root / normalize_rel_path(str(manifest["stdlib_program_site_entry"]))
     workspace_manifest = package_root / normalize_rel_path(str(manifest["stdlib_workspace_manifest"]))
     module_inventory = package_root / normalize_rel_path(str(manifest["stdlib_module_inventory"]))
     stability_policy = package_root / normalize_rel_path(str(manifest["stdlib_stability_policy"]))
@@ -109,6 +118,9 @@ def main() -> int:
     for path in (
         compile_wrapper,
         runtime_library,
+        stdlib_program_contract,
+        stdlib_program_runbook,
+        stdlib_program_site_entry,
         workspace_manifest,
         module_inventory,
         stability_policy,
@@ -119,6 +131,7 @@ def main() -> int:
         expect(path.is_file(), f"packaged runnable toolchain missing required stdlib file {path}")
 
     package_surface_payload = load_json(package_surface)
+    stdlib_program_surface_payload = load_json(stdlib_program_contract)
     lowering_import_surface_payload = load_json(lowering_import_surface)
     advanced_helper_package_surface_payload = load_json(advanced_helper_package_surface)
     expect(
@@ -132,6 +145,18 @@ def main() -> int:
     expect(
         package_surface_payload.get("advanced_helper_package_surface") == "stdlib/advanced_helper_package_surface.json",
         "packaged stdlib package surface drifted from the advanced helper package contract",
+    )
+    expect(
+        manifest.get("stdlib_program_command_surfaces") == stdlib_program_surface_payload.get("command_surfaces"),
+        "package manifest stdlib program command surfaces drifted",
+    )
+    expect(
+        manifest.get("stdlib_program_publish_inputs") == stdlib_program_surface_payload.get("publish_inputs"),
+        "package manifest stdlib program publish inputs drifted",
+    )
+    expect(
+        manifest.get("stdlib_program_examples") == stdlib_program_surface_payload.get("capability_demo_examples"),
+        "package manifest stdlib program examples drifted",
     )
     expect(
         manifest.get("stdlib_lowering_artifact_filenames")
@@ -160,6 +185,14 @@ def main() -> int:
         == advanced_helper_package_surface_payload.get("advanced_helper_profile_gates"),
         "package manifest advanced helper profile gates drifted",
     )
+    publish_inputs = manifest.get("stdlib_program_publish_inputs")
+    expect(isinstance(publish_inputs, list) and publish_inputs, "package manifest missing stdlib program publish inputs")
+    packaged_publish_inputs: list[str] = []
+    for raw_path in publish_inputs:
+        expect(isinstance(raw_path, str) and raw_path, "package manifest published malformed stdlib program input")
+        packaged_path = package_root / normalize_rel_path(raw_path)
+        expect(packaged_path.is_file(), f"packaged runnable toolchain missing stdlib program publish input {packaged_path}")
+        packaged_publish_inputs.append(repo_rel(packaged_path))
 
     artifact_filenames = lowering_import_surface_payload["artifact_filenames"]
 
@@ -234,6 +267,9 @@ def main() -> int:
             "stdlib_e2e": command_surfaces["stdlib_e2e"],
         },
         "packaged_stdlib_surface": {
+            "program_contract": repo_rel(stdlib_program_contract),
+            "program_runbook": repo_rel(stdlib_program_runbook),
+            "program_site_entry": repo_rel(stdlib_program_site_entry),
             "workspace_manifest": repo_rel(workspace_manifest),
             "module_inventory": repo_rel(module_inventory),
             "stability_policy": repo_rel(stability_policy),
@@ -242,6 +278,11 @@ def main() -> int:
             "advanced_helper_package_surface": repo_rel(advanced_helper_package_surface),
             "artifact_filenames": artifact_filenames,
             "import_surface": lowering_import_surface_payload["import_surface"],
+        },
+        "packaged_stdlib_program_surface": {
+            "publish_inputs": packaged_publish_inputs,
+            "command_surfaces": manifest["stdlib_program_command_surfaces"],
+            "examples": manifest["stdlib_program_examples"],
         },
         "advanced_helper_surface": {
             "modules": manifest["advanced_helper_modules"],

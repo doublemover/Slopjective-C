@@ -154,9 +154,13 @@ $requiredRelativeFiles = @(
   "showcase/signalMesh/workspace.json",
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
+  "docs/runbooks/objc3c_stdlib_program.md",
+  "docs/tutorials/README.md",
   "docs/tutorials/getting_started.md",
+  "docs/tutorials/objc2_swift_cpp_comparison.md",
   "docs/tutorials/build_run_verify.md",
   "docs/tutorials/guided_walkthrough.md",
+  "site/src/index.body.md",
   "scripts/probe_objc3c_llvm_capabilities.py",
   "tmp/artifacts/objc3c-native/frontend_source_graph.json",
   "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
@@ -234,6 +238,9 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surfac
 if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_foundation_surface")) {
   throw "runnable toolchain package FAIL: missing stdlib_foundation_surface in $repoSupercleanSurfaceRelativePath"
 }
+if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_program_surface")) {
+  throw "runnable toolchain package FAIL: missing stdlib_program_surface in $repoSupercleanSurfaceRelativePath"
+}
 
 $stdlibLoweringImportSurfaceRelativePath = "stdlib/lowering_import_surface.json"
 $stdlibLoweringImportSurfacePath = Join-Path $packageRoot ($stdlibLoweringImportSurfaceRelativePath.Replace('/', '\'))
@@ -241,6 +248,9 @@ $stdlibLoweringImportSurfacePayload = Get-Content -LiteralPath $stdlibLoweringIm
 $stdlibAdvancedHelperPackageSurfaceRelativePath = "stdlib/advanced_helper_package_surface.json"
 $stdlibAdvancedHelperPackageSurfacePath = Join-Path $packageRoot ($stdlibAdvancedHelperPackageSurfaceRelativePath.Replace('/', '\'))
 $stdlibAdvancedHelperPackageSurfacePayload = Get-Content -LiteralPath $stdlibAdvancedHelperPackageSurfacePath -Raw | ConvertFrom-Json -AsHashtable
+$stdlibProgramSurfaceRelativePath = "stdlib/program_surface.json"
+$stdlibProgramSurfacePath = Join-Path $packageRoot ($stdlibProgramSurfaceRelativePath.Replace('/', '\'))
+$stdlibProgramSurfacePayload = Get-Content -LiteralPath $stdlibProgramSurfacePath -Raw | ConvertFrom-Json -AsHashtable
 
 $manifestPayload = [ordered]@{
   contract_id = "objc3c-runnable-build-install-run-package/runnable_suite-packaged-end-to-end-v1"
@@ -330,8 +340,15 @@ $manifestPayload = [ordered]@{
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
   stdlib_foundation_surface = $repoSupercleanSurfacePayload["stdlib_foundation_surface"]
+  stdlib_program_surface = $repoSupercleanSurfacePayload["stdlib_program_surface"]
   guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
   stdlib_root = "stdlib"
+  stdlib_program_contract = $stdlibProgramSurfaceRelativePath
+  stdlib_program_runbook = "docs/runbooks/objc3c_stdlib_program.md"
+  stdlib_program_site_entry = "site/src/index.body.md"
+  stdlib_program_command_surfaces = $stdlibProgramSurfacePayload["command_surfaces"]
+  stdlib_program_publish_inputs = $stdlibProgramSurfacePayload["publish_inputs"]
+  stdlib_program_examples = $stdlibProgramSurfacePayload["capability_demo_examples"]
   stdlib_workspace_manifest = "stdlib/workspace.json"
   stdlib_module_inventory = "stdlib/module_inventory.json"
   stdlib_stability_policy = "stdlib/stability_policy.json"
