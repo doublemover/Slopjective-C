@@ -1,0 +1,42 @@
+{
+  "contract_id": "objc3c.performance.governance.source.surface.v1",
+  "surface_kind": "publishable-performance-report-source-surface",
+  "runbook": "docs/runbooks/objc3c_performance_governance.md",
+  "budget_model": "tests/tooling/fixtures/performance_governance/budget_model.json",
+  "claim_policy": "tests/tooling/fixtures/performance_governance/claim_policy.json",
+  "breach_triage_policy": "tests/tooling/fixtures/performance_governance/breach_triage_policy.json",
+  "lab_policy": "tests/tooling/fixtures/performance_governance/lab_policy.json",
+  "upstream_reports": [
+    "tmp/reports/performance/benchmark-summary.json",
+    "tmp/reports/performance/comparative-baselines-summary.json",
+    "tmp/reports/compiler-throughput/benchmark-summary.json",
+    "tmp/reports/compiler-throughput/integration-summary.json",
+    "tmp/reports/runtime-performance/benchmark-summary.json",
+    "tmp/reports/runtime-performance/integration-summary.json"
+  ],
+  "checked_in_sources": [
+    "docs/runbooks/objc3c_performance.md",
+    "docs/runbooks/objc3c_compiler_throughput.md",
+    "docs/runbooks/objc3c_runtime_performance.md",
+    "docs/runbooks/objc3c_performance_governance.md",
+    "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+    "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
+    "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+    "tests/tooling/fixtures/runtime_performance/workload_manifest.json"
+  ],
+  "build_scripts": [
+    "scripts/build_objc3c_performance_dashboard.py",
+    "scripts/publish_objc3c_performance_report.py",
+    "scripts/check_objc3c_performance_governance_integration.py",
+    "scripts/check_objc3c_performance_governance_end_to_end.py"
+  ],
+  "machine_owned_output_roots": [
+    "tmp/reports/performance-governance",
+    "tmp/artifacts/performance-governance"
+  ],
+  "explicit_non_goals": [
+    "no spreadsheet-only publication path",
+    "no hand-edited performance badge or dashboard status",
+    "no benchmark source outside the existing performance, compiler-throughput, and runtime-performance surfaces"
+  ]
+}
