@@ -242,6 +242,7 @@ def main() -> int:
         == {
             "source_surface_contract": "tests/tooling/fixtures/stress/source_surface.json",
             "source_readme": "tests/tooling/fixtures/stress/README.md",
+            "safety_policy": "tests/tooling/fixtures/stress/safety_policy.json",
             "runbook": "docs/runbooks/objc3c_stress_validation.md",
             "source_check_script": "scripts/check_stress_source_surface.py",
             "checked_in_roots": [

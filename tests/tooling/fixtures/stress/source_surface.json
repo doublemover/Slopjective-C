@@ -4,6 +4,7 @@
   "runbook": "docs/runbooks/objc3c_stress_validation.md",
   "source_root": "tests/tooling/fixtures/stress",
   "source_check_script": "scripts/check_stress_source_surface.py",
+  "safety_policy": "tests/tooling/fixtures/stress/safety_policy.json",
   "checked_in_roots": [
     "tests/tooling/fixtures/stress",
     "tests/tooling/fixtures/native",
@@ -17,6 +18,7 @@
       "coverage_goal": "deterministic malformed-input parser and semantic fail-closed coverage through the live compiler path",
       "source_paths": [
         "scripts/run_objc3c_fuzz_safety.py",
+        "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/test_objc3c_fuzz_safety.py",
         "tests/tooling/fixtures/parser_conformance_corpus/manifest.json",
         "tests/tooling/fixtures/native/recovery/negative",
@@ -32,6 +34,7 @@
       "source_paths": [
         "scripts/objc3c_native_compile.ps1",
         "scripts/check_objc3c_native_execution_smoke.ps1",
+        "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/fixtures/native/async_lowering_positive.objc3",
         "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
         "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
@@ -47,6 +50,7 @@
       "coverage_goal": "provider/consumer and import-export stress over module, interop, and bridge surfaces",
       "source_paths": [
         "scripts/check_objc3c_execution_replay_proof.ps1",
+        "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
         "tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3",
         "tests/tooling/fixtures/native/cross_module_error_surface_preservation_provider.objc3",
@@ -62,6 +66,7 @@
       "coverage_goal": "reuse checked-in replay contracts as stable stress seeds instead of inventing a second contract corpus",
       "source_paths": [
         "tests/tooling/fixtures/objc3c/validation_cross_module_conformance_contract",
+        "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/fixtures/objc3c/validation_module_import_graph_contract",
         "tests/tooling/fixtures/objc3c/validation_concurrency_replay_contract",
         "tests/tooling/fixtures/objc3c/validation_result_like_lowering_contract",

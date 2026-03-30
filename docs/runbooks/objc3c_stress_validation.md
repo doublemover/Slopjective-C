@@ -38,6 +38,24 @@ The current truthful stress-validation shape is:
   - objective: collapse failing runs onto stable signatures and reducer inputs
     that can be replayed from checked-in scripts
 
+## Differential And Fuzz Safety Policy
+
+The checked-in safety policy for this milestone lives at:
+
+- `tests/tooling/fixtures/stress/safety_policy.json`
+
+Downstream work must preserve these rules:
+
+- prefer checked-in fixtures, deterministic mutations, and replay-backed seeds
+  over unbounded random generation
+- keep execution bounded by explicit per-case timeouts and manifest-selected
+  corpus size
+- keep reducer, replay, and triage outputs in machine-owned roots only
+- preserve original checked-in inputs unchanged
+- record stable failure signatures before claiming a reducer result
+- never publish safety or coverage claims that cannot be traced back to
+  checked-in sources and machine-readable outputs
+
 ## Exact Live Implementation Paths
 
 - public command and package surface:
@@ -62,6 +80,7 @@ The current truthful stress-validation shape is:
 - checked-in fixture families that already hold the live stress corpus:
   - `tests/tooling/fixtures/stress/source_surface.json`
   - `tests/tooling/fixtures/stress/README.md`
+  - `tests/tooling/fixtures/stress/safety_policy.json`
   - `tests/tooling/fixtures/native/recovery/negative/`
   - `tests/tooling/fixtures/native/recovery/positive/`
   - `tests/tooling/fixtures/native/execution/negative/`
@@ -113,6 +132,7 @@ The current truthful stress-validation shape is:
   - `docs/runbooks/objc3c_maintainer_workflows.md`
 - fixture and corpus ownership:
   - `tests/tooling/fixtures/stress/source_surface.json`
+  - `tests/tooling/fixtures/stress/safety_policy.json`
   - `tests/tooling/fixtures/native/`
   - `tests/tooling/fixtures/objc3c/`
   - `tests/conformance/corpus_surface.json`

@@ -1,0 +1,51 @@
+{
+  "policy_id": "objc3c.stress.validation.safety-policy.v1",
+  "schema_version": 1,
+  "determinism_rule": "stress validation must prefer checked-in fixtures deterministic mutations and recorded replay cases over unbounded random input generation",
+  "allowed_input_classes": [
+    "checked-in malformed-input fixtures",
+    "deterministic mutation of checked-in malformed-input fixtures",
+    "checked-in lowering and runtime fixtures",
+    "checked-in provider consumer module pairs",
+    "checked-in replay-contract artifacts"
+  ],
+  "allowed_execution_modes": [
+    "compile-only fail-closed validation",
+    "compile-plus-link runnable stress validation",
+    "reducer replay against machine-owned copies",
+    "signature-based crash triage over captured summaries"
+  ],
+  "required_guards": [
+    "bounded per-case timeout",
+    "bounded case count or manifest-selected corpus",
+    "machine-owned artifact and report roots only",
+    "preserve original checked-in inputs unchanged",
+    "record stable failure signature before reducer output",
+    "no publishable claim without checked-in source traceability"
+  ],
+  "differential_rules": [
+    "differential comparisons must run the same checked-in source family through explicitly named compiler or workflow paths",
+    "provider-consumer and import-export differentials must stay on the live compile wrapper and replay proof surfaces",
+    "mixed-module stress validation must preserve emitted module artifacts for replay instead of recomputing hidden state"
+  ],
+  "forbidden_patterns": [
+    "network-fetched fuzz input corpora",
+    "unbounded random generation with no recorded seed or mutation recipe",
+    "writing reducer outputs back into checked-in fixture roots",
+    "claiming crash freedom from compile success alone",
+    "running generated binaries outside machine-owned temporary roots",
+    "milestone-local wrapper scripts that bypass the public compile path"
+  ],
+  "claim_boundary": {
+    "allowed_claims": [
+      "checked-in-source-covered",
+      "deterministic-replayable",
+      "triage-ready"
+    ],
+    "forbidden_claims": [
+      "fully safe against arbitrary input",
+      "coverage-complete from random exploration alone",
+      "portable crash-free guarantee"
+    ]
+  }
+}

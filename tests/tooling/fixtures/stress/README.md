@@ -13,3 +13,6 @@ Canonical checked-in inputs stay split into these families:
 - replay-backed contract fixtures
 
 The authoritative inventory lives in `tests/tooling/fixtures/stress/source_surface.json`.
+
+The checked-in safety policy lives in
+`tests/tooling/fixtures/stress/safety_policy.json`.

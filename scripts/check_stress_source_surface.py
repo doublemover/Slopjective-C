@@ -60,9 +60,28 @@ def main() -> int:
         return fail("stress source surface source_root drifted")
     if surface.get("source_check_script") != "scripts/check_stress_source_surface.py":
         return fail("stress source surface source_check_script drifted")
+    if surface.get("safety_policy") != "tests/tooling/fixtures/stress/safety_policy.json":
+        return fail("stress source surface safety_policy drifted")
 
     require_path("docs/runbooks/objc3c_stress_validation.md", kind="runbook")
     require_path("tests/tooling/fixtures/stress/README.md", kind="stress README")
+    safety_policy_path = require_path("tests/tooling/fixtures/stress/safety_policy.json", kind="stress safety policy")
+    safety_policy = load_json(safety_policy_path)
+    if safety_policy.get("policy_id") != "objc3c.stress.validation.safety-policy.v1":
+        return fail("stress safety policy_id drifted")
+    if safety_policy.get("schema_version") != 1:
+        return fail("stress safety policy schema_version drifted")
+    for key in (
+        "determinism_rule",
+        "allowed_input_classes",
+        "allowed_execution_modes",
+        "required_guards",
+        "differential_rules",
+        "forbidden_patterns",
+        "claim_boundary",
+    ):
+        if key not in safety_policy:
+            return fail(f"stress safety policy missing {key}")
 
     checked_in_roots = surface.get("checked_in_roots")
     if not isinstance(checked_in_roots, list) or not checked_in_roots:
@@ -113,7 +132,9 @@ def main() -> int:
         "source_surface_contract": repo_rel(SURFACE_PATH),
         "runbook": surface["runbook"],
         "source_check_script": surface["source_check_script"],
+        "safety_policy": repo_rel(safety_policy_path),
         "checked_in_root_count": len(checked_in_roots),
+        "required_guard_count": len(safety_policy["required_guards"]),
         "family_summaries": family_summaries,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
