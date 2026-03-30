@@ -1,0 +1,52 @@
+{
+  "contract_id": "objc3c.stress.mixed-module-differential.manifest.v1",
+  "schema_version": 1,
+  "case_ids": [
+    "cross-module-runtime-package-interop-source-surface",
+    "textual-binary-interface-parity-source-surface",
+    "mixed-image-compatibility-interop-semantics",
+    "imported-runtime-packaging-replay",
+    "c-cpp-swift-bridge-compatibility-semantics",
+    "import-version-feature-claim-diagnostics",
+    "runtime-packaging-bridge-loader-artifact-surface",
+    "mixed-image-package-lowering-bridge-emission",
+    "cross-language-replay-import-surface-preservation",
+    "runtime-package-loader-bridge-abi",
+    "live-package-loading-interop-runtime-implementation"
+  ],
+  "surface_contracts": {
+    "runtime_cross_module_package_interop_source_surface": "objc3c.runtime.cross.module.package.interop.source.surface.v1",
+    "runtime_textual_binary_interface_parity_source_surface": "objc3c.runtime.textual.binary.interface.parity.source.surface.v1",
+    "runtime_mixed_image_compatibility_interop_semantics_surface": "objc3c.runtime.mixed.image.compatibility.interop.semantics.surface.v1",
+    "runtime_package_loading_module_identity_semantics_surface": "objc3c.runtime.package.loading.module.identity.semantics.surface.v1",
+    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": "objc3c.runtime.c.cpp.swift.bridge.compatibility.semantics.surface.v1",
+    "runtime_import_version_feature_claim_diagnostics_surface": "objc3c.runtime.import.version.feature.claim.diagnostics.surface.v1",
+    "runtime_packaging_bridge_loader_artifact_surface": "objc3c.runtime.packaging.bridge.loader.artifact.surface.v1",
+    "runtime_mixed_image_package_lowering_bridge_emission_surface": "objc3c.runtime.mixed.image.package.lowering.bridge.emission.surface.v1",
+    "runtime_cross_language_replay_import_surface_preservation_surface": "objc3c.runtime.cross.language.replay.import.surface.preservation.surface.v1",
+    "runtime_package_loader_bridge_abi_surface": "objc3c.runtime.package.loader.bridge.abi.surface.v1",
+    "runtime_package_loading_interop_implementation_surface": "objc3c.runtime.package.loading.interop.implementation.surface.v1"
+  },
+  "fixture_groups": [
+    {
+      "group_id": "cross-module-runtime-provider-consumer",
+      "provider": "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+      "consumer": "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3"
+    },
+    {
+      "group_id": "header-module-bridge-provider-consumer",
+      "provider": "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+      "consumer": "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+    },
+    {
+      "group_id": "actor-isolation-provider-consumer",
+      "provider": "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
+      "consumer": "tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3"
+    },
+    {
+      "group_id": "error-surface-provider-consumer",
+      "provider": "tests/tooling/fixtures/native/cross_module_error_surface_preservation_provider.objc3",
+      "consumer": "tests/tooling/fixtures/native/cross_module_error_surface_preservation_consumer.objc3"
+    }
+  ]
+}

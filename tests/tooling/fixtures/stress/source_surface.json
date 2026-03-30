@@ -46,7 +46,9 @@
       "family_id": "mixed-module-differential",
       "coverage_goal": "provider/consumer and import-export stress over module, interop, and bridge surfaces",
       "source_paths": [
+        "scripts/run_objc3c_mixed_module_differential.py",
         "scripts/check_objc3c_execution_replay_proof.ps1",
+        "tests/tooling/fixtures/stress/mixed_module_differential_manifest.json",
         "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
         "tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3",
@@ -55,7 +57,9 @@
         "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
         "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
         "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
-        "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+        "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
+        "scripts/check_objc3c_runtime_acceptance.py",
+        "scripts/check_objc3c_runnable_interop_conformance.py"
       ]
     },
     {
