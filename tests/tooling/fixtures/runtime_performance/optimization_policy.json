@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.runtime.performance.optimization.policy.v1",
+  "schema_version": 1,
+  "policy_kind": "runtime-optimization-correctness-and-regression-policy",
+  "canonical_runtime_entrypoints": [
+    "objc3_runtime_register_image",
+    "objc3_runtime_lookup_selector",
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_reset_for_testing"
+  ],
+  "required_private_snapshot_helpers": [
+    "objc3_runtime_copy_dispatch_state_for_testing",
+    "objc3_runtime_copy_method_cache_state_for_testing",
+    "objc3_runtime_copy_property_registry_state_for_testing",
+    "objc3_runtime_copy_object_model_query_state_for_testing",
+    "objc3_runtime_copy_memory_management_state_for_testing",
+    "objc3_runtime_copy_arc_debug_state_for_testing"
+  ],
+  "allowed_optimization_moves": [
+    "reduce repeated selector materialization work without changing lookup semantics",
+    "reserve runtime-owned container capacity when registration or realized-class inventory makes the size knowable",
+    "publish new private testing counters through objc3_runtime_bootstrap_internal.h",
+    "measure live runtime probes through shared public workflow actions"
+  ],
+  "disallowed_optimization_moves": [
+    "no alternate dispatch entrypoint",
+    "no benchmark-only runtime shim",
+    "no widening native/objc3c/src/runtime/objc3_runtime.h for performance counters alone",
+    "no sidecar-only timing report without a coupled runtime probe result",
+    "no cache-fast-path claim without matching runtime snapshot proof"
+  ],
+  "regression_policy": {
+    "required_counter_families": [
+      "startup-installation",
+      "dispatch-cache",
+      "reflection-query",
+      "ownership-helpers"
+    ],
+    "required_report_fields": [
+      "duration_ms",
+      "summary",
+      "counter_snapshot",
+      "workload_id",
+      "acceptance_case_id"
+    ],
+    "same_machine_required": true,
+    "same_checked_in_probe_required": true
+  },
+  "exact_live_paths_for_downstream_work": [
+    "docs/runbooks/objc3c_runtime_performance.md",
+    "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
+    "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+  ]
+}

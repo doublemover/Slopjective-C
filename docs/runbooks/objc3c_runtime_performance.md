@@ -60,6 +60,40 @@ The current bottleneck map is:
   - `objc3_runtime_copy_memory_management_state_for_testing`
   - `objc3_runtime_copy_arc_debug_state_for_testing`
 
+## Optimization Correctness Policy
+
+Runtime-performance work is only valid when it preserves these invariants:
+
+- the canonical runtime dispatch entrypoint remains `objc3_runtime_dispatch_i32`
+- selector lookup remains rooted in `objc3_runtime_lookup_selector`
+- startup publication remains rooted in `objc3_runtime_register_image`,
+  staged-table walking, reset, and replay
+- reflection and ownership proofs remain rooted in the existing private testing
+  snapshot helpers, not a second reporting ABI
+- benchmark summaries must include both timing results and the coupled runtime
+  counter/snapshot fields that explain those timings
+
+Allowed optimization moves:
+
+- reduce repeated work inside selector materialization, registration-time cache
+  seeding, and realized-property lookup
+- reserve or reuse runtime-owned container capacity where the live registration
+  and class-graph model makes the size knowable
+- publish new private testing counters or summaries through the existing
+  bootstrap-internal helper boundary
+- add public workflow actions only when they execute the live runtime code and
+  authoritative runtime probes
+
+Disallowed optimization moves:
+
+- no alternate dispatch entrypoint, benchmark-only runtime shim, or synthetic
+  property/reflection path
+- no widening of `native/objc3c/src/runtime/objc3_runtime.h` just to expose
+  performance counters
+- no sidecar-only timing report with no coupled runtime probe result
+- no claim that a cache fast path is active unless the runtime snapshot state
+  reports it directly
+
 ## Exact Live Implementation Paths
 
 - runtime library:
