@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.runtime.performance.source.surface.v1",
+  "schema_version": 1,
+  "surface_kind": "runtime-hot-path-and-bottleneck-boundary",
+  "runbook": "docs/runbooks/objc3c_runtime_performance.md",
+  "runtime_library_paths": [
+    "native/objc3c/src/runtime/objc3_runtime.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/ARCHITECTURE.md"
+  ],
+  "runtime_acceptance_paths": [
+    "scripts/build_objc3c_native.ps1",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "scripts/package_objc3c_runnable_toolchain.ps1"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+    "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+  ],
+  "hot_path_families": [
+    "startup-installation",
+    "dispatch-cache",
+    "reflection-query",
+    "ownership-helpers",
+    "runtime-counter-snapshot"
+  ],
+  "artifact_roots": [
+    "tmp/artifacts/runtime-performance",
+    "tmp/reports/runtime-performance",
+    "tmp/pkg/objc3c-native-runnable-toolchain"
+  ],
+  "explicit_non_goals": [
+    "no milestone-local runtime shim",
+    "no sidecar-only performance claim surface",
+    "no hidden optimization toggle outside checked-in code",
+    "no second public runtime ABI for measurements"
+  ]
+}
