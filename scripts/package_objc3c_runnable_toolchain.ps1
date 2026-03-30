@@ -155,6 +155,7 @@ $requiredRelativeFiles = @(
   "artifacts/bin/objc3c-native.exe",
   "artifacts/bin/objc3c-frontend-c-api-runner.exe",
   "artifacts/lib/objc3_runtime.lib",
+  "scripts/build_objc3c_native.ps1",
   "scripts/objc3c_native_compile.ps1",
   "scripts/objc3c_runtime_launch_contract.ps1",
   "scripts/run_objc3c_native_compile_proof.ps1",
@@ -170,6 +171,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_conformance_corpus.md",
+  "docs/runbooks/objc3c_runtime_performance.md",
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
   "docs/tutorials/getting_started.md",
@@ -178,6 +180,8 @@ $requiredRelativeFiles = @(
   "docs/tutorials/guided_walkthrough.md",
   "site/src/index.body.md",
   "scripts/probe_objc3c_llvm_capabilities.py",
+  "scripts/benchmark_objc3c_runtime_performance.py",
+  "scripts/check_objc3c_runtime_acceptance.py",
   "tmp/artifacts/objc3c-native/frontend_source_graph.json",
   "tmp/artifacts/objc3c-native/frontend_invocation_lock.json",
   "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json",
@@ -198,6 +202,9 @@ $requiredRelativeFiles = @(
   "scripts/generate_conformance_corpus_index.py",
   "spec/conformance/release_evidence_gate_maintenance.md",
   "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+  "tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp",
+  "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+  "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
   "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
   "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
   "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
@@ -212,7 +219,9 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp",
   "tests/tooling/fixtures/native/hello.objc3",
   "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+  "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
   "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+  "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
   "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
   "tests/tooling/fixtures/native/runtime_metadata_source_records_class_protocol_property_ivar.objc3",
   "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
@@ -234,7 +243,13 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/performance/baselines/objc2_reference_workload.m",
   "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
   "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
-  "schemas/objc3c-performance-telemetry-v1.schema.json"
+  "schemas/objc3c-performance-telemetry-v1.schema.json",
+  "tests/tooling/fixtures/runtime_performance/source_surface.json",
+  "tests/tooling/fixtures/runtime_performance/workload_manifest.json",
+  "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+  "tests/tooling/fixtures/runtime_performance/optimization_policy.json",
+  "tests/tooling/fixtures/runtime_performance/README.md",
+  "schemas/objc3c-runtime-performance-telemetry-v1.schema.json"
 )
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
@@ -246,6 +261,17 @@ foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $s
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }
 
+$packagedNativeExecutablePath = Join-Path $packageRoot "artifacts\bin\objc3c-native.exe"
+$packagedFrontendRunnerPath = Join-Path $packageRoot "artifacts\bin\objc3c-frontend-c-api-runner.exe"
+$packagedRuntimeLibraryPath = Join-Path $packageRoot "artifacts\lib\objc3_runtime.lib"
+$normalizedOutputTimestamp = [datetime]::UtcNow
+foreach ($outputPath in @($packagedNativeExecutablePath, $packagedFrontendRunnerPath, $packagedRuntimeLibraryPath)) {
+  if (Test-Path -LiteralPath $outputPath -PathType Leaf) {
+    $item = Get-Item -LiteralPath $outputPath
+    $item.LastWriteTimeUtc = $normalizedOutputTimestamp
+  }
+}
+
 $repoSupercleanSurfaceRelativePath = "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
 $repoSupercleanSurfacePath = Join-Path $packageRoot ($repoSupercleanSurfaceRelativePath.Replace('/', '\'))
 $repoSupercleanSurfacePayload = Get-Content -LiteralPath $repoSupercleanSurfacePath -Raw | ConvertFrom-Json -AsHashtable
@@ -254,6 +280,9 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("bonus_experience_surfaces"))
 }
 if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surface")) {
   throw "runnable toolchain package FAIL: missing performance_benchmark_surface in $repoSupercleanSurfaceRelativePath"
+}
+if (-not $repoSupercleanSurfacePayload.ContainsKey("runtime_performance_surface")) {
+  throw "runnable toolchain package FAIL: missing runtime_performance_surface in $repoSupercleanSurfaceRelativePath"
 }
 if (-not $repoSupercleanSurfacePayload.ContainsKey("conformance_corpus_surface")) {
   throw "runnable toolchain package FAIL: missing conformance_corpus_surface in $repoSupercleanSurfaceRelativePath"
@@ -362,6 +391,7 @@ $manifestPayload = [ordered]@{
   bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
+  runtime_performance_surface = $repoSupercleanSurfacePayload["runtime_performance_surface"]
   conformance_corpus_surface = $repoSupercleanSurfacePayload["conformance_corpus_surface"]
   conformance_suite_readme = "tests/conformance/README.md"
   conformance_coverage_map = "tests/conformance/COVERAGE_MAP.md"
@@ -453,6 +483,7 @@ $manifestPayload = [ordered]@{
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
     inspect_performance = "npm run inspect:objc3c:performance"
+    inspect_runtime_performance = "npm run inspect:objc3c:runtime-performance"
     inspect_comparative_baselines = "npm run inspect:objc3c:comparative-baselines"
     inspect_capabilities = "npm run inspect:objc3c:capabilities"
     inspect_runtime = "npm run inspect:objc3c:runtime"
@@ -462,6 +493,8 @@ $manifestPayload = [ordered]@{
     conformance_corpus_e2e = "npm run test:objc3c:runnable-conformance-corpus"
     stdlib = "npm run test:stdlib"
     stdlib_e2e = "npm run test:stdlib:e2e"
+    runtime_performance = "npm run test:objc3c:runtime-performance"
+    runtime_performance_e2e = "npm run test:objc3c:runnable-runtime-performance"
     runnable_performance = "npm run test:objc3c:runnable-performance"
     showcase = "npm run test:showcase"
     showcase_e2e = "npm run test:showcase:e2e"

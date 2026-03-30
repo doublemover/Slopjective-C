@@ -92,6 +92,8 @@ def main() -> int:
             "build_stdlib": "build:objc3c:stdlib",
             "check_stdlib_surface": "check:stdlib:surface",
             "inspect_runtime_performance": "inspect:objc3c:runtime-performance",
+            "test_runtime_performance": "test:objc3c:runtime-performance",
+            "test_runtime_performance_e2e": "test:objc3c:runnable-runtime-performance",
             "test_stdlib": "test:stdlib",
             "test_stdlib_e2e": "test:stdlib:e2e",
             "test_fast": "test:fast",
@@ -268,6 +270,8 @@ def main() -> int:
             "public_actions": [
                 "inspect-runtime-inspector",
                 "benchmark-runtime-performance",
+                "validate-runtime-performance",
+                "validate-runnable-runtime-performance",
                 "package-runnable-toolchain",
             ],
         },

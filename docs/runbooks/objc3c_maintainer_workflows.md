@@ -187,6 +187,9 @@ npm run test:repo
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
+- runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
+- integrated runtime performance validation: `npm run test:objc3c:runtime-performance`
+- runnable runtime performance validation: `npm run test:objc3c:runnable-runtime-performance`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
 - external validation source-surface check: `python scripts/check_external_validation_source_surface.py`

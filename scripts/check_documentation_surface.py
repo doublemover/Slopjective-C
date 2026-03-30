@@ -681,6 +681,8 @@ def main() -> int:
         "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
         "scripts/check_objc3c_runtime_acceptance.py",
         "scripts/benchmark_objc3c_runtime_performance.py",
+        "scripts/check_objc3c_runtime_performance_integration.py",
+        "scripts/check_objc3c_runnable_runtime_performance_end_to_end.py",
         "tests/tooling/fixtures/runtime_performance/source_surface.json",
         "## Exact Live Artifact And Output Paths",
         "tmp/artifacts/runtime-performance/",

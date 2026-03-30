@@ -104,6 +104,8 @@ Disallowed optimization moves:
 - compile/build/runtime harness:
   - `scripts/build_objc3c_native.ps1`
   - `scripts/benchmark_objc3c_runtime_performance.py`
+  - `scripts/check_objc3c_runtime_performance_integration.py`
+  - `scripts/check_objc3c_runnable_runtime_performance_end_to_end.py`
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/objc3c_public_workflow_runner.py`
   - `scripts/package_objc3c_runnable_toolchain.ps1`

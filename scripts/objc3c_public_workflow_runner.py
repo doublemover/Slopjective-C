@@ -46,6 +46,8 @@ RUNTIME_PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_
 COMPARATIVE_BASELINES_PY = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
 RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
 PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
+RUNTIME_PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_performance_integration.py"
+RUNNABLE_RUNTIME_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_runtime_performance_end_to_end.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
@@ -577,6 +579,14 @@ def action_benchmark_performance(rest: list[str]) -> int:
 
 def action_benchmark_runtime_performance(rest: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_PERFORMANCE_BENCHMARK_PY), *rest])
+
+
+def action_validate_runtime_performance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)])
+
+
+def action_validate_runnable_runtime_performance(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_RUNTIME_PERFORMANCE_E2E_PY)])
 
 
 def action_benchmark_comparative_baselines(rest: list[str]) -> int:
@@ -1381,6 +1391,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("validate-stress", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-stress"]),
             ("validate-external-validation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-external-validation"]),
             ("validate-public-conformance-reporting", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-public-conformance-reporting"]),
+            ("validate-runtime-performance", [sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1434,6 +1445,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "benchmark-runtime-inspector": ActionSpec("benchmark-runtime-inspector", "measure the live runtime-inspector and capability-explorer workflow and write a reproducible benchmark report", "python:scripts/benchmark_objc3c_runtime_inspector.py", ("inspect:objc3c:benchmark",), validation_tier="repo", guarantee_owner="runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts", pass_through_args=True),
     "benchmark-performance": ActionSpec("benchmark-performance", "measure the checked-in objc3 showcase workloads and write reproducible compile/runtime telemetry packets", "python:scripts/benchmark_objc3c_performance.py", ("inspect:objc3c:performance",), validation_tier="repo", guarantee_owner="objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets", pass_through_args=True),
     "benchmark-runtime-performance": ActionSpec("benchmark-runtime-performance", "measure the live runtime startup dispatch reflection and ownership hot paths and write reproducible telemetry packets", "python:scripts/benchmark_objc3c_runtime_performance.py", ("inspect:objc3c:runtime-performance",), validation_tier="repo", guarantee_owner="runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots", pass_through_args=True),
+    "validate-runtime-performance": ActionSpec("validate-runtime-performance", "run the integrated runtime hot-path benchmark and packaged validation flow", "python:scripts/check_objc3c_runtime_performance_integration.py", ("test:objc3c:runtime-performance",), validation_tier="repo", guarantee_owner="runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle"),
+    "validate-runnable-runtime-performance": ActionSpec("validate-runnable-runtime-performance", "validate the staged runnable runtime-performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_runtime_performance_end_to_end.py", ("test:objc3c:runnable-runtime-performance",), validation_tier="full", guarantee_owner="packaged runtime-performance fixtures, contracts, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "benchmark-comparative-baselines": ActionSpec("benchmark-comparative-baselines", "measure the checked-in ObjC2 Swift and C++ baseline workloads and write reproducible comparison telemetry packets", "python:scripts/run_objc3c_comparative_baselines.py", ("inspect:objc3c:comparative-baselines",), validation_tier="repo", guarantee_owner="comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states", pass_through_args=True),
     "validate-runnable-performance": ActionSpec("validate-runnable-performance", "validate the staged runnable toolchain performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_performance_end_to_end.py", ("test:objc3c:runnable-performance",), validation_tier="full", guarantee_owner="packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "validate-performance-foundation": ActionSpec("validate-performance-foundation", "run the integrated benchmark and comparative baseline validation flow", "python:scripts/check_objc3c_performance_integration.py", ("test:objc3c:performance",), validation_tier="repo", guarantee_owner="benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle"),
@@ -1497,7 +1510,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive recovery fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive corpus artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
-    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus conformance corpus indexing, recovery, and broad corpus sweeps"),
+    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus runtime-performance benchmarking, conformance corpus indexing, recovery, and broad corpus sweeps"),
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1", ("package:objc3c-native:runnable-toolchain",)),
     "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1", ("proof:objc3c",)),
 }
@@ -1541,6 +1554,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "benchmark-runtime-inspector": action_benchmark_runtime_inspector,
     "benchmark-performance": action_benchmark_performance,
     "benchmark-runtime-performance": action_benchmark_runtime_performance,
+    "validate-runtime-performance": action_validate_runtime_performance,
+    "validate-runnable-runtime-performance": action_validate_runnable_runtime_performance,
     "benchmark-comparative-baselines": action_benchmark_comparative_baselines,
     "validate-runnable-performance": action_validate_runnable_performance,
     "validate-performance-foundation": action_validate_performance_foundation,
