@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.performance.governance.claim.policy.v1",
+  "surface_kind": "public-performance-claim-and-waiver-policy",
+  "claim_statuses": [
+    {
+      "status": "release-ready",
+      "minimum_score": 95,
+      "requires": [
+        "all_required_budget_families_pass",
+        "no_blocking_breach",
+        "no_expired_waiver"
+      ]
+    },
+    {
+      "status": "caution",
+      "minimum_score": 70,
+      "requires": [
+        "all_required_budget_families_present",
+        "no_blocking_environment_drift"
+      ]
+    },
+    {
+      "status": "blocked",
+      "minimum_score": 0,
+      "requires": [
+        "fallback-when-any-release-blocking-condition-is-met"
+      ]
+    }
+  ],
+  "waiver_requirements": {
+    "checked_in": true,
+    "time_bounded": true,
+    "must_name_budget_id": true,
+    "must_name_breach_id": true,
+    "must_name_owner": true,
+    "must_name_expiration_utc": true,
+    "must_name_evidence_paths": true
+  },
+  "allowed_waiver_statuses": [
+    "active",
+    "expired",
+    "superseded"
+  ],
+  "required_paths": [
+    "docs/runbooks/objc3c_performance_governance.md",
+    "tests/tooling/fixtures/performance_governance/claim_policy.json",
+    "tmp/reports/performance-governance/dashboard-summary.json",
+    "tmp/reports/performance-governance/public-summary.json"
+  ]
+}
