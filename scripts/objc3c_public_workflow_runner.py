@@ -55,6 +55,9 @@ STRESS_MINIMIZATION_PY = ROOT / "scripts" / "run_objc3c_stress_minimization.py"
 STRESS_CRASH_TRIAGE_PY = ROOT / "scripts" / "run_objc3c_stress_crash_triage.py"
 STRESS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stress_integration.py"
 STRESS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_stress_end_to_end.py"
+EXTERNAL_VALIDATION_SURFACE_PY = ROOT / "scripts" / "check_external_validation_source_surface.py"
+EXTERNAL_VALIDATION_REPLAY_PY = ROOT / "scripts" / "run_objc3c_external_validation_replay.py"
+EXTERNAL_VALIDATION_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_external_repro_corpus.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -628,6 +631,18 @@ def action_validate_stress_integration(_: list[str]) -> int:
 
 def action_validate_stress_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(STRESS_END_TO_END_PY)])
+
+
+def action_check_external_validation_surface(_: list[str]) -> int:
+    return run([sys.executable, str(EXTERNAL_VALIDATION_SURFACE_PY)])
+
+
+def action_test_external_validation_replay(_: list[str]) -> int:
+    return run([sys.executable, str(EXTERNAL_VALIDATION_REPLAY_PY)])
+
+
+def action_publish_external_repro_corpus(_: list[str]) -> int:
+    return run([sys.executable, str(EXTERNAL_VALIDATION_PUBLICATION_PY)])
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1367,6 +1382,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-stress": ActionSpec("validate-stress", "run the integrated fuzz, stress, reducer, and crash-triage workflow", "runner-internal + direct stress validation commands", ("test:objc3c:stress",), validation_tier="repo", guarantee_owner="checked-in stress roots, deterministic malformed-input coverage, mixed-module differential validation, reducer output, and crash-triage indexes stay executable on the live workflow"),
     "validate-stress-integration": ActionSpec("validate-stress-integration", "validate the integrated stress workflow report and child artifact set", "python:scripts/check_objc3c_stress_integration.py", ("test:objc3c:stress:integration",), validation_tier="repo", guarantee_owner="integrated stress workflow reports stay coherent across source-surface, differential, minimization, and crash-triage outputs"),
     "validate-stress-end-to-end": ActionSpec("validate-stress-end-to-end", "validate the public end-to-end stress workflow, command appendix, and nightly wiring", "python:scripts/check_objc3c_stress_end_to_end.py", ("test:objc3c:stress:e2e",), validation_tier="repo", guarantee_owner="public stress workflow entrypoints and nightly wiring stay coherent with the integrated stress report set"),
+    "check-external-validation-surface": ActionSpec("check-external-validation-surface", "validate the checked-in external-validation source, trust, intake, quarantine, and artifact contracts", "python:scripts/check_external_validation_source_surface.py", ("check:external-validation:surface",), validation_tier="repo", guarantee_owner="external validation stays rooted in checked-in trust, intake, quarantine, and artifact contracts"),
+    "test-external-validation-replay": ActionSpec("test-external-validation-replay", "run accepted external-validation entries through the live replay proof scripts", "python:scripts/run_objc3c_external_validation_replay.py", ("test:objc3c:external-validation:replay",), validation_tier="repo", guarantee_owner="accepted external evidence keeps replaying through the live parser and execution proof surfaces"),
+    "publish-external-repro-corpus": ActionSpec("publish-external-repro-corpus", "materialize the machine-owned external repro corpus publication artifact", "python:scripts/publish_objc3c_external_repro_corpus.py", ("publish:objc3c:external-repro-corpus",), validation_tier="repo", guarantee_owner="accepted and quarantined external evidence stays publishable as a machine-owned corpus summary rooted in the replay drill"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1461,6 +1479,9 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-stress": action_validate_stress,
     "validate-stress-integration": action_validate_stress_integration,
     "validate-stress-end-to-end": action_validate_stress_end_to_end,
+    "check-external-validation-surface": action_check_external_validation_surface,
+    "test-external-validation-replay": action_test_external_validation_replay,
+    "publish-external-repro-corpus": action_publish_external_repro_corpus,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
