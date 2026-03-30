@@ -1,0 +1,42 @@
+{
+  "contract_id": "objc3c.release.foundation.source.surface.v1",
+  "surface_kind": "release-foundation-source-surface",
+  "runbook": "docs/runbooks/objc3c_release_foundation.md",
+  "artifact_taxonomy": "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json",
+  "distribution_trust_model": "tests/tooling/fixtures/release_foundation/distribution_trust_model.json",
+  "distribution_audit": "tests/tooling/fixtures/release_foundation/distribution_audit.json",
+  "reproducibility_policy": "tests/tooling/fixtures/release_foundation/reproducibility_policy.json",
+  "release_payload_policy": "tests/tooling/fixtures/release_foundation/release_payload_policy.json",
+  "provenance_policy": "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+  "workflow_surface": "tests/tooling/fixtures/release_foundation/workflow_surface.json",
+  "schema_surface": "tests/tooling/fixtures/release_foundation/schema_surface.json",
+  "checked_in_sources": [
+    "docs/runbooks/objc3c_release_foundation.md",
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/check_release_evidence.py",
+    "scripts/build_objc3c_native.ps1",
+    "docs/runbooks/objc3c_maintainer_workflows.md"
+  ],
+  "upstream_surfaces": [
+    "spec/conformance/release_evidence_gate_maintenance.md",
+    "docs/runbooks/objc3c_public_command_surface.md",
+    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+  ],
+  "build_scripts": [
+    "scripts/check_release_foundation_source_surface.py",
+    "scripts/check_release_foundation_schema_surface.py",
+    "scripts/build_objc3c_release_manifest.py",
+    "scripts/publish_objc3c_release_provenance.py",
+    "scripts/check_objc3c_release_foundation_integration.py"
+  ],
+  "machine_owned_output_roots": [
+    "tmp/reports/release-foundation",
+    "tmp/artifacts/release-foundation",
+    "tmp/pkg/objc3c-native-runnable-toolchain"
+  ],
+  "explicit_non_goals": [
+    "no second installer-shaped payload",
+    "no hand-maintained digest manifest",
+    "no release claim that bypasses the runnable package manifest"
+  ]
+}

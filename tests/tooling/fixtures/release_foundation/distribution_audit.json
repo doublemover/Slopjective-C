@@ -1,0 +1,45 @@
+{
+  "contract_id": "objc3c.release.foundation.distribution.audit.v1",
+  "surface_kind": "distribution-payload-and-channel-audit",
+  "canonical_channel": "staged-runnable-toolchain-bundle",
+  "audited_channels": [
+    {
+      "channel_id": "local-package-root",
+      "delivery_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+      "status": "supported",
+      "reason": "existing runnable bundle is the only machine-proven packaging surface in-tree"
+    },
+    {
+      "channel_id": "repo-artifact-publication",
+      "delivery_root": "tmp/artifacts/release-foundation",
+      "status": "supported",
+      "reason": "release manifest, sbom, and attestation are published here as machine-owned outputs"
+    },
+    {
+      "channel_id": "system-installer",
+      "delivery_root": "",
+      "status": "deferred",
+      "reason": "installers are explicitly out of scope for M297"
+    }
+  ],
+  "required_payload_bindings": [
+    "native_executable",
+    "frontend_c_api_runner",
+    "runtime_library",
+    "compile_wrapper",
+    "execution_smoke_script",
+    "execution_replay_script",
+    "repo_superclean_surface",
+    "release_evidence_gate_script",
+    "command_surfaces"
+  ],
+  "audited_upstream_manifests": [
+    "artifacts/package/objc3c-runnable-toolchain-package.json",
+    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+  ],
+  "payload_selection_boundary": [
+    "payload membership must come from the runnable package manifest and checked-in release payload policy",
+    "payload publication must remain repo-relative",
+    "payload publication must not depend on installer-only metadata"
+  ]
+}
