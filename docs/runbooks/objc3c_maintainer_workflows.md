@@ -97,6 +97,17 @@ Stress-validation entrypoint:
 - use that runbook before widening fixture families, reducer outputs, workflow
   commands, or packaged stress validation claims
 
+External-validation entrypoint:
+
+- `docs/runbooks/objc3c_external_validation.md` is the maintainer boundary for
+  external fixture intake, normalized replay contracts, quarantine, and
+  ecosystem-facing credibility work
+- external validation must stay on the existing conformance corpus, replay
+  proof, release evidence, and runnable package surfaces instead of inventing a
+  second corpus, sidecar harness, or manual-only replay workflow
+- use that runbook before widening intake roots, replay publication, or
+  ecosystem evidence claims
+
 Standard-library entrypoint:
 
 - `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
@@ -154,6 +165,7 @@ npm run test:repo
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
+- external validation boundary: `docs/runbooks/objc3c_external_validation.md`
 - stress source-surface check: `npm run check:stress:surface`
 - parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
 - lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`
