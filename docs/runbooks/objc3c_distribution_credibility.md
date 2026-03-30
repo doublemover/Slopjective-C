@@ -65,6 +65,23 @@ This milestone must leave behind:
 - a machine-owned trust report under `tmp/artifacts/distribution-credibility/`
 - integrated and end-to-end validation entrypoints on the shared public workflow runner
 
+## Operator Release Policy
+
+Credibility publication is operator-gated:
+
+- `ready`: all required upstream trust signals passed on the live release surface
+- `degraded`: one or more non-fatal trust signals regressed and require explicit caution
+- `blocked`: a release drill, install smoke, rollback proof, or release-operation proof failed
+
+Incidents for this milestone are limited to:
+
+- install failure on a published package channel
+- rollback failure on the live installer or offline bundle path
+- trust-report drift against the published release-operation metadata
+- missing or invalid release-evidence index for the shipped release payload
+
+Do not publish a trust-positive summary when the state is `blocked`.
+
 ## Non-Goals
 
 - no hosted status page

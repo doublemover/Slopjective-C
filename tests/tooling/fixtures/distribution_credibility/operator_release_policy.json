@@ -1,0 +1,42 @@
+{
+  "contract_id": "objc3c.distribution.credibility.operator.release.policy.v1",
+  "schema_version": 1,
+  "states": [
+    "ready",
+    "degraded",
+    "blocked"
+  ],
+  "blocking_conditions": [
+    "package-channel-install-failure",
+    "rollback-proof-failure",
+    "release-operations-proof-failure",
+    "missing-release-evidence-index"
+  ],
+  "degraded_conditions": [
+    "candidate-channel-only-warning",
+    "preview-channel-warning",
+    "stale-trust-report-input"
+  ],
+  "incident_classes": [
+    {
+      "incident_id": "install-failure",
+      "severity": "high",
+      "required_action": "stop credibility publication until the live package-channel drill passes"
+    },
+    {
+      "incident_id": "rollback-failure",
+      "severity": "high",
+      "required_action": "publish blocked status and retain operator recovery guidance"
+    },
+    {
+      "incident_id": "metadata-drift",
+      "severity": "medium",
+      "required_action": "rebuild release-operations publication and trust-report outputs together"
+    },
+    {
+      "incident_id": "evidence-gap",
+      "severity": "medium",
+      "required_action": "regenerate the release-evidence index before claiming a credible release surface"
+    }
+  ]
+}
