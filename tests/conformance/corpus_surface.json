@@ -1,0 +1,64 @@
+{
+  "contract_id": "objc3c.conformance.corpus.surface.v1",
+  "schema_version": 1,
+  "corpus_root": "tests/conformance",
+  "suite_readme": "tests/conformance/README.md",
+  "coverage_map": "tests/conformance/COVERAGE_MAP.md",
+  "runbook": "docs/runbooks/objc3c_conformance_corpus.md",
+  "primary_buckets": [
+    "parser",
+    "semantic",
+    "lowering_abi",
+    "module_roundtrip",
+    "diagnostics"
+  ],
+  "supplemental_buckets": [
+    "examples",
+    "spec_open_issues",
+    "workpacks"
+  ],
+  "taxonomy": {
+    "bucket_roles": {
+      "parser": "grammar acceptance rejection and ambiguity coverage",
+      "semantic": "type system effect isolation ownership and behavior coverage",
+      "lowering_abi": "lowering runtime bridge and ABI boundary coverage",
+      "module_roundtrip": "interface emit import and metadata preservation coverage",
+      "diagnostics": "required diagnostic and fix-it behavior coverage",
+      "examples": "reader-facing example parity and tutorial-backed feature coverage",
+      "spec_open_issues": "known-spec-gap accounting and unresolved requirement tracking",
+      "workpacks": "historical planning shards retained for traceability only"
+    },
+    "required_profile_set": [
+      "core",
+      "strict",
+      "strict-concurrency",
+      "strict-system"
+    ],
+    "manifest_inventory": {
+      "parser": "tests/conformance/parser/manifest.json",
+      "semantic": "tests/conformance/semantic/manifest.json",
+      "lowering_abi": "tests/conformance/lowering_abi/manifest.json",
+      "module_roundtrip": "tests/conformance/module_roundtrip/manifest.json",
+      "diagnostics": "tests/conformance/diagnostics/manifest.json",
+      "examples": "tests/conformance/examples/manifest.json",
+      "spec_open_issues": "tests/conformance/spec_open_issues/manifest.json"
+    }
+  },
+  "coverage_gap_model": {
+    "gap_axes": [
+      "bucket minimum shortfall",
+      "required family missing",
+      "profile-only requirement missing",
+      "executable replay nondeterminism",
+      "runtime packaging path not covered",
+      "example or tutorial path not covered"
+    ],
+    "gap_states": [
+      "covered",
+      "partial",
+      "missing",
+      "known-open"
+    ],
+    "claim_boundary": "release-facing corpus claims must be traceable to checked-in manifests coverage-map families and deterministic executable evidence"
+  }
+}
