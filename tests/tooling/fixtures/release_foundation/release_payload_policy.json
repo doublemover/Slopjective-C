@@ -1,0 +1,41 @@
+{
+  "contract_id": "objc3c.release.foundation.payload.policy.v1",
+  "surface_kind": "canonical-release-payload-selection-and-signing-boundary",
+  "canonical_package_manifest_field": "copied_files",
+  "required_manifest_fields": [
+    "contract_id",
+    "package_root",
+    "manifest_artifact",
+    "native_executable",
+    "frontend_c_api_runner",
+    "runtime_library",
+    "compile_wrapper",
+    "repo_superclean_surface",
+    "release_evidence_gate_script",
+    "command_surfaces",
+    "copied_files",
+    "copied_file_count"
+  ],
+  "required_payload_prefixes": [
+    "artifacts/bin/",
+    "artifacts/lib/",
+    "scripts/",
+    "docs/runbooks/",
+    "showcase/",
+    "stdlib/",
+    "tests/conformance/",
+    "tests/tooling/fixtures/"
+  ],
+  "signing_boundary_inputs": [
+    "release manifest digest",
+    "sbom digest",
+    "runnable package manifest digest",
+    "repo superclean surface digest",
+    "release evidence index digest"
+  ],
+  "payload_exclusions": [
+    "tmp/reports/** except published release-foundation summaries",
+    "tmp/artifacts/** except published release-foundation artifacts and repo superclean surface",
+    "unstaged repo files outside the runnable package root"
+  ]
+}
