@@ -7,55 +7,121 @@
     {
       "budget_id": "compile-throughput",
       "summary_path": "tmp/reports/compiler-throughput/benchmark-summary.json",
-      "metric_ids": [
-        "cold_compile_wall_clock_ms",
-        "cache_hit_wall_clock_ms",
-        "incremental_invalidation_wall_clock_ms",
-        "docs_generation_wall_clock_ms"
-      ],
-      "warning_ratio_ceiling": 1.05,
-      "blocking_ratio_ceiling": 1.15,
-      "minimum_sample_count": 1,
-      "required_status": "PASS"
+      "required_status": "PASS",
+      "metric_definitions": [
+        {
+          "metric_id": "cold_compile_wall_clock_ms",
+          "source_field": "avg_fixture_elapsed_ms",
+          "comparison": "max",
+          "warning_value": 250.0,
+          "blocking_value": 325.0
+        },
+        {
+          "metric_id": "cache_hit_wall_clock_ms",
+          "source_field": "cache_proof.run2.elapsed_ms",
+          "comparison": "max",
+          "warning_value": 1000.0,
+          "blocking_value": 1400.0
+        },
+        {
+          "metric_id": "incremental_invalidation_wall_clock_ms",
+          "source_field": "cache_invalidation_proof.run2.elapsed_ms",
+          "comparison": "max",
+          "warning_value": 2200.0,
+          "blocking_value": 2800.0
+        },
+        {
+          "metric_id": "docs_generation_wall_clock_ms",
+          "source_field": "workload_summary.docs_generation_elapsed_ms",
+          "comparison": "max",
+          "warning_value": 450.0,
+          "blocking_value": 700.0
+        }
+      ]
     },
     {
       "budget_id": "runtime-hot-path",
       "summary_path": "tmp/reports/runtime-performance/benchmark-summary.json",
-      "metric_ids": [
-        "startup_wall_clock_ms",
-        "dispatch_wall_clock_ms",
-        "reflection_wall_clock_ms",
-        "ownership_wall_clock_ms"
-      ],
-      "warning_ratio_ceiling": 1.05,
-      "blocking_ratio_ceiling": 1.12,
-      "minimum_sample_count": 1,
-      "required_status": "PASS"
+      "required_status": "PASS",
+      "metric_definitions": [
+        {
+          "metric_id": "startup_wall_clock_ms",
+          "source_field": "workloads[startup-installation].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "dispatch_wall_clock_ms",
+          "source_field": "workloads[dispatch-cache].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "reflection_wall_clock_ms",
+          "source_field": "workloads[reflection-query].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        },
+        {
+          "metric_id": "ownership_wall_clock_ms",
+          "source_field": "workloads[ownership-helpers].summary.median_duration_ms",
+          "comparison": "max",
+          "warning_value": 3300.0,
+          "blocking_value": 3800.0
+        }
+      ]
     },
     {
       "budget_id": "comparative-baseline",
       "summary_path": "tmp/reports/performance/comparative-baselines-summary.json",
-      "metric_ids": [
-        "objc3c_compile_wall_clock_ms",
-        "objc2_compile_wall_clock_ms",
-        "swift_compile_wall_clock_ms",
-        "cpp_compile_wall_clock_ms"
-      ],
-      "warning_ratio_ceiling": 1.1,
-      "blocking_ratio_ceiling": 1.25,
-      "minimum_sample_count": 1,
-      "required_status": "PASS"
+      "required_status": "PASS",
+      "metric_definitions": [
+        {
+          "metric_id": "compile_packet_count",
+          "source_field": "derived.compile_packet_count",
+          "comparison": "min",
+          "warning_value": 3,
+          "blocking_value": 2
+        },
+        {
+          "metric_id": "runtime_packet_count",
+          "source_field": "derived.runtime_packet_count",
+          "comparison": "min",
+          "warning_value": 2,
+          "blocking_value": 1
+        }
+      ]
     },
     {
       "budget_id": "publication-freshness",
-      "summary_path": "tmp/reports/performance/benchmark-summary.json",
-      "metric_ids": [
-        "report_freshness_hours"
-      ],
-      "warning_ratio_ceiling": 1.0,
-      "blocking_ratio_ceiling": 1.0,
-      "maximum_report_age_hours": 24,
-      "required_status": "PASS"
+      "summary_path": "tmp/reports/performance/integration-summary.json",
+      "required_status": "PASS",
+      "metric_definitions": [
+        {
+          "metric_id": "performance_report_age_hours",
+          "source_field": "derived.performance_report_age_hours",
+          "comparison": "max",
+          "warning_value": 12.0,
+          "blocking_value": 24.0
+        },
+        {
+          "metric_id": "compiler_throughput_report_age_hours",
+          "source_field": "derived.compiler_throughput_report_age_hours",
+          "comparison": "max",
+          "warning_value": 12.0,
+          "blocking_value": 24.0
+        },
+        {
+          "metric_id": "runtime_performance_report_age_hours",
+          "source_field": "derived.runtime_performance_report_age_hours",
+          "comparison": "max",
+          "warning_value": 12.0,
+          "blocking_value": 24.0
+        }
+      ]
     }
   ],
   "breach_taxonomy": [
