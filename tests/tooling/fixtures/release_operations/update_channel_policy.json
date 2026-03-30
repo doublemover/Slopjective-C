@@ -1,0 +1,92 @@
+{
+  "contract_id": "objc3c.release.operations.update.channel.policy.v1",
+  "schema_version": 1,
+  "default_channel": "stable",
+  "channel_order": [
+    "stable",
+    "candidate",
+    "preview"
+  ],
+  "channels": [
+    {
+      "channel_id": "stable",
+      "precedence": 1,
+      "support_status": "supported",
+      "warning_classes": [
+        "deprecated-channel",
+        "support-window-expired"
+      ],
+      "permitted_upgrade_targets": [
+        "stable",
+        "candidate"
+      ]
+    },
+    {
+      "channel_id": "candidate",
+      "precedence": 2,
+      "support_status": "release-drill",
+      "warning_classes": [
+        "candidate-channel",
+        "downgrade-available",
+        "runtime-fallback-required"
+      ],
+      "permitted_upgrade_targets": [
+        "stable",
+        "candidate",
+        "preview"
+      ]
+    },
+    {
+      "channel_id": "preview",
+      "precedence": 3,
+      "support_status": "best-effort",
+      "warning_classes": [
+        "preview-channel",
+        "cross-major-unsupported",
+        "data-format-fallback-required",
+        "rollback-recommended"
+      ],
+      "permitted_upgrade_targets": [
+        "preview"
+      ]
+    }
+  ],
+  "warning_classes": [
+    {
+      "warning_id": "candidate-channel",
+      "severity": "info"
+    },
+    {
+      "warning_id": "preview-channel",
+      "severity": "warn"
+    },
+    {
+      "warning_id": "downgrade-available",
+      "severity": "info"
+    },
+    {
+      "warning_id": "deprecated-channel",
+      "severity": "warn"
+    },
+    {
+      "warning_id": "support-window-expired",
+      "severity": "error"
+    },
+    {
+      "warning_id": "cross-major-unsupported",
+      "severity": "error"
+    },
+    {
+      "warning_id": "runtime-fallback-required",
+      "severity": "warn"
+    },
+    {
+      "warning_id": "data-format-fallback-required",
+      "severity": "warn"
+    },
+    {
+      "warning_id": "rollback-recommended",
+      "severity": "warn"
+    }
+  ]
+}
