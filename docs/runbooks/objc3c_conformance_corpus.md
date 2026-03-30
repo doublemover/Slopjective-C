@@ -52,6 +52,30 @@ Claim boundary:
 
 - release-facing corpus claims must resolve back to checked-in manifests, the coverage map, and deterministic executable evidence
 
+## Coverage Claim Policy
+
+Allowed claim levels:
+
+- `bucket-covered`
+- `profile-covered`
+- `release-claimable`
+
+Publishable claims require all of the following at once:
+
+- bucket minima pass
+- family traceability is present in the coverage map
+- executable determinism gates pass where the suite is executable
+
+Forbidden claim patterns:
+
+- count-only coverage claims with no family traceability
+- profile claims that ignore strict-system or strict-concurrency deltas
+- release claims backed only by prose or dashboard summaries
+
+Fail-closed rule:
+
+- any unresolved `missing`, `partial`, or `known-open` gap blocks `release-claimable` status for the affected profile or surface
+
 ## Audited Surface
 
 Runtime and lowering coverage already resolves through:

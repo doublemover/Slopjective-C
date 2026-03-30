@@ -61,6 +61,21 @@
     ],
     "claim_boundary": "release-facing corpus claims must be traceable to checked-in manifests coverage-map families and deterministic executable evidence"
   },
+  "claim_policy": {
+    "policy_id": "objc3c.conformance.coverage_claim_policy.v1",
+    "sufficiency_rule": "a coverage claim is only publishable when bucket minima family mapping and executable determinism gates all pass together",
+    "allowed_claim_levels": [
+      "bucket-covered",
+      "profile-covered",
+      "release-claimable"
+    ],
+    "forbidden_claim_patterns": [
+      "count-only coverage claims without family traceability",
+      "profile claims without strict-system or strict-concurrency deltas",
+      "release claims backed only by prose or dashboard summaries"
+    ],
+    "fail_closed_model": "any unresolved missing partial or known-open gap blocks release-claimable status for the affected profile or surface"
+  },
   "audit_surface": {
     "runtime_and_lowering_coverage": [
       "tests/conformance/lowering_abi/manifest.json",
