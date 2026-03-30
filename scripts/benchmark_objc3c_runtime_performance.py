@@ -18,10 +18,19 @@ RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 WORKLOAD_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "workload_manifest.json"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "runtime_performance" / "artifact_surface.json"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "runtime-performance" / "benchmark-summary.json"
-SUPPORTED_WORKLOAD_IDS = ("startup-installation", "dispatch-cache")
+SUPPORTED_WORKLOAD_IDS = (
+    "startup-installation",
+    "dispatch-cache",
+    "reflection-query",
+    "ownership-helpers",
+    "storage-ownership-reflection",
+)
 CASE_FUNCTION_NAMES = {
     "startup-installation": "check_installation_lifecycle_case",
     "dispatch-cache": "check_live_dispatch_fast_path_case",
+    "reflection-query": "check_realization_lookup_reflection_runtime_case",
+    "ownership-helpers": "check_arc_property_helper_case",
+    "storage-ownership-reflection": "check_storage_ownership_reflection_case",
 }
 
 
