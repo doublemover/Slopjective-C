@@ -1,0 +1,55 @@
+{
+  "contract_id": "objc3c.compiler.throughput.workload.manifest.v1",
+  "schema_version": 1,
+  "workloads": [
+    {
+      "workload_id": "compile-cold-wrapper",
+      "kind": "compile",
+      "entrypoint": "compile-objc3c",
+      "cache_mode": "cold",
+      "source": "tests/tooling/fixtures/native/hello.objc3",
+      "objective": "measure one live wrapper-driven compile without cache reuse"
+    },
+    {
+      "workload_id": "compile-cache-hit-wrapper",
+      "kind": "compile",
+      "entrypoint": "compile-objc3c",
+      "cache_mode": "warm-hit",
+      "source": "tests/tooling/fixtures/native/hello.objc3",
+      "objective": "measure truthful wrapper cache restoration with compile-output provenance preserved"
+    },
+    {
+      "workload_id": "incremental-cache-invalidation",
+      "kind": "compile",
+      "entrypoint": "compile-objc3c",
+      "cache_mode": "invalidation-aware",
+      "source": "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+      "objective": "measure cache reuse and invalidation over a source that already publishes macro-host and import surfaces"
+    },
+    {
+      "workload_id": "macro-host-cache-publication",
+      "kind": "runtime-acceptance-subsurface",
+      "entrypoint": "test-runtime-acceptance",
+      "fixture": "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+      "objective": "keep macro-host cache publication tied to the live runtime-acceptance path"
+    },
+    {
+      "workload_id": "native-docs-generation",
+      "kind": "docs",
+      "entrypoint": "build-native-docs",
+      "objective": "measure the checked-in native docs generator instead of synthetic markdown transforms"
+    },
+    {
+      "workload_id": "command-surface-generation",
+      "kind": "docs",
+      "entrypoint": "build-public-command-surface",
+      "objective": "measure the generated operator-facing command appendix"
+    },
+    {
+      "workload_id": "tier-overlap-audit",
+      "kind": "runner-validation",
+      "entrypoint": "test-nightly",
+      "objective": "keep heavyweight suite ownership explicit so duplicate recovery-negative loops can be removed"
+    }
+  ]
+}

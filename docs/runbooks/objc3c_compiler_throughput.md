@@ -44,6 +44,45 @@ The current truthful compiler-throughput workload families are:
     guarantee so the public runner does not recompile the same corpus for
     duplicate signal
 
+## Audit Inventory
+
+The current audit inventory is:
+
+- compiler/tooling throughput:
+  - `scripts/objc3c_native_compile.ps1`
+  - `artifacts/bin/objc3c-native.exe`
+  - `scripts/build_objc3c_native.ps1`
+  - `scripts/objc3c_public_workflow_runner.py`
+- incremental build and invalidation:
+  - wrapper `--use-cache`
+  - `tmp/artifacts/objc3c-native/cache/`
+  - incremental invalidation counters published through the live manifest and
+    lowering/sema replay-key surfaces
+- macro-host compile-coupled artifacts:
+  - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
+  - `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`
+  - `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
+  - `module.metaprogramming-macro-host-cache.json`
+- docs-generation paths:
+  - `scripts/build_objc3c_native_docs.py`
+  - `scripts/render_objc3c_public_command_surface.py`
+  - `scripts/build_site_index.py`
+
+## Workload Manifest
+
+The authoritative workload inventory is checked in at
+`tests/tooling/fixtures/compiler_throughput/workload_manifest.json`.
+
+It currently divides the live surface into:
+
+- `compile-cold-wrapper`
+- `compile-cache-hit-wrapper`
+- `incremental-cache-invalidation`
+- `macro-host-cache-publication`
+- `native-docs-generation`
+- `command-surface-generation`
+- `tier-overlap-audit`
+
 ## Exact Live Implementation Paths
 
 - compile/build wrappers:
@@ -64,6 +103,7 @@ The current truthful compiler-throughput workload families are:
   - `docs/runbooks/objc3c_public_command_surface.md`
 - checked-in throughput metadata:
   - `tests/tooling/fixtures/compiler_throughput/source_surface.json`
+  - `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
 
 ## Explicit Non-Goals
 
