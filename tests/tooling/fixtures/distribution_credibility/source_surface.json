@@ -9,6 +9,7 @@
   "release_drill_policy": "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
   "artifact_surface": "tests/tooling/fixtures/distribution_credibility/artifact_surface.json",
   "schema_surface": "tests/tooling/fixtures/distribution_credibility/schema_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/distribution_credibility/workflow_surface.json",
   "checked_in_sources": [
     "README.md",
     "docs/tutorials/getting_started.md",
@@ -31,7 +32,8 @@
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
     "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
     "tests/tooling/fixtures/distribution_credibility/artifact_surface.json",
-    "tests/tooling/fixtures/distribution_credibility/schema_surface.json"
+    "tests/tooling/fixtures/distribution_credibility/schema_surface.json",
+    "tests/tooling/fixtures/distribution_credibility/workflow_surface.json"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/distribution-credibility",

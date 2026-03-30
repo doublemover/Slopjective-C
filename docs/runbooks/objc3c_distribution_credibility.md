@@ -110,6 +110,21 @@ The drill model is intentionally narrow:
 No drill may depend on manual screenshots, hand-edited operator notes, or a second
 package assembly path.
 
+## Workflow Surface
+
+The live workflow for this milestone must expose:
+
+- a source-surface check
+- a schema-surface check
+- a dashboard build command
+- a trust-report publication command
+- an integrated distribution-credibility validation command
+- an end-to-end distribution-credibility validation command
+
+These entrypoints must stay on the shared public workflow runner and reuse the
+existing release-foundation, packaging-channel, release-operations, and release-evidence
+surfaces instead of inventing a milestone-only drill lane.
+
 ## Non-Goals
 
 - no hosted status page

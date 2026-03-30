@@ -20,6 +20,7 @@ EXPECTED_CONTRACT_IDS = {
     "release_drill_policy": "objc3c.distribution.credibility.release.drill.policy.v1",
     "artifact_surface": "objc3c.distribution.credibility.artifact.surface.v1",
     "schema_surface": "objc3c.distribution.credibility.schema.surface.v1",
+    "workflow_surface": "objc3c.distribution.credibility.workflow.surface.v1",
 }
 
 
