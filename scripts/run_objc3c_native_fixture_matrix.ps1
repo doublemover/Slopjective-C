@@ -13,8 +13,7 @@ if ($PSVersionTable.PSVersion.Major -ge 7) {
 }
 
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$recoveryRoot = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery"
-$positiveDir = Join-Path $recoveryRoot "positive"
+$fixtureMatrixRoot = Join-Path $repoRoot "tests/tooling/fixtures/native/recovery/dispatch"
 $runId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
 $matrixRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/fixture-matrix"
 $runDir = Join-Path $matrixRoot $runId
@@ -23,9 +22,10 @@ $hadFatalError = $false
 $fatalErrorMessage = ""
 $selectedPositiveCount = 0
 
-# Suite ownership: this script owns the broad positive recovery artifact-sanity
+# Suite ownership: this script owns the broad positive dispatch/artifact-sanity
 # sweep only. Recovery pass/fail and negative diagnostics ownership stays on the
-# dedicated recovery contract suite.
+# dedicated recovery contract suite, so this matrix no longer recompiles the
+# baseline recovery-positive corpus.
 
 function Get-RepoRelativePath {
   param(
@@ -166,7 +166,7 @@ function Select-Fixtures {
   }
 
   if ($selected.Count -eq 0) {
-    throw "matrix FAIL: no positive recovery fixtures matched the requested selection"
+    throw "matrix FAIL: no fixture-matrix positive fixtures matched the requested selection"
   }
 
   return $selected
@@ -212,7 +212,7 @@ try {
     throw "matrix FAIL: native compiler executable missing at $exe"
   }
 
-  $positiveFixtures = Get-Fixtures -Directory $positiveDir -FixtureKind "positive recovery"
+  $positiveFixtures = Get-Fixtures -Directory $fixtureMatrixRoot -FixtureKind "fixture-matrix positive"
   $positiveFixtures = Select-Fixtures `
     -Fixtures $positiveFixtures `
     -FixtureListPath $FixtureList `

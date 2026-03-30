@@ -121,7 +121,7 @@ One authoritative owner per guarantee:
   - `test-runtime-acceptance`
 - negative expectation header enforcement:
   - `test-negative-expectations`
-- broad positive recovery artifact sanity:
+- broad positive dispatch/artifact sanity:
   - `test-fixture-matrix`
 
 ## Optimization Correctness Policy

@@ -44,7 +44,7 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
   - `test-execution-replay`: replay and native-output truth
   - `test-runtime-acceptance`: runtime acceptance and ABI/accessor proof
   - `test-negative-expectations`: negative expectation header and token enforcement
-  - `test-fixture-matrix`: broad positive recovery artifact sanity
+  - `test-fixture-matrix`: broad positive dispatch and artifact sanity
 - `test:objc3c:runtime-architecture`: full public workflow plus runtime architecture proof-packet alignment
 - dependency-boundary enforcement
 - compact task-hygiene enforcement

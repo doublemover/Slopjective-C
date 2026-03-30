@@ -50,6 +50,6 @@
     "replay_and_native_output_truth": "test-execution-replay",
     "runtime_acceptance_and_abi_accessor_proof": "test-runtime-acceptance",
     "negative_expectation_header_enforcement": "test-negative-expectations",
-    "broad_positive_recovery_artifact_sanity": "test-fixture-matrix"
+    "broad_positive_dispatch_artifact_sanity": "test-fixture-matrix"
   }
 }
