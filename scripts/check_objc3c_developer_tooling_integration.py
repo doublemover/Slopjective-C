@@ -91,6 +91,14 @@ def main() -> int:
     expect(capability_explorer.get("clang", {}).get("found") is True, "expected capability explorer clang probe to succeed", failures)
     expect(capability_explorer.get("llc", {}).get("found") is True, "expected capability explorer llc probe to succeed", failures)
     expect(capability_explorer.get("sema_type_system_parity", {}).get("parity_ready") is True, "expected capability explorer parity_ready=true", failures)
+    expect(capability_explorer.get("capability_demo_compatibility", {}).get("ok") is True, "expected capability explorer capability_demo_compatibility ok=true", failures)
+    expect(capability_explorer.get("capability_demo_compatibility", {}).get("drift_checks", {}).get("actor_claims_are_qualified") is True, "expected capability explorer to keep actor claims qualified", failures)
+    expect(
+        [entry.get("id") for entry in capability_explorer.get("capability_demo_compatibility", {}).get("examples", [])]
+        == ["auroraBoard", "signalMesh", "patchKit"],
+        "expected capability explorer example ids to match the capability demo portfolio",
+        failures,
+    )
     expect(float(capability_explorer.get("clang", {}).get("version_duration_ms", 0.0)) > 0.0, "expected capability explorer clang timing to be recorded", failures)
     expect(float(capability_explorer.get("llc", {}).get("version_duration_ms", 0.0)) > 0.0, "expected capability explorer llc timing to be recorded", failures)
     expect(runtime_inspector_benchmark.get("contract_id") == "objc3c.runtime.inspector.benchmark.v1", "expected runtime inspector benchmark contract id", failures)

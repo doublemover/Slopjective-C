@@ -129,6 +129,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - live capability-explorer probe contract:
   - `scripts/probe_objc3c_llvm_capabilities.py`
   - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
+  - `capability_demo_compatibility`
+  - `stdlib/program_surface.json`
+  - `showcase/portfolio.json`
 - downstream work must treat those runtime-emitted facts as authoritative over
   ad hoc report text
 

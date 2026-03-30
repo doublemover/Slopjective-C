@@ -126,6 +126,8 @@ def main() -> int:
     expect(capability_explorer.get("mode") == "objc3c-llvm-capabilities-v2", "unexpected capability explorer mode", failures)
     expect(capability_explorer.get("ok") is True, "capability explorer did not report ok=true", failures)
     expect(capability_explorer.get("sema_type_system_parity", {}).get("parity_ready") is True, "capability explorer parity_ready drifted", failures)
+    expect(capability_explorer.get("capability_demo_compatibility", {}).get("ok") is True, "capability explorer capability_demo_compatibility drifted", failures)
+    expect(capability_explorer.get("capability_demo_compatibility", {}).get("drift_checks", {}).get("story_capabilities_match") is True, "capability explorer story capability drift check failed", failures)
     expect(float(capability_explorer.get("clang", {}).get("version_duration_ms", 0.0)) > 0.0, "clang probe timing was not recorded", failures)
     expect(float(capability_explorer.get("llc", {}).get("version_duration_ms", 0.0)) > 0.0, "llc probe timing was not recorded", failures)
 
