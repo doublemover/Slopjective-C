@@ -1,0 +1,22 @@
+{
+  "contract_id": "objc3c.packaging.channels.installer-policy.v1",
+  "install_scope": "local-root-only",
+  "platform_scope": [
+    "windows-x64"
+  ],
+  "requires_machine_generated_receipt": true,
+  "requires_deterministic_rollback": true,
+  "requires_offline_bootstrap_without_network": true,
+  "requires_payload_digest_parity_with_runnable_package": true,
+  "installer_runtime_requirements": [
+    "pwsh",
+    "filesystem access",
+    "machine-generated install receipt"
+  ],
+  "forbidden_claims": [
+    "system-wide install",
+    "package-manager publication",
+    "network bootstrap",
+    "signed or notarized installer publication"
+  ]
+}

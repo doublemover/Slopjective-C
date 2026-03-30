@@ -62,3 +62,24 @@ The trusted packaging-channel boundary is:
 
 No packaging-channel claim may depend on manual zip assembly, a hand-edited
 installer manifest, or an external registry snapshot.
+
+## Installer Behavior Policy
+
+Installer and bootstrap flows in this milestone must follow these rules:
+
+- installation is local-root only and must not claim a system-wide install
+- install, bootstrap, and rollback logic must be machine-generated from the
+  runnable package manifest and release-foundation artifacts
+- installer receipts must be written as machine-owned JSON
+- rollback must be explicit and deterministic over the install receipt
+- offline bootstrap must not fetch tools, packages, or metadata from the
+  network
+- archive and installer channels must preserve the same payload digest set as
+  the canonical runnable package
+
+Compatibility rules:
+
+- only the checked-in `windows-x64` channel matrix is supported
+- installer scripts may assume `pwsh` and local filesystem access
+- installer validation must prove install, bootstrap, and rollback under a
+  temp-owned root
