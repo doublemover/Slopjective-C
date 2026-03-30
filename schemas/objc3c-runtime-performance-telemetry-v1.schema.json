@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+  "title": "objc3c Runtime Performance Telemetry v1",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_version",
+    "benchmark_kind",
+    "workload_id",
+    "acceptance_case_id",
+    "duration_ms",
+    "counter_snapshot",
+    "summary",
+    "ok"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "benchmark_kind": {
+      "type": "string"
+    },
+    "workload_id": {
+      "type": "string"
+    },
+    "acceptance_case_id": {
+      "type": "string"
+    },
+    "duration_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "counter_snapshot": {
+      "type": "object"
+    },
+    "summary": {
+      "type": "object"
+    },
+    "ok": {
+      "type": "boolean"
+    },
+    "failure_messages": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

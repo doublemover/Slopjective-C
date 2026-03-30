@@ -1,0 +1,33 @@
+{
+  "contract_id": "objc3c.runtime.performance.artifact.surface.v1",
+  "schema_version": 1,
+  "surface_kind": "runtime-performance-counter-and-regression-artifacts",
+  "telemetry_schema": "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+  "report_root": "tmp/reports/runtime-performance",
+  "artifact_root": "tmp/artifacts/runtime-performance",
+  "summary_reports": [
+    "tmp/reports/runtime-performance/benchmark-summary.json",
+    "tmp/reports/runtime-performance/integration-summary.json",
+    "tmp/reports/runtime-performance/runnable-end-to-end-summary.json"
+  ],
+  "packet_roots": [
+    "tmp/reports/runtime-performance/startup-installation",
+    "tmp/reports/runtime-performance/dispatch-cache",
+    "tmp/reports/runtime-performance/reflection-query",
+    "tmp/reports/runtime-performance/ownership-helpers"
+  ],
+  "required_packet_fields": [
+    "contract_id",
+    "benchmark_kind",
+    "workload_id",
+    "acceptance_case_id",
+    "duration_ms",
+    "counter_snapshot",
+    "summary"
+  ],
+  "exact_live_paths_for_downstream_work": [
+    "tests/tooling/fixtures/runtime_performance/artifact_surface.json",
+    "schemas/objc3c-runtime-performance-telemetry-v1.schema.json",
+    "tmp/reports/runtime-performance"
+  ]
+}

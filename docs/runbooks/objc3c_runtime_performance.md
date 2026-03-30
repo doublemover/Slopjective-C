@@ -115,6 +115,8 @@ Disallowed optimization moves:
 - workload manifest and checked-in boundary metadata:
   - `tests/tooling/fixtures/runtime_performance/source_surface.json`
   - `tests/tooling/fixtures/runtime_performance/workload_manifest.json`
+  - `tests/tooling/fixtures/runtime_performance/artifact_surface.json`
+  - `tests/tooling/fixtures/runtime_performance/optimization_policy.json`
   - `tests/tooling/fixtures/runtime_performance/README.md`
 
 ## Exact Live Artifact And Output Paths
