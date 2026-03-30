@@ -177,6 +177,8 @@ def main() -> int:
         return fail("semantic policy workspace_contract drifted")
     if semantic_policy.get("core_architecture") != "stdlib/core_architecture.json":
         return fail("semantic policy core_architecture drifted")
+    if semantic_policy.get("advanced_architecture") != "stdlib/advanced_architecture.json":
+        return fail("semantic policy advanced_architecture drifted")
     if lowering_import_surface.get("contract_id") != "objc3c.stdlib.lowering_import_surface.v1":
         return fail("lowering/import surface contract_id drifted")
     if lowering_import_surface.get("schema_version") != 1:
@@ -279,6 +281,24 @@ def main() -> int:
                 )
     if covered_modules != inventory_module_names:
         return fail("stability policy module coverage drifted from module inventory")
+
+    family_ownership = stability_policy.get("family_ownership")
+    if not isinstance(family_ownership, dict) or not family_ownership:
+        return fail("stability policy missing family_ownership")
+    advanced_api_families = advanced_architecture.get("api_families")
+    if family_ownership != advanced_api_families:
+        return fail("stability policy family_ownership drifted from advanced architecture api_families")
+
+    profile_gates = stability_policy.get("profile_gates")
+    if not isinstance(profile_gates, dict) or not profile_gates:
+        return fail("stability policy missing profile_gates")
+    for entry in inventory_rows:
+        if profile_gates.get(entry["module"]) != entry["required_profile"]:
+            return fail(f"stability policy profile_gates drifted for {entry['module']}")
+
+    breaking_change_rules = stability_policy.get("breaking_change_rules")
+    if not isinstance(breaking_change_rules, list) or len(breaking_change_rules) < 3:
+        return fail("stability policy missing breaking_change_rules")
 
     module_imports = package_surface.get("module_imports")
     if not isinstance(module_imports, list) or not module_imports:
@@ -397,7 +417,6 @@ def main() -> int:
         if manifest_payload.get("exports") != required_exports:
             return fail(f"module manifest exports drifted for {module_name}")
 
-    advanced_api_families = advanced_architecture.get("api_families")
     if not isinstance(advanced_api_families, dict) or not advanced_api_families:
         return fail("advanced architecture missing api_families")
     for module_name, families in advanced_api_families.items():
@@ -453,6 +472,58 @@ def main() -> int:
         "returns 0 when text_units is at least component_count, otherwise 30603"
     ):
         return fail("semantic policy text_compatibility_diagnostic drifted")
+    if keypath_semantics.get("typed_keypath_metadata") != (
+        "remains count-and-component preserving until runtime-backed keypath metadata lands"
+    ):
+        return fail("semantic policy typed_keypath_metadata drifted")
+    if keypath_semantics.get("reflection_interop") != (
+        "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries"
+    ):
+        return fail("semantic policy reflection_interop drifted")
+    if keypath_semantics.get("runtime_composition_adapter") != (
+        "must not invent ownership or allocation semantics beyond the checked-in keypath component and compatibility helpers"
+    ):
+        return fail("semantic policy runtime_composition_adapter drifted")
+
+    concurrency_semantics = semantic_policy.get("concurrency_semantics")
+    if not isinstance(concurrency_semantics, dict):
+        return fail("semantic policy missing concurrency_semantics")
+    if concurrency_semantics.get("spawn_token") != (
+        "returns seed plus 1 as the current deterministic child-spawn token placeholder"
+    ):
+        return fail("semantic policy spawn_token drifted")
+    if concurrency_semantics.get("cancellation_checkpoint") != (
+        "returns 1 when the provided flag is nonzero and 0 otherwise"
+    ):
+        return fail("semantic policy cancellation_checkpoint drifted")
+    if concurrency_semantics.get("family_growth_rule") != (
+        "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation and executor-hop helpers may grow additively inside objc3.concurrency"
+    ):
+        return fail("semantic policy concurrency family_growth_rule drifted")
+    if concurrency_semantics.get("layering_rule") != (
+        "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
+    ):
+        return fail("semantic policy concurrency layering_rule drifted")
+
+    system_semantics = semantic_policy.get("system_semantics")
+    if not isinstance(system_semantics, dict):
+        return fail("semantic policy missing system_semantics")
+    if system_semantics.get("resource_token") != (
+        "returns seed plus 4 as the current deterministic strict-system resource token placeholder"
+    ):
+        return fail("semantic policy system resource_token drifted")
+    if system_semantics.get("profile_gate") != (
+        "objc3.system helpers remain reserved for Strict System claims and must not become unconditional Core imports"
+    ):
+        return fail("semantic policy system profile_gate drifted")
+    if system_semantics.get("runtime_composition_hook") != (
+        "strict-system runtime-composition helpers must be explicit profile-gated entrypoints rather than implicit side effects in core helpers"
+    ):
+        return fail("semantic policy system runtime_composition_hook drifted")
+    if system_semantics.get("layering_rule") != (
+        "objc3.system may depend on objc3.core objc3.errors objc3.concurrency and objc3.keypath but those modules may not depend on objc3.system"
+    ):
+        return fail("semantic policy system layering_rule drifted")
 
     artifact_filenames = lowering_import_surface.get("artifact_filenames")
     if artifact_filenames != {

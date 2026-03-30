@@ -3,6 +3,7 @@
   "schema_version": 1,
   "workspace_contract": "stdlib/workspace.json",
   "core_architecture": "stdlib/core_architecture.json",
+  "advanced_architecture": "stdlib/advanced_architecture.json",
   "module_semver": {
     "objc3.core": {
       "major": 1,
@@ -34,7 +35,9 @@
     "required export names remain stable within stdlib major version 1",
     "result tag numeric identity remains stable within stdlib major version 1",
     "text/data helper meaning remains count-and-presence preserving within stdlib major version 1",
-    "helpers may grow additively, but exported families must not move between modules without updating the checked-in contracts"
+    "helpers may grow additively, but exported families must not move between modules without updating the checked-in contracts",
+    "advanced helper family ownership remains tied to objc3.concurrency objc3.keypath and objc3.system within stdlib major version 1",
+    "strict-system helper exposure remains profile-gated and must not be widened into core claims without a checked-in contract update"
   ],
   "core_semantics": {
     "option_presence_encoding": "0-means-none-nonzero-means-some",
@@ -66,12 +69,29 @@
     "apply_index": "returns root plus offset",
     "component_count": "returns root plus offset until runtime-backed keypath storage lands",
     "text_compatibility_score": "returns component_count plus text_units",
-    "text_compatibility_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603"
+    "text_compatibility_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
+    "typed_keypath_metadata": "remains count-and-component preserving until runtime-backed keypath metadata lands",
+    "reflection_interop": "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries",
+    "runtime_composition_adapter": "must not invent ownership or allocation semantics beyond the checked-in keypath component and compatibility helpers"
+  },
+  "concurrency_semantics": {
+    "spawn_token": "returns seed plus 1 as the current deterministic child-spawn token placeholder",
+    "cancellation_checkpoint": "returns 1 when the provided flag is nonzero and 0 otherwise",
+    "family_growth_rule": "structured-child-spawn detached-spawn join-and-wait task-group-scope cancellation-observation and executor-hop helpers may grow additively inside objc3.concurrency",
+    "layering_rule": "objc3.concurrency may depend only on objc3.core and objc3.errors within stdlib major version 1"
+  },
+  "system_semantics": {
+    "resource_token": "returns seed plus 4 as the current deterministic strict-system resource token placeholder",
+    "profile_gate": "objc3.system helpers remain reserved for Strict System claims and must not become unconditional Core imports",
+    "runtime_composition_hook": "strict-system runtime-composition helpers must be explicit profile-gated entrypoints rather than implicit side effects in core helpers",
+    "layering_rule": "objc3.system may depend on objc3.core objc3.errors objc3.concurrency and objc3.keypath but those modules may not depend on objc3.system"
   },
   "non_goals": [
     "allocator or ownership ABI claims",
     "runtime-backed string or bytes storage in M306-B001",
     "generic collection ABI promises",
-    "moving error bridges into objc3.core"
+    "moving error bridges into objc3.core",
+    "claiming runtime-backed executor or reflection semantics before the checked-in helper exports exist",
+    "widening strict-system helpers into always-on core imports"
   ]
 }

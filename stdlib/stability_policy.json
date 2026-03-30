@@ -6,7 +6,44 @@
     "canonical module names remain stable within major version 1",
     "capability identifiers remain stable within major version 1",
     "new exported APIs may be added without renaming existing modules",
-    "layering violations are rejected at the checked-in workspace boundary"
+    "layering violations are rejected at the checked-in workspace boundary",
+    "advanced helper families remain owned by their current canonical modules within major version 1",
+    "strict-system helper exposure remains profile-gated and cannot be widened into core claims without an explicit contract update"
+  ],
+  "family_ownership": {
+    "objc3.concurrency": [
+      "structured-child-spawn",
+      "detached-spawn",
+      "join-and-wait",
+      "task-group-scope",
+      "cancellation-observation",
+      "executor-hop"
+    ],
+    "objc3.keypath": [
+      "typed-keypath-application",
+      "typed-keypath-text-compatibility",
+      "typed-keypath-metadata",
+      "reflection-interop",
+      "runtime-composition-adapter"
+    ],
+    "objc3.system": [
+      "resource-cleanup",
+      "borrowed-lifetime-hook",
+      "strict-system-diagnostics",
+      "runtime-composition-hook"
+    ]
+  },
+  "profile_gates": {
+    "objc3.core": "Core and above",
+    "objc3.errors": "Core and above",
+    "objc3.concurrency": "Core and above",
+    "objc3.keypath": "Core and above",
+    "objc3.system": "Strict System"
+  },
+  "breaking_change_rules": [
+    "moving an api family between canonical modules is a major-version change",
+    "changing a required profile gate for an existing canonical module is a major-version change",
+    "removing a required export from the checked-in architecture contracts is a major-version change"
   ],
   "layers": [
     {

@@ -46,7 +46,7 @@ This root is not a place for:
 - `stdlib/advanced_architecture.json` defines the `M307` ownership split for
   concurrency, reflection, interop, and runtime-composition helper families
 - `stdlib/semantic_policy.json` defines the observable compatibility and helper
-  semantics for the current core stdlib surface
+  semantics for the current core and advanced stdlib surfaces
 - `stdlib/lowering_import_surface.json` defines the real smoke-compile artifact
   names, import identity fields, and machine-owned lowering roots
 - the checked-in module roots will live under `stdlib/modules/`

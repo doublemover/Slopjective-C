@@ -112,6 +112,20 @@ the checked-in architecture contract.
   `objc3.concurrency`, and `objc3.keypath`
 - `M307` does not move `M306` core helpers out of their existing modules
 
+## Semantic guarantees
+
+- `objc3_concurrency_spawn_token` returns `seed + 1` as the current
+  deterministic child-spawn token placeholder
+- `objc3_concurrency_cancellation_checkpoint` returns `1` only when the
+  provided cancellation flag is nonzero
+- key-path helpers preserve caller-visible component counts and compatibility
+  diagnostics instead of inventing reflection-owned storage
+- `objc3.system` remains profile-gated to Strict System claims and its helper
+  hooks do not become unconditional core imports
+- moving advanced helper families between canonical modules is a breaking change
+- changing the required profile gate for an existing advanced helper module is a
+  breaking change
+
 ## Explicit non-goals
 
 This milestone does not justify:
