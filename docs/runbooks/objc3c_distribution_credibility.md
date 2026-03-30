@@ -82,6 +82,24 @@ Incidents for this milestone are limited to:
 
 Do not publish a trust-positive summary when the state is `blocked`.
 
+## Release Drill And Adoption Smoke
+
+This milestone uses the existing package and metadata surfaces for release drills:
+
+- package-channel install and rollback smoke from `M298`
+- update-manifest and compatibility publication from `M299`
+- release-evidence index generation from the existing evidence gate
+
+The drill model is intentionally narrow:
+
+- stage the live packaged channels under a temp-owned root
+- verify install, metadata publication, and rollback coherence
+- summarize the result as a machine-owned trust signal set
+- require a reproducibility audit over the released payload metadata before claiming `ready`
+
+No drill may depend on manual screenshots, hand-edited operator notes, or a second
+package assembly path.
+
 ## Non-Goals
 
 - no hosted status page

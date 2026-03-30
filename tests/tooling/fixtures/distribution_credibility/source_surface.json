@@ -6,6 +6,7 @@
   "trust_signal_architecture": "tests/tooling/fixtures/distribution_credibility/trust_signal_architecture.json",
   "install_release_doc_surface": "tests/tooling/fixtures/distribution_credibility/install_release_doc_surface.json",
   "operator_release_policy": "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
+  "release_drill_policy": "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
   "checked_in_sources": [
     "README.md",
     "docs/tutorials/getting_started.md",
@@ -19,7 +20,8 @@
     "scripts/build_objc3c_update_manifest.py",
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_release_evidence.py",
-    "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json"
+    "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
+    "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/distribution-credibility",

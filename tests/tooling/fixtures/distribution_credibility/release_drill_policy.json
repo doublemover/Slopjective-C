@@ -1,0 +1,32 @@
+{
+  "contract_id": "objc3c.distribution.credibility.release.drill.policy.v1",
+  "schema_version": 1,
+  "required_upstream_reports": [
+    "tmp/reports/package-channels/end-to-end-summary.json",
+    "tmp/reports/release-operations/end-to-end-summary.json",
+    "tmp/reports/release_evidence/evidence-index.json"
+  ],
+  "required_drill_steps": [
+    "stage-package-channels",
+    "verify-install-smoke",
+    "verify-rollback-guidance",
+    "verify-update-manifest-coherence",
+    "verify-release-evidence-index"
+  ],
+  "reproducibility_audit": {
+    "release_manifest": "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "required_fields": [
+      "release_id",
+      "release_version",
+      "release_evidence_index_sha256",
+      "attestation_path",
+      "sbom_path"
+    ],
+    "claim_boundary": "a ready distribution claim requires the published release payload lineage to remain attached to the machine-owned release manifest"
+  },
+  "explicit_non_goals": [
+    "manual smoke screenshots",
+    "operator-authored trust badges",
+    "alternate package build path"
+  ]
+}
