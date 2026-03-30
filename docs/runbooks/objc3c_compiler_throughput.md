@@ -170,6 +170,8 @@ Disallowed optimization moves:
   - `scripts/objc3c_native_compile.ps1`
   - `scripts/build_objc3c_native.ps1`
   - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts/check_objc3c_native_perf_budget.ps1`
+  - `scripts/check_objc3c_compiler_throughput_integration.py`
 - heavyweight validation suites:
   - `scripts/check_objc3c_native_execution_smoke.ps1`
   - `scripts/check_objc3c_native_recovery_contract.ps1`
