@@ -25,6 +25,7 @@ Authoritative inputs:
 - `stdlib/advanced_architecture.json`
 - `stdlib/semantic_policy.json`
 - `stdlib/lowering_import_surface.json`
+- `stdlib/advanced_helper_package_surface.json`
 - `docs/runbooks/objc3c_stdlib_core.md`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `scripts/objc3c_public_workflow_runner.py`
@@ -75,6 +76,7 @@ and identifier-safe implementation module declarations.
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 - `scripts/objc3c_public_workflow_runner.py`
 - `stdlib/advanced_architecture.json`
+- `stdlib/advanced_helper_package_surface.json`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 
 ## Exact Live Artifact And Output Paths

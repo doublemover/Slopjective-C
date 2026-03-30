@@ -18,6 +18,7 @@ CORE_ARCHITECTURE_PATH = ROOT / "stdlib" / "core_architecture.json"
 ADVANCED_ARCHITECTURE_PATH = ROOT / "stdlib" / "advanced_architecture.json"
 SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
 LOWERING_IMPORT_SURFACE_PATH = ROOT / "stdlib" / "lowering_import_surface.json"
+ADVANCED_HELPER_PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "advanced_helper_package_surface.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
@@ -76,6 +77,10 @@ def main() -> int:
         return fail(f"missing semantic policy contract: {repo_rel(SEMANTIC_POLICY_PATH)}")
     if not LOWERING_IMPORT_SURFACE_PATH.is_file():
         return fail(f"missing lowering/import surface contract: {repo_rel(LOWERING_IMPORT_SURFACE_PATH)}")
+    if not ADVANCED_HELPER_PACKAGE_SURFACE_PATH.is_file():
+        return fail(
+            f"missing advanced helper package surface contract: {repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH)}"
+        )
     if not SPEC_CONTRACT_PATH.is_file():
         return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
 
@@ -87,6 +92,7 @@ def main() -> int:
     advanced_architecture = load_json(ADVANCED_ARCHITECTURE_PATH)
     semantic_policy = load_json(SEMANTIC_POLICY_PATH)
     lowering_import_surface = load_json(LOWERING_IMPORT_SURFACE_PATH)
+    advanced_helper_package_surface = load_json(ADVANCED_HELPER_PACKAGE_SURFACE_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
@@ -107,6 +113,8 @@ def main() -> int:
         return fail("workspace semantic_policy path drifted")
     if workspace.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
         return fail("workspace lowering_import_surface path drifted")
+    if workspace.get("advanced_helper_package_surface") != "stdlib/advanced_helper_package_surface.json":
+        return fail("workspace advanced_helper_package_surface path drifted")
     if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
         return fail("workspace core_runbook path drifted")
     if workspace.get("advanced_runbook") != "docs/runbooks/objc3c_stdlib_advanced.md":
@@ -139,6 +147,8 @@ def main() -> int:
         return fail("package surface semantic_policy drifted")
     if package_surface.get("lowering_import_surface") != "stdlib/lowering_import_surface.json":
         return fail("package surface lowering_import_surface drifted")
+    if package_surface.get("advanced_helper_package_surface") != "stdlib/advanced_helper_package_surface.json":
+        return fail("package surface advanced_helper_package_surface drifted")
     if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
         return fail("package surface machine_output_root drifted")
     if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
@@ -550,6 +560,55 @@ def main() -> int:
     ]:
         return fail("lowering/import surface public_actions drifted")
 
+    if advanced_helper_package_surface.get("contract_id") != "objc3c.stdlib.advanced_helper_package_surface.v1":
+        return fail("advanced helper package surface contract_id drifted")
+    if advanced_helper_package_surface.get("schema_version") != 1:
+        return fail("advanced helper package surface schema_version drifted")
+    if advanced_helper_package_surface.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("advanced helper package surface workspace_contract drifted")
+    if advanced_helper_package_surface.get("package_surface") != "stdlib/package_surface.json":
+        return fail("advanced helper package surface package_surface drifted")
+    if advanced_helper_package_surface.get("advanced_architecture") != "stdlib/advanced_architecture.json":
+        return fail("advanced helper package surface advanced_architecture drifted")
+    if advanced_helper_package_surface.get("module_inventory") != "stdlib/module_inventory.json":
+        return fail("advanced helper package surface module_inventory drifted")
+    if advanced_helper_package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
+        return fail("advanced helper package surface machine_output_root drifted")
+    if advanced_helper_package_surface.get("machine_report_root") != "tmp/reports/stdlib":
+        return fail("advanced helper package surface machine_report_root drifted")
+    if advanced_helper_package_surface.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
+        return fail("advanced helper package surface package_stage_root drifted")
+    if advanced_helper_package_surface.get("staged_manifest_fields") != [
+        "stdlib_advanced_architecture",
+        "stdlib_advanced_helper_package_surface",
+        "advanced_helper_modules",
+        "advanced_helper_command_surfaces",
+        "advanced_helper_profile_gates",
+    ]:
+        return fail("advanced helper package surface staged_manifest_fields drifted")
+    if advanced_helper_package_surface.get("public_actions") != [
+        "check-stdlib-surface",
+        "materialize-stdlib-workspace",
+        "validate-stdlib-foundation",
+        "validate-runnable-stdlib-foundation",
+        "package-runnable-toolchain",
+    ]:
+        return fail("advanced helper package surface public_actions drifted")
+
+    advanced_helper_modules = advanced_helper_package_surface.get("advanced_helper_modules")
+    if not isinstance(advanced_helper_modules, list) or len(advanced_helper_modules) != 3:
+        return fail("advanced helper package surface missing advanced_helper_modules")
+    for entry in advanced_helper_modules:
+        if not isinstance(entry, dict):
+            return fail("advanced helper package surface published a malformed module entry")
+        canonical_module = entry.get("canonical_module")
+        implementation_module = entry.get("implementation_module")
+        manifest = entry.get("manifest")
+        source = entry.get("source")
+        smoke_source = entry.get("smoke_source")
+        if not all(isinstance(value, str) and value for value in (canonical_module, implementation_module, manifest, source, smoke_source)):
+            return fail("advanced helper package surface published a malformed module entry")
+
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(
         json.dumps(
@@ -565,6 +624,7 @@ def main() -> int:
                 "advanced_architecture": repo_rel(ADVANCED_ARCHITECTURE_PATH),
                 "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
                 "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
+                "advanced_helper_package_surface": repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
                 "canonical_modules": inventory_rows,
                 "layers": layers,
@@ -575,6 +635,7 @@ def main() -> int:
                 "advanced_required_exports": advanced_required_exports,
                 "module_semver": semantic_module_semver,
                 "artifact_filenames": artifact_filenames,
+                "advanced_helper_modules": advanced_helper_modules,
             },
             indent=2,
         )

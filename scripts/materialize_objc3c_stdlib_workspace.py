@@ -65,6 +65,7 @@ def main() -> int:
         Path("stdlib/advanced_architecture.json"),
         Path("stdlib/semantic_policy.json"),
         Path("stdlib/lowering_import_surface.json"),
+        Path("stdlib/advanced_helper_package_surface.json"),
         Path("docs/runbooks/objc3c_stdlib_foundation.md"),
         Path("docs/runbooks/objc3c_stdlib_core.md"),
         Path("docs/runbooks/objc3c_stdlib_advanced.md"),

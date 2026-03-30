@@ -13,6 +13,7 @@ advanced helper modules that sit above the `M306` core surface.
 Live `M307` work must stay on these paths:
 
 - `stdlib/advanced_architecture.json`
+- `stdlib/advanced_helper_package_surface.json`
 - `stdlib/modules/objc3.concurrency/`
 - `stdlib/modules/objc3.keypath/`
 - `stdlib/modules/objc3.system/`
@@ -29,6 +30,7 @@ Exact live implementation paths for downstream work:
 - `stdlib/modules/objc3.keypath/module.json`
 - `stdlib/modules/objc3.system/module.json`
 - `stdlib/advanced_architecture.json`
+- `stdlib/advanced_helper_package_surface.json`
 - `scripts/check_stdlib_surface.py`
 - `scripts/materialize_objc3c_stdlib_workspace.py`
 - `scripts/run_objc3c_stdlib_workspace_smoke.py`

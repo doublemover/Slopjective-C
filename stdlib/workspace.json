@@ -16,6 +16,7 @@
   "advanced_architecture": "stdlib/advanced_architecture.json",
   "semantic_policy": "stdlib/semantic_policy.json",
   "lowering_import_surface": "stdlib/lowering_import_surface.json",
+  "advanced_helper_package_surface": "stdlib/advanced_helper_package_surface.json",
   "core_runbook": "docs/runbooks/objc3c_stdlib_core.md",
   "advanced_runbook": "docs/runbooks/objc3c_stdlib_advanced.md",
   "working_scope": [

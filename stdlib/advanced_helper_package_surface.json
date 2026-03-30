@@ -1,0 +1,74 @@
+{
+  "contract_id": "objc3c.stdlib.advanced_helper_package_surface.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "package_surface": "stdlib/package_surface.json",
+  "advanced_architecture": "stdlib/advanced_architecture.json",
+  "module_inventory": "stdlib/module_inventory.json",
+  "machine_output_root": "tmp/artifacts/stdlib",
+  "machine_report_root": "tmp/reports/stdlib",
+  "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "staged_manifest_fields": [
+    "stdlib_advanced_architecture",
+    "stdlib_advanced_helper_package_surface",
+    "advanced_helper_modules",
+    "advanced_helper_command_surfaces",
+    "advanced_helper_profile_gates"
+  ],
+  "advanced_helper_modules": [
+    {
+      "canonical_module": "objc3.concurrency",
+      "implementation_module": "objc3_concurrency",
+      "manifest": "stdlib/modules/objc3.concurrency/module.json",
+      "source": "stdlib/modules/objc3.concurrency/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.concurrency/smoke.objc3"
+    },
+    {
+      "canonical_module": "objc3.keypath",
+      "implementation_module": "objc3_keypath",
+      "manifest": "stdlib/modules/objc3.keypath/module.json",
+      "source": "stdlib/modules/objc3.keypath/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.keypath/smoke.objc3"
+    },
+    {
+      "canonical_module": "objc3.system",
+      "implementation_module": "objc3_system",
+      "manifest": "stdlib/modules/objc3.system/module.json",
+      "source": "stdlib/modules/objc3.system/module.objc3",
+      "smoke_source": "stdlib/modules/objc3.system/smoke.objc3"
+    }
+  ],
+  "advanced_helper_command_surfaces": {
+    "check_stdlib_surface": "npm run check:stdlib:surface",
+    "build_stdlib": "npm run build:objc3c:stdlib",
+    "validate_stdlib_foundation": "npm run test:stdlib",
+    "validate_runnable_stdlib_foundation": "npm run test:stdlib:e2e",
+    "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain"
+  },
+  "advanced_helper_profile_gates": {
+    "objc3.concurrency": "Core and above",
+    "objc3.keypath": "Core and above",
+    "objc3.system": "Strict System"
+  },
+  "import_surface": {
+    "model": "advanced-helper-canonical-module-subset-uses-the-shared-implementation-alias-package-surface",
+    "module_imports_source": "stdlib/package_surface.json",
+    "identity_fields": [
+      "canonical_module",
+      "implementation_module",
+      "source_declaration"
+    ]
+  },
+  "public_actions": [
+    "check-stdlib-surface",
+    "materialize-stdlib-workspace",
+    "validate-stdlib-foundation",
+    "validate-runnable-stdlib-foundation",
+    "package-runnable-toolchain"
+  ],
+  "non_goals": [
+    "a-second-stdlib-package-manifest",
+    "a-separate-runnable-bundle-layout-for-advanced-helpers",
+    "module-local-command-surfaces-outside-the-shared-public-runner"
+  ]
+}
