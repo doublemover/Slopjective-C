@@ -89,3 +89,9 @@ Later `M304` issues must stay on these paths:
 
 Later work may widen scoring, schema, publication, and workflow coverage, but
 it must stay on this boundary.
+
+## Current Checked-In Source Surface
+
+- contract root: `tests/tooling/fixtures/public_conformance_reporting/`
+- source check: `python scripts/check_public_conformance_reporting_source_surface.py`
+- source summary: `tmp/reports/public-conformance/source-surface-summary.json`

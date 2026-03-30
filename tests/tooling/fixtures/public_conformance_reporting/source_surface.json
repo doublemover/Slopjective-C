@@ -1,0 +1,58 @@
+{
+  "contract_id": "objc3c.public_conformance_reporting.source.surface.v1",
+  "schema_version": 1,
+  "runbook": "docs/runbooks/objc3c_public_conformance_reporting.md",
+  "source_root": "tests/tooling/fixtures/public_conformance_reporting",
+  "source_readme": "tests/tooling/fixtures/public_conformance_reporting/README.md",
+  "source_check_script": "scripts/check_public_conformance_reporting_source_surface.py",
+  "checked_in_roots": [
+    "tests/tooling/fixtures/public_conformance_reporting",
+    "tests/tooling/fixtures/external_validation",
+    "tests/conformance",
+    "docs/runbooks",
+    "schemas",
+    "scripts"
+  ],
+  "source_families": [
+    {
+      "family_id": "upstream-conformance-evidence",
+      "coverage_goal": "public reporting must terminate in the live checked-in corpus and coverage-index contracts instead of a dashboard-only summary",
+      "source_paths": [
+        "docs/runbooks/objc3c_public_conformance_reporting.md",
+        "docs/runbooks/objc3c_conformance_corpus.md",
+        "tests/conformance/corpus_surface.json",
+        "tests/conformance/longitudinal_suites.json",
+        "scripts/check_conformance_corpus_surface.py",
+        "scripts/generate_conformance_corpus_index.py",
+        "scripts/check_objc3c_conformance_corpus_integration.py"
+      ]
+    },
+    {
+      "family_id": "external-credibility-evidence",
+      "coverage_goal": "public credibility claims must terminate in accepted external-validation replay and publication surfaces rather than manual narrative claims",
+      "source_paths": [
+        "docs/runbooks/objc3c_external_validation.md",
+        "tests/tooling/fixtures/external_validation/source_surface.json",
+        "tests/tooling/fixtures/external_validation/trust_policy.json",
+        "tests/tooling/fixtures/external_validation/intake_manifest.json",
+        "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+        "tests/tooling/fixtures/external_validation/artifact_surface.json",
+        "scripts/check_external_validation_source_surface.py",
+        "scripts/run_objc3c_external_validation_replay.py",
+        "scripts/publish_objc3c_external_repro_corpus.py",
+        "scripts/check_objc3c_external_validation_integration.py"
+      ]
+    },
+    {
+      "family_id": "public-reporting-schema-anchors",
+      "coverage_goal": "public status and scorecard claims must remain anchored to checked-in dashboard and release-evidence schemas",
+      "source_paths": [
+        "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+        "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
+        "scripts/check_release_evidence.py",
+        "scripts/generate_conformance_evidence_index.py"
+      ]
+    }
+  ]
+}
+
