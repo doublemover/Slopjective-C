@@ -353,6 +353,22 @@ def main() -> int:
         return fail("semantic policy missing error_semantics")
     if error_semantics.get("result_ok_tag") != 1 or error_semantics.get("result_err_tag") != 2:
         return fail("semantic policy result tag values drifted")
+    if error_semantics.get("result_bridge_diagnostic") != (
+        "returns 0 when option presence matches the provided result tag, otherwise 30601"
+    ):
+        return fail("semantic policy result_bridge_diagnostic drifted")
+    if error_semantics.get("text_data_compatibility_diagnostic") != (
+        "returns 0 when unit_count equals byte_count, otherwise 30602"
+    ):
+        return fail("semantic policy text_data_compatibility_diagnostic drifted")
+
+    keypath_semantics = semantic_policy.get("keypath_semantics")
+    if not isinstance(keypath_semantics, dict):
+        return fail("semantic policy missing keypath_semantics")
+    if keypath_semantics.get("text_compatibility_diagnostic") != (
+        "returns 0 when text_units is at least component_count, otherwise 30603"
+    ):
+        return fail("semantic policy text_compatibility_diagnostic drifted")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(

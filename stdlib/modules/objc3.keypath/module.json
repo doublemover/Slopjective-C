@@ -20,6 +20,7 @@
   "exports": [
     "objc3_keypath_apply_index",
     "objc3_keypath_component_count",
-    "objc3_keypath_text_compatibility_score"
+    "objc3_keypath_text_compatibility_score",
+    "objc3_keypath_text_compatibility_diagnostic"
   ]
 }

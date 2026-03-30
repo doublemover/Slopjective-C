@@ -109,17 +109,21 @@ modules without updating the checked-in architecture contract.
 - `objc3_errors_result_ok_tag`
 - `objc3_errors_result_err_tag`
 - `objc3_errors_result_is_ok`
+- `objc3_errors_option_to_result_tag`
+- `objc3_errors_result_bridge_diagnostic`
 - `objc3_errors_result_unwrap_or`
 - `objc3_errors_result_error_or`
 - `objc3_errors_ok_or_code`
 - `objc3_errors_or_throw_code`
 - `objc3_errors_text_data_compatibility_score`
+- `objc3_errors_text_data_compatibility_diagnostic`
 
 `objc3.keypath` exports:
 
 - `objc3_keypath_apply_index`
 - `objc3_keypath_component_count`
 - `objc3_keypath_text_compatibility_score`
+- `objc3_keypath_text_compatibility_diagnostic`
 
 ## Semantic guarantees
 
@@ -127,11 +131,17 @@ modules without updating the checked-in architecture contract.
 - option and presence helpers use `0` for absent and nonzero for present
 - `unwrap_or` helpers return the live payload only when the checked-in
   presence or result tag says it is valid
+- option-to-result bridge helpers map presence directly onto the checked-in
+  result tags and emit stable mismatch code `30601` when the bridge contract is
+  violated
 - `objc3_errors_result_ok_tag` stays `1` and
   `objc3_errors_result_err_tag` stays `2` within major version `1`
 - text/data helpers preserve the caller-provided counts instead of claiming
   allocation, ownership, or transcoding semantics, and prefix helpers clamp to
   the caller-provided count instead of widening it
+- text/data compatibility diagnostics return `0` on compatible shapes and
+  stable mismatch codes `30602` and `30603` for error-bridge and keypath
+  compatibility failures
 - module semver metadata stays `1.0.0` for the initial core stdlib surface
 - additive helper growth is allowed, but moving helper families between modules
   is a breaking change
