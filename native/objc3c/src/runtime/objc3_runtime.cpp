@@ -126,6 +126,30 @@ enum class RuntimeMethodReturnKind {
 
 struct RealizedPropertyAccessor;
 
+struct PropertyLookupCacheKey {
+  std::uint64_t start_base_identity = 0;
+  std::string property_name;
+
+  bool operator==(const PropertyLookupCacheKey &other) const {
+    return start_base_identity == other.start_base_identity &&
+           property_name == other.property_name;
+  }
+};
+
+struct PropertyLookupCacheKeyHash {
+  std::size_t operator()(const PropertyLookupCacheKey &key) const {
+    return std::hash<std::uint64_t>{}(key.start_base_identity) ^
+           (std::hash<std::string>{}(key.property_name) << 1u);
+  }
+};
+
+struct PropertyLookupCacheEntry {
+  bool found = false;
+  bool inherited = false;
+  std::size_t resolved_node_index = 0;
+  std::size_t accessor_index = 0;
+};
+
 struct MethodCacheKey {
   std::uint64_t normalized_receiver_identity = 0;
   std::uint64_t selector_stable_id = 0;
@@ -475,6 +499,9 @@ struct RuntimeState {
   std::unordered_map<std::string, std::size_t> selector_index_by_name;
   std::deque<SelectorSlot> selector_slots;
   std::unordered_map<std::uint64_t, KeyPathSlot> keypath_slots;
+  std::unordered_map<PropertyLookupCacheKey, PropertyLookupCacheEntry,
+                     PropertyLookupCacheKeyHash>
+      property_lookup_cache;
   std::uint64_t metadata_backed_selector_count = 0;
   std::uint64_t dynamic_selector_count = 0;
   std::uint64_t metadata_provider_edge_count = 0;
@@ -587,6 +614,9 @@ struct RuntimeState {
   std::string last_reflected_property_owner_identity;
   bool last_property_query_found = false;
   bool last_property_query_inherited = false;
+  bool last_property_query_used_cache = false;
+  std::uint64_t property_lookup_cache_hit_count = 0;
+  std::uint64_t property_lookup_cache_miss_count = 0;
 };
 
 RuntimeState &State() {
@@ -760,6 +790,9 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.ambiguous_realized_base_identities.clear();
   state.realized_class_node_indices_by_name.clear();
   state.realized_class_nodes.clear();
+  state.property_lookup_cache.clear();
+  state.property_lookup_cache_hit_count = 0;
+  state.property_lookup_cache_miss_count = 0;
   state.realized_root_class_count = 0;
   state.realized_metaclass_edge_count = 0;
   state.receiver_class_binding_count = 0;
@@ -787,6 +820,8 @@ void ClearRealizedClassGraphUnlocked(RuntimeState &state) {
   state.last_reflected_property_owner_identity.clear();
   state.last_property_query_found = false;
   state.last_property_query_inherited = false;
+  state.last_property_query_used_cache = false;
+  state.last_property_query_used_cache = false;
 }
 
 void ClearRuntimeInstanceStateUnlocked(RuntimeState &state) {
@@ -1709,15 +1744,41 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
 }
 
 const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
-    const RuntimeState &state, const RealizedClassNode &start_node,
+    RuntimeState &state, const RealizedClassNode &start_node,
     const char *property_name, const RealizedClassNode *&resolved_node,
-    bool &inherited) {
+    bool &inherited, bool &used_cache) {
   // property-metadata-reflection anchor: private reflective helper
   // lookup walks the realized runtime-owned property graph by class/property
   // name instead of rediscovering accessors or layout from source.
   if (property_name == nullptr || property_name[0] == '\0') {
     return nullptr;
   }
+  PropertyLookupCacheKey cache_key;
+  cache_key.start_base_identity = start_node.base_identity;
+  cache_key.property_name = property_name;
+  const auto cache_it = state.property_lookup_cache.find(cache_key);
+  if (cache_it != state.property_lookup_cache.end()) {
+    used_cache = true;
+    ++state.property_lookup_cache_hit_count;
+    if (!cache_it->second.found) {
+      inherited = false;
+      resolved_node = nullptr;
+      return nullptr;
+    }
+    if (cache_it->second.resolved_node_index < state.realized_class_nodes.size()) {
+      const RealizedClassNode &cached_node =
+          state.realized_class_nodes[cache_it->second.resolved_node_index];
+      if (cache_it->second.accessor_index <
+          cached_node.runtime_property_accessors.size()) {
+        resolved_node = &cached_node;
+        inherited = cache_it->second.inherited;
+        return &cached_node.runtime_property_accessors[cache_it->second.accessor_index];
+      }
+    }
+    state.property_lookup_cache.erase(cache_it);
+  }
+  used_cache = false;
+  ++state.property_lookup_cache_miss_count;
   std::unordered_set<const RealizedClassNode *> visited;
   const RealizedClassNode *node = &start_node;
   inherited = false;
@@ -1733,6 +1794,14 @@ const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
                         property_name) == 0) {
           resolved_node = node;
           inherited = node != &start_node;
+          const std::size_t resolved_node_index = static_cast<std::size_t>(
+              node - state.realized_class_nodes.data());
+          const std::size_t accessor_index = static_cast<std::size_t>(
+              &accessor - node->runtime_property_accessors.data());
+          state.property_lookup_cache.emplace(
+              std::move(cache_key),
+              PropertyLookupCacheEntry{true, inherited, resolved_node_index,
+                                       accessor_index});
           return &accessor;
         }
       }
@@ -1740,6 +1809,8 @@ const RealizedPropertyAccessor *FindRuntimePropertyAccessorByNameUnlocked(
     node = node->has_super_node ? &state.realized_class_nodes[node->super_node_index]
                                 : nullptr;
   }
+  state.property_lookup_cache.emplace(std::move(cache_key),
+                                      PropertyLookupCacheEntry{});
   return nullptr;
 }
 
@@ -4324,8 +4395,12 @@ int objc3_runtime_copy_property_registry_state_for_testing(
   snapshot->reflectable_property_count = 0;
   snapshot->writable_property_count = 0;
   snapshot->slot_backed_property_count = 0;
+  snapshot->property_lookup_cache_entry_count = 0;
+  snapshot->property_lookup_cache_hit_count = 0;
+  snapshot->property_lookup_cache_miss_count = 0;
   snapshot->last_query_found = 0;
   snapshot->last_query_inherited = 0;
+  snapshot->last_query_used_cache = 0;
   snapshot->last_queried_class_name = nullptr;
   snapshot->last_queried_property_name = nullptr;
   snapshot->last_resolved_class_name = nullptr;
@@ -4347,8 +4422,15 @@ int objc3_runtime_copy_property_registry_state_for_testing(
           accessor.ivar_descriptor != nullptr ? 1u : 0u;
     }
   }
+  snapshot->property_lookup_cache_entry_count =
+      static_cast<std::uint64_t>(state.property_lookup_cache.size());
+  snapshot->property_lookup_cache_hit_count = state.property_lookup_cache_hit_count;
+  snapshot->property_lookup_cache_miss_count =
+      state.property_lookup_cache_miss_count;
   snapshot->last_query_found = state.last_property_query_found ? 1 : 0;
   snapshot->last_query_inherited = state.last_property_query_inherited ? 1 : 0;
+  snapshot->last_query_used_cache =
+      state.last_property_query_used_cache ? 1 : 0;
   snapshot->last_queried_class_name =
       StableCString(state.last_queried_property_class_name);
   snapshot->last_queried_property_name =
@@ -4431,9 +4513,12 @@ int objc3_runtime_copy_property_entry_for_testing(
   const RealizedClassNode &start_node = state.realized_class_nodes[node_index];
   const RealizedClassNode *resolved_node = nullptr;
   bool inherited = false;
+  bool used_cache = false;
   const RealizedPropertyAccessor *accessor =
       FindRuntimePropertyAccessorByNameUnlocked(
-          state, start_node, property_name, resolved_node, inherited);
+          state, start_node, property_name, resolved_node, inherited,
+          used_cache);
+  state.last_property_query_used_cache = used_cache;
   if (accessor == nullptr || resolved_node == nullptr ||
       accessor->property_descriptor == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
@@ -5383,9 +5468,12 @@ extern "C" int objc3_runtime_bind_current_property_context_for_testing(
   const RealizedClassNode &start_node = state.realized_class_nodes[node_index];
   const RealizedClassNode *resolved_node = nullptr;
   bool inherited = false;
+  bool used_cache = false;
   const RealizedPropertyAccessor *accessor =
       FindRuntimePropertyAccessorByNameUnlocked(
-          state, start_node, property_name, resolved_node, inherited);
+          state, start_node, property_name, resolved_node, inherited,
+          used_cache);
+  state.last_property_query_used_cache = used_cache;
   if (accessor == nullptr || resolved_node == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }

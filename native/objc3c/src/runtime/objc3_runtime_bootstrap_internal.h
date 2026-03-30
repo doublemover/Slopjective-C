@@ -239,8 +239,12 @@ typedef struct objc3_runtime_property_registry_state_snapshot {
   uint64_t reflectable_property_count;
   uint64_t writable_property_count;
   uint64_t slot_backed_property_count;
+  uint64_t property_lookup_cache_entry_count;
+  uint64_t property_lookup_cache_hit_count;
+  uint64_t property_lookup_cache_miss_count;
   int last_query_found;
   int last_query_inherited;
+  int last_query_used_cache;
   const char *last_queried_class_name;
   const char *last_queried_property_name;
   const char *last_resolved_class_name;
