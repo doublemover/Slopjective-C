@@ -1,0 +1,28 @@
+{
+  "contract_id": "objc3c.release.foundation.reproducibility.policy.v1",
+  "surface_kind": "reproducibility-provenance-and-hermetic-toolchain-policy",
+  "reproducibility_scope": "repo-local staged runnable bundle assembly",
+  "required_generation_inputs": [
+    "scripts/build_objc3c_native.ps1",
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/check_release_evidence.py",
+    "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
+  ],
+  "hermeticity_requirements": [
+    "all published release artifacts must be derived from repo-relative inputs",
+    "release manifest generation must consume machine-generated package manifests, not hand-curated payload lists",
+    "payload hashing must use sorted repo-relative paths and sha256 digests",
+    "reproducibility proof must compare repeated package assembly runs from the same repo state"
+  ],
+  "non_claims": [
+    "no cross-host binary identity guarantee",
+    "no notarization or certificate-service guarantee",
+    "no package-manager ecosystem parity guarantee"
+  ],
+  "required_source_stamps": [
+    "git_commit",
+    "package_manifest_sha256",
+    "repo_superclean_surface_sha256",
+    "release_evidence_index_sha256"
+  ]
+}
