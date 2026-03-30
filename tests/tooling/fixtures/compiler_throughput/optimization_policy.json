@@ -1,0 +1,24 @@
+{
+  "contract_id": "objc3c.compiler.throughput.optimization.policy.v1",
+  "schema_version": 1,
+  "required_invariants": [
+    "compile surface remains the native executable plus the existing compile wrapper",
+    "cache-hit claims remain coupled to compile-output provenance and runtime-launch-contract checks",
+    "incremental invalidation claims remain rooted in live compiler-emitted manifest and replay-key surfaces",
+    "macro-host cache claims remain fail-closed and compile-coupled",
+    "docs-generation throughput claims stay on the checked-in native docs and command-surface generators"
+  ],
+  "allowed_moves": [
+    "remove repeated wrapper or build invocations from heavyweight validation loops",
+    "reuse truthful wrapper cache entries when the live cache contract validates them",
+    "time direct native-executable compile loops when wrapper-launch semantics are not the guarantee under test",
+    "package the same live scripts and checked-in fixtures for end-to-end validation"
+  ],
+  "disallowed_moves": [
+    "no benchmark-only compiler executable or cache format",
+    "no cache-hit claim that bypasses compile-output provenance",
+    "no duplicate recovery-negative recompilation inside default validation tiers",
+    "no docs-throughput claim that omits the checked-in docs generators",
+    "no second public tier map outside the live runner and checked-in contracts"
+  ]
+}

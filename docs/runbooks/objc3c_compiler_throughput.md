@@ -124,6 +124,40 @@ One authoritative owner per guarantee:
 - broad positive recovery artifact sanity:
   - `test-fixture-matrix`
 
+## Optimization Correctness Policy
+
+Compiler-throughput work is only valid when it preserves these invariants:
+
+- the authoritative compile surface remains
+  `scripts/objc3c_native_compile.ps1` plus `artifacts/bin/objc3c-native.exe`
+- cache-hit claims remain coupled to compile-output provenance and the runtime
+  launch contract
+- incremental invalidation claims remain rooted in the live manifest/replay-key
+  surfaces already emitted by the compiler
+- macro-host cache claims remain fail-closed and compile-coupled through the
+  existing runtime-acceptance/metaprogramming fixtures
+- docs-generation throughput claims stay on the checked-in generators, not on
+  ad-hoc markdown transforms
+
+Allowed optimization moves:
+
+- remove repeated wrapper/build invocations inside heavyweight loops
+- reuse a truthful cache entry when the live wrapper cache contract says it is
+  valid
+- time direct native-executable compile loops when wrapper-launch semantics are
+  not the guarantee under test
+- keep packaged validation on the same live scripts and checked-in fixtures
+
+Disallowed optimization moves:
+
+- no benchmark-only compiler executable, cache format, or synthetic replay path
+- no cache-hit claim that bypasses compile-output provenance generation
+- no reintroduction of recovery-negative recompilation into default tiers after
+  ownership is assigned elsewhere
+- no docs-throughput claim that omits the native docs or public command-surface
+  generators
+- no second public tier map outside the runner and checked-in contracts
+
 ## Exact Live Implementation Paths
 
 - compile/build wrappers:
@@ -146,6 +180,7 @@ One authoritative owner per guarantee:
   - `tests/tooling/fixtures/compiler_throughput/source_surface.json`
   - `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
   - `tests/tooling/fixtures/compiler_throughput/validation_tier_map.json`
+  - `tests/tooling/fixtures/compiler_throughput/optimization_policy.json`
 
 ## Explicit Non-Goals
 
