@@ -1,30 +1,47 @@
 # Slopjective-C
 
-Slopjective-C is an Objective-C 3.0 draft specification and native compiler project.
+Slopjective-C is an Objective-C 3.0 draft specification, native compiler/runtime,
+and validated toolchain project.
 
-This repository contains two things that matter:
+This repository now has four live surfaces that matter:
 
 - a working draft of the Objective-C 3.0 language and runtime model,
-- an in-tree native implementation under `native/objc3c/`.
+- an in-tree native implementation under `native/objc3c/`,
+- a checked-in standard library, tutorial, and showcase surface under
+  `stdlib/`, `docs/tutorials/`, and `showcase/`,
+- a large validation, packaging, release, and distribution workflow surface
+  rooted in `scripts/`, `tests/`, and `docs/runbooks/`.
 
 ## Current Status
 
-The project is no longer just a grammar sketch.
+The project is well past a grammar sketch.
 
 Today it has:
 
 - a real native `objc3c` compiler,
 - real LLVM IR and native object emission,
+- a native runtime archive and emitted runtime metadata for the object-model
+  surface,
 - a runnable subset of `.objc3`,
-- emitted runtime metadata for the object-model surface,
+- a checked-in standard library workspace with canonical modules under
+  `stdlib/modules/`,
+- checked-in tutorials, migration guides, and capability-backed showcase
+  examples,
+- integrated workflow surfaces for performance, conformance, stress,
+  external-validation, packaging, release operations, and distribution
+  credibility,
 - ongoing work to finish full runtime realization of classes, protocols, categories, properties, blocks, and ARC.
 
 What is still incomplete:
 
 - full live Objective-C 3.0 object-model runtime behavior,
 - full property/ivar/runtime reflection closure,
-- full blocks and ARC automation,
-- advanced error, concurrency, metaprogramming, and broader interop features.
+- full escaping block/byref and ARC automation,
+- complete runtime-backed semantics across `throws`/error propagation,
+  async/task/actor concurrency, metaprogramming/property-behavior surfaces, and
+  broader interop,
+- production-strength completeness and stability claims for the full intended
+  language/runtime envelope.
 
 ## Runnable Subset
 
@@ -52,13 +69,20 @@ What you can compile and run today:
 - deterministic selector/string pool and metadata-bearing object emission,
 - ownership-baseline runtime behavior for supported retainable object storage.
 
+The repo also now carries dedicated conformance and runnable-package workflows
+for block/ARC, concurrency, error handling, interop, metaprogramming,
+object-model, storage/reflection, and release-candidate validation. That means
+those feature families are actively modeled and validated. It does not mean
+every corresponding language/runtime behavior is fully complete.
+
 What is not fully runnable yet:
 
 - full class/protocol/category/property runtime realization,
 - full property synthesis and reflective runtime consumption,
 - full escaping block/byref runtime behavior,
 - full ARC automation,
-- advanced language features such as `throws`, async/await, tasks, actors, macros, and broader interop closure.
+- complete runtime-backed closure for `throws`, async/await, tasks, actors,
+  macros, property behaviors, and broader interop.
 
 ## Start Here
 
@@ -68,10 +92,14 @@ Use the shortest path that matches what you are trying to do.
 | --- | --- | --- |
 | understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
 | build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
+| inspect the checked-in stdlib surface | [stdlib/README.md](stdlib/README.md) | then follow the core, advanced, and program runbooks |
 | follow the runnable tutorial path | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md) | compile one example first, then use the showcase surface |
 | pick the right capability-backed example first | [showcase/README.md](showcase/README.md) | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text |
 | migrate ObjC2 code or check Swift-facing migration expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md) | then follow the showcase examples that back the comparison |
+| inspect performance surfaces | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md) | then use the performance and compiler-throughput commands |
+| inspect conformance, fuzz, and reporting work | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md) | then use the stress, external-validation, and public-conformance workflows |
+| inspect package, installer, and release flows | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md) | then follow packaging channels, release operations, and distribution credibility |
 | contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |
 | inspect runnable showcase examples | [showcase/README.md](showcase/README.md) | compile them through `npm run compile:objc3c -- ...` or the showcase surface check |
 | inspect implementation boundaries | [docs/objc3c-native.md](docs/objc3c-native.md) | then open `native/objc3c/` |
@@ -80,25 +108,14 @@ Use the shortest path that matches what you are trying to do.
 
 Documentation boundary:
 
-- human-facing onboarding:
-  - `README.md`
-  - `CONTRIBUTING.md`
-  - `site/index.md`
-- learning paths and migration guides:
-  - `docs/tutorials/`
-- user-facing runnable examples:
-  - `showcase/`
-- implementation-facing narrative:
-  - `docs/objc3c-native.md`
-  - `docs/objc3c-native/src/*.md`
-- generated operator appendix:
-  - `docs/runbooks/objc3c_public_command_surface.md`
-- compatibility-only redirect layer:
-  - `docs/reference/legacy_spec_anchor_index.md`
-- machine-owned outputs, not onboarding:
-  - `tmp/`
-  - `artifacts/`
-  - `reports/`
+- onboarding: `README.md`, `CONTRIBUTING.md`, `site/index.md`
+- tutorials and migration guides: `docs/tutorials/`
+- checked-in stdlib product surface: `stdlib/`
+- runnable examples: `showcase/`
+- implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
+- operator runbooks: `docs/runbooks/`
+- compatibility redirects: `docs/reference/legacy_spec_anchor_index.md`
+- machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
 If you are new to the repo, stay out of `tmp/` and the legacy redirect index until you actually need them.
 
@@ -112,10 +129,13 @@ Canonical roots:
   - `native/objc3c/`
   - `scripts/`
   - `tests/`
+  - `stdlib/`
+  - `schemas/`
 - human-facing docs:
   - `README.md`
   - `CONTRIBUTING.md`
   - `site/src/`
+  - `docs/tutorials/`
   - `docs/objc3c-native/src/`
   - `docs/runbooks/`
 - user-facing example sources:
@@ -136,27 +156,16 @@ Explicit non-goals for cleanup work:
 
 ## Repository Layout
 
-- `docs/tutorials/`
-  - reader-facing tutorials, migration guides, and teaching-material boundaries
-  - keep tutorial narrative compile-coupled to the checked-in showcase examples and public command surface
-  - getting-started work starts in `docs/tutorials/getting_started.md`
-  - tutorial command flow is defined in `docs/tutorials/build_run_verify.md`
-  - ordered example walkthrough work lives in `docs/tutorials/guided_walkthrough.md`
-  - migration work starts in `docs/tutorials/objc2_to_objc3_migration.md`
-  - ObjC2/Swift/C++ comparison work starts in `docs/tutorials/objc2_swift_cpp_comparison.md`
-- `docs/reference/legacy_spec_anchor_index.md`
-  - compatibility redirects for archived spec, planning, governance, and conformance anchors
-  - use this when older docs, reports, scripts, or conformance metadata still cite the retired `spec/` tree
-- `native/objc3c/`
-  - the native compiler, runtime-facing lowering, and toolchain integration work
-- `site/`
-  - the generated public overview page
-- `showcase/`
-  - runnable example sources and the checked-in showcase portfolio
-- `scripts/`
-  - build, validation, and documentation tooling
-- `tests/`
-  - tooling, conformance, and runtime-oriented test coverage
+- `native/objc3c/`: native compiler, lowering, runtime, and driver implementation
+- `stdlib/`: checked-in standard library workspace and package/import contracts
+- `showcase/`: runnable example portfolio
+- `docs/tutorials/`: learning path and migration material
+- `docs/runbooks/`: operator-facing workflow and validation boundaries
+- `schemas/`: checked-in artifact/report schema contracts
+- `scripts/`: build, validation, packaging, and publication tooling
+- `tests/`: tooling, conformance, runtime, and stress coverage
+- `site/`: generated public overview output
+- `docs/reference/legacy_spec_anchor_index.md`: compatibility redirects for old anchors
 
 ## Dependencies
 
@@ -271,103 +280,72 @@ npm run test:objc3c:execution-smoke
 
 ## Native Build Surface
 
-Current live build/test surface:
+Use these entrypoints:
 
 - `npm run build:objc3c-native`
 - `npm run build:objc3c-native:contracts`
 - `npm run build:objc3c-native:full`
 - `npm run build:objc3c-native:reconfigure`
-- `npm run test:smoke`
-- `npm run test:ci`
-- `npm run test:objc3c:full`
-- `npm run proof:objc3c`
 
-Behavior:
+Operational facts:
 
 - native builds run through the CMake/Ninja-backed wrapper
-- build trees and transient evidence stay under `tmp/`
-- published binaries and libraries stay under `artifacts/`
-- milestone-era planning and closeout material is archived under `tmp/archive/`
+- the persistent build tree lives under `tmp/build-objc3c-native`
+- published binaries and libraries live under `artifacts/`
+- contract artifacts and summaries live under `tmp/artifacts/` and `tmp/reports/`
 
-## When to use each command
-
-| Command | Use when | Result |
-| --- | --- | --- |
-| `npm run build:objc3c-native` | ordinary local native compiler work | refreshes native binaries through the persistent CMake/Ninja tree |
-| `npm run build:objc3c-native:contracts` | contract/checker work that needs the public contract-artifact surface | refreshes the source-derived plus binary-derived contract-artifact surface |
-| `npm run build:objc3c-native:full` | deliberately broad validation | refreshes native binaries and the full contract-artifact family |
-| `npm run build:objc3c-native:reconfigure` | toolchain drift, path drift, or stale fingerprint mismatch | forces a fresh configure against `tmp/build-objc3c-native`, then rebuilds binaries |
-
-Build-tree facts:
-
-- persistent build tree:
-  - `tmp/build-objc3c-native`
-- compile database:
-  - `tmp/build-objc3c-native/compile_commands.json`
-- fingerprint:
-  - `tmp/build-objc3c-native/native_build_backend_fingerprint.json`
-- repo superclean source-of-truth artifact:
-  - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
-
-Fingerprint inputs:
-
-- `generator`
-- `cmake`
-- `ninja`
-- `clangxx`
-- `llvm_root`
-- `llvm_include_dir`
-- `libclang`
-- `build_dir`
-- `source_dir`
-- `runtime_output_dir`
-- `library_output_dir`
-- direct-object-emission and warning-parity flags
-
-Supported stale-tree recovery:
-
-- use `npm run build:objc3c-native:reconfigure`
-- do not delete the build tree
-
-CI and closeout semantics:
-
-- local issue work benefits from the persistent tree under `tmp/build-objc3c-native`
-- CI runners start from clean workspaces, so `fast`, `contracts`, and `full`
-  describe proof scope rather than cache expectations
-- the active Windows core workflow proves `build:objc3c-native` plus
-  `build:objc3c-native:contracts`
-- the manual compiler closeout workflow proves `build:objc3c-native:full`
-- build-surface evidence and summaries live under `tmp/reports/`
+For the exact backend and artifact contract, use
+`docs/runbooks/objc3c_public_command_surface.md` and
+`docs/runbooks/objc3c_maintainer_workflows.md`.
 
 ## Public Command Surface
 
-Use package scripts for normal work. The common ones are:
+Use package scripts for normal work. The public surface is now large and
+purpose-specific, so use the generated appendix for the full map.
 
-- `npm run build:objc3c-native`
-- `npm run build:site`
-- `npm run build:docs:native`
-- `npm run build:docs:commands`
-- `npm run compile:objc3c -- ...`
-- `npm run test:showcase`
-- `npm run test:fast`
-- `npm run test:smoke`
-- `npm run test:ci`
-- `npm run package:objc3c-native:runnable-toolchain`
+Common entrypoints by job:
+
+- bootstrap and native compile:
+  - `npm run build:objc3c-native`
+  - `npm run compile:objc3c -- ...`
+  - `npm run test:fast`
+  - `npm run test:smoke`
+  - `npm run test:ci`
+- docs, tutorials, showcase, and stdlib:
+  - `npm run build:site`
+  - `npm run build:docs:native`
+  - `npm run build:docs:commands`
+  - `npm run test:getting-started`
+  - `npm run test:showcase`
+  - `npm run test:stdlib`
+  - `npm run test:stdlib:advanced`
+  - `npm run test:stdlib:program`
+- performance and diagnostics:
+  - `npm run inspect:objc3c:runtime-performance`
+  - `npm run inspect:objc3c:compiler-throughput`
+  - `npm run test:objc3c:performance`
+  - `npm run test:objc3c:performance-governance`
+  - `npm run test:objc3c:developer-tooling`
+- conformance, stress, and public evidence:
+  - `npm run test:objc3c:conformance-corpus`
+  - `npm run test:objc3c:stress`
+  - `npm run test:objc3c:external-validation`
+  - `npm run test:objc3c:public-conformance`
+- packaging, release, and distribution:
+  - `npm run package:objc3c-native:runnable-toolchain`
+  - `npm run package:objc3c:channels`
+  - `npm run test:objc3c:release-foundation`
+  - `npm run test:objc3c:packaging-channels`
+  - `npm run test:objc3c:release-operations`
+  - `npm run test:objc3c:distribution-credibility`
 
 Rules:
 
 - prefer the public `npm run ...` surface over direct Python or PowerShell when a wrapper already exists,
 - treat `native/objc3c/` as the only supported compiler implementation root,
+- treat `stdlib/` as the canonical checked-in standard-library root instead of inventing parallel helper trees,
 - use `docs/runbooks/objc3c_public_command_surface.md` for the synchronized command/action/backend reference,
 - use `docs/runbooks/objc3c_maintainer_workflows.md` for maintainer-only workflow maps.
-
-## Other Useful Commands
-
-Rebuild the generated site output with the standard package script:
-
-```powershell
-npm run build:site
-```
 
 ## Spec Structure
 
