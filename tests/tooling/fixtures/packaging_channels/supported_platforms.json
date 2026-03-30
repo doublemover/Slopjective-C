@@ -1,0 +1,26 @@
+{
+  "contract_id": "objc3c.packaging.channels.supported-platforms.v1",
+  "default_platform_id": "windows-x64",
+  "supported_platforms": [
+    {
+      "platform_id": "windows-x64",
+      "host_os": "windows",
+      "host_arch": "x64",
+      "supported_channels": [
+        "portable-archive",
+        "local-installer",
+        "offline-bundle"
+      ],
+      "required_tools": [
+        "pwsh",
+        "python",
+        "clang++"
+      ],
+      "unsupported_claims": [
+        "system package manager publication",
+        "cross-platform installer parity",
+        "signed or notarized installer publication"
+      ]
+    }
+  ]
+}
