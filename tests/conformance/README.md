@@ -46,6 +46,11 @@ Machine-readable indexes:
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)
 
+Live validation entrypoints:
+
+- `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
+
 ## Cross-module preservation requirements
 
 Each profile run must include tests that validate preservation of:

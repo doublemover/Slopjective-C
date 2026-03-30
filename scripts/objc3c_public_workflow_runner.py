@@ -45,6 +45,8 @@ PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_performance.py"
 COMPARATIVE_BASELINES_PY = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
 RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
 PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
+CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
+RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -564,6 +566,14 @@ def action_validate_runnable_performance(_: list[str]) -> int:
 
 def action_validate_performance_foundation(_: list[str]) -> int:
     return run([sys.executable, str(PERFORMANCE_INTEGRATION_PY)])
+
+
+def action_validate_conformance_corpus(_: list[str]) -> int:
+    return run([sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)])
+
+
+def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_CONFORMANCE_CORPUS_E2E_PY)])
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1290,6 +1300,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "benchmark-comparative-baselines": ActionSpec("benchmark-comparative-baselines", "measure the checked-in ObjC2 Swift and C++ baseline workloads and write reproducible comparison telemetry packets", "python:scripts/run_objc3c_comparative_baselines.py", ("inspect:objc3c:comparative-baselines",), validation_tier="repo", guarantee_owner="comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states", pass_through_args=True),
     "validate-runnable-performance": ActionSpec("validate-runnable-performance", "validate the staged runnable toolchain performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_performance_end_to_end.py", ("test:objc3c:runnable-performance",), validation_tier="full", guarantee_owner="packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "validate-performance-foundation": ActionSpec("validate-performance-foundation", "run the integrated benchmark and comparative baseline validation flow", "python:scripts/check_objc3c_performance_integration.py", ("test:objc3c:performance",), validation_tier="repo", guarantee_owner="benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle"),
+    "validate-conformance-corpus": ActionSpec("validate-conformance-corpus", "run the integrated conformance corpus taxonomy indexing and legacy gate-surface validation flow", "python:scripts/check_objc3c_conformance_corpus_integration.py", ("test:objc3c:conformance-corpus",), validation_tier="repo", guarantee_owner="conformance corpus taxonomy, retained longitudinal suites, coverage indexing, and legacy gate surfaces stay executable on the live public workflow"),
+    "validate-runnable-conformance-corpus": ActionSpec("validate-runnable-conformance-corpus", "validate the staged runnable conformance corpus package surface end to end", "python:scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py", ("test:objc3c:runnable-conformance-corpus",), validation_tier="full", guarantee_owner="packaged conformance corpus contracts, retained longitudinal suites, and legacy gate surfaces stay reproducible from the staged runnable toolchain bundle"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1373,6 +1385,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "benchmark-comparative-baselines": action_benchmark_comparative_baselines,
     "validate-runnable-performance": action_validate_runnable_performance,
     "validate-performance-foundation": action_validate_performance_foundation,
+    "validate-conformance-corpus": action_validate_conformance_corpus,
+    "validate-runnable-conformance-corpus": action_validate_runnable_conformance_corpus,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,

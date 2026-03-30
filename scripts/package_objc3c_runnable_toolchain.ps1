@@ -122,6 +122,21 @@ function Get-RepoRelativeStdlibFiles {
   )
 }
 
+function Get-RepoRelativeConformanceFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $conformanceRoot = Join-Path $RepoRoot "tests/conformance"
+  if (!(Test-Path -LiteralPath $conformanceRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: missing conformance root $conformanceRoot"
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $conformanceRoot -Recurse -File |
+      Sort-Object -Property FullName |
+      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
+  )
+}
+
 if (!(Test-Path -LiteralPath $buildScript -PathType Leaf)) {
   throw "runnable toolchain package FAIL: missing build script $buildScript"
 }
@@ -154,6 +169,7 @@ $requiredRelativeFiles = @(
   "showcase/signalMesh/workspace.json",
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
+  "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
   "docs/tutorials/getting_started.md",
@@ -177,6 +193,9 @@ $requiredRelativeFiles = @(
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "schemas/objc3-conformance-dashboard-status-v1.schema.json",
   "scripts/check_release_evidence.py",
+  "scripts/check_conformance_suite.ps1",
+  "scripts/check_conformance_corpus_surface.py",
+  "scripts/generate_conformance_corpus_index.py",
   "spec/conformance/release_evidence_gate_maintenance.md",
   "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
   "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
@@ -220,8 +239,9 @@ $requiredRelativeFiles = @(
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
 $stdlibFiles = @(Get-RepoRelativeStdlibFiles -RepoRoot $repoRoot)
+$conformanceFiles = @(Get-RepoRelativeConformanceFiles -RepoRoot $repoRoot)
 $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
-foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $stdlibFiles)) {
+foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $stdlibFiles + $conformanceFiles)) {
   Copy-RepoRelativeFile -RepoRoot $repoRoot -PackageRoot $packageRoot -RelativePath $relativePath | Out-Null
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }
@@ -234,6 +254,9 @@ if (-not $repoSupercleanSurfacePayload.ContainsKey("bonus_experience_surfaces"))
 }
 if (-not $repoSupercleanSurfacePayload.ContainsKey("performance_benchmark_surface")) {
   throw "runnable toolchain package FAIL: missing performance_benchmark_surface in $repoSupercleanSurfaceRelativePath"
+}
+if (-not $repoSupercleanSurfacePayload.ContainsKey("conformance_corpus_surface")) {
+  throw "runnable toolchain package FAIL: missing conformance_corpus_surface in $repoSupercleanSurfaceRelativePath"
 }
 if (-not $repoSupercleanSurfacePayload.ContainsKey("stdlib_foundation_surface")) {
   throw "runnable toolchain package FAIL: missing stdlib_foundation_surface in $repoSupercleanSurfaceRelativePath"
@@ -339,6 +362,14 @@ $manifestPayload = [ordered]@{
   bonus_experience_surfaces = $repoSupercleanSurfacePayload["bonus_experience_surfaces"]
   bonus_tool_integration_surface = $repoSupercleanSurfacePayload["bonus_tool_integration_surface"]
   performance_benchmark_surface = $repoSupercleanSurfacePayload["performance_benchmark_surface"]
+  conformance_corpus_surface = $repoSupercleanSurfacePayload["conformance_corpus_surface"]
+  conformance_suite_readme = "tests/conformance/README.md"
+  conformance_coverage_map = "tests/conformance/COVERAGE_MAP.md"
+  conformance_runbook = "docs/runbooks/objc3c_conformance_corpus.md"
+  conformance_surface_check_script = "scripts/check_conformance_corpus_surface.py"
+  conformance_coverage_index_script = "scripts/generate_conformance_corpus_index.py"
+  conformance_legacy_suite_gate_script = "scripts/check_conformance_suite.ps1"
+  conformance_longitudinal_manifest = "tests/conformance/longitudinal_suites.json"
   stdlib_foundation_surface = $repoSupercleanSurfacePayload["stdlib_foundation_surface"]
   stdlib_program_surface = $repoSupercleanSurfacePayload["stdlib_program_surface"]
   guided_walkthrough_manifest = "showcase/tutorial_walkthrough.json"
@@ -427,6 +458,8 @@ $manifestPayload = [ordered]@{
     inspect_runtime = "npm run inspect:objc3c:runtime"
     trace_stages = "npm run trace:objc3c:stages"
     developer_tooling = "npm run test:objc3c:developer-tooling"
+    conformance_corpus = "npm run test:objc3c:conformance-corpus"
+    conformance_corpus_e2e = "npm run test:objc3c:runnable-conformance-corpus"
     stdlib = "npm run test:stdlib"
     stdlib_e2e = "npm run test:stdlib:e2e"
     runnable_performance = "npm run test:objc3c:runnable-performance"

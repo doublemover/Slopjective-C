@@ -20,6 +20,8 @@
     "test:objc3c:performance": "python scripts/objc3c_public_workflow_runner.py validate-performance-foundation",
     "test:bonus-experiences": "python scripts/objc3c_public_workflow_runner.py validate-bonus-experiences",
     "test:bonus-experiences:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-bonus-experiences",
+    "test:objc3c:conformance-corpus": "python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus",
+    "test:objc3c:runnable-conformance-corpus": "python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus",
     "test:stdlib": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation",
     "test:stdlib:program": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-program",
     "test:stdlib:advanced": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced",

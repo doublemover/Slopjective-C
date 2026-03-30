@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `86`
+- Current public script count: `88`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -50,6 +50,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:comparative-baselines` | `benchmark-comparative-baselines` | `repo` | `comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states` | `pass-through` | `python:scripts/run_objc3c_comparative_baselines.py` |
 | `test:objc3c:runnable-performance` | `validate-runnable-performance` | `full` | `packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_performance_end_to_end.py` |
 | `test:objc3c:performance` | `validate-performance-foundation` | `repo` | `benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_performance_integration.py` |
+| `test:objc3c:conformance-corpus` | `validate-conformance-corpus` | `repo` | `conformance corpus taxonomy, retained longitudinal suites, coverage indexing, and legacy gate surfaces stay executable on the live public workflow` | `fixed-shape` | `python:scripts/check_objc3c_conformance_corpus_integration.py` |
+| `test:objc3c:runnable-conformance-corpus` | `validate-runnable-conformance-corpus` | `full` | `packaged conformance corpus contracts, retained longitudinal suites, and legacy gate surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `trace:objc3c:stages` | `trace-compile-stages` | `repo` | `developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
