@@ -35,6 +35,7 @@
     "test:objc3c:external-validation:integration": "python scripts/objc3c_public_workflow_runner.py validate-external-validation-integration",
     "test:objc3c:public-conformance": "python scripts/objc3c_public_workflow_runner.py validate-public-conformance-reporting",
     "test:objc3c:public-conformance:integration": "python scripts/objc3c_public_workflow_runner.py validate-public-conformance-reporting-integration",
+    "test:objc3c:public-conformance:e2e": "python scripts/objc3c_public_workflow_runner.py validate-public-conformance-reporting-end-to-end",
     "test:stdlib": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation",
     "test:stdlib:program": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-program",
     "test:stdlib:advanced": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced",
