@@ -76,6 +76,30 @@ Fail-closed rule:
 
 - any unresolved `missing`, `partial`, or `known-open` gap blocks `release-claimable` status for the affected profile or surface
 
+## Gap Priority And Suite Partitions
+
+Priority order:
+
+- `p0-release-blocker`
+- `p1-profile-blocker`
+- `p2-surface-gap`
+- `p3-audit-gap`
+
+Priority rules:
+
+- `p0-release-blocker`: missing executable or traceability evidence for a release-claimable surface
+- `p1-profile-blocker`: strict, strict-concurrency, or strict-system deltas are missing or partial
+- `p2-surface-gap`: a required primary bucket or audited surface is only partially covered
+- `p3-audit-gap`: supplemental or historical coverage is missing but does not block current profile claims
+
+Suite partitions:
+
+- `fast`: parser and diagnostics
+- `semantic`: semantic
+- `runtime`: lowering_abi
+- `interop`: module_roundtrip and examples
+- `tracking_only`: spec_open_issues and workpacks
+
 ## Audited Surface
 
 Runtime and lowering coverage already resolves through:

@@ -76,6 +76,40 @@
     ],
     "fail_closed_model": "any unresolved missing partial or known-open gap blocks release-claimable status for the affected profile or surface"
   },
+  "gap_priority_model": {
+    "priority_order": [
+      "p0-release-blocker",
+      "p1-profile-blocker",
+      "p2-surface-gap",
+      "p3-audit-gap"
+    ],
+    "priority_assignment_rules": {
+      "p0-release-blocker": "missing executable or traceability evidence for a release-claimable surface",
+      "p1-profile-blocker": "strict strict-concurrency or strict-system deltas are missing or partial",
+      "p2-surface-gap": "a required primary bucket or audited surface is only partially covered",
+      "p3-audit-gap": "supplemental or historical coverage is missing but does not block current profile claims"
+    }
+  },
+  "suite_partitions": {
+    "fast": [
+      "parser",
+      "diagnostics"
+    ],
+    "semantic": [
+      "semantic"
+    ],
+    "runtime": [
+      "lowering_abi"
+    ],
+    "interop": [
+      "module_roundtrip",
+      "examples"
+    ],
+    "tracking_only": [
+      "spec_open_issues",
+      "workpacks"
+    ]
+  },
   "audit_surface": {
     "runtime_and_lowering_coverage": [
       "tests/conformance/lowering_abi/manifest.json",
