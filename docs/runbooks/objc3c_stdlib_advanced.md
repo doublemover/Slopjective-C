@@ -34,6 +34,7 @@ Exact live implementation paths for downstream work:
 - `scripts/check_stdlib_surface.py`
 - `scripts/materialize_objc3c_stdlib_workspace.py`
 - `scripts/run_objc3c_stdlib_workspace_smoke.py`
+- `scripts/check_objc3c_stdlib_advanced_integration.py`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 - `scripts/objc3c_public_workflow_runner.py`
 
@@ -179,3 +180,19 @@ This milestone does not justify:
 - public reflection or executor ABI claims without checked-in helper exports
 - moving strict-system hooks into always-on core imports
 - adding a second stdlib packaging flow or milestone-local wrapper scripts
+
+## Live workflow surface
+
+The advanced-helper slice now owns a dedicated public validation action instead
+of hiding behind the generic stdlib label:
+
+- `npm run test:stdlib:advanced`
+- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced`
+
+That workflow must continue to:
+
+- reuse `check-stdlib-surface`
+- reuse the shared stdlib workspace materializer and smoke compiler path
+- prove the exact advanced-helper module subset from
+  `stdlib/advanced_helper_package_surface.json`
+- write machine-owned reports under `tmp/reports/stdlib/`

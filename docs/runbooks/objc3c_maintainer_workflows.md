@@ -147,5 +147,6 @@ npm run test:repo
 - stdlib surface check: `npm run check:stdlib:surface`
 - stdlib workspace materialization: `npm run build:objc3c:stdlib`
 - stdlib integration: `npm run test:stdlib`
+- advanced stdlib integration: `npm run test:stdlib:advanced`
 
 The live maintainer surface is intentionally small. Historical planning, contract, and milestone-specific validation material is archived under `tmp/archive/`.

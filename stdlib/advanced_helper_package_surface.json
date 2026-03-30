@@ -41,8 +41,8 @@
   "advanced_helper_command_surfaces": {
     "check_stdlib_surface": "npm run check:stdlib:surface",
     "build_stdlib": "npm run build:objc3c:stdlib",
-    "validate_stdlib_foundation": "npm run test:stdlib",
-    "validate_runnable_stdlib_foundation": "npm run test:stdlib:e2e",
+    "validate_stdlib_advanced": "npm run test:stdlib:advanced",
+    "validate_runnable_stdlib_advanced": "npm run test:stdlib:advanced:e2e",
     "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain"
   },
   "advanced_helper_profile_gates": {
@@ -62,8 +62,8 @@
   "public_actions": [
     "check-stdlib-surface",
     "materialize-stdlib-workspace",
-    "validate-stdlib-foundation",
-    "validate-runnable-stdlib-foundation",
+    "validate-stdlib-advanced",
+    "validate-runnable-stdlib-advanced",
     "package-runnable-toolchain"
   ],
   "non_goals": [

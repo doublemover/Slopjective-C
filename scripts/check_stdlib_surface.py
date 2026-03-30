@@ -586,11 +586,19 @@ def main() -> int:
         "advanced_helper_profile_gates",
     ]:
         return fail("advanced helper package surface staged_manifest_fields drifted")
+    if advanced_helper_package_surface.get("advanced_helper_command_surfaces") != {
+        "check_stdlib_surface": "npm run check:stdlib:surface",
+        "build_stdlib": "npm run build:objc3c:stdlib",
+        "validate_stdlib_advanced": "npm run test:stdlib:advanced",
+        "validate_runnable_stdlib_advanced": "npm run test:stdlib:advanced:e2e",
+        "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
+    }:
+        return fail("advanced helper package surface command surfaces drifted")
     if advanced_helper_package_surface.get("public_actions") != [
         "check-stdlib-surface",
         "materialize-stdlib-workspace",
-        "validate-stdlib-foundation",
-        "validate-runnable-stdlib-foundation",
+        "validate-stdlib-advanced",
+        "validate-runnable-stdlib-advanced",
         "package-runnable-toolchain",
     ]:
         return fail("advanced helper package surface public_actions drifted")

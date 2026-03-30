@@ -48,6 +48,7 @@ PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integr
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
+STDLIB_ADVANCED_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_advanced_integration.py"
 RUNNABLE_STDLIB_FOUNDATION_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_foundation_end_to_end.py"
 PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
@@ -213,6 +214,10 @@ def action_validate_showcase(_: list[str]) -> int:
 
 def action_validate_stdlib_foundation(_: list[str]) -> int:
     return run([sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)])
+
+
+def action_validate_stdlib_advanced(_: list[str]) -> int:
+    return run([sys.executable, str(STDLIB_ADVANCED_INTEGRATION_PY)])
 
 
 def action_validate_runnable_showcase(_: list[str]) -> int:
@@ -1254,6 +1259,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets", pass_through_args=True),
     "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace and lowering/import contracts into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", ("build:objc3c:stdlib",), validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface", pass_through_args=True),
     "validate-stdlib-foundation": ActionSpec("validate-stdlib-foundation", "run the integrated stdlib boundary and smoke validation flow", "python:scripts/check_objc3c_stdlib_foundation_integration.py", ("test:stdlib",), validation_tier="repo", guarantee_owner="stdlib boundary contracts, lowering/import artifact expectations, workspace materialization, and smoke compilation stay executable on the live public workflow"),
+    "validate-stdlib-advanced": ActionSpec("validate-stdlib-advanced", "run the integrated advanced stdlib helper validation flow", "python:scripts/check_objc3c_stdlib_advanced_integration.py", ("test:stdlib:advanced",), validation_tier="repo", guarantee_owner="advanced stdlib helper module contracts, profile gates, and shared smoke compilation stay executable on the live public workflow"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "inspect-capability-explorer": ActionSpec("inspect-capability-explorer", "probe LLVM and backend-routing capability state through the live capability explorer surface", "python:scripts/probe_objc3c_llvm_capabilities.py", ("inspect:objc3c:capabilities",), validation_tier="repo", guarantee_owner="capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts", pass_through_args=True),
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:playground",), validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
@@ -1333,6 +1339,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "materialize-playground-workspace": action_materialize_playground_workspace,
     "materialize-stdlib-workspace": action_materialize_stdlib_workspace,
     "validate-stdlib-foundation": action_validate_stdlib_foundation,
+    "validate-stdlib-advanced": action_validate_stdlib_advanced,
     "validate-runnable-stdlib-foundation": action_validate_runnable_stdlib_foundation,
     "inspect-capability-explorer": action_inspect_capability_explorer,
     "inspect-playground-repro": action_inspect_playground_repro,

@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `82`
+- Current public script count: `83`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -36,6 +36,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c:playground` | `materialize-playground-workspace` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `build:objc3c:stdlib` | `materialize-stdlib-workspace` | `repo` | `stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface` | `pass-through` | `python:scripts/materialize_objc3c_stdlib_workspace.py` |
 | `test:stdlib` | `validate-stdlib-foundation` | `repo` | `stdlib boundary contracts, lowering/import artifact expectations, workspace materialization, and smoke compilation stay executable on the live public workflow` | `fixed-shape` | `python:scripts/check_objc3c_stdlib_foundation_integration.py` |
+| `test:stdlib:advanced` | `validate-stdlib-advanced` | `repo` | `advanced stdlib helper module contracts, profile gates, and shared smoke compilation stay executable on the live public workflow` | `fixed-shape` | `python:scripts/check_objc3c_stdlib_advanced_integration.py` |
 | `test:stdlib:e2e` | `validate-runnable-stdlib-foundation` | `full` | `packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py` |
 | `inspect:objc3c:capabilities` | `inspect-capability-explorer` | `repo` | `capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts` | `pass-through` | `python:scripts/probe_objc3c_llvm_capabilities.py` |
 | `inspect:objc3c:playground` | `inspect-playground-repro` | `repo` | `playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
