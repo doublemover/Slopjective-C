@@ -114,3 +114,5 @@ it must stay on this boundary.
 - contract root: `tests/tooling/fixtures/public_conformance_reporting/`
 - source check: `python scripts/check_public_conformance_reporting_source_surface.py`
 - source summary: `tmp/reports/public-conformance/source-surface-summary.json`
+- scorecard builder: `python scripts/build_objc3c_public_conformance_scorecard.py`
+- scorecard summary: `tmp/reports/public-conformance/scorecard-summary.json`
