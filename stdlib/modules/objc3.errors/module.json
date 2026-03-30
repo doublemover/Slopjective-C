@@ -25,6 +25,8 @@
     "objc3_errors_result_ok_tag",
     "objc3_errors_result_err_tag",
     "objc3_errors_result_is_ok",
+    "objc3_errors_result_unwrap_or",
+    "objc3_errors_result_error_or",
     "objc3_errors_ok_or_code",
     "objc3_errors_or_throw_code",
     "objc3_errors_text_data_compatibility_score"

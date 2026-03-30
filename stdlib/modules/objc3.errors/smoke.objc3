@@ -16,6 +16,22 @@ fn objc3_errors_result_is_ok(tag: i32) {
   }
 }
 
+fn objc3_errors_result_unwrap_or(tag: i32, value: i32, fallback: i32) {
+  if (tag == 1) {
+    return value;
+  } else {
+    return fallback;
+  }
+}
+
+fn objc3_errors_result_error_or(tag: i32, code: i32, fallback: i32) {
+  if (tag == 2) {
+    return code;
+  } else {
+    return fallback;
+  }
+}
+
 fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
   if (value) {
     return value;
@@ -40,6 +56,8 @@ fn main() {
   return objc3_errors_result_ok_tag()
     + objc3_errors_result_err_tag()
     + objc3_errors_result_is_ok(1)
+    + objc3_errors_result_unwrap_or(1, 5, 6)
+    + objc3_errors_result_error_or(2, 7, 8)
     + objc3_errors_ok_or_code(0, 2)
     + objc3_errors_or_throw_code(3, 4)
     + objc3_errors_text_data_compatibility_score(5, 6);

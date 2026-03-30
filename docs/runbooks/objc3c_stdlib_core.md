@@ -92,10 +92,15 @@ modules without updating the checked-in architecture contract.
 - `objc3_core_profile_revision`
 - `objc3_core_has_capability`
 - `objc3_core_option_has_value`
+- `objc3_core_option_unwrap_or`
 - `objc3_core_string_view_length`
+- `objc3_core_string_view_prefix_units`
 - `objc3_core_bytes_span_length`
+- `objc3_core_bytes_span_prefix_length`
 - `objc3_core_array_count`
+- `objc3_core_array_prefix_count`
 - `objc3_core_map_entry_present`
+- `objc3_core_map_entry_value_or`
 
 `objc3.errors` exports:
 
@@ -104,6 +109,8 @@ modules without updating the checked-in architecture contract.
 - `objc3_errors_result_ok_tag`
 - `objc3_errors_result_err_tag`
 - `objc3_errors_result_is_ok`
+- `objc3_errors_result_unwrap_or`
+- `objc3_errors_result_error_or`
 - `objc3_errors_ok_or_code`
 - `objc3_errors_or_throw_code`
 - `objc3_errors_text_data_compatibility_score`
@@ -118,10 +125,13 @@ modules without updating the checked-in architecture contract.
 
 - all `M306` helpers remain deterministic and side-effect free
 - option and presence helpers use `0` for absent and nonzero for present
+- `unwrap_or` helpers return the live payload only when the checked-in
+  presence or result tag says it is valid
 - `objc3_errors_result_ok_tag` stays `1` and
   `objc3_errors_result_err_tag` stays `2` within major version `1`
 - text/data helpers preserve the caller-provided counts instead of claiming
-  allocation, ownership, or transcoding semantics
+  allocation, ownership, or transcoding semantics, and prefix helpers clamp to
+  the caller-provided count instead of widening it
 - module semver metadata stays `1.0.0` for the initial core stdlib surface
 - additive helper growth is allowed, but moving helper families between modules
   is a breaking change

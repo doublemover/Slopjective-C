@@ -27,16 +27,60 @@ fn objc3_core_option_has_value(flag: i32) {
   }
 }
 
+fn objc3_core_option_unwrap_or(flag: i32, value: i32, fallback: i32) {
+  if (flag) {
+    return value;
+  } else {
+    return fallback;
+  }
+}
+
 fn objc3_core_string_view_length(count: i32) {
   return count;
+}
+
+fn objc3_core_string_view_prefix_units(count: i32, requested: i32) {
+  if (requested < 0) {
+    return 0;
+  } else {
+    if (count < requested) {
+      return count;
+    } else {
+      return requested;
+    }
+  }
 }
 
 fn objc3_core_bytes_span_length(count: i32) {
   return count;
 }
 
+fn objc3_core_bytes_span_prefix_length(count: i32, requested: i32) {
+  if (requested < 0) {
+    return 0;
+  } else {
+    if (count < requested) {
+      return count;
+    } else {
+      return requested;
+    }
+  }
+}
+
 fn objc3_core_array_count(count: i32) {
   return count;
+}
+
+fn objc3_core_array_prefix_count(count: i32, requested: i32) {
+  if (requested < 0) {
+    return 0;
+  } else {
+    if (count < requested) {
+      return count;
+    } else {
+      return requested;
+    }
+  }
 }
 
 fn objc3_core_map_entry_present(flag: i32) {
@@ -44,5 +88,13 @@ fn objc3_core_map_entry_present(flag: i32) {
     return 1;
   } else {
     return 0;
+  }
+}
+
+fn objc3_core_map_entry_value_or(flag: i32, value: i32, fallback: i32) {
+  if (flag) {
+    return value;
+  } else {
+    return fallback;
   }
 }

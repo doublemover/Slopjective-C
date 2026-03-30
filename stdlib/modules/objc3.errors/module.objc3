@@ -19,6 +19,22 @@ fn objc3_errors_result_is_ok(tag: i32) {
   }
 }
 
+fn objc3_errors_result_unwrap_or(tag: i32, value: i32, fallback: i32) {
+  if (tag == Objc3ErrorsResultOkTag) {
+    return value;
+  } else {
+    return fallback;
+  }
+}
+
+fn objc3_errors_result_error_or(tag: i32, code: i32, fallback: i32) {
+  if (tag == Objc3ErrorsResultErrTag) {
+    return code;
+  } else {
+    return fallback;
+  }
+}
+
 fn objc3_errors_ok_or_code(value: i32, fallback: i32) {
   if (value) {
     return value;

@@ -49,10 +49,15 @@
       "objc3_core_profile_revision",
       "objc3_core_has_capability",
       "objc3_core_option_has_value",
+      "objc3_core_option_unwrap_or",
       "objc3_core_string_view_length",
+      "objc3_core_string_view_prefix_units",
       "objc3_core_bytes_span_length",
+      "objc3_core_bytes_span_prefix_length",
       "objc3_core_array_count",
-      "objc3_core_map_entry_present"
+      "objc3_core_array_prefix_count",
+      "objc3_core_map_entry_present",
+      "objc3_core_map_entry_value_or"
     ],
     "objc3.errors": [
       "Objc3ErrorsResultOkTag",
@@ -60,6 +65,8 @@
       "objc3_errors_result_ok_tag",
       "objc3_errors_result_err_tag",
       "objc3_errors_result_is_ok",
+      "objc3_errors_result_unwrap_or",
+      "objc3_errors_result_error_or",
       "objc3_errors_ok_or_code",
       "objc3_errors_or_throw_code",
       "objc3_errors_text_data_compatibility_score"

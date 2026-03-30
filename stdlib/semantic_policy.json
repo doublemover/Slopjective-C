@@ -39,15 +39,22 @@
   "core_semantics": {
     "option_presence_encoding": "0-means-none-nonzero-means-some",
     "capability_query_encoding": "0-means-missing-nonzero-means-present",
+    "option_unwrap_or": "returns value when presence flag is nonzero, otherwise fallback",
     "string_view_length": "returns the provided unit count unchanged",
+    "string_view_prefix_units": "returns requested units clamped to the provided unit count and zero floor",
     "byte_span_length": "returns the provided byte count unchanged",
+    "byte_span_prefix_length": "returns requested units clamped to the provided byte count and zero floor",
     "array_count": "returns the provided element count unchanged",
-    "map_entry_present": "0-means-absent-nonzero-means-present"
+    "array_prefix_count": "returns requested elements clamped to the provided element count and zero floor",
+    "map_entry_present": "0-means-absent-nonzero-means-present",
+    "map_entry_value_or": "returns value when presence flag is nonzero, otherwise fallback"
   },
   "error_semantics": {
     "result_ok_tag": 1,
     "result_err_tag": 2,
     "result_is_ok": "returns 1 only when tag equals result_ok_tag",
+    "result_unwrap_or": "returns value only when tag equals result_ok_tag, otherwise fallback",
+    "result_error_or": "returns code only when tag equals result_err_tag, otherwise fallback",
     "ok_or_code": "returns value when nonzero, otherwise fallback",
     "or_throw_code": "returns value when nonzero, otherwise fallback",
     "text_data_compatibility_score": "returns unit_count plus byte_count"
