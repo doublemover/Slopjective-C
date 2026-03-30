@@ -3,7 +3,7 @@
 This runbook is generated from the live public workflow runner metadata.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current public script count: `110`
+- Current public script count: `112`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Introspection command: `python scripts/objc3c_public_workflow_runner.py --list-json`
 - Generator path: `scripts/render_objc3c_public_command_surface.py`
@@ -48,6 +48,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:benchmark` | `benchmark-runtime-inspector` | `repo` | `runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_inspector.py` |
 | `inspect:objc3c:performance` | `benchmark-performance` | `repo` | `objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets` | `pass-through` | `python:scripts/benchmark_objc3c_performance.py` |
 | `inspect:objc3c:runtime-performance` | `benchmark-runtime-performance` | `repo` | `runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_performance.py` |
+| `test:objc3c:runtime-performance` | `validate-runtime-performance` | `repo` | `runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_runtime_performance_integration.py` |
+| `test:objc3c:runnable-runtime-performance` | `validate-runnable-runtime-performance` | `full` | `packaged runtime-performance fixtures, contracts, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_runtime_performance_end_to_end.py` |
 | `inspect:objc3c:comparative-baselines` | `benchmark-comparative-baselines` | `repo` | `comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states` | `pass-through` | `python:scripts/run_objc3c_comparative_baselines.py` |
 | `test:objc3c:runnable-performance` | `validate-runnable-performance` | `full` | `packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_performance_end_to_end.py` |
 | `test:objc3c:performance` | `validate-performance-foundation` | `repo` | `benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_performance_integration.py` |
@@ -111,7 +113,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive corpus artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
-| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
+| `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus runtime-performance benchmarking, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `-` | `-` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `proof:objc3c` | `proof-objc3c` | `-` | `-` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
 
