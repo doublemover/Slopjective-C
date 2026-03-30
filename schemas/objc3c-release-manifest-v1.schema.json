@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-release-manifest-v1.schema.json",
+  "title": "objc3c Release Manifest v1",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_version",
+    "package_model",
+    "reproducibility_scope",
+    "build_run_count",
+    "reproducibility_match",
+    "package_runs",
+    "release_payload_entries",
+    "release_payload_digest_sha256",
+    "primary_package_manifest_path",
+    "primary_package_manifest_sha256",
+    "repo_superclean_surface_path",
+    "repo_superclean_surface_sha256",
+    "release_evidence_index_path",
+    "release_evidence_index_sha256",
+    "source_stamps"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.release.foundation.manifest.v1" },
+    "schema_version": { "const": 1 },
+    "package_model": { "type": "string" },
+    "reproducibility_scope": { "type": "string" },
+    "build_run_count": { "type": "integer", "minimum": 1 },
+    "reproducibility_match": { "type": "boolean" },
+    "package_runs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["run_id", "package_root", "package_manifest_path", "package_manifest_sha256", "copied_file_count", "release_payload_digest_sha256"],
+        "properties": {
+          "run_id": { "type": "string" },
+          "package_root": { "type": "string" },
+          "package_manifest_path": { "type": "string" },
+          "package_manifest_sha256": { "type": "string" },
+          "copied_file_count": { "type": "integer", "minimum": 1 },
+          "release_payload_digest_sha256": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "release_payload_entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "byte_count", "component_group"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string" },
+          "byte_count": { "type": "integer", "minimum": 0 },
+          "component_group": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "release_payload_digest_sha256": { "type": "string" },
+    "primary_package_manifest_path": { "type": "string" },
+    "primary_package_manifest_sha256": { "type": "string" },
+    "repo_superclean_surface_path": { "type": "string" },
+    "repo_superclean_surface_sha256": { "type": "string" },
+    "release_evidence_index_path": { "type": "string" },
+    "release_evidence_index_sha256": { "type": "string" },
+    "source_stamps": {
+      "type": "object",
+      "required": ["git_commit", "git_tree_dirty"],
+      "properties": {
+        "git_commit": { "type": "string" },
+        "git_tree_dirty": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

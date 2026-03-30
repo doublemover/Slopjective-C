@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-release-attestation-v1.schema.json",
+  "title": "objc3c Release Attestation v1",
+  "type": "object",
+  "required": ["contract_id", "schema_version", "release_manifest_path", "sbom_path", "attested_digests", "source_stamps"],
+  "properties": {
+    "contract_id": { "const": "objc3c.release.foundation.attestation.v1" },
+    "schema_version": { "const": 1 },
+    "release_manifest_path": { "type": "string" },
+    "sbom_path": { "type": "string" },
+    "attested_digests": {
+      "type": "object",
+      "required": ["release_manifest_sha256", "release_payload_digest_sha256", "package_manifest_sha256", "sbom_sha256", "repo_superclean_surface_sha256", "release_evidence_index_sha256"],
+      "properties": {
+        "release_manifest_sha256": { "type": "string" },
+        "release_payload_digest_sha256": { "type": "string" },
+        "package_manifest_sha256": { "type": "string" },
+        "sbom_sha256": { "type": "string" },
+        "repo_superclean_surface_sha256": { "type": "string" },
+        "release_evidence_index_sha256": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "source_stamps": {
+      "type": "object",
+      "required": ["git_commit", "git_tree_dirty", "package_root", "package_manifest_path", "release_manifest_path", "sbom_path", "attestation_path"],
+      "properties": {
+        "git_commit": { "type": "string" },
+        "git_tree_dirty": { "type": "boolean" },
+        "package_root": { "type": "string" },
+        "package_manifest_path": { "type": "string" },
+        "release_manifest_path": { "type": "string" },
+        "sbom_path": { "type": "string" },
+        "attestation_path": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

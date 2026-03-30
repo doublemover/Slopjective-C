@@ -1,0 +1,8 @@
+{
+  "contract_id": "objc3c.release.foundation.schema.surface.v1",
+  "schema_version": 1,
+  "schema_check_script": "scripts/check_release_foundation_schema_surface.py",
+  "release_manifest_schema": "schemas/objc3c-release-manifest-v1.schema.json",
+  "release_sbom_schema": "schemas/objc3c-release-sbom-v1.schema.json",
+  "release_attestation_schema": "schemas/objc3c-release-attestation-v1.schema.json"
+}
