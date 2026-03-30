@@ -170,6 +170,7 @@ npm run test:repo
 - integrated external validation drill: `npm run test:objc3c:external-validation`
 - external validation replay drill: `npm run test:objc3c:external-validation:replay`
 - external repro publication: `npm run publish:objc3c:external-repro-corpus`
+- external validation integration proof: `npm run test:objc3c:external-validation:integration`
 - stress source-surface check: `npm run check:stress:surface`
 - parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
 - lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`

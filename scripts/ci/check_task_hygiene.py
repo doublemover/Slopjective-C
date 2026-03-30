@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_JSON = ROOT / "package.json"
-PACKAGE_SCRIPT_BUDGET = 101
+PACKAGE_SCRIPT_BUDGET = 102
 REMOVED_FAMILY_PATTERNS = (
     r"^check:objc3c:m",
     r"^test:tooling:m",

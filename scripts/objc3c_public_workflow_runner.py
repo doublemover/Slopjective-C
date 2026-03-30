@@ -58,6 +58,7 @@ STRESS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_stress_end_to_end.py"
 EXTERNAL_VALIDATION_SURFACE_PY = ROOT / "scripts" / "check_external_validation_source_surface.py"
 EXTERNAL_VALIDATION_REPLAY_PY = ROOT / "scripts" / "run_objc3c_external_validation_replay.py"
 EXTERNAL_VALIDATION_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_external_repro_corpus.py"
+EXTERNAL_VALIDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_external_validation_integration.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -654,6 +655,10 @@ def action_validate_external_validation(_: list[str]) -> int:
             ("publish-external-repro-corpus", [sys.executable, str(EXTERNAL_VALIDATION_PUBLICATION_PY)]),
         ],
     )
+
+
+def action_validate_external_validation_integration(_: list[str]) -> int:
+    return run([sys.executable, str(EXTERNAL_VALIDATION_INTEGRATION_PY)])
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1398,6 +1403,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-external-validation-replay": ActionSpec("test-external-validation-replay", "run accepted external-validation entries through the live replay proof scripts", "python:scripts/run_objc3c_external_validation_replay.py", ("test:objc3c:external-validation:replay",), validation_tier="repo", guarantee_owner="accepted external evidence keeps replaying through the live parser and execution proof surfaces"),
     "publish-external-repro-corpus": ActionSpec("publish-external-repro-corpus", "materialize the machine-owned external repro corpus publication artifact", "python:scripts/publish_objc3c_external_repro_corpus.py", ("publish:objc3c:external-repro-corpus",), validation_tier="repo", guarantee_owner="accepted and quarantined external evidence stays publishable as a machine-owned corpus summary rooted in the replay drill"),
     "validate-external-validation": ActionSpec("validate-external-validation", "run the integrated external-validation source, replay, and publication drill", "runner-internal + direct external validation commands", ("test:objc3c:external-validation",), validation_tier="repo", guarantee_owner="external evidence intake, replay, and publication stay executable on the live workflow"),
+    "validate-external-validation-integration": ActionSpec("validate-external-validation-integration", "validate the integrated external-validation report and child artifact set", "python:scripts/check_objc3c_external_validation_integration.py", ("test:objc3c:external-validation:integration",), validation_tier="repo", guarantee_owner="integrated external-validation reports stay coherent across source-surface, replay, and publication outputs"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1496,6 +1502,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-external-validation-replay": action_test_external_validation_replay,
     "publish-external-repro-corpus": action_publish_external_repro_corpus,
     "validate-external-validation": action_validate_external_validation,
+    "validate-external-validation-integration": action_validate_external_validation_integration,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
