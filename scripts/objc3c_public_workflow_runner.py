@@ -77,6 +77,11 @@ PERFORMANCE_GOVERNANCE_DASHBOARD_PY = ROOT / "scripts" / "build_objc3c_performan
 PERFORMANCE_GOVERNANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_performance_report.py"
 PERFORMANCE_GOVERNANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_governance_integration.py"
 PERFORMANCE_GOVERNANCE_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_performance_governance_end_to_end.py"
+RELEASE_FOUNDATION_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_release_foundation_source_surface.py"
+RELEASE_FOUNDATION_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_release_foundation_schema_surface.py"
+RELEASE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_release_manifest.py"
+RELEASE_PROVENANCE_PY = ROOT / "scripts" / "publish_objc3c_release_provenance.py"
+RELEASE_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_release_foundation_integration.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -766,6 +771,37 @@ def action_validate_performance_governance_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(PERFORMANCE_GOVERNANCE_END_TO_END_PY)])
 
 
+def action_check_release_foundation_surface(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)])
+
+
+def action_check_release_foundation_schema_surface(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_FOUNDATION_SCHEMA_SURFACE_PY)])
+
+
+def action_build_release_manifest(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_MANIFEST_PY)])
+
+
+def action_publish_release_provenance(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_PROVENANCE_PY)])
+
+
+def action_validate_release_foundation(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-release-foundation",
+        [
+            ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
+            ("validate-runnable-release-candidate", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-runnable-release-candidate"]),
+            ("check-release-evidence", [sys.executable, str(ROOT / "scripts" / "check_release_evidence.py")]),
+            ("check-release-foundation-surface", [sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)]),
+            ("check-release-foundation-schema-surface", [sys.executable, str(RELEASE_FOUNDATION_SCHEMA_SURFACE_PY)]),
+            ("build-release-manifest", [sys.executable, str(RELEASE_MANIFEST_PY)]),
+            ("publish-release-provenance", [sys.executable, str(RELEASE_PROVENANCE_PY)]),
+        ],
+    )
+
+
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     rc = execute_registered_action("build-native-contracts", [])
     if rc != 0:
@@ -1453,6 +1489,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("validate-external-validation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-external-validation"]),
             ("validate-public-conformance-reporting", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-public-conformance-reporting"]),
             ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
+            ("validate-release-foundation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-foundation"]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1544,6 +1581,11 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-performance-governance": ActionSpec("validate-performance-governance", "run the integrated performance governance workflow", "runner-internal + direct performance governance commands", ("test:objc3c:performance-governance",), validation_tier="repo", guarantee_owner="performance governance budgets, drift diagnostics, dashboard derivation, and report publication stay executable on the live performance surfaces"),
     "validate-performance-governance-integration": ActionSpec("validate-performance-governance-integration", "validate the integrated performance governance workflow report and child artifacts", "python:scripts/check_objc3c_performance_governance_integration.py", ("test:objc3c:performance-governance:integration",), validation_tier="repo", guarantee_owner="integrated performance governance artifacts stay coherent across source, schema, dashboard, and publication outputs"),
     "validate-performance-governance-end-to-end": ActionSpec("validate-performance-governance-end-to-end", "validate performance governance entrypoints, command-surface sync, and ci/nightly wiring", "python:scripts/check_objc3c_performance_governance_end_to_end.py", ("test:objc3c:performance-governance:e2e",), validation_tier="repo", guarantee_owner="performance governance entrypoints and ci/nightly wiring stay coherent with the integrated reporting artifacts"),
+    "check-release-foundation-surface": ActionSpec("check-release-foundation-surface", "validate the checked-in release-foundation source surface", "python:scripts/check_release_foundation_source_surface.py", ("check:objc3c:release-foundation:surface",), validation_tier="repo", guarantee_owner="release foundation only publishes from the checked-in release taxonomy, trust, payload, and provenance contracts"),
+    "check-release-foundation-schema-surface": ActionSpec("check-release-foundation-schema-surface", "validate the checked-in release-foundation schema surface", "python:scripts/check_release_foundation_schema_surface.py", ("check:objc3c:release-foundation:schemas",), validation_tier="repo", guarantee_owner="release manifest, sbom, and attestation artifacts stay on checked-in schema contracts"),
+    "build-release-manifest": ActionSpec("build-release-manifest", "derive the machine-owned release manifest from repeated runnable package assembly runs", "python:scripts/build_objc3c_release_manifest.py", ("inspect:objc3c:release-manifest",), validation_tier="repo", guarantee_owner="release payload selection and reproducibility proof stay tied to the live runnable package manifest and release-evidence boundary"),
+    "publish-release-provenance": ActionSpec("publish-release-provenance", "publish the machine-owned release sbom and attestation artifacts", "python:scripts/publish_objc3c_release_provenance.py", ("publish:objc3c:release-provenance",), validation_tier="repo", guarantee_owner="release provenance publication stays traceable to the live release manifest, package manifest, and release-evidence index"),
+    "validate-release-foundation": ActionSpec("validate-release-foundation", "run the integrated release-foundation workflow", "runner-internal + direct release foundation commands", ("test:objc3c:release-foundation",), validation_tier="nightly", guarantee_owner="release taxonomy, reproducible package assembly, and provenance publication stay executable on the live runnable package surface"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1581,7 +1623,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive dispatch fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", ("test:objc3c:fixture-matrix",), validation_tier="nightly", guarantee_owner="broad positive dispatch and artifact sanity", pass_through_args=True),
     "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", ("test:objc3c:negative-expectations",), validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
     "test-full": ActionSpec("test-full", "full developer validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:full",), validation_tier="full", guarantee_owner="smoke, runtime acceptance, and replay without full recovery fan-out"),
-    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus performance governance reporting, conformance corpus indexing, recovery, and broad corpus sweeps"),
+    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal + direct PowerShell suites", ("test:objc3c:nightly",), validation_tier="nightly", guarantee_owner="full validation plus performance governance reporting, release-foundation publication, conformance corpus indexing, recovery, and broad corpus sweeps"),
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1", ("package:objc3c-native:runnable-toolchain",)),
     "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1", ("proof:objc3c",)),
 }
@@ -1663,6 +1705,11 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-performance-governance": action_validate_performance_governance,
     "validate-performance-governance-integration": action_validate_performance_governance_integration,
     "validate-performance-governance-end-to-end": action_validate_performance_governance_end_to_end,
+    "check-release-foundation-surface": action_check_release_foundation_surface,
+    "check-release-foundation-schema-surface": action_check_release_foundation_schema_surface,
+    "build-release-manifest": action_build_release_manifest,
+    "publish-release-provenance": action_publish_release_provenance,
+    "validate-release-foundation": action_validate_release_foundation,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,

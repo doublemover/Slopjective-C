@@ -1,0 +1,29 @@
+{
+  "contract_id": "objc3c.release.foundation.workflow.surface.v1",
+  "validate_action": "validate-release-foundation",
+  "public_scripts": [
+    "test:objc3c:release-foundation",
+    "check:objc3c:release-foundation:surface",
+    "check:objc3c:release-foundation:schemas",
+    "inspect:objc3c:release-manifest",
+    "publish:objc3c:release-provenance"
+  ],
+  "release_evidence_paths": [
+    "tmp/reports/release-foundation/source-surface-summary.json",
+    "tmp/reports/release-foundation/schema-surface-summary.json",
+    "tmp/reports/release-foundation/release-manifest-summary.json",
+    "tmp/reports/release-foundation/publication-summary.json",
+    "tmp/reports/release-foundation/integration-summary.json",
+    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
+    "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json"
+  ],
+  "upstream_validate_actions": [
+    "validate-performance-governance",
+    "validate-runnable-release-candidate"
+  ],
+  "upstream_direct_checks": [
+    "check-release-evidence"
+  ],
+  "nightly_action": "test-nightly"
+}

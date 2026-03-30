@@ -99,6 +99,19 @@ Performance-governance entrypoint:
   dashboard derivation, and publication before widening release-performance
   claims or waiver semantics
 
+Release-foundation entrypoint:
+
+- `docs/runbooks/objc3c_release_foundation.md` is the maintainer boundary for
+  release artifact taxonomy, runnable payload selection, reproducible package
+  assembly, SBOM publication, and attestation binding
+- release-foundation work must stay on the existing runnable package,
+  release-evidence, repo-superclean, and public workflow runner surfaces
+  instead of inventing a second package layout, hand-maintained checksum
+  spreadsheet, or installer-shaped sidecar bundle
+- use the public runner actions for source-surface checking, schema checking,
+  release-manifest derivation, and provenance publication before widening
+  release claims
+
 Runtime-performance entrypoint:
 
 - `docs/runbooks/objc3c_runtime_performance.md` is the maintainer boundary for
@@ -221,6 +234,12 @@ npm run test:repo
 - integrated performance governance workflow: `npm run test:objc3c:performance-governance`
 - performance governance integration proof: `npm run test:objc3c:performance-governance:integration`
 - performance governance end-to-end proof: `npm run test:objc3c:performance-governance:e2e`
+- release foundation boundary: `docs/runbooks/objc3c_release_foundation.md`
+- release foundation source-surface check: `npm run check:objc3c:release-foundation:surface`
+- release foundation schema check: `npm run check:objc3c:release-foundation:schemas`
+- release manifest build: `npm run inspect:objc3c:release-manifest`
+- release provenance publication: `npm run publish:objc3c:release-provenance`
+- integrated release foundation workflow: `npm run test:objc3c:release-foundation`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
 - runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
 - integrated runtime performance validation: `npm run test:objc3c:runtime-performance`
