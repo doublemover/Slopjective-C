@@ -1947,11 +1947,23 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   std::unordered_map<std::size_t, ReceiverBinding> bindings_by_ordinal;
   std::vector<const RegisteredImageMetadata *> ordered_images =
       OrderedRegisteredImages(state);
+  std::size_t max_class_name_count = 0;
+  std::size_t estimated_realized_node_count = 0;
+  for (const RegisteredImageMetadata *record : ordered_images) {
+    if (record == nullptr) {
+      continue;
+    }
+    estimated_realized_node_count +=
+        static_cast<std::size_t>(record->class_descriptor_count);
+  }
   for (const RegisteredImageMetadata *record : ordered_images) {
     std::vector<std::string> class_names;
     if (!CollectSortedImageClassNames(*record, class_names)) {
       continue;
     }
+    max_class_name_count =
+        std::max(max_class_name_count, class_names.size());
+    bindings_by_ordinal.reserve(max_class_name_count);
     for (std::size_t ordinal = 0; ordinal < class_names.size(); ++ordinal) {
       ReceiverBinding &binding = bindings_by_ordinal[ordinal];
       if (binding.class_name.empty() && !binding.ambiguous) {
@@ -1964,6 +1976,8 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
       }
     }
   }
+  state.realized_class_name_by_base_identity.reserve(bindings_by_ordinal.size());
+  state.ambiguous_realized_base_identities.reserve(bindings_by_ordinal.size());
   for (const auto &[ordinal, binding] : bindings_by_ordinal) {
     const std::uint64_t base_identity = BuildReceiverBaseIdentity(ordinal);
     if (binding.ambiguous) {
@@ -1979,6 +1993,9 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
       static_cast<std::uint64_t>(state.realized_class_name_by_base_identity.size());
 
   std::unordered_map<const EmittedClassBundle *, std::size_t> node_index_by_bundle;
+  node_index_by_bundle.reserve(estimated_realized_node_count);
+  state.realized_class_nodes.reserve(estimated_realized_node_count);
+  state.realized_class_node_indices_by_name.reserve(max_class_name_count);
   for (const RegisteredImageMetadata *record : ordered_images) {
     std::vector<std::string> class_names;
     if (!CollectSortedImageClassNames(*record, class_names)) {
@@ -3440,6 +3457,12 @@ bool TryWalkRegistrationTableUnlocked(
       AggregateCount(registration_table->string_pool_root);
   const std::uint64_t keypath_descriptor_count =
       AggregateCount(registration_table->keypath_descriptor_root);
+  state.selector_index_by_name.reserve(
+      state.selector_index_by_name.size() +
+      static_cast<std::size_t>(selector_pool_count));
+  state.keypath_slots.reserve(
+      state.keypath_slots.size() +
+      static_cast<std::size_t>(keypath_descriptor_count));
   const bool linker_anchor_matches_discovery_root =
       linker_anchor_target == registration_table->discovery_root;
 
@@ -3587,6 +3610,10 @@ int RegisterImageUnlocked(
 
   std::uint64_t descriptor_total = DescriptorTotal(image);
   if (staged_registration_table != nullptr) {
+    state.registration_order_by_identity_key.reserve(
+        state.registration_order_by_identity_key.size() + 1u);
+    state.registered_image_metadata_by_identity_key.reserve(
+        state.registered_image_metadata_by_identity_key.size() + 1u);
     RegisteredImageMetadata record;
     if (!TryWalkRegistrationTableUnlocked(state, staged_registration_table, image,
                                           record)) {
