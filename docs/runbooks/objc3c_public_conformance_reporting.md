@@ -77,6 +77,21 @@ The score is not a free-standing marketing metric. It is a compact projection
 over the live conformance corpus, external-validation, and checked-in
 schema/release anchors.
 
+## Schema Surface
+
+Checked-in schema contract:
+
+- `tests/tooling/fixtures/public_conformance_reporting/schema_surface.json`
+
+Checked-in schema anchors:
+
+- dashboard status schema: `schemas/objc3-conformance-dashboard-status-v1.schema.json`
+- public scorecard schema: `schemas/objc3c-public-conformance-scorecard-v1.schema.json`
+- public summary schema: `schemas/objc3c-public-conformance-summary-v1.schema.json`
+
+The public report may widen fields later, but it must stay schema-shaped and
+traceable to checked-in contracts.
+
 ## Explicit Non-Goals
 
 - no spreadsheet-only or prose-only claim publication path
@@ -114,5 +129,7 @@ it must stay on this boundary.
 - contract root: `tests/tooling/fixtures/public_conformance_reporting/`
 - source check: `python scripts/check_public_conformance_reporting_source_surface.py`
 - source summary: `tmp/reports/public-conformance/source-surface-summary.json`
+- schema check: `python scripts/check_public_conformance_schema_surface.py`
+- schema summary: `tmp/reports/public-conformance/schema-surface-summary.json`
 - scorecard builder: `python scripts/build_objc3c_public_conformance_scorecard.py`
 - scorecard summary: `tmp/reports/public-conformance/scorecard-summary.json`

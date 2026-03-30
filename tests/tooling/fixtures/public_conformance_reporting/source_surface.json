@@ -6,6 +6,7 @@
   "source_readme": "tests/tooling/fixtures/public_conformance_reporting/README.md",
   "source_check_script": "scripts/check_public_conformance_reporting_source_surface.py",
   "stability_policy": "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
+  "schema_surface": "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",
     "tests/tooling/fixtures/external_validation",
@@ -21,6 +22,7 @@
       "source_paths": [
         "docs/runbooks/objc3c_public_conformance_reporting.md",
         "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
+        "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
         "docs/runbooks/objc3c_conformance_corpus.md",
         "tests/conformance/corpus_surface.json",
         "tests/conformance/longitudinal_suites.json",
@@ -52,7 +54,9 @@
         "schemas/objc3-conformance-dashboard-status-v1.schema.json",
         "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
         "scripts/check_release_evidence.py",
-        "scripts/generate_conformance_evidence_index.py"
+        "scripts/generate_conformance_evidence_index.py",
+        "schemas/objc3c-public-conformance-scorecard-v1.schema.json",
+        "schemas/objc3c-public-conformance-summary-v1.schema.json"
       ]
     }
   ]

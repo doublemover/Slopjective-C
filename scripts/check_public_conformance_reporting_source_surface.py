@@ -78,6 +78,8 @@ def main() -> int:
         return fail("source_check_script drifted")
     if surface.get("stability_policy") != "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json":
         return fail("stability_policy drifted")
+    if surface.get("schema_surface") != "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json":
+        return fail("schema_surface drifted")
     if surface.get("checked_in_roots") != EXPECTED_ROOTS:
         return fail("checked_in_roots drifted")
 
@@ -86,6 +88,10 @@ def main() -> int:
     policy_path = require_path(
         "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
         kind="stability policy",
+    )
+    require_path(
+        "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
+        kind="schema surface",
     )
     for root in EXPECTED_ROOTS:
         require_path(root, kind="checked-in root")
@@ -150,6 +156,7 @@ def main() -> int:
         "runbook": surface["runbook"],
         "source_check_script": surface["source_check_script"],
         "stability_policy": surface["stability_policy"],
+        "schema_surface": surface["schema_surface"],
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
     }

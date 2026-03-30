@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.slopjective.local/objc3c-public-conformance-scorecard-v1.schema.json",
+  "title": "ObjC 3 Public Conformance Scorecard (v1)",
+  "description": "Machine-readable public conformance scorecard derived from live corpus and external-validation reports.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "policy_path",
+    "upstream_reports",
+    "schema_anchor_paths",
+    "missing_schema_anchors",
+    "score",
+    "score_band_id",
+    "badge",
+    "public_status",
+    "claim_ready",
+    "upstream_status",
+    "claimability_counts",
+    "deductions",
+    "hard_blocks",
+    "failures"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c.public_conformance_reporting.scorecard.summary.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "policy_path": {
+      "$ref": "#/$defs/repoPath"
+    },
+    "upstream_reports": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_integration",
+        "external_validation_integration",
+        "external_validation_publication"
+      ],
+      "properties": {
+        "corpus_integration": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "external_validation_integration": {
+          "$ref": "#/$defs/repoPath"
+        },
+        "external_validation_publication": {
+          "$ref": "#/$defs/repoPath"
+        }
+      }
+    },
+    "schema_anchor_paths": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "missing_schema_anchors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/repoPath"
+      }
+    },
+    "score": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 100
+    },
+    "score_band_id": {
+      "type": "string",
+      "enum": [
+        "claim-ready",
+        "provisional",
+        "blocked"
+      ]
+    },
+    "badge": {
+      "type": "string",
+      "enum": [
+        "claim-ready",
+        "provisional",
+        "blocked"
+      ]
+    },
+    "public_status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "caution",
+        "blocked"
+      ]
+    },
+    "claim_ready": {
+      "type": "boolean"
+    },
+    "upstream_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "corpus_integration",
+        "external_validation_integration",
+        "external_validation_publication"
+      ],
+      "properties": {
+        "corpus_integration": {
+          "$ref": "#/$defs/passFail"
+        },
+        "external_validation_integration": {
+          "$ref": "#/$defs/passFail"
+        },
+        "external_validation_publication": {
+          "$ref": "#/$defs/passFail"
+        }
+      }
+    },
+    "claimability_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "retained_suite_count",
+        "manifest_summary_count",
+        "accepted_fixture_count",
+        "redacted_fixture_count",
+        "blocked_fixture_count"
+      ],
+      "properties": {
+        "retained_suite_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "manifest_summary_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "accepted_fixture_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "redacted_fixture_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocked_fixture_count": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "deductions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deduction_id",
+          "amount",
+          "reason"
+        ],
+        "properties": {
+          "deduction_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "amount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 3
+          }
+        }
+      }
+    },
+    "hard_blocks": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 3
+      }
+    }
+  },
+  "$defs": {
+    "repoPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9._\\-/]+$"
+    },
+    "passFail": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    }
+  }
+}
+

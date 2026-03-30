@@ -1,0 +1,9 @@
+{
+  "contract_id": "objc3c.public_conformance_reporting.schema.surface.v1",
+  "schema_version": 1,
+  "schema_check_script": "scripts/check_public_conformance_schema_surface.py",
+  "dashboard_status_schema": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+  "public_scorecard_schema": "schemas/objc3c-public-conformance-scorecard-v1.schema.json",
+  "public_summary_schema": "schemas/objc3c-public-conformance-summary-v1.schema.json"
+}
+
