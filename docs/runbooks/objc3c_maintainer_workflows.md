@@ -188,6 +188,7 @@ npm run test:repo
 - public conformance scorecard build: `npm run inspect:objc3c:public-conformance:scorecard`
 - public conformance publication: `npm run publish:objc3c:public-conformance`
 - integrated public conformance workflow: `npm run test:objc3c:public-conformance`
+- public conformance integration proof: `npm run test:objc3c:public-conformance:integration`
 - stress source-surface check: `npm run check:stress:surface`
 - parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
 - lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`

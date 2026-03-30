@@ -21,6 +21,10 @@
     {
       "action": "validate-public-conformance-reporting",
       "package_script": "test:objc3c:public-conformance"
+    },
+    {
+      "action": "validate-public-conformance-reporting-integration",
+      "package_script": "test:objc3c:public-conformance:integration"
     }
   ],
   "report_paths": [

@@ -63,6 +63,7 @@ PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_public_conforma
 PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_schema_surface.py"
 PUBLIC_CONFORMANCE_SCORECARD_PY = ROOT / "scripts" / "build_objc3c_public_conformance_scorecard.py"
 PUBLIC_CONFORMANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_public_conformance_report.py"
+PUBLIC_CONFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_integration.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -691,6 +692,10 @@ def action_validate_public_conformance_reporting(_: list[str]) -> int:
             ("publish-public-conformance-report", [sys.executable, str(PUBLIC_CONFORMANCE_REPORT_PY)]),
         ],
     )
+
+
+def action_validate_public_conformance_reporting_integration(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_CONFORMANCE_INTEGRATION_PY)])
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1441,6 +1446,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-public-conformance-scorecard": ActionSpec("build-public-conformance-scorecard", "derive the live public-conformance badge and stability score from upstream reports", "python:scripts/build_objc3c_public_conformance_scorecard.py", ("inspect:objc3c:public-conformance:scorecard",), validation_tier="repo", guarantee_owner="public conformance scoring stays derived from live conformance and external-validation reports"),
     "publish-public-conformance-report": ActionSpec("publish-public-conformance-report", "materialize the machine-owned public-conformance summary and publication artifacts", "python:scripts/publish_objc3c_public_conformance_report.py", ("publish:objc3c:public-conformance",), validation_tier="repo", guarantee_owner="public conformance summary and publication artifacts stay derived from the live scorecard and checked-in schema surface"),
     "validate-public-conformance-reporting": ActionSpec("validate-public-conformance-reporting", "run the integrated public-conformance reporting workflow", "runner-internal + direct public reporting commands", ("test:objc3c:public-conformance",), validation_tier="repo", guarantee_owner="public conformance reporting source policy schema scorecard and publication flows stay executable on the live workflow"),
+    "validate-public-conformance-reporting-integration": ActionSpec("validate-public-conformance-reporting-integration", "validate the integrated public-conformance reporting workflow report and child artifacts", "python:scripts/check_objc3c_public_conformance_reporting_integration.py", ("test:objc3c:public-conformance:integration",), validation_tier="repo", guarantee_owner="integrated public conformance reporting artifacts stay coherent across source, schema, scorecard, and publication outputs"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1545,6 +1551,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-public-conformance-scorecard": action_build_public_conformance_scorecard,
     "publish-public-conformance-report": action_publish_public_conformance_report,
     "validate-public-conformance-reporting": action_validate_public_conformance_reporting,
+    "validate-public-conformance-reporting-integration": action_validate_public_conformance_reporting_integration,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
