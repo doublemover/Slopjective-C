@@ -1,0 +1,36 @@
+{
+  "contract_id": "objc3c.public_conformance_reporting.workflow.surface.v1",
+  "schema_version": 1,
+  "actions": [
+    {
+      "action": "check-public-conformance-reporting-surface",
+      "package_script": "check:objc3c:public-conformance:surface"
+    },
+    {
+      "action": "check-public-conformance-schema-surface",
+      "package_script": "check:objc3c:public-conformance:schemas"
+    },
+    {
+      "action": "build-public-conformance-scorecard",
+      "package_script": "inspect:objc3c:public-conformance:scorecard"
+    },
+    {
+      "action": "publish-public-conformance-report",
+      "package_script": "publish:objc3c:public-conformance"
+    },
+    {
+      "action": "validate-public-conformance-reporting",
+      "package_script": "test:objc3c:public-conformance"
+    }
+  ],
+  "report_paths": [
+    "tmp/reports/public-conformance/source-surface-summary.json",
+    "tmp/reports/public-conformance/schema-surface-summary.json",
+    "tmp/reports/public-conformance/scorecard-summary.json",
+    "tmp/reports/public-conformance/public-summary.json"
+  ],
+  "artifact_paths": [
+    "tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json",
+    "tmp/artifacts/public-conformance/badge/public-conformance-badge.json"
+  ]
+}

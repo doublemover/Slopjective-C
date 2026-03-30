@@ -108,6 +108,17 @@ External-validation entrypoint:
 - use that runbook before widening intake roots, replay publication, or
   ecosystem evidence claims
 
+Public-conformance-reporting entrypoint:
+
+- `docs/runbooks/objc3c_public_conformance_reporting.md` is the maintainer
+  boundary for public conformance scorecards, badges, publication summaries,
+  and third-party-legible reporting
+- public conformance reporting must stay on the existing conformance corpus,
+  external-validation, release-evidence, and checked-in schema surfaces
+  instead of inventing a second claim spreadsheet or dashboard-only workflow
+- use the public runner actions for source-surface checking, schema checking,
+  scorecard derivation, and publication before widening public claim language
+
 Standard-library entrypoint:
 
 - `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
@@ -171,6 +182,12 @@ npm run test:repo
 - external validation replay drill: `npm run test:objc3c:external-validation:replay`
 - external repro publication: `npm run publish:objc3c:external-repro-corpus`
 - external validation integration proof: `npm run test:objc3c:external-validation:integration`
+- public conformance reporting boundary: `docs/runbooks/objc3c_public_conformance_reporting.md`
+- public conformance source-surface check: `npm run check:objc3c:public-conformance:surface`
+- public conformance schema check: `npm run check:objc3c:public-conformance:schemas`
+- public conformance scorecard build: `npm run inspect:objc3c:public-conformance:scorecard`
+- public conformance publication: `npm run publish:objc3c:public-conformance`
+- integrated public conformance workflow: `npm run test:objc3c:public-conformance`
 - stress source-surface check: `npm run check:stress:surface`
 - parser/sema fuzz safety: `npm run test:objc3c:fuzz-safety`
 - lowering/runtime stress: `npm run test:objc3c:lowering-runtime-stress`

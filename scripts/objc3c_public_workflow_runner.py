@@ -59,6 +59,10 @@ EXTERNAL_VALIDATION_SURFACE_PY = ROOT / "scripts" / "check_external_validation_s
 EXTERNAL_VALIDATION_REPLAY_PY = ROOT / "scripts" / "run_objc3c_external_validation_replay.py"
 EXTERNAL_VALIDATION_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_external_repro_corpus.py"
 EXTERNAL_VALIDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_external_validation_integration.py"
+PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_reporting_source_surface.py"
+PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_schema_surface.py"
+PUBLIC_CONFORMANCE_SCORECARD_PY = ROOT / "scripts" / "build_objc3c_public_conformance_scorecard.py"
+PUBLIC_CONFORMANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_public_conformance_report.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -659,6 +663,34 @@ def action_validate_external_validation(_: list[str]) -> int:
 
 def action_validate_external_validation_integration(_: list[str]) -> int:
     return run([sys.executable, str(EXTERNAL_VALIDATION_INTEGRATION_PY)])
+
+
+def action_check_public_conformance_reporting_surface(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY)])
+
+
+def action_check_public_conformance_schema_surface(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY)])
+
+
+def action_build_public_conformance_scorecard(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_CONFORMANCE_SCORECARD_PY)])
+
+
+def action_publish_public_conformance_report(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_CONFORMANCE_REPORT_PY)])
+
+
+def action_validate_public_conformance_reporting(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-public-conformance-reporting",
+        [
+            ("check-public-conformance-reporting-surface", [sys.executable, str(PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY)]),
+            ("check-public-conformance-schema-surface", [sys.executable, str(PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY)]),
+            ("build-public-conformance-scorecard", [sys.executable, str(PUBLIC_CONFORMANCE_SCORECARD_PY)]),
+            ("publish-public-conformance-report", [sys.executable, str(PUBLIC_CONFORMANCE_REPORT_PY)]),
+        ],
+    )
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1404,6 +1436,11 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "publish-external-repro-corpus": ActionSpec("publish-external-repro-corpus", "materialize the machine-owned external repro corpus publication artifact", "python:scripts/publish_objc3c_external_repro_corpus.py", ("publish:objc3c:external-repro-corpus",), validation_tier="repo", guarantee_owner="accepted and quarantined external evidence stays publishable as a machine-owned corpus summary rooted in the replay drill"),
     "validate-external-validation": ActionSpec("validate-external-validation", "run the integrated external-validation source, replay, and publication drill", "runner-internal + direct external validation commands", ("test:objc3c:external-validation",), validation_tier="repo", guarantee_owner="external evidence intake, replay, and publication stay executable on the live workflow"),
     "validate-external-validation-integration": ActionSpec("validate-external-validation-integration", "validate the integrated external-validation report and child artifact set", "python:scripts/check_objc3c_external_validation_integration.py", ("test:objc3c:external-validation:integration",), validation_tier="repo", guarantee_owner="integrated external-validation reports stay coherent across source-surface, replay, and publication outputs"),
+    "check-public-conformance-reporting-surface": ActionSpec("check-public-conformance-reporting-surface", "validate the checked-in public-conformance reporting source and policy contracts", "python:scripts/check_public_conformance_reporting_source_surface.py", ("check:objc3c:public-conformance:surface",), validation_tier="repo", guarantee_owner="public conformance reporting stays rooted in checked-in source, policy, and upstream evidence boundaries"),
+    "check-public-conformance-schema-surface": ActionSpec("check-public-conformance-schema-surface", "validate the checked-in public-conformance schema surface", "python:scripts/check_public_conformance_schema_surface.py", ("check:objc3c:public-conformance:schemas",), validation_tier="repo", guarantee_owner="public conformance scorecard and summary outputs stay tied to checked-in schema contracts"),
+    "build-public-conformance-scorecard": ActionSpec("build-public-conformance-scorecard", "derive the live public-conformance badge and stability score from upstream reports", "python:scripts/build_objc3c_public_conformance_scorecard.py", ("inspect:objc3c:public-conformance:scorecard",), validation_tier="repo", guarantee_owner="public conformance scoring stays derived from live conformance and external-validation reports"),
+    "publish-public-conformance-report": ActionSpec("publish-public-conformance-report", "materialize the machine-owned public-conformance summary and publication artifacts", "python:scripts/publish_objc3c_public_conformance_report.py", ("publish:objc3c:public-conformance",), validation_tier="repo", guarantee_owner="public conformance summary and publication artifacts stay derived from the live scorecard and checked-in schema surface"),
+    "validate-public-conformance-reporting": ActionSpec("validate-public-conformance-reporting", "run the integrated public-conformance reporting workflow", "runner-internal + direct public reporting commands", ("test:objc3c:public-conformance",), validation_tier="repo", guarantee_owner="public conformance reporting source policy schema scorecard and publication flows stay executable on the live workflow"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1503,6 +1540,11 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "publish-external-repro-corpus": action_publish_external_repro_corpus,
     "validate-external-validation": action_validate_external_validation,
     "validate-external-validation-integration": action_validate_external_validation_integration,
+    "check-public-conformance-reporting-surface": action_check_public_conformance_reporting_surface,
+    "check-public-conformance-schema-surface": action_check_public_conformance_schema_surface,
+    "build-public-conformance-scorecard": action_build_public_conformance_scorecard,
+    "publish-public-conformance-report": action_publish_public_conformance_report,
+    "validate-public-conformance-reporting": action_validate_public_conformance_reporting,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
