@@ -162,6 +162,7 @@ npm run test:repo
 - stress crash triage: `npm run test:objc3c:stress-crash-triage`
 - integrated stress workflow: `npm run test:objc3c:stress`
 - stress integration proof: `npm run test:objc3c:stress:integration`
+- stress end-to-end proof: `npm run test:objc3c:stress:e2e`
 - stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
 - stdlib core boundary: `docs/runbooks/objc3c_stdlib_core.md`
 - stdlib surface check: `npm run check:stdlib:surface`
