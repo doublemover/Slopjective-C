@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -55,6 +56,106 @@ def zip_directory(source_dir: Path, destination_zip: Path) -> None:
             archive.write(file_path, arcname=str(file_path.relative_to(source_dir)).replace("\\", "/"))
 
 
+def write_text(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text.replace("\r\n", "\n"), encoding="utf-8")
+
+
+def powershell_single_quote(text: str) -> str:
+    return text.replace("'", "''")
+
+
+def install_script_text() -> str:
+    return """param(
+  [Parameter(Mandatory = $true)][string]$InstallRoot,
+  [switch]$Force
+)
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+$sourceRoot = Join-Path $PSScriptRoot "payload"
+$resolvedInstallRoot = [System.IO.Path]::GetFullPath($InstallRoot)
+$installHome = Join-Path $resolvedInstallRoot "objc3c"
+$receiptPath = Join-Path $resolvedInstallRoot "objc3c-install-receipt.json"
+$bootstrapSource = Join-Path $PSScriptRoot "Bootstrap-objc3cEnvironment.ps1"
+$bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
+
+if ((Test-Path -LiteralPath $installHome) -and -not $Force.IsPresent) {
+  throw "installer target already exists: $installHome"
+}
+
+if (Test-Path -LiteralPath $installHome) {
+  Remove-Item -LiteralPath $installHome -Recurse -Force
+}
+
+New-Item -ItemType Directory -Force -Path $resolvedInstallRoot | Out-Null
+Copy-Item -LiteralPath $sourceRoot -Destination $installHome -Recurse -Force
+Copy-Item -LiteralPath $bootstrapSource -Destination $bootstrapTarget -Force
+
+$receipt = [ordered]@{
+  contract_id = "objc3c.packaging.channels.install-receipt.v1"
+  install_root = $resolvedInstallRoot
+  install_home = $installHome
+  bootstrap_script = $bootstrapTarget
+  installed_at_utc = [DateTime]::UtcNow.ToString("o")
+}
+$receipt | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $receiptPath -Encoding utf8
+
+Write-Output ("install_root: " + $resolvedInstallRoot)
+Write-Output ("install_home: " + $installHome)
+Write-Output ("receipt_path: " + $receiptPath)
+Write-Output ("bootstrap_script: " + $bootstrapTarget)
+"""
+
+
+def uninstall_script_text() -> str:
+    return """param(
+  [Parameter(Mandatory = $true)][string]$InstallRoot
+)
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+$resolvedInstallRoot = [System.IO.Path]::GetFullPath($InstallRoot)
+$installHome = Join-Path $resolvedInstallRoot "objc3c"
+$receiptPath = Join-Path $resolvedInstallRoot "objc3c-install-receipt.json"
+$bootstrapTarget = Join-Path $resolvedInstallRoot "Bootstrap-objc3cEnvironment.ps1"
+
+if (Test-Path -LiteralPath $installHome) {
+  Remove-Item -LiteralPath $installHome -Recurse -Force
+}
+if (Test-Path -LiteralPath $bootstrapTarget) {
+  Remove-Item -LiteralPath $bootstrapTarget -Force
+}
+if (Test-Path -LiteralPath $receiptPath) {
+  Remove-Item -LiteralPath $receiptPath -Force
+}
+
+Write-Output ("rollback_root: " + $resolvedInstallRoot)
+"""
+
+
+def bootstrap_script_text() -> str:
+    return """param()
+
+$ErrorActionPreference = "Stop"
+Set-StrictMode -Version Latest
+
+$installRoot = Split-Path -Parent $PSScriptRoot
+$toolchainHome = Join-Path $installRoot "objc3c"
+$binPath = Join-Path $toolchainHome "artifacts/bin"
+
+$env:OBJC3C_HOME = $toolchainHome
+if ($env:PATH -notmatch [regex]::Escape($binPath)) {
+  $env:PATH = $binPath + [System.IO.Path]::PathSeparator + $env:PATH
+}
+
+Write-Output ("objc3c_home: " + $env:OBJC3C_HOME)
+Write-Output ("objc3c_bin: " + $binPath)
+"""
+
+
 def main() -> int:
     load_json(SOURCE_SURFACE)
     supported_platforms = load_json(SUPPORTED_PLATFORMS)
@@ -84,6 +185,16 @@ def main() -> int:
     portable_archive = portable_root / "objc3c-windows-x64-portable.zip"
     zip_directory(package_root, portable_archive)
 
+    installer_root = build_root / "installer"
+    installer_image_root = installer_root / "image"
+    installer_payload_root = installer_image_root / "payload"
+    shutil.copytree(package_root, installer_payload_root, dirs_exist_ok=True)
+    write_text(installer_image_root / "Install-objc3c.ps1", install_script_text())
+    write_text(installer_image_root / "Uninstall-objc3c.ps1", uninstall_script_text())
+    write_text(installer_image_root / "Bootstrap-objc3cEnvironment.ps1", bootstrap_script_text())
+    installer_archive = installer_root / "objc3c-windows-x64-installer.zip"
+    zip_directory(installer_image_root, installer_archive)
+
     payload = {
         "contract_id": "objc3c.packaging.channels.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -91,7 +202,9 @@ def main() -> int:
         "platform_id": supported_platforms["default_platform_id"],
         "package_root": repo_rel(package_root),
         "portable_archive": repo_rel(portable_archive),
-        "implemented_channels": ["portable-archive"],
+        "installer_image_root": repo_rel(installer_image_root),
+        "installer_archive": repo_rel(installer_archive),
+        "implemented_channels": ["portable-archive", "local-installer"],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
