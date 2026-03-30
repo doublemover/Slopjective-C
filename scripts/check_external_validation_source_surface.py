@@ -69,6 +69,8 @@ def main() -> int:
         return fail("source_check_script drifted")
     if surface.get("trust_policy") != "tests/tooling/fixtures/external_validation/trust_policy.json":
         return fail("trust_policy drifted")
+    if surface.get("intake_manifest") != "tests/tooling/fixtures/external_validation/intake_manifest.json":
+        return fail("intake_manifest drifted")
     if surface.get("checked_in_roots") != EXPECTED_ROOTS:
         return fail("checked_in_roots drifted")
 
@@ -77,6 +79,10 @@ def main() -> int:
     trust_policy_path = require_path(
         "tests/tooling/fixtures/external_validation/trust_policy.json",
         kind="trust policy",
+    )
+    intake_manifest_path = require_path(
+        "tests/tooling/fixtures/external_validation/intake_manifest.json",
+        kind="intake manifest",
     )
     for root in EXPECTED_ROOTS:
         require_path(root, kind="checked-in root")
@@ -90,6 +96,69 @@ def main() -> int:
         return fail("trust policy allowed_trust_states drifted")
     if trust_policy.get("publishable_trust_states") != ["accepted"]:
         return fail("trust policy publishable_trust_states drifted")
+
+    intake_manifest = load_json(intake_manifest_path)
+    if intake_manifest.get("contract_id") != "objc3c.external_validation.intake.manifest.v1":
+        return fail("intake manifest contract_id drifted")
+    if intake_manifest.get("schema_version") != 1:
+        return fail("intake manifest schema_version drifted")
+    entries = intake_manifest.get("entries")
+    if not isinstance(entries, list) or len(entries) < 3:
+        return fail("intake manifest entries drifted")
+    allowed_trust_states = set(trust_policy["allowed_trust_states"])
+    allowed_surfaces = {"conformance-case", "replay-contract"}
+    allowed_families = {"parser", "diagnostics", "module-roundtrip"}
+    intake_entry_summaries: list[dict[str, Any]] = []
+    for entry in entries:
+        if not isinstance(entry, dict):
+            return fail("intake manifest contains a non-object entry")
+        fixture_id = entry.get("fixture_id")
+        trust_state = entry.get("trust_state")
+        normalized_surface = entry.get("normalized_surface")
+        family = entry.get("family")
+        provenance = entry.get("provenance")
+        replay_script = entry.get("replay_script")
+        if not isinstance(fixture_id, str) or not fixture_id:
+            return fail("intake manifest entry missing fixture_id")
+        if trust_state not in allowed_trust_states:
+            return fail(f"{fixture_id} references unknown trust_state")
+        if normalized_surface not in allowed_surfaces:
+            return fail(f"{fixture_id} references unknown normalized_surface")
+        if family not in allowed_families:
+            return fail(f"{fixture_id} references unknown family")
+        if not isinstance(provenance, dict):
+            return fail(f"{fixture_id} is missing provenance")
+        for field_name in trust_policy["required_provenance_fields"]:
+            if not isinstance(provenance.get(field_name), str) or not provenance.get(field_name):
+                return fail(f"{fixture_id} is missing provenance.{field_name}")
+        if not isinstance(replay_script, str) or not replay_script:
+            return fail(f"{fixture_id} is missing replay_script")
+        require_path(replay_script, kind=f"{fixture_id} replay script")
+        summary_entry = {
+            "fixture_id": fixture_id,
+            "trust_state": trust_state,
+            "normalized_surface": normalized_surface,
+            "family": family,
+            "replay_script": replay_script,
+        }
+        if normalized_surface == "conformance-case":
+            normalized_case_path = entry.get("normalized_case_path")
+            if not isinstance(normalized_case_path, str) or not normalized_case_path:
+                return fail(f"{fixture_id} is missing normalized_case_path")
+            require_path(normalized_case_path, kind=f"{fixture_id} normalized case")
+            summary_entry["normalized_case_path"] = normalized_case_path
+        else:
+            normalized_contract_path = entry.get("normalized_contract_path")
+            coverage_anchor = entry.get("coverage_anchor")
+            if not isinstance(normalized_contract_path, str) or not normalized_contract_path:
+                return fail(f"{fixture_id} is missing normalized_contract_path")
+            if not isinstance(coverage_anchor, str) or not coverage_anchor:
+                return fail(f"{fixture_id} is missing coverage_anchor")
+            require_path(normalized_contract_path, kind=f"{fixture_id} normalized contract")
+            require_path(coverage_anchor, kind=f"{fixture_id} coverage anchor")
+            summary_entry["normalized_contract_path"] = normalized_contract_path
+            summary_entry["coverage_anchor"] = coverage_anchor
+        intake_entry_summaries.append(summary_entry)
 
     families = surface.get("source_families")
     if not isinstance(families, list) or len(families) != len(EXPECTED_FAMILY_IDS):
@@ -135,8 +204,10 @@ def main() -> int:
         "runbook": surface["runbook"],
         "source_check_script": surface["source_check_script"],
         "trust_policy": surface["trust_policy"],
+        "intake_manifest": surface["intake_manifest"],
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
+        "intake_entry_summaries": intake_entry_summaries,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

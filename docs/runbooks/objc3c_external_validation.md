@@ -61,6 +61,21 @@ Fail-closed rule:
 - missing provenance, replay nondeterminism, or unresolved disclosure risk must
   hold the fixture in `quarantined` or `rejected`
 
+## Normalization Semantics
+
+Checked-in normalization manifest:
+
+- `tests/tooling/fixtures/external_validation/intake_manifest.json`
+
+Normalization rules:
+
+- every accepted external fixture must map onto one checked-in conformance case
+  or one checked-in replay contract
+- every normalized entry must name the live replay script that proves the claim
+- provenance stays attached to the normalized entry instead of living in ad hoc
+  notes or issue comments
+- raw ecosystem inputs do not become a second executable corpus root
+
 ## Explicit Non-Goals
 
 - no separate external-fixture compiler harness
