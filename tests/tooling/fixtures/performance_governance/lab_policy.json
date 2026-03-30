@@ -1,0 +1,38 @@
+{
+  "contract_id": "objc3c.performance.governance.lab.policy.v1",
+  "surface_kind": "stable-performance-lab-and-noise-control-policy",
+  "machine_profile_requirements": {
+    "platform": "windows",
+    "executable_roots": [
+      "artifacts/bin",
+      "artifacts/lib"
+    ],
+    "report_roots": [
+      "tmp/reports/performance",
+      "tmp/reports/compiler-throughput",
+      "tmp/reports/runtime-performance"
+    ]
+  },
+  "noise_envelope": {
+    "maximum_relative_standard_deviation": 0.15,
+    "minimum_measured_runs": 1,
+    "requires_warmup_declaration": true,
+    "requires_machine_profile_capture": true
+  },
+  "environment_drift_triggers": [
+    "missing_machine_profile",
+    "relative_standard_deviation_exceeded",
+    "summary_report_older_than_budget_window",
+    "benchmark_executable_missing"
+  ],
+  "comparative_baseline_policy": {
+    "allow_unavailable_baselines": true,
+    "require_explicit_unavailable_reason": true,
+    "forbid_silent_omission": true
+  },
+  "required_paths": [
+    "docs/runbooks/objc3c_performance_governance.md",
+    "tests/tooling/fixtures/performance_governance/lab_policy.json",
+    "tmp/reports/performance-governance/dashboard-summary.json"
+  ]
+}
