@@ -1,0 +1,19 @@
+{
+  "contract_id": "objc3c.release.operations.workflow.surface.v1",
+  "schema_version": 1,
+  "validate_action": "validate-release-operations",
+  "end_to_end_action": "validate-release-operations-end-to-end",
+  "public_scripts": [
+    "check:objc3c:release-operations:surface",
+    "check:objc3c:release-operations:schemas",
+    "inspect:objc3c:update-manifest",
+    "publish:objc3c:release-operations",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e"
+  ],
+  "upstream_validate_actions": [
+    "validate-release-foundation",
+    "validate-packaging-channels"
+  ],
+  "nightly_action": "test-nightly"
+}
