@@ -146,6 +146,9 @@ Allowed optimization moves:
   valid
 - time direct native-executable compile loops when wrapper-launch semantics are
   not the guarantee under test
+- prebuild native binaries once before heavyweight suite loops and fail closed
+  if the compiler disappears mid-run instead of silently rebuilding inside the
+  corpus
 - keep packaged validation on the same live scripts and checked-in fixtures
 
 Disallowed optimization moves:

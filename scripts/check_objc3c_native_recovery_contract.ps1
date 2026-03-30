@@ -36,37 +36,20 @@ function Invoke-Objc3cNativeWithRecovery {
     [switch]$UseCompileWrapper
   )
 
-  for ($attempt = 1; $attempt -le 2; $attempt++) {
-    if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-      & $buildScript -ExecutionMode binaries-only
-      if ($LASTEXITCODE -ne 0) {
-        throw "contract FAIL: native compiler build failed while recovering missing executable"
-      }
-      if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
-        throw "contract FAIL: native compiler executable missing at $exe"
-      }
-    }
-
-    try {
-      if ($UseCompileWrapper) {
-        $null = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compileWrapperScript @Arguments
-      } else {
-        $null = & $exe @Arguments
-      }
-      return [int]$LASTEXITCODE
-    } catch {
-      if ($attempt -ge 2) {
-        throw
-      }
-      Write-Output "warning: objc3c-native launch failed; rebuilding and retrying once"
-      & $buildScript -ExecutionMode binaries-only
-      if ($LASTEXITCODE -ne 0) {
-        throw "contract FAIL: native compiler build failed while recovering launch failure"
-      }
-    }
+  if (!(Test-Path -LiteralPath $exe -PathType Leaf)) {
+    throw "contract FAIL: native compiler executable missing at $exe"
   }
 
-  throw "contract FAIL: unreachable launch state"
+  if ($UseCompileWrapper) {
+    if (!(Test-Path -LiteralPath $compileWrapperScript -PathType Leaf)) {
+      throw "contract FAIL: compile wrapper missing at $compileWrapperScript"
+    }
+    $null = & $pwsh -NoProfile -ExecutionPolicy Bypass -File $compileWrapperScript @Arguments
+    return [int]$LASTEXITCODE
+  }
+
+  $null = & $exe @Arguments
+  return [int]$LASTEXITCODE
 }
 
 function Get-EntrypointLlSurface {
