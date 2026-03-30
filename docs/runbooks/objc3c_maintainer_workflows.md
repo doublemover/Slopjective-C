@@ -112,6 +112,18 @@ Release-foundation entrypoint:
   release-manifest derivation, and provenance publication before widening
   release claims
 
+Packaging-channels entrypoint:
+
+- `docs/runbooks/objc3c_packaging_channels.md` is the maintainer boundary for
+  portable archives, local installer images, offline bootstrap bundles, and
+  install or rollback smoke
+- packaging-channel work must stay on the existing runnable package,
+  release-foundation, and public workflow runner surfaces instead of inventing
+  a second installer payload or manual archive assembly flow
+- use the public runner actions for packaging-channel source checks, schema
+  checks, package generation, and install smoke before widening distribution
+  claims
+
 Runtime-performance entrypoint:
 
 - `docs/runbooks/objc3c_runtime_performance.md` is the maintainer boundary for

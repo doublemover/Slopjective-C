@@ -83,3 +83,16 @@ Compatibility rules:
 - installer scripts may assume `pwsh` and local filesystem access
 - installer validation must prove install, bootstrap, and rollback under a
   temp-owned root
+
+## Workflow Surface
+
+The live packaging-channel workflow for this milestone must expose:
+
+- a source-surface check
+- a schema-surface check
+- a package-channel build command
+- an integrated package-channel validation command
+- an end-to-end install and rollback validation command
+
+These workflow entrypoints must remain on the shared public runner and machine-
+owned reports under `tmp/reports/package-channels/`.
