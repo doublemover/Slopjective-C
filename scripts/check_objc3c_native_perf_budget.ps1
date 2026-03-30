@@ -29,6 +29,68 @@ $defaultPerFixtureBudgetMs = 150
 $defaultWindowsLaunchOverheadPerFixtureMs = 450
 $defaultNonWindowsLaunchOverheadPerFixtureMs = 0
 
+function Read-JsonObject {
+  param([string]$Path)
+
+  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "perf-budget FAIL: missing JSON artifact at $Path"
+  }
+
+  try {
+    if ($PSVersionTable.PSVersion.Major -ge 6) {
+      return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json -AsHashtable)
+    }
+    return (Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json)
+  } catch {
+    throw "perf-budget FAIL: invalid JSON artifact at $Path"
+  }
+}
+
+function Get-FileSha256Hex {
+  param([string]$Path)
+
+  if (!(Test-Path -LiteralPath $Path -PathType Leaf)) {
+    throw "perf-budget FAIL: missing file for hashing at $Path"
+  }
+
+  return (Get-FileHash -LiteralPath $Path -Algorithm SHA256).Hash.ToLowerInvariant()
+}
+
+function Get-CompileArtifactSurface {
+  param(
+    [string]$OutputDirectory,
+    [string]$RepoRoot
+  )
+
+  $manifestPath = Join-Path $OutputDirectory "module.manifest.json"
+  if (!(Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
+    return [ordered]@{
+      manifest_present = $false
+    }
+  }
+
+  $manifest = Read-JsonObject -Path $manifestPath
+  $frontend = $manifest["frontend"]
+  $pipeline = if ($null -ne $frontend) { $frontend["pipeline"] } else { $null }
+  $stages = if ($null -ne $pipeline) { $pipeline["stages"] } else { $null }
+  $parserStage = if ($null -ne $stages) { $stages["parser"] } else { $null }
+  $semanticStage = if ($null -ne $stages) { $stages["semantic"] } else { $null }
+  $semanticSurface = if ($null -ne $pipeline) { $pipeline["semantic_surface"] } else { $null }
+  $loweringSurface = $manifest["lowering_incremental_module_cache_invalidation"]
+
+  return [ordered]@{
+    manifest_present = $true
+    manifest_path = (Get-RepoRelativePath -Path $manifestPath -Root $RepoRoot)
+    manifest_sha256 = (Get-FileSha256Hex -Path $manifestPath)
+    parser_diagnostics = if ($null -ne $parserStage -and $null -ne $parserStage["diagnostics"]) { [int]$parserStage["diagnostics"] } else { 0 }
+    semantic_diagnostics = if ($null -ne $semanticStage -and $null -ne $semanticStage["diagnostics"]) { [int]$semanticStage["diagnostics"] } else { 0 }
+    semantic_skipped = if ($null -ne $pipeline -and $null -ne $pipeline["semantic_skipped"]) { [bool]$pipeline["semantic_skipped"] } else { $false }
+    declared_globals = if ($null -ne $semanticSurface -and $null -ne $semanticSurface["declared_globals"]) { [int]$semanticSurface["declared_globals"] } else { 0 }
+    declared_functions = if ($null -ne $semanticSurface -and $null -ne $semanticSurface["declared_functions"]) { [int]$semanticSurface["declared_functions"] } else { 0 }
+    lowering_replay_key = if ($null -ne $loweringSurface -and $null -ne $loweringSurface["replay_key"]) { [string]$loweringSurface["replay_key"] } else { "" }
+  }
+}
+
 function Get-RepoRelativePath {
   param(
     [string]$Path,
@@ -437,8 +499,14 @@ try {
     $objPath = Join-Path $caseDir "module.obj"
     $objExists = Test-Path -LiteralPath $objPath -PathType Leaf
     $objSize = if ($objExists) { (Get-Item -LiteralPath $objPath).Length } else { 0 }
-
     $passed = ($run.exit_code -eq 0) -and $objExists -and ($objSize -gt 0)
+    $artifactSurface = if ($passed) {
+      Get-CompileArtifactSurface -OutputDirectory $caseDir -RepoRoot $repoRoot
+    } else {
+      [ordered]@{
+        manifest_present = $false
+      }
+    }
     $detail = if ($passed) {
       "exit=0 obj_bytes=$objSize"
     } elseif ($run.exit_code -ne 0) {
@@ -456,6 +524,7 @@ try {
       passed = $passed
       detail = $detail
       out_dir = (Get-RepoRelativePath -Path $caseDir -Root $repoRoot)
+      compile_artifact_surface = $artifactSurface
     }
 
     $statusToken = if ($passed) { "PASS" } else { "FAIL" }
@@ -582,6 +651,8 @@ $cacheProofPassed = $cacheProof.executed -and ($cacheProof.status -eq "PASS")
 $status = if (!$hadFatalError -and $total -gt 0 -and $failedCount -eq 0 -and !$timingGateViolated -and $cacheProofPassed) { "PASS" } else { "FAIL" }
 
 $summary = [ordered]@{
+  contract_id = "objc3c.compiler.throughput.summary.v1"
+  benchmark_kind = "native-direct-compile-throughput"
   run_id = $runId
   run_dir = (Get-RepoRelativePath -Path $runDir -Root $repoRoot)
   generated_at_utc = (Get-Date).ToUniversalTime().ToString("o")
