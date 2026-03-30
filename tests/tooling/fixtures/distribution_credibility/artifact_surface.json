@@ -1,0 +1,10 @@
+{
+  "contract_id": "objc3c.distribution.credibility.artifact.surface.v1",
+  "schema_version": 1,
+  "report_root": "tmp/reports/distribution-credibility",
+  "artifact_root": "tmp/artifacts/distribution-credibility",
+  "dashboard_summary": "tmp/reports/distribution-credibility/dashboard-summary.json",
+  "publication_summary": "tmp/reports/distribution-credibility/publication-summary.json",
+  "trust_report_json": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json",
+  "trust_report_markdown": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.md"
+}

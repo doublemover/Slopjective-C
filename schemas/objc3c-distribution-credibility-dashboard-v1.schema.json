@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.doublemover.dev/objc3c-distribution-credibility-dashboard-v1.schema.json",
+  "title": "objc3c Distribution Credibility Dashboard",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "status",
+    "trust_state",
+    "release_id",
+    "release_version",
+    "trust_signals"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.distribution.credibility.dashboard.summary.v1"
+    },
+    "status": {
+      "const": "PASS"
+    },
+    "trust_state": {
+      "enum": [
+        "ready",
+        "degraded",
+        "blocked"
+      ]
+    },
+    "release_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "release_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "trust_signals": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "required": [
+          "signal_id",
+          "status",
+          "source_path"
+        ],
+        "properties": {
+          "signal_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "WARN",
+              "FAIL"
+            ]
+          },
+          "source_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "detail": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "upstream_reports": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false
+}

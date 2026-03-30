@@ -1,0 +1,6 @@
+{
+  "contract_id": "objc3c.distribution.credibility.schema.surface.v1",
+  "schema_version": 1,
+  "dashboard_schema": "schemas/objc3c-distribution-credibility-dashboard-v1.schema.json",
+  "trust_report_schema": "schemas/objc3c-distribution-trust-report-v1.schema.json"
+}

@@ -65,6 +65,16 @@ This milestone must leave behind:
 - a machine-owned trust report under `tmp/artifacts/distribution-credibility/`
 - integrated and end-to-end validation entrypoints on the shared public workflow runner
 
+The canonical publication artifacts are:
+
+- a machine-owned dashboard summary JSON
+- a machine-owned trust report JSON
+- a human-readable markdown trust report derived from the JSON publication
+
+These outputs must live under `tmp/reports/distribution-credibility/` and
+`tmp/artifacts/distribution-credibility/` and stay validated by checked-in schema
+contracts.
+
 ## Operator Release Policy
 
 Credibility publication is operator-gated:

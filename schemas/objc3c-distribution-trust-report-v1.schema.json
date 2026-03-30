@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.doublemover.dev/objc3c-distribution-trust-report-v1.schema.json",
+  "title": "objc3c Distribution Trust Report",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "status",
+    "trust_state",
+    "headline",
+    "evidence_paths",
+    "operator_actions",
+    "markdown_path"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.distribution.trust.report.v1"
+    },
+    "status": {
+      "const": "PASS"
+    },
+    "trust_state": {
+      "enum": [
+        "ready",
+        "degraded",
+        "blocked"
+      ]
+    },
+    "headline": {
+      "type": "string",
+      "minLength": 1
+    },
+    "evidence_paths": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "operator_actions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "markdown_path": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false
+}
