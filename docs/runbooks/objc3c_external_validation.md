@@ -150,6 +150,7 @@ Current checked-in source-surface check:
 Current intake and replay tooling:
 
 - `python scripts/run_objc3c_external_validation_replay.py`
+- `python scripts/publish_objc3c_external_repro_corpus.py`
 
 ## Claim Boundary
 
