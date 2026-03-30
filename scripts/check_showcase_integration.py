@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
+PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
 SURFACE_REPORT = ROOT / "tmp" / "reports" / "showcase" / "summary.json"
 RUNTIME_REPORT = ROOT / "tmp" / "reports" / "showcase" / "runtime-summary.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "showcase" / "integration-summary.json"
@@ -67,6 +68,7 @@ def main() -> int:
 
     surface_summary = load_json(SURFACE_REPORT)
     runtime_summary = load_json(RUNTIME_REPORT)
+    program_surface = load_json(PROGRAM_SURFACE_PATH)
     expect(
         surface_summary.get("contract_id") == "objc3c.showcase.surface.summary.v1",
         "showcase surface report published the wrong contract id",
@@ -78,6 +80,28 @@ def main() -> int:
 
     selected_ids = surface_summary.get("selected_example_ids")
     expect(selected_ids == EXPECTED_EXAMPLE_IDS, "showcase surface report drifted from the full example set")
+    program_examples = program_surface.get("capability_demo_examples")
+    expect(isinstance(program_examples, list), "program surface did not publish capability_demo_examples")
+    program_examples_by_id = {
+        str(entry.get("id")): entry for entry in program_examples if isinstance(entry, dict) and isinstance(entry.get("id"), str)
+    }
+    expect(list(program_examples_by_id) == EXPECTED_EXAMPLE_IDS, "program surface example ids drifted from showcase integration")
+
+    surface_examples = surface_summary.get("examples")
+    expect(isinstance(surface_examples, list), "showcase surface report did not publish examples")
+    for entry in surface_examples:
+        expect(isinstance(entry, dict), "showcase surface report published malformed example")
+        example_id = str(entry.get("example_id"))
+        program_entry = program_examples_by_id.get(example_id)
+        expect(program_entry is not None, f"showcase surface report referenced unknown program example {example_id}")
+        expect(
+            entry.get("story_capabilities") == program_entry.get("story_capabilities"),
+            f"showcase surface story_capabilities drifted for {example_id}",
+        )
+        expect(
+            entry.get("stdlib_followup_modules") == program_entry.get("stdlib_followup_modules"),
+            f"showcase surface stdlib_followup_modules drifted for {example_id}",
+        )
 
     runtime_examples = runtime_summary.get("examples")
     expect(isinstance(runtime_examples, list), "showcase runtime report did not publish examples")
@@ -101,6 +125,9 @@ def main() -> int:
         "runner_path": "scripts/check_showcase_integration.py",
         "example_ids": EXPECTED_EXAMPLE_IDS,
         "child_report_paths": [repo_rel(SURFACE_REPORT), repo_rel(RUNTIME_REPORT)],
+        "program_surface_contract": repo_rel(PROGRAM_SURFACE_PATH),
+        "program_publish_inputs": program_surface.get("publish_inputs"),
+        "capability_demo_examples": program_examples,
         "showcase_surface_summary": surface_summary,
         "showcase_runtime_summary": runtime_summary,
     }

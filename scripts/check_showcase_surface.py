@@ -351,6 +351,8 @@ def main() -> int:
                 "source": source,
                 "workspace_manifest": str(entry["workspace_manifest"]),
                 "story_capabilities": list(entry.get("story_capabilities", [])),
+                "stdlib_followup_modules": list(entry.get("stdlib_followup_modules", [])),
+                "presentation": dict(workspace_payload.get("presentation", {})),
                 "out_dir": repo_relative(out_dir),
                 "artifacts": {label: repo_relative(path) for label, path in required_artifacts.items()},
             }
