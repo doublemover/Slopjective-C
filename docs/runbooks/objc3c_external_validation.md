@@ -76,6 +76,21 @@ Normalization rules:
   notes or issue comments
 - raw ecosystem inputs do not become a second executable corpus root
 
+## Quarantine And Disclosure Diagnostics
+
+Checked-in quarantine manifest:
+
+- `tests/tooling/fixtures/external_validation/quarantine_manifest.json`
+
+Compatibility rules:
+
+- quarantined and rejected fixtures must carry an explicit
+  `OBJC3-EXTERNAL-EVIDENCE-*` diagnostic id
+- quarantined fixtures may remain `internal-only` or `redacted-summary`
+- rejected fixtures stay `blocked`
+- escalation targets must stay explicit so later tooling can route unresolved
+  evidence without inventing a sidecar review workflow
+
 ## Explicit Non-Goals
 
 - no separate external-fixture compiler harness

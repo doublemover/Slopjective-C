@@ -1,0 +1,36 @@
+{
+  "contract_id": "objc3c.external_validation.quarantine.manifest.v1",
+  "schema_version": 1,
+  "entries": [
+    {
+      "fixture_id": "ecosystem_runtime_link_trace_license_gap",
+      "trust_state": "quarantined",
+      "diagnostic_id": "OBJC3-EXTERNAL-EVIDENCE-LICENSE-UNKNOWN",
+      "escalation_target": "license-review",
+      "disclosure_compatibility": "internal-only",
+      "reason": "replayable normalization exists, but the upstream licensing and redistribution terms are not yet clear enough for public publication",
+      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_runtime_shim_host_link_contract/replay_run_1/module.manifest.json",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
+    },
+    {
+      "fixture_id": "ecosystem_dispatch_trace_nondeterministic",
+      "trust_state": "quarantined",
+      "diagnostic_id": "OBJC3-EXTERNAL-EVIDENCE-REPLAY-NONDETERMINISTIC",
+      "escalation_target": "maintainer-review",
+      "disclosure_compatibility": "redacted-summary",
+      "reason": "the normalized replay anchor exists, but the evidence cannot be promoted until replay stability is reconfirmed on the live path",
+      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_dispatch_abi_marshalling_contract/replay_run_1/module.manifest.json",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
+    },
+    {
+      "fixture_id": "ecosystem_unredistributable_blob_report",
+      "trust_state": "rejected",
+      "diagnostic_id": "OBJC3-EXTERNAL-EVIDENCE-DISCLOSURE-INCOMPATIBLE",
+      "escalation_target": "security-review",
+      "disclosure_compatibility": "blocked",
+      "reason": "the upstream material cannot be redistributed or published in a way that is compatible with the public evidence surface",
+      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_cross_module_conformance_contract/replay_run_1/module.manifest.json",
+      "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
+    }
+  ]
+}

@@ -71,6 +71,8 @@ def main() -> int:
         return fail("trust_policy drifted")
     if surface.get("intake_manifest") != "tests/tooling/fixtures/external_validation/intake_manifest.json":
         return fail("intake_manifest drifted")
+    if surface.get("quarantine_manifest") != "tests/tooling/fixtures/external_validation/quarantine_manifest.json":
+        return fail("quarantine_manifest drifted")
     if surface.get("checked_in_roots") != EXPECTED_ROOTS:
         return fail("checked_in_roots drifted")
 
@@ -83,6 +85,10 @@ def main() -> int:
     intake_manifest_path = require_path(
         "tests/tooling/fixtures/external_validation/intake_manifest.json",
         kind="intake manifest",
+    )
+    quarantine_manifest_path = require_path(
+        "tests/tooling/fixtures/external_validation/quarantine_manifest.json",
+        kind="quarantine manifest",
     )
     for root in EXPECTED_ROOTS:
         require_path(root, kind="checked-in root")
@@ -160,6 +166,58 @@ def main() -> int:
             summary_entry["coverage_anchor"] = coverage_anchor
         intake_entry_summaries.append(summary_entry)
 
+    quarantine_manifest = load_json(quarantine_manifest_path)
+    if quarantine_manifest.get("contract_id") != "objc3c.external_validation.quarantine.manifest.v1":
+        return fail("quarantine manifest contract_id drifted")
+    if quarantine_manifest.get("schema_version") != 1:
+        return fail("quarantine manifest schema_version drifted")
+    quarantine_entries = quarantine_manifest.get("entries")
+    if not isinstance(quarantine_entries, list) or len(quarantine_entries) < 3:
+        return fail("quarantine manifest entries drifted")
+    allowed_disclosure_modes = {"internal-only", "redacted-summary", "blocked"}
+    allowed_escalation_targets = {"license-review", "maintainer-review", "security-review"}
+    quarantine_entry_summaries: list[dict[str, Any]] = []
+    for entry in quarantine_entries:
+        if not isinstance(entry, dict):
+            return fail("quarantine manifest contains a non-object entry")
+        fixture_id = entry.get("fixture_id")
+        trust_state = entry.get("trust_state")
+        diagnostic_id = entry.get("diagnostic_id")
+        escalation_target = entry.get("escalation_target")
+        disclosure_compatibility = entry.get("disclosure_compatibility")
+        reason = entry.get("reason")
+        normalized_contract_path = entry.get("normalized_contract_path")
+        replay_script = entry.get("replay_script")
+        if not isinstance(fixture_id, str) or not fixture_id:
+            return fail("quarantine manifest entry missing fixture_id")
+        if trust_state not in {"quarantined", "rejected"}:
+            return fail(f"{fixture_id} uses an invalid quarantine trust_state")
+        if not isinstance(diagnostic_id, str) or not diagnostic_id.startswith("OBJC3-EXTERNAL-EVIDENCE-"):
+            return fail(f"{fixture_id} is missing an external-evidence diagnostic_id")
+        if escalation_target not in allowed_escalation_targets:
+            return fail(f"{fixture_id} references unknown escalation_target")
+        if disclosure_compatibility not in allowed_disclosure_modes:
+            return fail(f"{fixture_id} references unknown disclosure_compatibility")
+        if not isinstance(reason, str) or not reason:
+            return fail(f"{fixture_id} is missing reason")
+        if not isinstance(normalized_contract_path, str) or not normalized_contract_path:
+            return fail(f"{fixture_id} is missing normalized_contract_path")
+        if not isinstance(replay_script, str) or not replay_script:
+            return fail(f"{fixture_id} is missing replay_script")
+        require_path(normalized_contract_path, kind=f"{fixture_id} normalized contract")
+        require_path(replay_script, kind=f"{fixture_id} replay script")
+        quarantine_entry_summaries.append(
+            {
+                "fixture_id": fixture_id,
+                "trust_state": trust_state,
+                "diagnostic_id": diagnostic_id,
+                "escalation_target": escalation_target,
+                "disclosure_compatibility": disclosure_compatibility,
+                "normalized_contract_path": normalized_contract_path,
+                "replay_script": replay_script,
+            }
+        )
+
     families = surface.get("source_families")
     if not isinstance(families, list) or len(families) != len(EXPECTED_FAMILY_IDS):
         return fail("source_families drifted")
@@ -205,9 +263,11 @@ def main() -> int:
         "source_check_script": surface["source_check_script"],
         "trust_policy": surface["trust_policy"],
         "intake_manifest": surface["intake_manifest"],
+        "quarantine_manifest": surface["quarantine_manifest"],
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
         "intake_entry_summaries": intake_entry_summaries,
+        "quarantine_entry_summaries": quarantine_entry_summaries,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
