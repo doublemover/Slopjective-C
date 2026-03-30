@@ -1,0 +1,75 @@
+{
+  "contract_id": "objc3c.stress.source.surface.v1",
+  "schema_version": 1,
+  "runbook": "docs/runbooks/objc3c_stress_validation.md",
+  "source_root": "tests/tooling/fixtures/stress",
+  "source_check_script": "scripts/check_stress_source_surface.py",
+  "checked_in_roots": [
+    "tests/tooling/fixtures/stress",
+    "tests/tooling/fixtures/native",
+    "tests/tooling/fixtures/objc3c",
+    "tests/tooling/fixtures/parser_conformance_corpus",
+    "tests/conformance"
+  ],
+  "source_families": [
+    {
+      "family_id": "parser-sema-fuzz",
+      "coverage_goal": "deterministic malformed-input parser and semantic fail-closed coverage through the live compiler path",
+      "source_paths": [
+        "scripts/run_objc3c_fuzz_safety.py",
+        "tests/tooling/test_objc3c_fuzz_safety.py",
+        "tests/tooling/fixtures/parser_conformance_corpus/manifest.json",
+        "tests/tooling/fixtures/native/recovery/negative",
+        "tests/tooling/fixtures/native/negative_missing_return.objc3",
+        "tests/tooling/fixtures/native/negative_type_mismatch.objc3",
+        "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
+        "tests/tooling/fixtures/native/unowned_object_capture_mutation_negative.objc3"
+      ]
+    },
+    {
+      "family_id": "lowering-runtime-stress",
+      "coverage_goal": "compile and runtime stress over checked-in lowering and runtime-heavy fixtures",
+      "source_paths": [
+        "scripts/objc3c_native_compile.ps1",
+        "scripts/check_objc3c_native_execution_smoke.ps1",
+        "tests/tooling/fixtures/native/async_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
+        "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+        "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+        "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+        "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+        "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
+      ]
+    },
+    {
+      "family_id": "mixed-module-differential",
+      "coverage_goal": "provider/consumer and import-export stress over module, interop, and bridge surfaces",
+      "source_paths": [
+        "scripts/check_objc3c_execution_replay_proof.ps1",
+        "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
+        "tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3",
+        "tests/tooling/fixtures/native/cross_module_error_surface_preservation_provider.objc3",
+        "tests/tooling/fixtures/native/cross_module_error_surface_preservation_consumer.objc3",
+        "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+        "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+        "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+        "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3"
+      ]
+    },
+    {
+      "family_id": "replay-backed-contracts",
+      "coverage_goal": "reuse checked-in replay contracts as stable stress seeds instead of inventing a second contract corpus",
+      "source_paths": [
+        "tests/tooling/fixtures/objc3c/validation_cross_module_conformance_contract",
+        "tests/tooling/fixtures/objc3c/validation_module_import_graph_contract",
+        "tests/tooling/fixtures/objc3c/validation_concurrency_replay_contract",
+        "tests/tooling/fixtures/objc3c/validation_result_like_lowering_contract",
+        "tests/tooling/fixtures/objc3c/validation_dispatch_abi_marshalling_contract",
+        "tests/conformance/corpus_surface.json",
+        "tests/conformance/lowering_abi/manifest.json",
+        "tests/conformance/module_roundtrip/manifest.json"
+      ]
+    }
+  ]
+}

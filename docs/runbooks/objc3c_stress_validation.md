@@ -60,6 +60,8 @@ The current truthful stress-validation shape is:
   - `scripts/check_objc3c_runnable_interop_conformance.py`
   - `scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py`
 - checked-in fixture families that already hold the live stress corpus:
+  - `tests/tooling/fixtures/stress/source_surface.json`
+  - `tests/tooling/fixtures/stress/README.md`
   - `tests/tooling/fixtures/native/recovery/negative/`
   - `tests/tooling/fixtures/native/recovery/positive/`
   - `tests/tooling/fixtures/native/execution/negative/`
@@ -71,6 +73,8 @@ The current truthful stress-validation shape is:
 
 - build-owned source-of-truth artifact:
   - `tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json`
+- checked-in stress source summary:
+  - `tmp/reports/stress/source-surface-summary.json`
 - current machine-owned fuzz root:
   - `tmp/artifacts/objc3c-native/fuzz-safety/`
 - existing machine-owned validation roots that downstream work must reuse:
@@ -89,6 +93,8 @@ The current truthful stress-validation shape is:
   - `npm run build:objc3c-native`
 - run the current parser/sema malformed-input gate:
   - `python scripts/run_objc3c_fuzz_safety.py`
+- validate the checked-in stress source contract:
+  - `python scripts/check_stress_source_surface.py`
 - run the current executable smoke and replay proof paths:
   - `python scripts/objc3c_public_workflow_runner.py test-execution-smoke`
   - `python scripts/objc3c_public_workflow_runner.py test-execution-replay`
@@ -106,6 +112,7 @@ The current truthful stress-validation shape is:
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `docs/runbooks/objc3c_maintainer_workflows.md`
 - fixture and corpus ownership:
+  - `tests/tooling/fixtures/stress/source_surface.json`
   - `tests/tooling/fixtures/native/`
   - `tests/tooling/fixtures/objc3c/`
   - `tests/conformance/corpus_surface.json`

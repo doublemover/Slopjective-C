@@ -238,6 +238,30 @@ def main() -> int:
         errors,
     )
     expect(
+        payload.get("stress_validation_surface")
+        == {
+            "source_surface_contract": "tests/tooling/fixtures/stress/source_surface.json",
+            "source_readme": "tests/tooling/fixtures/stress/README.md",
+            "runbook": "docs/runbooks/objc3c_stress_validation.md",
+            "source_check_script": "scripts/check_stress_source_surface.py",
+            "checked_in_roots": [
+                "tests/tooling/fixtures/stress",
+                "tests/tooling/fixtures/native",
+                "tests/tooling/fixtures/objc3c",
+                "tests/tooling/fixtures/parser_conformance_corpus",
+                "tests/conformance",
+            ],
+            "source_family_ids": [
+                "parser-sema-fuzz",
+                "lowering-runtime-stress",
+                "mixed-module-differential",
+                "replay-backed-contracts",
+            ],
+        },
+        "stress_validation_surface drifted",
+        errors,
+    )
+    expect(
         payload.get("stdlib_foundation_surface")
         == {
             "workspace_contract": "stdlib/workspace.json",
