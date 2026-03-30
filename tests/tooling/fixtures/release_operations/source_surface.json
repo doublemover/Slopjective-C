@@ -21,7 +21,11 @@
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
     "tests/tooling/fixtures/release_operations/metadata_surface.json",
-    "tests/tooling/fixtures/release_operations/schema_surface.json"
+    "tests/tooling/fixtures/release_operations/schema_surface.json",
+    "scripts/check_release_operations_source_surface.py",
+    "scripts/check_release_operations_schema_surface.py",
+    "scripts/build_objc3c_update_manifest.py",
+    "scripts/publish_objc3c_release_operations_metadata.py"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/release-operations",
