@@ -20,6 +20,7 @@ EXPECTED_CONTRACT_IDS = {
     "fallback_diagnostics_policy": "objc3c.release.operations.fallback.diagnostics.policy.v1",
     "metadata_surface": "objc3c.release.operations.metadata.surface.v1",
     "schema_surface": "objc3c.release.operations.schema.surface.v1",
+    "workflow_surface": "objc3c.release.operations.workflow.surface.v1",
 }
 
 

@@ -124,6 +124,18 @@ Packaging-channels entrypoint:
   checks, package generation, and install smoke before widening distribution
   claims
 
+Release-operations entrypoint:
+
+- `docs/runbooks/objc3c_release_operations.md` is the maintainer boundary for
+  semantic versioning claims, support windows, update-manifest publication,
+  compatibility warnings, rollback guidance, and release-operations metadata
+- release-operations work must stay on the existing release-foundation,
+  packaging-channel, and public workflow runner surfaces instead of inventing a
+  hosted updater, second payload lineage, or package-manager-only upgrade flow
+- use the public runner actions for release-operations source checking, schema
+  checking, update-manifest derivation, publication, and end-to-end validation
+  before widening compatibility or deprecation claims
+
 Runtime-performance entrypoint:
 
 - `docs/runbooks/objc3c_runtime_performance.md` is the maintainer boundary for
@@ -258,6 +270,13 @@ npm run test:repo
 - packaging channels build: `npm run package:objc3c:channels`
 - integrated packaging channels workflow: `npm run test:objc3c:packaging-channels`
 - packaging channels end-to-end proof: `npm run test:objc3c:packaging-channels:e2e`
+- release operations boundary: `docs/runbooks/objc3c_release_operations.md`
+- release operations source-surface check: `npm run check:objc3c:release-operations:surface`
+- release operations schema check: `npm run check:objc3c:release-operations:schemas`
+- update manifest build: `npm run inspect:objc3c:update-manifest`
+- release operations publication: `npm run publish:objc3c:release-operations`
+- integrated release operations workflow: `npm run test:objc3c:release-operations`
+- release operations end-to-end proof: `npm run test:objc3c:release-operations:e2e`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
 - runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
 - integrated runtime performance validation: `npm run test:objc3c:runtime-performance`

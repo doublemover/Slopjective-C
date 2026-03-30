@@ -732,6 +732,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_performance.md",
       "docs/runbooks/objc3c_performance_governance.md",
       "docs/runbooks/objc3c_packaging_channels.md",
+      "docs/runbooks/objc3c_release_operations.md",
       "docs/runbooks/objc3c_release_foundation.md",
       "docs/runbooks/objc3c_runtime_performance.md",
       "docs/runbooks/objc3c_stress_validation.md",
@@ -765,6 +766,12 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       check_packaging_channels_schemas = "check:objc3c:packaging-channels:schemas"
       test_packaging_channels = "test:objc3c:packaging-channels"
       test_packaging_channels_e2e = "test:objc3c:packaging-channels:e2e"
+      check_release_operations_surface = "check:objc3c:release-operations:surface"
+      check_release_operations_schemas = "check:objc3c:release-operations:schemas"
+      inspect_update_manifest = "inspect:objc3c:update-manifest"
+      publish_release_operations = "publish:objc3c:release-operations"
+      test_release_operations = "test:objc3c:release-operations"
+      test_release_operations_e2e = "test:objc3c:release-operations:e2e"
       inspect_runtime_performance = "inspect:objc3c:runtime-performance"
       test_runtime_performance = "test:objc3c:runtime-performance"
       test_runtime_performance_e2e = "test:objc3c:runnable-runtime-performance"
@@ -1053,6 +1060,42 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "build-package-channels",
         "validate-packaging-channels",
         "validate-packaging-channels-end-to-end"
+      )
+    }
+    release_operations_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_release_operations.md"
+      source_surface_contract = "tests/tooling/fixtures/release_operations/source_surface.json"
+      versioning_model = "tests/tooling/fixtures/release_operations/versioning_model.json"
+      compatibility_claim_policy = "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json"
+      update_channel_policy = "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+      fallback_diagnostics_policy = "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json"
+      metadata_surface = "tests/tooling/fixtures/release_operations/metadata_surface.json"
+      workflow_surface = "tests/tooling/fixtures/release_operations/workflow_surface.json"
+      schema_surface = "tests/tooling/fixtures/release_operations/schema_surface.json"
+      update_manifest_schema = "schemas/objc3c-update-manifest-v1.schema.json"
+      compatibility_report_schema = "schemas/objc3c-compatibility-report-v1.schema.json"
+      source_roots = @(
+        "scripts/check_release_operations_source_surface.py",
+        "scripts/check_release_operations_schema_surface.py",
+        "scripts/build_objc3c_update_manifest.py",
+        "scripts/publish_objc3c_release_operations_metadata.py",
+        "scripts/check_objc3c_release_operations_integration.py",
+        "scripts/check_objc3c_release_operations_end_to_end.py",
+        "scripts/build_objc3c_package_channels.py",
+        "scripts/build_objc3c_release_manifest.py"
+      )
+      report_roots = @(
+        "tmp/reports/release-operations",
+        "tmp/artifacts/release-operations",
+        "tmp/reports/objc3c-public-workflow"
+      )
+      public_actions = @(
+        "check-release-operations-surface",
+        "check-release-operations-schema-surface",
+        "build-update-manifest",
+        "publish-release-operations",
+        "validate-release-operations",
+        "validate-release-operations-end-to-end"
       )
     }
     stress_validation_surface = [ordered]@{

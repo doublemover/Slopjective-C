@@ -54,7 +54,8 @@ def main() -> int:
     update_channel_policy = load_json(UPDATE_CHANNEL_POLICY)
     metadata_surface = load_json(METADATA_SURFACE)
 
-    run([sys.executable, str(PACKAGE_CHANNELS_BUILD)])
+    if not PACKAGE_CHANNELS_SUMMARY.is_file() or not RELEASE_MANIFEST.is_file():
+        run([sys.executable, str(PACKAGE_CHANNELS_BUILD)])
 
     package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY)
     release_manifest = load_json(RELEASE_MANIFEST)

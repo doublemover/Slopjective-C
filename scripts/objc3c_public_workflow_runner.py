@@ -87,6 +87,12 @@ PACKAGING_CHANNELS_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_packaging_chann
 PACKAGE_CHANNELS_BUILD_PY = ROOT / "scripts" / "build_objc3c_package_channels.py"
 PACKAGING_CHANNELS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_packaging_channels_integration.py"
 PACKAGING_CHANNELS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"
+RELEASE_OPERATIONS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_release_operations_source_surface.py"
+RELEASE_OPERATIONS_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_release_operations_schema_surface.py"
+UPDATE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_update_manifest.py"
+RELEASE_OPERATIONS_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_release_operations_metadata.py"
+RELEASE_OPERATIONS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_release_operations_integration.py"
+RELEASE_OPERATIONS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_release_operations_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -835,6 +841,39 @@ def action_validate_packaging_channels_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGING_CHANNELS_END_TO_END_PY)])
 
 
+def action_check_release_operations_surface(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_OPERATIONS_SOURCE_SURFACE_PY)])
+
+
+def action_check_release_operations_schema_surface(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_OPERATIONS_SCHEMA_SURFACE_PY)])
+
+
+def action_build_update_manifest(_: list[str]) -> int:
+    return run([sys.executable, str(UPDATE_MANIFEST_PY)])
+
+
+def action_publish_release_operations(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_OPERATIONS_PUBLICATION_PY)])
+
+
+def action_validate_release_operations(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-release-operations",
+        [
+            ("validate-packaging-channels", [sys.executable, str(PACKAGING_CHANNELS_INTEGRATION_PY)]),
+            ("check-release-operations-surface", [sys.executable, str(RELEASE_OPERATIONS_SOURCE_SURFACE_PY)]),
+            ("check-release-operations-schema-surface", [sys.executable, str(RELEASE_OPERATIONS_SCHEMA_SURFACE_PY)]),
+            ("build-update-manifest", [sys.executable, str(UPDATE_MANIFEST_PY)]),
+            ("publish-release-operations", [sys.executable, str(RELEASE_OPERATIONS_PUBLICATION_PY)]),
+        ],
+    )
+
+
+def action_validate_release_operations_end_to_end(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_OPERATIONS_END_TO_END_PY)])
+
+
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     rc = execute_registered_action("build-native-contracts", [])
     if rc != 0:
@@ -1524,6 +1563,7 @@ def action_test_nightly(_: list[str]) -> int:
             ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
             ("validate-release-foundation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-foundation"]),
             ("validate-packaging-channels", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-packaging-channels"]),
+            ("validate-release-operations", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-operations"]),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -1625,6 +1665,12 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-package-channels": ActionSpec("build-package-channels", "build the portable archive, installer image, and offline bundle channels from the live runnable payload", "python:scripts/build_objc3c_package_channels.py", ("package:objc3c:channels",), validation_tier="repo", guarantee_owner="package channels stay derived from the live runnable package and release-foundation artifacts"),
     "validate-packaging-channels": ActionSpec("validate-packaging-channels", "run the integrated packaging-channels workflow", "runner-internal + direct packaging-channel commands", ("test:objc3c:packaging-channels",), validation_tier="nightly", guarantee_owner="portable archive installer image and offline bundle generation stay executable on the live release surface"),
     "validate-packaging-channels-end-to-end": ActionSpec("validate-packaging-channels-end-to-end", "validate install bootstrap rollback and offline bundle behavior end to end", "python:scripts/check_objc3c_packaging_channels_end_to_end.py", ("test:objc3c:packaging-channels:e2e",), validation_tier="full", guarantee_owner="packaging-channel artifacts stay installable rollback-safe and offline-bootstrappable under temp-owned roots"),
+    "check-release-operations-surface": ActionSpec("check-release-operations-surface", "validate the checked-in release-operations source surface", "python:scripts/check_release_operations_source_surface.py", ("check:objc3c:release-operations:surface",), validation_tier="repo", guarantee_owner="release operations only publish from the checked-in versioning, upgrade, warning, and fallback policy contracts"),
+    "check-release-operations-schema-surface": ActionSpec("check-release-operations-schema-surface", "validate the checked-in release-operations schema surface", "python:scripts/check_release_operations_schema_surface.py", ("check:objc3c:release-operations:schemas",), validation_tier="repo", guarantee_owner="update manifest and compatibility-report artifacts stay on checked-in schema contracts"),
+    "build-update-manifest": ActionSpec("build-update-manifest", "derive the machine-owned update manifest from the live packaging-channel and release-foundation outputs", "python:scripts/build_objc3c_update_manifest.py", ("inspect:objc3c:update-manifest",), validation_tier="repo", guarantee_owner="versioned channel metadata stays tied to the live release and packaging surfaces"),
+    "publish-release-operations": ActionSpec("publish-release-operations", "publish the machine-owned release-operations compatibility report and channel catalog", "python:scripts/publish_objc3c_release_operations_metadata.py", ("publish:objc3c:release-operations",), validation_tier="repo", guarantee_owner="release-operations publication stays traceable to the checked-in compatibility, warning, and fallback policy contracts"),
+    "validate-release-operations": ActionSpec("validate-release-operations", "run the integrated release-operations workflow", "runner-internal + direct release-operations commands", ("test:objc3c:release-operations",), validation_tier="nightly", guarantee_owner="versioning, compatibility warnings, rollback guidance, and update metadata stay executable on the live release surfaces"),
+    "validate-release-operations-end-to-end": ActionSpec("validate-release-operations-end-to-end", "validate release-operations entrypoints, generated metadata, and packaged channel references end to end", "python:scripts/check_objc3c_release_operations_end_to_end.py", ("test:objc3c:release-operations:e2e",), validation_tier="full", guarantee_owner="release-operations metadata stays coherent with the live package-channel artifacts and rollback paths"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1754,6 +1800,12 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-package-channels": action_build_package_channels,
     "validate-packaging-channels": action_validate_packaging_channels,
     "validate-packaging-channels-end-to-end": action_validate_packaging_channels_end_to_end,
+    "check-release-operations-surface": action_check_release_operations_surface,
+    "check-release-operations-schema-surface": action_check_release_operations_schema_surface,
+    "build-update-manifest": action_build_update_manifest,
+    "publish-release-operations": action_publish_release_operations,
+    "validate-release-operations": action_validate_release_operations,
+    "validate-release-operations-end-to-end": action_validate_release_operations_end_to_end,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
