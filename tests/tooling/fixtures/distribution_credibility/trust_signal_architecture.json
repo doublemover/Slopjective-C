@@ -1,0 +1,37 @@
+{
+  "contract_id": "objc3c.distribution.credibility.trust.signal.architecture.v1",
+  "schema_version": 1,
+  "upstream_surfaces": [
+    "release-foundation",
+    "packaging-channels",
+    "release-operations",
+    "release-evidence"
+  ],
+  "trust_signals": [
+    {
+      "signal_id": "release-foundation-lineage",
+      "artifact_source": "tmp/artifacts/release-foundation",
+      "claim_boundary": "release payload provenance and reproducibility are only credible when tied to the live manifest sbom and attestation outputs"
+    },
+    {
+      "signal_id": "package-channel-install-smoke",
+      "artifact_source": "tmp/reports/package-channels",
+      "claim_boundary": "distribution claims are only credible when the installable channel surfaces still produce rollback-safe smoke artifacts"
+    },
+    {
+      "signal_id": "release-operations-metadata",
+      "artifact_source": "tmp/reports/release-operations",
+      "claim_boundary": "versioning update and rollback guidance must resolve to the live compatibility publication outputs"
+    },
+    {
+      "signal_id": "release-evidence-gate",
+      "artifact_source": "tmp/reports/release_evidence",
+      "claim_boundary": "credibility claims must retain a machine-generated evidence index for the shipped conformance artifacts"
+    }
+  ],
+  "explicit_non_goals": [
+    "hosted trust service",
+    "manual badge program",
+    "parallel release source of truth"
+  ]
+}
