@@ -1,0 +1,17 @@
+{
+  "contract_id": "objc3c.packaging.channels.architecture.v1",
+  "packaging_model": "release-foundation-derived-channel-set",
+  "upstream_release_surface": "docs/runbooks/objc3c_release_foundation.md",
+  "canonical_payload": "scripts/package_objc3c_runnable_toolchain.ps1",
+  "channel_ids": [
+    "portable-archive",
+    "local-installer",
+    "offline-bundle"
+  ],
+  "derivation_rule": "all channel payloads derive from the runnable toolchain package manifest and release-foundation evidence artifacts",
+  "forbidden_shapes": [
+    "second compiler payload",
+    "hand-curated install tree",
+    "installer-only metadata that bypasses the release manifest"
+  ]
+}
