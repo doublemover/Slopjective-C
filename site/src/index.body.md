@@ -35,6 +35,7 @@ Use this page in three passes:
 | understand what is still missing | [What Remains](#status-remaining) |
 | follow the reader-facing learning path | [docs/tutorials/README.md](../docs/tutorials/README.md) |
 | start with the runnable getting-started tutorial | [docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md) |
+| pick a capability-backed showcase example first | [showcase/README.md](../showcase/README.md) |
 | see the tutorial build run and verify flow | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md) |
 | follow the guided showcase walkthrough | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md) |
 | follow the ObjC2-to-ObjC3 migration guide | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md) |

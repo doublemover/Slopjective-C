@@ -5,6 +5,23 @@ This directory is the live home for runnable narrative examples.
 Use it for small examples that prove real compiler and runtime capabilities
 through the normal repo command surface.
 
+## Capability-First Entry Points
+
+Choose the story that matches the question before you read deeper docs:
+
+- `auroraBoard`
+  - use this when the question starts with categories, reflection, or synthesized behaviors
+  - pair it with `docs/tutorials/getting_started.md`
+  - pair it with `docs/tutorials/objc2_to_objc3_migration.md` for forward-mapping ObjC2 habits
+- `signalMesh`
+  - use this when the question is about actors, status bridging, or runtime messaging
+  - pair it with `docs/tutorials/guided_walkthrough.md`
+  - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md` for Swift-facing comparison framing
+- `patchKit`
+  - use this when the question is about derives, macros, property behaviors, or interop
+  - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md`
+  - use it when the question is about feature shape rather than the smallest possible first compile
+
 ## Portfolio Boundary
 
 Canonical checked-in inputs:

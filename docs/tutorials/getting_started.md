@@ -9,6 +9,15 @@ Use it when you want to:
 - understand which commands are the normal user path,
 - and choose the next tutorial or migration guide based on the capability you actually care about.
 
+## What This Tutorial Proves
+
+By the end of this file, a reader should know:
+
+- which commands count as the normal public path
+- which example is the right first compile target
+- which showcase story matches the capability they care about next
+- which document to open for migration or comparison questions instead of guessing
+
 ## Teaching Model
 
 Teach from checked-in runnable sources first.
@@ -58,6 +67,13 @@ Use `showcase/README.md` and `showcase/portfolio.json` as the example map:
 - `signalMesh` for actors, status bridging, and runtime messaging
 - `patchKit` for derives, macros, property behaviors, and interop
 
+If the first compile worked and you already know your question, branch
+immediately:
+
+- stay on `auroraBoard` if the question starts with ObjC2 object-model habits
+- move to `signalMesh` if the question is about messaging or actor-shaped flows
+- move to `patchKit` if the question is about macros, derives, or interop
+
 ## Step 4 Choose The Next Learning Path
 
 Choose the next document based on the question you actually have:
@@ -67,6 +83,12 @@ Choose the next document based on the question you actually have:
 - if you need runnable example context, continue to `showcase/README.md`
 - if you need exact command mapping, use `docs/runbooks/objc3c_public_command_surface.md`
 - if you need implementation boundaries after the tutorial, then open `docs/objc3c-native.md`
+
+Use this decision rule:
+
+- compile first
+- then choose the showcase example that matches the capability
+- then open the migration or comparison guide only after the runnable source is in view
 
 ## Canonical Inputs
 

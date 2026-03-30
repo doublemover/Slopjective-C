@@ -69,6 +69,7 @@ Use the shortest path that matches what you are trying to do.
 | understand the project | [published site](https://doublemover.github.io/Slopjective-C/) | read the status table and the spec map first |
 | build or evaluate the toolchain | [README.md](README.md) | follow `Fresh Setup`, then `First Working Session` |
 | follow the runnable tutorial path | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md) | compile one example first, then use the showcase surface |
+| pick the right capability-backed example first | [showcase/README.md](showcase/README.md) | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text |
 | migrate ObjC2 code or check Swift-facing migration expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md) | then follow the showcase examples that back the comparison |
 | contribute a normal repo change | [CONTRIBUTING.md](CONTRIBUTING.md) | stay inside the superclean boundary and use the mapped package scripts |

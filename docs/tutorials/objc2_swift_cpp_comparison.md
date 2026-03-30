@@ -10,6 +10,20 @@ Use it to explain Objective-C 3 choices against:
 
 Start with `docs/tutorials/objc2_to_objc3_migration.md` when you need the actual migration sequence. Use this file for the broader comparison boundary after the runnable examples and migration path are already clear.
 
+## Start With The Capability That Matches The Question
+
+Do not start with abstract parity claims. Start with the checked-in example that
+matches the capability in question:
+
+| Question | Checked-in example | Then read |
+| --- | --- | --- |
+| How do familiar ObjC2 categories and object-model habits map forward? | `showcase/auroraBoard/main.objc3` | `docs/tutorials/objc2_to_objc3_migration.md` |
+| What does current ObjC3 messaging and actor-shaped workflow look like next to Swift expectations? | `showcase/signalMesh/main.objc3` | this file |
+| What is the current macro derive property-behavior and interop story next to Swift and C++ expectations? | `showcase/patchKit/main.objc3` | this file |
+
+The comparison text should explain the current runnable and compile-coupled
+surface, not an imagined future language.
+
 ## Comparison Boundary
 
 This comparison surface should stay grounded in checked-in implementation truth.
@@ -18,6 +32,19 @@ This comparison surface should stay grounded in checked-in implementation truth.
 - use the checked-in showcase examples when a comparison needs executable source
 - prefer concrete language-surface and command-surface differences over marketing language
 - keep maintainer-only implementation detail out of the reader path unless it changes a user-visible migration choice
+
+## Current Truthful Comparison Shape
+
+Today the comparison surface can make these kinds of claims truthfully:
+
+- ObjC3 already has a real compile-and-run path backed by checked-in examples
+- the showcase stories are the evidence for what the docs say about categories,
+  reflection, messaging, derives, macros, property behaviors, and current
+  interop shape
+- Swift and C++ comparisons should stay at the level of current capability and
+  ergonomics, not pretend that unsupported parity already exists
+- ObjC2 comparisons should focus on what a reader can migrate or evaluate from
+  the runnable subset today
 
 ## Canonical Inputs
 

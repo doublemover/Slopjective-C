@@ -10,6 +10,35 @@ Use it for reader-facing material that teaches someone how to:
 - compare Objective-C 3 choices against Swift and C++ interop expectations,
 - and follow the checked-in showcase examples without reading internal implementation notes first.
 
+## Start Here By Goal
+
+Choose the shortest route that matches the question you actually have:
+
+| If you want to... | Start here | Runnable proof to keep open |
+| --- | --- | --- |
+| prove the toolchain is alive | `docs/tutorials/getting_started.md` | `showcase/auroraBoard/main.objc3` |
+| understand the full example map | `showcase/README.md` | `showcase/portfolio.json` |
+| migrate familiar ObjC2 habits | `docs/tutorials/objc2_to_objc3_migration.md` | `showcase/auroraBoard/main.objc3` |
+| compare ObjC3 against Swift or C++ expectations | `docs/tutorials/objc2_swift_cpp_comparison.md` | `showcase/signalMesh/main.objc3` and `showcase/patchKit/main.objc3` |
+| follow the exact compile run verify flow | `docs/tutorials/build_run_verify.md` | `showcase/tutorial_walkthrough.json` |
+
+## Capability-Backed Routes
+
+Use the example that best matches the capability you care about:
+
+- `auroraBoard`
+  - use it for categories, reflection, and synthesized behaviors
+  - pair it with `docs/tutorials/getting_started.md`
+  - pair it with `docs/tutorials/objc2_to_objc3_migration.md` when the question starts from ObjC2 habits
+- `signalMesh`
+  - use it for actors, status bridging, and runtime messaging
+  - pair it with `docs/tutorials/guided_walkthrough.md`
+  - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md` when the question is "what does this look like relative to Swift-style concurrency expectations?"
+- `patchKit`
+  - use it for derives, macros, property behaviors, and interop
+  - pair it with `docs/tutorials/objc2_swift_cpp_comparison.md`
+  - use it when the question is about feature shape rather than the smallest possible first compile
+
 ## Learning Paths
 
 - evaluator path:
@@ -74,6 +103,10 @@ Later issues in this milestone should edit these live paths directly:
   - `docs/runbooks/objc3c_maintainer_workflows.md`
 - documentation guardrails:
   - `scripts/check_documentation_surface.py`
+
+Reader-facing downstream work should keep one rule in mind: route from a user
+question to a checked-in example first, then to the comparison or migration
+text that explains that example.
 
 ## Explicit Non-Goals
 
