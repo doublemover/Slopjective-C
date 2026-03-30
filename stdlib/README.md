@@ -1,7 +1,7 @@
 # objc3c Standard Library
 
 This directory is the checked-in root for the Objective-C 3 standard-library
-foundation surface.
+foundation and adoption surface.
 
 ## Boundary
 
@@ -17,10 +17,15 @@ Live stdlib work must stay on these paths:
 - `stdlib/semantic_policy.json`
 - `stdlib/lowering_import_surface.json`
 - `stdlib/advanced_helper_package_surface.json`
+- `stdlib/program_surface.json`
 - `stdlib/modules/`
 - `docs/runbooks/objc3c_stdlib_foundation.md`
 - `docs/runbooks/objc3c_stdlib_core.md`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
+- `docs/runbooks/objc3c_stdlib_program.md`
+- `docs/tutorials/`
+- `showcase/`
+- `site/src/index.body.md`
 - `tmp/artifacts/stdlib/`
 - `tmp/reports/stdlib/`
 
@@ -36,6 +41,7 @@ This root is not a place for:
 - temporary package layouts outside `tmp/pkg/`
 - duplicate tutorial text
 - duplicate showcase sources
+- a second stdlib onboarding tree outside `docs/tutorials/` and `showcase/`
 
 ## Working model
 
@@ -52,9 +58,13 @@ This root is not a place for:
   names, import identity fields, and machine-owned lowering roots
 - `stdlib/advanced_helper_package_surface.json` defines how the advanced helper
   subset is expected to appear in the shared stdlib package and runnable bundle
+- `stdlib/program_surface.json` defines the live docs, example, site-routing,
+  and capability-demo boundary that `M308` work must stay inside
 - the checked-in module roots will live under `stdlib/modules/`
 - canonical module names map onto implementation aliases because the current
   frontend module declaration syntax is identifier-based rather than dotted
 - machine-owned materializations belong under `tmp/artifacts/stdlib/`
 - validation reports belong under `tmp/reports/stdlib/`
 - runnable package staging stays on the existing runnable toolchain bundle flow
+- reader-facing onboarding, comparison, and capability-demo work stays on the
+  live `docs/tutorials/`, `showcase/`, and `site/src/index.body.md` surfaces

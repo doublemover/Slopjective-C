@@ -9,6 +9,7 @@
   "semantic_policy": "stdlib/semantic_policy.json",
   "lowering_import_surface": "stdlib/lowering_import_surface.json",
   "advanced_helper_package_surface": "stdlib/advanced_helper_package_surface.json",
+  "program_surface": "stdlib/program_surface.json",
   "machine_output_root": "tmp/artifacts/stdlib",
   "machine_report_root": "tmp/reports/stdlib",
   "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",

@@ -1,0 +1,81 @@
+{
+  "contract_id": "objc3c.stdlib.program_surface.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "package_surface": "stdlib/package_surface.json",
+  "advanced_architecture": "stdlib/advanced_architecture.json",
+  "runbook": "docs/runbooks/objc3c_stdlib_program.md",
+  "site_entry": "site/src/index.body.md",
+  "tutorial_readme": "docs/tutorials/README.md",
+  "getting_started_readme": "docs/tutorials/getting_started.md",
+  "comparison_readme": "docs/tutorials/objc2_swift_cpp_comparison.md",
+  "showcase_readme": "showcase/README.md",
+  "showcase_portfolio": "showcase/portfolio.json",
+  "guided_walkthrough_manifest": "showcase/tutorial_walkthrough.json",
+  "machine_output_root": "tmp/artifacts/stdlib",
+  "machine_report_root": "tmp/reports/stdlib",
+  "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
+  "public_actions": [
+    "check-documentation-surface",
+    "check-showcase-surface",
+    "validate-getting-started",
+    "validate-showcase",
+    "validate-runnable-showcase",
+    "inspect-capability-explorer",
+    "package-runnable-toolchain"
+  ],
+  "command_surfaces": {
+    "check_documentation_surface": "npm run check:docs:surface",
+    "check_showcase_surface": "npm run check:showcase:surface",
+    "validate_getting_started": "npm run test:getting-started",
+    "validate_showcase": "npm run test:showcase",
+    "validate_runnable_showcase": "npm run test:showcase:e2e",
+    "inspect_capability_explorer": "npm run inspect:objc3c:capabilities",
+    "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain"
+  },
+  "capability_demo_examples": [
+    {
+      "id": "auroraBoard",
+      "source": "showcase/auroraBoard/main.objc3",
+      "workspace_manifest": "showcase/auroraBoard/workspace.json",
+      "story_capabilities": [
+        "categories",
+        "reflection",
+        "synthesized-behaviors"
+      ]
+    },
+    {
+      "id": "signalMesh",
+      "source": "showcase/signalMesh/main.objc3",
+      "workspace_manifest": "showcase/signalMesh/workspace.json",
+      "story_capabilities": [
+        "status-bridging",
+        "actors",
+        "runtime-messaging"
+      ]
+    },
+    {
+      "id": "patchKit",
+      "source": "showcase/patchKit/main.objc3",
+      "workspace_manifest": "showcase/patchKit/workspace.json",
+      "story_capabilities": [
+        "derives",
+        "macros",
+        "property-behaviors",
+        "interop"
+      ]
+    }
+  ],
+  "working_scope": [
+    "reader-facing stdlib onboarding rooted in docs/tutorials",
+    "capability-driven example routing rooted in showcase",
+    "site entrypoints that route readers into the live stdlib and showcase surfaces",
+    "shared validation and packaging through the existing public runner and runnable toolchain bundle"
+  ],
+  "non_goals": [
+    "milestone-local tutorial wrappers",
+    "duplicate example trees outside showcase",
+    "machine-owned documentation under tmp",
+    "a second stdlib demo packaging flow outside the existing runnable toolchain bundle"
+  ]
+}

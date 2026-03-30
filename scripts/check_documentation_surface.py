@@ -22,6 +22,7 @@ BONUS_EXPERIENCES_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_bonus_expe
 PERFORMANCE_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_performance.md"
 STDLIB_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_foundation.md"
 STDLIB_README_PATH = ROOT / "stdlib" / "README.md"
+STDLIB_PROGRAM_RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_stdlib_program.md"
 PUBLIC_COMMAND_SURFACE_PATH = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 TUTORIAL_README_PATH = ROOT / "docs" / "tutorials" / "README.md"
 GETTING_STARTED_PATH = ROOT / "docs" / "tutorials" / "getting_started.md"
@@ -235,10 +236,12 @@ def main() -> int:
         "stdlib/advanced_architecture.json",
         "stdlib/lowering_import_surface.json",
         "stdlib/advanced_helper_package_surface.json",
+        "stdlib/program_surface.json",
         "module.runtime-registration-manifest.json",
         "identifier-safe implementation module declarations",
         "docs/runbooks/objc3c_stdlib_core.md",
         "docs/runbooks/objc3c_stdlib_advanced.md",
+        "docs/runbooks/objc3c_stdlib_program.md",
     ):
         require_token(stdlib_runbook, token, path=STDLIB_RUNBOOK_PATH, errors=errors)
 
@@ -255,6 +258,11 @@ def main() -> int:
         "stdlib/semantic_policy.json",
         "stdlib/lowering_import_surface.json",
         "stdlib/advanced_helper_package_surface.json",
+        "stdlib/program_surface.json",
+        "docs/runbooks/objc3c_stdlib_program.md",
+        "docs/tutorials/",
+        "showcase/",
+        "site/src/index.body.md",
         "docs/runbooks/objc3c_stdlib_advanced.md",
         "machine-owned lowering roots",
         "## Working model",
@@ -323,6 +331,41 @@ def main() -> int:
         "## Explicit non-goals",
     ):
         require_token(stdlib_advanced_runbook, token, path=stdlib_advanced_runbook_path, errors=errors)
+
+    stdlib_program_runbook = STDLIB_PROGRAM_RUNBOOK_PATH.read_text(encoding="utf-8")
+    for token in (
+        "# objc3c Stdlib Program Surface",
+        "## Working Boundary",
+        "stdlib/program_surface.json",
+        "docs/tutorials/getting_started.md",
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "showcase/README.md",
+        "showcase/portfolio.json",
+        "showcase/tutorial_walkthrough.json",
+        "site/src/index.body.md",
+        "## Current Truthful Portfolio",
+        "## Exact Live Implementation Paths",
+        "scripts/check_stdlib_surface.py",
+        "scripts/check_documentation_surface.py",
+        "scripts/check_showcase_surface.py",
+        "scripts/check_showcase_integration.py",
+        "scripts/check_getting_started_integration.py",
+        "## Exact Capability Demo Paths",
+        "showcase/auroraBoard/main.objc3",
+        "showcase/signalMesh/main.objc3",
+        "showcase/patchKit/main.objc3",
+        "## Exact Live Artifact And Output Paths",
+        "tmp/artifacts/showcase/",
+        "tmp/reports/showcase/",
+        "## Exact Live Commands",
+        "python scripts/objc3c_public_workflow_runner.py validate-showcase",
+        "python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase",
+        "python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer",
+        "npm run inspect:objc3c:capabilities",
+        "## Working Rules For Downstream Issues",
+        "## Explicit Non-Goals",
+    ):
+        require_token(stdlib_program_runbook, token, path=STDLIB_PROGRAM_RUNBOOK_PATH, errors=errors)
 
     site_body = SITE_BODY_PATH.read_text(encoding="utf-8")
     for token in (

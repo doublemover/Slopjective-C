@@ -19,6 +19,7 @@ ADVANCED_ARCHITECTURE_PATH = ROOT / "stdlib" / "advanced_architecture.json"
 SEMANTIC_POLICY_PATH = ROOT / "stdlib" / "semantic_policy.json"
 LOWERING_IMPORT_SURFACE_PATH = ROOT / "stdlib" / "lowering_import_surface.json"
 ADVANCED_HELPER_PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "advanced_helper_package_surface.json"
+PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
 SPEC_CONTRACT_PATH = ROOT / "spec" / "STANDARD_LIBRARY_CONTRACT.md"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.surface.summary.v1"
@@ -81,6 +82,8 @@ def main() -> int:
         return fail(
             f"missing advanced helper package surface contract: {repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH)}"
         )
+    if not PROGRAM_SURFACE_PATH.is_file():
+        return fail(f"missing program surface contract: {repo_rel(PROGRAM_SURFACE_PATH)}")
     if not SPEC_CONTRACT_PATH.is_file():
         return fail(f"missing spec contract: {repo_rel(SPEC_CONTRACT_PATH)}")
 
@@ -93,6 +96,7 @@ def main() -> int:
     semantic_policy = load_json(SEMANTIC_POLICY_PATH)
     lowering_import_surface = load_json(LOWERING_IMPORT_SURFACE_PATH)
     advanced_helper_package_surface = load_json(ADVANCED_HELPER_PACKAGE_SURFACE_PATH)
+    program_surface = load_json(PROGRAM_SURFACE_PATH)
     spec_text = SPEC_CONTRACT_PATH.read_text(encoding="utf-8")
 
     if workspace.get("contract_id") != "objc3c.stdlib.workspace.v1":
@@ -115,10 +119,14 @@ def main() -> int:
         return fail("workspace lowering_import_surface path drifted")
     if workspace.get("advanced_helper_package_surface") != "stdlib/advanced_helper_package_surface.json":
         return fail("workspace advanced_helper_package_surface path drifted")
+    if workspace.get("program_surface") != "stdlib/program_surface.json":
+        return fail("workspace program_surface path drifted")
     if workspace.get("core_runbook") != "docs/runbooks/objc3c_stdlib_core.md":
         return fail("workspace core_runbook path drifted")
     if workspace.get("advanced_runbook") != "docs/runbooks/objc3c_stdlib_advanced.md":
         return fail("workspace advanced_runbook path drifted")
+    if workspace.get("program_runbook") != "docs/runbooks/objc3c_stdlib_program.md":
+        return fail("workspace program_runbook path drifted")
     if inventory.get("contract_id") != "objc3c.stdlib.module_inventory.v1":
         return fail("module inventory contract_id drifted")
     if inventory.get("schema_version") != 1:
@@ -149,6 +157,8 @@ def main() -> int:
         return fail("package surface lowering_import_surface drifted")
     if package_surface.get("advanced_helper_package_surface") != "stdlib/advanced_helper_package_surface.json":
         return fail("package surface advanced_helper_package_surface drifted")
+    if package_surface.get("program_surface") != "stdlib/program_surface.json":
+        return fail("package surface program_surface drifted")
     if package_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
         return fail("package surface machine_output_root drifted")
     if package_surface.get("machine_report_root") != "tmp/reports/stdlib":
@@ -603,6 +613,119 @@ def main() -> int:
     ]:
         return fail("advanced helper package surface public_actions drifted")
 
+    if program_surface.get("contract_id") != "objc3c.stdlib.program_surface.v1":
+        return fail("program surface contract_id drifted")
+    if program_surface.get("schema_version") != 1:
+        return fail("program surface schema_version drifted")
+    if program_surface.get("workspace_contract") != "stdlib/workspace.json":
+        return fail("program surface workspace_contract drifted")
+    if program_surface.get("package_surface") != "stdlib/package_surface.json":
+        return fail("program surface package_surface drifted")
+    if program_surface.get("advanced_architecture") != "stdlib/advanced_architecture.json":
+        return fail("program surface advanced_architecture drifted")
+    if program_surface.get("runbook") != "docs/runbooks/objc3c_stdlib_program.md":
+        return fail("program surface runbook drifted")
+    if program_surface.get("site_entry") != "site/src/index.body.md":
+        return fail("program surface site_entry drifted")
+    if program_surface.get("tutorial_readme") != "docs/tutorials/README.md":
+        return fail("program surface tutorial_readme drifted")
+    if program_surface.get("getting_started_readme") != "docs/tutorials/getting_started.md":
+        return fail("program surface getting_started_readme drifted")
+    if program_surface.get("comparison_readme") != "docs/tutorials/objc2_swift_cpp_comparison.md":
+        return fail("program surface comparison_readme drifted")
+    if program_surface.get("showcase_readme") != "showcase/README.md":
+        return fail("program surface showcase_readme drifted")
+    if program_surface.get("showcase_portfolio") != "showcase/portfolio.json":
+        return fail("program surface showcase_portfolio drifted")
+    if program_surface.get("guided_walkthrough_manifest") != "showcase/tutorial_walkthrough.json":
+        return fail("program surface guided_walkthrough_manifest drifted")
+    if program_surface.get("machine_output_root") != "tmp/artifacts/stdlib":
+        return fail("program surface machine_output_root drifted")
+    if program_surface.get("machine_report_root") != "tmp/reports/stdlib":
+        return fail("program surface machine_report_root drifted")
+    if program_surface.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
+        return fail("program surface package_stage_root drifted")
+    if program_surface.get("public_actions") != [
+        "check-documentation-surface",
+        "check-showcase-surface",
+        "validate-getting-started",
+        "validate-showcase",
+        "validate-runnable-showcase",
+        "inspect-capability-explorer",
+        "package-runnable-toolchain",
+    ]:
+        return fail("program surface public_actions drifted")
+    if program_surface.get("command_surfaces") != {
+        "check_documentation_surface": "npm run check:docs:surface",
+        "check_showcase_surface": "npm run check:showcase:surface",
+        "validate_getting_started": "npm run test:getting-started",
+        "validate_showcase": "npm run test:showcase",
+        "validate_runnable_showcase": "npm run test:showcase:e2e",
+        "inspect_capability_explorer": "npm run inspect:objc3c:capabilities",
+        "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
+    }:
+        return fail("program surface command_surfaces drifted")
+
+    program_live_paths = (
+        "runbook",
+        "site_entry",
+        "tutorial_readme",
+        "getting_started_readme",
+        "comparison_readme",
+        "showcase_readme",
+        "showcase_portfolio",
+        "guided_walkthrough_manifest",
+    )
+    for path_key in program_live_paths:
+        raw_path = program_surface.get(path_key)
+        if not isinstance(raw_path, str) or not raw_path:
+            return fail(f"program surface {path_key} is malformed")
+        if not (ROOT / raw_path).exists():
+            return fail(f"program surface live path missing: {raw_path}")
+
+    capability_demo_examples = program_surface.get("capability_demo_examples")
+    if not isinstance(capability_demo_examples, list) or len(capability_demo_examples) != 3:
+        return fail("program surface missing capability_demo_examples")
+    showcase_portfolio = load_json(ROOT / str(program_surface["showcase_portfolio"]))
+    showcase_examples = showcase_portfolio.get("examples")
+    if not isinstance(showcase_examples, list):
+        return fail("showcase portfolio examples are malformed")
+    showcase_examples_by_id = {
+        str(entry.get("id")): entry
+        for entry in showcase_examples
+        if isinstance(entry, dict) and isinstance(entry.get("id"), str)
+    }
+    for entry in capability_demo_examples:
+        if not isinstance(entry, dict):
+            return fail("program surface published a malformed capability demo entry")
+        demo_id = entry.get("id")
+        source = entry.get("source")
+        workspace_manifest = entry.get("workspace_manifest")
+        story_capabilities = entry.get("story_capabilities")
+        if not isinstance(demo_id, str) or not demo_id:
+            return fail("program surface capability demo id is malformed")
+        if not isinstance(source, str) or not source:
+            return fail(f"program surface source is malformed for {demo_id}")
+        if not isinstance(workspace_manifest, str) or not workspace_manifest:
+            return fail(f"program surface workspace_manifest is malformed for {demo_id}")
+        if not isinstance(story_capabilities, list) or not all(
+            isinstance(value, str) and value for value in story_capabilities
+        ):
+            return fail(f"program surface story_capabilities are malformed for {demo_id}")
+        if not (ROOT / source).is_file():
+            return fail(f"program surface source path missing for {demo_id}")
+        if not (ROOT / workspace_manifest).is_file():
+            return fail(f"program surface workspace manifest missing for {demo_id}")
+        showcase_entry = showcase_examples_by_id.get(demo_id)
+        if showcase_entry is None:
+            return fail(f"program surface referenced unknown showcase example {demo_id}")
+        if showcase_entry.get("source") != source:
+            return fail(f"program surface source drifted for {demo_id}")
+        if showcase_entry.get("workspace_manifest") != workspace_manifest:
+            return fail(f"program surface workspace_manifest drifted for {demo_id}")
+        if showcase_entry.get("story_capabilities") != story_capabilities:
+            return fail(f"program surface story_capabilities drifted for {demo_id}")
+
     advanced_helper_modules = advanced_helper_package_surface.get("advanced_helper_modules")
     if not isinstance(advanced_helper_modules, list) or len(advanced_helper_modules) != 3:
         return fail("advanced helper package surface missing advanced_helper_modules")
@@ -633,6 +756,7 @@ def main() -> int:
                 "semantic_policy": repo_rel(SEMANTIC_POLICY_PATH),
                 "lowering_import_surface": repo_rel(LOWERING_IMPORT_SURFACE_PATH),
                 "advanced_helper_package_surface": repo_rel(ADVANCED_HELPER_PACKAGE_SURFACE_PATH),
+                "program_surface": repo_rel(PROGRAM_SURFACE_PATH),
                 "spec_contract": repo_rel(SPEC_CONTRACT_PATH),
                 "canonical_modules": inventory_rows,
                 "layers": layers,
@@ -644,6 +768,7 @@ def main() -> int:
                 "module_semver": semantic_module_semver,
                 "artifact_filenames": artifact_filenames,
                 "advanced_helper_modules": advanced_helper_modules,
+                "capability_demo_examples": capability_demo_examples,
             },
             indent=2,
         )

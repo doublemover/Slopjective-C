@@ -17,19 +17,23 @@
   "semantic_policy": "stdlib/semantic_policy.json",
   "lowering_import_surface": "stdlib/lowering_import_surface.json",
   "advanced_helper_package_surface": "stdlib/advanced_helper_package_surface.json",
+  "program_surface": "stdlib/program_surface.json",
   "core_runbook": "docs/runbooks/objc3c_stdlib_core.md",
   "advanced_runbook": "docs/runbooks/objc3c_stdlib_advanced.md",
+  "program_runbook": "docs/runbooks/objc3c_stdlib_program.md",
   "working_scope": [
     "checked-in standard-library root",
     "canonical module partition under stdlib/modules",
     "machine-owned materialization under tmp/artifacts/stdlib",
     "shared validation reports under tmp/reports/stdlib",
-    "runnable package staging through the existing objc3c runnable toolchain bundle"
+    "runnable package staging through the existing objc3c runnable toolchain bundle",
+    "reader-facing docs examples and capability demos routed through live tutorials site and showcase paths"
   ],
   "non_goals": [
     "milestone-local scaffolding",
     "duplicate example trees outside stdlib",
     "a second packaging system outside the existing runnable toolchain bundle",
-    "hidden machine-owned source roots"
+    "hidden machine-owned source roots",
+    "a second tutorial or showcase tree outside the existing docs and showcase roots"
   ]
 }
