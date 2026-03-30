@@ -1,0 +1,16 @@
+{
+  "contract_id": "objc3c.stress.lowering-runtime.manifest.v1",
+  "schema_version": 1,
+  "compile_cases": [
+    "tests/tooling/fixtures/native/async_lowering_positive.objc3",
+    "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
+    "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+    "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3"
+  ],
+  "execution_cases": [
+    "tests/tooling/fixtures/native/execution/positive/basic_i32_return_main.objc3",
+    "tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3",
+    "tests/tooling/fixtures/native/execution/positive/arc_cleanup_scope_positive.objc3"
+  ]
+}
