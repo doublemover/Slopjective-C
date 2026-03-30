@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-compatibility-report-v1.schema.json",
+  "title": "objc3c Compatibility Report",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "current_version",
+    "support_windows",
+    "upgrade_paths",
+    "warnings",
+    "rollback_guidance"
+  ],
+  "properties": {
+    "contract_id": { "const": "objc3c.release.operations.compatibility-report.v1" },
+    "generated_at_utc": { "type": "string" },
+    "current_version": { "type": "string" },
+    "support_windows": { "type": "object" },
+    "upgrade_paths": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "warnings": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "rollback_guidance": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "object" }
+    }
+  }
+}

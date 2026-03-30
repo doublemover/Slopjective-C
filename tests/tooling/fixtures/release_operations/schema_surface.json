@@ -1,0 +1,9 @@
+{
+  "contract_id": "objc3c.release.operations.schema.surface.v1",
+  "schema_version": 1,
+  "schemas": [
+    "schemas/objc3c-update-manifest-v1.schema.json",
+    "schemas/objc3c-compatibility-report-v1.schema.json"
+  ],
+  "schema_check_script": "scripts/check_release_operations_schema_surface.py"
+}

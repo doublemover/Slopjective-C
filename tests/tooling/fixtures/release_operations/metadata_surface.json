@@ -1,0 +1,23 @@
+{
+  "contract_id": "objc3c.release.operations.metadata.surface.v1",
+  "schema_version": 1,
+  "update_manifest": "schemas/objc3c-update-manifest-v1.schema.json",
+  "compatibility_report": "schemas/objc3c-compatibility-report-v1.schema.json",
+  "required_update_manifest_fields": [
+    "contract_id",
+    "generated_at_utc",
+    "current_version",
+    "default_channel",
+    "channels",
+    "compatibility_report"
+  ],
+  "required_compatibility_report_fields": [
+    "contract_id",
+    "generated_at_utc",
+    "current_version",
+    "support_windows",
+    "upgrade_paths",
+    "warnings",
+    "rollback_guidance"
+  ]
+}
