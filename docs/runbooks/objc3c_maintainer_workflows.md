@@ -86,6 +86,17 @@ Performance-benchmark entrypoint:
 - use that runbook before widening benchmark claims, baseline corpus inputs, or
   packaged validation flows
 
+Stress-validation entrypoint:
+
+- `docs/runbooks/objc3c_stress_validation.md` is the maintainer boundary for
+  malformed-input fuzzing, lowering/runtime stress sweeps, mixed-module
+  differentials, and reducer/triage artifact flows
+- stress work must stay on the existing compile wrapper, execution-smoke,
+  conformance corpus, runtime acceptance, and runnable package surfaces instead
+  of inventing a separate fuzz service or sidecar corpus root
+- use that runbook before widening fixture families, reducer outputs, workflow
+  commands, or packaged stress validation claims
+
 Standard-library entrypoint:
 
 - `docs/runbooks/objc3c_stdlib_foundation.md` is the maintainer boundary for
@@ -142,6 +153,7 @@ npm run test:repo
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`
+- stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - stdlib foundation boundary: `docs/runbooks/objc3c_stdlib_foundation.md`
 - stdlib core boundary: `docs/runbooks/objc3c_stdlib_core.md`
 - stdlib surface check: `npm run check:stdlib:surface`

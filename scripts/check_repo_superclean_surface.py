@@ -63,6 +63,7 @@ def main() -> int:
             "docs/runbooks/objc3c_developer_tooling.md",
             "docs/runbooks/objc3c_bonus_experiences.md",
             "docs/runbooks/objc3c_performance.md",
+            "docs/runbooks/objc3c_stress_validation.md",
             "docs/runbooks/objc3c_stdlib_foundation.md",
             "docs/runbooks/objc3c_stdlib_core.md",
             "docs/runbooks/objc3c_stdlib_advanced.md",
