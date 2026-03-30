@@ -13,11 +13,13 @@ Live stdlib work must stay on these paths:
 - `stdlib/stability_policy.json`
 - `stdlib/package_surface.json`
 - `stdlib/core_architecture.json`
+- `stdlib/advanced_architecture.json`
 - `stdlib/semantic_policy.json`
 - `stdlib/lowering_import_surface.json`
 - `stdlib/modules/`
 - `docs/runbooks/objc3c_stdlib_foundation.md`
 - `docs/runbooks/objc3c_stdlib_core.md`
+- `docs/runbooks/objc3c_stdlib_advanced.md`
 - `tmp/artifacts/stdlib/`
 - `tmp/reports/stdlib/`
 
@@ -41,6 +43,8 @@ This root is not a place for:
 - import/package alias mapping comes from `stdlib/package_surface.json`
 - `stdlib/core_architecture.json` defines the `M306` ownership split for
   foundational utility, text/data, collection, option, and result families
+- `stdlib/advanced_architecture.json` defines the `M307` ownership split for
+  concurrency, reflection, interop, and runtime-composition helper families
 - `stdlib/semantic_policy.json` defines the observable compatibility and helper
   semantics for the current core stdlib surface
 - `stdlib/lowering_import_surface.json` defines the real smoke-compile artifact

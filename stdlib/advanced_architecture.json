@@ -1,0 +1,83 @@
+{
+  "contract_id": "objc3c.stdlib.advanced_architecture.v1",
+  "schema_version": 1,
+  "workspace_contract": "stdlib/workspace.json",
+  "foundation_contract": "stdlib/core_architecture.json",
+  "runbook": "docs/runbooks/objc3c_stdlib_advanced.md",
+  "scope": "advanced-helper-concurrency-reflection-interop-runtime-composition-surface",
+  "live_paths": [
+    "stdlib/advanced_architecture.json",
+    "stdlib/modules/objc3.concurrency/module.objc3",
+    "stdlib/modules/objc3.keypath/module.objc3",
+    "stdlib/modules/objc3.system/module.objc3",
+    "scripts/check_stdlib_surface.py",
+    "scripts/materialize_objc3c_stdlib_workspace.py",
+    "scripts/run_objc3c_stdlib_workspace_smoke.py",
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "api_families": {
+    "objc3.concurrency": [
+      "structured-child-spawn",
+      "detached-spawn",
+      "join-and-wait",
+      "task-group-scope",
+      "cancellation-observation",
+      "executor-hop"
+    ],
+    "objc3.keypath": [
+      "typed-keypath-application",
+      "typed-keypath-metadata",
+      "reflection-interop",
+      "runtime-composition-adapter"
+    ],
+    "objc3.system": [
+      "resource-cleanup",
+      "borrowed-lifetime-hook",
+      "strict-system-diagnostics",
+      "runtime-composition-hook"
+    ]
+  },
+  "required_exports": {
+    "objc3.concurrency": [
+      "objc3_concurrency_spawn_token",
+      "objc3_concurrency_cancellation_checkpoint"
+    ],
+    "objc3.keypath": [
+      "objc3_keypath_apply_index",
+      "objc3_keypath_component_count",
+      "objc3_keypath_text_compatibility_score",
+      "objc3_keypath_text_compatibility_diagnostic"
+    ],
+    "objc3.system": [
+      "objc3_system_resource_token"
+    ]
+  },
+  "module_roles": {
+    "objc3.concurrency": "task, cancellation, executor, and actor helper entrypoints that eventually back structured runtime behavior",
+    "objc3.keypath": "typed key-path metadata and helper entrypoints that bridge reflection, interop, and runtime-composition claims",
+    "objc3.system": "profile-gated cleanup, lifetime, and runtime-composition hooks reserved for strict-system claims"
+  },
+  "layering_model": {
+    "objc3.concurrency": [
+      "objc3.core",
+      "objc3.errors"
+    ],
+    "objc3.keypath": [
+      "objc3.core",
+      "objc3.errors"
+    ],
+    "objc3.system": [
+      "objc3.core",
+      "objc3.errors",
+      "objc3.concurrency",
+      "objc3.keypath"
+    ]
+  },
+  "non_goals": [
+    "duplicating the M306 core helper contract",
+    "claiming runtime-backed reflection or executor semantics before live helper exports exist",
+    "widening strict-system helpers into always-on core imports",
+    "adding a second stdlib packaging flow outside the existing runnable toolchain bundle"
+  ]
+}
