@@ -137,3 +137,4 @@ it must stay on this boundary.
 - public summary: `tmp/reports/public-conformance/public-summary.json`
 - published scorecard artifact: `tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json`
 - published badge artifact: `tmp/artifacts/public-conformance/badge/public-conformance-badge.json`
+- published Markdown report: `tmp/artifacts/public-conformance/report/public-conformance-report.md`

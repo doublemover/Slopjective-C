@@ -23,6 +23,7 @@ PUBLIC_SUMMARY = ROOT / "tmp" / "reports" / "public-conformance" / "public-summa
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "public-conformance"
 PUBLISHED_SCORECARD = ARTIFACT_ROOT / "scorecard" / "public-conformance-scorecard.json"
 PUBLISHED_BADGE = ARTIFACT_ROOT / "badge" / "public-conformance-badge.json"
+PUBLISHED_REPORT_MD = ARTIFACT_ROOT / "report" / "public-conformance-report.md"
 SUMMARY_CONTRACT_ID = "objc3c.public_conformance_reporting.summary.v1"
 
 
@@ -63,6 +64,12 @@ def ensure_success(path: Path, script: Path) -> dict[str, Any]:
     return payload
 
 
+def pluralize(value: int, singular: str, plural: str | None = None) -> str:
+    if value == 1:
+        return singular
+    return plural or f"{singular}s"
+
+
 def main() -> int:
     try:
         source_summary = ensure_success(SOURCE_SUMMARY, SOURCE_CHECK)
@@ -96,9 +103,9 @@ def main() -> int:
         (
             "External validation is "
             f"{scorecard['upstream_status']['external_validation_integration']} with "
-            f"{claimability['accepted_fixture_count']} accepted fixtures, "
-            f"{claimability['redacted_fixture_count']} redacted fixtures, and "
-            f"{claimability['blocked_fixture_count']} blocked fixtures."
+            f"{claimability['accepted_fixture_count']} accepted {pluralize(claimability['accepted_fixture_count'], 'fixture')}, "
+            f"{claimability['redacted_fixture_count']} redacted {pluralize(claimability['redacted_fixture_count'], 'fixture')}, and "
+            f"{claimability['blocked_fixture_count']} blocked {pluralize(claimability['blocked_fixture_count'], 'fixture')}."
         ),
         (
             "Checked-in dashboard and release-evidence schema anchors are "
@@ -125,6 +132,7 @@ def main() -> int:
 
     PUBLISHED_SCORECARD.parent.mkdir(parents=True, exist_ok=True)
     PUBLISHED_BADGE.parent.mkdir(parents=True, exist_ok=True)
+    PUBLISHED_REPORT_MD.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(SCORECARD_SUMMARY, PUBLISHED_SCORECARD)
     PUBLISHED_BADGE.write_text(
         json.dumps(
@@ -139,6 +147,29 @@ def main() -> int:
         + "\n",
         encoding="utf-8",
     )
+    markdown_lines = [
+        "# Objective-C 3 Public Conformance Report",
+        "",
+        f"- Public status: `{public_status}`",
+        f"- Badge: `{badge}`",
+        f"- Stability score: `{score}`",
+        f"- Claim ready: `{str(bool(scorecard['claim_ready'])).lower()}`",
+        "",
+        headline,
+        "",
+        "## Summary",
+        "",
+    ]
+    markdown_lines.extend(f"- {line}" for line in report_lines)
+    markdown_lines.extend(
+        [
+            "",
+            "## Evidence",
+            "",
+        ]
+    )
+    markdown_lines.extend(f"- `{path}`" for path in evidence_paths)
+    PUBLISHED_REPORT_MD.write_text("\n".join(markdown_lines) + "\n", encoding="utf-8")
 
     payload = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -147,6 +178,7 @@ def main() -> int:
         "source_surface_summary_path": repo_rel(SOURCE_SUMMARY),
         "schema_surface_summary_path": repo_rel(SCHEMA_SUMMARY),
         "scorecard_summary_path": repo_rel(SCORECARD_SUMMARY),
+        "report_markdown_path": repo_rel(PUBLISHED_REPORT_MD),
         "public_status": public_status,
         "badge": badge,
         "score": score,
@@ -159,10 +191,10 @@ def main() -> int:
     print(f"summary_path: {repo_rel(PUBLIC_SUMMARY)}")
     print(f"published_scorecard: {repo_rel(PUBLISHED_SCORECARD)}")
     print(f"published_badge: {repo_rel(PUBLISHED_BADGE)}")
+    print(f"published_report_markdown: {repo_rel(PUBLISHED_REPORT_MD)}")
     print("objc3c-public-conformance-report: OK")
     return 0
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

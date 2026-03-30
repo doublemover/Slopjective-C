@@ -42,6 +42,9 @@
     "scorecard_summary_path": {
       "$ref": "#/$defs/repoPath"
     },
+    "report_markdown_path": {
+      "$ref": "#/$defs/repoPath"
+    },
     "public_status": {
       "type": "string",
       "enum": [
@@ -90,4 +93,3 @@
     }
   }
 }
-

@@ -31,6 +31,7 @@
   ],
   "artifact_paths": [
     "tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json",
-    "tmp/artifacts/public-conformance/badge/public-conformance-badge.json"
+    "tmp/artifacts/public-conformance/badge/public-conformance-badge.json",
+    "tmp/artifacts/public-conformance/report/public-conformance-report.md"
   ]
 }
