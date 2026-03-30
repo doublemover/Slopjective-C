@@ -731,6 +731,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       "docs/runbooks/objc3c_bonus_experiences.md",
       "docs/runbooks/objc3c_performance.md",
       "docs/runbooks/objc3c_performance_governance.md",
+      "docs/runbooks/objc3c_packaging_channels.md",
       "docs/runbooks/objc3c_release_foundation.md",
       "docs/runbooks/objc3c_runtime_performance.md",
       "docs/runbooks/objc3c_stress_validation.md",
@@ -759,6 +760,11 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       inspect_release_manifest = "inspect:objc3c:release-manifest"
       publish_release_provenance = "publish:objc3c:release-provenance"
       test_release_foundation = "test:objc3c:release-foundation"
+      package_channels = "package:objc3c:channels"
+      check_packaging_channels_surface = "check:objc3c:packaging-channels:surface"
+      check_packaging_channels_schemas = "check:objc3c:packaging-channels:schemas"
+      test_packaging_channels = "test:objc3c:packaging-channels"
+      test_packaging_channels_e2e = "test:objc3c:packaging-channels:e2e"
       inspect_runtime_performance = "inspect:objc3c:runtime-performance"
       test_runtime_performance = "test:objc3c:runtime-performance"
       test_runtime_performance_e2e = "test:objc3c:runnable-runtime-performance"
@@ -1014,6 +1020,39 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
         "build-release-manifest",
         "publish-release-provenance",
         "validate-release-foundation"
+      )
+    }
+    packaging_channels_surface = [ordered]@{
+      runbook = "docs/runbooks/objc3c_packaging_channels.md"
+      source_surface_contract = "tests/tooling/fixtures/packaging_channels/source_surface.json"
+      supported_platforms = "tests/tooling/fixtures/packaging_channels/supported_platforms.json"
+      installer_policy = "tests/tooling/fixtures/packaging_channels/installer_policy.json"
+      metadata_surface = "tests/tooling/fixtures/packaging_channels/metadata_surface.json"
+      workflow_surface = "tests/tooling/fixtures/packaging_channels/workflow_surface.json"
+      schema_surface = "tests/tooling/fixtures/packaging_channels/schema_surface.json"
+      package_channels_manifest_schema = "schemas/objc3c-package-channels-manifest-v1.schema.json"
+      install_receipt_schema = "schemas/objc3c-package-install-receipt-v1.schema.json"
+      source_roots = @(
+        "scripts/check_packaging_channels_source_surface.py",
+        "scripts/check_packaging_channels_schema_surface.py",
+        "scripts/build_objc3c_package_channels.py",
+        "scripts/check_objc3c_packaging_channels_integration.py",
+        "scripts/check_objc3c_packaging_channels_end_to_end.py",
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "scripts/build_objc3c_release_manifest.py",
+        "scripts/publish_objc3c_release_provenance.py"
+      )
+      report_roots = @(
+        "tmp/reports/package-channels",
+        "tmp/artifacts/package-channels",
+        "tmp/pkg/objc3c-package-channels"
+      )
+      public_actions = @(
+        "check-packaging-channels-surface",
+        "check-packaging-channels-schema-surface",
+        "build-package-channels",
+        "validate-packaging-channels",
+        "validate-packaging-channels-end-to-end"
       )
     }
     stress_validation_surface = [ordered]@{

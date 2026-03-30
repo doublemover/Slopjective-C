@@ -252,6 +252,12 @@ npm run test:repo
 - release manifest build: `npm run inspect:objc3c:release-manifest`
 - release provenance publication: `npm run publish:objc3c:release-provenance`
 - integrated release foundation workflow: `npm run test:objc3c:release-foundation`
+- packaging channels boundary: `docs/runbooks/objc3c_packaging_channels.md`
+- packaging channels source-surface check: `npm run check:objc3c:packaging-channels:surface`
+- packaging channels schema check: `npm run check:objc3c:packaging-channels:schemas`
+- packaging channels build: `npm run package:objc3c:channels`
+- integrated packaging channels workflow: `npm run test:objc3c:packaging-channels`
+- packaging channels end-to-end proof: `npm run test:objc3c:packaging-channels:e2e`
 - runtime performance boundary: `docs/runbooks/objc3c_runtime_performance.md`
 - runtime performance benchmark: `npm run inspect:objc3c:runtime-performance`
 - integrated runtime performance validation: `npm run test:objc3c:runtime-performance`
