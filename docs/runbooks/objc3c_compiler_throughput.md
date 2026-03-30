@@ -181,6 +181,25 @@ Disallowed optimization moves:
   - `tests/tooling/fixtures/compiler_throughput/workload_manifest.json`
   - `tests/tooling/fixtures/compiler_throughput/validation_tier_map.json`
   - `tests/tooling/fixtures/compiler_throughput/optimization_policy.json`
+  - `tests/tooling/fixtures/compiler_throughput/artifact_surface.json`
+  - `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
+
+## Exact Live Artifact And Output Paths
+
+- machine-owned throughput roots:
+  - `tmp/artifacts/objc3c-native/perf-budget/`
+  - `tmp/reports/compiler-throughput/`
+  - `tmp/pkg/objc3c-native-runnable-toolchain/`
+- checked-in benchmark contract roots:
+  - `tests/tooling/fixtures/compiler_throughput/`
+
+## Exact Live Commands
+
+- benchmark the live direct-compile throughput and wrapper cache surface:
+  - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/check_objc3c_native_perf_budget.ps1`
+- build the compile-coupled docs generators used by this milestone:
+  - `python scripts/build_objc3c_native_docs.py`
+  - `python scripts/render_objc3c_public_command_surface.py`
 
 ## Explicit Non-Goals
 

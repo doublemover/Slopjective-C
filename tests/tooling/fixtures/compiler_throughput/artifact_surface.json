@@ -1,0 +1,22 @@
+{
+  "contract_id": "objc3c.compiler.throughput.artifact.surface.v1",
+  "schema_version": 1,
+  "benchmark_script": "scripts/check_objc3c_native_perf_budget.ps1",
+  "summary_contract_id": "objc3c.compiler.throughput.summary.v1",
+  "summary_schema": "schemas/objc3c-compiler-throughput-summary-v1.schema.json",
+  "artifact_roots": [
+    "tmp/artifacts/objc3c-native/perf-budget",
+    "tmp/reports/compiler-throughput",
+    "tmp/pkg/objc3c-native-runnable-toolchain"
+  ],
+  "required_summary_fields": [
+    "contract_id",
+    "benchmark_kind",
+    "status",
+    "cache_proof",
+    "cache_invalidation_proof",
+    "macro_host_cache_proof",
+    "docs_generation_proof",
+    "results"
+  ]
+}

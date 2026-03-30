@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-compiler-throughput-summary-v1.schema.json",
+  "title": "objc3c compiler throughput summary v1",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "benchmark_kind",
+    "status",
+    "cache_proof",
+    "cache_invalidation_proof",
+    "macro_host_cache_proof",
+    "docs_generation_proof",
+    "results"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.compiler.throughput.summary.v1"
+    },
+    "benchmark_kind": {
+      "const": "native-direct-compile-throughput"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "cache_proof": {
+      "type": "object"
+    },
+    "cache_invalidation_proof": {
+      "type": "object"
+    },
+    "macro_host_cache_proof": {
+      "type": "object"
+    },
+    "docs_generation_proof": {
+      "type": "object"
+    },
+    "results": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": true
+}
