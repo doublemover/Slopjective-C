@@ -51,3 +51,38 @@ Gap states:
 Claim boundary:
 
 - release-facing corpus claims must resolve back to checked-in manifests, the coverage map, and deterministic executable evidence
+
+## Audited Surface
+
+Runtime and lowering coverage already resolves through:
+
+- `tests/conformance/lowering_abi/manifest.json`
+- `scripts/check_objc3c_execution_replay_proof.ps1`
+- `scripts/check_objc3c_lowering_replay_proof.ps1`
+
+Module and metadata coverage already resolves through:
+
+- `tests/conformance/module_roundtrip/manifest.json`
+- `scripts/generate_conformance_evidence_index.py`
+
+Interop coverage already resolves through:
+
+- `tests/conformance/semantic/manifest.json`
+- `tests/conformance/module_roundtrip/manifest.json`
+- `scripts/check_objc3c_runnable_interop_conformance.py`
+
+Example and tutorial coverage already resolves through:
+
+- `tests/conformance/examples/manifest.json`
+- `showcase/portfolio.json`
+- `docs/tutorials/README.md`
+
+Packaging and release evidence already resolves through:
+
+- `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
+- `schemas/objc3-conformance-dashboard-status-v1.schema.json`
+- `scripts/check_release_evidence.py`
+
+Remaining corpus gaps are expected to terminate in:
+
+- `tests/conformance/spec_open_issues/manifest.json`

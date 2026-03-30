@@ -17,6 +17,7 @@ CI enforcement:
 
 - workflow: `.github/workflows/conformance-minima.yml`
 - checker: `scripts/check_conformance_suite.ps1`
+- corpus contract: `tests/conformance/corpus_surface.json`
 
 ## Family Mapping
 
