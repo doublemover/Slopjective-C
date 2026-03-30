@@ -28,6 +28,7 @@
     "test:objc3c:stress-minimization": "python scripts/objc3c_public_workflow_runner.py test-stress-minimization",
     "test:objc3c:stress-crash-triage": "python scripts/objc3c_public_workflow_runner.py test-stress-crash-triage",
     "test:objc3c:stress": "python scripts/objc3c_public_workflow_runner.py validate-stress",
+    "test:objc3c:stress:integration": "python scripts/objc3c_public_workflow_runner.py validate-stress-integration",
     "test:stdlib": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation",
     "test:stdlib:program": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-program",
     "test:stdlib:advanced": "python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced",

@@ -53,6 +53,7 @@ LOWERING_RUNTIME_STRESS_PY = ROOT / "scripts" / "run_objc3c_lowering_runtime_str
 MIXED_MODULE_DIFFERENTIAL_PY = ROOT / "scripts" / "run_objc3c_mixed_module_differential.py"
 STRESS_MINIMIZATION_PY = ROOT / "scripts" / "run_objc3c_stress_minimization.py"
 STRESS_CRASH_TRIAGE_PY = ROOT / "scripts" / "run_objc3c_stress_crash_triage.py"
+STRESS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stress_integration.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -618,6 +619,10 @@ def action_validate_stress(_: list[str]) -> int:
             ("test-stress-crash-triage", [sys.executable, str(STRESS_CRASH_TRIAGE_PY)]),
         ],
     )
+
+
+def action_validate_stress_integration(_: list[str]) -> int:
+    return run([sys.executable, str(STRESS_INTEGRATION_PY)])
 
 
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
@@ -1355,6 +1360,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-stress-minimization": ActionSpec("test-stress-minimization", "reduce failing checked-in malformed inputs into machine-owned replay capsules", "python:scripts/run_objc3c_stress_minimization.py", ("test:objc3c:stress-minimization",), validation_tier="repo", guarantee_owner="deterministic reducer output stays tied to checked-in failing inputs and live compiler signatures", pass_through_args=True),
     "test-stress-crash-triage": ActionSpec("test-stress-crash-triage", "build crash-signature triage indexes and replay requests from minimized stress cases", "python:scripts/run_objc3c_stress_crash_triage.py", ("test:objc3c:stress-crash-triage",), validation_tier="repo", guarantee_owner="crash-signature grouping and replay requests stay derived from machine-owned minimized stress artifacts", pass_through_args=True),
     "validate-stress": ActionSpec("validate-stress", "run the integrated fuzz, stress, reducer, and crash-triage workflow", "runner-internal + direct stress validation commands", ("test:objc3c:stress",), validation_tier="repo", guarantee_owner="checked-in stress roots, deterministic malformed-input coverage, mixed-module differential validation, reducer output, and crash-triage indexes stay executable on the live workflow"),
+    "validate-stress-integration": ActionSpec("validate-stress-integration", "validate the integrated stress workflow report and child artifact set", "python:scripts/check_objc3c_stress_integration.py", ("test:objc3c:stress:integration",), validation_tier="repo", guarantee_owner="integrated stress workflow reports stay coherent across source-surface, differential, minimization, and crash-triage outputs"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -1447,6 +1453,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-stress-minimization": action_test_stress_minimization,
     "test-stress-crash-triage": action_test_stress_crash_triage,
     "validate-stress": action_validate_stress,
+    "validate-stress-integration": action_validate_stress_integration,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
