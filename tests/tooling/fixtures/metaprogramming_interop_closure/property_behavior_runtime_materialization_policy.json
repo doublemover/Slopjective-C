@@ -1,0 +1,64 @@
+{
+  "contract_id": "objc3c.metaprogramming.interop.closure.property.behavior.runtime.materialization.policy.v1",
+  "surface_kind": "property-behavior-runtime-materialization-policy",
+  "milestone": "M323",
+  "issue": "M323-B002",
+  "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+  "summary_script": "scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py",
+  "canonical_surfaces": [
+    "runtime_metaprogramming_semantics_surface",
+    "runtime_metaprogramming_lowering_host_cache_surface",
+    "runtime_cross_module_metaprogramming_artifact_preservation_surface",
+    "executable_synthesized_accessor_property_lowering_surface",
+    "runtime_property_ivar_accessor_reflection_implementation_surface",
+    "storage_accessor_runtime_abi_surface"
+  ],
+  "semantic_models": [
+    "property-behavior-sites-are-source-and-sema-visible-before-runtime-materialization-but-closure-claims-start-only-once-emitted-artifacts-runtime-boundary-probes-and-live-accessor-layout-agree",
+    "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks-without-public-runtime-abi-widening",
+    "implementation-owned-properties-synthesize-missing-effective-instance-accessors-into-emitted-method-lists-and-publish-runtime-owned-descriptor-layout-truth",
+    "cross-module-replay-and-storage-reflection-surfaces-must-preserve-the-same-property-behavior-artifact-counts-and-effective-accessor-bindings-that-live-runtime-probes-observe"
+  ],
+  "claim_narrowing_constraints": [
+    "property-behavior-claims-stay-narrower-than-the-private-current-property-helper-boundary-and-runtime-owned-property-registry-snapshots",
+    "unsupported-property-behavior-combinations-remain-diagnostic-backed-and-fail-closed-until-dedicated-runtime-evidence-lands",
+    "no-public-runtime-abi-widening-or-storage-global-fallbacks-are-claimed-by-this-policy"
+  ],
+  "authoritative_case_ids": [
+    "metaprogramming-derive-property-behavior-semantics",
+    "metaprogramming-executable-lowering",
+    "cross-module-metaprogramming-artifact-preservation",
+    "property-accessor-layout-lowering",
+    "property-synthesis-storage-binding-semantics",
+    "synthesized-accessor-runtime",
+    "property-layout",
+    "property-execution",
+    "storage-ownership-reflection",
+    "arc-property-helper-abi"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/property_behavior_legality_positive.objc3",
+    "tests/tooling/fixtures/native/property_behavior_legality_negative_unsupported.objc3",
+    "tests/tooling/fixtures/native/property_behavior_legality_negative_nonobject.objc3",
+    "tests/tooling/fixtures/native/property_behavior_legality_negative_protocol_observed.objc3",
+    "tests/tooling/fixtures/native/property_behavior_legality_negative_projected_writable.objc3",
+    "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+    "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+    "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+    "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",
+    "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+    "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+    "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp"
+  ]
+}
