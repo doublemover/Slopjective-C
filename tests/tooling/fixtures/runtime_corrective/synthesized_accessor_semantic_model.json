@@ -1,0 +1,69 @@
+{
+  "contract_id": "objc3c.runtime.corrective.synthesized.accessor.semantic.model.v1",
+  "surface_kind": "runtime-corrective-synthesized-accessor-semantic-model",
+  "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
+  "source_contract_ids": [
+    "objc3c.runtime.property.ivar.storage.accessor.source.surface.v1",
+    "objc3c.executable.synthesized.accessor.property.lowering.v1"
+  ],
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "summary_script": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
+  "lowering_contract_source_path": "native/objc3c/src/lower/objc3_lowering_contract.h",
+  "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+  "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+  "accessor_storage_lowering_metadata_model": "runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path",
+  "accessor_storage_lowering_helper_selection_model": "plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers",
+  "runtime_storage_execution_models": [
+    "synthesized-accessor-execution-consumes-runtime-owned-per-instance-slots-selected-by-the-dispatch-frame-property-context",
+    "synthesized-accessor-execution-reads-and-writes-per-instance-slot-storage-using-emitted-ivar-offset-layout-records"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+    "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+    "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
+    "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+    "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+    "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+    "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+    "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+    "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp"
+  ],
+  "helper_symbol_expectations": {
+    "current_property_read_symbol": "objc3_runtime_read_current_property_i32",
+    "current_property_write_symbol": "objc3_runtime_write_current_property_i32",
+    "current_property_exchange_symbol": "objc3_runtime_exchange_current_property_i32",
+    "weak_current_property_load_symbol": "objc3_runtime_load_weak_current_property_i32",
+    "weak_current_property_store_symbol": "objc3_runtime_store_weak_current_property_i32"
+  },
+  "baseline_lowering_counts": {
+    "synthesized_accessor_owner_entries": 3,
+    "synthesized_getter_entries": 3,
+    "synthesized_setter_entries": 3,
+    "current_property_read_entries": 3,
+    "current_property_write_entries": 2,
+    "current_property_exchange_entries": 1,
+    "weak_current_property_load_entries": 0,
+    "weak_current_property_store_entries": 0
+  },
+  "arc_interaction_counts": {
+    "synthesized_accessor_owner_entries": 2,
+    "synthesized_getter_entries": 2,
+    "synthesized_setter_entries": 2,
+    "current_property_read_entries": 1,
+    "current_property_write_entries": 0,
+    "current_property_exchange_entries": 1,
+    "weak_current_property_load_entries": 1,
+    "weak_current_property_store_entries": 1
+  },
+  "explicit_non_goals": [
+    "no-public-runtime-abi-widening",
+    "no-storage-global-fallback-claims",
+    "no-claim-that-full-atomic-or-reflection-closure-has-landed-in-b002",
+    "no-milestone-specific-scaffolding"
+  ]
+}
