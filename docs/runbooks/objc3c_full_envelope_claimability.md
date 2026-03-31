@@ -17,6 +17,7 @@ Replayable generators and validators:
 - `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
 - `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
 - `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
+- `python scripts/check_full_envelope_claimability_rollout_readiness.py`
 
 ## Claim Taxonomy
 
@@ -85,6 +86,24 @@ The canonical release blockers for this milestone are:
 This milestone is allowed to conclude that the current envelope remains
 release-blocked. The policy surface must state that explicitly instead of
 implicitly treating every passing integration script as enough for release.
+
+## Stability Regression And Rollout Implementation
+
+The canonical rollout-readiness summary for this milestone must be derived from:
+
+- the full-envelope support matrix summary
+- the production-strength claim policy summary
+- the release-blocker and rollout summary
+- the live public-conformance, performance-governance, release-foundation,
+  release-operations, and distribution-credibility integration reports
+
+The derived rollout summary must make these decisions explicit:
+
+- current rollout class: `stable`, `candidate`, or `preview`
+- whether the envelope is currently production-strength claimable
+- which active regressions or blocker states forced demotion
+- which release and trust artifacts remain publishable even when the envelope is
+  not stable-rollout ready
 
 ## Evidence Families
 

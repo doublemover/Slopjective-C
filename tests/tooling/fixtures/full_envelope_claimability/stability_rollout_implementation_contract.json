@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.stability.rollout.implementation.contract.v1",
+  "surface_kind": "full-envelope-stability-rollout-implementation-contract",
+  "milestone": "M324",
+  "issue": "M324-B003",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/check_full_envelope_claimability_rollout_readiness.py",
+  "required_policy_summaries": [
+    "tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json",
+    "tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json",
+    "tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json"
+  ],
+  "required_integration_reports": [
+    "tmp/reports/public-conformance/integration-summary.json",
+    "tmp/reports/performance-governance/integration-summary.json",
+    "tmp/reports/release-foundation/integration-summary.json",
+    "tmp/reports/release-operations/integration-summary.json",
+    "tmp/reports/distribution-credibility/integration-summary.json"
+  ],
+  "expected_rollout_classes": [
+    "stable",
+    "candidate",
+    "preview"
+  ]
+}
