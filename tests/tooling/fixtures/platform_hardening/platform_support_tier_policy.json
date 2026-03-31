@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.platform.hardening.support.tier.policy.v1",
+  "surface_kind": "platform-support-tier-policy",
+  "milestone": "M326",
+  "issue": "M326-B001",
+  "source_boundary_contract": "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+  "supported_platforms_contract": "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+  "tiers": [
+    {
+      "tier_id": "tier-1",
+      "display_name": "Tier 1",
+      "platform_ids": [
+        "windows-x64"
+      ],
+      "claim_class": "supported",
+      "requires_replayable_package_install_validation": true,
+      "requires_release_operations_publication": true
+    },
+    {
+      "tier_id": "tier-2",
+      "display_name": "Tier 2",
+      "platform_ids": [],
+      "claim_class": "supported-but-not-default",
+      "requires_replayable_package_install_validation": true,
+      "requires_release_operations_publication": true
+    },
+    {
+      "tier_id": "experimental",
+      "display_name": "Experimental",
+      "platform_ids": [],
+      "claim_class": "qualified-experimental",
+      "requires_replayable_package_install_validation": false,
+      "requires_release_operations_publication": false
+    },
+    {
+      "tier_id": "unsupported",
+      "display_name": "Unsupported",
+      "platform_ids": [],
+      "claim_class": "fail-closed",
+      "requires_replayable_package_install_validation": false,
+      "requires_release_operations_publication": false
+    }
+  ],
+  "publication_rules": [
+    "only tier-1 and tier-2 hosts may be described as supported",
+    "experimental hosts must not be described as installable support claims",
+    "unsupported hosts must not be described as best-effort supported",
+    "package-install-update claims must agree with the same tier assignment"
+  ],
+  "forbidden_claims": [
+    "cross-platform parity",
+    "supported on every LLVM host",
+    "implicitly supported because the source tree parses",
+    "package-manager parity across unproved hosts"
+  ]
+}

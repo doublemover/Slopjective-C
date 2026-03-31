@@ -94,6 +94,33 @@ Toolchain claims must also stay narrow:
 - packaged install behavior, archive behavior, and update/rollback publication
   must all agree on the same support boundary
 
+## Platform Support Tier Policy
+
+Platform support must be expressed with explicit tiers instead of flat
+supported/unsupported shorthand.
+
+- `Tier 1`:
+  - checked-in, replayed, and package/install validated on the canonical public
+    workflow path
+  - currently only `windows-x64`
+- `Tier 2`:
+  - reserved for future hosts that prove replayable compile, package, install,
+    and update coverage but are not yet the default operator recommendation
+  - no current entries
+- `Experimental`:
+  - reserved for host or toolchain shapes that may gain limited probes later
+    without becoming installable support claims
+  - no current entries
+- `Unsupported`:
+  - any host, channel, or toolchain shape outside the checked-in matrix
+
+Tier publication rules:
+
+- no tier may be published without machine-owned support-matrix evidence
+- package/install/update claims must agree with the same tier assignment
+- `windows-x64` is the only host family that may currently be described as
+  supported on the public workflow surface
+
 ## Install And Archive Compatibility Boundary
 
 Packaging and install compatibility is part of platform support, not a separate

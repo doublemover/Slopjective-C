@@ -57,6 +57,14 @@ foundation evidence. Packaging channels remain the installable transport.
 Do not introduce a second update payload, a parallel installer tree, or a
 package-manager-only compatibility source of truth.
 
+Current platform support-tier boundary:
+
+- `Tier 1`: `windows-x64`
+- `Tier 2`: none published
+- `Experimental`: none published
+- release-operations metadata must not imply support on any host outside the
+  checked-in `windows-x64` package-channel set
+
 ## Compatibility And Warning Policy
 
 Compatibility publication for this milestone must emit:

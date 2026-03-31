@@ -33,9 +33,15 @@ can drift from the runnable package.
 
 ## Supported Platforms
 
-The supported platform surface for this milestone is intentionally narrow:
+The supported platform surface for this milestone is intentionally narrow and
+tiered:
 
-- `windows-x64`
+- `Tier 1`
+  - `windows-x64`
+- `Tier 2`
+  - none published
+- `Experimental`
+  - none published
 
 Supported channel matrix for `windows-x64`:
 
