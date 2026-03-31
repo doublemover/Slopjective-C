@@ -1,0 +1,115 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.release.blocker.rollout.policy.v1",
+  "surface_kind": "full-envelope-release-blocker-rollout-policy",
+  "milestone": "M324",
+  "issue": "M324-B002",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
+  "required_reports": [
+    {
+      "name": "public-conformance",
+      "path": "tmp/reports/public-conformance/integration-summary.json",
+      "required_contract_id": "objc3c.public_conformance_reporting.integration.summary.v1"
+    },
+    {
+      "name": "performance-governance",
+      "path": "tmp/reports/performance-governance/integration-summary.json",
+      "required_contract_id": "objc3c.performance.governance.integration.summary.v1"
+    },
+    {
+      "name": "release-foundation",
+      "path": "tmp/reports/release-foundation/integration-summary.json",
+      "required_contract_id": "objc3c.release.foundation.integration.summary.v1"
+    },
+    {
+      "name": "release-operations",
+      "path": "tmp/reports/release-operations/integration-summary.json",
+      "required_contract_id": "objc3c.release.operations.integration.summary.v1"
+    },
+    {
+      "name": "distribution-credibility",
+      "path": "tmp/reports/distribution-credibility/integration-summary.json",
+      "required_contract_id": "objc3c.distribution.credibility.integration.summary.v1"
+    }
+  ],
+  "rollout_classes": [
+    {
+      "class": "stable",
+      "requires_production_strength_claim": true,
+      "allows_release_blocking": false
+    },
+    {
+      "class": "candidate",
+      "requires_production_strength_claim": false,
+      "allows_release_blocking": false
+    },
+    {
+      "class": "preview",
+      "requires_production_strength_claim": false,
+      "allows_release_blocking": true
+    }
+  ],
+  "release_blockers": [
+    {
+      "blocker": "missing-or-failing-required-report",
+      "source_reports": [
+        "public-conformance",
+        "performance-governance",
+        "release-foundation",
+        "release-operations",
+        "distribution-credibility"
+      ]
+    },
+    {
+      "blocker": "public-conformance-blocked",
+      "source_report": "public-conformance",
+      "field": "public_status",
+      "blocking_values": [
+        "blocked"
+      ]
+    },
+    {
+      "blocker": "performance-claim-not-ready",
+      "source_report": "performance-governance",
+      "field": "claim_ready",
+      "blocking_values": [
+        false
+      ]
+    },
+    {
+      "blocker": "performance-release-status-blocked",
+      "source_report": "performance-governance",
+      "field": "release_status",
+      "blocking_values": [
+        "blocked"
+      ]
+    },
+    {
+      "blocker": "missing-release-foundation-publication",
+      "source_report": "release-foundation",
+      "required_fields": [
+        "release_manifest_path",
+        "published_sbom",
+        "published_attestation"
+      ]
+    },
+    {
+      "blocker": "missing-release-operations-publication",
+      "source_report": "release-operations",
+      "required_fields": [
+        "update_manifest_path",
+        "compatibility_report",
+        "channel_catalog"
+      ]
+    },
+    {
+      "blocker": "distribution-trust-not-ready",
+      "source_report": "distribution-credibility",
+      "field": "trust_state",
+      "blocking_values": [
+        "blocked",
+        "degraded"
+      ]
+    }
+  ]
+}

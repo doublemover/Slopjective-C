@@ -10,11 +10,13 @@ Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json`
 - `tests/tooling/fixtures/full_envelope_claimability/production_strength_claim_policy.json`
+- `tests/tooling/fixtures/full_envelope_claimability/release_blocker_rollout_policy.json`
 
 Replayable generators and validators:
 
 - `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
 - `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
+- `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
 
 ## Claim Taxonomy
 
@@ -56,6 +58,33 @@ Current support-window rules for production-strength claims:
 
 No production-strength claim may widen support beyond the checked-in release
 channel, support-window, or runtime-boundary contracts.
+
+## Release-Blocker And Rollout Criteria
+
+The full-envelope release gate is explicit and machine-resolved:
+
+- `stable` rollout requires passing required evidence families, a
+  production-strength claim class, non-blocked performance governance,
+  publishable release-foundation and release-operations artifacts, and a `ready`
+  distribution-trust state
+- `candidate` rollout may proceed only for candidate-scoped claims and only when
+  the same evidence stack is coherent enough to avoid `release-blocking`
+- `preview` rollout may publish exploratory or experimental guidance, but it is
+  never treated as production-strength
+
+The canonical release blockers for this milestone are:
+
+- a required integration report is missing or not `PASS`
+- public conformance reporting is `blocked`
+- performance governance is `blocked` or not claim-ready
+- release-foundation publication artifacts are missing
+- release-operations compatibility or update artifacts are missing
+- distribution credibility is not `ready`
+- a surface is marked `unsupported` but is being promoted as `supported`
+
+This milestone is allowed to conclude that the current envelope remains
+release-blocked. The policy surface must state that explicitly instead of
+implicitly treating every passing integration script as enough for release.
 
 ## Evidence Families
 
