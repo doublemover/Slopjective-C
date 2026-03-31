@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.metaprogramming.interop.closure.interop.bridge.cross.module.artifact.implementation.contract.v1",
+  "surface_kind": "interop-bridge-cross-module-artifact-implementation-contract",
+  "milestone": "M323",
+  "issue": "M323-C003",
+  "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+  "summary_script": "scripts/check_metaprogramming_interop_closure_interop_lowering.py",
+  "canonical_reports": [
+    "tmp/reports/runtime/acceptance/summary.json",
+    "tmp/reports/runtime/runnable-interop-conformance/summary.json",
+    "tmp/reports/runtime/runnable-interop-e2e/summary.json"
+  ],
+  "authoritative_case_ids": [
+    "cross-module-runtime-package-interop-source-surface",
+    "textual-binary-interface-parity-source-surface",
+    "mixed-image-compatibility-interop-semantics",
+    "c-cpp-swift-bridge-compatibility-semantics",
+    "import-version-feature-claim-diagnostics",
+    "runtime-packaging-bridge-loader-artifact-surface",
+    "mixed-image-package-lowering-bridge-emission",
+    "cross-language-replay-import-surface-preservation",
+    "runtime-package-loader-bridge-abi",
+    "live-package-loading-interop-runtime-implementation"
+  ],
+  "authoritative_surfaces": [
+    "runtime_mixed_image_compatibility_interop_semantics_surface",
+    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "runtime_packaging_bridge_loader_artifact_surface",
+    "runtime_mixed_image_package_lowering_bridge_emission_surface",
+    "runtime_package_loader_bridge_abi_surface",
+    "runtime_package_loading_interop_implementation_surface"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/io/objc3_process.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runnable_interop_conformance.py",
+    "scripts/check_objc3c_runnable_interop_end_to_end.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
+    "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
+    "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
+    "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+    "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp",
+    "tests/tooling/runtime/header_module_bridge_generation_probe.cpp",
+    "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+  ]
+}
