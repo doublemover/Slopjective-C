@@ -43,6 +43,12 @@ Escaping block, byref, and ownership semantic model:
 - escaping byref behavior is only supported through the runtime-owned promotion, forwarding, copy, and dispose helper path already targeted by lowering
 - milestone claims stay narrower than the shared acceptance, runtime-probe, and packaged-e2e evidence and do not widen the public ABI
 
+ARC automation and lifetime insertion policy:
+
+- ARC is supported only as emitted retain/release/autorelease/autoreleasepool and weak/current-property helper traffic over the live runtime path
+- cleanup scopes, implicit cleanup, and autorelease returns remain part of one coupled lowering and runtime story
+- property interaction stays within the runtime-owned helper surface already covered by proof, while error and concurrency interaction claims stay deferred to `M321` and `M322`
+
 Explicit non-goals:
 
 - public runtime ABI widening for blocks, ARC helpers, or reflection

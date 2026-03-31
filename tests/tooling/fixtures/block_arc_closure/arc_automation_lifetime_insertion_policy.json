@@ -1,0 +1,94 @@
+{
+  "contract_id": "objc3c.block_arc.closure.arc.automation.lifetime.insertion.policy.v1",
+  "surface_kind": "arc-automation-lifetime-insertion-policy",
+  "milestone": "M320",
+  "issue": "M320-B002",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "summary_script": "scripts/build_block_arc_closure_arc_policy_summary.py",
+  "canonical_surfaces": [
+    "runtime_block_arc_unified_source_surface",
+    "runtime_ownership_transfer_capture_family_source_surface",
+    "runtime_block_arc_lowering_helper_surface",
+    "runtime_block_arc_runtime_abi_surface"
+  ],
+  "source_surface_contract_ids": [
+    "objc3c.runtime.block.arc.unified.source.surface.v1",
+    "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1",
+    "objc3c.runtime.block.arc.lowering.helper.surface.v1",
+    "objc3c.runtime.block.arc.runtime.abi.surface.v1"
+  ],
+  "inserted_lifetime_operations": [
+    "objc3_runtime_retain_i32",
+    "objc3_runtime_release_i32",
+    "objc3_runtime_autorelease_i32",
+    "objc3_runtime_push_autoreleasepool_scope",
+    "objc3_runtime_pop_autoreleasepool_scope",
+    "objc3_runtime_load_weak_current_property_i32",
+    "objc3_runtime_store_weak_current_property_i32"
+  ],
+  "lowering_surface_paths": [
+    "frontend.pipeline.semantic_surface.objc_arc_diagnostics_fixit_lowering_surface",
+    "llvm_ir_summary.arc_cleanup_weak_lifetime_hooks",
+    "llvm_ir_summary.arc_block_autorelease_return_lowering",
+    "llvm_ir_summary.executable_block_escape_runtime_hook_lowering"
+  ],
+  "policy_models": [
+    {
+      "policy_id": "arc-is-real-inserted-ownership-behavior",
+      "summary": "ARC is supported only as emitted retain, release, autorelease, autoreleasepool, weak, and current-property helper traffic on the live runtime path."
+    },
+    {
+      "policy_id": "cleanup-and-autorelease-conventions-stay-coupled",
+      "summary": "Cleanup scopes, implicit cleanup, and autorelease returns remain part of one coupled lowering and runtime story rather than independent advisory checks."
+    },
+    {
+      "policy_id": "property-error-concurrency-interactions-remain-narrowed",
+      "summary": "Property helper interaction is covered by the shared runtime-owned helper cluster, while error and concurrency interaction claims stay explicitly deferred to successor milestones."
+    },
+    {
+      "policy_id": "fail-closed-edges-must-stay-explicit",
+      "summary": "Unsupported ownership widening, public ABI widening, and non-runtime-backed interaction claims must remain fail-closed."
+    }
+  ],
+  "interaction_boundaries": [
+    {
+      "surface": "properties",
+      "status": "supported-on-runtime-owned-helper-path",
+      "evidence": [
+        "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
+        "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+      ]
+    },
+    {
+      "surface": "errors",
+      "status": "deferred-to-M321",
+      "evidence": []
+    },
+    {
+      "surface": "concurrency",
+      "status": "deferred-to-M322",
+      "evidence": []
+    }
+  ],
+  "authoritative_case_ids": [
+    "block-arc-runtime-abi",
+    "block-storage-arc-automation-semantics",
+    "block-helper-runtime-execution",
+    "arc-property-helper-abi"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
+    "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+    "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+    "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+    "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+    "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp",
+    "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp"
+  ]
+}
