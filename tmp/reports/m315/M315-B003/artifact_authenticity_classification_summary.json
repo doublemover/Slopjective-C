@@ -42,7 +42,7 @@
     },
     {
       "rule_id": "objc3c.fixture.synthetic.testjson.v1",
-      "match_count": 2418,
+      "match_count": 2419,
       "sample": [
         "tests/conformance/corpus_surface.json",
         "tests/conformance/diagnostics/AGR-NEG-01.json",
@@ -70,8 +70,8 @@
       "label_rollout_status": "already-labeled"
     }
   ],
-  "synthetic_total_match_count": 2494,
-  "archive_reference_match_count": 92,
+  "synthetic_total_match_count": 2495,
+  "archive_reference_match_count": 94,
   "library_cli_parity_labeled_ll_count": 0,
   "library_cli_parity_labeled_json_count": 3,
   "checks": {

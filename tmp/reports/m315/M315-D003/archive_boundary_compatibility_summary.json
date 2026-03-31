@@ -2,7 +2,7 @@
   "issue": "M315-D003",
   "contract_id": "objc3c.source_hygiene.archive_boundary_contract.v1",
   "archive_root_file_counts": {
-    "tmp/planning/": 77,
+    "tmp/planning/": 78,
     "tmp/github-publish/": 15,
     "tmp/archive/": 0,
     "docs/reference/": 1
@@ -37,7 +37,7 @@
       "docs/reference/legacy_spec_anchor_index.md"
     ]
   },
-  "historical_reference_hit_count": 83,
+  "historical_reference_hit_count": 84,
   "historical_reference_sample": [
     "tmp/planning/backlog_publication/README.md",
     "tmp/planning/backlog_publication/backlog_publication_policy.json",
