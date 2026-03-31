@@ -1,0 +1,61 @@
+{
+  "contract_id": "objc3c.metaprogramming.interop.closure.metaprogramming.runtime.semantic.model.v1",
+  "surface_kind": "metaprogramming-runtime-semantic-model",
+  "milestone": "M323",
+  "issue": "M323-B001",
+  "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+  "summary_script": "scripts/build_metaprogramming_interop_closure_semantic_summary.py",
+  "canonical_surfaces": [
+    "runtime_metaprogramming_source_surface",
+    "runtime_metaprogramming_package_provenance_source_surface",
+    "runtime_metaprogramming_semantics_surface",
+    "runtime_metaprogramming_lowering_host_cache_surface",
+    "runtime_cross_module_metaprogramming_artifact_preservation_surface",
+    "runtime_metaprogramming_runtime_abi_cache_surface",
+    "runtime_metaprogramming_cache_runtime_integration_implementation_surface"
+  ],
+  "semantic_models": [
+    "macro-package-provenance-and-host-cache-semantics-are-runtime-and-packaging-responsibilities-not-doc-only-guidance",
+    "property-behavior-runtime-materialization-claims-stay-coupled-to-metaprogramming-lowering-runtime-boundary-and-cross-module-preservation-surfaces",
+    "private-runtime-snapshots-and-runtime-import-artifacts-define-the-live-metaprogramming-cache-boundary-without-widening-the-public-runtime-header",
+    "cross-module-artifact-preservation-and-live-cache-runtime-integration-must-describe-one-observable-runtime-story"
+  ],
+  "claim_narrowing_constraints": [
+    "public claims stay narrower than the private metaprogramming runtime ABI/cache snapshots and runtime-import artifacts",
+    "package loading through the public runtime header remains fail-closed until deliberate ABI widening lands",
+    "unsupported macro execution topologies and unsupported property-behavior combinations remain diagnostic-backed and fail-closed"
+  ],
+  "authoritative_case_ids": [
+    "metaprogramming-source-surface",
+    "metaprogramming-package-provenance-source-surface",
+    "metaprogramming-expansion-semantic-model",
+    "metaprogramming-derive-property-behavior-semantics",
+    "metaprogramming-macro-safety-cache-diagnostics",
+    "metaprogramming-lowering-host-cache-surface",
+    "metaprogramming-executable-lowering",
+    "cross-module-metaprogramming-artifact-preservation",
+    "metaprogramming-runtime-abi-cache-surface",
+    "live-metaprogramming-cache-runtime-integration"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/io/objc3_process.cpp",
+    "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
+    "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py",
+    "stdlib/program_surface.json"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+    "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+    "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+    "tests/tooling/fixtures/native/preservation_provider.objc3",
+    "tests/tooling/fixtures/native/preservation_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",
+    "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp"
+  ]
+}
