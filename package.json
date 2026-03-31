@@ -87,6 +87,7 @@
     "inspect:objc3c:playground": "python scripts/objc3c_public_workflow_runner.py inspect-playground-repro",
     "inspect:objc3c:observability": "python scripts/objc3c_public_workflow_runner.py inspect-compile-observability",
     "inspect:objc3c:runtime": "python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector",
+    "inspect:objc3c:editor": "python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling",
     "trace:objc3c:stages": "python scripts/objc3c_public_workflow_runner.py trace-compile-stages",
     "proof:objc3c": "python scripts/objc3c_public_workflow_runner.py proof-objc3c",
     "proof:objc3c:runtime-architecture": "python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture",

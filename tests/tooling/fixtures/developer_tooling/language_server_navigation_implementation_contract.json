@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.developer.tooling.language.server.navigation.implementation.contract.v1",
+  "surface_kind": "developer-tooling-implementation-contract",
+  "milestone": "M325",
+  "issue": "M325-C002",
+  "summary_script": "scripts/check_developer_tooling_language_server_navigation.py",
+  "public_action": "inspect-editor-tooling",
+  "positive_source": "tests/tooling/fixtures/native/hello.objc3",
+  "negative_source": "tests/tooling/fixtures/native/negative_undefined_symbol.objc3",
+  "expected_supported_capabilities": [
+    "publishDiagnostics",
+    "documentSymbol",
+    "workspaceSymbol",
+    "definition"
+  ],
+  "expected_fallback_capabilities": [
+    "references",
+    "rename",
+    "semanticTokens",
+    "codeAction",
+    "statementLevelStepping"
+  ],
+  "expected_positive_symbol_names": [
+    "answer",
+    "add",
+    "main"
+  ],
+  "expected_negative_diagnostic_codes": [
+    "O3S203"
+  ]
+}

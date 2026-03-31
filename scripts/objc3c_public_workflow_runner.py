@@ -42,6 +42,7 @@ SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
+EDITOR_TOOLING_SURFACE_PY = ROOT / "scripts" / "build_objc3c_editor_tooling_surface.py"
 BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
 PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_performance.py"
@@ -623,6 +624,13 @@ def action_inspect_runtime_inspector(rest: list[str]) -> int:
         "runtime-inspector.json",
         rest,
     )
+
+
+def action_inspect_editor_tooling(rest: list[str]) -> int:
+    rc = execute_registered_action("build-native-binaries", [])
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), *rest])
 
 
 def action_inspect_capability_explorer(rest: list[str]) -> int:
@@ -1738,6 +1746,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:playground",), validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
     "inspect-runtime-inspector": ActionSpec("inspect-runtime-inspector", "compile one source through the frontend C API runner and dump the runtime inspector object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:runtime",), validation_tier="repo", guarantee_owner="developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models", pass_through_args=True),
+    "inspect-editor-tooling": ActionSpec("inspect-editor-tooling", "compile one source through the real frontend runner and dump the combined editor tooling surface", "python:scripts/build_objc3c_editor_tooling_surface.py", ("inspect:objc3c:editor",), validation_tier="repo", guarantee_owner="editor-facing diagnostics, language-server capabilities, and navigation stay tied to the real compile summary, diagnostics JSON, and manifest declaration coordinates", pass_through_args=True),
     "benchmark-runtime-inspector": ActionSpec("benchmark-runtime-inspector", "measure the live runtime-inspector and capability-explorer workflow and write a reproducible benchmark report", "python:scripts/benchmark_objc3c_runtime_inspector.py", ("inspect:objc3c:benchmark",), validation_tier="repo", guarantee_owner="runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts", pass_through_args=True),
     "benchmark-performance": ActionSpec("benchmark-performance", "measure the checked-in objc3 showcase workloads and write reproducible compile/runtime telemetry packets", "python:scripts/benchmark_objc3c_performance.py", ("inspect:objc3c:performance",), validation_tier="repo", guarantee_owner="objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets", pass_through_args=True),
     "benchmark-runtime-performance": ActionSpec("benchmark-runtime-performance", "measure the live runtime startup dispatch reflection and ownership hot paths and write reproducible telemetry packets", "python:scripts/benchmark_objc3c_runtime_performance.py", ("inspect:objc3c:runtime-performance",), validation_tier="repo", guarantee_owner="runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots", pass_through_args=True),
@@ -1891,6 +1900,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "inspect-playground-repro": action_inspect_playground_repro,
     "inspect-compile-observability": action_inspect_compile_observability,
     "inspect-runtime-inspector": action_inspect_runtime_inspector,
+    "inspect-editor-tooling": action_inspect_editor_tooling,
     "benchmark-runtime-inspector": action_benchmark_runtime_inspector,
     "benchmark-performance": action_benchmark_performance,
     "benchmark-runtime-performance": action_benchmark_runtime_performance,

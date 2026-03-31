@@ -265,8 +265,11 @@ The canonical generated surface must group:
 The authoritative report family lives under `tmp/reports/developer-tooling/`
 and must be produced by the public runner plus replayable checked-in scripts.
 
-The canonical public entrypoints for the surface are delivered by the
-follow-on implementation issues and must converge on:
+The current generator for the combined surface is:
+
+- `python scripts/build_objc3c_editor_tooling_surface.py`
+
+The current and follow-on public entrypoints for the surface converge on:
 
 - `python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling`
 - `python scripts/objc3c_public_workflow_runner.py format-objc3c`
