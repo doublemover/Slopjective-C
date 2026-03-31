@@ -12,6 +12,15 @@ Downstream developer-tooling work must stay on the existing implementation paths
 instead of introducing sidecar drivers, milestone-local wrappers, or proof-only
 inspection flows.
 
+Canonical checked-in boundary and contract surfaces:
+
+- `tests/tooling/fixtures/developer_tooling/boundary_inventory.json`
+
+Replayable generators and validators:
+
+- `python scripts/build_developer_tooling_boundary_inventory_summary.py`
+- `python scripts/check_objc3c_developer_tooling_integration.py`
+
 ## Exact Live Implementation Paths
 
 - native tooling entrypoint:
@@ -145,6 +154,41 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - keep checked-in developer guidance under `docs/runbooks/`
 - prove inspection/debug behavior through the existing runtime acceptance and
   parity paths before adding broader integration coverage
+
+## Current Capability Map
+
+The current checked-in developer-tooling surface is intentionally narrower than a
+full editor product:
+
+- supported today:
+  - compile observability
+  - runtime inspection
+  - capability exploration
+  - runtime inspector benchmarking
+  - compile-stage tracing
+  - integrated developer-tooling validation
+- explicit milestone gaps for `M325`:
+  - language-server capabilities and symbol/navigation responses
+  - formatter contracts and executable formatting output
+  - source-map, debug-info, and stepping semantics
+  - CLI-to-editor and packaged tooling handoff contracts
+
+Downstream work must extend the real frontend runner, runtime artifacts, and
+public workflow commands instead of creating an editor-only shadow parser or
+debug-only sidecar data model.
+
+## Explicit Gap Inventory
+
+Current gaps after `M324`:
+
+- no checked-in language-server capability contract
+- no checked-in formatter contract or formatter output surface
+- no checked-in source-map/debug-info stepping contract
+- no runnable workspace drill that proves editor/debug handoff over a packaged
+  tooling surface
+
+These gaps are deliberate scope for `M325`; they are not already supported by
+the inspect/trace workflow.
 
 ## Explicit Non-Goals
 

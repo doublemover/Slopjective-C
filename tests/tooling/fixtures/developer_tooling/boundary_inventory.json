@@ -1,0 +1,72 @@
+{
+  "contract_id": "objc3c.developer.tooling.boundary.inventory.v1",
+  "surface_kind": "developer-tooling-boundary-inventory",
+  "milestone": "M325",
+  "issue": "M325-A001",
+  "runbook": "docs/runbooks/objc3c_developer_tooling.md",
+  "summary_script": "scripts/build_developer_tooling_boundary_inventory_summary.py",
+  "authoritative_code_paths": [
+    "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+    "native/objc3c/src/io/objc3_cli_reporting_output_contract_scaffold.h",
+    "native/objc3c/src/io/objc3_cli_reporting_output_contract_core_feature_surface.h",
+    "native/objc3c/src/io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/io/objc3_process.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/lower/objc3_lowering_contract.cpp",
+    "native/objc3c/src/lower/objc3_lowering_contract.h",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp"
+  ],
+  "public_commands": [
+    "inspect:objc3c:observability",
+    "inspect:objc3c:runtime",
+    "inspect:objc3c:capabilities",
+    "inspect:objc3c:benchmark",
+    "trace:objc3c:stages",
+    "test:objc3c:developer-tooling"
+  ],
+  "public_actions": [
+    "inspect-compile-observability",
+    "inspect-runtime-inspector",
+    "inspect-capability-explorer",
+    "benchmark-runtime-inspector",
+    "trace-compile-stages",
+    "validate-developer-tooling"
+  ],
+  "report_paths": [
+    "tmp/reports/objc3c-public-workflow/compile-observability.json",
+    "tmp/reports/objc3c-public-workflow/runtime-inspector.json",
+    "tmp/reports/objc3c-public-workflow/capability-explorer.json",
+    "tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json",
+    "tmp/reports/objc3c-public-workflow/compile-stage-trace.json",
+    "tmp/reports/developer-tooling/integration-summary.json"
+  ],
+  "supported_capabilities": [
+    "compile-observability",
+    "runtime-inspector",
+    "capability-explorer",
+    "runtime-inspector-benchmark",
+    "compile-stage-trace",
+    "integrated-developer-tooling-validation"
+  ],
+  "gap_capabilities": [
+    "language-server-capabilities",
+    "symbol-navigation",
+    "formatter-output",
+    "source-map-debug-info-stepping",
+    "workspace-editor-debug-drill",
+    "packaged-cli-to-editor-contract"
+  ],
+  "successor_issues": [
+    "M325-B001",
+    "M325-B002",
+    "M325-B003",
+    "M325-C001",
+    "M325-C002",
+    "M325-C003",
+    "M325-D001",
+    "M325-D002",
+    "M325-E001"
+  ]
+}
