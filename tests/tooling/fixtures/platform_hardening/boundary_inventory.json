@@ -1,0 +1,97 @@
+{
+  "contract_id": "objc3c.platform.hardening.boundary.inventory.v1",
+  "surface_kind": "platform-hardening-boundary-inventory",
+  "milestone": "M326",
+  "issue": "M326-A001",
+  "runbook": "docs/runbooks/objc3c_platform_hardening.md",
+  "summary_script": "scripts/build_platform_hardening_boundary_inventory_summary.py",
+  "authoritative_code_paths": [
+    "scripts/build_objc3c_native.ps1",
+    "scripts/probe_objc3c_llvm_capabilities.py",
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/build_objc3c_release_manifest.py",
+    "scripts/build_objc3c_package_channels.py",
+    "scripts/check_objc3c_packaging_channels_integration.py",
+    "scripts/check_objc3c_packaging_channels_end_to_end.py",
+    "scripts/build_objc3c_update_manifest.py",
+    "scripts/publish_objc3c_release_operations_metadata.py",
+    "scripts/check_objc3c_release_operations_integration.py",
+    "scripts/check_objc3c_release_operations_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "policy_contract_paths": [
+    "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+    "tests/tooling/fixtures/packaging_channels/installer_policy.json",
+    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json"
+  ],
+  "public_commands": [
+    "package:objc3c-native:runnable-toolchain",
+    "package:objc3c:channels",
+    "test:objc3c:packaging-channels",
+    "test:objc3c:packaging-channels:e2e",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e",
+    "inspect:objc3c:release-manifest",
+    "inspect:objc3c:update-manifest",
+    "publish:objc3c:release-operations"
+  ],
+  "public_actions": [
+    "package-runnable-toolchain",
+    "build-package-channels",
+    "validate-packaging-channels",
+    "validate-packaging-channels-end-to-end",
+    "validate-release-operations",
+    "validate-release-operations-end-to-end",
+    "build-release-manifest",
+    "build-update-manifest",
+    "publish-release-operations"
+  ],
+  "report_paths": [
+    "tmp/reports/release-foundation/release-manifest-summary.json",
+    "tmp/reports/package-channels/package-channels-summary.json",
+    "tmp/reports/package-channels/integration-summary.json",
+    "tmp/reports/package-channels/end-to-end-summary.json",
+    "tmp/reports/release-operations/update-manifest-summary.json",
+    "tmp/reports/release-operations/publication-summary.json",
+    "tmp/reports/release-operations/integration-summary.json",
+    "tmp/reports/release-operations/end-to-end-summary.json"
+  ],
+  "supported_tier_buckets": [
+    "tier-1",
+    "tier-2",
+    "experimental",
+    "unsupported"
+  ],
+  "supported_platform_ids": [
+    "windows-x64"
+  ],
+  "supported_channels": [
+    "portable-archive",
+    "local-installer",
+    "offline-bundle"
+  ],
+  "required_tools": [
+    "pwsh",
+    "python",
+    "clang++"
+  ],
+  "gap_claims": [
+    "no non-windows-x64 support claim",
+    "no cross-platform parity claim",
+    "no system package manager publication claim",
+    "no signed or notarized installer claim",
+    "no multi-host packaged install matrix claim"
+  ],
+  "successor_issues": [
+    "M326-B001",
+    "M326-B002",
+    "M326-B003",
+    "M326-C001",
+    "M326-C002",
+    "M326-C003",
+    "M326-D001",
+    "M326-D002",
+    "M326-E001"
+  ]
+}

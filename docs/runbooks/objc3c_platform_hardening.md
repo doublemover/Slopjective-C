@@ -1,0 +1,138 @@
+# objc3c Platform Hardening Boundary
+
+## Working Boundary
+
+This runbook defines the live platform, toolchain, packaging, install, and
+compatibility claim surface for objc3c.
+
+Use it when changing host support claims, toolchain version expectations,
+packaged install behavior, or archive/update compatibility rules.
+
+Downstream platform work must stay on the existing implementation paths below
+instead of inventing a second portability harness or publishing broader support
+claims than the packaged evidence can prove.
+
+Canonical checked-in boundary and contract surfaces:
+
+- `tests/tooling/fixtures/platform_hardening/boundary_inventory.json`
+- `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
+- `tests/tooling/fixtures/packaging_channels/installer_policy.json`
+- `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+
+Replayable generators and validators:
+
+- `python scripts/build_platform_hardening_boundary_inventory_summary.py`
+- `python scripts/check_objc3c_packaging_channels_integration.py`
+- `python scripts/check_objc3c_packaging_channels_end_to_end.py`
+- `python scripts/check_objc3c_release_operations_integration.py`
+- `python scripts/check_objc3c_release_operations_end_to_end.py`
+
+## Exact Live Implementation Paths
+
+- native build and toolchain probing:
+  - `scripts/build_objc3c_native.ps1`
+  - `scripts/probe_objc3c_llvm_capabilities.py`
+- runnable package assembly:
+  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `scripts/build_objc3c_release_manifest.py`
+- package-channel and installer flow:
+  - `scripts/build_objc3c_package_channels.py`
+  - `scripts/check_objc3c_packaging_channels_integration.py`
+  - `scripts/check_objc3c_packaging_channels_end_to_end.py`
+- release/update compatibility flow:
+  - `scripts/build_objc3c_update_manifest.py`
+  - `scripts/publish_objc3c_release_operations_metadata.py`
+  - `scripts/check_objc3c_release_operations_integration.py`
+  - `scripts/check_objc3c_release_operations_end_to_end.py`
+- public command and workflow surface:
+  - `scripts/objc3c_public_workflow_runner.py`
+  - `package.json`
+  - `docs/runbooks/objc3c_public_command_surface.md`
+
+## Current Support Matrix
+
+The current checked-in support matrix is intentionally narrow.
+
+- `Tier 1`:
+  - `windows-x64`
+  - public package/install channels:
+    - `portable-archive`
+    - `local-installer`
+    - `offline-bundle`
+  - required local tools:
+    - `pwsh`
+    - `python`
+    - `clang++`
+- `Tier 2`:
+  - none published
+- `Experimental`:
+  - none published
+- `Unsupported`:
+  - every non-`windows-x64` host shape
+  - every package-manager or system-install claim outside the checked-in
+    portable archive, local installer, and offline bundle
+  - every signed/notarized installer or cross-platform parity claim
+
+The supported host/toolchain matrix is narrow but real, verified, tiered, and
+rooted in the same package and release workflows users run.
+
+## Host And Toolchain Claim Boundary
+
+Current support claims must stay narrower than the evidence:
+
+- only the checked-in `windows-x64` host family is supported
+- only the checked-in archive/install channel set is supported
+- no cross-platform parity claim exists today
+- no system package manager publication claim exists today
+- no notarization or signed-installer claim exists today
+
+Toolchain claims must also stay narrow:
+
+- `clang++`, `python`, and `pwsh` presence are part of the live support surface
+- unsupported hosts and unsupported toolchain shapes must fail closed with
+  explicit diagnostics
+- packaged install behavior, archive behavior, and update/rollback publication
+  must all agree on the same support boundary
+
+## Install And Archive Compatibility Boundary
+
+Packaging and install compatibility is part of platform support, not a separate
+story.
+
+- the canonical payload remains the runnable toolchain package
+- package channels are transport views over that payload
+- install receipts, bootstrap scripts, rollback, and update metadata must all
+  resolve back to the same packaged payload family
+- archive and installer compatibility claims remain `windows-x64` only until
+  another host is proved on the same public workflow surface
+
+## Explicit Unsupported-Host Behavior
+
+Unsupported hosts and unsupported toolchain shapes must not degrade into vague
+best-effort language.
+
+- unsupported host claims stay fail-closed
+- unsupported channel claims stay fail-closed
+- unsupported toolchain-range claims stay fail-closed
+- widening support later must happen by expanding checked-in contracts,
+  generated matrix artifacts, and public workflow validation
+
+## Working Rules For Downstream Issues
+
+- treat `scripts/objc3c_public_workflow_runner.py` as the only public command
+  routing surface
+- keep support-tier and compatibility publication machine-owned
+- keep transient package/install reports and matrix captures under `tmp/`
+- keep checked-in platform policy under `docs/runbooks/`,
+  `tests/tooling/fixtures/`, and `schemas/`
+- prove new support claims through the package/install/update path, not just a
+  compile-only probe
+
+## Explicit Non-Goals
+
+- no non-`windows-x64` support claim in the current milestone slice
+- no package-manager-specific install or upgrade semantics
+- no signed or notarized installer claim
+- no system-wide installer claim
+- no parallel portability harness outside the existing package, release, and
+  public workflow paths
