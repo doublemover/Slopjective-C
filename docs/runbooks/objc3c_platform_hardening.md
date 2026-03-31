@@ -26,6 +26,7 @@ Replayable generators and validators:
 - `python scripts/build_platform_hardening_artifact_contract_summary.py`
 - `python scripts/check_platform_hardening_build_package_validation.py`
 - `python scripts/check_platform_hardening_toolchain_range_replay.py`
+- `python scripts/check_platform_hardening_install_matrix_integration.py`
 - `python scripts/check_objc3c_packaging_channels_integration.py`
 - `python scripts/check_objc3c_packaging_channels_end_to_end.py`
 - `python scripts/check_objc3c_release_operations_integration.py`
@@ -260,6 +261,22 @@ The replay surface for this slice is:
 
 This surface proves the current host/toolchain shape that the checked-in matrix
 can actually claim and keeps broader toolchain-range rhetoric fail-closed.
+
+## Runnable Install-Matrix Integration
+
+The runnable install-matrix proof for this milestone is the composition of:
+
+- support-matrix generation
+- build/package validation on the checked-in host tier
+- toolchain/release compatibility replay
+- installer and offline-bundle smoke under temp-owned roots
+
+The integrator for this slice is:
+
+- `python scripts/check_platform_hardening_install_matrix_integration.py`
+
+It must prove the current supported host tier through the same package/install
+artifacts that operators would actually consume.
 
 ## Explicit Non-Goals
 

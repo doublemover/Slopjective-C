@@ -1,0 +1,20 @@
+{
+  "contract_id": "objc3c.platform.hardening.install.matrix.integration.contract.v1",
+  "surface_kind": "install-matrix-integration-contract",
+  "milestone": "M326",
+  "issue": "M326-D001",
+  "summary_script": "scripts/check_platform_hardening_install_matrix_integration.py",
+  "required_inputs": [
+    "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+    "tmp/reports/platform-hardening/build-package-validation-summary.json",
+    "tmp/reports/platform-hardening/toolchain-range-replay-summary.json",
+    "tmp/reports/package-channels/end-to-end-summary.json"
+  ],
+  "required_checks": [
+    "matrix platform matches supported host tier",
+    "build package validation passes",
+    "toolchain range replay passes",
+    "offline install root retains installed native executable",
+    "temp-root installer path rolls back the primary install root"
+  ]
+}
