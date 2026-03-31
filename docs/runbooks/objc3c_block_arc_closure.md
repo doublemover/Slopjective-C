@@ -61,6 +61,12 @@ Lowering and runtime ABI contract:
 - the four required block/ARC surfaces are `runtime_block_arc_unified_source_surface`, `runtime_ownership_transfer_capture_family_source_surface`, `runtime_block_arc_lowering_helper_surface`, and `runtime_block_arc_runtime_abi_surface`
 - milestone-local checks must consume those emitted surfaces instead of recreating parallel manifest truth
 
+Executable proof and ABI contract:
+
+- the public command surface for this milestone remains `test:objc3c:block-arc-conformance` and `test:objc3c:runnable-block-arc`
+- the public workflow surface remains `validate-block-arc-conformance` and `validate-runnable-block-arc`
+- block and ARC closure still relies on private runtime-owned helper and snapshot surfaces; the public runtime header is not widened by this milestone
+
 Explicit non-goals:
 
 - public runtime ABI widening for blocks, ARC helpers, or reflection

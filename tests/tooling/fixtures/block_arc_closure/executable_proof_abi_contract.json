@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.block_arc.closure.executable.proof.abi.contract.v1",
+  "surface_kind": "block-arc-closure-executable-proof-abi-contract",
+  "milestone": "M320",
+  "issue": "M320-D001",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "summary_script": "scripts/build_block_arc_closure_executable_proof_summary.py",
+  "public_command_surfaces": [
+    "test:objc3c:block-arc-conformance",
+    "test:objc3c:runnable-block-arc"
+  ],
+  "public_workflow_actions": [
+    "validate-block-arc-conformance",
+    "validate-runnable-block-arc"
+  ],
+  "public_runtime_abi_boundary": [
+    "objc3_runtime_register_image",
+    "objc3_runtime_lookup_selector",
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_reset_for_testing"
+  ],
+  "private_runtime_abi_boundary": [
+    "objc3_runtime_promote_block_i32",
+    "objc3_runtime_invoke_block_i32",
+    "objc3_runtime_retain_i32",
+    "objc3_runtime_release_i32",
+    "objc3_runtime_autorelease_i32",
+    "objc3_runtime_push_autoreleasepool_scope",
+    "objc3_runtime_pop_autoreleasepool_scope",
+    "objc3_runtime_bind_current_property_context_for_testing",
+    "objc3_runtime_clear_current_property_context_for_testing",
+    "objc3_runtime_load_weak_current_property_i32",
+    "objc3_runtime_store_weak_current_property_i32",
+    "objc3_runtime_copy_arc_debug_state_for_testing",
+    "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing"
+  ],
+  "authoritative_runner_paths": [
+    "scripts/check_objc3c_runnable_block_arc_conformance.py",
+    "scripts/check_objc3c_runnable_block_arc_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "package.json"
+  ]
+}
