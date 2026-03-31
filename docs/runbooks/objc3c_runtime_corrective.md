@@ -25,6 +25,7 @@ Replayable summary generator:
 - `python scripts/build_runtime_corrective_executable_proof_summary.py`
 - `python scripts/check_runtime_corrective_dispatch_lowering.py`
 - `python scripts/check_runtime_corrective_synthesized_accessor_lowering.py`
+- `python scripts/check_runtime_corrective_live_dispatch_runtime.py`
 
 Current corrective scope:
 
