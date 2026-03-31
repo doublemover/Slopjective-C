@@ -1,4 +1,12 @@
 ; ModuleID = 'm190_validation_concurrency_replay_race_guard'
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 source_filename = "m190_validation_concurrency_replay_race_guard.objc3"
 
 ; concurrency_replay_race_guard_lowering = concurrency_replay_sites=8;replay_proof_sites=5;race_guard_sites=4;task_handoff_sites=3;actor_isolation_sites=4;deterministic_schedule_sites=6;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m190-concurrency-replay-race-guard-lowering-v1

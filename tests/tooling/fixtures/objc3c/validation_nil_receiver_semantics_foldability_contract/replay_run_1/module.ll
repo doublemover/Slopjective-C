@@ -1,3 +1,11 @@
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 ; objc3c native frontend IR
 ; nil_receiver_semantics_foldability_lowering = message_send_sites=5;receiver_nil_literal_sites=2;nil_receiver_semantics_enabled_sites=2;nil_receiver_foldable_sites=2;nil_receiver_runtime_dispatch_required_sites=3;non_nil_receiver_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m158-nil-receiver-semantics-foldability-v1
 ; frontend_objc_nil_receiver_semantics_foldability_profile = message_send_sites=5, receiver_nil_literal_sites=2, nil_receiver_semantics_enabled_sites=2, nil_receiver_foldable_sites=2, nil_receiver_runtime_dispatch_required_sites=3, non_nil_receiver_sites=3, contract_violation_sites=0, deterministic_nil_receiver_semantics_foldability_handoff=true

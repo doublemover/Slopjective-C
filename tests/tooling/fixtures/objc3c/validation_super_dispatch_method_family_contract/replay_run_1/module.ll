@@ -1,3 +1,11 @@
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 ; objc3c native frontend IR
 ; super_dispatch_method_family_lowering = message_send_sites=8;receiver_super_identifier_sites=3;super_dispatch_enabled_sites=3;super_dispatch_requires_class_context_sites=3;method_family_init_sites=2;method_family_copy_sites=1;method_family_mutable_copy_sites=1;method_family_new_sites=1;method_family_none_sites=3;method_family_returns_retained_result_sites=5;method_family_returns_related_result_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m159-super-dispatch-method-family-v1
 ; frontend_objc_super_dispatch_method_family_profile = message_send_sites=8, receiver_super_identifier_sites=3, super_dispatch_enabled_sites=3, super_dispatch_requires_class_context_sites=3, method_family_init_sites=2, method_family_copy_sites=1, method_family_mutable_copy_sites=1, method_family_new_sites=1, method_family_none_sites=3, method_family_returns_retained_result_sites=5, method_family_returns_related_result_sites=2, contract_violation_sites=0, deterministic_super_dispatch_method_family_handoff=true

@@ -1,3 +1,11 @@
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 ; lightweight_generic_constraint_lowering = generic_constraint_sites=5;generic_suffix_sites=4;object_pointer_type_sites=5;terminated_generic_suffix_sites=4;pointer_declarator_sites=5;normalized_constraint_sites=5;contract_violation_sites=0;deterministic=true;lane_contract=m171-lightweight-generics-constraint-lowering-v1
 ; frontend_objc_lightweight_generic_constraint_lowering_profile = generic_constraint_sites=5, generic_suffix_sites=4, object_pointer_type_sites=5, terminated_generic_suffix_sites=4, pointer_declarator_sites=5, normalized_constraint_sites=5, contract_violation_sites=0, deterministic_lightweight_generic_constraint_lowering_handoff=true
 !objc3.objc_lightweight_generic_constraint_lowering = !{!24}

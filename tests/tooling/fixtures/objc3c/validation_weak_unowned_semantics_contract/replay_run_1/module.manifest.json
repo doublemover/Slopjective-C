@@ -29,5 +29,15 @@
     "replay_key": "ownership_candidate_sites=8;weak_reference_sites=3;unowned_reference_sites=2;unowned_safe_reference_sites=1;weak_unowned_conflict_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m164-weak-unowned-semantics-lowering-v1",
     "lane_contract": "m164-weak-unowned-semantics-lowering-v1",
     "deterministic_handoff": true
+  },
+  "artifact_authenticity": {
+    "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+    "artifact_family_id": "objc3c.artifact.replaymanifest.frontend.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "content_role": "replay_frontend_manifest",
+    "fixture_family_id": "objc3c.fixture.synthetic.replayll.v1",
+    "synthetic_reason": "deterministic replay artifact preserved for validation contracts",
+    "explicit_fixture_label": "replay IR fixture"
   }
 }

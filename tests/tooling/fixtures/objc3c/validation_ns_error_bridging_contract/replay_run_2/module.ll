@@ -1,4 +1,12 @@
 ; ModuleID = 'm183_validation_ns_error_bridging'
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 source_filename = "m183_validation_ns_error_bridging.objc3"
 
 ; ns_error_bridging_lowering = ns_error_bridging_sites=5;ns_error_parameter_sites=2;ns_error_out_parameter_sites=2;ns_error_bridge_path_sites=1;failable_call_sites=3;normalized_sites=4;bridge_boundary_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m183-ns-error-bridging-lowering-v1

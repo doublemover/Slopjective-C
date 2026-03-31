@@ -1,4 +1,12 @@
 ; ModuleID = 'm185_validation_error_diagnostics_recovery_contract'
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 source_filename = "m185_validation_error_diagnostics_recovery_contract.objc3"
 
 ; error_diagnostics_recovery_lowering = error_diagnostics_recovery_sites=15;diagnostic_emission_sites=11;recovery_attempt_sites=9;recovery_success_sites=7;fixit_hint_sites=6;diagnostic_rendering_sites=10;normalized_sites=12;gate_blocked_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m185-error-diagnostics-ux-recovery-lowering-v1

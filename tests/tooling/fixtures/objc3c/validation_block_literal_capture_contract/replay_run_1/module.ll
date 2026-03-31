@@ -1,3 +1,11 @@
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 ; objc3c native frontend IR
 ; block_literal_capture_lowering = block_literal_sites=7;block_parameter_entries=12;block_capture_entries=9;block_body_statement_entries=18;block_empty_capture_sites=2;block_nondeterministic_capture_sites=0;block_non_normalized_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m166-block-literal-capture-lowering-v1
 ; frontend_objc_block_literal_capture_lowering_profile = block_literal_sites=7, block_parameter_entries=12, block_capture_entries=9, block_body_statement_entries=18, block_empty_capture_sites=2, block_nondeterministic_capture_sites=0, block_non_normalized_sites=0, contract_violation_sites=0, deterministic_block_literal_capture_lowering_handoff=true

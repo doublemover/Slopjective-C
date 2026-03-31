@@ -1,4 +1,12 @@
 ; ModuleID = 'm182_validation_result_like'
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 source_filename = "m182_validation_result_like.objc3"
 
 ; result_like_lowering = result_like_sites=6;result_success_sites=3;result_failure_sites=1;result_branch_sites=2;result_payload_sites=4;normalized_sites=5;branch_merge_sites=1;contract_violation_sites=0;deterministic=true;lane_contract=m182-result-like-lowering-v1

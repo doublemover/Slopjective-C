@@ -1,4 +1,12 @@
 ; ModuleID = 'm188_validation_actor_isolation_sendability'
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 source_filename = "m188_validation_actor_isolation_sendability.objc3"
 
 ; actor_isolation_sendability_lowering = actor_isolation_sites=11;sendability_check_sites=7;cross_actor_hop_sites=4;non_sendable_capture_sites=2;sendable_transfer_sites=5;isolation_boundary_sites=9;guard_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m188-actor-isolation-sendability-lowering-v1

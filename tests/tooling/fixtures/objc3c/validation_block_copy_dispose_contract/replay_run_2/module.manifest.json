@@ -41,5 +41,15 @@
     "replay_key": "block_literal_sites=7;mutable_capture_count_total=9;byref_slot_count_total=9;parameter_entries_total=12;capture_entries_total=9;body_statement_entries_total=18;copy_helper_required_sites=7;dispose_helper_required_sites=7;profile_normalized_sites=7;copy_helper_symbolized_sites=7;dispose_helper_symbolized_sites=7;contract_violation_sites=0;deterministic=true;lane_contract=m169-block-copy-dispose-lowering-v1",
     "lane_contract": "m169-block-copy-dispose-lowering-v1",
     "deterministic_handoff": true
+  },
+  "artifact_authenticity": {
+    "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+    "artifact_family_id": "objc3c.artifact.replaymanifest.frontend.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "content_role": "replay_frontend_manifest",
+    "fixture_family_id": "objc3c.fixture.synthetic.replayll.v1",
+    "synthetic_reason": "deterministic replay artifact preserved for validation contracts",
+    "explicit_fixture_label": "replay IR fixture"
   }
 }

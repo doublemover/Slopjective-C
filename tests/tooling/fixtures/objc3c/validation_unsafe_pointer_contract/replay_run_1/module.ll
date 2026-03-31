@@ -1,4 +1,12 @@
 ; ModuleID = 'm191_validation_unsafe_pointer_extension'
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 source_filename = "m191_validation_unsafe_pointer_extension.objc3"
 
 ; unsafe_pointer_extension_lowering = unsafe_pointer_extension_sites=6;unsafe_keyword_sites=4;pointer_arithmetic_sites=3;raw_pointer_type_sites=5;unsafe_operation_sites=2;normalized_sites=4;gate_blocked_sites=2;contract_violation_sites=0;deterministic=true;lane_contract=m191-unsafe-pointer-extension-gating-lowering-v1

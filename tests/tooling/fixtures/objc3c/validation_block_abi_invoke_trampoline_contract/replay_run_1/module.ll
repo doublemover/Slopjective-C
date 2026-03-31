@@ -1,3 +1,11 @@
+; authenticity_schema_id: objc3c.artifact.authenticity.schema.v1
+; artifact_family_id: objc3c.fixture.synthetic.replayll.v1
+; provenance_class: synthetic_fixture
+; provenance_mode: fixture_curated
+; content_role: replay_ir_fixture
+; fixture_family_id: objc3c.fixture.synthetic.replayll.v1
+; explicit_fixture_label: replay IR fixture
+; synthetic_reason: deterministic replay artifact preserved for validation contracts
 ; objc3c native frontend IR
 ; block_abi_invoke_trampoline_lowering = block_literal_sites=7;invoke_argument_slots_total=12;capture_word_count_total=9;parameter_entries_total=12;capture_entries_total=9;body_statement_entries_total=18;descriptor_symbolized_sites=7;invoke_trampoline_symbolized_sites=7;missing_invoke_trampoline_sites=0;non_normalized_layout_sites=0;contract_violation_sites=0;deterministic=true;lane_contract=m167-block-abi-invoke-trampoline-lowering-v1
 ; frontend_objc_block_abi_invoke_trampoline_lowering_profile = block_literal_sites=7, invoke_argument_slots_total=12, capture_word_count_total=9, parameter_entries_total=12, capture_entries_total=9, body_statement_entries_total=18, descriptor_symbolized_sites=7, invoke_trampoline_symbolized_sites=7, missing_invoke_trampoline_sites=0, non_normalized_layout_sites=0, contract_violation_sites=0, deterministic_block_abi_invoke_trampoline_lowering_handoff=true

@@ -32,5 +32,15 @@
     "replay_key": "message_send_sites=5;receiver_nil_literal_sites=2;nil_receiver_semantics_enabled_sites=2;nil_receiver_foldable_sites=2;nil_receiver_runtime_dispatch_required_sites=3;non_nil_receiver_sites=3;contract_violation_sites=0;deterministic=true;lane_contract=m158-nil-receiver-semantics-foldability-v1",
     "lane_contract": "m158-nil-receiver-semantics-foldability-v1",
     "deterministic_handoff": true
+  },
+  "artifact_authenticity": {
+    "authenticity_schema_id": "objc3c.artifact.authenticity.schema.v1",
+    "artifact_family_id": "objc3c.artifact.replaymanifest.frontend.v1",
+    "provenance_class": "synthetic_fixture",
+    "provenance_mode": "fixture_curated",
+    "content_role": "replay_frontend_manifest",
+    "fixture_family_id": "objc3c.fixture.synthetic.replayll.v1",
+    "synthetic_reason": "deterministic replay artifact preserved for validation contracts",
+    "explicit_fixture_label": "replay IR fixture"
   }
 }

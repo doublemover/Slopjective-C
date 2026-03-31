@@ -43,9 +43,32 @@
           ],
           "content_role": "replay_ir_fixture",
           "required_annotations": [
-            "fixture_family_id"
+            "authenticity_schema_id",
+            "artifact_family_id",
+            "provenance_class",
+            "provenance_mode",
+            "fixture_family_id",
+            "explicit_fixture_label"
           ],
-          "label_rollout_status": "classification-now-labeling-in-c003"
+          "label_rollout_status": "implemented-in-c003",
+          "reference_implementation": "tmp/planning/source_hygiene/sync_replay_fixture_authenticity.py"
+        },
+        {
+          "rule_id": "objc3c.fixture.synthetic.replaymanifest.v1",
+          "path_globs": [
+            "tests/tooling/fixtures/objc3c/**/replay_run_*/module.manifest.json"
+          ],
+          "content_role": "replay_frontend_manifest",
+          "required_annotations": [
+            "authenticity_schema_id",
+            "artifact_family_id",
+            "provenance_class",
+            "provenance_mode",
+            "fixture_family_id",
+            "explicit_fixture_label"
+          ],
+          "label_rollout_status": "implemented-in-c003",
+          "reference_implementation": "tmp/planning/source_hygiene/sync_replay_fixture_authenticity.py"
         },
         {
           "rule_id": "objc3c.fixture.synthetic.testjson.v1",
@@ -56,7 +79,7 @@
           "required_annotations": [
             "fixture_family_id"
           ],
-          "label_rollout_status": "classification-now-labeling-in-c003"
+          "label_rollout_status": "path-fenced-by-tests-root"
         },
         {
           "rule_id": "objc3c.fixture.synthetic.librarycliparity.v1",
