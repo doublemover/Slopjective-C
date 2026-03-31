@@ -33,6 +33,7 @@ Replayable generators and validators:
 - `python scripts/build_objc3c_security_posture.py`
 - `python scripts/publish_objc3c_security_advisories.py`
 - `python scripts/check_objc3c_security_hardening_integration.py`
+- `python scripts/check_m327_security_hardening_closeout_gate.py`
 - `python scripts/check_release_evidence.py`
 - `python scripts/check_source_hygiene_authenticity.py`
 - `python scripts/check_objc3c_distribution_credibility_integration.py`
