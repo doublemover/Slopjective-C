@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.dev/schemas/objc3c-public-command-contract-v1.schema.json",
+  "title": "Objective-C 3 Public Command Contract v1",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "issue",
+    "runner_mode",
+    "runner_path",
+    "package_script_count",
+    "workflow_action_count",
+    "public_script_count",
+    "internal_action_count",
+    "operator_script_count",
+    "maintainer_script_count",
+    "unmapped_scripts",
+    "extra_runner_public_scripts",
+    "actions",
+    "package_scripts"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string",
+      "const": "objc3c-public-command-contract-v1"
+    },
+    "issue": {
+      "type": "string"
+    },
+    "runner_mode": {
+      "type": "string"
+    },
+    "runner_path": {
+      "type": "string"
+    },
+    "package_script_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "workflow_action_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "public_script_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "internal_action_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "operator_script_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "maintainer_script_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "unmapped_scripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "extra_runner_public_scripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/action"
+      }
+    },
+    "package_scripts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/package_script"
+      }
+    }
+  },
+  "$defs": {
+    "action": {
+      "type": "object",
+      "required": [
+        "action",
+        "summary",
+        "backend",
+        "public_scripts",
+        "pass_through_args",
+        "mode",
+        "runner_path",
+        "audience",
+        "category"
+      ],
+      "properties": {
+        "action": { "type": "string" },
+        "summary": { "type": "string" },
+        "backend": { "type": "string" },
+        "public_scripts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "validation_tier": { "type": "string" },
+        "guarantee_owner": { "type": "string" },
+        "pass_through_args": { "type": "boolean" },
+        "mode": { "type": "string" },
+        "runner_path": { "type": "string" },
+        "audience": {
+          "type": "string",
+          "enum": ["operator", "maintainer", "internal"]
+        },
+        "category": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
+    "package_script": {
+      "type": "object",
+      "required": [
+        "package_script",
+        "action",
+        "audience",
+        "category",
+        "backend",
+        "runner_path"
+      ],
+      "properties": {
+        "package_script": { "type": "string" },
+        "action": { "type": "string" },
+        "summary": { "type": "string" },
+        "audience": {
+          "type": "string",
+          "enum": ["operator", "maintainer", "internal"]
+        },
+        "category": { "type": "string" },
+        "backend": { "type": "string" },
+        "validation_tier": { "type": "string" },
+        "guarantee_owner": { "type": "string" },
+        "pass_through_args": { "type": "boolean" },
+        "mode": { "type": "string" },
+        "runner_path": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -2006,13 +2006,14 @@ def enrich_action_payload(spec: ActionSpec) -> dict[str, object]:
 def list_actions_payload() -> dict[str, object]:
     public_actions = [spec for spec in ACTION_SPECS.values() if spec.public_scripts]
     internal_action_count = len(ACTION_SPECS) - len(public_actions)
+    public_script_count = len(public_script_to_action_map())
     return {
         "mode": "public_runner-parameterized-task-runner-v2",
         "runner_path": "scripts/objc3c_public_workflow_runner.py",
         "action_count": len(ACTION_SPECS),
         "public_action_count": len(public_actions),
         "internal_action_count": internal_action_count,
-        "public_script_count": sum(len(spec.public_scripts) for spec in public_actions),
+        "public_script_count": public_script_count,
         "actions": [enrich_action_payload(spec) for spec in ACTION_SPECS.values()],
     }
 
