@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.metaprogramming.interop.closure.packaged.cross.module.interop.proof.contract.v1",
+  "surface_kind": "packaged-cross-module-interop-proof-contract",
+  "milestone": "M323",
+  "issue": "M323-D003",
+  "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+  "summary_script": "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py",
+  "authoritative_report": "tmp/reports/runtime/runnable-interop-e2e/summary.json",
+  "required_step_actions": [
+    "package-runnable-toolchain",
+    "compile-interop-provider-fixture",
+    "compile-interop-consumer-fixture",
+    "compile-header-bridge-provider-fixture",
+    "compile-header-bridge-consumer-fixture",
+    "compile-packaged-interop-probes",
+    "run-packaged-interop-probes",
+    "packaged-execution-smoke",
+    "packaged-execution-replay"
+  ],
+  "required_artifact_fields": [
+    "package_manifest_path",
+    "package_root",
+    "packaged_provider_fixture",
+    "packaged_consumer_fixture",
+    "packaged_packaging_probe",
+    "packaged_bridge_probe",
+    "provider_bridge_json_path",
+    "consumer_cross_module_link_plan_path"
+  ],
+  "required_probe_fields": [
+    "packaged_probe_executables.packaging_probe",
+    "packaged_probe_executables.bridge_probe"
+  ],
+  "required_packaging_probe_payload": {
+    "operator_visible_evidence_ready": 1,
+    "packaging_topology_ready": 1
+  },
+  "required_bridge_probe_payload": {
+    "runtime_generation_ready": 1,
+    "cross_module_packaging_ready": 1,
+    "header_generation_ready": 1,
+    "module_generation_ready": 1,
+    "bridge_generation_ready": 1
+  },
+  "required_child_report_count": 2,
+  "required_step_report_actions": [
+    "packaged-execution-smoke",
+    "packaged-execution-replay"
+  ]
+}

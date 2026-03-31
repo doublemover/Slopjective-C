@@ -10,6 +10,7 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/metaprogramming_interop_closure/interop_runtime_ownership_abi_policy.json`
 - `tests/tooling/fixtures/metaprogramming_interop_closure/lowering_runtime_artifact_contract.json`
 - `tests/tooling/fixtures/metaprogramming_interop_closure/executable_proof_abi_contract.json`
+- `tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json`
 
 Replayable generators and validators:
 
@@ -23,6 +24,7 @@ Replayable generators and validators:
 - `python scripts/build_metaprogramming_interop_closure_executable_proof_summary.py`
 - `python scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py`
 - `python scripts/check_metaprogramming_interop_closure_live_interop_runtime.py`
+- `python scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py`
 - `python scripts/check_m323_metaprogramming_interop_closeout_gate.py`
 
 Current closure scope:
@@ -54,6 +56,7 @@ Current closure constraints:
 
 - import/export, runtime package loading, bridge generation, mixed-image compatibility, and cross-language replay claims are supported only through the current runtime acceptance, runnable interop conformance, and runnable interop e2e surfaces
 - interop claims must pass through ABI, ownership, error, and async compatibility on the real packaged toolchain; comparison-only narratives do not count
+- packaged cross-module interop proof is anchored to the runnable interop e2e provider and consumer fixtures, packaged probe executables, and packaged execution smoke and replay steps
 - public runtime ABI widening for interop/package-loading helpers remains out of scope for this milestone
 
 ## Lowering and Runtime Artifact Surface
