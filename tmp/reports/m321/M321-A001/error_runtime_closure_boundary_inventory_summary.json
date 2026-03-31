@@ -1,0 +1,45 @@
+{
+  "issue": "M321-A001",
+  "contract_id": "objc3c.error_runtime.closure.boundary.inventory.v1",
+  "surface_kind": "error-runtime-closure-boundary-inventory",
+  "focus_track_count": 3,
+  "authoritative_surface_key_count": 7,
+  "authoritative_code_path_count": 14,
+  "authoritative_runtime_symbol_count": 6,
+  "authoritative_probe_path_count": 5,
+  "authoritative_fixture_path_count": 7,
+  "current_gap_count": 3,
+  "explicit_non_goal_count": 4,
+  "successor_milestone_count": 3,
+  "runtime_symbol_occurrence_counts": {
+    "objc3_runtime_store_thrown_error_i32": 1,
+    "objc3_runtime_load_thrown_error_i32": 1,
+    "objc3_runtime_bridge_status_error_i32": 1,
+    "objc3_runtime_bridge_nserror_error_i32": 1,
+    "objc3_runtime_catch_matches_error_i32": 1,
+    "objc3_runtime_copy_error_bridge_state_for_testing": 1
+  },
+  "documentation_occurrence_counts": {
+    "## Error Execution And Cleanup Source Surface": 1,
+    "## Error Lowering Unwind And Bridge Helper Surface": 1,
+    "## Error Runtime ABI And Cleanup Surface": 1,
+    "## Error Propagation Catch And Cleanup Runtime Implementation Surface": 1
+  },
+  "checks": {
+    "summary_script_link_matches": true,
+    "runbook_exists": true,
+    "all_authoritative_code_paths_exist": true,
+    "all_authoritative_probe_paths_exist": true,
+    "all_authoritative_fixture_paths_exist": true,
+    "all_authoritative_runtime_symbols_exported": true,
+    "docs_publish_error_source_surface": true,
+    "docs_publish_error_lowering_surface": true,
+    "docs_publish_error_runtime_abi_surface": true,
+    "docs_publish_error_runtime_impl_surface": true,
+    "runbook_mentions_private_runtime_helper_constraint": true,
+    "public_command_surfaces_exist": true,
+    "public_workflow_actions_exist": true
+  },
+  "status": "PASS",
+  "ok": true
+}

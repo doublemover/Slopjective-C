@@ -1,0 +1,121 @@
+{
+  "contract_id": "objc3c.error_runtime.closure.boundary.inventory.v1",
+  "surface_kind": "error-runtime-closure-boundary-inventory",
+  "milestone": "M321",
+  "issue": "M321-A001",
+  "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
+  "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+  "canonical_planning_root": "tmp/planning/error_runtime_closure",
+  "canonical_report_root": "tmp/reports/m321/M321-A001",
+  "focus_tracks": [
+    "throw-catch-cleanup-unwind-runtime-closure",
+    "nserror-status-result-bridge-runtime-closure",
+    "cross-module-error-propagation-and-replay-closure"
+  ],
+  "authoritative_surface_keys": [
+    "runtime_error_execution_cleanup_source_surface",
+    "runtime_catch_filter_finalization_source_surface",
+    "runtime_error_propagation_cleanup_semantics_surface",
+    "runtime_bridging_filter_unwind_diagnostics_surface",
+    "runtime_error_lowering_unwind_bridge_helper_surface",
+    "runtime_error_runtime_abi_cleanup_surface",
+    "runtime_error_propagation_catch_cleanup_runtime_implementation_surface"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/ast/objc3_ast.h",
+    "native/objc3c/src/parse/objc3_parser.cpp",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/sema/objc3_sema_contract.h",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runnable_error_conformance.py",
+    "scripts/check_objc3c_runnable_error_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "docs/objc3c-native.md"
+  ],
+  "authoritative_runtime_symbols": [
+    "objc3_runtime_store_thrown_error_i32",
+    "objc3_runtime_load_thrown_error_i32",
+    "objc3_runtime_bridge_status_error_i32",
+    "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_catch_matches_error_i32",
+    "objc3_runtime_copy_error_bridge_state_for_testing"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+    "tests/tooling/runtime/live_cleanup_retainable_integration_probe.cpp",
+    "tests/tooling/runtime/cleanup_unwind_autoreleasepool_probe.cpp",
+    "tests/tooling/runtime/cleanup_unwind_nested_autoreleasepool_probe.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/error_source_closure_positive.objc3",
+    "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+    "tests/tooling/fixtures/native/error_bridge_marker_surface_positive.objc3",
+    "tests/tooling/fixtures/native/error_out_abi_positive.objc3",
+    "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/result_bridge_consumer.objc3"
+  ],
+  "public_command_surfaces": [
+    "test:objc3c:error-conformance",
+    "test:objc3c:runnable-error"
+  ],
+  "public_workflow_actions": [
+    "validate-error-conformance",
+    "validate-runnable-error"
+  ],
+  "current_gaps": [
+    "shared conformance and packaged e2e reports exist, but milestone-local closure artifacts still need to tie semantic, lowering, runtime ABI, and cross-module propagation claims together",
+    "public claims must stay narrower than the private runtime helper ABI and snapshot evidence already published",
+    "arc and concurrency interaction claims remain deferred to successor milestones even though cleanup/unwind ordering is already part of the current scope"
+  ],
+  "explicit_non_goals": [
+    "no-public-error-runtime-abi-widening",
+    "no-milestone-specific-runtime-scaffolding",
+    "no-claims-about-async-or-interop-closure-beyond-current-error-runtime-evidence",
+    "no-cross-module-claim-beyond-current-manifest-runtime-registration-and-replay-proof"
+  ],
+  "successor_milestones": [
+    "M322",
+    "M323",
+    "M324"
+  ],
+  "measured_query_sources": [
+    {
+      "kind": "runtime-source-search",
+      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "patterns": [
+        "objc3_runtime_store_thrown_error_i32",
+        "objc3_runtime_load_thrown_error_i32",
+        "objc3_runtime_bridge_status_error_i32",
+        "objc3_runtime_bridge_nserror_error_i32",
+        "objc3_runtime_catch_matches_error_i32",
+        "objc3_runtime_copy_error_bridge_state_for_testing"
+      ]
+    },
+    {
+      "kind": "documentation-search",
+      "path": "docs/objc3c-native.md",
+      "patterns": [
+        "## Error Execution And Cleanup Source Surface",
+        "## Error Lowering Unwind And Bridge Helper Surface",
+        "## Error Runtime ABI And Cleanup Surface",
+        "## Error Propagation Catch And Cleanup Runtime Implementation Surface"
+      ]
+    },
+    {
+      "kind": "path-existence",
+      "paths": [
+        "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+        "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+        "scripts/check_objc3c_runnable_error_conformance.py",
+        "scripts/check_objc3c_runnable_error_end_to_end.py"
+      ]
+    }
+  ]
+}
