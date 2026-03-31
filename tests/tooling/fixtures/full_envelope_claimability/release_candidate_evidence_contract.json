@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.release.candidate.evidence.contract.v1",
+  "surface_kind": "full-envelope-release-candidate-evidence-contract",
+  "milestone": "M324",
+  "issue": "M324-D002",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/check_full_envelope_claimability_release_candidate_evidence.py",
+  "required_reports": [
+    "tmp/reports/full-envelope-claimability/dashboard-summary.json",
+    "tmp/reports/full-envelope-claimability/public-summary.json",
+    "tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json",
+    "tmp/reports/release-foundation/integration-summary.json",
+    "tmp/reports/release-operations/integration-summary.json",
+    "tmp/reports/distribution-credibility/integration-summary.json"
+  ],
+  "required_artifact_fields": [
+    "release_manifest_path",
+    "published_sbom",
+    "published_attestation",
+    "update_manifest_path",
+    "compatibility_report",
+    "channel_catalog",
+    "trust_report_json"
+  ]
+}

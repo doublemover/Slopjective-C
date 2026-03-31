@@ -22,6 +22,7 @@ Replayable generators and validators:
 - `python scripts/build_full_envelope_claimability_dashboard_contract_summary.py`
 - `python scripts/build_full_envelope_claimability_dashboard.py`
 - `python scripts/check_full_envelope_claimability_soak_external_validation.py`
+- `python scripts/check_full_envelope_claimability_release_candidate_evidence.py`
 
 ## Claim Taxonomy
 
@@ -138,6 +139,18 @@ Full-envelope claimability must keep the long-running validation surfaces live:
 Later evidence packaging and closeout gates must consume the shared full-envelope
 dashboard and the live validation integrations instead of publishing a second
 soak or external-validation truth surface.
+
+## Release-Candidate Compatibility And Evidence Packaging
+
+The full-envelope evidence package for this milestone must terminate in the live:
+
+- release-foundation manifest, SBOM, and attestation
+- release-operations update manifest, compatibility report, and channel catalog
+- distribution-credibility trust report
+- full-envelope dashboard and public summary
+
+This packaging surface is allowed to prove that release artifacts are coherent
+even when the full envelope is not yet stable-rollout ready.
 
 ## Evidence Families
 
