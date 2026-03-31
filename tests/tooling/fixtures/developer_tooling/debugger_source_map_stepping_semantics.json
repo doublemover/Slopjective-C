@@ -1,0 +1,30 @@
+{
+  "contract_id": "objc3c.developer.tooling.debugger.source.map.stepping.semantics.v1",
+  "surface_kind": "developer-tooling-policy",
+  "milestone": "M325",
+  "issue": "M325-B003",
+  "runbook": "docs/runbooks/objc3c_developer_tooling.md",
+  "summary_script": "scripts/build_developer_tooling_debug_semantics_summary.py",
+  "authoritative_code_paths": [
+    "scripts/objc3c_public_workflow_runner.py",
+    "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+    "tests/tooling/runtime/system_helper_runtime_contract_probe.cpp"
+  ],
+  "debug_anchor_sources": [
+    "compile-owned declaration coordinates are authoritative for breakpoint and navigation anchors",
+    "emitted object artifact symbol inventory is authoritative for object-backed debug symbol visibility"
+  ],
+  "fail_closed_claims": [
+    "statement-level stepping remains fail-closed until native line-table evidence is emitted on the canonical toolchain path",
+    "full source-map claims remain fail-closed until emitted debug metadata proves them directly"
+  ],
+  "claim_narrowing_constraints": [
+    "the public debug surface must describe itself as declaration-breakpoint and artifact-inspection driven until richer metadata is emitted",
+    "debugger claims must stay rooted in emitted artifacts and runtime inspection facts"
+  ]
+}
