@@ -1,0 +1,45 @@
+{
+  "contract_id": "objc3c.concurrency.runtime.closure.lowering.runtime.abi.contract.v1",
+  "surface_kind": "concurrency-lowering-runtime-abi-contract",
+  "milestone": "M322",
+  "issue": "M322-C001",
+  "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+  "summary_script": "scripts/build_concurrency_runtime_closure_artifact_summary.py",
+  "compile_manifest_surface_keys": [
+    "runtime_unified_concurrency_source_surface",
+    "runtime_async_task_actor_normalization_completion_surface",
+    "runtime_unified_concurrency_lowering_metadata_surface",
+    "runtime_unified_concurrency_runtime_abi_surface"
+  ],
+  "acceptance_builder_functions": [
+    "build_runtime_unified_concurrency_source_surface",
+    "build_runtime_async_task_actor_normalization_completion_surface",
+    "build_runtime_unified_concurrency_lowering_metadata_surface",
+    "build_runtime_unified_concurrency_runtime_abi_surface"
+  ],
+  "frontend_surface_fields": [
+    "frontend.pipeline.semantic_surface.objc_concurrency_continuation_abi_and_async_lowering_contract",
+    "frontend.pipeline.semantic_surface.objc_concurrency_task_runtime_lowering_contract",
+    "frontend.pipeline.semantic_surface.objc_concurrency_task_group_and_runtime_abi_completion",
+    "frontend.pipeline.semantic_surface.objc_concurrency_actor_lowering_and_metadata_contract",
+    "objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface"
+  ],
+  "required_compile_artifacts": [
+    "<emit-prefix>.obj",
+    "<emit-prefix>.ll",
+    "<emit-prefix>.manifest.json",
+    "<emit-prefix>.runtime-registration-manifest.json",
+    "<emit-prefix>.runtime-registration-descriptor.json"
+  ],
+  "authoritative_generation_paths": [
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runtime_architecture_integration.py",
+    "scripts/check_objc3c_runnable_concurrency_conformance.py",
+    "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "required_public_workflow_actions": [
+    "action_validate_concurrency_conformance",
+    "action_validate_runnable_concurrency"
+  ]
+}
