@@ -1,0 +1,65 @@
+{
+  "contract_id": "objc3c.platform.hardening.unsupported.host.fallback.policy.v1",
+  "surface_kind": "unsupported-host-fallback-policy",
+  "milestone": "M326",
+  "issue": "M326-B002",
+  "supported_boundary_contract": "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+  "hard_fail_classes": [
+    {
+      "failure_id": "unsupported-host-os-or-arch",
+      "applies_to": [
+        "build",
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "missing-required-tier-tool",
+      "applies_to": [
+        "build",
+        "package",
+        "install"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "unsupported-channel-claim",
+      "applies_to": [
+        "package",
+        "install",
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    },
+    {
+      "failure_id": "support-tier-overclaim",
+      "applies_to": [
+        "publication"
+      ],
+      "required_behavior": "fail-closed"
+    }
+  ],
+  "allowed_fallback_classes": [
+    {
+      "fallback_id": "capability-inspection-only",
+      "allowed_actions": [
+        "check:objc3c:llvm-capabilities",
+        "check:docs:surface",
+        "check:repo:surface"
+      ],
+      "claim_boundary": "must not widen support-tier or install claims"
+    }
+  ],
+  "forbidden_phrases": [
+    "best effort supported",
+    "probably compatible",
+    "supported if LLVM is installed"
+  ],
+  "required_claims": [
+    "unsupported hosts fail closed",
+    "package install rollback and publication claims stay on the checked-in matrix",
+    "tool presence does not widen host support by itself"
+  ]
+}

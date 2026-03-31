@@ -144,6 +144,31 @@ best-effort language.
 - widening support later must happen by expanding checked-in contracts,
   generated matrix artifacts, and public workflow validation
 
+## Unsupported-Host And Fallback Policy
+
+Unsupported-host behavior must be deterministic and machine-describable.
+
+Hard-fail classes:
+
+- host OS or host architecture outside the checked-in support matrix
+- missing required local tools for the claimed host tier
+- installer or package-channel invocation outside the published host/channel set
+- update or compatibility publication that implies support outside the checked-in
+  matrix
+
+Allowed fallback behavior:
+
+- capability inspection and docs-only policy checks may still run on an
+  unsupported host when they do not widen support claims
+- public package, install, rollback, and support-tier publication must fail
+  closed instead of silently degrading into unsupported behavior
+
+No unsupported host may be described as:
+
+- `best effort supported`
+- `probably compatible`
+- `supported if LLVM is installed`
+
 ## Working Rules For Downstream Issues
 
 - treat `scripts/objc3c_public_workflow_runner.py` as the only public command
