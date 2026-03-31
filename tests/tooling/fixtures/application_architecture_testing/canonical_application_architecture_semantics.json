@@ -1,0 +1,84 @@
+{
+  "contract_id": "objc3c.application.architecture.testing.canonical_application_architecture_semantics.v1",
+  "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+  "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
+  "portfolio_manifest": "showcase/portfolio.json",
+  "stdlib_program_surface": "stdlib/program_surface.json",
+  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
+  "canonical_application_kind": "medium-sized runnable workspace assembled from checked-in example, stdlib, and packageable validation surfaces",
+  "required_evidence_actions": [
+    "validate-showcase",
+    "validate-runnable-showcase",
+    "validate-stdlib-program",
+    "validate-runnable-stdlib-program",
+    "package-runnable-toolchain"
+  ],
+  "architecture_layers": [
+    {
+      "id": "entry_and_composition",
+      "responsibility": "own the main module entrypoint, wiring, and user-visible command flow",
+      "allowed_inputs": [
+        "checked-in workspace manifests",
+        "public workflow actions",
+        "packaged runnable toolchain paths"
+      ]
+    },
+    {
+      "id": "feature_and_domain_logic",
+      "responsibility": "express product behavior over stdlib modules without owning runtime/package operations directly",
+      "allowed_inputs": [
+        "objc3.core",
+        "objc3.errors",
+        "objc3.concurrency",
+        "objc3.keypath",
+        "objc3.system"
+      ]
+    },
+    {
+      "id": "runtime_and_interop_adapters",
+      "responsibility": "contain runtime launch, status bridging, messaging, macro, and interop boundaries behind explicit adapters",
+      "allowed_inputs": [
+        "runtime launch contract helper",
+        "status-bridging capabilities",
+        "actor-shaped messaging",
+        "property-behaviors",
+        "interop"
+      ]
+    },
+    {
+      "id": "tests_and_operator_drills",
+      "responsibility": "prove the same workspace through integration, packaging, and recovery-oriented checks",
+      "allowed_inputs": [
+        "showcase integration",
+        "stdlib program integration",
+        "runnable showcase validation",
+        "runnable stdlib program validation"
+      ]
+    }
+  ],
+  "capability_portfolio_alignment": [
+    {
+      "example_id": "auroraBoard",
+      "focus": "object-model and synthesized-behavior heavy application surface"
+    },
+    {
+      "example_id": "signalMesh",
+      "focus": "concurrency and runtime-messaging heavy application surface"
+    },
+    {
+      "example_id": "patchKit",
+      "focus": "macro, property-behavior, and interop heavy application surface"
+    }
+  ],
+  "canonical_claim_rules": [
+    "canonical apps must be packageable and runnable through the public workflow path",
+    "canonical apps must pressure later dependency and package design rather than bypass it",
+    "capability bundles may reuse checked-in showcase slices, but the recommended architecture must unify them under one layering model",
+    "claims of canonicality are blocked if the app path cannot be validated after packaging"
+  ],
+  "non_goals": [
+    "a screenshot-only reference application",
+    "a second package/install workflow just for canonical apps",
+    "application guidance that ignores existing showcase and stdlib contracts"
+  ]
+}

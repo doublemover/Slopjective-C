@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Build the canonical application layering semantics summary for M330."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "canonical_application_architecture_semantics.json"
+PACKAGE_JSON = ROOT / "package.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "canonical-application-layering-summary.json"
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def main() -> int:
+    contract = load_json(CONTRACT_PATH)
+    package = load_json(PACKAGE_JSON)
+    portfolio = load_json(ROOT / str(contract["portfolio_manifest"]))
+    stdlib_program_surface = load_json(ROOT / str(contract["stdlib_program_surface"]))
+    package_scripts = package.get("scripts", {})
+    if not isinstance(package_scripts, dict):
+        raise RuntimeError("package.json scripts field drifted from an object")
+
+    examples = portfolio.get("examples", [])
+    example_ids = {
+        str(entry.get("id"))
+        for entry in examples
+        if isinstance(entry, dict) and isinstance(entry.get("id"), str)
+    }
+    aligned_examples = [entry["example_id"] for entry in contract["capability_portfolio_alignment"]]
+    missing_examples = [example_id for example_id in aligned_examples if example_id not in example_ids]
+    missing_actions = [
+        action
+        for action in contract["required_evidence_actions"]
+        if action not in str(stdlib_program_surface.get("workflow_surface", {}))
+        and action not in str(stdlib_program_surface.get("public_actions", []))
+        and action != "package-runnable-toolchain"
+    ]
+    missing_package_script = []
+    if "package:objc3c-native:runnable-toolchain" not in package_scripts:
+        missing_package_script.append("package:objc3c-native:runnable-toolchain")
+
+    payload = {
+        "contract_id": "objc3c.application.architecture.testing.canonical_application_architecture_semantics.summary.v1",
+        "status": "PASS" if not missing_examples and not missing_actions and not missing_package_script else "FAIL",
+        "architecture_contract": repo_rel(CONTRACT_PATH),
+        "runbook": str(contract["runbook"]),
+        "architecture_layer_count": len(contract["architecture_layers"]),
+        "aligned_example_count": len(aligned_examples),
+        "required_evidence_action_count": len(contract["required_evidence_actions"]),
+        "canonical_application_kind": contract["canonical_application_kind"],
+        "architecture_layers": contract["architecture_layers"],
+        "capability_portfolio_alignment": contract["capability_portfolio_alignment"],
+        "canonical_claim_rules": contract["canonical_claim_rules"],
+        "missing_examples": missing_examples,
+        "missing_actions": missing_actions,
+        "missing_package_script": missing_package_script,
+        "non_goals": contract["non_goals"],
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print("application-architecture-layering: PASS" if payload["status"] == "PASS" else "application-architecture-layering: FAIL")
+    return 0 if payload["status"] == "PASS" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

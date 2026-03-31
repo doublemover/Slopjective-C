@@ -25,6 +25,7 @@ Replayable boundary inventory:
 - `python scripts/build_application_architecture_testing_boundary_inventory_summary.py`
 - `python scripts/build_application_architecture_testing_semantic_summary.py`
 - `python scripts/build_application_architecture_template_workspace_summary.py`
+- `python scripts/build_application_architecture_layering_summary.py`
 
 ## Current Boundary
 
@@ -61,6 +62,9 @@ The live meaning is:
   showcase, stdlib, developer-tooling, and documentation surfaces
 - project templates are derived from checked-in showcase sources and are only
   claimable when they remain traceable through public workflow actions
+- canonical application architecture is not a second example taxonomy; it is a
+  layering model that unifies the checked-in showcase and stdlib surfaces into a
+  copyable project shape
 
 ## Non-Goals
 
