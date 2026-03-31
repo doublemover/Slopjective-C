@@ -1,0 +1,64 @@
+{
+  "issue": "M313-D001",
+  "generated_at": "2026-03-31T01:11:11.889901+00:00",
+  "topology": [
+    {
+      "package_script": "test:fast",
+      "family_count": 5,
+      "families": [
+        "aggregate-validation",
+        "docs",
+        "repo-shape",
+        "showcase",
+        "onboarding"
+      ]
+    },
+    {
+      "package_script": "test:objc3c:full",
+      "family_count": 12,
+      "families": [
+        "aggregate-validation",
+        "docs",
+        "repo-shape",
+        "showcase",
+        "onboarding",
+        "stdlib",
+        "performance",
+        "compiler-throughput",
+        "runtime-architecture",
+        "release-foundation",
+        "packaging-channels",
+        "release-operations"
+      ]
+    },
+    {
+      "package_script": "test:objc3c:nightly",
+      "family_count": 20,
+      "families": [
+        "aggregate-validation",
+        "docs",
+        "repo-shape",
+        "showcase",
+        "onboarding",
+        "stdlib",
+        "performance",
+        "compiler-throughput",
+        "runtime-architecture",
+        "release-foundation",
+        "packaging-channels",
+        "release-operations",
+        "bonus-experiences",
+        "conformance-corpus",
+        "stress",
+        "external-validation",
+        "public-conformance",
+        "performance-governance",
+        "distribution-credibility",
+        "runtime-closure"
+      ]
+    }
+  ],
+  "next_issues": [
+    "M313-D002"
+  ]
+}
