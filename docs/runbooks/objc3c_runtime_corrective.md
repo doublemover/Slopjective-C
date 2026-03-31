@@ -11,6 +11,7 @@ Canonical checked-in boundary contract:
 - `tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json`
 - `tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json`
 - `tests/tooling/fixtures/runtime_corrective/dispatch_lowering_implementation_contract.json`
+- `tests/tooling/fixtures/runtime_corrective/synthesized_accessor_lowering_implementation_contract.json`
 
 Replayable summary generator:
 
@@ -21,6 +22,7 @@ Replayable summary generator:
 - `python scripts/build_runtime_corrective_acceptance_workload_summary.py`
 - `python scripts/build_runtime_corrective_lowering_provenance_summary.py`
 - `python scripts/check_runtime_corrective_dispatch_lowering.py`
+- `python scripts/check_runtime_corrective_synthesized_accessor_lowering.py`
 
 Current corrective scope:
 
@@ -31,7 +33,7 @@ Current corrective scope:
 Current corrective gaps:
 
 - unresolved dispatch still retains one deterministic fallback path after slow-path miss
-- synthesized accessor IR still carries transitional lowering residue
+- live synthesized accessor execution and reflection coherence still need one integrated proof surface
 - native-output proof is only trustworthy when the emitted object and linked probe stay coupled to compile provenance and the runtime registration manifest
 
 Explicit non-goals:

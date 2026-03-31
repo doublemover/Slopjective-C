@@ -1,0 +1,109 @@
+{
+  "contract_id": "objc3c.runtime.corrective.synthesized.accessor.lowering.implementation.contract.v1",
+  "surface_kind": "runtime-corrective-synthesized-accessor-lowering-implementation",
+  "lowering_provenance_artifact_contract_id": "objc3c.runtime.corrective.lowering.provenance.artifact.contract.v1",
+  "synthesized_accessor_semantic_contract_id": "objc3c.runtime.corrective.synthesized.accessor.semantic.model.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "validator_script": "scripts/check_runtime_corrective_synthesized_accessor_lowering.py",
+  "compile_script": "scripts/objc3c_native_compile.ps1",
+  "emit_prefix": "module",
+  "object_backend": "clang",
+  "case_definitions": [
+    {
+      "case_id": "baseline-synthesized-accessors",
+      "fixture_path": "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+      "expected_dispatch_lowering_counts": {
+        "property_synthesis_sites": 3,
+        "property_synthesis_default_ivar_bindings": 3,
+        "synthesized_accessor_owner_entries": 3,
+        "synthesized_getter_entries": 3,
+        "synthesized_setter_entries": 3,
+        "current_property_read_entries": 3,
+        "current_property_write_entries": 2,
+        "current_property_exchange_entries": 1,
+        "weak_current_property_load_entries": 0,
+        "weak_current_property_store_entries": 0,
+        "property_descriptor_count": 6,
+        "ivar_descriptor_count": 3
+      },
+      "expected_executable_surface_counts": {
+        "implementation_owned_property_entries": 3,
+        "synthesized_getter_entries": 3,
+        "synthesized_setter_entries": 3,
+        "synthesized_accessor_entries": 6,
+        "property_descriptor_entries": 6
+      },
+      "expected_registration_manifest_counts": {
+        "property_descriptor_count": 6,
+        "ivar_descriptor_count": 3
+      },
+      "required_ll_snippets": [
+        "define i32 @objc3_method_Widget_instance_count() {",
+        "define void @objc3_method_Widget_instance_setCount_(i32 %arg0) {",
+        "define i1 @objc3_method_Widget_instance_enabled() {",
+        "define void @objc3_method_Widget_instance_setEnabled_(i1 %arg0) {",
+        "define i32 @objc3_method_Widget_instance_value() {",
+        "define void @objc3_method_Widget_instance_setValue_(i32 %arg0) {",
+        "call i32 @objc3_runtime_read_current_property_i32()",
+        "call void @objc3_runtime_write_current_property_i32(i32 %arg0)",
+        "call i32 @objc3_runtime_exchange_current_property_i32(i32 %objc3_property_retained)",
+        "call i32 @objc3_runtime_retain_i32(i32 %objc3_property_slot)",
+        "call i32 @objc3_runtime_autorelease_i32(i32 %objc3_property_retained)",
+        "call i32 @objc3_runtime_release_i32(i32 %objc3_property_previous)",
+        "ptr @objc3_method_Widget_instance_count, ptr @objc3_method_Widget_instance_setCount_",
+        "ptr @objc3_method_Widget_instance_enabled, ptr @objc3_method_Widget_instance_setEnabled_",
+        "ptr @objc3_method_Widget_instance_value, ptr @objc3_method_Widget_instance_setValue_"
+      ]
+    },
+    {
+      "case_id": "arc-and-weak-synthesized-accessors",
+      "fixture_path": "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3",
+      "expected_dispatch_lowering_counts": {
+        "property_synthesis_sites": 2,
+        "property_synthesis_default_ivar_bindings": 2,
+        "synthesized_accessor_owner_entries": 2,
+        "synthesized_getter_entries": 2,
+        "synthesized_setter_entries": 2,
+        "current_property_read_entries": 1,
+        "current_property_write_entries": 0,
+        "current_property_exchange_entries": 1,
+        "weak_current_property_load_entries": 1,
+        "weak_current_property_store_entries": 1,
+        "property_descriptor_count": 4,
+        "ivar_descriptor_count": 2
+      },
+      "expected_executable_surface_counts": {
+        "implementation_owned_property_entries": 2,
+        "synthesized_getter_entries": 2,
+        "synthesized_setter_entries": 2,
+        "synthesized_accessor_entries": 4,
+        "property_descriptor_entries": 4
+      },
+      "expected_registration_manifest_counts": {
+        "property_descriptor_count": 4,
+        "ivar_descriptor_count": 2
+      },
+      "required_ll_snippets": [
+        "define i32 @objc3_method_ArcBox_instance_currentValue() {",
+        "define void @objc3_method_ArcBox_instance_setCurrentValue_(i32 %arg0) {",
+        "define i32 @objc3_method_ArcBox_instance_weakValue() {",
+        "define void @objc3_method_ArcBox_instance_setWeakValue_(i32 %arg0) {",
+        "call i32 @objc3_runtime_read_current_property_i32()",
+        "call i32 @objc3_runtime_exchange_current_property_i32(i32 %objc3_property_retained)",
+        "call i32 @objc3_runtime_load_weak_current_property_i32()",
+        "call void @objc3_runtime_store_weak_current_property_i32(i32 %arg0)",
+        "call i32 @objc3_runtime_retain_i32(i32 %arg0)",
+        "call i32 @objc3_runtime_release_i32(i32 %objc3_property_previous)",
+        "call i32 @objc3_runtime_autorelease_i32(i32 %objc3_property_retained)",
+        "ptr @objc3_method_ArcBox_instance_currentValue, ptr @objc3_method_ArcBox_instance_setCurrentValue_",
+        "ptr @objc3_method_ArcBox_instance_weakValue, ptr @objc3_method_ArcBox_instance_setWeakValue_"
+      ]
+    }
+  ],
+  "explicit_non_goals": [
+    "no-runtime-execution-claim-without-linked-probes",
+    "no-public-runtime-abi-widening",
+    "no-storage-global-fallback-claims",
+    "no-milestone-specific-scaffolding"
+  ]
+}
