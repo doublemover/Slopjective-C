@@ -1,0 +1,105 @@
+{
+  "contract_id": "objc3c.metaprogramming.interop.closure.boundary.inventory.v1",
+  "surface_kind": "metaprogramming-interop-closure-boundary-inventory",
+  "milestone": "M323",
+  "issue": "M323-A001",
+  "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+  "summary_script": "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
+  "focus_tracks": [
+    "metaprogramming-property-behavior-runtime-materialization",
+    "mixed-image-package-loading-and-foreign-boundary-interop"
+  ],
+  "authoritative_metaprogramming_surface_keys": [
+    "runtime_metaprogramming_source_surface",
+    "runtime_metaprogramming_package_provenance_source_surface",
+    "runtime_metaprogramming_semantics_surface",
+    "runtime_metaprogramming_lowering_host_cache_surface",
+    "runtime_cross_module_metaprogramming_artifact_preservation_surface",
+    "runtime_metaprogramming_runtime_abi_cache_surface",
+    "runtime_metaprogramming_cache_runtime_integration_implementation_surface"
+  ],
+  "authoritative_interop_surface_keys": [
+    "runtime_cross_module_package_interop_source_surface",
+    "runtime_textual_binary_interface_parity_source_surface",
+    "runtime_mixed_image_compatibility_interop_semantics_surface",
+    "runtime_package_loading_module_identity_semantics_surface",
+    "runtime_c_cpp_swift_bridge_compatibility_semantics_surface",
+    "runtime_import_version_feature_claim_diagnostics_surface",
+    "runtime_packaging_bridge_loader_artifact_surface",
+    "runtime_mixed_image_package_lowering_bridge_emission_surface",
+    "runtime_cross_language_replay_import_surface_preservation_surface",
+    "runtime_package_loader_bridge_abi_surface",
+    "runtime_package_loading_interop_implementation_surface"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/io/objc3_process.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runnable_metaprogramming_conformance.py",
+    "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py",
+    "scripts/check_objc3c_runnable_interop_conformance.py",
+    "scripts/check_objc3c_runnable_interop_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",
+    "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
+    "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/header_module_bridge_generation_probe.cpp",
+    "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3",
+    "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+    "tests/tooling/fixtures/native/macro_host_process_consumer.objc3",
+    "tests/tooling/fixtures/native/preservation_provider.objc3",
+    "tests/tooling/fixtures/native/preservation_consumer.objc3",
+    "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+    "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_provider.objc3",
+    "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3"
+  ],
+  "authoritative_runtime_symbols": [
+    "objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing",
+    "objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing"
+  ],
+  "public_commands": [
+    "test:objc3c:metaprogramming-conformance",
+    "test:objc3c:runnable-metaprogramming",
+    "test:objc3c:interop-conformance",
+    "test:objc3c:runnable-interop"
+  ],
+  "public_workflows": [
+    "validate-metaprogramming-conformance",
+    "validate-runnable-metaprogramming",
+    "validate-interop-conformance",
+    "validate-runnable-interop"
+  ],
+  "report_paths": [
+    "tmp/reports/runtime/runnable-metaprogramming-conformance/summary.json",
+    "tmp/reports/runtime/runnable-interop-conformance/summary.json",
+    "tmp/reports/runtime/runnable-metaprogramming-e2e/summary.json",
+    "tmp/reports/runtime/runnable-interop-e2e/summary.json",
+    "tmp/reports/runtime/acceptance/summary.json"
+  ],
+  "current_gaps": [
+    "property-behavior runtime materialization is still bounded by metaprogramming runtime-boundary and lowering probes rather than a dedicated public runtime ABI",
+    "macro host execution and package loading remain fail-closed on private runtime snapshots and runtime-import artifacts",
+    "interop ownership, error, and async compatibility claims are narrower than the current packaged mixed-image proof surface",
+    "integration surfaces for runnable interop are still marked stale-or-missing relative to the acceptance report"
+  ],
+  "explicit_non_goals": [
+    "public runtime ABI widening for macro host execution or package loader helpers",
+    "claiming unsupported property-behavior combinations as runtime complete",
+    "claiming unsupported foreign loader topologies or unsupported bridge ecosystems as live",
+    "creating milestone-local scaffolding parallel to the shared runtime acceptance and packaged e2e surfaces"
+  ],
+  "successor_milestones": [
+    "M324",
+    "M325",
+    "M329"
+  ]
+}
