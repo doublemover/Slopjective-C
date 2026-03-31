@@ -1,0 +1,101 @@
+{
+  "contract_id": "objc3c.source_hygiene.artifact_authenticity_classification.v1",
+  "schema_version": 1,
+  "policy_contract": "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
+  "classes": {
+    "generated_truth": {
+      "classification_mode": "enumerated_paths",
+      "paths": [
+        "site/index.md",
+        "docs/objc3c-native.md",
+        "docs/runbooks/objc3c_public_command_surface.md"
+      ],
+      "required_annotations": [
+        "surface_id"
+      ],
+      "notes": "checked-in generated truth surfaces stay small and explicitly enumerated"
+    },
+    "genuine_generated_output": {
+      "classification_mode": "runtime_output_roots",
+      "roots": [
+        "tmp/reports/",
+        "tmp/artifacts/"
+      ],
+      "required_annotations": [
+        "surface_id",
+        "artifact_family_id",
+        "report_family_id"
+      ],
+      "required_provenance_fields": [
+        "generator_or_compile_path",
+        "input_root",
+        "output_path"
+      ],
+      "notes": "compiler-coupled or generator-coupled outputs may be transient but must carry durable provenance identifiers"
+    },
+    "synthetic_fixture": {
+      "classification_mode": "tracked_fixture_globs",
+      "rules": [
+        {
+          "rule_id": "objc3c.fixture.synthetic.replayll.v1",
+          "path_globs": [
+            "tests/tooling/fixtures/objc3c/**/replay_run_*/module.ll"
+          ],
+          "content_role": "replay_ir_fixture",
+          "required_annotations": [
+            "fixture_family_id"
+          ],
+          "label_rollout_status": "classification-now-labeling-in-c003"
+        },
+        {
+          "rule_id": "objc3c.fixture.synthetic.testjson.v1",
+          "path_globs": [
+            "tests/**/*.json"
+          ],
+          "content_role": "checked_in_test_or_conformance_fixture",
+          "required_annotations": [
+            "fixture_family_id"
+          ],
+          "label_rollout_status": "classification-now-labeling-in-c003"
+        },
+        {
+          "rule_id": "objc3c.fixture.synthetic.librarycliparity.v1",
+          "path_globs": [
+            "tests/tooling/fixtures/native/library_cli_parity/*.json",
+            "tests/tooling/fixtures/native/library_cli_parity/**/*.json",
+            "tests/tooling/fixtures/native/library_cli_parity/**/*.ll"
+          ],
+          "content_role": "labeled_parity_fixture",
+          "required_annotations": [
+            "authenticity_schema_id",
+            "artifact_family_id",
+            "fixture_family_id",
+            "explicit_fixture_label"
+          ],
+          "label_rollout_status": "already-labeled",
+          "reference_implementation": "scripts/check_objc3c_library_cli_parity.py"
+        }
+      ],
+      "notes": "synthetic fixtures remain valid for tests and replay, but they must not be presented as live generated proof outputs"
+    },
+    "archive_reference": {
+      "classification_mode": "archive_roots",
+      "roots": [
+        "tmp/planning/",
+        "tmp/github-publish/",
+        "tmp/archive/",
+        "docs/reference/"
+      ],
+      "required_annotations": [
+        "historical_ref"
+      ],
+      "notes": "archive references may preserve planning history but must never drive current product claims"
+    }
+  },
+  "priority_rollout": [
+    "keep generated truth on explicit enumerated paths only",
+    "treat tracked tests and replay fixtures as synthetic_fixture unless a stricter rule overrides them",
+    "use library_cli_parity as the seed authenticity envelope for future fixture labeling work",
+    "require genuine generated outputs to carry durable surface and family identifiers before widening proof claims"
+  ]
+}

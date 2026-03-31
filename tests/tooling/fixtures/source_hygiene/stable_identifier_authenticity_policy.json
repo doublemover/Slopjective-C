@@ -107,5 +107,6 @@
     "generated truth surfaces must reach zero milestone-coded identifiers before product surfaces are considered clean",
     "new product and generated surfaces must use durable objc3c.*.vN identifiers instead of milestone-coded names",
     "synthetic fixtures must be machine-distinguishable from genuine generated outputs before proof claims widen"
-  ]
+  ],
+  "classification_contract": "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json"
 }
