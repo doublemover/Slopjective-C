@@ -1,0 +1,19 @@
+{
+  "contract_id": "objc3c.object_model.closure.closeout.gate.summary.v1",
+  "generated_at_utc": "2026-03-31T05:15:51.928632+00:00",
+  "status": "PASS",
+  "runner_path": "scripts/check_m319_object_model_closure_closeout_gate.py",
+  "required_report_count": 10,
+  "report_statuses": {
+    "tmp/reports/m319/M319-A001/object_model_closure_boundary_inventory_summary.json": "PASS",
+    "tmp/reports/m319/M319-B001/realized_object_graph_reflection_semantic_summary.json": "PASS",
+    "tmp/reports/m319/M319-B002/loader_category_protocol_workload_summary.json": "PASS",
+    "tmp/reports/m319/M319-B003/realized_object_graph_runtime_implementation_summary.json": "PASS",
+    "tmp/reports/m319/M319-C001/object_model_reflection_artifact_runtime_registration_summary.json": "PASS",
+    "tmp/reports/m319/M319-C002/class_category_protocol_realization_lowering_summary.json": "PASS",
+    "tmp/reports/m319/M319-C003/property_ivar_aggregate_reflection_artifact_summary.json": "PASS",
+    "tmp/reports/m319/M319-D001/object_model_closure_executable_proof_summary.json": "PASS",
+    "tmp/reports/m319/M319-D002/live_object_model_runtime_summary.json": "PASS",
+    "tmp/reports/m319/M319-D003/live_property_ivar_reflection_summary.json": "PASS"
+  }
+}

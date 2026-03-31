@@ -1,6 +1,6 @@
 {
   "contract_id": "objc3c.object_model.closure.live.property.ivar.reflection.summary.v1",
-  "generated_at_utc": "2026-03-31T05:14:42.217357+00:00",
+  "generated_at_utc": "2026-03-31T05:15:51.783087+00:00",
   "status": "PASS",
   "runner_path": "scripts/check_object_model_closure_live_property_reflection.py",
   "used_existing_storage_reflection_e2e_report": true,
