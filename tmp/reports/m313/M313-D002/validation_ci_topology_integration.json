@@ -1,0 +1,80 @@
+{
+  "issue": "M313-D002",
+  "generated_at": "2026-03-31T01:13:15.051444+00:00",
+  "status": "PASS",
+  "failure_count": 0,
+  "failures": [],
+  "rows": [
+    {
+      "package_script": "test:fast",
+      "action": "test-fast",
+      "package_command": "python scripts/objc3c_public_workflow_runner.py test-fast",
+      "validation_tier": "fast",
+      "guarantee_owner": "runtime acceptance, canonical replay, and a bounded smoke slice",
+      "family_count": 5,
+      "families": [
+        "aggregate-validation",
+        "docs",
+        "repo-shape",
+        "showcase",
+        "onboarding"
+      ]
+    },
+    {
+      "package_script": "test:objc3c:full",
+      "action": "test-full",
+      "package_command": "python scripts/objc3c_public_workflow_runner.py test-full",
+      "validation_tier": "full",
+      "guarantee_owner": "smoke, runtime acceptance, and replay without full recovery fan-out",
+      "family_count": 12,
+      "families": [
+        "aggregate-validation",
+        "docs",
+        "repo-shape",
+        "showcase",
+        "onboarding",
+        "stdlib",
+        "performance",
+        "compiler-throughput",
+        "runtime-architecture",
+        "release-foundation",
+        "packaging-channels",
+        "release-operations"
+      ]
+    },
+    {
+      "package_script": "test:objc3c:nightly",
+      "action": "test-nightly",
+      "package_command": "python scripts/objc3c_public_workflow_runner.py test-nightly",
+      "validation_tier": "nightly",
+      "guarantee_owner": "full validation plus performance governance reporting, release-foundation publication, conformance corpus indexing, recovery, and broad corpus sweeps",
+      "family_count": 20,
+      "families": [
+        "aggregate-validation",
+        "docs",
+        "repo-shape",
+        "showcase",
+        "onboarding",
+        "stdlib",
+        "performance",
+        "compiler-throughput",
+        "runtime-architecture",
+        "release-foundation",
+        "packaging-channels",
+        "release-operations",
+        "bonus-experiences",
+        "conformance-corpus",
+        "stress",
+        "external-validation",
+        "public-conformance",
+        "performance-governance",
+        "distribution-credibility",
+        "runtime-closure"
+      ]
+    }
+  ],
+  "next_issues": [
+    "M313-D003",
+    "M313-E001"
+  ]
+}
