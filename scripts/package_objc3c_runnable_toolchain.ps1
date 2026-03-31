@@ -189,6 +189,14 @@ $requiredRelativeFiles = @(
   "scripts/build_objc3c_native.ps1",
   "scripts/objc3c_native_compile.ps1",
   "scripts/objc3c_public_workflow_runner.py",
+  "scripts/build_objc3c_editor_tooling_surface.py",
+  "scripts/format_objc3c_source.py",
+  "scripts/check_developer_tooling_language_server_navigation.py",
+  "scripts/check_developer_tooling_formatter_debug_surface.py",
+  "scripts/check_developer_tooling_workspace_integration.py",
+  "scripts/check_objc3c_developer_tooling_integration.py",
+  "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
+  "scripts/benchmark_objc3c_runtime_inspector.py",
   "scripts/objc3c_runtime_launch_contract.ps1",
   "scripts/run_objc3c_native_compile_proof.ps1",
   "scripts/check_objc3c_native_execution_smoke.ps1",
@@ -206,6 +214,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
+  "docs/runbooks/objc3c_developer_tooling.md",
   "docs/runbooks/objc3c_public_command_surface.md",
   "docs/runbooks/objc3c_release_foundation.md",
   "docs/runbooks/objc3c_runtime_performance.md",
@@ -233,6 +242,7 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+  "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
   "schemas/objc3-conformance-dashboard-status-v1.schema.json",
   "schemas/objc3c-release-manifest-v1.schema.json",
   "schemas/objc3c-release-sbom-v1.schema.json",
@@ -263,7 +273,15 @@ $requiredRelativeFiles = @(
   "tests/tooling/runtime/header_module_bridge_generation_probe.cpp",
   "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp",
   "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp",
+  "tests/tooling/fixtures/developer_tooling/boundary_inventory.json",
+  "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json",
+  "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json",
+  "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json",
+  "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json",
+  "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
+  "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
   "tests/tooling/fixtures/native/hello.objc3",
+  "tests/tooling/fixtures/native/negative_undefined_symbol.objc3",
   "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json",
   "tests/tooling/fixtures/release_foundation/distribution_trust_model.json",
   "tests/tooling/fixtures/release_foundation/distribution_audit.json",
@@ -424,6 +442,40 @@ $manifestPayload = [ordered]@{
   release_candidate_fixture = "tests/tooling/fixtures/native/hello.objc3"
   release_candidate_claim_probe = "tests/tooling/runtime/release_candidate_claim_runtime_probe.cpp"
   release_candidate_evidence_probe = "tests/tooling/runtime/release_candidate_evidence_runtime_probe.cpp"
+  developer_tooling_runbook = "docs/runbooks/objc3c_developer_tooling.md"
+  developer_tooling_boundary_inventory = "tests/tooling/fixtures/developer_tooling/boundary_inventory.json"
+  developer_tooling_editor_surface_schema = "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+  developer_tooling_navigation_contract = "tests/tooling/fixtures/developer_tooling/language_server_navigation_implementation_contract.json"
+  developer_tooling_formatter_debug_contract = "tests/tooling/fixtures/developer_tooling/formatter_debug_implementation_contract.json"
+  developer_tooling_workspace_contract = "tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json"
+  developer_tooling_packaged_contract = "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json"
+  developer_tooling_example_source = "tests/tooling/fixtures/native/hello.objc3"
+  developer_tooling_negative_source = "tests/tooling/fixtures/native/negative_undefined_symbol.objc3"
+  developer_tooling_formatter_source = "tests/tooling/fixtures/developer_tooling/messy_hello.objc3"
+  developer_tooling_expected_formatted_source = "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3"
+  developer_tooling_scripts = [ordered]@{
+    editor_surface = "scripts/build_objc3c_editor_tooling_surface.py"
+    formatter = "scripts/format_objc3c_source.py"
+    language_server_navigation_validation = "scripts/check_developer_tooling_language_server_navigation.py"
+    formatter_debug_validation = "scripts/check_developer_tooling_formatter_debug_surface.py"
+    workspace_validation = "scripts/check_developer_tooling_workspace_integration.py"
+    integration_validation = "scripts/check_objc3c_developer_tooling_integration.py"
+    runnable_end_to_end_validation = "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py"
+  }
+  developer_tooling_public_actions = @(
+    "inspect-editor-tooling",
+    "format-objc3c",
+    "materialize-playground-workspace",
+    "validate-developer-tooling",
+    "validate-runnable-developer-tooling"
+  )
+  developer_tooling_public_scripts = @(
+    "inspect:objc3c:editor",
+    "format:objc3c",
+    "build:objc3c:playground",
+    "test:objc3c:developer-tooling",
+    "test:objc3c:runnable-developer-tooling"
+  )
   object_model_probe = "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
   block_arc_fixture = "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
   block_arc_runtime_abi_probe = "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp"
@@ -556,6 +608,7 @@ $manifestPayload = [ordered]@{
     stdlib_program_e2e = "npm run test:stdlib:program:e2e"
     inspect_bonus_tools = "npm run inspect:objc3c:bonus-tools"
     inspect_playground = "npm run inspect:objc3c:playground"
+    inspect_editor_tooling = "npm run inspect:objc3c:editor -- tests/tooling/fixtures/native/hello.objc3"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
     inspect_performance = "npm run inspect:objc3c:performance"
     inspect_release_manifest = "npm run inspect:objc3c:release-manifest"
@@ -564,8 +617,10 @@ $manifestPayload = [ordered]@{
     inspect_comparative_baselines = "npm run inspect:objc3c:comparative-baselines"
     inspect_capabilities = "npm run inspect:objc3c:capabilities"
     inspect_runtime = "npm run inspect:objc3c:runtime"
+    format_objc3c = "npm run format:objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3"
     trace_stages = "npm run trace:objc3c:stages"
     developer_tooling = "npm run test:objc3c:developer-tooling"
+    runnable_developer_tooling = "npm run test:objc3c:runnable-developer-tooling"
     conformance_corpus = "npm run test:objc3c:conformance-corpus"
     conformance_corpus_e2e = "npm run test:objc3c:runnable-conformance-corpus"
     stdlib = "npm run test:stdlib"

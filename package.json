@@ -17,6 +17,7 @@
     "test:showcase": "python scripts/objc3c_public_workflow_runner.py validate-showcase",
     "test:showcase:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase",
     "test:objc3c:developer-tooling": "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
+    "test:objc3c:runnable-developer-tooling": "python scripts/objc3c_public_workflow_runner.py validate-runnable-developer-tooling",
     "test:objc3c:performance": "python scripts/objc3c_public_workflow_runner.py validate-performance-foundation",
     "test:objc3c:compiler-throughput": "python scripts/objc3c_public_workflow_runner.py validate-compiler-throughput",
     "test:objc3c:runnable-compiler-throughput": "python scripts/objc3c_public_workflow_runner.py validate-runnable-compiler-throughput",

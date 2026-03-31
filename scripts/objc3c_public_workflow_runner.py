@@ -42,6 +42,7 @@ SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
 RUNNABLE_SHOWCASE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_showcase_end_to_end.py"
 GETTING_STARTED_INTEGRATION_PY = ROOT / "scripts" / "check_getting_started_integration.py"
 DEVELOPER_TOOLING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_developer_tooling_integration.py"
+RUNNABLE_DEVELOPER_TOOLING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_developer_tooling_end_to_end.py"
 EDITOR_TOOLING_SURFACE_PY = ROOT / "scripts" / "build_objc3c_editor_tooling_surface.py"
 FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
 BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
@@ -476,6 +477,12 @@ def _slugify_playground_workspace(source_display: str) -> str:
     return f"{safe_stem}-{digest}"
 
 
+def _ensure_frontend_runner_ready() -> int:
+    if not (ROOT / "native" / "objc3c" / "src" / "main.cpp").is_file() and FRONTEND_C_API_RUNNER_EXE.is_file():
+        return 0
+    return execute_registered_action("build-native-binaries", [])
+
+
 def _run_playground_workspace(
     rest: list[str],
     *,
@@ -488,7 +495,7 @@ def _run_playground_workspace(
         print(str(exc), file=sys.stderr)
         return 2
 
-    rc = execute_registered_action("build-native-binaries", [])
+    rc = _ensure_frontend_runner_ready()
     if rc != 0:
         return rc
 
@@ -652,7 +659,7 @@ def _run_developer_tooling_dump(action_name: str,
     except ValueError as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    rc = execute_registered_action("build-native-binaries", [])
+    rc = _ensure_frontend_runner_ready()
     if rc != 0:
         return rc
     summary_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action_name}-summary.json"
@@ -695,7 +702,7 @@ def action_inspect_runtime_inspector(rest: list[str]) -> int:
 
 
 def action_inspect_editor_tooling(rest: list[str]) -> int:
-    rc = execute_registered_action("build-native-binaries", [])
+    rc = _ensure_frontend_runner_ready()
     if rc != 0:
         return rc
     return run([sys.executable, str(EDITOR_TOOLING_SURFACE_PY), *rest])
@@ -742,6 +749,10 @@ def action_trace_compile_stages(rest: list[str]) -> int:
 
 def action_validate_developer_tooling(_: list[str]) -> int:
     return run([sys.executable, str(DEVELOPER_TOOLING_INTEGRATION_PY)])
+
+
+def action_validate_runnable_developer_tooling(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_DEVELOPER_TOOLING_E2E_PY)])
 
 
 def action_validate_bonus_experiences(_: list[str]) -> int:
@@ -1814,6 +1825,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", ("test:stdlib:advanced:e2e",), validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", ("test:stdlib:program:e2e",), validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
+    "validate-runnable-developer-tooling": ActionSpec("validate-runnable-developer-tooling", "validate packaged editor, formatter, debug, workspace, and integrated developer-tooling behavior from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_developer_tooling_end_to_end.py", ("test:objc3c:runnable-developer-tooling",), validation_tier="full", guarantee_owner="packaged editor, formatter, debug anchors, workspace drills, and integrated developer-tooling validation stay reproducible from the staged runnable toolchain bundle"),
     "inspect-capability-explorer": ActionSpec("inspect-capability-explorer", "probe LLVM and backend-routing capability state through the live capability explorer surface", "python:scripts/probe_objc3c_llvm_capabilities.py", ("inspect:objc3c:capabilities",), validation_tier="repo", guarantee_owner="capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts", pass_through_args=True),
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:playground",), validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("inspect:objc3c:observability",), validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
@@ -2042,6 +2054,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,
     "validate-developer-tooling": action_validate_developer_tooling,
+    "validate-runnable-developer-tooling": action_validate_runnable_developer_tooling,
     "validate-bonus-experiences": action_validate_bonus_experiences,
     "validate-runnable-bonus-experiences": action_validate_runnable_bonus_experiences,
     "lint-spec": action_lint_spec,

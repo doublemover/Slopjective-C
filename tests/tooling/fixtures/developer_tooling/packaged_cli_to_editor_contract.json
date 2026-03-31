@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.developer.tooling.packaged.cli.to.editor.contract.v1",
+  "surface_kind": "developer-tooling-packaged-cli-to-editor-contract",
+  "milestone": "M325",
+  "issue": "M325-D002",
+  "summary_script": "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
+  "package_action": "package-runnable-toolchain",
+  "public_actions": [
+    "inspect-editor-tooling",
+    "format-objc3c",
+    "materialize-playground-workspace",
+    "validate-developer-tooling",
+    "validate-runnable-developer-tooling"
+  ],
+  "public_scripts": [
+    "inspect:objc3c:editor",
+    "format:objc3c",
+    "build:objc3c:playground",
+    "test:objc3c:developer-tooling",
+    "test:objc3c:runnable-developer-tooling"
+  ],
+  "manifest_fields": [
+    "developer_tooling_runbook",
+    "developer_tooling_boundary_inventory",
+    "developer_tooling_editor_surface_schema",
+    "developer_tooling_navigation_contract",
+    "developer_tooling_formatter_debug_contract",
+    "developer_tooling_workspace_contract",
+    "developer_tooling_packaged_contract",
+    "developer_tooling_example_source",
+    "developer_tooling_negative_source",
+    "developer_tooling_formatter_source",
+    "developer_tooling_expected_formatted_source",
+    "developer_tooling_scripts",
+    "developer_tooling_public_actions",
+    "developer_tooling_public_scripts"
+  ],
+  "required_command_surfaces": [
+    "build_playground",
+    "inspect_editor_tooling",
+    "format_objc3c",
+    "developer_tooling",
+    "runnable_developer_tooling"
+  ],
+  "hello_source": "tests/tooling/fixtures/native/hello.objc3",
+  "format_source": "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
+  "expected_formatted_source": "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
+  "expected_debugger_model": "declaration-breakpoint-and-object-symbol-inspection",
+  "expected_fail_closed_statement_stepping": true
+}

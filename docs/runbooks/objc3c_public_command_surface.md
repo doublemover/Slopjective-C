@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `146`
-- Operator command count: `137`
+- Current package script count: `147`
+- Operator command count: `138`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -123,6 +123,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:runnable-compiler-throughput` | `validate-runnable-compiler-throughput` | `full` | `packaged compiler-throughput fixtures, contracts, benchmark script, and command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_compiler_throughput_end_to_end.py` |
 | `test:objc3c:runnable-concurrency` | `validate-runnable-concurrency` | `full` | `packaged compile, concurrency probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_concurrency_end_to_end.py` |
 | `test:objc3c:runnable-conformance-corpus` | `validate-runnable-conformance-corpus` | `full` | `packaged conformance corpus contracts, retained longitudinal suites, and legacy gate surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py` |
+| `test:objc3c:runnable-developer-tooling` | `validate-runnable-developer-tooling` | `full` | `packaged editor, formatter, debug anchors, workspace drills, and integrated developer-tooling validation stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_developer_tooling_end_to_end.py` |
 | `test:objc3c:runnable-error` | `validate-runnable-error` | `full` | `packaged compile, error probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_error_end_to_end.py` |
 | `test:objc3c:runnable-interop` | `validate-runnable-interop` | `full` | `packaged compile, interop probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_end_to_end.py` |
 | `test:objc3c:runnable-metaprogramming` | `validate-runnable-metaprogramming` | `full` | `packaged compile, metaprogramming probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_end_to_end.py` |

@@ -19,20 +19,28 @@
     "native/objc3c/src/ir/objc3_ir_emitter.cpp"
   ],
   "public_commands": [
+    "build:objc3c:playground",
+    "inspect:objc3c:editor",
+    "format:objc3c",
     "inspect:objc3c:observability",
     "inspect:objc3c:runtime",
     "inspect:objc3c:capabilities",
     "inspect:objc3c:benchmark",
     "trace:objc3c:stages",
-    "test:objc3c:developer-tooling"
+    "test:objc3c:developer-tooling",
+    "test:objc3c:runnable-developer-tooling"
   ],
   "public_actions": [
+    "materialize-playground-workspace",
+    "inspect-editor-tooling",
+    "format-objc3c",
     "inspect-compile-observability",
     "inspect-runtime-inspector",
     "inspect-capability-explorer",
     "benchmark-runtime-inspector",
     "trace-compile-stages",
-    "validate-developer-tooling"
+    "validate-developer-tooling",
+    "validate-runnable-developer-tooling"
   ],
   "report_paths": [
     "tmp/reports/objc3c-public-workflow/compile-observability.json",
@@ -40,7 +48,10 @@
     "tmp/reports/objc3c-public-workflow/capability-explorer.json",
     "tmp/reports/objc3c-public-workflow/runtime-inspector-benchmark.json",
     "tmp/reports/objc3c-public-workflow/compile-stage-trace.json",
-    "tmp/reports/developer-tooling/integration-summary.json"
+    "tmp/reports/developer-tooling/integration-summary.json",
+    "tmp/reports/developer-tooling/formatter-debug/formatter_debug_summary.json",
+    "tmp/reports/developer-tooling/workspace-integration-summary.json",
+    "tmp/reports/runtime/runnable-developer-tooling-e2e/summary.json"
   ],
   "supported_capabilities": [
     "compile-observability",
@@ -48,15 +59,17 @@
     "capability-explorer",
     "runtime-inspector-benchmark",
     "compile-stage-trace",
-    "integrated-developer-tooling-validation"
-  ],
-  "gap_capabilities": [
     "language-server-capabilities",
     "symbol-navigation",
     "formatter-output",
-    "source-map-debug-info-stepping",
+    "declaration-breakpoint-debug-preview",
     "workspace-editor-debug-drill",
+    "integrated-developer-tooling-validation",
     "packaged-cli-to-editor-contract"
+  ],
+  "gap_capabilities": [
+    "source-map-debug-info-stepping",
+    "references-rename-semantic-tokens-code-actions"
   ],
   "successor_issues": [
     "M325-B001",

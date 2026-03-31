@@ -134,6 +134,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - run the integrated developer-tooling validation flow:
   - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
   - `npm run test:objc3c:developer-tooling`
+- run the packaged developer-tooling validation flow against the staged runnable bundle:
+  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-developer-tooling`
+  - `npm run test:objc3c:runnable-developer-tooling`
 - validate compiler/library parity:
   - `python scripts/check_objc3c_library_cli_parity.py`
 - validate runtime/debug ABI and emitted source surfaces:
@@ -182,10 +185,10 @@ full editor product:
   - declaration-breakpoint and object-symbol inspection debug anchors
   - runnable workspace drill materialization with editor/debug references
   - integrated developer-tooling validation
+  - packaged CLI-to-editor, formatter, debug, and workspace handoff over the staged runnable toolchain bundle
 - explicit remaining gaps after the current implementation slice:
   - references, rename, semantic tokens, and code actions remain fail-closed
   - statement-level stepping and full source-map publication remain fail-closed
-  - packaged tooling handoff contracts remain future work
 
 Downstream work must extend the real frontend runner, runtime artifacts, and
 public workflow commands instead of creating an editor-only shadow parser or
@@ -197,8 +200,6 @@ Current remaining gaps after the current developer-tooling slice:
 
 - no checked-in references/rename/semantic-token/code-action contract
 - no checked-in statement-level stepping or full source-map publication contract
-- no runnable packaged-tooling drill that proves editor/debug handoff over the
-  shipped bundle surface
 
 These remaining gaps stay fail-closed; they are not implied by the preview
 formatter or declaration-breakpoint debug surface.
@@ -295,13 +296,16 @@ Exact implementation anchors for the current formatter/debug/workspace slice:
 - `scripts/build_objc3c_editor_tooling_surface.py`
 - `scripts/check_developer_tooling_formatter_debug_surface.py`
 - `scripts/check_developer_tooling_workspace_integration.py`
+- `scripts/check_objc3c_runnable_developer_tooling_end_to_end.py`
 - `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
+- `tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json`
 
 The npm entrypoints must route to the same action family once implemented:
 
 - `npm run inspect:objc3c:editor`
 - `npm run format:objc3c -- <source>`
 - `npm run test:objc3c:developer-tooling`
+- `npm run test:objc3c:runnable-developer-tooling`
 
 ## Explicit Non-Goals
 

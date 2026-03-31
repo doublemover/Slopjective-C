@@ -46,6 +46,7 @@ Use the packaged surface only when you need the staged runnable bundle:
 
 ```sh
 npm run test:showcase:e2e
+npm run test:objc3c:runnable-developer-tooling
 ```
 
 If you want the ordered example sequence after these commands are clear, continue to `docs/tutorials/guided_walkthrough.md`.
