@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCRIPT = ROOT / "scripts" / "generate_conformance_evidence_index.py"
 INDEX_OUTPUT = ROOT / "tmp" / "reports" / "release_evidence" / "evidence-index.json"
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
+ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 
 REQUIRED_SCHEMA_DATA_PAIRS: tuple[tuple[str, str], ...] = (
     (
@@ -94,6 +95,32 @@ def main() -> int:
         return fail("generated index missing required schema_id")
     if not isinstance(index_payload.get("artifacts"), list):
         return fail("generated index missing artifacts list")
+    envelope = index_payload.get("artifact_authenticity")
+    if not isinstance(envelope, dict):
+        return fail("generated index missing artifact_authenticity envelope")
+    expected_envelope = {
+        "authenticity_schema_id": ARTIFACT_AUTHENTICITY_SCHEMA_ID,
+        "provenance_class": "genuine_generated_output",
+        "surface_id": "objc3c.public_conformance.evidence_index.v1",
+        "artifact_family_id": "objc3c.genuine_generated_output.conformance_evidence_index.v1",
+        "report_family_id": "objc3c.genuine_generated_output.release_evidence_index_report.v1",
+        "generator_or_compile_path": "python scripts/generate_conformance_evidence_index.py",
+        "input_root": "reports/conformance",
+        "output_path": "tmp/reports/release_evidence/evidence-index.json",
+    }
+    for field_name, expected_value in expected_envelope.items():
+        if envelope.get(field_name) != expected_value:
+            return fail(
+                f"generated index artifact_authenticity field {field_name} expected {expected_value!r}, observed {envelope.get(field_name)!r}"
+            )
+    replay = index_payload.get("replay")
+    if not isinstance(replay, dict):
+        return fail("generated index missing replay instructions")
+    replay_command = replay.get("command")
+    if replay.get("cwd") != ".":
+        return fail("generated index replay instructions must set cwd to repository root")
+    if not isinstance(replay_command, list) or replay_command[:2] != ["python", "scripts/generate_conformance_evidence_index.py"]:
+        return fail("generated index replay instructions must invoke the canonical generator")
 
     artifact_paths = {
         artifact.get("artifact_path")

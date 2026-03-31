@@ -19,6 +19,11 @@ DEFAULT_INPUT_ROOT = Path("reports/conformance")
 DEFAULT_GLOBS = ("**/*.json",)
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 INDEX_VERSION = 1
+ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
+EVIDENCE_INDEX_SURFACE_ID = "objc3c.public_conformance.evidence_index.v1"
+EVIDENCE_INDEX_ARTIFACT_FAMILY_ID = "objc3c.genuine_generated_output.conformance_evidence_index.v1"
+EVIDENCE_INDEX_REPORT_FAMILY_ID = "objc3c.genuine_generated_output.release_evidence_index_report.v1"
+GENERATOR_PATH = "python scripts/generate_conformance_evidence_index.py"
 UNKNOWN_PROFILE = "unknown-profile"
 UNKNOWN_RELEASE = "unknown-release"
 
@@ -478,12 +483,13 @@ def build_index_payload(
     *,
     records: Sequence[ArtifactRecord],
     input_root: Path,
+    output_path: Path | None,
     release_label: str | None,
     generated_at: str | None,
 ) -> dict[str, Any]:
     profiles = build_profiles_index(records)
     releases = build_releases_index(records)
-    return {
+    payload = {
         "schema_id": SCHEMA_ID,
         "index_version": INDEX_VERSION,
         "release_label": release_label,
@@ -496,6 +502,40 @@ def build_index_payload(
         "profiles": profiles,
         "releases": releases,
     }
+    if output_path is not None:
+        output_rel = normalize_repo_path(output_path)
+        payload["artifact_authenticity"] = {
+            "authenticity_schema_id": ARTIFACT_AUTHENTICITY_SCHEMA_ID,
+            "provenance_class": "genuine_generated_output",
+            "provenance_mode": "generator_replayable",
+            "content_role": "conformance_evidence_index",
+            "surface_id": EVIDENCE_INDEX_SURFACE_ID,
+            "artifact_family_id": EVIDENCE_INDEX_ARTIFACT_FAMILY_ID,
+            "report_family_id": EVIDENCE_INDEX_REPORT_FAMILY_ID,
+            "generator_or_compile_path": GENERATOR_PATH,
+            "input_root": normalize_repo_path(input_root),
+            "output_path": output_rel,
+        }
+        payload["replay"] = {
+            "cwd": ".",
+            "command": [
+                "python",
+                "scripts/generate_conformance_evidence_index.py",
+                "--input-root",
+                normalize_repo_path(input_root),
+                "--output",
+                output_rel,
+            ],
+            "notes": [
+                "re-run this command from the repository root to regenerate the evidence index",
+                "artifacts under reports/conformance remain tracked inputs; the index itself is a genuine generated output under tmp/reports",
+            ],
+        }
+        if release_label is not None:
+            payload["replay"]["command"].extend(["--release-label", release_label])
+        if generated_at is not None:
+            payload["replay"]["command"].extend(["--generated-at", generated_at])
+    return payload
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -632,6 +672,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     payload = build_index_payload(
         records=records,
         input_root=input_root,
+        output_path=output_path,
         release_label=args.release_label,
         generated_at=generated_at,
     )
