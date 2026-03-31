@@ -6,7 +6,7 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
-    "lint": "npm run check:task-hygiene && npm run check:md:all",
+    "lint": "npm run check:task-hygiene && npm run build:site && npm run check:md",
     "test": "python scripts/objc3c_public_workflow_runner.py test-default",
     "test:fast": "python scripts/objc3c_public_workflow_runner.py test-fast",
     "test:smoke": "python scripts/objc3c_public_workflow_runner.py test-smoke",
@@ -148,7 +148,6 @@
     "check:objc3c:boundaries": "python scripts/check_objc3c_dependency_boundaries.py --strict",
     "lint:md": "markdownlint-cli2 \"**/*.md\"",
     "format:md": "prettier --write \"**/*.md\"",
-    "check:md": "prettier --check \"**/*.md\"",
-    "check:md:all": "npm run build:site && npm run check:md"
+    "check:md": "prettier --check \"**/*.md\""
   }
 }
