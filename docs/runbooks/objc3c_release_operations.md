@@ -101,6 +101,17 @@ These entrypoints must stay on the shared public workflow runner and publish
 machine-owned artifacts under `tmp/reports/release-operations/` and
 `tmp/artifacts/release-operations/`.
 
+The update manifest, compatibility report, and channel catalog must also
+publish:
+
+- the machine-owned platform support matrix path
+- the default supported platform id
+- the supported platform id set
+- the support-tier table reused from the platform-hardening surface
+
+Those fields must stay aligned with
+`tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`.
+
 ## Non-Goals
 
 - no hosted update service

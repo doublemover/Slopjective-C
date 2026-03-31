@@ -98,10 +98,13 @@ def main() -> int:
           "forbidden_claims": tier_policy["forbidden_claims"],
         },
         "publication_surface": {
+          "inspect_support_matrix_command": "inspect:objc3c:platform-matrix",
           "package_command": "package:objc3c-native:runnable-toolchain",
           "package_channels_command": "package:objc3c:channels",
           "packaging_validation_command": "test:objc3c:packaging-channels",
           "packaging_end_to_end_command": "test:objc3c:packaging-channels:e2e",
+          "platform_hardening_validation_command": "test:objc3c:platform-hardening",
+          "platform_hardening_end_to_end_command": "test:objc3c:platform-hardening:e2e",
           "release_operations_command": "test:objc3c:release-operations",
           "release_operations_end_to_end_command": "test:objc3c:release-operations:e2e"
         }

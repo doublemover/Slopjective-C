@@ -24,6 +24,9 @@ SUPPORTED_PLATFORMS = ROOT / "tests" / "tooling" / "fixtures" / "packaging_chann
 INSTALLER_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "installer_policy.json"
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "metadata_surface.json"
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "schema_surface.json"
+PLATFORM_SUPPORT_MATRIX_BUILD = ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"
+PLATFORM_SUPPORT_MATRIX_ARTIFACT = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
+PLATFORM_SUPPORT_MATRIX_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "platform-support-matrix-summary.json"
 ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "package-channels"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 RELEASE_FOUNDATION_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
@@ -193,6 +196,8 @@ def main() -> int:
     load_json(INSTALLER_POLICY)
     metadata_surface = load_json(METADATA_SURFACE)
     load_json(SCHEMA_SURFACE)
+    run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_BUILD)])
+    platform_support_matrix = load_json(PLATFORM_SUPPORT_MATRIX_ARTIFACT)
 
     run([sys.executable, str(RELEASE_MANIFEST_PY)])
     run([sys.executable, str(RELEASE_PROVENANCE_PY)])
@@ -254,6 +259,10 @@ def main() -> int:
         "offline_archive": repo_rel(offline_archive),
         "installer_image_root": repo_rel(installer_image_root),
         "offline_bundle_root": repo_rel(offline_bundle_root),
+        "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX_ARTIFACT),
+        "platform_support_summary": repo_rel(PLATFORM_SUPPORT_MATRIX_SUMMARY),
+        "supported_platform_ids": platform_support_matrix["claim_boundary"]["supported_platform_ids"],
+        "support_tiers": platform_support_matrix["tiers"],
         "implemented_channels": ["portable-archive", "local-installer", "offline-bundle"],
         "release_foundation_artifacts": {
             "manifest": repo_rel(RELEASE_FOUNDATION_MANIFEST),
@@ -279,6 +288,9 @@ def main() -> int:
         "installer_archive": repo_rel(installer_archive),
         "offline_bundle_root": repo_rel(offline_bundle_root),
         "offline_archive": repo_rel(offline_archive),
+        "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX_ARTIFACT),
+        "supported_platform_ids": platform_support_matrix["claim_boundary"]["supported_platform_ids"],
+        "support_tiers": platform_support_matrix["tiers"],
         "implemented_channels": manifest_payload["implemented_channels"],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

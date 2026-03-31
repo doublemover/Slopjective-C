@@ -104,3 +104,12 @@ The live packaging-channel workflow for this milestone must expose:
 
 These workflow entrypoints must remain on the shared public runner and machine-
 owned reports under `tmp/reports/package-channels/`.
+
+Current public platform-support entrypoints layered onto this surface:
+
+- `npm run inspect:objc3c:platform-matrix`
+- `npm run test:objc3c:platform-hardening`
+- `npm run test:objc3c:platform-hardening:e2e`
+
+The package-channel manifest and summary must publish the same support-tier
+boundary as the machine-owned platform support matrix.

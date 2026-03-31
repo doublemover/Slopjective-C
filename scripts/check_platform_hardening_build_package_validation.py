@@ -58,7 +58,7 @@ def main() -> int:
     command_map = {
         "build-native-binaries": [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "build-native-binaries"],
         "package-runnable-toolchain": [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "package-runnable-toolchain"],
-        "check-packaging-channels-integration": [sys.executable, str(ROOT / "scripts" / "check_objc3c_packaging_channels_integration.py")],
+        "build-package-channels": [sys.executable, str(ROOT / "scripts" / "build_objc3c_package_channels.py")],
         "check-packaging-channels-end-to-end": [sys.executable, str(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py")],
     }
     for step_name in contract["required_steps"]:

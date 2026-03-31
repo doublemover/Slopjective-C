@@ -215,8 +215,11 @@ $requiredRelativeFiles = @(
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
   "docs/runbooks/objc3c_developer_tooling.md",
+  "docs/runbooks/objc3c_platform_hardening.md",
   "docs/runbooks/objc3c_public_command_surface.md",
+  "docs/runbooks/objc3c_packaging_channels.md",
   "docs/runbooks/objc3c_release_foundation.md",
+  "docs/runbooks/objc3c_release_operations.md",
   "docs/runbooks/objc3c_runtime_performance.md",
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
@@ -226,6 +229,17 @@ $requiredRelativeFiles = @(
   "docs/tutorials/guided_walkthrough.md",
   "site/src/index.body.md",
   "scripts/probe_objc3c_llvm_capabilities.py",
+  "scripts/build_objc3c_platform_support_matrix.py",
+  "scripts/check_objc3c_platform_hardening_integration.py",
+  "scripts/check_objc3c_runnable_platform_hardening_end_to_end.py",
+  "scripts/build_platform_hardening_boundary_inventory_summary.py",
+  "scripts/build_platform_hardening_support_tier_policy_summary.py",
+  "scripts/build_platform_hardening_unsupported_host_policy_summary.py",
+  "scripts/build_platform_hardening_toolchain_archive_policy_summary.py",
+  "scripts/build_platform_hardening_artifact_contract_summary.py",
+  "scripts/check_platform_hardening_build_package_validation.py",
+  "scripts/check_platform_hardening_toolchain_range_replay.py",
+  "scripts/check_platform_hardening_install_matrix_integration.py",
   "scripts/check_objc3c_native_perf_budget.ps1",
   "scripts/benchmark_objc3c_runtime_performance.py",
   "scripts/check_objc3c_runtime_acceptance.py",
@@ -244,6 +258,11 @@ $requiredRelativeFiles = @(
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
   "schemas/objc3-conformance-dashboard-status-v1.schema.json",
+  "schemas/objc3c-platform-support-matrix-v1.schema.json",
+  "schemas/objc3c-package-channels-manifest-v1.schema.json",
+  "schemas/objc3c-package-install-receipt-v1.schema.json",
+  "schemas/objc3c-update-manifest-v1.schema.json",
+  "schemas/objc3c-compatibility-report-v1.schema.json",
   "schemas/objc3c-release-manifest-v1.schema.json",
   "schemas/objc3c-release-sbom-v1.schema.json",
   "schemas/objc3c-release-attestation-v1.schema.json",
@@ -253,6 +272,17 @@ $requiredRelativeFiles = @(
   "scripts/build_objc3c_release_manifest.py",
   "scripts/publish_objc3c_release_provenance.py",
   "scripts/check_objc3c_release_foundation_integration.py",
+  "scripts/check_packaging_channels_source_surface.py",
+  "scripts/check_packaging_channels_schema_surface.py",
+  "scripts/build_objc3c_package_channels.py",
+  "scripts/check_objc3c_packaging_channels_integration.py",
+  "scripts/check_objc3c_packaging_channels_end_to_end.py",
+  "scripts/check_release_operations_source_surface.py",
+  "scripts/check_release_operations_schema_surface.py",
+  "scripts/build_objc3c_update_manifest.py",
+  "scripts/publish_objc3c_release_operations_metadata.py",
+  "scripts/check_objc3c_release_operations_integration.py",
+  "scripts/check_objc3c_release_operations_end_to_end.py",
   "scripts/check_conformance_suite.ps1",
   "scripts/check_conformance_corpus_surface.py",
   "scripts/generate_conformance_corpus_index.py",
@@ -280,6 +310,29 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json",
   "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
   "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
+  "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+  "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
+  "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
+  "tests/tooling/fixtures/platform_hardening/toolchain_archive_compatibility_policy.json",
+  "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
+  "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
+  "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
+  "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
+  "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json",
+  "tests/tooling/fixtures/packaging_channels/source_surface.json",
+  "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
+  "tests/tooling/fixtures/packaging_channels/installer_policy.json",
+  "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
+  "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+  "tests/tooling/fixtures/release_operations/source_surface.json",
+  "tests/tooling/fixtures/release_operations/versioning_model.json",
+  "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
+  "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+  "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+  "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+  "tests/tooling/fixtures/release_operations/metadata_surface.json",
+  "tests/tooling/fixtures/release_operations/schema_surface.json",
+  "tests/tooling/fixtures/release_operations/workflow_surface.json",
   "tests/tooling/fixtures/native/hello.objc3",
   "tests/tooling/fixtures/native/negative_undefined_symbol.objc3",
   "tests/tooling/fixtures/release_foundation/artifact_taxonomy.json",
@@ -476,6 +529,40 @@ $manifestPayload = [ordered]@{
     "test:objc3c:developer-tooling",
     "test:objc3c:runnable-developer-tooling"
   )
+  platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
+  platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
+  platform_support_tier_policy = "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"
+  platform_unsupported_host_policy = "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json"
+  platform_toolchain_archive_policy = "tests/tooling/fixtures/platform_hardening/toolchain_archive_compatibility_policy.json"
+  platform_support_matrix_schema = "schemas/objc3c-platform-support-matrix-v1.schema.json"
+  platform_support_matrix_contract = "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json"
+  platform_build_package_validation_contract = "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json"
+  platform_toolchain_range_replay_contract = "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json"
+  platform_install_matrix_integration_contract = "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json"
+  platform_packaged_smoke_contract = "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json"
+  platform_hardening_scripts = [ordered]@{
+    support_matrix = "scripts/build_objc3c_platform_support_matrix.py"
+    boundary_inventory_summary = "scripts/build_platform_hardening_boundary_inventory_summary.py"
+    support_tier_policy_summary = "scripts/build_platform_hardening_support_tier_policy_summary.py"
+    unsupported_host_policy_summary = "scripts/build_platform_hardening_unsupported_host_policy_summary.py"
+    toolchain_archive_policy_summary = "scripts/build_platform_hardening_toolchain_archive_policy_summary.py"
+    artifact_contract_summary = "scripts/build_platform_hardening_artifact_contract_summary.py"
+    live_integration_validation = "scripts/check_objc3c_platform_hardening_integration.py"
+    build_package_validation = "scripts/check_platform_hardening_build_package_validation.py"
+    toolchain_range_replay = "scripts/check_platform_hardening_toolchain_range_replay.py"
+    install_matrix_integration = "scripts/check_platform_hardening_install_matrix_integration.py"
+    runnable_end_to_end_validation = "scripts/check_objc3c_runnable_platform_hardening_end_to_end.py"
+  }
+  platform_hardening_public_actions = @(
+    "build-platform-support-matrix",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end"
+  )
+  platform_hardening_public_scripts = @(
+    "inspect:objc3c:platform-matrix",
+    "test:objc3c:platform-hardening",
+    "test:objc3c:platform-hardening:e2e"
+  )
   object_model_probe = "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
   block_arc_fixture = "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3"
   block_arc_runtime_abi_probe = "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp"
@@ -595,6 +682,7 @@ $manifestPayload = [ordered]@{
   command_surfaces = [ordered]@{
     build = "npm run build:objc3c-native"
     package = "npm run package:objc3c-native:runnable-toolchain"
+    package_channels = "npm run package:objc3c:channels"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
     build_playground = "npm run build:objc3c:playground"
     build_stdlib = "npm run build:objc3c:stdlib"
@@ -609,6 +697,7 @@ $manifestPayload = [ordered]@{
     inspect_bonus_tools = "npm run inspect:objc3c:bonus-tools"
     inspect_playground = "npm run inspect:objc3c:playground"
     inspect_editor_tooling = "npm run inspect:objc3c:editor -- tests/tooling/fixtures/native/hello.objc3"
+    inspect_platform_matrix = "npm run inspect:objc3c:platform-matrix"
     inspect_benchmark = "npm run inspect:objc3c:benchmark"
     inspect_performance = "npm run inspect:objc3c:performance"
     inspect_release_manifest = "npm run inspect:objc3c:release-manifest"
@@ -629,6 +718,10 @@ $manifestPayload = [ordered]@{
     runtime_performance_e2e = "npm run test:objc3c:runnable-runtime-performance"
     compiler_throughput = "npm run test:objc3c:compiler-throughput"
     compiler_throughput_e2e = "npm run test:objc3c:runnable-compiler-throughput"
+    platform_hardening = "npm run test:objc3c:platform-hardening"
+    platform_hardening_e2e = "npm run test:objc3c:platform-hardening:e2e"
+    release_operations = "npm run test:objc3c:release-operations"
+    release_operations_e2e = "npm run test:objc3c:release-operations:e2e"
     check_release_foundation_surface = "npm run check:objc3c:release-foundation:surface"
     check_release_foundation_schema_surface = "npm run check:objc3c:release-foundation:schemas"
     release_foundation = "npm run test:objc3c:release-foundation"

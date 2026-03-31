@@ -18,10 +18,13 @@ UPGRADE_PATH_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operat
 UPDATE_CHANNEL_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "update_channel_policy.json"
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "metadata_surface.json"
 PACKAGE_CHANNELS_BUILD = ROOT / "scripts" / "build_objc3c_package_channels.py"
+PLATFORM_SUPPORT_MATRIX_BUILD = ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"
 REPORT_PATH = ROOT / "tmp" / "reports" / "release-operations" / "update-manifest-summary.json"
 MANIFEST_PATH = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
 PACKAGE_CHANNELS_SUMMARY = ROOT / "tmp" / "reports" / "package-channels" / "package-channels-summary.json"
 RELEASE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-foundation" / "manifest" / "objc3c-release-manifest.json"
+PLATFORM_SUPPORT_MATRIX = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
+PLATFORM_SUPPORT_SUMMARY = ROOT / "tmp" / "reports" / "platform-hardening" / "platform-support-matrix-summary.json"
 
 
 def repo_rel(path: Path) -> str:
@@ -52,9 +55,12 @@ def main() -> int:
 
     if not PACKAGE_CHANNELS_SUMMARY.is_file() or not RELEASE_MANIFEST.is_file():
         run([sys.executable, str(PACKAGE_CHANNELS_BUILD)])
+    if not PLATFORM_SUPPORT_MATRIX.is_file():
+        run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_BUILD)])
 
     package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY)
     release_manifest = load_json(RELEASE_MANIFEST)
+    platform_support_matrix = load_json(PLATFORM_SUPPORT_MATRIX)
 
     compatibility_report_path = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-compatibility-report.json"
     artifacts = {
@@ -63,6 +69,7 @@ def main() -> int:
         "offline_archive": package_channels_summary["offline_archive"],
         "package_channels_manifest": package_channels_summary["manifest_path"],
         "release_manifest": repo_rel(RELEASE_MANIFEST),
+        "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX),
     }
 
     channels = []
@@ -83,8 +90,13 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "current_version": versioning_model["current_stable_version"],
         "default_channel": update_channel_policy["default_channel"],
+        "default_platform_id": platform_support_matrix["default_platform_id"],
         "supported_major_line": versioning_model["supported_major_line"],
         "package_model": release_manifest["package_model"],
+        "platform_support_matrix": repo_rel(PLATFORM_SUPPORT_MATRIX),
+        "platform_support_summary": repo_rel(PLATFORM_SUPPORT_SUMMARY),
+        "supported_platform_ids": platform_support_matrix["claim_boundary"]["supported_platform_ids"],
+        "support_tiers": platform_support_matrix["tiers"],
         "channels": channels,
         "upgrade_paths": upgrade_surface["upgrade_path_classes"],
         "compatibility_report": repo_rel(compatibility_report_path),
@@ -103,6 +115,8 @@ def main() -> int:
         "update_manifest_path": repo_rel(MANIFEST_PATH),
         "channel_count": len(channels),
         "default_channel": payload["default_channel"],
+        "default_platform_id": payload["default_platform_id"],
+        "platform_support_matrix": payload["platform_support_matrix"],
         "package_channels_manifest": package_channels_summary["manifest_path"],
         "release_manifest": repo_rel(RELEASE_MANIFEST),
     }

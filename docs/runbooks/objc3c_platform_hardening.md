@@ -23,6 +23,8 @@ Replayable generators and validators:
 
 - `python scripts/build_platform_hardening_boundary_inventory_summary.py`
 - `python scripts/build_objc3c_platform_support_matrix.py`
+- `python scripts/check_objc3c_platform_hardening_integration.py`
+- `python scripts/check_objc3c_runnable_platform_hardening_end_to_end.py`
 - `python scripts/build_platform_hardening_artifact_contract_summary.py`
 - `python scripts/check_platform_hardening_build_package_validation.py`
 - `python scripts/check_platform_hardening_toolchain_range_replay.py`
@@ -234,8 +236,11 @@ inventing a second matrix format.
 The live build/package validation path for this milestone must stay on the same
 public build/package surfaces users run:
 
+- `python scripts/objc3c_public_workflow_runner.py build-platform-support-matrix`
 - `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
 - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+- `python scripts/objc3c_public_workflow_runner.py validate-platform-hardening`
+- `python scripts/objc3c_public_workflow_runner.py validate-platform-hardening-end-to-end`
 - `python scripts/build_objc3c_package_channels.py`
 - `python scripts/check_objc3c_packaging_channels_integration.py`
 - `python scripts/check_objc3c_packaging_channels_end_to_end.py`
@@ -277,6 +282,24 @@ The integrator for this slice is:
 
 It must prove the current supported host tier through the same package/install
 artifacts that operators would actually consume.
+
+## Public Publication Surface
+
+The tiered support matrix must now be visible on the public workflow and
+release/update metadata surfaces:
+
+- public commands:
+  - `npm run inspect:objc3c:platform-matrix`
+  - `npm run test:objc3c:platform-hardening`
+  - `npm run test:objc3c:platform-hardening:e2e`
+- update metadata:
+  - `tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json`
+- compatibility publication:
+  - `tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json`
+  - `tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json`
+
+These surfaces must publish the same support tiers and supported platform ids as
+`tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json`.
 
 ## Explicit Non-Goals
 

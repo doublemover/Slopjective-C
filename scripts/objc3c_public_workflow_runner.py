@@ -92,6 +92,9 @@ PACKAGING_CHANNELS_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_packaging_chann
 PACKAGE_CHANNELS_BUILD_PY = ROOT / "scripts" / "build_objc3c_package_channels.py"
 PACKAGING_CHANNELS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_packaging_channels_integration.py"
 PACKAGING_CHANNELS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"
+PLATFORM_SUPPORT_MATRIX_PY = ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"
+PLATFORM_HARDENING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_platform_hardening_integration.py"
+RUNNABLE_PLATFORM_HARDENING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_platform_hardening_end_to_end.py"
 RELEASE_OPERATIONS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_release_operations_source_surface.py"
 RELEASE_OPERATIONS_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_release_operations_schema_surface.py"
 UPDATE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_update_manifest.py"
@@ -990,6 +993,10 @@ def action_build_package_channels(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGE_CHANNELS_BUILD_PY)])
 
 
+def action_build_platform_support_matrix(_: list[str]) -> int:
+    return run([sys.executable, str(PLATFORM_SUPPORT_MATRIX_PY)])
+
+
 def action_validate_packaging_channels(_: list[str]) -> int:
     return run_composite_validation(
         "validate-packaging-channels",
@@ -1004,6 +1011,14 @@ def action_validate_packaging_channels(_: list[str]) -> int:
 
 def action_validate_packaging_channels_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGING_CHANNELS_END_TO_END_PY)])
+
+
+def action_validate_platform_hardening(_: list[str]) -> int:
+    return run([sys.executable, str(PLATFORM_HARDENING_INTEGRATION_PY)])
+
+
+def action_validate_platform_hardening_end_to_end(_: list[str]) -> int:
+    return run([sys.executable, str(RUNNABLE_PLATFORM_HARDENING_E2E_PY)])
 
 
 def action_check_release_operations_surface(_: list[str]) -> int:
@@ -1026,7 +1041,7 @@ def action_validate_release_operations(_: list[str]) -> int:
     return run_composite_validation(
         "validate-release-operations",
         [
-            ("validate-packaging-channels", [sys.executable, str(PACKAGING_CHANNELS_INTEGRATION_PY)]),
+            ("validate-packaging-channels", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-packaging-channels"]),
             ("check-release-operations-surface", [sys.executable, str(RELEASE_OPERATIONS_SOURCE_SURFACE_PY)]),
             ("check-release-operations-schema-surface", [sys.executable, str(RELEASE_OPERATIONS_SCHEMA_SURFACE_PY)]),
             ("build-update-manifest", [sys.executable, str(UPDATE_MANIFEST_PY)]),
@@ -1572,10 +1587,26 @@ def run_composite_step(action: str, command: Sequence[str]) -> dict[str, object]
             "report_paths": ["tmp/reports/runtime/acceptance/summary.json"],
             "report_reused": True,
         }
+    normalized = [str(token) for token in command]
+    if (
+        len(normalized) >= 3
+        and Path(normalized[0]).resolve() == Path(sys.executable).resolve()
+        and Path(normalized[1]).resolve() == Path(__file__).resolve()
+    ):
+        nested_action = normalized[2]
+        nested_rest = normalized[3:]
+        exit_code = execute_registered_action(nested_action, nested_rest)
+        return {
+            "action": action,
+            "command": normalized,
+            "exit_code": exit_code,
+            "report_paths": [],
+            "executed_in_process": True,
+        }
     result = run_capture(command)
     return {
         "action": action,
-        "command": [str(token) for token in command],
+        "command": normalized,
         "exit_code": result.returncode,
         "report_paths": extract_report_paths(result.stdout),
     }
@@ -1883,6 +1914,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-package-channels": ActionSpec("build-package-channels", "build the portable archive, installer image, and offline bundle channels from the live runnable payload", "python:scripts/build_objc3c_package_channels.py", ("package:objc3c:channels",), validation_tier="repo", guarantee_owner="package channels stay derived from the live runnable package and release-foundation artifacts"),
     "validate-packaging-channels": ActionSpec("validate-packaging-channels", "run the integrated packaging-channels workflow", "runner-internal + direct packaging-channel commands", ("test:objc3c:packaging-channels",), validation_tier="nightly", guarantee_owner="portable archive installer image and offline bundle generation stay executable on the live release surface"),
     "validate-packaging-channels-end-to-end": ActionSpec("validate-packaging-channels-end-to-end", "validate install bootstrap rollback and offline bundle behavior end to end", "python:scripts/check_objc3c_packaging_channels_end_to_end.py", ("test:objc3c:packaging-channels:e2e",), validation_tier="full", guarantee_owner="packaging-channel artifacts stay installable rollback-safe and offline-bootstrappable under temp-owned roots"),
+    "build-platform-support-matrix": ActionSpec("build-platform-support-matrix", "build the machine-owned platform support matrix artifact", "python:scripts/build_objc3c_platform_support_matrix.py", ("inspect:objc3c:platform-matrix",), validation_tier="repo", guarantee_owner="the published host and channel support matrix stays machine-owned narrow and aligned with live packaging and release evidence"),
+    "validate-platform-hardening": ActionSpec("validate-platform-hardening", "run the integrated platform-hardening workflow", "python:scripts/check_objc3c_platform_hardening_integration.py", ("test:objc3c:platform-hardening",), validation_tier="nightly", guarantee_owner="supported host package install and release claims stay tiered package-backed and fail-closed outside the checked-in matrix"),
+    "validate-platform-hardening-end-to-end": ActionSpec("validate-platform-hardening-end-to-end", "validate packaged platform-hardening publication and smoke behavior from the staged runnable bundle", "python:scripts/check_objc3c_runnable_platform_hardening_end_to_end.py", ("test:objc3c:platform-hardening:e2e",), validation_tier="full", guarantee_owner="packaged platform support inspection and validation remain runnable from the staged toolchain bundle"),
     "check-release-operations-surface": ActionSpec("check-release-operations-surface", "validate the checked-in release-operations source surface", "python:scripts/check_release_operations_source_surface.py", ("check:objc3c:release-operations:surface",), validation_tier="repo", guarantee_owner="release operations only publish from the checked-in versioning, upgrade, warning, and fallback policy contracts"),
     "check-release-operations-schema-surface": ActionSpec("check-release-operations-schema-surface", "validate the checked-in release-operations schema surface", "python:scripts/check_release_operations_schema_surface.py", ("check:objc3c:release-operations:schemas",), validation_tier="repo", guarantee_owner="update manifest and compatibility-report artifacts stay on checked-in schema contracts"),
     "build-update-manifest": ActionSpec("build-update-manifest", "derive the machine-owned update manifest from the live packaging-channel and release-foundation outputs", "python:scripts/build_objc3c_update_manifest.py", ("inspect:objc3c:update-manifest",), validation_tier="repo", guarantee_owner="versioned channel metadata stays tied to the live release and packaging surfaces"),
@@ -2036,8 +2070,11 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-packaging-channels-surface": action_check_packaging_channels_surface,
     "check-packaging-channels-schema-surface": action_check_packaging_channels_schema_surface,
     "build-package-channels": action_build_package_channels,
+    "build-platform-support-matrix": action_build_platform_support_matrix,
     "validate-packaging-channels": action_validate_packaging_channels,
     "validate-packaging-channels-end-to-end": action_validate_packaging_channels_end_to_end,
+    "validate-platform-hardening": action_validate_platform_hardening,
+    "validate-platform-hardening-end-to-end": action_validate_platform_hardening_end_to_end,
     "check-release-operations-surface": action_check_release_operations_surface,
     "check-release-operations-schema-surface": action_check_release_operations_schema_surface,
     "build-update-manifest": action_build_update_manifest,

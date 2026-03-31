@@ -83,6 +83,10 @@ def main() -> int:
         "contract_id": "objc3c.release.operations.compatibility-report.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "current_version": update_manifest["current_version"],
+        "default_platform_id": update_manifest["default_platform_id"],
+        "platform_support_matrix": update_manifest["platform_support_matrix"],
+        "supported_platform_ids": update_manifest["supported_platform_ids"],
+        "support_tiers": update_manifest["support_tiers"],
         "support_windows": versioning_model["support_windows"],
         "upgrade_paths": upgrade_surface["upgrade_path_classes"],
         "warnings": warnings,
@@ -100,6 +104,10 @@ def main() -> int:
         "contract_id": "objc3c.release.operations.channel-catalog.v1",
         "generated_at_utc": compatibility_report["generated_at_utc"],
         "default_channel": update_manifest["default_channel"],
+        "default_platform_id": update_manifest["default_platform_id"],
+        "platform_support_matrix": update_manifest["platform_support_matrix"],
+        "supported_platform_ids": update_manifest["supported_platform_ids"],
+        "support_tiers": update_manifest["support_tiers"],
         "channels": update_manifest["channels"],
     }
     CHANNEL_CATALOG.write_text(json.dumps(channel_catalog, indent=2) + "\n", encoding="utf-8")
@@ -113,6 +121,7 @@ def main() -> int:
         "channel_catalog": repo_rel(CHANNEL_CATALOG),
         "warning_count": len(warnings),
         "claim_class_count": len(claim_policy["claim_classes"]),
+        "platform_support_matrix": update_manifest["platform_support_matrix"],
     }
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")

@@ -1,0 +1,48 @@
+{
+  "contract_id": "objc3c.platform.hardening.packaged.smoke.integration.contract.v1",
+  "manifest_fields": [
+    "platform_hardening_runbook",
+    "platform_hardening_boundary_inventory",
+    "platform_support_tier_policy",
+    "platform_unsupported_host_policy",
+    "platform_toolchain_archive_policy",
+    "platform_support_matrix_schema",
+    "platform_support_matrix_contract",
+    "platform_build_package_validation_contract",
+    "platform_toolchain_range_replay_contract",
+    "platform_install_matrix_integration_contract",
+    "platform_packaged_smoke_contract",
+    "platform_hardening_scripts",
+    "platform_hardening_public_actions",
+    "platform_hardening_public_scripts"
+  ],
+  "public_actions": [
+    "build-platform-support-matrix",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end"
+  ],
+  "public_scripts": [
+    "inspect:objc3c:platform-matrix",
+    "test:objc3c:platform-hardening",
+    "test:objc3c:platform-hardening:e2e"
+  ],
+  "required_command_surfaces": [
+    "inspect_platform_matrix",
+    "platform_hardening",
+    "platform_hardening_e2e",
+    "package",
+    "package_channels",
+    "release_operations"
+  ],
+  "required_publication_surface_fields": [
+    "inspect_support_matrix_command",
+    "package_command",
+    "package_channels_command",
+    "packaging_validation_command",
+    "packaging_end_to_end_command",
+    "platform_hardening_validation_command",
+    "platform_hardening_end_to_end_command",
+    "release_operations_command",
+    "release_operations_end_to_end_command"
+  ]
+}

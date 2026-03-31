@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `147`
-- Operator command count: `138`
+- Current package script count: `150`
+- Operator command count: `141`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -58,6 +58,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:observability` | `inspect-compile-observability` | `repo` | `developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:performance` | `benchmark-performance` | `repo` | `objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets` | `pass-through` | `python:scripts/benchmark_objc3c_performance.py` |
 | `inspect:objc3c:performance-dashboard` | `build-performance-dashboard` | `repo` | `performance governance dashboard derivation stays tied to the live benchmark, throughput, and runtime summaries` | `fixed-shape` | `python:scripts/build_objc3c_performance_dashboard.py` |
+| `inspect:objc3c:platform-matrix` | `build-platform-support-matrix` | `repo` | `the published host and channel support matrix stays machine-owned narrow and aligned with live packaging and release evidence` | `fixed-shape` | `python:scripts/build_objc3c_platform_support_matrix.py` |
 | `inspect:objc3c:playground` | `inspect-playground-repro` | `repo` | `playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:public-conformance:scorecard` | `build-public-conformance-scorecard` | `repo` | `public conformance scoring stays derived from live conformance and external-validation reports` | `fixed-shape` | `python:scripts/build_objc3c_public_conformance_scorecard.py` |
 | `inspect:objc3c:release-manifest` | `build-release-manifest` | `repo` | `release payload selection and reproducibility proof stay tied to the live runnable package manifest and release-evidence boundary` | `fixed-shape` | `python:scripts/build_objc3c_release_manifest.py` |
@@ -111,6 +112,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:performance-governance` | `validate-performance-governance` | `repo` | `performance governance budgets, drift diagnostics, dashboard derivation, and report publication stay executable on the live performance surfaces` | `fixed-shape` | `runner-internal + direct performance governance commands` |
 | `test:objc3c:performance-governance:e2e` | `validate-performance-governance-end-to-end` | `repo` | `performance governance entrypoints and ci/nightly wiring stay coherent with the integrated reporting artifacts` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_end_to_end.py` |
 | `test:objc3c:performance-governance:integration` | `validate-performance-governance-integration` | `repo` | `integrated performance governance artifacts stay coherent across source, schema, dashboard, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_performance_governance_integration.py` |
+| `test:objc3c:platform-hardening` | `validate-platform-hardening` | `nightly` | `supported host package install and release claims stay tiered package-backed and fail-closed outside the checked-in matrix` | `fixed-shape` | `python:scripts/check_objc3c_platform_hardening_integration.py` |
+| `test:objc3c:platform-hardening:e2e` | `validate-platform-hardening-end-to-end` | `full` | `packaged platform support inspection and validation remain runnable from the staged toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_platform_hardening_end_to_end.py` |
 | `test:objc3c:public-conformance` | `validate-public-conformance-reporting` | `repo` | `public conformance reporting source policy schema scorecard and publication flows stay executable on the live workflow` | `fixed-shape` | `runner-internal + direct public reporting commands` |
 | `test:objc3c:public-conformance:e2e` | `validate-public-conformance-reporting-end-to-end` | `repo` | `public conformance reporting entrypoints and nightly wiring stay coherent with the integrated reporting artifacts` | `fixed-shape` | `python:scripts/check_objc3c_public_conformance_reporting_end_to_end.py` |
 | `test:objc3c:public-conformance:integration` | `validate-public-conformance-reporting-integration` | `repo` | `integrated public conformance reporting artifacts stay coherent across source, schema, scorecard, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_public_conformance_reporting_integration.py` |

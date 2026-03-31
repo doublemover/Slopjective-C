@@ -111,14 +111,20 @@
     "publication_surface": {
       "type": "object",
       "required": [
+        "inspect_support_matrix_command",
         "package_command",
         "package_channels_command",
         "packaging_validation_command",
         "packaging_end_to_end_command",
+        "platform_hardening_validation_command",
+        "platform_hardening_end_to_end_command",
         "release_operations_command",
         "release_operations_end_to_end_command"
       ],
       "properties": {
+        "inspect_support_matrix_command": {
+          "type": "string"
+        },
         "package_command": {
           "type": "string"
         },
@@ -129,6 +135,12 @@
           "type": "string"
         },
         "packaging_end_to_end_command": {
+          "type": "string"
+        },
+        "platform_hardening_validation_command": {
+          "type": "string"
+        },
+        "platform_hardening_end_to_end_command": {
           "type": "string"
         },
         "release_operations_command": {

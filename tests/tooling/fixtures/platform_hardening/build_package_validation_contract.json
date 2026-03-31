@@ -8,12 +8,11 @@
   "required_steps": [
     "build-native-binaries",
     "package-runnable-toolchain",
-    "check-packaging-channels-integration",
+    "build-package-channels",
     "check-packaging-channels-end-to-end"
   ],
   "required_reports": [
     "tmp/reports/package-channels/package-channels-summary.json",
-    "tmp/reports/package-channels/integration-summary.json",
     "tmp/reports/package-channels/end-to-end-summary.json"
   ],
   "required_matrix_fields": [

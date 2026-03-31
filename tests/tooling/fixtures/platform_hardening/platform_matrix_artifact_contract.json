@@ -22,10 +22,13 @@
     "publication_surface"
   ],
   "required_publication_surface_fields": [
+    "inspect_support_matrix_command",
     "package_command",
     "package_channels_command",
     "packaging_validation_command",
     "packaging_end_to_end_command",
+    "platform_hardening_validation_command",
+    "platform_hardening_end_to_end_command",
     "release_operations_command",
     "release_operations_end_to_end_command"
   ]
