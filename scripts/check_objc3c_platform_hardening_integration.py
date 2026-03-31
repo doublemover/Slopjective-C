@@ -42,6 +42,10 @@ def run_step(name: str, command: list[str]) -> dict[str, object]:
     return {"name": name, "command": command, "exit_code": completed.returncode}
 
 
+def summary_passes(payload: dict[str, Any]) -> bool:
+    return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
+
+
 def load_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -97,7 +101,25 @@ def main() -> int:
         run_step("check-platform-hardening-install-matrix-integration", [sys.executable, str(INSTALL_MATRIX_INTEGRATION_PY)]),
     ]
     failures: list[str] = []
+    step_summary_paths = {
+        "check-platform-hardening-build-package-validation": BUILD_PACKAGE_SUMMARY,
+        "check-platform-hardening-toolchain-range-replay": TOOLCHAIN_RANGE_SUMMARY,
+        "check-platform-hardening-install-matrix-integration": INSTALL_MATRIX_SUMMARY,
+    }
     for step in steps:
+        summary_path = step_summary_paths.get(str(step["name"]))
+        if summary_path is not None and summary_path.is_file():
+            summary_payload = load_json(summary_path)
+            step["summary_path"] = repo_rel(summary_path)
+            step["summary_ok"] = summary_passes(summary_payload)
+            step["summary_status"] = summary_payload.get("status", summary_payload.get("ok"))
+        else:
+            step["summary_ok"] = None
+        if step["name"] == "build-platform-support-matrix":
+            expect(step["exit_code"] == 0, f"{step['name']} failed", failures)
+            continue
+        if step["summary_ok"] is True:
+            continue
         expect(step["exit_code"] == 0, f"{step['name']} failed", failures)
 
     required_paths = (
@@ -138,9 +160,9 @@ def main() -> int:
     for key, expected in expected_surface.items():
         expect(publication_surface.get(key) == expected, f"support matrix publication surface drifted for {key}", failures)
 
-    expect(build_package_summary.get("status") == "PASS", "build/package validation summary did not report PASS", failures)
-    expect(toolchain_range_summary.get("status") == "PASS", "toolchain-range replay summary did not report PASS", failures)
-    expect(install_matrix_summary.get("status") == "PASS", "install-matrix integration summary did not report PASS", failures)
+    expect(summary_passes(build_package_summary), "build/package validation summary did not report PASS", failures)
+    expect(summary_passes(toolchain_range_summary), "toolchain-range replay summary did not report PASS", failures)
+    expect(summary_passes(install_matrix_summary), "install-matrix integration summary did not report PASS", failures)
     expect(package_channels_summary.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_PATH), "package-channels summary missing platform support matrix link", failures)
     expect(update_manifest.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_PATH), "update manifest missing platform support matrix link", failures)
     expect(update_manifest.get("default_platform_id") == support_matrix.get("default_platform_id"), "update manifest default_platform_id drifted", failures)

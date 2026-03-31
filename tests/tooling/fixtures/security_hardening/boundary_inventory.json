@@ -89,6 +89,7 @@
     "tmp/reports/security-hardening/source-surface-summary.json",
     "tmp/reports/security-hardening/schema-surface-summary.json",
     "tmp/reports/security-hardening/response-drill-summary.json",
+    "tmp/reports/security-hardening/runtime-hardening-summary.json",
     "tmp/reports/security-hardening/security-posture-summary.json",
     "tmp/reports/security-hardening/integration-summary.json",
     "tmp/reports/security-hardening/publication-summary.json",

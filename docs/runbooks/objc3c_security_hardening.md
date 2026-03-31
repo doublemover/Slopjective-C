@@ -29,6 +29,7 @@ Replayable generators and validators:
 - `python scripts/check_security_hardening_schema_surface.py`
 - `python scripts/check_security_hardening_supply_chain_audit.py`
 - `python scripts/check_security_hardening_response_drill.py`
+- `python scripts/check_security_hardening_runtime_hardening.py`
 - `python scripts/build_objc3c_security_posture.py`
 - `python scripts/publish_objc3c_security_advisories.py`
 - `python scripts/check_objc3c_security_hardening_integration.py`
@@ -57,6 +58,7 @@ The current checked-in security posture is intentionally narrow.
   - fail-closed metadata requirements on checked-in fixtures
 - runtime hardening is bounded by:
   - existing runtime acceptance and packaged runnable validation
+  - a machine-owned runtime-hardening summary derived from those passing reports
   - no claim of external sandboxing, memory-safe runtime isolation, or hostile
     plugin containment beyond the checked-in acceptance and packaged proofs
 - response publication is bounded by:

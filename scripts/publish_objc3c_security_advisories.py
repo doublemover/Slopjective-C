@@ -18,6 +18,7 @@ POSTURE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "security-po
 ADVISORY_INDEX_PATH = ROOT / "tmp" / "artifacts" / "security-hardening" / "advisories" / "objc3c-security-advisory-index.json"
 ADVISORY_REPORT_PATH = ROOT / "tmp" / "artifacts" / "security-hardening" / "advisories" / "objc3c-security-advisory-report.md"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publication-summary.json"
+RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
 
 
 def repo_rel(path: Path) -> str:
@@ -52,6 +53,15 @@ def ensure_posture() -> tuple[dict[str, Any], dict[str, Any]]:
     return posture, summary
 
 
+def ensure_runtime_hardening_summary() -> dict[str, Any]:
+    if not RUNTIME_HARDENING_SUMMARY.is_file():
+        raise RuntimeError(f"missing runtime hardening summary {repo_rel(RUNTIME_HARDENING_SUMMARY)}")
+    payload = load_json(RUNTIME_HARDENING_SUMMARY)
+    if payload.get("status") != "PASS":
+        raise RuntimeError("runtime hardening summary did not pass")
+    return payload
+
+
 def advisory_status(security_state: str) -> str:
     if security_state == "ready":
         return "monitoring"
@@ -63,6 +73,7 @@ def advisory_status(security_state: str) -> str:
 def main() -> int:
     try:
         posture, _ = ensure_posture()
+        runtime_hardening_summary = ensure_runtime_hardening_summary()
     except RuntimeError as exc:
         print(f"objc3c-security-advisories: FAIL\n- {exc}", file=sys.stderr)
         return 1
@@ -99,7 +110,8 @@ def main() -> int:
             "status": status,
             "headline": "Runtime hardening claims stay limited to checked-in acceptance, packaged runnable validation, and response evidence.",
             "source_paths": [
-                "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+                "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
+                repo_rel(RUNTIME_HARDENING_SUMMARY),
                 "tmp/artifacts/security-hardening/posture/objc3c-security-posture.json"
             ]
         },
@@ -172,6 +184,8 @@ def main() -> int:
         "advisory_count": len(advisories),
         "headline": str(posture.get("headline", "")),
         "evidence_paths": evidence_paths,
+        "runtime_hardening_summary_path": repo_rel(RUNTIME_HARDENING_SUMMARY),
+        "runtime_hardening_memory_safety_boundary": runtime_hardening_summary.get("memory_safety_boundary"),
     }
     PUBLICATION_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
     PUBLICATION_SUMMARY.write_text(json.dumps(publication_payload, indent=2) + "\n", encoding="utf-8")

@@ -19,6 +19,7 @@ MACRO_SUMMARY_BUILD = ROOT / "scripts" / "build_security_hardening_macro_trust_p
 RELEASE_KEY_SUMMARY_BUILD = ROOT / "scripts" / "build_security_hardening_release_key_policy_summary.py"
 ARTIFACT_CONTRACT_SUMMARY_BUILD = ROOT / "scripts" / "build_security_hardening_artifact_contract_summary.py"
 SUPPLY_CHAIN_AUDIT = ROOT / "scripts" / "check_security_hardening_supply_chain_audit.py"
+RUNTIME_HARDENING_CHECK = ROOT / "scripts" / "check_security_hardening_runtime_hardening.py"
 SOURCE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "source-surface-summary.json"
 SCHEMA_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "schema-surface-summary.json"
 RESPONSE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-policy" / "response_policy_summary.json"
@@ -26,6 +27,7 @@ MACRO_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "macro-trust-p
 RELEASE_KEY_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "release-key-policy" / "release_key_policy_summary.json"
 ARTIFACT_CONTRACT_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "artifact-contract" / "artifact_contract_summary.json"
 SUPPLY_CHAIN_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "supply-chain-audit-summary.json"
+RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
 DISTRIBUTION_TRUST_REPORT = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.json"
 POSTURE_PATH = ROOT / "tmp" / "artifacts" / "security-hardening" / "posture" / "objc3c-security-posture.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "security-posture-summary.json"
@@ -79,6 +81,7 @@ def main() -> int:
         release_key_summary = ensure_success(RELEASE_KEY_SUMMARY, RELEASE_KEY_SUMMARY_BUILD)
         artifact_contract_summary = ensure_success(ARTIFACT_CONTRACT_SUMMARY, ARTIFACT_CONTRACT_SUMMARY_BUILD)
         supply_chain_summary = ensure_success(SUPPLY_CHAIN_SUMMARY, SUPPLY_CHAIN_AUDIT)
+        runtime_hardening_summary = ensure_success(RUNTIME_HARDENING_SUMMARY, RUNTIME_HARDENING_CHECK)
     except RuntimeError as exc:
         print(f"objc3c-security-posture: FAIL\n- {exc}", file=sys.stderr)
         return 1
@@ -136,6 +139,12 @@ def main() -> int:
             "detail": "release evidence, update metadata, and trust-report lineage remain coherent",
         },
         {
+            "boundary_id": "runtime-hardening-memory-safety-regression",
+            "status": boundary_status_from_summary(runtime_hardening_summary),
+            "source_path": repo_rel(RUNTIME_HARDENING_SUMMARY),
+            "detail": "runtime hardening claims stay bounded to passing runtime acceptance and packaged runnable release-candidate evidence",
+        },
+        {
             "boundary_id": "distribution-trust-signal",
             "status": "PASS" if trust_state == "ready" else "WARN" if trust_state == "degraded" else "FAIL",
             "source_path": repo_rel(DISTRIBUTION_TRUST_REPORT),
@@ -166,6 +175,7 @@ def main() -> int:
         repo_rel(RELEASE_KEY_SUMMARY),
         repo_rel(ARTIFACT_CONTRACT_SUMMARY),
         repo_rel(SUPPLY_CHAIN_SUMMARY),
+        repo_rel(RUNTIME_HARDENING_SUMMARY),
         repo_rel(DISTRIBUTION_TRUST_REPORT),
         *[str(path) for path in trust_report.get("evidence_paths", []) if isinstance(path, str)],
     ]

@@ -1,0 +1,26 @@
+{
+  "contract_id": "objc3c.security.hardening.runtime.hardening.contract.v1",
+  "surface_kind": "security-runtime-hardening-contract",
+  "required_validate_actions": [
+    "test-runtime-acceptance",
+    "validate-runnable-release-candidate",
+    "validate-release-candidate-conformance"
+  ],
+  "required_reports": [
+    "tmp/reports/runtime/acceptance/summary.json",
+    "tmp/reports/runtime/runnable-release-candidate-e2e/summary.json",
+    "tmp/reports/runtime/runnable-release-candidate-conformance/summary.json"
+  ],
+  "required_runtime_case_ids": [
+    "runtime-library",
+    "installation-lifecycle",
+    "dispatch-fast-path",
+    "property-execution",
+    "block-helper-runtime-execution",
+    "live-error-runtime-integration",
+    "async-task-actor-normalization-completion",
+    "live-unified-concurrency-runtime-implementation",
+    "live-metaprogramming-cache-runtime-integration",
+    "live-package-loading-interop-runtime-implementation"
+  ]
+}
