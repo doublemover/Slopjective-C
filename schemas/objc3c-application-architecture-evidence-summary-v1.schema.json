@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.example/schemas/objc3c-application-architecture-evidence-summary-v1.schema.json",
+  "title": "objc3c Application Architecture Evidence Summary v1",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "status",
+    "artifact_contract",
+    "schema_path",
+    "generated_report_root",
+    "report_slots",
+    "generated_artifact_roots",
+    "public_actions",
+    "public_scripts"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "artifact_contract": {
+      "type": "string"
+    },
+    "schema_path": {
+      "type": "string"
+    },
+    "generated_report_root": {
+      "type": "string"
+    },
+    "report_slots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generated_artifact_roots": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "public_actions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "public_scripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_paths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_public_scripts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

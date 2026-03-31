@@ -1,0 +1,61 @@
+{
+  "contract_id": "objc3c.application.architecture.testing.artifact_contract.v1",
+  "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+  "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
+  "schema": "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json",
+  "generated_report_root": "tmp/reports/application-architecture-testing",
+  "generated_artifact_roots": [
+    "tmp/artifacts/project-template",
+    "tmp/reports/project-template",
+    "tmp/artifacts/playground",
+    "tmp/reports/playground",
+    "tmp/artifacts/application-architecture-testing",
+    "tmp/reports/application-architecture-testing"
+  ],
+  "source_contracts": [
+    "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+    "tests/tooling/fixtures/application_architecture_testing/first_party_testing_semantics.json",
+    "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json",
+    "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json"
+  ],
+  "report_slots": [
+    "boundary-inventory-summary.json",
+    "first-party-testing-semantics-summary.json",
+    "project-template-workspace-semantics-summary.json",
+    "canonical-application-layering-summary.json",
+    "template-harness-summary.json",
+    "canonical-application-workspace-summary.json",
+    "runnable-template-canonical-app-summary.json",
+    "package-integration-summary.json",
+    "closeout-gate.json"
+  ],
+  "public_actions": [
+    "materialize-project-template",
+    "materialize-playground-workspace",
+    "validate-showcase",
+    "validate-runnable-showcase",
+    "validate-stdlib-program",
+    "validate-runnable-stdlib-program",
+    "package-runnable-toolchain"
+  ],
+  "public_scripts": [
+    "build:objc3c:template",
+    "build:objc3c:playground",
+    "test:showcase",
+    "test:showcase:e2e",
+    "test:stdlib:program",
+    "test:stdlib:program:e2e",
+    "package:objc3c-native:runnable-toolchain"
+  ],
+  "artifact_claim_rules": [
+    "all milestone evidence reports publish under one generated report root",
+    "all machine-owned application-architecture artifacts must be replayable from checked-in source contracts and public workflow actions",
+    "template, workspace, and canonical-app evidence may reuse showcase and stdlib sources but may not create a second checked-in example taxonomy",
+    "package and runnable evidence is invalid if it bypasses the public workflow runner"
+  ],
+  "non_goals": [
+    "independent milestone-local evidence roots",
+    "untracked schema drift between template and canonical-app evidence",
+    "package or install evidence published without a corresponding source contract"
+  ]
+}
