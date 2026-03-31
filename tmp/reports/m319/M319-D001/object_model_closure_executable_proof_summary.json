@@ -1,0 +1,16 @@
+{
+  "issue": "M319-D001",
+  "contract_id": "objc3c.object_model.closure.executable_proof_abi_contract.v1",
+  "surface_kind": "object-model-closure-executable-proof-abi-contract",
+  "public_command_surface_count": 4,
+  "public_workflow_action_count": 4,
+  "public_runtime_abi_symbol_count": 4,
+  "private_runtime_query_symbol_count": 7,
+  "checks": {
+    "summary_script_link_matches": true,
+    "all_authoritative_runner_paths_exist": true,
+    "all_public_command_surfaces_exist": true,
+    "all_public_workflow_actions_exist": true
+  },
+  "ok": true
+}

@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.object_model.closure.executable_proof_abi_contract.v1",
+  "surface_kind": "object-model-closure-executable-proof-abi-contract",
+  "milestone": "M319",
+  "issue": "M319-D001",
+  "runbook": "docs/runbooks/objc3c_object_model_closure.md",
+  "summary_script": "scripts/build_object_model_closure_executable_proof_summary.py",
+  "public_command_surfaces": [
+    "test:objc3c:object-model-conformance",
+    "test:objc3c:storage-reflection-conformance",
+    "test:objc3c:runnable-object-model",
+    "test:objc3c:runnable-storage-reflection"
+  ],
+  "public_workflow_actions": [
+    "validate-object-model-conformance",
+    "validate-storage-reflection-conformance",
+    "validate-runnable-object-model",
+    "validate-runnable-storage-reflection"
+  ],
+  "public_runtime_abi_boundary": [
+    "objc3_runtime_register_image",
+    "objc3_runtime_lookup_selector",
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_reset_for_testing"
+  ],
+  "private_runtime_query_boundary": [
+    "objc3_runtime_copy_realized_class_graph_state_for_testing",
+    "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_property_registry_state_for_testing",
+    "objc3_runtime_copy_property_entry_for_testing",
+    "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "objc3_runtime_copy_object_model_query_state_for_testing",
+    "objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing"
+  ],
+  "authoritative_runner_paths": [
+    "scripts/check_objc3c_runnable_object_model_conformance.py",
+    "scripts/check_objc3c_runnable_storage_reflection_conformance.py",
+    "scripts/check_objc3c_runnable_object_model_end_to_end.py",
+    "scripts/check_objc3c_runnable_storage_reflection_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "package.json"
+  ]
+}
