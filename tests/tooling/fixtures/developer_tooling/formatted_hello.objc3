@@ -1,0 +1,15 @@
+module Demo;
+let answer = 40;
+
+fn add(x: i32, y: i32) {
+  return x + y;
+}
+
+fn main() {
+  let local = add(answer, 2);
+  if (local) {
+    return local;
+  } else {
+    return 0;
+  }
+}

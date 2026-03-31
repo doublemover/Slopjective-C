@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the live developer-tooling inspect and trace workflow."""
+"""Validate the live developer-tooling inspect, formatter, and trace workflow."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+FORMATTER_DEBUG_SURFACE_PY = ROOT / "scripts" / "check_developer_tooling_formatter_debug_surface.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "developer-tooling" / "integration-summary.json"
 
@@ -54,6 +55,14 @@ def main() -> int:
             [sys.executable, str(PUBLIC_RUNNER), "inspect-runtime-inspector"],
         ),
         run_step(
+            "inspect-editor-tooling",
+            [sys.executable, str(PUBLIC_RUNNER), "inspect-editor-tooling"],
+        ),
+        run_step(
+            "check-formatter-debug-surface",
+            [sys.executable, str(FORMATTER_DEBUG_SURFACE_PY)],
+        ),
+        run_step(
             "inspect-capability-explorer",
             [sys.executable, str(PUBLIC_RUNNER), "inspect-capability-explorer"],
         ),
@@ -74,18 +83,34 @@ def main() -> int:
     capability_explorer_path = PUBLIC_WORKFLOW_REPORT_ROOT / "capability-explorer.json"
     runtime_inspector_benchmark_path = PUBLIC_WORKFLOW_REPORT_ROOT / "runtime-inspector-benchmark.json"
     stage_trace_path = PUBLIC_WORKFLOW_REPORT_ROOT / "compile-stage-trace.json"
-    for path in (observability_path, runtime_inspector_path, capability_explorer_path, runtime_inspector_benchmark_path, stage_trace_path):
+    editor_surface_path = ROOT / "tmp" / "reports" / "developer-tooling" / "editor-surface" / "hello-3bb3df22f2ea" / "editor-surface.json"
+    formatter_debug_summary_path = ROOT / "tmp" / "reports" / "developer-tooling" / "formatter-debug" / "formatter_debug_summary.json"
+    for path in (
+        observability_path,
+        runtime_inspector_path,
+        capability_explorer_path,
+        runtime_inspector_benchmark_path,
+        stage_trace_path,
+        editor_surface_path,
+        formatter_debug_summary_path,
+    ):
         expect(path.is_file(), f"missing expected report: {path.relative_to(ROOT).as_posix()}", failures)
     observability = read_json(observability_path) if observability_path.is_file() else {}
     runtime_inspector = read_json(runtime_inspector_path) if runtime_inspector_path.is_file() else {}
     capability_explorer = read_json(capability_explorer_path) if capability_explorer_path.is_file() else {}
     runtime_inspector_benchmark = read_json(runtime_inspector_benchmark_path) if runtime_inspector_benchmark_path.is_file() else {}
     stage_trace = read_json(stage_trace_path) if stage_trace_path.is_file() else {}
+    editor_surface = read_json(editor_surface_path) if editor_surface_path.is_file() else {}
+    formatter_debug_summary = read_json(formatter_debug_summary_path) if formatter_debug_summary_path.is_file() else {}
     expect(observability.get("status_name") == "ok", "expected compile observability status_name=ok", failures)
     expect("summary" in observability.get("dump_commands", {}), "expected compile observability dump_commands.summary", failures)
     expect(runtime_inspector.get("contract_id") == "objc3c.runtime.metadata.object.inspection.harness.v1", "expected runtime inspector contract id", failures)
     expect(runtime_inspector.get("arc_debug_state_snapshot_symbol") == "objc3_runtime_copy_arc_debug_state_for_testing", "expected runtime inspector ARC debug snapshot symbol", failures)
     expect("object_sections" in runtime_inspector.get("dump_commands", {}), "expected runtime inspector object_sections dump command", failures)
+    expect(editor_surface.get("formatter", {}).get("supported") is True, "expected editor tooling formatter surface to report supported=true", failures)
+    expect(editor_surface.get("debug", {}).get("supported") is True, "expected editor tooling debug surface to report supported=true", failures)
+    expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "expected editor tooling debug surface to keep statement stepping fail-closed", failures)
+    expect(formatter_debug_summary.get("ok") is True, "expected formatter/debug surface validation ok=true", failures)
     expect(capability_explorer.get("mode") == "objc3c-llvm-capabilities-v2", "expected capability explorer mode", failures)
     expect(capability_explorer.get("ok") is True, "expected capability explorer ok=true", failures)
     expect(capability_explorer.get("clang", {}).get("found") is True, "expected capability explorer clang probe to succeed", failures)
@@ -116,6 +141,8 @@ def main() -> int:
         "reports": {
             "compile_observability": observability_path.relative_to(ROOT).as_posix(),
             "runtime_inspector": runtime_inspector_path.relative_to(ROOT).as_posix(),
+            "editor_surface": editor_surface_path.relative_to(ROOT).as_posix(),
+            "formatter_debug_summary": formatter_debug_summary_path.relative_to(ROOT).as_posix(),
             "capability_explorer": capability_explorer_path.relative_to(ROOT).as_posix(),
             "runtime_inspector_benchmark": runtime_inspector_benchmark_path.relative_to(ROOT).as_posix(),
             "compile_stage_trace": stage_trace_path.relative_to(ROOT).as_posix(),

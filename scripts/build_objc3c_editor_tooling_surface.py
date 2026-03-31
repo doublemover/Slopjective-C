@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from format_objc3c_source import build_format_summary_for_source
+
 
 ROOT = Path(__file__).resolve().parents[1]
 FRONTEND_RUNNER = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
@@ -43,7 +45,7 @@ def resolve_source(source_text: str) -> tuple[Path, str]:
     resolved = candidate if candidate.is_absolute() else (ROOT / candidate)
     resolved = resolved.resolve()
     if not resolved.is_file():
-      raise FileNotFoundError(f"source not found: {source_text}")
+        raise FileNotFoundError(f"source not found: {source_text}")
     return resolved, repo_rel(resolved)
 
 
@@ -189,6 +191,46 @@ def build_navigation_payload(source_display: str, manifest_path_text: str | None
     }
 
 
+def build_debug_payload(
+    summary: dict[str, Any],
+    object_path_text: str | None,
+    symbols: list[dict[str, Any]],
+) -> dict[str, Any]:
+    runtime_inspector = summary.get("runtime_inspector", {})
+    dump_commands = runtime_inspector.get("dump_commands", {}) if isinstance(runtime_inspector, dict) else {}
+    object_symbols = dump_commands.get("object_symbols", "") if isinstance(dump_commands, dict) else ""
+    object_sections = dump_commands.get("object_sections", "") if isinstance(dump_commands, dict) else ""
+    declaration_breakpoints = [
+        {
+            "symbol": symbol["name"],
+            "kind": symbol["kind"],
+            "line": symbol["line"],
+            "column": symbol["column"],
+        }
+        for symbol in symbols
+    ]
+    supported = bool(object_path_text) or bool(declaration_breakpoints)
+    return {
+        "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
+        "supported": supported,
+        "support_class": "declaration-breakpoint-preview" if supported else "fail-closed",
+        "debugger_model": "declaration-breakpoint-and-object-symbol-inspection",
+        "source_map_supported": False,
+        "source_map_model": "declaration-coordinate-only",
+        "statement_level_stepping": False,
+        "stepping_fallback_reason": "statement-level stepping remains fail-closed until emitted line-table evidence exists on the canonical toolchain path",
+        "object_artifact_present": bool(object_path_text),
+        "object_path": object_path_text,
+        "declaration_breakpoint_anchor_count": len(declaration_breakpoints),
+        "declaration_breakpoints": declaration_breakpoints,
+        "object_section_inventory_command": object_sections,
+        "object_symbol_inventory_command": object_symbols,
+        "runtime_inspector_contract_id": runtime_inspector.get("contract_id", "") if isinstance(runtime_inspector, dict) else "",
+        "artifact_inspection_ready": bool(object_path_text and object_symbols),
+        "fallback_reason": "" if supported else "compile produced no object artifact or declaration coordinates for preview debug anchors",
+    }
+
+
 def main() -> int:
     args = parse_args()
     source_path, source_display = resolve_source(args.source)
@@ -203,6 +245,7 @@ def main() -> int:
     capabilities_path = report_dir / "language-server-capabilities.json"
     navigation_path = report_dir / "navigation-index.json"
     formatter_path = report_dir / "formatter-output.json"
+    formatted_source_path = report_dir / "formatted-source.objc3"
     debug_path = report_dir / "debug-map.json"
 
     compile = subprocess.run(
@@ -236,24 +279,17 @@ def main() -> int:
     diagnostics_payload = load_json(ROOT / diagnostics_path_text) if diagnostics_path_text else {"diagnostics": []}
     manifest_payload = load_json(ROOT / manifest_path_text) if manifest_path_text else {}
     symbols = extract_symbols(manifest_payload)
+    source_text = source_path.read_text(encoding="utf-8")
+    formatted_text, formatter = build_format_summary_for_source(
+        source_display,
+        source_text,
+        repo_rel(formatted_source_path),
+    )
+    formatted_source_path.write_text(formatted_text, encoding="utf-8")
 
     language_server = build_language_server_payload(summary, manifest_path_text, symbols)
     navigation = build_navigation_payload(source_display, manifest_path_text, symbols)
-    formatter = {
-        "contract_id": "objc3c.developer.tooling.formatter.surface.v1",
-        "supported": False,
-        "support_class": "deferred",
-        "fallback_reason": "formatter implementation lands in M325-C003",
-        "formatted_output_path": None,
-    }
-    debug = {
-        "contract_id": "objc3c.developer.tooling.debug.map.surface.v1",
-        "supported": False,
-        "support_class": "deferred",
-        "object_artifact_present": bool(object_path_text),
-        "declaration_breakpoint_anchor_count": len(symbols),
-        "fallback_reason": "debug-map and stepping implementation lands in M325-C003",
-    }
+    debug = build_debug_payload(summary, object_path_text, symbols)
 
     editor_surface = {
         "contract_id": "objc3c.developer.tooling.editor.surface.v1",

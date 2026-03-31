@@ -120,6 +120,12 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - dump the structured compile-stage trace through the public command surface:
   - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
   - `npm run trace:objc3c:stages`
+- inspect the combined editor tooling surface:
+  - `python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling`
+  - `npm run inspect:objc3c:editor`
+- format one supported objc3c source through the preview formatter subset:
+  - `python scripts/objc3c_public_workflow_runner.py format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
+  - `npm run format:objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
 - run the integrated developer-tooling validation flow:
   - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
   - `npm run test:objc3c:developer-tooling`
@@ -166,12 +172,14 @@ full editor product:
   - capability exploration
   - runtime inspector benchmarking
   - compile-stage tracing
+  - manifest-backed language-server capabilities and navigation
+  - preview formatter output on the supported canonical subset
+  - declaration-breakpoint and object-symbol inspection debug anchors
   - integrated developer-tooling validation
-- explicit milestone gaps for `M325`:
-  - language-server capabilities and symbol/navigation responses
-  - formatter contracts and executable formatting output
-  - source-map, debug-info, and stepping semantics
-  - CLI-to-editor and packaged tooling handoff contracts
+- explicit remaining gaps after the current implementation slice:
+  - references, rename, semantic tokens, and code actions remain fail-closed
+  - statement-level stepping and full source-map publication remain fail-closed
+  - runnable workspace drill and packaged tooling handoff contracts remain future work
 
 Downstream work must extend the real frontend runner, runtime artifacts, and
 public workflow commands instead of creating an editor-only shadow parser or
@@ -179,16 +187,15 @@ debug-only sidecar data model.
 
 ## Explicit Gap Inventory
 
-Current gaps after `M324`:
+Current remaining gaps after the current developer-tooling slice:
 
-- no checked-in language-server capability contract
-- no checked-in formatter contract or formatter output surface
-- no checked-in source-map/debug-info stepping contract
+- no checked-in references/rename/semantic-token/code-action contract
+- no checked-in statement-level stepping or full source-map publication contract
 - no runnable workspace drill that proves editor/debug handoff over a packaged
   tooling surface
 
-These gaps are deliberate scope for `M325`; they are not already supported by
-the inspect/trace workflow.
+These remaining gaps stay fail-closed; they are not implied by the preview
+formatter or declaration-breakpoint debug surface.
 
 ## Diagnostics, Formatting, And Symbol Resolution Policy
 
@@ -205,7 +212,8 @@ frontend runner output model.
   - declaration coordinates published by the real compile output
 - formatting source of truth:
   - machine-owned formatter output must be generated from the canonical
-    developer-tooling surface after a real compile attempt
+    formatter helper and reflected through the combined developer-tooling
+    surface
   - formatter claims must fail closed when the source is outside the supported
     canonical subset
 
@@ -274,6 +282,12 @@ The current and follow-on public entrypoints for the surface converge on:
 - `python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling`
 - `python scripts/objc3c_public_workflow_runner.py format-objc3c`
 - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
+
+Exact implementation anchors for the new formatter/debug slice:
+
+- `scripts/format_objc3c_source.py`
+- `scripts/build_objc3c_editor_tooling_surface.py`
+- `scripts/check_developer_tooling_formatter_debug_surface.py`
 
 The npm entrypoints must route to the same action family once implemented:
 

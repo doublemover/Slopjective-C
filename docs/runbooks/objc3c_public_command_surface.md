@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `145`
-- Operator command count: `136`
+- Current package script count: `146`
+- Operator command count: `137`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -47,13 +47,14 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:stdlib:surface` | `check-stdlib-surface` | `repo` | `stdlib roots, canonical module inventory, package alias mapping, and lowering/import artifact contract stay checked in and coherent` | `fixed-shape` | `python:scripts/check_stdlib_surface.py` |
 | `check:stress:surface` | `check-stress-surface` | `repo` | `stress source roots, machine-owned artifact boundaries, and checked-in minimization contracts stay explicit and coherent` | `fixed-shape` | `python:scripts/check_stress_source_surface.py` |
 | `compile:objc3c` | `compile-objc3c` | `-` | `-` | `pass-through` | `pwsh:scripts/objc3c_native_compile.ps1` |
+| `format:objc3c` | `format-objc3c` | `repo` | `preview formatter output stays fail-closed outside the supported subset and deterministic within it` | `pass-through` | `python:scripts/format_objc3c_source.py` |
 | `inspect:objc3c:benchmark` | `benchmark-runtime-inspector` | `repo` | `runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_inspector.py` |
 | `inspect:objc3c:bonus-tools` | `inspect-bonus-tool-integration` | `repo` | `bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts` | `fixed-shape` | `runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json` |
 | `inspect:objc3c:capabilities` | `inspect-capability-explorer` | `repo` | `capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts` | `pass-through` | `python:scripts/probe_objc3c_llvm_capabilities.py` |
 | `inspect:objc3c:comparative-baselines` | `benchmark-comparative-baselines` | `repo` | `comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states` | `pass-through` | `python:scripts/run_objc3c_comparative_baselines.py` |
 | `inspect:objc3c:compiler-throughput` | `benchmark-compiler-throughput` | `repo` | `compiler-throughput telemetry stays tied to the live native compiler executable, wrapper cache contract, macro-host artifact path, and checked-in docs generators` | `pass-through` | `pwsh:scripts/check_objc3c_native_perf_budget.ps1` |
 | `inspect:objc3c:distribution-credibility` | `build-distribution-credibility-dashboard` | `repo` | `distribution credibility summaries stay tied to the live release-foundation, packaging-channel, release-operations, and release-evidence surfaces` | `fixed-shape` | `python:scripts/build_objc3c_distribution_credibility_dashboard.py` |
-| `inspect:objc3c:editor` | `inspect-editor-tooling` | `repo` | `editor-facing diagnostics, language-server capabilities, and navigation stay tied to the real compile summary, diagnostics JSON, and manifest declaration coordinates` | `pass-through` | `python:scripts/build_objc3c_editor_tooling_surface.py` |
+| `inspect:objc3c:editor` | `inspect-editor-tooling` | `repo` | `editor-facing diagnostics, language-server capabilities, navigation, formatter output, and preview debug anchors stay tied to the real compile summary, diagnostics JSON, manifest declaration coordinates, and emitted object artifacts` | `pass-through` | `python:scripts/build_objc3c_editor_tooling_surface.py` |
 | `inspect:objc3c:observability` | `inspect-compile-observability` | `repo` | `developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:performance` | `benchmark-performance` | `repo` | `objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets` | `pass-through` | `python:scripts/benchmark_objc3c_performance.py` |
 | `inspect:objc3c:performance-dashboard` | `build-performance-dashboard` | `repo` | `performance governance dashboard derivation stays tied to the live benchmark, throughput, and runtime summaries` | `fixed-shape` | `python:scripts/build_objc3c_performance_dashboard.py` |

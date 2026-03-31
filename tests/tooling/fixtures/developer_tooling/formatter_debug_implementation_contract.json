@@ -1,0 +1,17 @@
+{
+  "contract_id": "objc3c.developer.tooling.formatter.debug.implementation.contract.v1",
+  "surface_kind": "developer-tooling-implementation-contract",
+  "milestone": "M325",
+  "issue": "M325-C003",
+  "summary_script": "scripts/check_developer_tooling_formatter_debug_surface.py",
+  "format_source": "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
+  "expected_formatted_source": "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
+  "debug_source": "tests/tooling/fixtures/native/hello.objc3",
+  "required_debug_fields": [
+    "supported",
+    "support_class",
+    "declaration_breakpoint_anchor_count",
+    "statement_level_stepping",
+    "object_symbol_inventory_command"
+  ]
+}
