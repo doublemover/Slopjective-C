@@ -84,6 +84,22 @@ Those surfaces enforce:
 - explicit macro provenance markers
 - deterministic provenance token rules
 - fail-closed rejection when metadata is missing, orphaned, or malformed
+- host-process and host-cache inputs must remain complete before macro execution
+  is treated as runnable
+
+Current macro/package/provenance trust semantics:
+
+- `objc_macro` admission is the root capability marker
+- `objc_macro_package` and `objc_macro_provenance` are required together on the
+  checked-in trusted macro surface
+- macro provenance must stay deterministic and lowercase-sha256-shaped on the
+  checked-in surface
+- metadata-completeness, sandbox-namespace, provenance-determinism, and
+  callable-determinism checks all fail closed before the surface is treated as
+  ready for lowering and runtime
+- package/provenance claims are only as strong as the checked-in compiler,
+  runtime acceptance, and packaged runnable evidence; they do not imply remote
+  package trust, signature verification, or general untrusted macro execution
 
 They do not currently prove:
 

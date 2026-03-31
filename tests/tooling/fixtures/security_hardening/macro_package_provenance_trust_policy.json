@@ -1,0 +1,45 @@
+{
+  "contract_id": "objc3c.security.hardening.macro.package.provenance.trust.policy.v1",
+  "surface_kind": "macro-package-provenance-trust-policy",
+  "milestone": "M327",
+  "issue": "M327-B002",
+  "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "authoritative_code_paths": [
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/io/objc3_process.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py"
+  ],
+  "required_attributes": [
+    "objc_macro",
+    "objc_macro_package",
+    "objc_macro_provenance"
+  ],
+  "required_enforcement_flags": [
+    "metadata_completeness_enforced",
+    "sandbox_namespace_enforced",
+    "provenance_determinism_enforced",
+    "callable_determinism_enforced",
+    "ready_for_lowering_and_runtime"
+  ],
+  "positive_fixture_paths": [
+    "tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3",
+    "tests/tooling/fixtures/native/macro_package_provenance_positive.objc3",
+    "tests/tooling/fixtures/native/macro_host_process_provider.objc3",
+    "tests/tooling/fixtures/native/macro_host_process_consumer.objc3"
+  ],
+  "negative_fixture_paths": [
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_missing_metadata.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_orphan_metadata.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_package.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_invalid_provenance.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_nonpure.objc3",
+    "tests/tooling/fixtures/native/macro_safety_sandbox_negative_method_topology.objc3"
+  ],
+  "non_claims": [
+    "no remote package-signing verification claim",
+    "no general hostile-macro execution claim",
+    "no trust claim outside the checked-in compiler, runtime acceptance, and runnable package surfaces"
+  ]
+}
