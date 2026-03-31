@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.error_runtime.closure.lowering.runtime.artifact.contract.v1",
+  "surface_kind": "error-lowering-runtime-artifact-contract",
+  "milestone": "M321",
+  "issue": "M321-C001",
+  "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
+  "summary_script": "scripts/build_error_runtime_closure_artifact_summary.py",
+  "canonical_artifacts": [
+    "tmp/reports/runtime/acceptance/summary.json",
+    "tmp/reports/runtime/architecture-integration/summary.json",
+    "tmp/reports/runtime/runnable-error-conformance/summary.json",
+    "tmp/reports/runtime/runnable-error-e2e/summary.json"
+  ],
+  "canonical_surfaces": [
+    "runtime_error_lowering_unwind_bridge_helper_surface",
+    "runtime_error_runtime_abi_cleanup_surface",
+    "runtime_error_propagation_catch_cleanup_runtime_implementation_surface"
+  ],
+  "artifact_rules": [
+    "the canonical compile-manifest and runtime-registration truth for this milestone is emitted by scripts/check_objc3c_runtime_acceptance.py and replayed by the integration and runnable error workflows",
+    "milestone-local checks consume the shared runtime acceptance, integration, conformance, and packaged e2e artifacts instead of recreating a parallel error manifest",
+    "public workflow reporting must preserve the same error surface packets carried by acceptance and architecture integration",
+    "generated evidence remains deterministic and narrower than the shared acceptance and packaged runnable error path"
+  ],
+  "authoritative_code_paths": [
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runtime_architecture_integration.py",
+    "scripts/check_objc3c_runnable_error_conformance.py",
+    "scripts/check_objc3c_runnable_error_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/result_bridge_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+    "tests/tooling/runtime/live_error_runtime_integration_probe.cpp"
+  ]
+}
