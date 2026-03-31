@@ -117,7 +117,6 @@
     "test:objc3c:negative-expectations": "python scripts/objc3c_public_workflow_runner.py test-negative-expectations",
     "test:objc3c:full": "python scripts/objc3c_public_workflow_runner.py test-full",
     "test:objc3c:nightly": "python scripts/objc3c_public_workflow_runner.py test-nightly",
-    "lint:spec": "python scripts/objc3c_public_workflow_runner.py lint-spec",
     "check:site": "python scripts/objc3c_public_workflow_runner.py check-site",
     "check:docs:native": "python scripts/objc3c_public_workflow_runner.py check-native-docs",
     "check:docs:commands": "python scripts/objc3c_public_workflow_runner.py check-public-command-surface",

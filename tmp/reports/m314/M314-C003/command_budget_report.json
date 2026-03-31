@@ -1,0 +1,28 @@
+{
+  "status": "PASS",
+  "package_script_count": 143,
+  "public_script_count": 143,
+  "workflow_action_count": 147,
+  "internal_action_count": 4,
+  "operator_script_count": 135,
+  "maintainer_script_count": 8,
+  "operator_categories": [
+    "build",
+    "check",
+    "compile",
+    "inspect",
+    "package",
+    "proof",
+    "publish",
+    "test",
+    "trace"
+  ],
+  "maintainer_categories": [
+    "check",
+    "format",
+    "lint"
+  ],
+  "max_maintainer_scripts": 8,
+  "failures": [],
+  "contract_path": "tmp/artifacts/public-command-surface/objc3c-public-command-contract.json"
+}
