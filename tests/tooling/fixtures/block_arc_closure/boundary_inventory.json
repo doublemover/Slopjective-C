@@ -1,0 +1,181 @@
+{
+  "contract_id": "objc3c.block_arc.closure.boundary.inventory.v1",
+  "surface_kind": "block-arc-closure-boundary-inventory",
+  "milestone": "M320",
+  "issue": "M320-A001",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "summary_script": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
+  "canonical_planning_root": "tmp/planning/block_arc_closure",
+  "report_root": "tmp/reports/m320/M320-A001",
+  "focus": [
+    "escaping-block-promotion-and-invoke-runtime-closure",
+    "byref-forwarding-copy-dispose-and-heap-promotion-closure",
+    "arc-lifetime-helper-automation-across-weak-autoreleasepool-and-current-property-surfaces"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runnable_block_arc_conformance.py",
+    "scripts/check_objc3c_runnable_block_arc_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "docs/objc3c-native.md",
+    "tests/tooling/runtime/README.md"
+  ],
+  "authoritative_runtime_symbols": [
+    "objc3_runtime_promote_block_i32",
+    "objc3_runtime_invoke_block_i32",
+    "objc3_runtime_retain_i32",
+    "objc3_runtime_release_i32",
+    "objc3_runtime_autorelease_i32",
+    "objc3_runtime_push_autoreleasepool_scope",
+    "objc3_runtime_pop_autoreleasepool_scope",
+    "objc3_runtime_load_weak_current_property_i32",
+    "objc3_runtime_store_weak_current_property_i32",
+    "objc3_runtime_copy_arc_debug_state_for_testing",
+    "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+    "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+    "tests/tooling/runtime/arc_helper_runtime_support_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+    "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_argument_positive.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_return_positive.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+    "tests/tooling/fixtures/native/executable_block_object_invoke_thunk_positive.objc3",
+    "tests/tooling/fixtures/native/arc_mode_handling_positive.objc3",
+    "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+    "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+    "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+  ],
+  "claim_surfaces": [
+    "README.md",
+    "docs/objc3c-native.md",
+    "tests/tooling/runtime/README.md",
+    "docs/runbooks/objc3c_public_command_surface.md"
+  ],
+  "current_closure_gaps": [
+    {
+      "gap_id": "block-byref-and-arc-proof-remains-split-across-separate-shared-reports",
+      "summary": "The runtime already publishes block/ARC conformance and packaged e2e proof, but M320 still needs one truthful closure boundary and closeout gate tying escaping blocks, byref forwarding, and ARC automation to the same ownership claim surface.",
+      "evidence_references": [
+        "scripts/check_objc3c_runnable_block_arc_conformance.py",
+        "scripts/check_objc3c_runnable_block_arc_end_to_end.py",
+        "docs/objc3c-native.md"
+      ],
+      "successor_issue_codes": [
+        "M320-B001",
+        "M320-B002",
+        "M320-C001",
+        "M320-D001",
+        "M320-E001"
+      ]
+    },
+    {
+      "gap_id": "arc-automation-claims-must-stay-on-runtime-owned-helper-surfaces",
+      "summary": "ARC runtime support, autoreleasepool traffic, and weak/current-property helper behavior are live today, but the supported closure path still depends on private runtime-owned helpers and snapshots rather than a widened public ABI.",
+      "evidence_references": [
+        "docs/objc3c-native.md",
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",
+        "tests/tooling/runtime/reference_counting_weak_autoreleasepool_probe.cpp"
+      ],
+      "successor_issue_codes": [
+        "M320-B002",
+        "M320-C003",
+        "M320-D003"
+      ]
+    },
+    {
+      "gap_id": "interaction-with-properties-errors-and-concurrency-not-frozen-as-one-map",
+      "summary": "The milestone focus includes property, cleanup, and future error/concurrency interaction, but the current live proof surface only publishes the block/ARC/runtime-helper slice and must keep broader interaction claims narrow until successor milestones land.",
+      "evidence_references": [
+        "tmp/planning/runtime_envelope_completion_program/milestones/M320.md",
+        "docs/objc3c-native.md",
+        "scripts/check_objc3c_runtime_acceptance.py"
+      ],
+      "successor_issue_codes": [
+        "M320-A001",
+        "M320-B002",
+        "M321-A001",
+        "M322-A001"
+      ]
+    }
+  ],
+  "explicit_non_goals": [
+    "no-public-runtime-abi-widening",
+    "no-claim-that-arc-automation-is-complete-beyond-the-runtime-owned-helper-and-lowering-surfaces-already-proved",
+    "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path",
+    "no-broader-error-or-concurrency-interaction-claim-before-successor-milestones-land"
+  ],
+  "successor_map": [
+    {
+      "milestone": "M321",
+      "reason": "throws, cleanup, bridged errors, and executable propagation closure"
+    },
+    {
+      "milestone": "M322",
+      "reason": "async/task/actor runtime execution, scheduling, and isolation closure"
+    },
+    {
+      "milestone": "M323",
+      "reason": "metaprogramming, property-behavior runtime materialization, and interop closure"
+    },
+    {
+      "milestone": "M324",
+      "reason": "full-envelope conformance, stability, and production claimability"
+    }
+  ],
+  "measured_query_sources": [
+    {
+      "query_id": "block-arc-runtime-symbol-exports",
+      "kind": "source-search",
+      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "patterns": [
+        "objc3_runtime_promote_block_i32",
+        "objc3_runtime_invoke_block_i32",
+        "objc3_runtime_retain_i32",
+        "objc3_runtime_release_i32",
+        "objc3_runtime_autorelease_i32",
+        "objc3_runtime_push_autoreleasepool_scope",
+        "objc3_runtime_pop_autoreleasepool_scope",
+        "objc3_runtime_load_weak_current_property_i32",
+        "objc3_runtime_store_weak_current_property_i32",
+        "objc3_runtime_copy_arc_debug_state_for_testing",
+        "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing"
+      ]
+    },
+    {
+      "query_id": "block-arc-claim-surfaces",
+      "kind": "documentation-search",
+      "path": "docs/objc3c-native.md",
+      "patterns": [
+        "This is the authoritative block/ARC unified source boundary.",
+        "This is the authoritative live runtime ABI boundary for `objc3c.runtime.blockarc.runtimeabisurface.v1`.",
+        "Downstream block lowering, byref forwarding, ownership transfer, and ARC"
+      ]
+    },
+    {
+      "query_id": "authoritative-probe-existence",
+      "kind": "path-existence",
+      "root": "tests/tooling/runtime"
+    },
+    {
+      "query_id": "authoritative-fixture-existence",
+      "kind": "path-existence",
+      "root": "tests/tooling/fixtures/native"
+    }
+  ]
+}

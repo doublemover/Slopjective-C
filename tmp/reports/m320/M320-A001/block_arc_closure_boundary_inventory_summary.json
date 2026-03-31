@@ -1,0 +1,50 @@
+{
+  "issue": "M320-A001",
+  "contract_id": "objc3c.block_arc.closure.boundary.inventory.v1",
+  "surface_kind": "block-arc-closure-boundary-inventory",
+  "measured_inventory": {
+    "focus_track_count": 3,
+    "authoritative_code_path_count": 11,
+    "authoritative_runtime_symbol_count": 11,
+    "authoritative_probe_count": 6,
+    "authoritative_fixture_count": 12,
+    "claim_surface_count": 4,
+    "current_gap_count": 3,
+    "explicit_non_goal_count": 4,
+    "successor_milestone_count": 4,
+    "block_promote_occurrences": 2,
+    "block_invoke_occurrences": 2,
+    "byref_occurrences": 2,
+    "autoreleasepool_occurrences": 48,
+    "weak_current_property_occurrences": 24,
+    "block_arc_claim_occurrences_in_docs": 3
+  },
+  "current_gap_ids": [
+    "block-byref-and-arc-proof-remains-split-across-separate-shared-reports",
+    "arc-automation-claims-must-stay-on-runtime-owned-helper-surfaces",
+    "interaction-with-properties-errors-and-concurrency-not-frozen-as-one-map"
+  ],
+  "successor_milestones": [
+    "M321",
+    "M322",
+    "M323",
+    "M324"
+  ],
+  "checks": {
+    "runbook_link_matches": true,
+    "summary_script_link_matches": true,
+    "all_authoritative_probe_paths_exist": true,
+    "all_authoritative_fixture_paths_exist": true,
+    "all_authoritative_code_paths_exist": true,
+    "all_claim_surfaces_exist": true,
+    "block_promote_symbol_exported": true,
+    "block_invoke_symbol_exported": true,
+    "arc_debug_snapshot_exported": true,
+    "block_arc_runtime_abi_snapshot_exported": true,
+    "docs_publish_block_arc_unified_boundary": true,
+    "docs_publish_block_arc_runtime_abi_boundary": true,
+    "docs_publish_arc_automation_extension_constraint": true,
+    "non_goals_keep_public_abi_narrow": true
+  },
+  "ok": true
+}
