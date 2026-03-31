@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.error_runtime.closure.executable.proof.abi.contract.v1",
+  "surface_kind": "error-runtime-executable-proof-abi-contract",
+  "milestone": "M321",
+  "issue": "M321-D001",
+  "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
+  "summary_script": "scripts/build_error_runtime_closure_executable_proof_summary.py",
+  "public_commands": [
+    "test:objc3c:error-conformance",
+    "test:objc3c:runnable-error"
+  ],
+  "public_workflows": [
+    "validate-error-conformance",
+    "validate-runnable-error"
+  ],
+  "private_runtime_abi_boundary": [
+    "objc3_runtime_store_thrown_error_i32",
+    "objc3_runtime_load_thrown_error_i32",
+    "objc3_runtime_bridge_status_error_i32",
+    "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_catch_matches_error_i32",
+    "objc3_runtime_copy_error_bridge_state_for_testing"
+  ],
+  "authoritative_code_paths": [
+    "scripts/check_objc3c_runnable_error_conformance.py",
+    "scripts/check_objc3c_runnable_error_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/result_bridge_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+    "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/live_cleanup_retainable_integration_probe.cpp",
+    "tests/tooling/runtime/cleanup_unwind_autoreleasepool_probe.cpp",
+    "tests/tooling/runtime/cleanup_unwind_nested_autoreleasepool_probe.cpp"
+  ]
+}
