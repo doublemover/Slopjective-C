@@ -1,6 +1,6 @@
 {
   "contract_id": "objc3c.block_arc.closure.escaping.block.promotion.byref.lowering.summary.v1",
-  "generated_at_utc": "2026-03-31T05:35:23.765569+00:00",
+  "generated_at_utc": "2026-03-31T05:40:12.369305+00:00",
   "status": "PASS",
   "runner_path": "scripts/check_block_arc_closure_escaping_block_lowering.py",
   "used_existing_block_arc_conformance_report": true,

@@ -1,6 +1,6 @@
 {
   "contract_id": "objc3c.block_arc.closure.live.escaping.block.byref.runtime.summary.v1",
-  "generated_at_utc": "2026-03-31T05:38:11.292294+00:00",
+  "generated_at_utc": "2026-03-31T05:40:12.493402+00:00",
   "status": "PASS",
   "runner_path": "scripts/check_block_arc_closure_live_block_runtime.py",
   "used_existing_block_arc_e2e_report": true,
