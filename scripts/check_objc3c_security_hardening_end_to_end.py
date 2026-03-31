@@ -16,6 +16,8 @@ WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validat
 WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "workflow_surface.json"
 SOURCE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "source-surface-summary.json"
 SCHEMA_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "schema-surface-summary.json"
+RESPONSE_DRILL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"
+INTEGRATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "integration-summary.json"
 POSTURE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "security-posture-summary.json"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publication-summary.json"
 COMMAND_SURFACE = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
@@ -23,6 +25,7 @@ PACKAGE_JSON = ROOT / "package.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "end-to-end-summary.json"
 
 REQUIRED_STEPS = [
+    "check-security-response-drill",
     "check-security-hardening-surface",
     "check-security-hardening-schema-surface",
     "build-security-posture",
@@ -54,10 +57,6 @@ def repo_rel(path: Path) -> str:
 
 
 def ensure_workflow_report() -> dict[str, Any]:
-    if WORKFLOW_REPORT.is_file():
-        report = load_json(WORKFLOW_REPORT)
-        if report.get("status") == "PASS":
-            return report
     completed = subprocess.run(
         [sys.executable, str(RUNNER), "validate-security-hardening"],
         cwd=ROOT,
@@ -84,10 +83,24 @@ def main() -> int:
     step_actions = [str(step.get("action")) for step in steps if isinstance(step, dict)]
     expect(step_actions == REQUIRED_STEPS, "validate-security-hardening workflow step inventory drifted")
 
-    for path in (SOURCE_SUMMARY, SCHEMA_SUMMARY, POSTURE_SUMMARY, PUBLICATION_SUMMARY):
+    for path in (SOURCE_SUMMARY, SCHEMA_SUMMARY, RESPONSE_DRILL_SUMMARY, POSTURE_SUMMARY, PUBLICATION_SUMMARY):
         expect(path.is_file(), f"missing required security artifact {repo_rel(path)}")
         payload = load_json(path)
         expect(payload.get("status") == "PASS", f"security artifact did not pass: {repo_rel(path)}")
+
+    integration = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "check_objc3c_security_hardening_integration.py")],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if integration.stdout:
+        sys.stdout.write(integration.stdout)
+    if integration.stderr:
+        sys.stderr.write(integration.stderr)
+    expect(integration.returncode == 0, "security-hardening integration validation failed")
+    expect(INTEGRATION_SUMMARY.is_file(), "security-hardening integration summary is missing")
 
     publication = load_json(PUBLICATION_SUMMARY)
     posture_summary = load_json(POSTURE_SUMMARY)
@@ -109,6 +122,8 @@ def main() -> int:
         "child_report_paths": [
             repo_rel(SOURCE_SUMMARY),
             repo_rel(SCHEMA_SUMMARY),
+            repo_rel(RESPONSE_DRILL_SUMMARY),
+            repo_rel(INTEGRATION_SUMMARY),
             repo_rel(POSTURE_SUMMARY),
             repo_rel(PUBLICATION_SUMMARY),
         ],

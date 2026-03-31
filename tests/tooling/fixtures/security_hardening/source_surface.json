@@ -9,6 +9,7 @@
   "release_key_policy": "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
   "artifact_reporting_contract": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json",
   "supply_chain_audit_contract": "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
+  "response_drill_contract": "tests/tooling/fixtures/security_hardening/response_drill_contract.json",
   "schema_surface": "tests/tooling/fixtures/security_hardening/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
   "checked_in_sources": [
@@ -19,6 +20,8 @@
     "scripts/check_security_hardening_schema_surface.py",
     "scripts/build_objc3c_security_posture.py",
     "scripts/publish_objc3c_security_advisories.py",
+    "scripts/check_security_hardening_response_drill.py",
+    "scripts/check_objc3c_security_hardening_integration.py",
     "scripts/objc3c_public_workflow_runner.py",
     "package.json"
   ],

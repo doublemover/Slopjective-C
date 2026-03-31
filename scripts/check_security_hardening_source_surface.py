@@ -20,6 +20,7 @@ EXPECTED_CONTRACT_IDS = {
     "release_key_policy": "objc3c.security.hardening.installer.update.release-key.policy.v1",
     "artifact_reporting_contract": "objc3c.security.hardening.artifact.reporting.contract.v1",
     "supply_chain_audit_contract": "objc3c.security.hardening.supply.chain.audit.contract.v1",
+    "response_drill_contract": "objc3c.security.hardening.response.drill.contract.v1",
     "schema_surface": "objc3c.security.hardening.schema.surface.v1",
     "workflow_surface": "objc3c.security.hardening.workflow.surface.v1",
 }

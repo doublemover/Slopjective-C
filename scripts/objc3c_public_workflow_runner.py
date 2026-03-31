@@ -109,8 +109,10 @@ DISTRIBUTION_CREDIBILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_distr
 DISTRIBUTION_CREDIBILITY_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_end_to_end.py"
 SECURITY_HARDENING_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_security_hardening_source_surface.py"
 SECURITY_HARDENING_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_security_hardening_schema_surface.py"
+SECURITY_HARDENING_RESPONSE_DRILL_PY = ROOT / "scripts" / "check_security_hardening_response_drill.py"
 SECURITY_HARDENING_POSTURE_PY = ROOT / "scripts" / "build_objc3c_security_posture.py"
 SECURITY_HARDENING_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_security_advisories.py"
+SECURITY_HARDENING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_security_hardening_integration.py"
 SECURITY_HARDENING_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_security_hardening_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
@@ -1112,6 +1114,7 @@ def action_validate_security_hardening(_: list[str]) -> int:
     return run_composite_validation(
         "validate-security-hardening",
         [
+            ("check-security-response-drill", [sys.executable, str(SECURITY_HARDENING_RESPONSE_DRILL_PY)]),
             ("check-security-hardening-surface", [sys.executable, str(SECURITY_HARDENING_SOURCE_SURFACE_PY)]),
             ("check-security-hardening-schema-surface", [sys.executable, str(SECURITY_HARDENING_SCHEMA_SURFACE_PY)]),
             ("build-security-posture", [sys.executable, str(SECURITY_HARDENING_POSTURE_PY)]),

@@ -1,0 +1,21 @@
+{
+  "contract_id": "objc3c.security.hardening.response.drill.contract.v1",
+  "surface_kind": "security-response-drill-contract",
+  "response_policy": "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+  "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
+  "required_validate_actions": [
+    "validate-platform-hardening",
+    "validate-distribution-credibility",
+    "validate-distribution-credibility-end-to-end"
+  ],
+  "required_reports": [
+    "tmp/reports/platform-hardening/integration-summary.json",
+    "tmp/reports/distribution-credibility/publication-summary.json",
+    "tmp/reports/distribution-credibility/end-to-end-summary.json",
+    "tmp/reports/release-operations/publication-summary.json"
+  ],
+  "required_artifacts": [
+    "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json",
+    "tmp/artifacts/security-hardening/posture/objc3c-security-posture.json"
+  ]
+}
