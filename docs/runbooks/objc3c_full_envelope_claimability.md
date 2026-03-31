@@ -23,6 +23,7 @@ Replayable generators and validators:
 - `python scripts/build_full_envelope_claimability_dashboard.py`
 - `python scripts/check_full_envelope_claimability_soak_external_validation.py`
 - `python scripts/check_full_envelope_claimability_release_candidate_evidence.py`
+- `python scripts/check_m324_full_envelope_claimability_closeout_gate.py`
 
 ## Claim Taxonomy
 
