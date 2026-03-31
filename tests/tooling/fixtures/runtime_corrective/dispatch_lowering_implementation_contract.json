@@ -1,0 +1,42 @@
+{
+  "contract_id": "objc3c.runtime.corrective.dispatch.lowering.implementation.contract.v1",
+  "surface_kind": "runtime-corrective-dispatch-lowering-implementation",
+  "lowering_provenance_artifact_contract_id": "objc3c.runtime.corrective.lowering.provenance.artifact.contract.v1",
+  "dispatch_semantic_contract_id": "objc3c.runtime.realization.lookup.semantics.surface.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "validator_script": "scripts/check_runtime_corrective_dispatch_lowering.py",
+  "compile_script": "scripts/objc3c_native_compile.ps1",
+  "emit_prefix": "module",
+  "object_backend": "clang",
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+    "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
+  ],
+  "required_manifest_fields": [
+    "dispatch_and_synthesized_accessor_lowering_surface",
+    "runtime_installation_abi_surface",
+    "runtime_bootstrap_lowering_registration_artifact_surface",
+    "dispatch_accessor_runtime_abi_surface"
+  ],
+  "required_surface_fields": [
+    "contract_id",
+    "runtime_dispatch_symbol",
+    "compile_manifest_artifact",
+    "registration_manifest_artifact",
+    "object_artifact",
+    "backend_artifact"
+  ],
+  "required_ll_substrings": [
+    "declare i32 @objc3_runtime_dispatch_i32("
+  ],
+  "forbidden_ll_substrings": [
+    "@objc3_msgsend_i32("
+  ],
+  "explicit_non_goals": [
+    "no-runtime-fallback-removal-in-c002",
+    "no-direct-dispatch-entrypoint-materialization",
+    "no-milestone-local-compile-driver",
+    "no-proof-without-coupled-manifest-and-provenance"
+  ]
+}

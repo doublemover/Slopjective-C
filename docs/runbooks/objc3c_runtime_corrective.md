@@ -10,6 +10,7 @@ Canonical checked-in boundary contract:
 - `tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json`
 - `tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json`
 - `tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json`
+- `tests/tooling/fixtures/runtime_corrective/dispatch_lowering_implementation_contract.json`
 
 Replayable summary generator:
 
@@ -19,6 +20,7 @@ Replayable summary generator:
 - `python scripts/build_runtime_corrective_native_output_truth_summary.py`
 - `python scripts/build_runtime_corrective_acceptance_workload_summary.py`
 - `python scripts/build_runtime_corrective_lowering_provenance_summary.py`
+- `python scripts/check_runtime_corrective_dispatch_lowering.py`
 
 Current corrective scope:
 

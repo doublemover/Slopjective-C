@@ -6960,7 +6960,7 @@ BuildToolingDiagnosticTaxonomyPortabilityContractSummary(
         &diagnostic_surface) {
   Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary summary;
   summary.portability_dependency_count =
-      summary.portability_dependency_issue_ids.size();
+      summary.portability_dependency_surface_ids.size();
   summary.diagnostics_total = diagnostic_surface.diagnostics_total;
   summary.diagnostics_after_pass_final =
       diagnostic_surface.diagnostics_after_pass_final;
