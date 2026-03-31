@@ -267,7 +267,7 @@ statement debugger.
 
 ## Editor Protocol And Debug Artifact Contract
 
-`M325` must publish one machine-owned editor tooling surface instead of
+the checked-in developer-tooling surface must publish one machine-owned editor tooling surface instead of
 scattering separate editor-only payloads across ad hoc scripts.
 
 The canonical generated surface must group:

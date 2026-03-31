@@ -105,7 +105,7 @@ def main() -> int:
         "source_contract_id": contract["contract_id"],
         "runner_path": "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py",
         "authoritative_report": repo_rel(report_path),
-        "issue": "M323-D003",
+        "issue": "packaged-interop-proof",
         "surface_kind": contract["surface_kind"],
         "required_step_action_count": len(contract["required_step_actions"]),
         "required_artifact_field_count": len(contract["required_artifact_fields"]),

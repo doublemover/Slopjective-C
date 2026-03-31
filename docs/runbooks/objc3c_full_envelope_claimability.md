@@ -238,11 +238,11 @@ matrix:
 
 Follow-on work for stronger claims or wider support belongs in:
 
-- `M325` developer tooling, LSP, formatting, and debugger integration
-- `M326` cross-platform, toolchain-matrix, and compatibility hardening
-- `M327` security hardening, macro trust, and supply-chain resilience
-- `M328` compatibility maintenance, migrations, soak, and long-horizon operations
-- `M329` package manager, registry, and dependency workflow ecosystem
-- `M330` testing framework, templates, and canonical application architecture surfaces
-- `M331` adoption program, migration playbooks, and ecosystem legibility
-- `M332` governance, extension lifecycle, and ecosystem sustainability
+- developer tooling, LSP, formatting, and debugger integration
+- cross-platform, toolchain-matrix, and compatibility hardening
+- security hardening, macro trust, and supply-chain resilience
+- compatibility maintenance, migrations, soak, and long-horizon operations
+- package manager, registry, and dependency workflow ecosystem
+- testing framework, templates, and canonical application architecture surfaces
+- adoption program, migration playbooks, and ecosystem legibility
+- governance, extension lifecycle, and ecosystem sustainability

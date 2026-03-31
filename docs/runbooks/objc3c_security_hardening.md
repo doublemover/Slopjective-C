@@ -25,6 +25,7 @@ Canonical checked-in boundary and contract surfaces:
 Replayable generators and validators:
 
 - `python scripts/build_security_hardening_boundary_inventory_summary.py`
+- `python scripts/check_security_hardening_supply_chain_audit.py`
 - `python scripts/check_release_evidence.py`
 - `python scripts/check_source_hygiene_authenticity.py`
 - `python scripts/check_objc3c_distribution_credibility_integration.py`
@@ -236,6 +237,10 @@ Those artifacts must stay validated by checked-in schema and contract surfaces:
 - `schemas/objc3c-security-posture-v1.schema.json`
 - `schemas/objc3c-security-advisory-index-v1.schema.json`
 - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
+
+The canonical supply-chain audit summary for this milestone is:
+
+- `tmp/reports/security-hardening/supply-chain-audit-summary.json`
 
 Checked-in source-of-truth must stay under:
 

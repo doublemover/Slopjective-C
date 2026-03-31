@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.security.hardening.supply.chain.audit.contract.v1",
+  "surface_kind": "security-supply-chain-audit-contract",
+  "milestone": "M327",
+  "issue": "M327-C002",
+  "required_steps": [
+    "build_security_hardening_response_policy_summary",
+    "build_security_hardening_macro_trust_policy_summary",
+    "build_security_hardening_release_key_policy_summary",
+    "check_release_evidence",
+    "check_source_hygiene_authenticity",
+    "publish_objc3c_release_provenance",
+    "build_objc3c_update_manifest",
+    "publish_objc3c_release_operations_metadata",
+    "publish_objc3c_distribution_trust_report"
+  ],
+  "required_artifacts": [
+    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
+    "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json",
+    "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+    "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json",
+    "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json",
+    "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json"
+  ],
+  "required_reports": [
+    "tmp/reports/release_evidence/evidence-index.json",
+    "tmp/reports/release-operations/publication-summary.json",
+    "tmp/reports/distribution-credibility/publication-summary.json"
+  ]
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the M326 platform-hardening closeout gate over the live milestone evidence."""
+"""Run the platform-hardening closeout gate over the live security and publication evidence."""
 
 from __future__ import annotations
 
