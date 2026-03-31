@@ -342,6 +342,7 @@ Common entrypoints by job:
 Rules:
 
 - prefer the public `npm run ...` surface over direct Python or PowerShell when a wrapper already exists,
+- use `python scripts/objc3c_public_workflow_runner.py <internal-action>` only for maintainer-only command-surface upkeep that intentionally does not consume public package-script budget, specifically `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
 - treat `native/objc3c/` as the only supported compiler implementation root,
 - treat `stdlib/` as the canonical checked-in standard-library root instead of inventing parallel helper trees,
 - use `docs/runbooks/objc3c_public_command_surface.md` for the synchronized command/action/backend reference,

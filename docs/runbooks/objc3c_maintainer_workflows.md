@@ -12,8 +12,12 @@ checked into the repo:
   - source: `docs/objc3c-native/src/*.md`
   - build/check: `npm run build:docs:native` / `npm run check:docs:native`
 - machine-facing operator appendix:
-  - source: `package.json` + `scripts/objc3c_public_workflow_runner.py`
+  - source: `package.json` + `scripts/objc3c_public_workflow_runner.py` + `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run build:docs:commands` / `npm run check:docs:commands`
+  - maintainer contract checks:
+    - `python scripts/objc3c_public_workflow_runner.py build-public-command-contract`
+    - `python scripts/objc3c_public_workflow_runner.py check-public-command-contract`
+    - `python scripts/objc3c_public_workflow_runner.py check-public-command-budget`
 
 Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
 `tmp/artifacts/` as canonical documentation.
@@ -241,8 +245,11 @@ npm run test:repo
 
 ## Direct tools
 
-- dependency boundaries: `python scripts/check_objc3c_dependency_boundaries.py --strict`
-- task hygiene: `python scripts/ci/check_task_hygiene.py`
+- command-surface contract build: `python scripts/objc3c_public_workflow_runner.py build-public-command-contract`
+- command-surface contract check: `python scripts/objc3c_public_workflow_runner.py check-public-command-contract`
+- command-surface budget check: `python scripts/objc3c_public_workflow_runner.py check-public-command-budget`
+- dependency boundaries: `npm run check:objc3c:boundaries`
+- task hygiene: `npm run check:task-hygiene`
 - repo superclean surface: `npm run check:repo:surface`
 - repo superclean integration: `npm run test:repo`
 - docs stitch/check: `npm run check:docs:native`
@@ -294,7 +301,7 @@ npm run test:repo
 - runnable compiler throughput validation: `npm run test:objc3c:runnable-compiler-throughput`
 - stress validation boundary: `docs/runbooks/objc3c_stress_validation.md`
 - external validation boundary: `docs/runbooks/objc3c_external_validation.md`
-- external validation source-surface check: `python scripts/check_external_validation_source_surface.py`
+- external validation source-surface check: `npm run check:external-validation:surface`
 - integrated external validation drill: `npm run test:objc3c:external-validation`
 - external validation replay drill: `npm run test:objc3c:external-validation:replay`
 - external repro publication: `npm run publish:objc3c:external-repro-corpus`
