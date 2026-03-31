@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "history_window",
+    "current_snapshot",
+    "trend_lines",
+    "failures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.governance.sustainability.anti_regression.summary.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "history_window": {
+      "type": "object"
+    },
+    "current_snapshot": {
+      "type": "object"
+    },
+    "trend_lines": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

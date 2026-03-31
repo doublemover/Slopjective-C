@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/objc3c-governance-budget-summary-v1.schema.json",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "budget_inventory_contract",
+    "policy_contract",
+    "waiver_registry_contract",
+    "measured",
+    "failures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.governance.sustainability.budget.summary.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "budget_inventory_contract": {
+      "type": "string"
+    },
+    "policy_contract": {
+      "type": "string"
+    },
+    "waiver_registry_contract": {
+      "type": "string"
+    },
+    "measured": {
+      "type": "object"
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "waiver_status_summary": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

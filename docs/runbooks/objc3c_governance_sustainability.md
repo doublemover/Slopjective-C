@@ -46,6 +46,13 @@ Replayable policy summary:
 
 - `python scripts/build_governance_policy_summary.py`
 
+Machine-owned governance schema surface:
+
+- `tests/tooling/fixtures/governance_sustainability/schema_surface.json`
+- `schemas/objc3c-governance-budget-summary-v1.schema.json`
+- `schemas/objc3c-governance-anti-regression-summary-v1.schema.json`
+- `python scripts/check_governance_sustainability_schema_surface.py`
+
 Current governance entry surfaces:
 
 - `scripts/ci/check_task_hygiene.py`
