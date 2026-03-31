@@ -1,0 +1,117 @@
+{
+  "contract_id": "objc3c.governance.sustainability.budget.inventory.v1",
+  "surface_kind": "governance-sustainability-budget-inventory",
+  "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+  "summary_script": "scripts/build_governance_budget_inventory_summary.py",
+  "measured_budget_surfaces": [
+    {
+      "surface_id": "package-script-budget",
+      "source": "package.json:scripts",
+      "measurement_kind": "count",
+      "current_budget_source": "scripts/ci/check_task_hygiene.py:PACKAGE_SCRIPT_BUDGET",
+      "owner_surface": "scripts/ci/check_task_hygiene.py"
+    },
+    {
+      "surface_id": "public-workflow-action-surface",
+      "source": "scripts/objc3c_public_workflow_runner.py",
+      "measurement_kind": "action-definition-count",
+      "owner_surface": "scripts/objc3c_public_workflow_runner.py"
+    },
+    {
+      "surface_id": "public-command-category-surface",
+      "source": "package.json:scripts",
+      "measurement_kind": "prefix-category-count",
+      "owner_surface": "docs/runbooks/objc3c_public_command_surface.md"
+    },
+    {
+      "surface_id": "checked-in-runbook-surface",
+      "source": "docs/runbooks/*.md",
+      "measurement_kind": "file-count",
+      "owner_surface": "docs/runbooks/"
+    },
+    {
+      "surface_id": "checked-in-schema-surface",
+      "source": "schemas/*.json",
+      "measurement_kind": "file-count",
+      "owner_surface": "schemas/"
+    },
+    {
+      "surface_id": "live-checker-surface",
+      "source": "scripts/**/check_*.py",
+      "measurement_kind": "file-count",
+      "owner_surface": "scripts/"
+    }
+  ],
+  "must_remain_absent_surfaces": [
+    {
+      "surface_id": "deprecated-docs-contracts-root",
+      "path": "docs/contracts"
+    },
+    {
+      "surface_id": "deprecated-spec-planning-root",
+      "path": "spec/planning"
+    },
+    {
+      "surface_id": "deprecated-compiler-prototype-root",
+      "path": "compiler"
+    },
+    {
+      "surface_id": "milestone-named-workflows",
+      "glob": ".github/workflows/m*.yml"
+    },
+    {
+      "surface_id": "checker-wrapper-tests",
+      "glob": "tests/tooling/test_check_*.py"
+    },
+    {
+      "surface_id": "lane-readiness-runners",
+      "glob": "scripts/**/run_*_lane_*_readiness.py"
+    },
+    {
+      "surface_id": "legacy-npm-alias-references",
+      "pattern": "npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)"
+    }
+  ],
+  "known_live_governance_drifts": [
+    {
+      "surface_id": "milestone-scoped-checkers",
+      "glob": "scripts/check_m*.py",
+      "intended_follow_on_issue": "M318-C002"
+    },
+    {
+      "surface_id": "live-python-bytecode",
+      "glob": "**/*.pyc",
+      "intended_follow_on_issue": "M318-C002"
+    },
+    {
+      "surface_id": "live-pycache-directories",
+      "glob": "**/__pycache__",
+      "intended_follow_on_issue": "M318-C002"
+    }
+  ],
+  "governance_entry_surfaces": [
+    "scripts/ci/check_task_hygiene.py",
+    "scripts/ci/run_task_hygiene_gate.py",
+    "scripts/check_repo_superclean_surface.py",
+    "scripts/check_documentation_surface.py",
+    "scripts/check_objc3c_dependency_boundaries.py",
+    "docs/runbooks/objc3c_maintainer_workflows.md",
+    "docs/runbooks/objc3c_public_command_surface.md",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "explicit_non_goals": [
+    "no-new-budget-limits-in-a001",
+    "no-waiver-policy-definition-in-a001",
+    "no-maintainer-workflow-enforcement-in-a001",
+    "no-long-horizon-reporting-claims-in-a001"
+  ],
+  "successor_issues": [
+    "M318-B001",
+    "M318-B002",
+    "M318-C001",
+    "M318-C002",
+    "M318-D001",
+    "M318-D002",
+    "M318-E001"
+  ]
+}
