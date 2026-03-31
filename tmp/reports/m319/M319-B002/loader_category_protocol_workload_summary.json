@@ -1,0 +1,16 @@
+{
+  "issue": "M319-B002",
+  "contract_id": "objc3c.object_model.closure.loader.category.protocol.workload_map.v1",
+  "surface_kind": "loader-category-protocol-workload-map",
+  "workload_count": 3,
+  "required_case_id_count": 5,
+  "fixture_count": 6,
+  "probe_count": 7,
+  "checks": {
+    "summary_script_link_matches": true,
+    "all_workload_paths_exist": true,
+    "all_authoritative_runners_exist": true,
+    "required_case_ids_are_wired_into_conformance_runner": true
+  },
+  "ok": true
+}

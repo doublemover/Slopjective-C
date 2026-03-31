@@ -1,0 +1,60 @@
+{
+  "contract_id": "objc3c.object_model.closure.loader.category.protocol.workload_map.v1",
+  "surface_kind": "loader-category-protocol-workload-map",
+  "milestone": "M319",
+  "issue": "M319-B002",
+  "runbook": "docs/runbooks/objc3c_object_model_closure.md",
+  "summary_script": "scripts/build_object_model_closure_workload_summary.py",
+  "workloads": [
+    {
+      "workload_id": "cross-module-loader-replay",
+      "required_case_ids": [
+        "imported-runtime-packaging-replay"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+        "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3"
+      ],
+      "probes": [
+        "tests/tooling/runtime/import_module_execution_matrix_probe.cpp"
+      ]
+    },
+    {
+      "workload_id": "category-attachment-and-merged-dispatch",
+      "required_case_ids": [
+        "canonical-dispatch",
+        "canonical-sample-set"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+        "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3"
+      ],
+      "probes": [
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+        "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp"
+      ]
+    },
+    {
+      "workload_id": "protocol-conformance-and-aggregate-query-coherence",
+      "required_case_ids": [
+        "realization-lookup-reflection-runtime",
+        "dispatch-fast-path"
+      ],
+      "fixtures": [
+        "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+        "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
+      ],
+      "probes": [
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp"
+      ]
+    }
+  ],
+  "authoritative_runners": [
+    "scripts/check_objc3c_runnable_object_model_conformance.py",
+    "scripts/check_objc3c_runnable_object_model_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py"
+  ]
+}
