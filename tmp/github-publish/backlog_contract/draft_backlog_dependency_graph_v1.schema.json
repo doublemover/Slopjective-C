@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tmp/github-publish/backlog_contract/draft_backlog_dependency_graph_v1.schema.json",
+  "title": "Draft Backlog Dependency Graph v1",
+  "type": "object",
+  "required": [
+    "program_code",
+    "schema_version",
+    "schema_path",
+    "policy_refs",
+    "milestone_edges",
+    "issue_edges"
+  ],
+  "properties": {
+    "program_code": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "draft-backlog-dependency-graph-v1"
+    },
+    "schema_path": {
+      "const": "tmp/github-publish/backlog_contract/draft_backlog_dependency_graph_v1.schema.json"
+    },
+    "policy_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "milestone_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "issue_edges": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "from",
+          "to"
+        ],
+        "properties": {
+          "from": {
+            "type": "string"
+          },
+          "to": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

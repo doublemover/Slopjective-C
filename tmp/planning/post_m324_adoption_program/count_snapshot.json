@@ -1,0 +1,34 @@
+{
+  "program_code": "post_m324_adoption_program",
+  "schema_version": "draft-backlog-count-snapshot-v1",
+  "schema_path": "tmp/github-publish/backlog_contract/draft_backlog_count_snapshot_v1.schema.json",
+  "policy_refs": [
+    "tmp/planning/backlog_publication/backlog_publication_policy.json",
+    "tmp/planning/backlog_publication/backlog_publication_policy.md"
+  ],
+  "generated_at": "2026-03-31T00:14:47.483263+00:00",
+  "repo_facts": {
+    "package_scripts": 144,
+    "check_py_files": 82,
+    "test_check_py_files": 0,
+    "m2xx_refs_in_native_src": 0,
+    "tracked_ll_files": 76,
+    "tracked_stub_ll_files": 0,
+    "prototype_semantic_surface_present": false
+  },
+  "milestone_count": 8,
+  "issue_count": 76,
+  "issue_counts_by_milestone": {
+    "M325": 10,
+    "M326": 10,
+    "M327": 10,
+    "M330": 10,
+    "M329": 10,
+    "M328": 9,
+    "M331": 9,
+    "M332": 8
+  },
+  "prerequisite_sequence": "M317 -> {M313, M314, M315 overlap} -> M316 -> M318 -> M319 -> M320 -> M321 -> M322 -> M323 -> M324",
+  "recommended_sequence": "M317 -> {M313, M314, M315 overlap} -> M316 -> M318 -> M319 -> M320 -> M321 -> M322 -> M323 -> M324 -> M325 -> M326 -> M327 -> M330 -> M329 -> M328 -> M331 -> M332",
+  "parallel_milestone_groups": []
+}

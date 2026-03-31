@@ -1,5 +1,11 @@
 {
-  "generated_at": "2026-03-31T00:12:07.734096+00:00",
+  "schema_version": "draft-backlog-master-snapshot-v1",
+  "schema_path": "tmp/github-publish/backlog_contract/draft_backlog_master_snapshot_v1.schema.json",
+  "policy_refs": [
+    "tmp/planning/backlog_publication/backlog_publication_policy.json",
+    "tmp/planning/backlog_publication/backlog_publication_policy.md"
+  ],
+  "generated_at": "2026-03-31T00:14:47.483263+00:00",
   "repo_facts": {
     "package_scripts": 144,
     "check_py_files": 82,

@@ -15,6 +15,11 @@ PLANNING = TMP / "planning"
 PUBLISH = TMP / "github-publish"
 BACKLOG_PUBLICATION_POLICY_JSON = "tmp/planning/backlog_publication/backlog_publication_policy.json"
 BACKLOG_PUBLICATION_POLICY_MD = "tmp/planning/backlog_publication/backlog_publication_policy.md"
+BACKLOG_CONTRACT_DIR = PUBLISH / "backlog_contract"
+BACKLOG_PROGRAM_MANIFEST_SCHEMA = "tmp/github-publish/backlog_contract/draft_backlog_program_manifest_v1.schema.json"
+BACKLOG_DEPENDENCY_GRAPH_SCHEMA = "tmp/github-publish/backlog_contract/draft_backlog_dependency_graph_v1.schema.json"
+BACKLOG_COUNT_SNAPSHOT_SCHEMA = "tmp/github-publish/backlog_contract/draft_backlog_count_snapshot_v1.schema.json"
+BACKLOG_MASTER_SNAPSHOT_SCHEMA = "tmp/github-publish/backlog_contract/draft_backlog_master_snapshot_v1.schema.json"
 
 MEASURE_ROOTS = ["scripts", "tests", "native", "docs", "showcase", "stdlib"]
 
@@ -225,6 +230,10 @@ def publication_rules_lines() -> list[str]:
         "Back all count claims with generated snapshots or replayable measurement scripts.",
         f"Canonical policy surface: `{BACKLOG_PUBLICATION_POLICY_JSON}` and `{BACKLOG_PUBLICATION_POLICY_MD}`.",
     ]
+
+
+def artifact_policy_refs() -> list[str]:
+    return [BACKLOG_PUBLICATION_POLICY_JSON, BACKLOG_PUBLICATION_POLICY_MD]
 
 
 MILESTONE_REPO_REFERENCES: dict[str, dict[str, list[str]]] = {
@@ -605,6 +614,8 @@ def build_publish_readme(program: ProgramSpec) -> str:
         f"- program manifest: `program_manifest.json`\n"
         f"- direct blocker graph: `dependency_edges.json`\n"
         f"- canonical publication policy: `{BACKLOG_PUBLICATION_POLICY_JSON}`\n"
+        f"- manifest schema: `{BACKLOG_PROGRAM_MANIFEST_SCHEMA}`\n"
+        f"- dependency-graph schema: `{BACKLOG_DEPENDENCY_GRAPH_SCHEMA}`\n"
         f"- stable identifiers in source: milestone codes and issue codes\n"
         f"- live identifiers: GitHub-assigned milestone and issue numbers captured only after publication\n"
     )
@@ -661,9 +672,266 @@ def dependency_graph(program: ProgramSpec, issue_index: dict[str, IssueSpec]) ->
                 issue_edges.append({"from": blocker, "to": issue.code})
     return {
         "program_code": program.code,
+        "schema_version": "draft-backlog-dependency-graph-v1",
+        "schema_path": BACKLOG_DEPENDENCY_GRAPH_SCHEMA,
+        "policy_refs": artifact_policy_refs(),
         "milestone_edges": milestone_edges,
         "issue_edges": issue_edges,
     }
+
+
+def write_backlog_contract_files() -> None:
+    BACKLOG_CONTRACT_DIR.mkdir(parents=True, exist_ok=True)
+    readme = "\n".join(
+        [
+            "# Draft Backlog Publish Contract",
+            "",
+            f"- program manifest schema: `{BACKLOG_PROGRAM_MANIFEST_SCHEMA}`",
+            f"- dependency graph schema: `{BACKLOG_DEPENDENCY_GRAPH_SCHEMA}`",
+            f"- count snapshot schema: `{BACKLOG_COUNT_SNAPSHOT_SCHEMA}`",
+            f"- master snapshot schema: `{BACKLOG_MASTER_SNAPSHOT_SCHEMA}`",
+            f"- canonical publication policy: `{BACKLOG_PUBLICATION_POLICY_JSON}`",
+            "",
+            "These schemas define the stable machine-owned artifact shape for the draft backlog programs.",
+            "",
+        ]
+    )
+    (BACKLOG_CONTRACT_DIR / "README.md").write_text(readme, encoding="utf-8")
+
+    def write_schema(filename: str, schema: dict[str, Any]) -> None:
+        (BACKLOG_CONTRACT_DIR / filename).write_text(json.dumps(schema, indent=2) + "\n", encoding="utf-8")
+
+    issue_manifest_schema = {
+        "type": "object",
+        "required": [
+            "code",
+            "title",
+            "milestone_code",
+            "publication_scope",
+            "domain",
+            "priority",
+            "label_names",
+            "blocked_by_milestones",
+            "blocked_by_issue_codes",
+            "direct_unblock_issue_codes",
+            "kind",
+            "body",
+        ],
+        "properties": {
+            "code": {"type": "string"},
+            "title": {"type": "string"},
+            "milestone_code": {"type": "string"},
+            "publication_scope": {"type": "string"},
+            "domain": {"type": "string"},
+            "priority": {"type": "string"},
+            "label_names": {"type": "array", "items": {"type": "string"}},
+            "blocked_by_milestones": {"type": "array", "items": {"type": "string"}},
+            "blocked_by_issue_codes": {"type": "array", "items": {"type": "string"}},
+            "direct_unblock_issue_codes": {"type": "array", "items": {"type": "string"}},
+            "kind": {"type": "string"},
+            "body": {"type": "string"},
+        },
+        "additionalProperties": False,
+    }
+    milestone_manifest_schema = {
+        "type": "object",
+        "required": [
+            "code",
+            "title",
+            "domain",
+            "priority",
+            "publication_scope",
+            "area_labels",
+            "blocked_by_milestones",
+            "issue_count",
+            "issues",
+        ],
+        "properties": {
+            "code": {"type": "string"},
+            "title": {"type": "string"},
+            "domain": {"type": "string"},
+            "priority": {"type": "string"},
+            "publication_scope": {"type": "string"},
+            "area_labels": {"type": "array", "items": {"type": "string"}},
+            "blocked_by_milestones": {"type": "array", "items": {"type": "string"}},
+            "issue_count": {"type": "integer"},
+            "issues": {"type": "array", "items": issue_manifest_schema},
+        },
+        "additionalProperties": False,
+    }
+    write_schema(
+        "draft_backlog_program_manifest_v1.schema.json",
+        {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": BACKLOG_PROGRAM_MANIFEST_SCHEMA,
+            "title": "Draft Backlog Program Manifest v1",
+            "type": "object",
+            "required": [
+                "program_code",
+                "schema_version",
+                "schema_path",
+                "title",
+                "generated_at",
+                "count_snapshot",
+                "policy_refs",
+                "prerequisite_sequence",
+                "recommended_sequence",
+                "parallel_milestone_groups",
+                "milestones",
+            ],
+            "properties": {
+                "program_code": {"type": "string"},
+                "schema_version": {"const": "draft-backlog-program-manifest-v1"},
+                "schema_path": {"const": BACKLOG_PROGRAM_MANIFEST_SCHEMA},
+                "title": {"type": "string"},
+                "generated_at": {"type": "string"},
+                "count_snapshot": {"type": "string"},
+                "policy_refs": {"type": "array", "items": {"type": "string"}},
+                "prerequisite_sequence": {"type": "string"},
+                "recommended_sequence": {"type": "string"},
+                "parallel_milestone_groups": {
+                    "type": "array",
+                    "items": {"type": "array", "items": {"type": "string"}},
+                },
+                "milestones": {"type": "array", "items": milestone_manifest_schema},
+            },
+            "additionalProperties": False,
+        },
+    )
+    write_schema(
+        "draft_backlog_dependency_graph_v1.schema.json",
+        {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": BACKLOG_DEPENDENCY_GRAPH_SCHEMA,
+            "title": "Draft Backlog Dependency Graph v1",
+            "type": "object",
+            "required": [
+                "program_code",
+                "schema_version",
+                "schema_path",
+                "policy_refs",
+                "milestone_edges",
+                "issue_edges",
+            ],
+            "properties": {
+                "program_code": {"type": "string"},
+                "schema_version": {"const": "draft-backlog-dependency-graph-v1"},
+                "schema_path": {"const": BACKLOG_DEPENDENCY_GRAPH_SCHEMA},
+                "policy_refs": {"type": "array", "items": {"type": "string"}},
+                "milestone_edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["from", "to"],
+                        "properties": {
+                            "from": {"type": "string"},
+                            "to": {"type": "string"},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "issue_edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "required": ["from", "to"],
+                        "properties": {
+                            "from": {"type": "string"},
+                            "to": {"type": "string"},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": False,
+        },
+    )
+    write_schema(
+        "draft_backlog_count_snapshot_v1.schema.json",
+        {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": BACKLOG_COUNT_SNAPSHOT_SCHEMA,
+            "title": "Draft Backlog Count Snapshot v1",
+            "type": "object",
+            "required": [
+                "program_code",
+                "schema_version",
+                "schema_path",
+                "policy_refs",
+                "generated_at",
+                "repo_facts",
+                "milestone_count",
+                "issue_count",
+                "issue_counts_by_milestone",
+                "prerequisite_sequence",
+                "recommended_sequence",
+                "parallel_milestone_groups",
+            ],
+            "properties": {
+                "program_code": {"type": "string"},
+                "schema_version": {"const": "draft-backlog-count-snapshot-v1"},
+                "schema_path": {"const": BACKLOG_COUNT_SNAPSHOT_SCHEMA},
+                "policy_refs": {"type": "array", "items": {"type": "string"}},
+                "generated_at": {"type": "string"},
+                "repo_facts": {"type": "object"},
+                "milestone_count": {"type": "integer"},
+                "issue_count": {"type": "integer"},
+                "issue_counts_by_milestone": {
+                    "type": "object",
+                    "additionalProperties": {"type": "integer"},
+                },
+                "prerequisite_sequence": {"type": "string"},
+                "recommended_sequence": {"type": "string"},
+                "parallel_milestone_groups": {
+                    "type": "array",
+                    "items": {"type": "array", "items": {"type": "string"}},
+                },
+            },
+            "additionalProperties": False,
+        },
+    )
+    write_schema(
+        "draft_backlog_master_snapshot_v1.schema.json",
+        {
+            "$schema": "https://json-schema.org/draft/2020-12/schema",
+            "$id": BACKLOG_MASTER_SNAPSHOT_SCHEMA,
+            "title": "Draft Backlog Master Snapshot v1",
+            "type": "object",
+            "required": [
+                "schema_version",
+                "schema_path",
+                "policy_refs",
+                "generated_at",
+                "repo_facts",
+                "total_milestones",
+                "total_issues",
+                "programs",
+            ],
+            "properties": {
+                "schema_version": {"const": "draft-backlog-master-snapshot-v1"},
+                "schema_path": {"const": BACKLOG_MASTER_SNAPSHOT_SCHEMA},
+                "policy_refs": {"type": "array", "items": {"type": "string"}},
+                "generated_at": {"type": "string"},
+                "repo_facts": {"type": "object"},
+                "total_milestones": {"type": "integer"},
+                "total_issues": {"type": "integer"},
+                "programs": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "required": ["milestones", "issues", "milestone_order"],
+                        "properties": {
+                            "milestones": {"type": "integer"},
+                            "issues": {"type": "integer"},
+                            "milestone_order": {"type": "array", "items": {"type": "string"}},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+            },
+            "additionalProperties": False,
+        },
+    )
 
 
 def write_program(program: ProgramSpec, repo_snapshot: dict[str, Any]) -> None:
@@ -682,6 +950,9 @@ def write_program(program: ProgramSpec, repo_snapshot: dict[str, Any]) -> None:
     issue_index = issue_index_for(program.milestones)
     count_snapshot = {
         "program_code": program.code,
+        "schema_version": "draft-backlog-count-snapshot-v1",
+        "schema_path": BACKLOG_COUNT_SNAPSHOT_SCHEMA,
+        "policy_refs": artifact_policy_refs(),
         "generated_at": repo_snapshot["generated_at"],
         "repo_facts": repo_snapshot["repo_facts"],
         "milestone_count": len(program.milestones),
@@ -729,9 +1000,12 @@ def write_program(program: ProgramSpec, repo_snapshot: dict[str, Any]) -> None:
 
     program_manifest = {
         "program_code": program.code,
+        "schema_version": "draft-backlog-program-manifest-v1",
+        "schema_path": BACKLOG_PROGRAM_MANIFEST_SCHEMA,
         "title": program.title,
         "generated_at": repo_snapshot["generated_at"],
         "count_snapshot": str(count_snapshot_path.relative_to(ROOT)).replace("\\", "/"),
+        "policy_refs": artifact_policy_refs(),
         "prerequisite_sequence": program.prerequisite_sequence,
         "recommended_sequence": program.recommended_sequence,
         "parallel_milestone_groups": program.parallel_groups,
@@ -1566,6 +1840,9 @@ def write_master_summary(programs: list[ProgramSpec], snapshot: dict[str, Any]) 
     (PLANNING / "draft_backlog_master_snapshot.json").write_text(
         json.dumps(
             {
+                "schema_version": "draft-backlog-master-snapshot-v1",
+                "schema_path": BACKLOG_MASTER_SNAPSHOT_SCHEMA,
+                "policy_refs": artifact_policy_refs(),
                 "generated_at": snapshot["generated_at"],
                 "repo_facts": snapshot["repo_facts"],
                 "total_milestones": total_milestones,
@@ -1588,6 +1865,7 @@ def write_master_summary(programs: list[ProgramSpec], snapshot: dict[str, Any]) 
 
 def main() -> None:
     snapshot = repo_fact_snapshot()
+    write_backlog_contract_files()
     programs = [cleanup_program(), runtime_program(), post_program()]
     for program in programs:
         write_program(program, snapshot)

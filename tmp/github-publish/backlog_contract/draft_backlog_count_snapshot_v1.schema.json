@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "tmp/github-publish/backlog_contract/draft_backlog_count_snapshot_v1.schema.json",
+  "title": "Draft Backlog Count Snapshot v1",
+  "type": "object",
+  "required": [
+    "program_code",
+    "schema_version",
+    "schema_path",
+    "policy_refs",
+    "generated_at",
+    "repo_facts",
+    "milestone_count",
+    "issue_count",
+    "issue_counts_by_milestone",
+    "prerequisite_sequence",
+    "recommended_sequence",
+    "parallel_milestone_groups"
+  ],
+  "properties": {
+    "program_code": {
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "draft-backlog-count-snapshot-v1"
+    },
+    "schema_path": {
+      "const": "tmp/github-publish/backlog_contract/draft_backlog_count_snapshot_v1.schema.json"
+    },
+    "policy_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "repo_facts": {
+      "type": "object"
+    },
+    "milestone_count": {
+      "type": "integer"
+    },
+    "issue_count": {
+      "type": "integer"
+    },
+    "issue_counts_by_milestone": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer"
+      }
+    },
+    "prerequisite_sequence": {
+      "type": "string"
+    },
+    "recommended_sequence": {
+      "type": "string"
+    },
+    "parallel_milestone_groups": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}

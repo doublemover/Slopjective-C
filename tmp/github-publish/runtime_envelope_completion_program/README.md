@@ -1,6 +1,6 @@
-# Cleanup Acceleration And Runtime Corrective Program Publish Artifacts
+# Runtime Envelope Completion Program Publish Artifacts
 
-This directory contains publish-ready JSON issue bodies and dependency metadata for `cleanup_acceleration_program`.
+This directory contains publish-ready JSON issue bodies and dependency metadata for `runtime_envelope_completion_program`.
 
 - issue JSON bodies: `issue_bodies/`
 - program manifest: `program_manifest.json`
