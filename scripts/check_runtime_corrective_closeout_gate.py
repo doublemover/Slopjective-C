@@ -87,7 +87,7 @@ def main() -> int:
 
     summary = {
         "issue": "M316-E001",
-        "runbook_mentions_closeout_gate": "check_m316_runtime_corrective_closeout_gate.py" in runbook_text,
+        "runbook_mentions_closeout_gate": "check_runtime_corrective_closeout_gate.py" in runbook_text,
         "command_count": len(COMMANDS),
         "commands": command_results,
     }

@@ -53,6 +53,12 @@ Machine-owned governance schema surface:
 - `schemas/objc3c-governance-anti-regression-summary-v1.schema.json`
 - `python scripts/check_governance_sustainability_schema_surface.py`
 
+Replayable governance enforcement:
+
+- `python scripts/check_governance_sustainability_budget_enforcement.py`
+- `python scripts/ci/run_task_hygiene_gate.py`
+- canonical enforcement summary: `tmp/reports/m318/M318-C002/governance_budget_enforcement_summary.json`
+
 Current governance entry surfaces:
 
 - `scripts/ci/check_task_hygiene.py`

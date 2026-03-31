@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 BYTECODE_STASH_ROOT = ROOT / "tmp" / "reports" / "task-hygiene-bytecode"
 SEQUENCE = [
     ('task-hygiene', [sys.executable, 'scripts/ci/check_task_hygiene.py']),
+    ('governance-budget-enforcement', [sys.executable, 'scripts/check_governance_sustainability_budget_enforcement.py']),
     ('dependency-boundaries', [sys.executable, 'scripts/check_objc3c_dependency_boundaries.py', '--strict']),
     ('repo-superclean-surface', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-repo-superclean-surface']),
     ('site-index-drift', [sys.executable, 'scripts/objc3c_public_workflow_runner.py', 'check-site']),
