@@ -24,6 +24,7 @@ Replayable generators and validators:
 - `python scripts/build_platform_hardening_boundary_inventory_summary.py`
 - `python scripts/build_objc3c_platform_support_matrix.py`
 - `python scripts/build_platform_hardening_artifact_contract_summary.py`
+- `python scripts/check_platform_hardening_build_package_validation.py`
 - `python scripts/check_objc3c_packaging_channels_integration.py`
 - `python scripts/check_objc3c_packaging_channels_end_to_end.py`
 - `python scripts/check_objc3c_release_operations_integration.py`
@@ -225,6 +226,24 @@ The generated summary/report family for this milestone lives under:
 
 Downstream validation and publication work must extend this artifact instead of
 inventing a second matrix format.
+
+## Build And Package Validation Surface
+
+The live build/package validation path for this milestone must stay on the same
+public build/package surfaces users run:
+
+- `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
+- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+- `python scripts/build_objc3c_package_channels.py`
+- `python scripts/check_objc3c_packaging_channels_integration.py`
+- `python scripts/check_objc3c_packaging_channels_end_to_end.py`
+
+The matrix validator for this slice is:
+
+- `python scripts/check_platform_hardening_build_package_validation.py`
+
+It must fail closed if the current host is outside the checked-in support
+matrix.
 
 ## Explicit Non-Goals
 

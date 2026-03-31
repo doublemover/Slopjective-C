@@ -28,13 +28,20 @@ def load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
+def run_capture(command: Sequence[str], *, capture_output: bool = True) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(list(command), cwd=ROOT, text=True, capture_output=True, check=False, env=env)
-    if result.stdout:
+    result = subprocess.run(
+        list(command),
+        cwd=ROOT,
+        text=True,
+        capture_output=capture_output,
+        check=False,
+        env=env,
+    )
+    if capture_output and result.stdout:
         sys.stdout.write(result.stdout)
-    if result.stderr:
+    if capture_output and result.stderr:
         sys.stderr.write(result.stderr)
     return result
 
@@ -45,7 +52,7 @@ def expect(condition: bool, message: str) -> None:
 
 
 def main() -> int:
-    result = run_capture([sys.executable, str(RUNNER), "validate-release-operations"])
+    result = run_capture([sys.executable, str(RUNNER), "validate-release-operations"], capture_output=False)
     if result.returncode != 0:
         raise RuntimeError("validate-release-operations failed")
 

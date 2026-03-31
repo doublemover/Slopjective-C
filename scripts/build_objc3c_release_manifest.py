@@ -51,11 +51,7 @@ def load_json(path: Path) -> dict[str, Any]:
 def run(command: list[str]) -> None:
     env = os.environ.copy()
     env['PYTHONDONTWRITEBYTECODE'] = '1'
-    result = subprocess.run(command, cwd=ROOT, env=env, text=True, capture_output=True, check=False)
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-    if result.stderr:
-        sys.stderr.write(result.stderr)
+    result = subprocess.run(command, cwd=ROOT, env=env, text=True, check=False)
     if result.returncode != 0:
         joined = ' '.join(command)
         raise RuntimeError(f"command failed with exit code {result.returncode}: {joined}")

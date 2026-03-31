@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.platform.hardening.build.package.validation.contract.v1",
+  "surface_kind": "build-package-validation-contract",
+  "milestone": "M326",
+  "issue": "M326-C002",
+  "support_matrix_artifact": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+  "summary_script": "scripts/check_platform_hardening_build_package_validation.py",
+  "required_steps": [
+    "build-native-binaries",
+    "package-runnable-toolchain",
+    "check-packaging-channels-integration",
+    "check-packaging-channels-end-to-end"
+  ],
+  "required_reports": [
+    "tmp/reports/package-channels/package-channels-summary.json",
+    "tmp/reports/package-channels/integration-summary.json",
+    "tmp/reports/package-channels/end-to-end-summary.json"
+  ],
+  "required_matrix_fields": [
+    "default_platform_id",
+    "current_host",
+    "required_tool_probes",
+    "publication_surface"
+  ]
+}
