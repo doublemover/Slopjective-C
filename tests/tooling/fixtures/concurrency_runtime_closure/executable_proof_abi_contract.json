@@ -1,0 +1,52 @@
+{
+  "contract_id": "objc3c.concurrency.runtime.closure.executable.proof.abi.contract.v1",
+  "surface_kind": "concurrency-runtime-executable-proof-abi-contract",
+  "milestone": "M322",
+  "issue": "M322-D001",
+  "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+  "summary_script": "scripts/build_concurrency_runtime_closure_executable_proof_summary.py",
+  "public_commands": [
+    "test:objc3c:concurrency-conformance",
+    "test:objc3c:runnable-concurrency"
+  ],
+  "public_workflows": [
+    "validate-concurrency-conformance",
+    "validate-runnable-concurrency"
+  ],
+  "private_runtime_abi_boundary": [
+    "objc3_runtime_allocate_async_continuation_i32",
+    "objc3_runtime_handoff_async_continuation_to_executor_i32",
+    "objc3_runtime_resume_async_continuation_i32",
+    "objc3_runtime_spawn_task_i32",
+    "objc3_runtime_enter_task_group_scope_i32",
+    "objc3_runtime_add_task_group_task_i32",
+    "objc3_runtime_wait_task_group_next_i32",
+    "objc3_runtime_cancel_task_group_i32",
+    "objc3_runtime_task_is_cancelled_i32",
+    "objc3_runtime_task_on_cancel_i32",
+    "objc3_runtime_executor_hop_i32",
+    "objc3_runtime_copy_async_continuation_state_for_testing",
+    "objc3_runtime_copy_task_runtime_state_for_testing"
+  ],
+  "authoritative_code_paths": [
+    "scripts/check_objc3c_runnable_concurrency_conformance.py",
+    "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/continuation_runtime_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+    "tests/tooling/fixtures/native/task_runtime_abi_completion_positive.objc3",
+    "tests/tooling/fixtures/native/task_runtime_hardening_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+    "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/task_runtime_abi_completion_probe.cpp",
+    "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+    "tests/tooling/runtime/task_runtime_hardening_probe.cpp"
+  ]
+}
