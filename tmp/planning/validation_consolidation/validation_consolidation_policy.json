@@ -1,0 +1,90 @@
+{
+  "policy_id": "validation-consolidation-policy-v1",
+  "effective_from_milestone": "M313",
+  "scope": {
+    "planning_root": "tmp/planning/validation_consolidation",
+    "evidence_root": "tmp/reports/m313",
+    "live_repo": "doublemover/Slopjective-C",
+    "implementation_surfaces": [
+      "scripts/objc3c_public_workflow_runner.py",
+      "scripts/shared_compiler_runtime_acceptance_harness.py",
+      "scripts/ci/run_task_hygiene_gate.py",
+      "scripts/ci/check_task_hygiene.py",
+      "package.json",
+      "docs/runbooks/objc3c_public_command_surface.md"
+    ]
+  },
+  "measurement_sources": {
+    "surface_inventory": "tmp/planning/validation_consolidation/build_validation_surface_inventory.py",
+    "latest_snapshot": "tmp/reports/m313/M313-A001/validation_surface_inventory.json"
+  },
+  "validation_model": {
+    "goal": "feature and workflow claims should be backed by executable acceptance-first truth, with static guards retained only where they prevent overclaiming or protect repo/product contract surfaces",
+    "canonical_truth_order": [
+      "shared_acceptance_harness",
+      "public_workflow_validate_actions",
+      "integration_validators",
+      "runnable_end_to_end_validators",
+      "retained_static_policy_guards"
+    ],
+    "truth_definitions": {
+      "shared_acceptance_harness": "Reusable subsystem acceptance suites and common compile/runtime drill entrypoints such as scripts/shared_compiler_runtime_acceptance_harness.py.",
+      "public_workflow_validate_actions": "Named validate-* and test-* actions in scripts/objc3c_public_workflow_runner.py and package.json that compose live steps into operator-facing workflows.",
+      "integration_validators": "Executable integration scripts, usually check_objc3c_*_integration.py, that prove the live in-repo path rather than static structure.",
+      "runnable_end_to_end_validators": "Executable staged or packaged end-to-end scripts, usually check_objc3c_runnable_*_end_to_end.py or equivalent e2e flows, that prove runnable distribution behavior.",
+      "retained_static_policy_guards": "Static checks allowed only when they guard repo shape, docs, product layout, source-of-truth contract roots, schema validity, or task-hygiene budgets that executable flows do not replace cleanly."
+    },
+    "requirements": [
+      "New validation entrypoints must attach to a shared harness or a public workflow action before they are treated as canonical truth.",
+      "Executable validation evidence outranks static checks when proving feature behavior or integration success.",
+      "Retained static guards must map to one approved retention class and name the irreplaceable contract they protect.",
+      "Human summaries may quote validation counts only from replayable snapshots generated in the same change set."
+    ]
+  },
+  "retained_static_guard_classes": [
+    "retain:task-hygiene",
+    "retain:repo-shape",
+    "retain:docs-surface",
+    "retain:product-surface",
+    "retain:source-surface-contract",
+    "retain:schema-contract"
+  ],
+  "legacy_surface_lifecycle": {
+    "states": [
+      "active",
+      "migration-only",
+      "archival",
+      "prohibited"
+    ],
+    "state_rules": {
+      "active": "The surface is still part of the canonical validation path and remains named by a shared harness or public workflow action.",
+      "migration-only": "The surface still runs, but only as a bridge to a shared acceptance-first entrypoint and must name that successor.",
+      "archival": "The surface is retained only for historical replay or reference and must not be invoked by default CI or public docs.",
+      "prohibited": "The surface must not be reintroduced or referenced as current truth; task-hygiene or closeout gates should fail if it returns."
+    },
+    "requirements": [
+      "Every legacy check_* surface outside the retained static guard classes must be classified into one lifecycle state.",
+      "Migration-only surfaces must name a shared-harness or public-workflow successor.",
+      "Archival and prohibited surfaces must not remain in default package scripts, default CI schedules, or public command docs."
+    ]
+  },
+  "implementation_rules": {
+    "requirements": [
+      "Prefer extending scripts/objc3c_public_workflow_runner.py execute_registered_action() compositions over adding milestone-local wrapper commands.",
+      "Prefer extending scripts/shared_compiler_runtime_acceptance_harness.py or another shared executable harness over creating one-off validators.",
+      "Keep retained static guards narrowly scoped to contract validation; do not use them to claim runtime or integration behavior.",
+      "When an executable validator remains necessary, wire it through validate-* or test-* actions instead of leaving it orphaned.",
+      "CI schedules must express acceptance, integration, runnable, and retained-static layers without creating a second taxonomy."
+    ],
+    "non_goals": [
+      "This policy does not delete executable validators by itself.",
+      "This policy does not rename package scripts or CI jobs yet; follow-on M313 issues do that work.",
+      "This policy does not lower the public claim surface below the evidence; unresolved gaps remain fail-closed until executable proof exists."
+    ]
+  },
+  "direct_follow_on_work": {
+    "M313-B002": "Consolidate subsystem execution into shared harnesses and public workflow composition.",
+    "M313-B003": "Classify legacy check_* surfaces into active, migration-only, archival, or prohibited namespaces.",
+    "M313-C001": "Define one replayable artifact schema for acceptance evidence, migration state, and retained-guard reporting."
+  }
+}

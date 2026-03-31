@@ -1,0 +1,73 @@
+{
+  "issue": "M313-B001",
+  "policy_id": "validation-consolidation-policy-v1",
+  "inventory_issue": "M313-A001",
+  "measured_counts": {
+    "package_scripts_total": 144,
+    "package_test_scripts": 75,
+    "package_check_scripts": 27,
+    "package_build_scripts": 10,
+    "check_py_files": 82,
+    "test_check_py_files": 0,
+    "validation_ps1_files": 17,
+    "shared_acceptance_harness_suite_count": 3,
+    "retained_static_guard_count": 19,
+    "executable_validation_count": 63
+  },
+  "canonical_truth_order": [
+    "shared_acceptance_harness",
+    "public_workflow_validate_actions",
+    "integration_validators",
+    "runnable_end_to_end_validators",
+    "retained_static_policy_guards"
+  ],
+  "retained_static_guard_classes": [
+    "retain:task-hygiene",
+    "retain:repo-shape",
+    "retain:docs-surface",
+    "retain:product-surface",
+    "retain:source-surface-contract",
+    "retain:schema-contract"
+  ],
+  "legacy_surface_states": [
+    "active",
+    "migration-only",
+    "archival",
+    "prohibited"
+  ],
+  "retained_static_guard_paths": [
+    "scripts/check_distribution_credibility_schema_surface.py",
+    "scripts/check_distribution_credibility_source_surface.py",
+    "scripts/check_documentation_surface.py",
+    "scripts/check_external_validation_source_surface.py",
+    "scripts/check_packaging_channels_schema_surface.py",
+    "scripts/check_packaging_channels_source_surface.py",
+    "scripts/check_performance_governance_schema_surface.py",
+    "scripts/check_performance_governance_source_surface.py",
+    "scripts/check_public_conformance_reporting_source_surface.py",
+    "scripts/check_public_conformance_schema_surface.py",
+    "scripts/check_release_foundation_schema_surface.py",
+    "scripts/check_release_foundation_source_surface.py",
+    "scripts/check_release_operations_schema_surface.py",
+    "scripts/check_release_operations_source_surface.py",
+    "scripts/check_repo_superclean_surface.py",
+    "scripts/check_showcase_surface.py",
+    "scripts/check_stdlib_surface.py",
+    "scripts/check_stress_source_surface.py",
+    "scripts/ci/check_task_hygiene.py"
+  ],
+  "unreferenced_check_surfaces": [
+    "scripts/check_activation_triggers.py",
+    "scripts/check_bootstrap_readiness.py",
+    "scripts/check_conformance_corpus_surface.py",
+    "scripts/check_getting_started_surface.py",
+    "scripts/check_objc3c_end_to_end_determinism.py",
+    "scripts/check_objc3c_library_cli_parity.py",
+    "scripts/check_open_blocker_audit_contract.py"
+  ],
+  "next_issues": [
+    "M313-B002",
+    "M313-B003",
+    "M313-C001"
+  ]
+}
