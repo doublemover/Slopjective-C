@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.dev/schemas/objc3c-artifact-authenticity-v1.schema.json",
+  "title": "objc3c Artifact Authenticity Envelope",
+  "type": "object",
+  "required": [
+    "authenticity_schema_id",
+    "provenance_class"
+  ],
+  "properties": {
+    "authenticity_schema_id": {
+      "const": "objc3c.artifact.authenticity.schema.v1"
+    },
+    "provenance_class": {
+      "type": "string",
+      "enum": [
+        "generated_truth",
+        "genuine_generated_output",
+        "synthetic_fixture",
+        "archive_reference"
+      ]
+    },
+    "provenance_mode": {
+      "type": "string"
+    },
+    "content_role": {
+      "type": "string"
+    },
+    "surface_id": {
+      "type": "string",
+      "pattern": "^objc3c\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+\\.v[0-9]+$"
+    },
+    "artifact_family_id": {
+      "type": "string",
+      "pattern": "^objc3c\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+\\.v[0-9]+$"
+    },
+    "report_family_id": {
+      "type": "string",
+      "pattern": "^objc3c\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+\\.v[0-9]+$"
+    },
+    "fixture_family_id": {
+      "type": "string",
+      "pattern": "^objc3c\\.[a-z][a-z0-9]*(\\.[a-z][a-z0-9]*)+\\.v[0-9]+$"
+    },
+    "historical_ref": {
+      "type": "string"
+    },
+    "generator_or_compile_path": {
+      "type": "string"
+    },
+    "input_root": {
+      "type": "string"
+    },
+    "output_path": {
+      "type": "string"
+    },
+    "synthetic_reason": {
+      "type": "string"
+    },
+    "explicit_fixture_label": {
+      "type": "string"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "provenance_class": {
+            "const": "generated_truth"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "surface_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance_class": {
+            "const": "genuine_generated_output"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "surface_id",
+          "artifact_family_id",
+          "report_family_id",
+          "generator_or_compile_path",
+          "input_root",
+          "output_path"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance_class": {
+            "const": "synthetic_fixture"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "artifact_family_id",
+          "fixture_family_id"
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "provenance_class": {
+            "const": "archive_reference"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "historical_ref"
+        ]
+      }
+    }
+  ],
+  "additionalProperties": true
+}

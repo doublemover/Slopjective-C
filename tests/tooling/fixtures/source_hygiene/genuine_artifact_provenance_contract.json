@@ -1,0 +1,34 @@
+{
+  "contract_id": "objc3c.source_hygiene.genuine_artifact_provenance_contract.v1",
+  "schema_version": 1,
+  "authenticity_schema": "schemas/objc3c-artifact-authenticity-v1.schema.json",
+  "policy_contract": "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
+  "classification_contract": "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json",
+  "provenance_class": "genuine_generated_output",
+  "required_envelope_fields": [
+    "authenticity_schema_id",
+    "provenance_class",
+    "surface_id",
+    "artifact_family_id",
+    "report_family_id",
+    "generator_or_compile_path",
+    "input_root",
+    "output_path"
+  ],
+  "output_roots": [
+    "tmp/reports/",
+    "tmp/artifacts/"
+  ],
+  "generator_families": [
+    "python scripts/build_objc3c_native_docs.py",
+    "python scripts/render_objc3c_public_command_surface.py",
+    "python scripts/generate_conformance_evidence_index.py",
+    "python scripts/objc3c_public_workflow_runner.py",
+    "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1"
+  ],
+  "notes": [
+    "genuine generated outputs are replayable build or report artifacts, not tracked fixture substitutes",
+    "the envelope schema is shared with synthetic fixtures so downstream validators can distinguish class by provenance_class rather than path heuristics alone",
+    "c002 is responsible for emitting genuine examples against this contract"
+  ]
+}

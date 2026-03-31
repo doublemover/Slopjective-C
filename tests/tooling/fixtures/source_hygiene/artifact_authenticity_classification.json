@@ -97,5 +97,6 @@
     "treat tracked tests and replay fixtures as synthetic_fixture unless a stricter rule overrides them",
     "use library_cli_parity as the seed authenticity envelope for future fixture labeling work",
     "require genuine generated outputs to carry durable surface and family identifiers before widening proof claims"
-  ]
+  ],
+  "genuine_provenance_contract": "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json"
 }

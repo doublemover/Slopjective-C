@@ -1,0 +1,35 @@
+{
+  "issue": "M315-C001",
+  "schema_path": "schemas/objc3c-artifact-authenticity-v1.schema.json",
+  "contract_path": "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json",
+  "policy_contract": "objc3c.source_hygiene.stable_identifier_authenticity_policy.v1",
+  "classification_contract": "objc3c.source_hygiene.artifact_authenticity_classification.v1",
+  "genuine_contract_id": "objc3c.source_hygiene.genuine_artifact_provenance_contract.v1",
+  "schema_authenticity_id": "objc3c.artifact.authenticity.schema.v1",
+  "genuine_required_fields": [
+    "authenticity_schema_id",
+    "provenance_class",
+    "surface_id",
+    "artifact_family_id",
+    "report_family_id",
+    "generator_or_compile_path",
+    "input_root",
+    "output_path"
+  ],
+  "parity_reference_examples": [
+    "tests/tooling/fixtures/native/library_cli_parity/library/module.manifest.json",
+    "tests/tooling/fixtures/native/library_cli_parity/cli/module.manifest.json",
+    "tests/tooling/fixtures/native/library_cli_parity/golden_summary.json"
+  ],
+  "checks": {
+    "policy_links_classification_contract": true,
+    "classification_links_genuine_contract": true,
+    "schema_id_matches_contract": true,
+    "genuine_contract_required_fields_in_schema": true,
+    "genuine_contract_covers_policy_fields": true,
+    "schema_has_genuine_generated_output_enum": true,
+    "parity_examples_use_schema_id": true,
+    "parity_examples_stay_synthetic": true
+  },
+  "ok": true
+}
