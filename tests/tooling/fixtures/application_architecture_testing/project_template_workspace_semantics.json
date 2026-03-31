@@ -1,0 +1,56 @@
+{
+  "contract_id": "objc3c.application.architecture.testing.project_template_workspace_semantics.v1",
+  "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+  "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
+  "template_materializer": "scripts/materialize_objc3c_project_template.py",
+  "playground_materializer_action": "materialize-playground-workspace",
+  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
+  "template_contract_id": "objc3c.project.template.surface.v1",
+  "template_harness_contract_id": "objc3c.project.template.demo.harness.v1",
+  "playground_workspace_contract_id": "objc3c.playground.workspace.v1",
+  "checked_in_source_roots": [
+    "showcase/portfolio.json",
+    "showcase/README.md",
+    "stdlib/workspace.json",
+    "docs/tutorials/getting_started.md",
+    "docs/tutorials/build_run_verify.md",
+    "docs/tutorials/guided_walkthrough.md"
+  ],
+  "public_actions": [
+    "materialize-project-template",
+    "materialize-playground-workspace",
+    "benchmark-runtime-inspector",
+    "inspect-bonus-tool-integration"
+  ],
+  "public_scripts": [
+    "build:objc3c:template",
+    "build:objc3c:playground",
+    "inspect:objc3c:bonus-tools",
+    "inspect:objc3c:benchmark"
+  ],
+  "generated_template_layout": {
+    "root": "tmp/artifacts/project-template/<example-id>",
+    "required_paths": [
+      "README.md",
+      "src/main.objc3",
+      "template.json"
+    ]
+  },
+  "generated_harness_layout": {
+    "root": "tmp/reports/project-template/<example-id>",
+    "required_paths": [
+      "demo-harness.json"
+    ]
+  },
+  "workspace_semantics": [
+    "template source is copied from a checked-in showcase source and remains traceable through template.json",
+    "template README must point users at public workflow actions instead of internal-only scripts",
+    "playground workspace materialization is the canonical generated workspace shape for editor/debug tooling and runnable drills",
+    "template and playground generation must agree on source roots, public actions, and report publication"
+  ],
+  "non_goals": [
+    "shipping a second template generator outside scripts/materialize_objc3c_project_template.py",
+    "creating a hidden machine-owned workspace format that differs from the public runner path",
+    "treating tmp outputs as authoritative source inputs"
+  ]
+}

@@ -24,6 +24,7 @@ Replayable boundary inventory:
 
 - `python scripts/build_application_architecture_testing_boundary_inventory_summary.py`
 - `python scripts/build_application_architecture_testing_semantic_summary.py`
+- `python scripts/build_application_architecture_template_workspace_summary.py`
 
 ## Current Boundary
 
@@ -58,6 +59,8 @@ The live meaning is:
 
 - first-party testing reuses the existing public workflow runner and checked-in
   showcase, stdlib, developer-tooling, and documentation surfaces
+- project templates are derived from checked-in showcase sources and are only
+  claimable when they remain traceable through public workflow actions
 
 ## Non-Goals
 
