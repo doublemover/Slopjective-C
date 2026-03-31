@@ -1,0 +1,610 @@
+{
+  "issue": "M313-B002",
+  "generated_at": "2026-03-31T01:04:13.631856+00:00",
+  "policy_id": "validation-consolidation-policy-v1",
+  "inventory_issue": "M313-A001",
+  "shared_acceptance_harness": {
+    "contract_id": "objc3c.shared.executable.acceptance.harness.v1",
+    "harness_path": "scripts/shared_compiler_runtime_acceptance_harness.py",
+    "suite_count": 3,
+    "suite_ids": [
+      "runtime-acceptance",
+      "public-test-fast",
+      "public-test-full"
+    ]
+  },
+  "public_workflow_validation": {
+    "action_count": 135,
+    "script_count": 135,
+    "families": [
+      {
+        "family": "aggregate-validation",
+        "action_count": 3,
+        "actions": [
+          "test-fast",
+          "test-full",
+          "test-nightly"
+        ],
+        "package_scripts": [
+          "test:fast",
+          "test:objc3c:full",
+          "test:objc3c:nightly"
+        ],
+        "tiers": [
+          "acceptance"
+        ]
+      },
+      {
+        "family": "bonus-experiences",
+        "action_count": 2,
+        "actions": [
+          "validate-bonus-experiences",
+          "validate-runnable-bonus-experiences"
+        ],
+        "package_scripts": [
+          "test:bonus-experiences",
+          "test:bonus-experiences:e2e"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable"
+        ]
+      },
+      {
+        "family": "compiler-throughput",
+        "action_count": 3,
+        "actions": [
+          "benchmark-compiler-throughput",
+          "validate-compiler-throughput",
+          "validate-runnable-compiler-throughput"
+        ],
+        "package_scripts": [
+          "inspect:objc3c:compiler-throughput",
+          "test:objc3c:compiler-throughput",
+          "test:objc3c:runnable-compiler-throughput"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable"
+        ]
+      },
+      {
+        "family": "conformance-corpus",
+        "action_count": 2,
+        "actions": [
+          "validate-conformance-corpus",
+          "validate-runnable-conformance-corpus"
+        ],
+        "package_scripts": [
+          "test:objc3c:conformance-corpus",
+          "test:objc3c:runnable-conformance-corpus"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable"
+        ]
+      },
+      {
+        "family": "distribution-credibility",
+        "action_count": 6,
+        "actions": [
+          "build-distribution-credibility-dashboard",
+          "check-distribution-credibility-schema-surface",
+          "check-distribution-credibility-surface",
+          "publish-distribution-credibility",
+          "validate-distribution-credibility",
+          "validate-distribution-credibility-end-to-end"
+        ],
+        "package_scripts": [
+          "check:objc3c:distribution-credibility:schemas",
+          "check:objc3c:distribution-credibility:surface",
+          "inspect:objc3c:distribution-credibility",
+          "publish:objc3c:distribution-credibility",
+          "test:objc3c:distribution-credibility",
+          "test:objc3c:distribution-credibility:e2e"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "docs",
+        "action_count": 6,
+        "actions": [
+          "build-native-docs",
+          "build-site",
+          "check-documentation-surface",
+          "check-native-docs",
+          "check-site",
+          "validate-documentation-surface"
+        ],
+        "package_scripts": [
+          "build:docs:native",
+          "build:site",
+          "check:docs:native",
+          "check:docs:surface",
+          "check:site",
+          "test:docs"
+        ],
+        "tiers": [
+          "acceptance",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "external-validation",
+        "action_count": 4,
+        "actions": [
+          "check-external-validation-surface",
+          "test-external-validation-replay",
+          "validate-external-validation",
+          "validate-external-validation-integration"
+        ],
+        "package_scripts": [
+          "check:external-validation:surface",
+          "test:objc3c:external-validation",
+          "test:objc3c:external-validation:integration",
+          "test:objc3c:external-validation:replay"
+        ],
+        "tiers": [
+          "acceptance",
+          "integration",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "misc",
+        "action_count": 36,
+        "actions": [
+          "benchmark-comparative-baselines",
+          "benchmark-runtime-inspector",
+          "build-default",
+          "build-native-binaries",
+          "build-native-contracts",
+          "build-native-full",
+          "build-native-reconfigure",
+          "build-package-channels",
+          "build-public-command-surface",
+          "build-release-manifest",
+          "build-update-manifest",
+          "compile-objc3c",
+          "inspect-bonus-tool-integration",
+          "inspect-capability-explorer",
+          "inspect-compile-observability",
+          "inspect-playground-repro",
+          "inspect-runtime-inspector",
+          "lint-spec",
+          "materialize-playground-workspace",
+          "materialize-project-template",
+          "package-runnable-toolchain",
+          "proof-objc3c",
+          "publish-external-repro-corpus",
+          "publish-release-provenance",
+          "test-ci",
+          "test-default",
+          "test-execution-replay",
+          "test-execution-smoke",
+          "test-fixture-matrix",
+          "test-mixed-module-differential",
+          "test-negative-expectations",
+          "test-recovery",
+          "test-runtime-acceptance",
+          "test-smoke",
+          "trace-compile-stages",
+          "validate-developer-tooling"
+        ],
+        "package_scripts": [
+          "build",
+          "build:docs:commands",
+          "build:objc3c-native",
+          "build:objc3c-native:contracts",
+          "build:objc3c-native:full",
+          "build:objc3c-native:reconfigure",
+          "build:objc3c:playground",
+          "build:objc3c:template",
+          "compile:objc3c",
+          "inspect:objc3c:benchmark",
+          "inspect:objc3c:bonus-tools",
+          "inspect:objc3c:capabilities",
+          "inspect:objc3c:comparative-baselines",
+          "inspect:objc3c:observability",
+          "inspect:objc3c:playground",
+          "inspect:objc3c:release-manifest",
+          "inspect:objc3c:runtime",
+          "inspect:objc3c:update-manifest",
+          "lint:spec",
+          "package:objc3c-native:runnable-toolchain",
+          "package:objc3c:channels",
+          "proof:objc3c",
+          "publish:objc3c:external-repro-corpus",
+          "publish:objc3c:release-provenance",
+          "test",
+          "test:ci",
+          "test:objc3c",
+          "test:objc3c:developer-tooling",
+          "test:objc3c:execution-replay-proof",
+          "test:objc3c:execution-smoke",
+          "test:objc3c:fixture-matrix",
+          "test:objc3c:mixed-module-differential",
+          "test:objc3c:negative-expectations",
+          "test:objc3c:runtime-acceptance",
+          "test:smoke",
+          "trace:objc3c:stages"
+        ],
+        "tiers": [
+          "acceptance",
+          "integration"
+        ]
+      },
+      {
+        "family": "onboarding",
+        "action_count": 1,
+        "actions": [
+          "validate-getting-started"
+        ],
+        "package_scripts": [
+          "test:getting-started"
+        ],
+        "tiers": [
+          "acceptance"
+        ]
+      },
+      {
+        "family": "packaging-channels",
+        "action_count": 4,
+        "actions": [
+          "check-packaging-channels-schema-surface",
+          "check-packaging-channels-surface",
+          "validate-packaging-channels",
+          "validate-packaging-channels-end-to-end"
+        ],
+        "package_scripts": [
+          "check:objc3c:packaging-channels:schemas",
+          "check:objc3c:packaging-channels:surface",
+          "test:objc3c:packaging-channels",
+          "test:objc3c:packaging-channels:e2e"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "performance",
+        "action_count": 8,
+        "actions": [
+          "benchmark-performance",
+          "benchmark-runtime-performance",
+          "build-performance-dashboard",
+          "publish-performance-report",
+          "validate-performance-foundation",
+          "validate-runnable-performance",
+          "validate-runnable-runtime-performance",
+          "validate-runtime-performance"
+        ],
+        "package_scripts": [
+          "inspect:objc3c:performance",
+          "inspect:objc3c:performance-dashboard",
+          "inspect:objc3c:runtime-performance",
+          "publish:objc3c:performance-report",
+          "test:objc3c:performance",
+          "test:objc3c:runnable-performance",
+          "test:objc3c:runnable-runtime-performance",
+          "test:objc3c:runtime-performance"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable"
+        ]
+      },
+      {
+        "family": "performance-governance",
+        "action_count": 5,
+        "actions": [
+          "check-performance-governance-schema-surface",
+          "check-performance-governance-surface",
+          "validate-performance-governance",
+          "validate-performance-governance-end-to-end",
+          "validate-performance-governance-integration"
+        ],
+        "package_scripts": [
+          "check:objc3c:performance-governance:schemas",
+          "check:objc3c:performance-governance:surface",
+          "test:objc3c:performance-governance",
+          "test:objc3c:performance-governance:e2e",
+          "test:objc3c:performance-governance:integration"
+        ],
+        "tiers": [
+          "acceptance",
+          "integration",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "public-conformance",
+        "action_count": 7,
+        "actions": [
+          "build-public-conformance-scorecard",
+          "check-public-conformance-reporting-surface",
+          "check-public-conformance-schema-surface",
+          "publish-public-conformance-report",
+          "validate-public-conformance-reporting",
+          "validate-public-conformance-reporting-end-to-end",
+          "validate-public-conformance-reporting-integration"
+        ],
+        "package_scripts": [
+          "check:objc3c:public-conformance:schemas",
+          "check:objc3c:public-conformance:surface",
+          "inspect:objc3c:public-conformance:scorecard",
+          "publish:objc3c:public-conformance",
+          "test:objc3c:public-conformance",
+          "test:objc3c:public-conformance:e2e",
+          "test:objc3c:public-conformance:integration"
+        ],
+        "tiers": [
+          "acceptance",
+          "integration",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "release-foundation",
+        "action_count": 3,
+        "actions": [
+          "check-release-foundation-schema-surface",
+          "check-release-foundation-surface",
+          "validate-release-foundation"
+        ],
+        "package_scripts": [
+          "check:objc3c:release-foundation:schemas",
+          "check:objc3c:release-foundation:surface",
+          "test:objc3c:release-foundation"
+        ],
+        "tiers": [
+          "acceptance",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "release-operations",
+        "action_count": 5,
+        "actions": [
+          "check-release-operations-schema-surface",
+          "check-release-operations-surface",
+          "publish-release-operations",
+          "validate-release-operations",
+          "validate-release-operations-end-to-end"
+        ],
+        "package_scripts": [
+          "check:objc3c:release-operations:schemas",
+          "check:objc3c:release-operations:surface",
+          "publish:objc3c:release-operations",
+          "test:objc3c:release-operations",
+          "test:objc3c:release-operations:e2e"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "repo-shape",
+        "action_count": 2,
+        "actions": [
+          "check-repo-superclean-surface",
+          "validate-repo-superclean"
+        ],
+        "package_scripts": [
+          "check:repo:surface",
+          "test:repo"
+        ],
+        "tiers": [
+          "acceptance",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "runtime-architecture",
+        "action_count": 1,
+        "actions": [
+          "validate-runtime-architecture"
+        ],
+        "package_scripts": [
+          "test:objc3c:runtime-architecture"
+        ],
+        "tiers": [
+          "acceptance"
+        ]
+      },
+      {
+        "family": "runtime-closure",
+        "action_count": 17,
+        "actions": [
+          "validate-block-arc-conformance",
+          "validate-concurrency-conformance",
+          "validate-error-conformance",
+          "validate-interop-conformance",
+          "validate-metaprogramming-conformance",
+          "validate-object-model-conformance",
+          "validate-release-candidate-conformance",
+          "validate-runnable-block-arc",
+          "validate-runnable-bootstrap",
+          "validate-runnable-concurrency",
+          "validate-runnable-error",
+          "validate-runnable-interop",
+          "validate-runnable-metaprogramming",
+          "validate-runnable-object-model",
+          "validate-runnable-release-candidate",
+          "validate-runnable-storage-reflection",
+          "validate-storage-reflection-conformance"
+        ],
+        "package_scripts": [
+          "test:objc3c:block-arc-conformance",
+          "test:objc3c:concurrency-conformance",
+          "test:objc3c:error-conformance",
+          "test:objc3c:interop-conformance",
+          "test:objc3c:metaprogramming-conformance",
+          "test:objc3c:object-model-conformance",
+          "test:objc3c:release-candidate-conformance",
+          "test:objc3c:runnable-block-arc",
+          "test:objc3c:runnable-bootstrap",
+          "test:objc3c:runnable-concurrency",
+          "test:objc3c:runnable-error",
+          "test:objc3c:runnable-interop",
+          "test:objc3c:runnable-metaprogramming",
+          "test:objc3c:runnable-object-model",
+          "test:objc3c:runnable-release-candidate",
+          "test:objc3c:runnable-storage-reflection",
+          "test:objc3c:storage-reflection-conformance"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable"
+        ]
+      },
+      {
+        "family": "showcase",
+        "action_count": 3,
+        "actions": [
+          "check-showcase-surface",
+          "validate-runnable-showcase",
+          "validate-showcase"
+        ],
+        "package_scripts": [
+          "check:showcase:surface",
+          "test:showcase",
+          "test:showcase:e2e"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "static-guard-surface",
+        "action_count": 1,
+        "actions": [
+          "check-public-command-surface"
+        ],
+        "package_scripts": [
+          "check:docs:commands"
+        ],
+        "tiers": [
+          "static-guard"
+        ]
+      },
+      {
+        "family": "stdlib",
+        "action_count": 8,
+        "actions": [
+          "check-stdlib-surface",
+          "materialize-stdlib-workspace",
+          "validate-runnable-stdlib-advanced",
+          "validate-runnable-stdlib-foundation",
+          "validate-runnable-stdlib-program",
+          "validate-stdlib-advanced",
+          "validate-stdlib-foundation",
+          "validate-stdlib-program"
+        ],
+        "package_scripts": [
+          "build:objc3c:stdlib",
+          "check:stdlib:surface",
+          "test:stdlib",
+          "test:stdlib:advanced",
+          "test:stdlib:advanced:e2e",
+          "test:stdlib:e2e",
+          "test:stdlib:program",
+          "test:stdlib:program:e2e"
+        ],
+        "tiers": [
+          "acceptance",
+          "runnable",
+          "static-guard"
+        ]
+      },
+      {
+        "family": "stress",
+        "action_count": 8,
+        "actions": [
+          "check-stress-surface",
+          "test-fuzz-safety",
+          "test-lowering-runtime-stress",
+          "test-stress-crash-triage",
+          "test-stress-minimization",
+          "validate-stress",
+          "validate-stress-end-to-end",
+          "validate-stress-integration"
+        ],
+        "package_scripts": [
+          "check:stress:surface",
+          "test:objc3c:fuzz-safety",
+          "test:objc3c:lowering-runtime-stress",
+          "test:objc3c:stress",
+          "test:objc3c:stress-crash-triage",
+          "test:objc3c:stress-minimization",
+          "test:objc3c:stress:e2e",
+          "test:objc3c:stress:integration"
+        ],
+        "tiers": [
+          "acceptance",
+          "integration",
+          "runnable",
+          "static-guard"
+        ]
+      }
+    ]
+  },
+  "direct_non_runner_validation_scripts": [
+    {
+      "package_script": "check:objc3c:llvm-capabilities",
+      "command": "python scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
+      "family": "static-guard-surface"
+    },
+    {
+      "package_script": "check:release-evidence",
+      "command": "python scripts/check_release_evidence.py",
+      "family": "static-guard-surface"
+    },
+    {
+      "package_script": "check:task-hygiene",
+      "command": "python scripts/ci/run_task_hygiene_gate.py",
+      "family": "static-guard-surface"
+    },
+    {
+      "package_script": "check:objc3c:boundaries",
+      "command": "python scripts/check_objc3c_dependency_boundaries.py --strict",
+      "family": "static-guard-surface"
+    },
+    {
+      "package_script": "check:md",
+      "command": "prettier --check \"**/*.md\"",
+      "family": "static-guard-surface"
+    },
+    {
+      "package_script": "check:md:all",
+      "command": "npm run build:site && npm run check:md",
+      "family": "docs"
+    }
+  ],
+  "retained_static_guard_classes": [
+    "retain:task-hygiene",
+    "retain:repo-shape",
+    "retain:docs-surface",
+    "retain:product-surface",
+    "retain:source-surface-contract",
+    "retain:schema-contract"
+  ],
+  "migration_targets": {
+    "primary_shared_harness": "scripts/shared_compiler_runtime_acceptance_harness.py",
+    "primary_public_runner": "scripts/objc3c_public_workflow_runner.py",
+    "legacy_namespace_work": "M313-B003",
+    "artifact_contract_work": "M313-C001"
+  }
+}
