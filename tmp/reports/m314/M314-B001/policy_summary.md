@@ -1,0 +1,36 @@
+# Workflow Simplification Policy
+
+- policy_id: `workflow-simplification-policy-v1`
+- package_script_count: `144`
+- workflow_action_count: `137`
+- orphan_public_script_count: `9`
+
+## Canonical public categories
+- `build`
+- `check`
+- `compile`
+- `inspect`
+- `package`
+- `proof`
+- `publish`
+- `test`
+- `trace`
+
+## Retained orphan public scripts
+- `check:md`
+- `check:md:all`
+- `check:objc3c:boundaries`
+- `check:objc3c:llvm-capabilities`
+- `check:release-evidence`
+- `check:task-hygiene`
+- `format:md`
+- `lint`
+- `lint:md`
+
+## Runner-first rules
+- Normal operator flows should route through package.json scripts that delegate to scripts/objc3c_public_workflow_runner.py where a workflow action exists.
+- Internal workflow actions may remain without public aliases when they are composition helpers or implementation details.
+- Lint, formatter, dependency-boundary, llvm-capability, and task-hygiene commands may remain direct scripts when they are tool wrappers rather than workflow families.
+- Generated command appendix and package.json must remain synchronized; public commands should not bypass that surface.
+
+Next issues: `M314-B002`, `M314-B003`, `M314-C001`
