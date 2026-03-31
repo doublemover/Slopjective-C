@@ -1,0 +1,52 @@
+{
+  "issue": "M313-C003",
+  "generated_at": "2026-03-31T01:09:59.369222+00:00",
+  "bridge_count": 4,
+  "bridges": [
+    {
+      "path": "scripts/check_activation_triggers.py",
+      "namespace_bucket": "legacy/bootstrap-preflight",
+      "successor_surface": "scripts/run_activation_preflight.py",
+      "allowed_callers": [
+        "spec/IMPLEMENTATION_EXECUTION_ROADMAP.md:235:  - `scripts/check_activation_triggers.py`",
+        "scripts/node/check_activation_seed_hardening_w1_strict.js:6:  'scripts/check_activation_triggers.py',"
+      ],
+      "removal_condition": "remove once the named successor owns the workflow and docs/tests stop calling the legacy surface directly"
+    },
+    {
+      "path": "scripts/check_bootstrap_readiness.py",
+      "namespace_bucket": "legacy/bootstrap-preflight",
+      "successor_surface": "scripts/run_bootstrap_readiness.py",
+      "allowed_callers": [
+        "scripts/check_bootstrap_readiness.py:245:        prog=\"check_bootstrap_readiness.py\",",
+        "scripts/run_bootstrap_readiness.py:22:CHECK_BOOTSTRAP_READINESS_SCRIPT_PATH = ROOT / \"scripts\" / \"check_bootstrap_readiness.py\""
+      ],
+      "removal_condition": "remove once the named successor owns the workflow and docs/tests stop calling the legacy surface directly"
+    },
+    {
+      "path": "scripts/check_objc3c_end_to_end_determinism.py",
+      "namespace_bucket": "legacy/tooling-utility",
+      "successor_surface": "future developer-tooling workflow integration under validate-developer-tooling",
+      "allowed_callers": [
+        "tests/tooling/test_objc3c_end_to_end_determinism.py:18:    raise RuntimeError(\"Unable to load scripts/check_objc3c_end_to_end_determinism.py\")",
+        "scripts/check_objc3c_end_to_end_determinism.py:433:                    \"scripts/check_objc3c_end_to_end_determinism.py\","
+      ],
+      "removal_condition": "remove once the named successor owns the workflow and docs/tests stop calling the legacy surface directly"
+    },
+    {
+      "path": "scripts/check_objc3c_library_cli_parity.py",
+      "namespace_bucket": "legacy/tooling-utility",
+      "successor_surface": "future developer-tooling workflow integration under validate-developer-tooling",
+      "allowed_callers": [
+        "docs/runbooks/objc3c_maintainer_workflows.md:249:- parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`",
+        "docs/runbooks/objc3c_developer_tooling.md:42:  - `scripts/check_objc3c_library_cli_parity.py`",
+        "docs/runbooks/objc3c_developer_tooling.md:118:  - `python scripts/check_objc3c_library_cli_parity.py`",
+        "scripts/check_documentation_surface.py:532:        \"scripts/check_objc3c_library_cli_parity.py\","
+      ],
+      "removal_condition": "remove once the named successor owns the workflow and docs/tests stop calling the legacy surface directly"
+    }
+  ],
+  "next_issues": [
+    "M313-D002"
+  ]
+}
