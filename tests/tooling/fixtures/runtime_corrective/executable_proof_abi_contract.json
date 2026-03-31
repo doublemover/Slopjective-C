@@ -1,0 +1,71 @@
+{
+  "contract_id": "objc3c.runtime.corrective.executable.proof.abi.contract.v1",
+  "surface_kind": "runtime-corrective-executable-proof-abi-contract",
+  "dispatch_lowering_contract_id": "objc3c.runtime.corrective.dispatch.lowering.implementation.contract.v1",
+  "synthesized_accessor_lowering_contract_id": "objc3c.runtime.corrective.synthesized.accessor.lowering.implementation.contract.v1",
+  "acceptance_workload_contract_id": "objc3c.runtime.corrective.acceptance.workload.map.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "summary_script": "scripts/build_runtime_corrective_executable_proof_summary.py",
+  "shared_acceptance_entrypoints": [
+    "scripts/objc3c_native_compile.ps1",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/shared_compiler_runtime_acceptance_harness.py"
+  ],
+  "required_compile_artifacts": [
+    "module.manifest.json",
+    "module.runtime-registration-manifest.json",
+    "module.compile-provenance.json",
+    "module.ll",
+    "module.obj"
+  ],
+  "runtime_abi_contracts": [
+    "objc3c.runtime.dispatch_accessor.abi.surface.v1",
+    "objc3c.runtime.storage.accessor.abi.surface.v1",
+    "objc3c.runtime.installation.abi.surface.v1"
+  ],
+  "dispatch_runtime_cases": [
+    {
+      "case_id": "live-dispatch-fast-path",
+      "fixture_path": "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      "probe_path": "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "claim_class": "linked-runtime-probe"
+    },
+    {
+      "case_id": "lookup-reflection-object-model",
+      "fixture_path": "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+      "probe_path": "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+      "claim_class": "linked-runtime-probe"
+    }
+  ],
+  "synthesized_accessor_runtime_cases": [
+    {
+      "case_id": "property-layout-runtime",
+      "fixture_path": "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+      "probe_path": "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+      "claim_class": "linked-runtime-probe"
+    },
+    {
+      "case_id": "property-metadata-reflection-runtime",
+      "fixture_path": "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+      "probe_path": "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+      "claim_class": "linked-runtime-probe"
+    },
+    {
+      "case_id": "property-ivar-execution-matrix-runtime",
+      "fixture_path": "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+      "probe_path": "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+      "claim_class": "linked-runtime-probe"
+    }
+  ],
+  "proof_rules": [
+    "compile-coupled-proof-must-bind-manifest-registration-manifest-provenance-llvm-ir-and-object-output",
+    "runtime-claims-must-link-real-compiled-module-objects-into-native-runtime-probes",
+    "dispatch-and-synthesized-accessor-claims-must-bind-to-the-runtime-installation-and-private-helper-abi-surfaces-without-public-abi-widening"
+  ],
+  "explicit_non_goals": [
+    "no-full-object-model-closure-claim",
+    "no-public-runtime-abi-widening",
+    "no-sidecar-only-proof",
+    "no-milestone-local-acceptance-harness-fork"
+  ]
+}
