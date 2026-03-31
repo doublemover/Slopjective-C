@@ -1,0 +1,38 @@
+{
+  "contract_id": "objc3c.metaprogramming.interop.closure.executable.proof.abi.contract.v1",
+  "surface_kind": "metaprogramming-interop-executable-proof-abi-contract",
+  "milestone": "M323",
+  "issue": "M323-D001",
+  "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+  "summary_script": "scripts/build_metaprogramming_interop_closure_executable_proof_summary.py",
+  "canonical_reports": [
+    "tmp/reports/runtime/runnable-metaprogramming-conformance/summary.json",
+    "tmp/reports/runtime/runnable-metaprogramming-e2e/summary.json",
+    "tmp/reports/runtime/runnable-interop-conformance/summary.json",
+    "tmp/reports/runtime/runnable-interop-e2e/summary.json"
+  ],
+  "public_commands": [
+    "test:objc3c:metaprogramming-conformance",
+    "test:objc3c:runnable-metaprogramming",
+    "test:objc3c:interop-conformance",
+    "test:objc3c:runnable-interop"
+  ],
+  "public_workflows": [
+    "validate-metaprogramming-conformance",
+    "validate-runnable-metaprogramming",
+    "validate-interop-conformance",
+    "validate-runnable-interop"
+  ],
+  "private_runtime_snapshot_symbols": [
+    "objc3_runtime_copy_metaprogramming_expansion_host_boundary_snapshot_for_testing",
+    "objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snapshot_for_testing",
+    "objc3_runtime_copy_interop_bridge_packaging_toolchain_snapshot_for_testing",
+    "objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",
+    "tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp",
+    "tests/tooling/runtime/bridge_packaging_toolchain_probe.cpp",
+    "tests/tooling/runtime/header_module_bridge_generation_probe.cpp"
+  ]
+}
