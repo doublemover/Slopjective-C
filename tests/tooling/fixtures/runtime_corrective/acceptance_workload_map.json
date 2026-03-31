@@ -1,0 +1,57 @@
+{
+  "contract_id": "objc3c.runtime.corrective.acceptance.workload.map.v1",
+  "surface_kind": "runtime-corrective-acceptance-workload-map",
+  "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "summary_script": "scripts/build_runtime_corrective_acceptance_workload_summary.py",
+  "harness_path": "scripts/shared_compiler_runtime_acceptance_harness.py",
+  "suite_ids": [
+    "runtime-acceptance",
+    "public-test-fast",
+    "public-test-full"
+  ],
+  "dispatch_focus": {
+    "runtime_acceptance_case_ids": [
+      "canonical-dispatch",
+      "canonical-sample-set",
+      "dispatch-fast-path"
+    ],
+    "authoritative_probe_paths": [
+      "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+      "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+      "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "tests/tooling/runtime/class_realization_runtime_probe.cpp",
+      "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+      "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
+    ]
+  },
+  "synthesized_accessor_focus": {
+    "authoritative_fixture_paths": [
+      "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
+      "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",
+      "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
+      "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+      "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3",
+      "tests/tooling/fixtures/native/arc_property_interaction_positive.objc3"
+    ],
+    "authoritative_probe_paths": [
+      "tests/tooling/runtime/synthesized_accessor_probe.cpp",
+      "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+      "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+      "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+      "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+      "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp"
+    ]
+  },
+  "required_reports": [
+    "tmp/reports/runtime/acceptance/summary.json",
+    "tmp/reports/objc3c-public-workflow/test-fast.json",
+    "tmp/reports/objc3c-public-workflow/test-full.json"
+  ],
+  "explicit_non_goals": [
+    "no-milestone-local-acceptance-runner",
+    "no-claim-without-runtime-acceptance-suite",
+    "no-final-closeout-claim-from-catalog-check-alone",
+    "no-probe-inventory-detached-from-the-shared-harness"
+  ]
+}
