@@ -1,0 +1,102 @@
+{
+  "contract_id": "objc3c.concurrency.runtime.closure.task.continuation.lifecycle.contract.v1",
+  "surface_kind": "task-continuation-lifecycle-contract",
+  "milestone": "M322",
+  "issue": "M322-B003",
+  "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+  "summary_script": "scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py",
+  "lifecycle_models": [
+    "continuation-allocation-handoff-and-resume-remain-runtime-owned-behavior-backed-by-private-helper-entrypoints-and-testing-snapshots",
+    "task-spawn-scope-add-wait-cancel-on-cancel-and-executor-hop-remain-one-deterministic-runtime-lifecycle-story",
+    "task-and-continuation-lifecycle-claims-stay-grounded-in-live-probes-packaged-runnable-e2e-and-shared-acceptance-surfaces",
+    "arc-and-thrown-error-cleanup-interaction-claims-remain-successor-bounded-beyond-the-current-task-hardening-replay-surface"
+  ],
+  "authoritative_case_ids": [
+    "unified-concurrency-runtime-abi",
+    "live-unified-concurrency-runtime-implementation"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "scripts/check_objc3c_runnable_concurrency_conformance.py",
+    "scripts/check_objc3c_runnable_concurrency_end_to_end.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/continuation_runtime_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+    "tests/tooling/fixtures/native/task_runtime_abi_completion_positive.objc3",
+    "tests/tooling/fixtures/native/task_runtime_hardening_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+    "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/task_runtime_abi_completion_probe.cpp",
+    "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+    "tests/tooling/runtime/task_runtime_hardening_probe.cpp"
+  ],
+  "required_continuation_probe_payload": {
+    "runTask": 7,
+    "loadValue": 7,
+    "allocation_call_count": 2,
+    "handoff_call_count": 2,
+    "resume_call_count": 2,
+    "live_continuation_handle_count": 0,
+    "last_handoff_executor_tag": 1,
+    "last_resume_return_value": 7
+  },
+  "required_task_probe_payload": {
+    "spawn_group": 111,
+    "scope": 1,
+    "add_task": 1,
+    "cancelled": 0,
+    "wait_next": 23,
+    "hop": 23,
+    "cancel_all": 31,
+    "on_cancel": 41,
+    "spawn_detached": 121,
+    "spawn_call_count": 2,
+    "scope_call_count": 1,
+    "add_task_call_count": 1,
+    "wait_next_call_count": 1,
+    "cancel_all_call_count": 1,
+    "cancellation_poll_call_count": 1,
+    "on_cancel_call_count": 1,
+    "executor_hop_call_count": 1,
+    "last_spawn_kind": 2,
+    "last_spawn_executor_tag": 3,
+    "last_wait_next_result": 23,
+    "last_executor_hop_executor_tag": 2,
+    "last_executor_hop_value": 23
+  },
+  "required_task_hardening_probe_values": {
+    "spawn_group": 111,
+    "scope": 1,
+    "add_task": 1,
+    "cancelled": 0,
+    "wait_next": 23,
+    "hop": 23,
+    "cancel_all": 31,
+    "on_cancel": 41,
+    "spawn_detached": 121,
+    "spawn_call_count": 2,
+    "scope_call_count": 1,
+    "add_task_call_count": 1,
+    "wait_next_call_count": 1,
+    "cancel_all_call_count": 1,
+    "cancellation_poll_call_count": 1,
+    "on_cancel_call_count": 1,
+    "executor_hop_call_count": 1,
+    "last_spawn_kind": 2,
+    "last_spawn_executor_tag": 3,
+    "last_wait_next_result": 23,
+    "last_executor_hop_executor_tag": 2,
+    "last_executor_hop_value": 23,
+    "autoreleasepool_depth": 0,
+    "autoreleasepool_max_depth": 1,
+    "autoreleasepool_push_count": 1,
+    "autoreleasepool_pop_count": 1,
+    "replay_equal": 1
+  }
+}
