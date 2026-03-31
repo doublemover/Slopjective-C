@@ -12,12 +12,12 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[3]
-ISSUE_BODY_CONTRACT = ROOT / "spec" / "planning" / "compiler" / "m317" / "m317_c001_planning_packet_and_issue_template_simplification_contract_and_architecture_freeze_contract.json"
-PLANNING_HYGIENE_POLICY = ROOT / "spec" / "governance" / "objc3c_planning_hygiene_policy.json"
-EXCEPTION_PROCESS = ROOT / "spec" / "governance" / "objc3c_anti_noise_exception_process.json"
-EXCEPTION_REGISTRY = ROOT / "spec" / "governance" / "objc3c_anti_noise_exception_registry.json"
+BACKLOG_PUBLICATION_POLICY = ROOT / "tmp" / "planning" / "backlog_publication" / "backlog_publication_policy.json"
+GOVERNANCE_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "sustainable_progress_policy.json"
+WAIVER_REGISTRY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "waiver_registry.json"
 DEFAULT_TEMPLATE = ROOT / "tmp" / "planning" / "m318_governance" / "new_work_proposal_template.json"
 DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "m318" / "governance" / "new_work_proposal"
+MILESTONE_CODE_RE = re.compile(r"^(M\d{3})")
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -43,6 +43,41 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def run_json(command: list[str]) -> Any:
+    completed = subprocess.run(
+        command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if completed.returncode != 0:
+        raise RuntimeError(completed.stderr or completed.stdout or f"command failed: {' '.join(command)}")
+    return json.loads(completed.stdout)
+
+
+def run_preflight(command_text: str) -> dict[str, Any]:
+    completed = subprocess.run(
+        command_text,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        shell=True,
+        check=False,
+    )
+    return {
+        "command": command_text,
+        "exit_code": completed.returncode,
+        "ok": completed.returncode == 0,
+        "stdout": completed.stdout.strip(),
+        "stderr": completed.stderr.strip(),
+    }
+
+
 def validate_required_fields(proposal: dict[str, Any], template: dict[str, Any]) -> list[str]:
     failures: list[str] = []
     for field in template["required_issue_fields"]:
@@ -58,8 +93,8 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
         if key not in allowed_fields:
             failures.append(f"unknown proposal field `{key}`")
 
-    issue_code = proposal.get("issue_code", "")
-    resolved = {"milestone_code": "", "short_code": "", "lane": "", "exception_status": None}
+    issue_code = str(proposal.get("issue_code", ""))
+    resolved = {"milestone_code": "", "short_code": "", "lane": "", "waiver_status": None}
     if not re.match(template["issue_code_pattern"], issue_code):
         failures.append("issue_code does not match required Mxxx-Lnnn pattern")
     else:
@@ -73,7 +108,6 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
         failures.append("validation_posture is not allowed by template")
     if proposal.get("budget_impact") not in set(template["budget_impact_options"]):
         failures.append("budget_impact is not allowed by template")
-
     if not isinstance(proposal.get("acceptance_criteria"), list) or not proposal["acceptance_criteria"]:
         failures.append("acceptance_criteria must be a non-empty list")
     if not isinstance(proposal.get("primary_implementation_surfaces"), list) or not proposal["primary_implementation_surfaces"]:
@@ -83,35 +117,39 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
     if not isinstance(proposal.get("label_names"), list) or not proposal["label_names"]:
         failures.append("label_names must be a non-empty list")
 
-    planning_policy = read_json(PLANNING_HYGIENE_POLICY)
-    if proposal.get("budget_impact") not in set(planning_policy["budget_impact_options"]):
-        failures.append("budget_impact is not allowed by planning hygiene policy")
+    policy = read_json(BACKLOG_PUBLICATION_POLICY)
+    governance_policy = read_json(GOVERNANCE_POLICY)
+    waiver_registry = read_json(WAIVER_REGISTRY)
 
-    issue_body_contract = read_json(ISSUE_BODY_CONTRACT)
-    allowed_postures = {item["code"] for item in issue_body_contract["validation_postures"]}
-    if proposal.get("validation_posture") not in allowed_postures:
-        failures.append("validation_posture is not allowed by issue body contract")
+    if "issue_numbers" in proposal or "milestone_numbers" in proposal:
+        failures.append("proposal must not carry predicted GitHub numeric identifiers")
+    forbidden_source_keys = set(policy["identifier_rules"].get("forbidden_source_keys", []))
+    if forbidden_source_keys & set(proposal.keys()):
+        failures.append("proposal includes forbidden source keys")
 
-    exception_process = read_json(EXCEPTION_PROCESS)
-    exception_registry = read_json(EXCEPTION_REGISTRY)
-    exception_id = proposal.get("exception_record_id")
+    if proposal.get("budget_impact") not in set(template["budget_impact_options"]):
+        failures.append("budget impact not allowed by template")
+    waiver_id = proposal.get("waiver_id")
     if proposal.get("budget_impact") == "requires_exception_record":
-        if not exception_id:
-            failures.append("exception_record_id is required when budget_impact is requires_exception_record")
+        if not waiver_id:
+            failures.append("waiver_id is required when budget_impact is requires_exception_record")
         else:
-            match = next((item for item in exception_registry.get("exceptions", []) if item.get("id") == exception_id), None)
+            match = next((item for item in waiver_registry.get("waivers", []) if item.get("waiver_id") == waiver_id), None)
             if match is None:
-                failures.append(f"exception record `{exception_id}` was not found in the registry")
+                failures.append(f"waiver `{waiver_id}` was not found in the waiver registry")
             else:
-                resolved["exception_status"] = match.get("status")
+                resolved["waiver_status"] = match.get("status")
                 if match.get("status") != "active":
-                    failures.append(f"exception record `{exception_id}` is not active")
-                required_fields = set(exception_process["required_record_fields"])
-                if not required_fields.issubset(match.keys()):
-                    failures.append(f"exception record `{exception_id}` is missing required fields")
-    elif exception_id:
-        match = next((item for item in exception_registry.get("exceptions", []) if item.get("id") == exception_id), None)
-        resolved["exception_status"] = match.get("status") if match else "missing"
+                    failures.append(f"waiver `{waiver_id}` is not active")
+    elif waiver_id:
+        match = next((item for item in waiver_registry.get("waivers", []) if item.get("waiver_id") == waiver_id), None)
+        resolved["waiver_status"] = match.get("status") if match else "missing"
+
+    if proposal.get("milestone_title"):
+        milestone_code = resolved["milestone_code"]
+        title_code = MILESTONE_CODE_RE.match(str(proposal["milestone_title"]))
+        if title_code and title_code.group(1) != milestone_code:
+            failures.append("milestone_title code must match issue_code milestone")
 
     execution_order = proposal.get("execution_order")
     if execution_order is not None:
@@ -121,6 +159,9 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
             missing = [field for field in template["execution_order_fields"] if field not in execution_order]
             if missing:
                 failures.append("execution_order is missing required fields: " + ", ".join(missing))
+
+    if not governance_policy.get("exception_requirements", {}).get("expiry_required", False):
+        failures.append("governance policy drifted: expiry requirement must stay enabled")
     return resolved, failures
 
 
@@ -130,7 +171,6 @@ def render_issue_title(proposal: dict[str, Any], template: dict[str, Any], resol
         lane=resolved["lane"],
         short_code=resolved["short_code"],
         title_core=proposal["title_core"],
-        kind=proposal["kind"],
     )
 
 
@@ -142,24 +182,17 @@ def render_issue_body(proposal: dict[str, Any]) -> str:
         "## Why this matters",
         proposal["why_it_matters"],
     ]
-
     if proposal.get("design_corrections_folded_in"):
         lines += ["", "## Design corrections folded in"] + [f"- {item}" for item in proposal["design_corrections_folded_in"]]
-
     lines += ["", "## Acceptance criteria"] + [f"- {item}" for item in proposal["acceptance_criteria"]]
     lines += ["", "## Primary implementation surfaces"] + [f"- `{item}`" for item in proposal["primary_implementation_surfaces"]]
     lines += ["", "## Dependencies"]
-    if proposal["dependencies"]:
-        lines += [f"- `{item}`" for item in proposal["dependencies"]]
-    else:
-        lines += ["- None."]
+    lines += [f"- `{item}`" for item in proposal["dependencies"]] if proposal["dependencies"] else ["- None."]
     lines += ["", "## Validation posture", f"- Class: `{proposal['validation_posture']}`", f"- Budget impact: `{proposal['budget_impact']}`"]
-
+    if proposal.get("waiver_id"):
+        lines.append(f"- Waiver: `{proposal['waiver_id']}`")
     if proposal.get("boundary_note"):
         lines += ["", "## Boundary note", proposal["boundary_note"]]
-    if proposal.get("post_cleanup_dependency_rewrite"):
-        lines += ["", "## Post-cleanup dependency rewrite", proposal["post_cleanup_dependency_rewrite"]]
-
     if proposal.get("execution_order"):
         order = proposal["execution_order"]
         lines += [
@@ -175,21 +208,38 @@ def render_issue_body(proposal: dict[str, Any]) -> str:
             f"- Execution instruction: {order['instruction']}",
             "<!-- EXECUTION-ORDER-END -->",
         ]
-
     if proposal.get("notes"):
         lines += ["", "## Notes"] + [f"- {item}" for item in proposal["notes"]]
     return "\n".join(lines) + "\n"
 
 
-def validate_rendered_sections(body: str) -> list[str]:
-    contract = read_json(ISSUE_BODY_CONTRACT)
-    missing = [section for section in contract["issue_body_contract"]["required_sections"] if section not in body]
-    return [f"rendered issue body is missing required section `{section}`" for section in missing]
+def resolve_live_milestone_number(repo: str, milestone_title: str | None, milestone_code: str) -> int | None:
+    if not milestone_title:
+        return None
+    payload = run_json([
+        "gh",
+        "api",
+        f"repos/{repo}/milestones?state=all&per_page=100",
+        "--paginate",
+        "--slurp",
+    ])
+    for page in payload:
+        if not isinstance(page, list):
+            continue
+        for item in page:
+            if not isinstance(item, dict):
+                continue
+            title = item.get("title")
+            if title == milestone_title:
+                return int(item["number"])
+            if isinstance(title, str) and title.startswith(milestone_code + " ") and title == milestone_title:
+                return int(item["number"])
+    return None
 
 
-def maybe_publish(repo: str, title: str, body: str, proposal: dict[str, Any]) -> dict[str, Any]:
+def maybe_publish(repo: str, title: str, body: str, proposal: dict[str, Any], milestone_code: str) -> dict[str, Any]:
     args = ["gh", "api", f"repos/{repo}/issues", "-X", "POST", "-f", f"title={title}", "-f", f"body={body}"]
-    milestone_number = proposal.get("milestone_number")
+    milestone_number = resolve_live_milestone_number(repo, proposal.get("milestone_title"), milestone_code)
     if milestone_number is not None:
         args += ["-F", f"milestone={milestone_number}"]
     for label in proposal["label_names"]:
@@ -202,14 +252,23 @@ def maybe_publish(repo: str, title: str, body: str, proposal: dict[str, Any]) ->
 
 def main(argv: Sequence[str]) -> int:
     args = parse_args(argv)
+    if not args.template.is_absolute():
+        args.template = ROOT / args.template
+    if not args.proposal.is_absolute():
+        args.proposal = ROOT / args.proposal
+    if not args.output_dir.is_absolute():
+        args.output_dir = ROOT / args.output_dir
     template = read_json(args.template)
     proposal = read_json(args.proposal)
     resolved, failures = validate_proposal(proposal, template)
 
     title = render_issue_title(proposal, template, resolved) if not failures else ""
     body = render_issue_body(proposal) if not failures else ""
-    if body:
-        failures.extend(validate_rendered_sections(body))
+
+    preflight_results = [run_preflight(command) for command in template.get("governance_preflight_commands", [])]
+    preflight_failures = [result["command"] for result in preflight_results if not result["ok"]]
+    if preflight_failures:
+        failures.append("governance preflight failed: " + ", ".join(preflight_failures))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     body_path = args.output_dir / template["render_defaults"]["write_paths"]["issue_body"]
@@ -223,7 +282,6 @@ def main(argv: Sequence[str]) -> int:
         "body_path": rel(body_path),
         "labels": proposal.get("label_names", []),
         "milestone_title": proposal.get("milestone_title"),
-        "milestone_number": proposal.get("milestone_number"),
         "issue_code": proposal.get("issue_code"),
     }
     write_json(payload_path, payload)
@@ -239,10 +297,10 @@ def main(argv: Sequence[str]) -> int:
             else:
                 repo = json.loads(completed.stdout)["nameWithOwner"]
         if repo and not failures:
-            created_issue = maybe_publish(repo, title, body, proposal)
+            created_issue = maybe_publish(repo, title, body, proposal, resolved["milestone_code"])
 
     summary = {
-        "mode": "m318-c003-new-work-proposal-tooling-v1",
+        "mode": template["mode"],
         "contract_id": template["contract_id"],
         "proposal_path": rel(args.proposal),
         "template_path": rel(args.template),
@@ -252,11 +310,11 @@ def main(argv: Sequence[str]) -> int:
         "title": title,
         "labels": proposal.get("label_names", []),
         "milestone_title": proposal.get("milestone_title"),
-        "milestone_number": proposal.get("milestone_number"),
         "budget_impact": proposal.get("budget_impact"),
         "validation_posture": proposal.get("validation_posture"),
-        "exception_record_id": proposal.get("exception_record_id"),
-        "exception_record_status": resolved.get("exception_status"),
+        "waiver_id": proposal.get("waiver_id"),
+        "waiver_status": resolved.get("waiver_status"),
+        "governance_preflight": preflight_results,
         "output_paths": {
             "issue_body": rel(body_path),
             "issue_payload": rel(payload_path),

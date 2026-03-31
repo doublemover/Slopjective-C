@@ -1,14 +1,14 @@
 {
-  "mode": "m318-c003-new-work-proposal-template-v1",
-  "contract_id": "objc3c-governance-new-work-proposal-tooling/m318-c003-v1",
+  "mode": "m318-d001-new-work-proposal-template-v2",
+  "contract_id": "objc3c.governance.new-work-proposal.template.v2",
   "consumed_contract_ids": {
-    "issue_body_contract": "objc3c-cleanup-planning-packet-issue-template-contract/m317-c001-v1",
-    "planning_hygiene": "objc3c-governance-planning-hygiene-policy/m318-b002-v1",
-    "exception_process": "objc3c-governance-anti-noise-exception-process/m318-a002-v1",
-    "automation_contract": "objc3c-governance-automation-contract/m318-c001-v1"
+    "backlog_publication_policy": "backlog-publication-policy-v1",
+    "governance_policy": "objc3c.governance.sustainability.policy.v1",
+    "waiver_registry": "objc3c.governance.sustainability.waiver.registry.v1",
+    "schema_surface": "objc3c.governance.sustainability.schema.surface.v1"
   },
   "issue_code_pattern": "^M\\d{3}-[A-E]\\d{3}$",
-  "title_format": "[{milestone_code}][Lane-{lane}][{short_code}] {title_core} - {kind}",
+  "title_format": "[{milestone_code}][Lane-{lane}][{short_code}] {title_core}",
   "required_issue_fields": [
     "issue_code",
     "title_core",
@@ -24,13 +24,11 @@
   ],
   "optional_issue_fields": [
     "boundary_note",
-    "post_cleanup_dependency_rewrite",
     "design_corrections_folded_in",
     "notes",
     "execution_order",
     "milestone_title",
-    "milestone_number",
-    "exception_record_id"
+    "waiver_id"
   ],
   "execution_order_fields": [
     "cleanup_program_slot",
@@ -51,6 +49,12 @@
     "no_budget_growth",
     "within_existing_budget",
     "requires_exception_record"
+  ],
+  "governance_preflight_commands": [
+    "python scripts/build_governance_budget_inventory_summary.py",
+    "python scripts/build_governance_policy_summary.py",
+    "python scripts/build_governance_maintainer_review_summary.py",
+    "python scripts/check_governance_sustainability_budget_enforcement.py"
   ],
   "render_defaults": {
     "publish_mode": "render-only",

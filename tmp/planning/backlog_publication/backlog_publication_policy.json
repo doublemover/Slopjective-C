@@ -88,7 +88,8 @@
       "If a live GitHub milestone already exists for a stable milestone code, update and reuse it instead of creating a duplicate milestone with a guessed number.",
       "If a live GitHub issue already exists for a stable issue code in the intended milestone, update and reuse it instead of creating a duplicate issue.",
       "When new live milestones or issues must be created, accept the identifiers GitHub returns and then regenerate the live mapping snapshot so every downstream reference matches those assigned numbers.",
-      "Never attempt to reserve, predict, or preserve a desired GitHub numeric identifier."
+      "Never attempt to reserve, predict, or preserve a desired GitHub numeric identifier.",
+      "New-work proposal publication and bulk backlog publication must run the live M318 governance preflight before calling GitHub APIs."
     ]
   },
   "count_and_evidence_rules": {
@@ -108,7 +109,7 @@
   "implementation_notes": [
     "B002 should rewrite local backlog artifacts to consume this policy rather than restating it.",
     "C001 should encode the manifest and artifact contract that makes these policy rules machine-checkable.",
-    "D001 should validate that generated issue markdown, publish JSON, and blocker graphs remain self-consistent after publication."
+    "D001 should validate that generated issue markdown, publish JSON, and blocker graphs remain self-consistent after publication and should require the live governance preflight before any publish step."
   ],
   "non_goals": [
     "This policy does not define milestone-specific semantic or runtime governance outside backlog publication mechanics.",
