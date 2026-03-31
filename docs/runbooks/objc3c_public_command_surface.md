@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `158`
-- Operator command count: `149`
+- Current package script count: `159`
+- Operator command count: `150`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -89,6 +89,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:getting-started` | `validate-getting-started` | `repo` | `getting-started tutorials stay compile-coupled, runnable, and wired into the normal repo validation path` | `fixed-shape` | `python:scripts/check_getting_started_integration.py` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
 | `test:objc3c:application-architecture` | `validate-application-architecture` | `repo` | `template harnesses and canonical application workspaces stay derived from live showcase, stdlib, and public workflow surfaces` | `fixed-shape` | `python:scripts/check_objc3c_application_architecture_integration.py` |
+| `test:objc3c:application-architecture:e2e` | `validate-runnable-application-architecture` | `full` | `packaged canonical application workspaces and template harness validation stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_application_architecture_end_to_end.py` |
 | `test:objc3c:block-arc-conformance` | `validate-block-arc-conformance` | `full` | `integrated block/ARC conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_block_arc_conformance.py` |
 | `test:objc3c:compiler-throughput` | `validate-compiler-throughput` | `repo` | `compiler-throughput benchmark outputs stay executable across the live native compiler, wrapper cache proof, macro-host artifact path, and docs generators` | `fixed-shape` | `python:scripts/check_objc3c_compiler_throughput_integration.py` |
 | `test:objc3c:concurrency-conformance` | `validate-concurrency-conformance` | `full` | `integrated async/task/executor/actor conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_concurrency_conformance.py` |

@@ -31,16 +31,22 @@
   ],
   "public_actions": [
     "materialize-project-template",
+    "materialize-canonical-application-workspace",
     "materialize-playground-workspace",
     "validate-showcase",
+    "validate-application-architecture",
     "validate-runnable-showcase",
     "validate-stdlib-program",
+    "validate-runnable-application-architecture",
     "validate-runnable-stdlib-program",
     "package-runnable-toolchain"
   ],
   "public_scripts": [
+    "build:objc3c:application-workspace",
     "build:objc3c:template",
     "build:objc3c:playground",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e",
     "test:showcase",
     "test:showcase:e2e",
     "test:stdlib:program",

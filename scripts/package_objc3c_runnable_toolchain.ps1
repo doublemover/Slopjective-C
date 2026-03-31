@@ -189,9 +189,16 @@ $requiredRelativeFiles = @(
   "scripts/build_objc3c_native.ps1",
   "scripts/objc3c_native_compile.ps1",
   "scripts/objc3c_public_workflow_runner.py",
+  "scripts/materialize_objc3c_project_template.py",
   "scripts/materialize_objc3c_canonical_application_workspace.py",
   "scripts/check_application_architecture_template_harness.py",
   "scripts/check_objc3c_application_architecture_integration.py",
+  "scripts/check_objc3c_runnable_application_architecture_end_to_end.py",
+  "scripts/build_application_architecture_testing_boundary_inventory_summary.py",
+  "scripts/build_application_architecture_testing_semantic_summary.py",
+  "scripts/build_application_architecture_template_workspace_summary.py",
+  "scripts/build_application_architecture_layering_summary.py",
+  "scripts/build_application_architecture_artifact_contract_summary.py",
   "scripts/build_objc3c_editor_tooling_surface.py",
   "scripts/format_objc3c_source.py",
   "scripts/check_developer_tooling_language_server_navigation.py",
@@ -215,6 +222,7 @@ $requiredRelativeFiles = @(
   "showcase/signalMesh/workspace.json",
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
+  "docs/runbooks/objc3c_application_architecture_testing.md",
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
   "docs/runbooks/objc3c_developer_tooling.md",
@@ -259,6 +267,7 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
   "native/objc3c/src/runtime/objc3_runtime.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+  "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json",
   "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
   "schemas/objc3-conformance-dashboard-status-v1.schema.json",
   "schemas/objc3c-platform-support-matrix-v1.schema.json",
@@ -313,6 +322,11 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json",
   "tests/tooling/fixtures/developer_tooling/messy_hello.objc3",
   "tests/tooling/fixtures/developer_tooling/formatted_hello.objc3",
+  "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+  "tests/tooling/fixtures/application_architecture_testing/first_party_testing_semantics.json",
+  "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json",
+  "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json",
+  "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json",
   "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
   "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
   "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
@@ -532,6 +546,42 @@ $manifestPayload = [ordered]@{
     "test:objc3c:developer-tooling",
     "test:objc3c:runnable-developer-tooling"
   )
+  application_architecture_runbook = "docs/runbooks/objc3c_application_architecture_testing.md"
+  application_architecture_boundary_inventory = "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json"
+  application_architecture_testing_semantics = "tests/tooling/fixtures/application_architecture_testing/first_party_testing_semantics.json"
+  application_architecture_template_semantics = "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json"
+  application_architecture_layering_semantics = "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json"
+  application_architecture_artifact_contract = "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json"
+  application_architecture_evidence_schema = "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json"
+  application_architecture_surface = [ordered]@{
+    canonical_workspace_materializer = "scripts/materialize_objc3c_canonical_application_workspace.py"
+    template_harness_checker = "scripts/check_application_architecture_template_harness.py"
+    integration_validation = "scripts/check_objc3c_application_architecture_integration.py"
+    runnable_end_to_end_validation = "scripts/check_objc3c_runnable_application_architecture_end_to_end.py"
+  }
+  application_architecture_scripts = [ordered]@{
+    boundary_inventory_summary = "scripts/build_application_architecture_testing_boundary_inventory_summary.py"
+    semantics_summary = "scripts/build_application_architecture_testing_semantic_summary.py"
+    template_workspace_summary = "scripts/build_application_architecture_template_workspace_summary.py"
+    layering_summary = "scripts/build_application_architecture_layering_summary.py"
+    artifact_contract_summary = "scripts/build_application_architecture_artifact_contract_summary.py"
+    template_harness_validation = "scripts/check_application_architecture_template_harness.py"
+    canonical_workspace_materializer = "scripts/materialize_objc3c_canonical_application_workspace.py"
+    integration_validation = "scripts/check_objc3c_application_architecture_integration.py"
+    runnable_end_to_end_validation = "scripts/check_objc3c_runnable_application_architecture_end_to_end.py"
+  }
+  application_architecture_public_actions = @(
+    "materialize-project-template",
+    "materialize-canonical-application-workspace",
+    "validate-application-architecture",
+    "validate-runnable-application-architecture"
+  )
+  application_architecture_public_scripts = @(
+    "build:objc3c:template",
+    "build:objc3c:application-workspace",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e"
+  )
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
   platform_support_tier_policy = "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"
@@ -688,8 +738,11 @@ $manifestPayload = [ordered]@{
     package_channels = "npm run package:objc3c:channels"
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
     build_playground = "npm run build:objc3c:playground"
+    build_application_workspace = "npm run build:objc3c:application-workspace"
     build_stdlib = "npm run build:objc3c:stdlib"
     build_template = "npm run build:objc3c:template"
+    application_architecture = "npm run test:objc3c:application-architecture"
+    application_architecture_e2e = "npm run test:objc3c:application-architecture:e2e"
     bonus_experiences = "npm run test:bonus-experiences"
     bonus_experiences_e2e = "npm run test:bonus-experiences:e2e"
     check_stdlib_surface = "npm run check:stdlib:surface"

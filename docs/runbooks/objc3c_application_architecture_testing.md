@@ -31,6 +31,8 @@ Replayable boundary inventory:
 - `python scripts/materialize_objc3c_canonical_application_workspace.py`
 - `python scripts/check_objc3c_application_architecture_integration.py`
 - `python scripts/objc3c_public_workflow_runner.py validate-application-architecture`
+- `python scripts/check_objc3c_runnable_application_architecture_end_to_end.py`
+- `python scripts/objc3c_public_workflow_runner.py validate-runnable-application-architecture`
 
 ## Current Boundary
 
@@ -80,6 +82,8 @@ The integration path is intentionally narrow:
   summaries when those child surfaces are already green
 - package/install manifest pressure for canonical applications lands separately from
   the repo-scope integration flow
+- the packaged runnable bundle must carry the canonical workspace materializer,
+  template harness checker, and application-architecture command surfaces together
 
 ## Non-Goals
 
