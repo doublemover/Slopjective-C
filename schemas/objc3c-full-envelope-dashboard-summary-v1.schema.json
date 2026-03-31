@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.dev/schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json",
+  "title": "objc3c Full Envelope Dashboard Summary",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "status",
+    "current_rollout_class",
+    "production_strength_claimable",
+    "triggered_reasons",
+    "source_summaries"
+  ],
+  "properties": {
+    "contract_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "current_rollout_class": {
+      "type": "string",
+      "enum": [
+        "stable",
+        "candidate",
+        "preview"
+      ]
+    },
+    "production_strength_claimable": {
+      "type": "boolean"
+    },
+    "triggered_reasons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "source_summaries": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}

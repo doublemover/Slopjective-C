@@ -11,6 +11,7 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json`
 - `tests/tooling/fixtures/full_envelope_claimability/production_strength_claim_policy.json`
 - `tests/tooling/fixtures/full_envelope_claimability/release_blocker_rollout_policy.json`
+- `tests/tooling/fixtures/full_envelope_claimability/dashboard_reporting_contract.json`
 
 Replayable generators and validators:
 
@@ -18,6 +19,7 @@ Replayable generators and validators:
 - `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
 - `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
 - `python scripts/check_full_envelope_claimability_rollout_readiness.py`
+- `python scripts/build_full_envelope_claimability_dashboard_contract_summary.py`
 
 ## Claim Taxonomy
 
@@ -104,6 +106,23 @@ The derived rollout summary must make these decisions explicit:
 - which active regressions or blocker states forced demotion
 - which release and trust artifacts remain publishable even when the envelope is
   not stable-rollout ready
+
+## Dashboard And Claim Publication Surface
+
+The machine-owned envelope claim outputs for this milestone must stay under:
+
+- `tmp/reports/full-envelope-claimability/`
+- `tmp/artifacts/full-envelope-claimability/`
+
+The checked-in contract and schema surface for those outputs is:
+
+- `tests/tooling/fixtures/full_envelope_claimability/dashboard_reporting_contract.json`
+- `schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json`
+
+The envelope dashboard is a projection over the support matrix, claim policy,
+release-blocker summary, rollout-readiness summary, and the live conformance,
+performance, release, and trust integration reports. It is not allowed to
+become a separate manual truth source.
 
 ## Evidence Families
 

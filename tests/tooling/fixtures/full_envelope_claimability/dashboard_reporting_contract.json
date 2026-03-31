@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.dashboard.reporting.contract.v1",
+  "surface_kind": "full-envelope-dashboard-reporting-contract",
+  "milestone": "M324",
+  "issue": "M324-C001",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/build_full_envelope_claimability_dashboard_contract_summary.py",
+  "required_source_summaries": [
+    "tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json",
+    "tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json",
+    "tmp/reports/full-envelope-claimability/release-blockers/release_blocker_summary.json",
+    "tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json"
+  ],
+  "required_integration_reports": [
+    "tmp/reports/public-conformance/integration-summary.json",
+    "tmp/reports/performance-governance/integration-summary.json",
+    "tmp/reports/release-foundation/integration-summary.json",
+    "tmp/reports/release-operations/integration-summary.json",
+    "tmp/reports/distribution-credibility/integration-summary.json"
+  ],
+  "report_output_paths": [
+    "tmp/reports/full-envelope-claimability/dashboard-summary.json",
+    "tmp/reports/full-envelope-claimability/public-summary.json"
+  ],
+  "artifact_output_paths": [
+    "tmp/artifacts/full-envelope-claimability/report/full-envelope-claimability-report.md"
+  ],
+  "required_schemas": [
+    "schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json"
+  ]
+}
