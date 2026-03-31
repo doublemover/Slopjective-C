@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.error_runtime.closure.bridged.error.cross.module.compatibility_policy.v1",
+  "surface_kind": "bridged-error-cross-module-compatibility-policy",
+  "milestone": "M321",
+  "issue": "M321-B002",
+  "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
+  "summary_script": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
+  "canonical_surfaces": [
+    "runtime_bridging_filter_unwind_diagnostics_surface",
+    "runtime_error_lowering_unwind_bridge_helper_surface",
+    "runtime_error_runtime_abi_cleanup_surface",
+    "runtime_error_propagation_catch_cleanup_runtime_implementation_surface"
+  ],
+  "compatibility_rules": [
+    "bridged NSError and status propagation remain supported only through the emitted helper ABI and runtime bridge-state snapshot path",
+    "cross-module propagation claims are limited to the manifest, runtime-registration, replay, and packaged runnable proof path already exercised by live validation",
+    "bridge compatibility remains fail-closed where a wider public ABI, richer interop transport, or foreign-runtime model would be required",
+    "public claims stay narrower than the private runtime-owned helper ABI and runtime bridge-state evidence"
+  ],
+  "bridge_helper_symbols": [
+    "objc3_runtime_bridge_status_error_i32",
+    "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_catch_matches_error_i32",
+    "objc3_runtime_copy_error_bridge_state_for_testing"
+  ],
+  "authoritative_case_ids": [
+    "bridging-filter-unwind-compatibility-diagnostics",
+    "error-lowering-unwind-bridge-helper-surface",
+    "cross-module-error-metadata-replay-preservation",
+    "live-error-runtime-integration"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts/check_objc3c_runnable_error_conformance.py",
+    "scripts/check_objc3c_runnable_error_end_to_end.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/result_bridge_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+    "tests/tooling/runtime/live_error_runtime_integration_probe.cpp"
+  ]
+}
