@@ -23,6 +23,7 @@ Canonical checked-in boundary surfaces:
 Replayable boundary inventory:
 
 - `python scripts/build_application_architecture_testing_boundary_inventory_summary.py`
+- `python scripts/build_application_architecture_testing_semantic_summary.py`
 
 ## Current Boundary
 
@@ -46,6 +47,17 @@ That means `M330` starts from real runnable surfaces, but it still needs:
 - one canonical medium-sized application layering model
 - artifact contracts and runnable evidence that tie those surfaces back to the
   existing package/install/public-workflow path
+
+## Canonical Semantics
+
+Authoritative checked-in contracts for this milestone live under:
+
+- `tests/tooling/fixtures/application_architecture_testing/`
+
+The live meaning is:
+
+- first-party testing reuses the existing public workflow runner and checked-in
+  showcase, stdlib, developer-tooling, and documentation surfaces
 
 ## Non-Goals
 
