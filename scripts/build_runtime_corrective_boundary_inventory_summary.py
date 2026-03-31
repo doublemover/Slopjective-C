@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-A001"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/boundary-inventory"
 JSON_OUT = OUT_DIR / "runtime_corrective_boundary_inventory_summary.json"
 MD_OUT = OUT_DIR / "runtime_corrective_boundary_inventory_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -66,7 +66,7 @@ def main() -> int:
                 "objc3_runtime_exchange_current_property_i32",
             )
         ),
-        "successor_map_starts_after_corrective_tranche": contract["successor_map"][0]["milestone"] == "M318",
+        "successor_map_starts_after_corrective_tranche": contract["successor_map"][0]["description"].startswith("governance ratchet"),
         "non_goals_keep_full_closure_out_of_scope": "no-full-object-model-closure" in contract["explicit_non_goals"],
     }
 
@@ -95,7 +95,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M316-A001",
+        "issue": "runtime-corrective-boundary-inventory",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
@@ -108,7 +108,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M316-A001 Runtime Corrective Boundary Inventory Summary\n\n"
+        "# Runtime Corrective Boundary Inventory Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Focus tracks: `{measured_inventory['focus_track_count']}`\n"
         f"- Authoritative code paths: `{measured_inventory['authoritative_code_path_count']}`\n"

@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-C001"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/lowering-provenance-artifact"
 JSON_OUT = OUT_DIR / "lowering_provenance_artifact_contract_summary.json"
 MD_OUT = OUT_DIR / "lowering_provenance_artifact_contract_summary.md"
 COMPILE_SCRIPT_PATH = ROOT / "scripts/objc3c_native_compile.ps1"
@@ -62,7 +62,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M316-C001",
+        "issue": "runtime-corrective-lowering-provenance-artifact",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
@@ -73,7 +73,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M316-C001 Lowering Provenance Artifact Contract Summary\n\n"
+        "# Runtime Corrective Lowering Provenance Artifact Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Authoritative generation paths: `{measured_inventory['authoritative_generation_path_count']}`\n"
         f"- Required artifacts: `{measured_inventory['required_artifact_count']}`\n"

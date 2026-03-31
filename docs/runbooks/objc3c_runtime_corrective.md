@@ -1,6 +1,6 @@
 # Objective-C 3 Runtime Corrective Tranche
 
-This runbook freezes the narrow corrective scope for `M316`.
+This runbook freezes the narrow runtime-corrective scope.
 
 Canonical checked-in boundary contract:
 
@@ -48,15 +48,15 @@ Explicit non-goals:
 - milestone-specific proof scaffolding
 - claims based on hand-authored `.ll` or sidecar-only artifacts
 
-Successor milestones:
+Follow-on tracks:
 
-- `M318`: governance ratchet after the corrective tranche lands
-- `M319`: full object-model realization, property closure, and aggregate runtime reflection
-- `M320`: escaping block/byref execution, ownership transfer, and ARC automation
-- `M321`: throws, cleanup, bridged errors, and executable propagation closure
-- `M322`: async/task/actor runtime execution, scheduling, and isolation closure
-- `M323`: metaprogramming, property-behavior runtime materialization, and interop closure
-- `M324`: full-envelope conformance, stability, and production claimability
+- governance ratchet after the corrective tranche lands
+- full object-model realization, property closure, and aggregate runtime reflection
+- escaping block/byref execution, ownership transfer, and ARC automation
+- throws, cleanup, bridged errors, and executable propagation closure
+- async/task/actor runtime execution, scheduling, and isolation closure
+- metaprogramming, property-behavior runtime materialization, and interop closure
+- full-envelope conformance, stability, and production claimability
 
 Authoritative live surfaces:
 
@@ -75,5 +75,5 @@ Authoritative live surfaces:
 
 Generated evidence:
 
-- `tmp/reports/m316/M316-A001/runtime_corrective_boundary_inventory_summary.json`
-- `tmp/reports/m316/M316-A001/runtime_corrective_boundary_inventory_summary.md`
+- `tmp/reports/runtime-corrective/boundary-inventory/runtime_corrective_boundary_inventory_summary.json`
+- `tmp/reports/runtime-corrective/boundary-inventory/runtime_corrective_boundary_inventory_summary.md`

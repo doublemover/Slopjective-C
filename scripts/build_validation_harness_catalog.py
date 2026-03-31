@@ -10,10 +10,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-B002'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-harness-catalog'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 POLICY_PATH = PLAN_DIR / 'validation_consolidation_policy.json'
-INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-A001' / 'validation_surface_inventory.json'
+INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-surface-inventory' / 'validation_surface_inventory.json'
 CATALOG_JSON_PATH = PLAN_DIR / 'validation_harness_catalog.json'
 CATALOG_MD_PATH = PLAN_DIR / 'validation_harness_catalog.md'
 SUMMARY_JSON_PATH = REPORT_DIR / 'validation_harness_catalog.json'
@@ -149,7 +149,7 @@ def main() -> None:
         })
 
     catalog = {
-        'issue': 'M313-B002',
+        'issue': 'validation-harness-catalog',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'policy_id': policy['policy_id'],
         'inventory_issue': inventory['issue'],
@@ -169,8 +169,8 @@ def main() -> None:
         'migration_targets': {
             'primary_shared_harness': 'scripts/shared_compiler_runtime_acceptance_harness.py',
             'primary_public_runner': 'scripts/objc3c_public_workflow_runner.py',
-            'legacy_namespace_work': 'M313-B003',
-            'artifact_contract_work': 'M313-C001',
+            'legacy_namespace_work': 'validation-legacy-surface-map',
+            'artifact_contract_work': 'validation-acceptance-artifact-index',
         },
     }
 

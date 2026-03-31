@@ -11,28 +11,28 @@
     {
       "check_id": "product_surface_residue_zero",
       "entrypoint": "python scripts/build_product_decontamination_report.py",
-      "expected_report": "tmp/reports/m315/M315-B002/product_decontamination_report.json",
+      "expected_report": "tmp/reports/source-hygiene/product-decontamination/product_decontamination_report.json",
       "required_ok_field": "ok",
       "failure_condition": "product or generated truth surfaces retain milestone residue or forbidden annotations"
     },
     {
       "check_id": "synthetic_fixture_classification_surface",
       "entrypoint": "python scripts/build_artifact_authenticity_classification_summary.py",
-      "expected_report": "tmp/reports/m315/M315-B003/artifact_authenticity_classification_summary.json",
+      "expected_report": "tmp/reports/source-hygiene/artifact-authenticity-classification/artifact_authenticity_classification_summary.json",
       "required_ok_field": "ok",
       "failure_condition": "synthetic fixture rules or generated truth path coverage drift from the classification contract"
     },
     {
       "check_id": "genuine_generated_output_provenance",
       "entrypoint": "python scripts/build_genuine_artifact_provenance_implementation_summary.py",
-      "expected_report": "tmp/reports/m315/M315-C002/genuine_artifact_provenance_implementation_summary.json",
+      "expected_report": "tmp/reports/source-hygiene/genuine-artifact-provenance-implementation/genuine_artifact_provenance_implementation_summary.json",
       "required_ok_field": "ok",
       "failure_condition": "genuine generated outputs lack shared authenticity envelopes or replay instructions"
     },
     {
       "check_id": "replay_fixture_labeling",
       "entrypoint": "python scripts/sync_replay_fixture_authenticity.py --check",
-      "expected_report": "tmp/reports/m315/M315-C003/synthetic_fixture_labeling_summary.json",
+      "expected_report": "tmp/reports/source-hygiene/synthetic-fixture-labeling/synthetic_fixture_labeling_summary.json",
       "required_ok_field": "ok",
       "failure_condition": "replay ll or replay manifest fixtures are unlabeled or drift from the explicit synthetic fixture contract"
     }

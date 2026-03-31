@@ -9,7 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-B004"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/acceptance-workload-map"
 JSON_OUT = OUT_DIR / "acceptance_workload_map_summary.json"
 MD_OUT = OUT_DIR / "acceptance_workload_map_summary.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
@@ -83,7 +83,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M316-B004",
+        "issue": "runtime-corrective-acceptance-workload-map",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
@@ -94,7 +94,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M316-B004 Acceptance Workload Map Summary\n\n"
+        "# Runtime Corrective Acceptance Workload Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Suites: `{measured_inventory['suite_count']}`\n"
         f"- Dispatch cases: `{measured_inventory['dispatch_case_count']}`\n"

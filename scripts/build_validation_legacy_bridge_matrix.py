@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-C003'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-legacy-bridge-matrix'
 LEGACY_MAP_PATH = PLAN_DIR / 'legacy_validation_surface_map.json'
 OUTPUT_JSON_PATH = PLAN_DIR / 'validation_legacy_bridge_matrix.json'
 OUTPUT_MD_PATH = PLAN_DIR / 'validation_legacy_bridge_matrix.md'
@@ -39,11 +39,11 @@ def main() -> None:
         })
 
     payload = {
-        'issue': 'M313-C003',
+        'issue': 'validation-legacy-bridge-matrix',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'bridge_count': len(bridges),
         'bridges': bridges,
-        'next_issues': ['M313-D002'],
+        'next_issues': ['validation-ci-topology-integration'],
     }
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
     write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
@@ -61,7 +61,7 @@ def main() -> None:
         lines.append(f"  - namespace_bucket: `{bridge['namespace_bucket']}`")
         lines.append(f"  - successor_surface: `{bridge['successor_surface']}`")
         lines.append(f"  - allowed_caller_count: `{len(bridge['allowed_callers'])}`")
-    lines.extend(['', 'Next issue: `M313-D002`', ''])
+    lines.extend(['', 'Next issue: `validation-ci-topology-integration`', ''])
     markdown = '\n'.join(lines)
     write_text(OUTPUT_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/arc_automation_lifetime_insertion_policy.json"
-OUT_DIR = ROOT / "tmp/reports/m320/M320-B002"
+OUT_DIR = ROOT / "tmp/reports/block-arc-closure/arc-automation-policy"
 JSON_OUT = OUT_DIR / "arc_automation_lifetime_insertion_policy_summary.json"
 MD_OUT = OUT_DIR / "arc_automation_lifetime_insertion_policy_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -43,7 +43,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M320-B002",
+        "issue": "block-arc-closure-arc-automation-policy",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "canonical_surface_count": len(contract["canonical_surfaces"]),
@@ -61,7 +61,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M320-B002 ARC Automation Lifetime Insertion Policy Summary\n\n"
+        "# Block ARC Closure ARC Policy Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Canonical surfaces: `{summary['canonical_surface_count']}`\n"
         f"- Source surface contracts: `{summary['source_surface_contract_count']}`\n"

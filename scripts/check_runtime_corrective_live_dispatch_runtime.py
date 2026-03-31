@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ACCEPTANCE_SCRIPT = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-D002"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/live-dispatch-runtime"
 SUMMARY_PATH = OUT_DIR / "live_dispatch_runtime_summary.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 
@@ -49,7 +49,7 @@ def main() -> int:
     ]
 
     summary = {
-        "issue": "M316-D002",
+        "issue": "runtime-corrective-live-dispatch-runtime",
         "acceptance_script": str(ACCEPTANCE_SCRIPT.relative_to(ROOT)).replace("\\", "/"),
         "runbook_mentions_script": "check_runtime_corrective_live_dispatch_runtime.py" in runbook_text,
         "case_count": len(cases),

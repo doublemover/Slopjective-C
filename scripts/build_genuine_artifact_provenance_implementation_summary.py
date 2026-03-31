@@ -12,7 +12,7 @@ GENERATOR = ROOT / "scripts/generate_conformance_evidence_index.py"
 INPUT_ROOT = ROOT / "reports/conformance"
 INDEX_OUTPUT = ROOT / "tmp/reports/release_evidence/evidence-index.json"
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json"
-OUT_DIR = ROOT / "tmp/reports/m315/M315-C002"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/genuine-artifact-provenance-implementation"
 JSON_OUT = OUT_DIR / "genuine_artifact_provenance_implementation_summary.json"
 MD_OUT = OUT_DIR / "genuine_artifact_provenance_implementation_summary.md"
 
@@ -71,7 +71,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M315-C002",
+        "issue": "source-hygiene-genuine-artifact-provenance-implementation",
         "generator": normalize(GENERATOR),
         "input_root": normalize(INPUT_ROOT),
         "output_path": normalize(INDEX_OUTPUT),
@@ -90,7 +90,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M315-C002 Genuine Artifact Provenance Implementation Summary\n\n"
+        "# Genuine Artifact Provenance Implementation Summary\n\n"
         f"- Generator: `{summary['generator']}`\n"
         f"- Output: `{summary['output_path']}`\n"
         f"- Artifact count: `{summary['artifact_count']}`\n"

@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-C002'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-acceptance-suite-matrix'
 CATALOG_PATH = PLAN_DIR / 'validation_harness_catalog.json'
 POLICY_PATH = PLAN_DIR / 'validation_consolidation_policy.json'
 OUTPUT_JSON_PATH = PLAN_DIR / 'validation_acceptance_suite_matrix.json'
@@ -41,7 +41,7 @@ def main() -> None:
         })
 
     payload = {
-        'issue': 'M313-C002',
+        'issue': 'validation-acceptance-suite-matrix',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'policy_id': policy['policy_id'],
         'shared_acceptance_harness': catalog['shared_acceptance_harness'],
@@ -64,7 +64,7 @@ def main() -> None:
                 'role': 'nightly-aggregate',
             },
         ],
-        'next_issues': ['M313-D001', 'M313-D002'],
+        'next_issues': ['validation-ci-topology', 'validation-ci-topology-integration'],
     }
 
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
@@ -90,7 +90,7 @@ def main() -> None:
     lines.extend(['', '## Aggregate entrypoints'])
     for entry in payload['aggregate_entrypoints']:
         lines.append(f"- `{entry['package_script']}` -> `{entry['action']}` ({entry['role']})")
-    lines.extend(['', 'Next issues: `M313-D001`, `M313-D002`', ''])
+    lines.extend(['', 'Next issues: `validation-ci-topology`, `validation-ci-topology-integration`', ''])
     markdown = '\n'.join(lines)
     write_text(OUTPUT_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

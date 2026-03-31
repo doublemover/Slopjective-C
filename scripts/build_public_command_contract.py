@@ -8,7 +8,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-C001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-public-command-contract'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-public-command-contract-v1.schema.json'
@@ -56,7 +56,7 @@ def main() -> None:
 
     contract = {
         'contract_id': 'objc3c-public-command-contract-v1',
-        'issue': 'M314-C001',
+        'issue': 'workflow-public-command-contract',
         'runner_mode': list_payload['mode'],
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
@@ -70,13 +70,13 @@ def main() -> None:
         'extra_runner_public_scripts': extra_runner_public_scripts,
         'actions': action_payloads,
         'package_scripts': package_script_payloads,
-        'next_issue': 'M314-C002',
+        'next_issue': 'workflow-api-implementation',
     }
     write_text(PLAN_JSON_PATH, json.dumps(contract, indent=2) + '\n')
     write_text(REPORT_JSON_PATH, json.dumps(contract, indent=2) + '\n')
 
     lines = [
-        '# M314-C001 Public Command Contract',
+        '# workflow-public-command-contract Public Command Contract',
         '',
         f"- contract_id: `{contract['contract_id']}`",
         f"- package_script_count: `{contract['package_script_count']}`",
@@ -99,7 +99,7 @@ def main() -> None:
     lines.extend(['', '## Contract status'])
     status = 'PASS' if not unmapped_scripts and not extra_runner_public_scripts else 'FAIL'
     lines.append(f'- status: `{status}`')
-    lines.extend(['', 'Next issue: `M314-C002`', ''])
+    lines.extend(['', 'Next issue: `workflow-api-implementation`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

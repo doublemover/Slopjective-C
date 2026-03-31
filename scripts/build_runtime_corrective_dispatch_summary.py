@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/realized_dispatch_semantic_model.json"
-SUMMARY_OUT_DIR = ROOT / "tmp/reports/m316/M316-B001"
+SUMMARY_OUT_DIR = ROOT / "tmp/reports/runtime-corrective/realized-dispatch-semantic"
 JSON_OUT = SUMMARY_OUT_DIR / "realized_dispatch_semantic_summary.json"
 MD_OUT = SUMMARY_OUT_DIR / "realized_dispatch_semantic_summary.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
@@ -69,7 +69,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M316-B001",
+        "issue": "runtime-corrective-realized-dispatch-semantic",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "runtime_acceptance_case_ids": contract["runtime_acceptance_case_ids"],
@@ -81,7 +81,7 @@ def main() -> int:
     SUMMARY_OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M316-B001 Realized Dispatch Semantic Summary\n\n"
+        "# Runtime Corrective Dispatch Semantic Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Runtime-acceptance cases: `{', '.join(summary['runtime_acceptance_case_ids'])}`\n"
         f"- Authoritative fixtures: `{measured_inventory['authoritative_fixture_count']}`\n"

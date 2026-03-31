@@ -9,8 +9,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/archive_boundary_contract.json"
-PRODUCT_REPORT_PATH = ROOT / "tmp/reports/m315/M315-B002/product_decontamination_report.json"
-OUT_DIR = ROOT / "tmp/reports/m315/M315-D003"
+PRODUCT_REPORT_PATH = ROOT / "tmp/reports/source-hygiene/product-decontamination/product_decontamination_report.json"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/archive-boundary-compatibility"
 JSON_OUT = OUT_DIR / "archive_boundary_compatibility_summary.json"
 MD_OUT = OUT_DIR / "archive_boundary_compatibility_summary.md"
 
@@ -86,7 +86,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M315-D003",
+        "issue": "source-hygiene-archive-boundary-compatibility",
         "contract_id": contract["contract_id"],
         "archive_root_file_counts": archive_counts,
         "archive_root_samples": archive_samples,
@@ -100,7 +100,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M315-D003 Archive Boundary Compatibility Summary\n\n"
+        "# Archive Boundary Compatibility Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Archive-tracked file count: `{archive_total}`\n"
         f"- Historical-reference hit count: `{summary['historical_reference_hit_count']}`\n"

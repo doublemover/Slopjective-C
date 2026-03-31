@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-A001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-surface-inventory'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
 OUTPUT_JSON_PATH = REPORT_DIR / 'command_surface_inventory.json'
@@ -56,7 +56,7 @@ def main() -> None:
     orphan_public_scripts = sorted(name for name in scripts if name not in public_script_to_action)
 
     payload = {
-        'issue': 'M314-A001',
+        'issue': 'workflow-command-surface-inventory',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'package_script_count': len(scripts),
         'workflow_action_count': len(action_specs),
@@ -70,12 +70,12 @@ def main() -> None:
             'appendix_generator': 'scripts/render_objc3c_public_command_surface.py',
         },
         'orphan_public_scripts': orphan_public_scripts,
-        'next_issue': 'M314-B001',
+        'next_issue': 'workflow-simplification-policy',
     }
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M314-A001 Command Surface Inventory',
+        '# workflow-command-surface-inventory Command Surface Inventory',
         '',
         f"- package_script_count: `{payload['package_script_count']}`",
         f"- workflow_action_count: `{payload['workflow_action_count']}`",
@@ -90,7 +90,7 @@ def main() -> None:
     lines.extend(['', '## Orphan public scripts'])
     for script_name in orphan_public_scripts:
         lines.append(f"- `{script_name}`")
-    lines.extend(['', 'Next issue: `M314-B001`', ''])
+    lines.extend(['', 'Next issue: `workflow-simplification-policy`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
 
 

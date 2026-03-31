@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/escaping_block_byref_ownership_semantic_model.json"
-OUT_DIR = ROOT / "tmp/reports/m320/M320-B001"
+OUT_DIR = ROOT / "tmp/reports/block-arc-closure/escaping-block-byref-ownership"
 JSON_OUT = OUT_DIR / "escaping_block_byref_ownership_semantic_summary.json"
 MD_OUT = OUT_DIR / "escaping_block_byref_ownership_semantic_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -42,7 +42,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M320-B001",
+        "issue": "block-arc-closure-escaping-block-byref-ownership",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "canonical_surface_count": len(contract["canonical_surfaces"]),
@@ -59,7 +59,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M320-B001 Escaping Block Byref Ownership Semantic Summary\n\n"
+        "# Block ARC Closure Semantic Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Canonical surfaces: `{summary['canonical_surface_count']}`\n"
         f"- Semantic surface paths: `{summary['semantic_surface_path_count']}`\n"

@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'source_hygiene'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm315' / 'M315-A001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'residue-authenticity-inventory'
 PLAN_JSON_PATH = PLAN_DIR / 'residue_authenticity_inventory.json'
 PLAN_MD_PATH = PLAN_DIR / 'residue_authenticity_inventory.md'
 REPORT_JSON_PATH = REPORT_DIR / 'residue_authenticity_inventory.json'
@@ -119,7 +119,7 @@ def main() -> None:
 
     residue_bucket_counts = Counter(entry['bucket'] for entry in product_residue_hits)
     payload = {
-        'issue': 'M315-A001',
+        'issue': 'source-hygiene-residue-authenticity-inventory',
         'tracked_file_count': tracked_file_count,
         'product_file_count': len(product_files),
         'archive_file_count': len(archive_files),
@@ -140,14 +140,14 @@ def main() -> None:
             'replace milestone-coded identifiers in live source comments and contract strings with stable feature-surface identifiers',
             'separate genuine generated outputs from synthetic fixtures and archive-only material in machine-readable provenance',
         ],
-        'next_issue': 'M315-B001',
+        'next_issue': 'stable-identifier-policy',
     }
 
     write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
     write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M315-A001 Residue Authenticity Inventory',
+        '# Residue Authenticity Inventory',
         '',
         f"- tracked_file_count: `{payload['tracked_file_count']}`",
         f"- product_file_count: `{payload['product_file_count']}`",
@@ -175,7 +175,7 @@ def main() -> None:
     lines.extend(['', '## Follow-on priorities'])
     for item in payload['follow_on_priorities']:
         lines.append(f'- {item}')
-    lines.extend(['', 'Next issue: `M315-B001`', ''])
+    lines.extend(['', 'Next step: `stable-identifier-policy`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

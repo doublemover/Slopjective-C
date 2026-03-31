@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/byref_promotion_copy_dispose_forwarding_contract.json"
-OUT_DIR = ROOT / "tmp/reports/m320/M320-B003"
+OUT_DIR = ROOT / "tmp/reports/block-arc-closure/byref-promotion-forwarding"
 JSON_OUT = OUT_DIR / "byref_promotion_copy_dispose_forwarding_summary.json"
 MD_OUT = OUT_DIR / "byref_promotion_copy_dispose_forwarding_summary.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
@@ -34,7 +34,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M320-B003",
+        "issue": "block-arc-closure-byref-promotion-forwarding",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "authoritative_runtime_symbol_count": len(contract["authoritative_runtime_symbols"]),
@@ -50,7 +50,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M320-B003 Byref Promotion Copy Dispose Forwarding Summary\n\n"
+        "# Block ARC Closure Byref Forwarding Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Runtime symbols: `{summary['authoritative_runtime_symbol_count']}`\n"
         f"- Implementation invariants: `{summary['implementation_invariant_count']}`\n"

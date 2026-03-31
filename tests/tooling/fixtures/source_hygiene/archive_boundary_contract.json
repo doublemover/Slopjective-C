@@ -26,8 +26,8 @@
     "docs/runbooks/objc3c_public_command_surface.md"
   ],
   "historical_reference_patterns": [
-    "\\bM[0-9]{3}\\b",
-    "Lane-[A-E]",
+    "\\bM[0-9]{2,3}(?:\\b|_)",
+    "(?:Lane|lane)-[A-Ea-e]",
     "workpack iteration",
     "closeout signoff"
   ],
@@ -37,5 +37,5 @@
     "product surface residue checks remain authoritative for live truth cleanliness",
     "archive summaries must prove history still exists without widening current product claims"
   ],
-  "canonical_summary_output": "tmp/reports/m315/M315-D003/archive_boundary_compatibility_summary.json"
+  "canonical_summary_output": "tmp/reports/source-hygiene/archive-boundary-compatibility/archive_boundary_compatibility_summary.json"
 }

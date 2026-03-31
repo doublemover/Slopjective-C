@@ -1,6 +1,6 @@
 # Objective-C 3 Error Runtime Closure
 
-This runbook freezes the `M321` error runtime closure boundary.
+This runbook freezes the error runtime closure boundary.
 
 Canonical checked-in boundary and contract surfaces:
 
@@ -74,11 +74,11 @@ Explicit non-goals:
 - milestone-local error runtime scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims that cross-module propagation is complete beyond the current manifest/runtime-registration/replay proof
 
-Successor milestones:
+Follow-on tracks:
 
-- `M322`: async/task/actor runtime execution, scheduling, and isolation closure
-- `M323`: metaprogramming, property-behavior runtime materialization, and interop closure
-- `M324`: full-envelope conformance, stability, and production claimability
+- async/task/actor runtime execution, scheduling, and isolation closure
+- metaprogramming, property-behavior runtime materialization, and interop closure
+- full-envelope conformance, stability, and production claimability
 
 Authoritative live surfaces:
 

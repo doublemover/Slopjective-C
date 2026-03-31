@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/check_objc3c_runnable_object_model_end_to_end.py"
 RUNNER_REPORT = ROOT / "tmp/reports/runtime/runnable-object-model-e2e/summary.json"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-D002"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/live-runtime"
 JSON_OUT = OUT_DIR / "live_object_model_runtime_summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.object_model.closure.live.runtime.summary.v1"
 

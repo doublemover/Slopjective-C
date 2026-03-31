@@ -10,7 +10,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_SCRIPT = ROOT / "scripts/check_source_hygiene_authenticity.py"
 SUMMARY_PATH = ROOT / "tmp/reports/source_hygiene/source_hygiene_audit_summary.json"
-OUT_DIR = ROOT / "tmp/reports/m315/M315-D002"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/audit-issue-summary"
 JSON_OUT = OUT_DIR / "source_hygiene_audit_issue_summary.json"
 MD_OUT = OUT_DIR / "source_hygiene_audit_issue_summary.md"
 
@@ -29,7 +29,7 @@ def main() -> int:
     )
     payload = read_json(SUMMARY_PATH)
     summary = {
-        "issue": "M315-D002",
+        "issue": "source-hygiene-audit-issue-summary",
         "audit_script": "scripts/check_source_hygiene_authenticity.py",
         "runner_entrypoint": "python scripts/objc3c_public_workflow_runner.py check-source-hygiene-authenticity",
         "package_script": "check:objc3c:source-hygiene",
@@ -46,7 +46,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M315-D002 Source Hygiene Audit Summary\n\n"
+        "# Source Hygiene Audit Summary\n\n"
         f"- Audit script: `{summary['audit_script']}`\n"
         f"- Runner entrypoint: `{summary['runner_entrypoint']}`\n"
         f"- Package script: `{summary['package_script']}`\n"

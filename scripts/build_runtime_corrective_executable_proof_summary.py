@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/executable_proof_abi_contract.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-D001"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/executable-proof-abi"
 SUMMARY_PATH = OUT_DIR / "executable_proof_abi_contract_summary.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 
@@ -25,7 +25,7 @@ def main() -> int:
     synthesized_cases = contract["synthesized_accessor_runtime_cases"]
 
     summary = {
-        "issue": "M316-D001",
+        "issue": "runtime-corrective-executable-proof-abi",
         "contract_id": contract["contract_id"],
         "runbook_mentions_contract": "executable_proof_abi_contract.json" in runbook_text,
         "shared_acceptance_entrypoint_count": len(shared_entrypoints),

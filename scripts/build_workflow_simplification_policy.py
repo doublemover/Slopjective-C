@@ -6,8 +6,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-B001'
-INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-A001' / 'command_surface_inventory.json'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-simplification-policy'
+INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-surface-inventory' / 'command_surface_inventory.json'
 POLICY_JSON_PATH = PLAN_DIR / 'workflow_simplification_policy.json'
 POLICY_MD_PATH = PLAN_DIR / 'workflow_simplification_policy.md'
 REPORT_JSON_PATH = REPORT_DIR / 'policy_summary.json'
@@ -27,7 +27,7 @@ def main() -> None:
     inventory = load_json(INVENTORY_PATH)
     policy = {
         'policy_id': 'workflow-simplification-policy-v1',
-        'effective_from_milestone': 'M314',
+        'effective_from_phase': 'workflow-simplification',
         'canonical_public_categories': [
             'build',
             'check',
@@ -46,12 +46,12 @@ def main() -> None:
             'Generated command appendix and package.json must remain synchronized; public commands should not bypass that surface.'
         ],
         'retained_orphan_public_scripts': inventory['orphan_public_scripts'],
-        'next_issues': ['M314-B002', 'M314-B003', 'M314-C001'],
+        'next_issues': ['workflow-alias-retirement', 'workflow-runner-unification', 'workflow-public-command-contract'],
     }
     write_text(POLICY_JSON_PATH, json.dumps(policy, indent=2) + '\n')
 
     summary = {
-        'issue': 'M314-B001',
+        'issue': 'workflow-simplification-policy',
         'policy_id': policy['policy_id'],
         'package_script_count': inventory['package_script_count'],
         'workflow_action_count': inventory['workflow_action_count'],
@@ -80,7 +80,7 @@ def main() -> None:
     lines.extend(['', '## Runner-first rules'])
     for rule in policy['runner_first_rules']:
         lines.append(f"- {rule}")
-    lines.extend(['', 'Next issues: `M314-B002`, `M314-B003`, `M314-C001`', ''])
+    lines.extend(['', 'Next issues: `workflow-alias-retirement`, `workflow-runner-unification`, `workflow-public-command-contract`', ''])
     markdown = '\n'.join(lines)
     write_text(POLICY_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-D002'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-prototype-retirement'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 NPM = shutil.which('npm.cmd') or shutil.which('npm') or 'npm'
 PLAN_JSON_PATH = PLAN_DIR / 'prototype_retirement_report.json'
@@ -141,13 +141,13 @@ def main() -> None:
             required_missing[relative_path] = missing
 
     payload = {
-        'issue': 'M314-D002',
+        'issue': 'workflow-prototype-retirement',
         'package_script_count': len(package_scripts),
         'invalid_npm_run_references': invalid_npm_refs,
         'forbidden_hits': forbidden_hits,
         'required_missing': required_missing,
         'checked_files': {key: path.relative_to(ROOT).as_posix() for key, path in TARGET_FILES.items()},
-        'next_issue': 'M314-E001',
+        'next_issue': 'workflow-closeout-gate',
         'status': 'PASS' if not invalid_npm_refs and not forbidden_hits and not required_missing else 'FAIL',
     }
 
@@ -155,7 +155,7 @@ def main() -> None:
     write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M314-D002 Prototype Retirement Report',
+        '# workflow-prototype-retirement Prototype Retirement Report',
         '',
         f"- status: `{payload['status']}`",
         f"- package_script_count: `{payload['package_script_count']}`",
@@ -189,7 +189,7 @@ def main() -> None:
                 lines.append(f'  - `{miss}`')
     else:
         lines.append('- none')
-    lines.extend(['', 'Next issue: `M314-E001`', ''])
+    lines.extend(['', 'Next issue: `workflow-closeout-gate`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

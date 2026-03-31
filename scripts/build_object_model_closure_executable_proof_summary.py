@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/executable_proof_abi_contract.json"
 PACKAGE_PATH = ROOT / "package.json"
 RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-D001"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/executable-proof-abi"
 JSON_OUT = OUT_DIR / "object_model_closure_executable_proof_summary.json"
 MD_OUT = OUT_DIR / "object_model_closure_executable_proof_summary.md"
 
@@ -29,7 +29,7 @@ def main() -> int:
         "all_public_workflow_actions_exist": all(action in runner_text for action in contract["public_workflow_actions"]),
     }
     summary = {
-        "issue": "M319-D001",
+        "issue": "object-model-closure-executable-proof-abi",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "public_command_surface_count": len(contract["public_command_surfaces"]),
@@ -42,7 +42,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M319-D001 Object-Model Closure Executable Proof Summary\n\n"
+        "# Object-Model Closure Executable Proof Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Public commands: `{summary['public_command_surface_count']}`\n"
         f"- Public workflow actions: `{summary['public_workflow_action_count']}`\n"

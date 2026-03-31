@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_DIR = ROOT / "tmp" / "reports" / "m313" / "M313-A001"
+REPORT_DIR = ROOT / "tmp" / "reports" / "m313" / "validation-surface-inventory"
 JSON_OUT = REPORT_DIR / "validation_surface_inventory.json"
 MD_OUT = REPORT_DIR / "validation_surface_inventory.md"
 PACKAGE_JSON = ROOT / "package.json"
@@ -270,7 +270,7 @@ def main() -> int:
     }
 
     report = {
-        "issue": "M313-A001",
+        "issue": "validation-surface-inventory",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "measured_counts": {
             "package_scripts_total": len(package),
@@ -299,17 +299,17 @@ def main() -> int:
         },
         "check_surface_inventory": inventory_entries,
         "non_goals": [
-            "This inventory does not collapse or rename validation commands yet; that belongs to later M313 issues.",
+            "This inventory does not collapse or rename validation commands yet; that belongs to later validation-consolidation steps.",
             "This inventory does not delete executable validators; it classifies retained static guards versus acceptance-first truth surfaces.",
-            "This inventory does not rewrite CI scheduling; that belongs to M313-D001 and M313-D002.",
+            "This inventory does not rewrite CI scheduling; that belongs to validation-ci-topology and validation-ci-topology-integration.",
         ],
-        "next_issue": "M313-B001",
+        "next_issue": "validation-policy-summary",
     }
 
     JSON_OUT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
     lines = [
-        "# M313-A001 Validation Surface Inventory",
+        "# validation-surface-inventory Validation Surface Inventory",
         "",
         f"- generated_at: `{report['generated_at']}`",
         f"- package_scripts_total: `{report['measured_counts']['package_scripts_total']}`",
@@ -343,7 +343,7 @@ def main() -> int:
     lines.extend(["", "## Non-goals"])
     lines.extend(f"- {item}" for item in report["non_goals"])
     lines.append("")
-    lines.append("Next issue: `M313-B001`")
+    lines.append("Next issue: `validation-policy-summary`")
     MD_OUT.write_text("\n".join(lines), encoding="utf-8")
     return 0
 

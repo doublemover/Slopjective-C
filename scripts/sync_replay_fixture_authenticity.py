@@ -9,7 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_ROOT = ROOT / "tests/tooling/fixtures/objc3c"
 CLASSIFICATION_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json"
-OUT_DIR = ROOT / "tmp/reports/m315/M315-C003"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/synthetic-fixture-labeling"
 JSON_OUT = OUT_DIR / "synthetic_fixture_labeling_summary.json"
 MD_OUT = OUT_DIR / "synthetic_fixture_labeling_summary.md"
 
@@ -165,7 +165,7 @@ def main() -> int:
 
     tests_json_count = sum(1 for _ in ROOT.glob("tests/**/*.json"))
     summary = {
-        "issue": "M315-C003",
+        "issue": "source-hygiene-synthetic-fixture-labeling",
         "replay_ll_count": len(ll_paths),
         "replay_manifest_count": len(manifest_paths),
         "tests_json_count": tests_json_count,
@@ -195,7 +195,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M315-C003 Synthetic Fixture Labeling Summary\n\n"
+        "# Synthetic Fixture Labeling Summary\n\n"
         f"- Replay `.ll` fixtures: `{summary['replay_ll_count']}`\n"
         f"- Replay manifest fixtures: `{summary['replay_manifest_count']}`\n"
         f"- Tracked `tests/**/*.json`: `{summary['tests_json_count']}`\n"

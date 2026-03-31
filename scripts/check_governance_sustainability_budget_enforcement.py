@@ -18,7 +18,7 @@ WAIVER_REGISTRY_PATH = FIXTURE_ROOT / "waiver_registry.json"
 SCHEMA_PATH = ROOT / "schemas" / "objc3c-governance-budget-summary-v1.schema.json"
 TASK_HYGIENE_PATH = ROOT / "scripts" / "ci" / "check_task_hygiene.py"
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_governance_sustainability.md"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "m318" / "M318-C002" / "governance_budget_enforcement_summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "budget-enforcement" / "governance_budget_enforcement_summary.json"
 
 LEGACY_ALIAS_RE = re.compile(
     r"npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)"

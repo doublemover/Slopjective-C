@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-B003"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/native-output-truth-policy"
 JSON_OUT = OUT_DIR / "native_output_truth_policy_summary.json"
 MD_OUT = OUT_DIR / "native_output_truth_policy_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -63,7 +63,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M316-B003",
+        "issue": "runtime-corrective-native-output-truth-policy",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
@@ -74,7 +74,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M316-B003 Native Output Truth Policy Summary\n\n"
+        "# Runtime Corrective Native Output Truth Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Required coupled artifacts: `{measured_inventory['required_coupled_artifact_count']}`\n"
         f"- Required truth bindings: `{measured_inventory['required_truth_binding_count']}`\n"

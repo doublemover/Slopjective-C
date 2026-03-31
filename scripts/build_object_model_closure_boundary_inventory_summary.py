@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/boundary_inventory.json"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-A001"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/boundary-inventory"
 JSON_OUT = OUT_DIR / "object_model_closure_boundary_inventory_summary.json"
 MD_OUT = OUT_DIR / "object_model_closure_boundary_inventory_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -76,7 +76,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M319-A001",
+        "issue": "object-model-closure-boundary-inventory",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
@@ -89,7 +89,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M319-A001 Object-Model Closure Boundary Inventory Summary\n\n"
+        "# Object-Model Closure Boundary Inventory Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Focus tracks: `{measured_inventory['focus_track_count']}`\n"
         f"- Authoritative code paths: `{measured_inventory['authoritative_code_path_count']}`\n"

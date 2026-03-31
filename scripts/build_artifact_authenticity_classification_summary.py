@@ -10,8 +10,8 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / 'tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json'
 CLASS_PATH = ROOT / 'tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json'
-INVENTORY_PATH = ROOT / 'tmp/reports/m315/M315-A001/residue_authenticity_inventory.json'
-OUT_DIR = ROOT / 'tmp/reports/m315/M315-B003'
+INVENTORY_PATH = ROOT / 'tmp/reports/source-hygiene/residue-authenticity-inventory/residue_authenticity_inventory.json'
+OUT_DIR = ROOT / 'tmp/reports/source-hygiene/artifact-authenticity-classification'
 JSON_OUT = OUT_DIR / 'artifact_authenticity_classification_summary.json'
 MD_OUT = OUT_DIR / 'artifact_authenticity_classification_summary.md'
 
@@ -102,7 +102,7 @@ def main() -> int:
     parity_json_labeled = count_json_envelopes(parity_paths)
 
     summary = {
-        'issue': 'M315-B003',
+        'issue': 'source-hygiene-artifact-authenticity-classification',
         'contract_id': classification['contract_id'],
         'policy_id': policy['contract_id'],
         'inventory_issue': inventory['issue'],
@@ -127,7 +127,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
     MD_OUT.write_text(
-        '# M315-B003 Artifact Authenticity Classification Summary\n\n'
+        '# Artifact Authenticity Classification Summary\n\n'
         f"- Contract: `{classification['contract_id']}`\n"
         f"- Generated truth paths present: `{len(generated_truth_present)}/{len(generated_truth_paths)}`\n"
         f"- Synthetic total match count: `{len(total_synthetic_matches)}`\n"

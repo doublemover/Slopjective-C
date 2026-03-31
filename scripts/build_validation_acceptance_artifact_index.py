@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-C001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-acceptance-artifact-index'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-validation-acceptance-artifact-index-v1.schema.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_acceptance_artifact_index.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_acceptance_artifact_index.md'
@@ -36,22 +36,22 @@ def validate_payload(payload: dict[str, Any]) -> None:
 
 
 def main() -> None:
-    inventory = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'M313-A001' / 'validation_surface_inventory.json')
-    policy_summary = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'M313-B001' / 'policy_summary.json')
-    harness_catalog = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'M313-B002' / 'validation_harness_catalog.json')
-    legacy_map = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'M313-B003' / 'legacy_validation_surface_map.json')
+    inventory = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'validation-surface-inventory' / 'validation_surface_inventory.json')
+    policy_summary = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'validation-policy-summary' / 'policy_summary.json')
+    harness_catalog = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'validation-harness-catalog' / 'validation_harness_catalog.json')
+    legacy_map = load_json(ROOT / 'tmp' / 'reports' / 'm313' / 'validation-legacy-surface-map' / 'legacy_validation_surface_map.json')
 
     payload = {
         'contract_id': 'objc3c.validation.acceptance.artifact.index.v1',
         'generated_at_utc': datetime.now(timezone.utc).isoformat(),
-        'milestone_code': 'M313',
+        'phase_code': 'validation-consolidation',
         'policy_id': policy_summary['policy_id'],
         'artifact_count': 4,
         'artifacts': [
             {
-                'issue_code': 'M313-A001',
+                'issue_code': 'validation-surface-inventory',
                 'artifact_kind': 'validation-surface-inventory',
-                'report_path': 'tmp/reports/m313/M313-A001/validation_surface_inventory.json',
+                'report_path': 'tmp/reports/validation-consolidation/surface-inventory/validation_surface_inventory.json',
                 'planning_source_paths': [
                     'scripts/build_validation_surface_inventory.py'
                 ],
@@ -63,9 +63,9 @@ def main() -> None:
                 },
             },
             {
-                'issue_code': 'M313-B001',
+                'issue_code': 'validation-policy-summary',
                 'artifact_kind': 'validation-policy',
-                'report_path': 'tmp/reports/m313/M313-B001/policy_summary.json',
+                'report_path': 'tmp/reports/validation-consolidation/policy-summary/policy_summary.json',
                 'planning_source_paths': [
                     'scripts/build_validation_policy_summary.py'
                 ],
@@ -76,9 +76,9 @@ def main() -> None:
                 },
             },
             {
-                'issue_code': 'M313-B002',
+                'issue_code': 'validation-harness-catalog',
                 'artifact_kind': 'validation-harness-catalog',
-                'report_path': 'tmp/reports/m313/M313-B002/validation_harness_catalog.json',
+                'report_path': 'tmp/reports/validation-consolidation/harness-catalog/validation_harness_catalog.json',
                 'planning_source_paths': [
                     'scripts/build_validation_harness_catalog.py'
                 ],
@@ -89,9 +89,9 @@ def main() -> None:
                 },
             },
             {
-                'issue_code': 'M313-B003',
+                'issue_code': 'validation-legacy-surface-map',
                 'artifact_kind': 'legacy-validation-surface-map',
-                'report_path': 'tmp/reports/m313/M313-B003/legacy_validation_surface_map.json',
+                'report_path': 'tmp/reports/validation-consolidation/legacy-surface-map/legacy_validation_surface_map.json',
                 'planning_source_paths': [
                     'scripts/build_legacy_validation_surface_map.py'
                 ],
@@ -101,14 +101,14 @@ def main() -> None:
                 },
             },
         ],
-        'next_issues': ['M313-C002', 'M313-C003', 'M313-D001'],
+        'next_issues': ['validation-acceptance-suite-matrix', 'validation-legacy-bridge-matrix', 'validation-ci-topology'],
     }
 
     validate_payload(payload)
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M313-C001 Validation Acceptance Artifact Index',
+        '# validation-acceptance-artifact-index Validation Acceptance Artifact Index',
         '',
         f"- contract_id: `{payload['contract_id']}`",
         f"- schema_path: `schemas/{SCHEMA_PATH.name}`",
@@ -120,7 +120,7 @@ def main() -> None:
         lines.append(f"- `{artifact['issue_code']}` -> `{artifact['artifact_kind']}`")
         lines.append(f"  - report_path: `{artifact['report_path']}`")
         lines.append(f"  - planning_source_paths: {', '.join(f'`{path}`' for path in artifact['planning_source_paths'])}")
-    lines.extend(['', 'Next issues: `M313-C002`, `M313-C003`, `M313-D001`', ''])
+    lines.extend(['', 'Next issues: `validation-acceptance-suite-matrix`, `validation-legacy-bridge-matrix`, `validation-ci-topology`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
 
 

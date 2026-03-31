@@ -10,19 +10,19 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "tmp/reports/m319/M319-E001"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/closeout-gate"
 JSON_OUT = OUT_DIR / "object_model_closure_closeout_gate.json"
 REQUIRED_REPORTS = [
-    ROOT / "tmp/reports/m319/M319-A001/object_model_closure_boundary_inventory_summary.json",
-    ROOT / "tmp/reports/m319/M319-B001/realized_object_graph_reflection_semantic_summary.json",
-    ROOT / "tmp/reports/m319/M319-B002/loader_category_protocol_workload_summary.json",
-    ROOT / "tmp/reports/m319/M319-B003/realized_object_graph_runtime_implementation_summary.json",
-    ROOT / "tmp/reports/m319/M319-C001/object_model_reflection_artifact_runtime_registration_summary.json",
-    ROOT / "tmp/reports/m319/M319-C002/class_category_protocol_realization_lowering_summary.json",
-    ROOT / "tmp/reports/m319/M319-C003/property_ivar_aggregate_reflection_artifact_summary.json",
-    ROOT / "tmp/reports/m319/M319-D001/object_model_closure_executable_proof_summary.json",
-    ROOT / "tmp/reports/m319/M319-D002/live_object_model_runtime_summary.json",
-    ROOT / "tmp/reports/m319/M319-D003/live_property_ivar_reflection_summary.json",
+    ROOT / "tmp/reports/object-model-closure/boundary-inventory/object_model_closure_boundary_inventory_summary.json",
+    ROOT / "tmp/reports/object-model-closure/realized-object-graph-semantic/realized_object_graph_reflection_semantic_summary.json",
+    ROOT / "tmp/reports/object-model-closure/loader-category-protocol-workload/loader_category_protocol_workload_summary.json",
+    ROOT / "tmp/reports/object-model-closure/runtime-implementation/realized_object_graph_runtime_implementation_summary.json",
+    ROOT / "tmp/reports/object-model-closure/artifact-registration/object_model_reflection_artifact_runtime_registration_summary.json",
+    ROOT / "tmp/reports/object-model-closure/realization-lowering-proof/class_category_protocol_realization_lowering_summary.json",
+    ROOT / "tmp/reports/object-model-closure/property-reflection-artifact/property_ivar_aggregate_reflection_artifact_summary.json",
+    ROOT / "tmp/reports/object-model-closure/executable-proof-abi/object_model_closure_executable_proof_summary.json",
+    ROOT / "tmp/reports/object-model-closure/live-runtime/live_object_model_runtime_summary.json",
+    ROOT / "tmp/reports/object-model-closure/live-property-reflection/live_property_ivar_reflection_summary.json",
 ]
 
 

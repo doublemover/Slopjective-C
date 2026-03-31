@@ -9,10 +9,10 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-B003'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-runner-unification'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
-B002_REPORT_PATH = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-B002' / 'alias_retirement_report.json'
+B002_REPORT_PATH = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-alias-retirement' / 'alias_retirement_report.json'
 PLAN_JSON_PATH = PLAN_DIR / 'workflow_runner_unification.json'
 PLAN_MD_PATH = PLAN_DIR / 'workflow_runner_unification.md'
 OUTPUT_JSON_PATH = REPORT_DIR / 'runner_unification_report.json'
@@ -62,7 +62,7 @@ def main() -> None:
     unmapped_scripts = sorted(name for name in scripts if name not in public_script_to_action)
     category_counts = Counter(category_for_script(name) for name in scripts)
     payload = {
-        'issue': 'M314-B003',
+        'issue': 'workflow-runner-unification',
         'package_script_count': len(scripts),
         'workflow_action_count': len(runner.ACTION_SPECS),
         'public_script_count': len(public_script_to_action),
@@ -74,13 +74,13 @@ def main() -> None:
         'category_counts': dict(sorted(category_counts.items())),
         'maintainer_scripts': sorted(maintainer_scripts),
         'unmapped_scripts': unmapped_scripts,
-        'next_issue': 'M314-C001',
+        'next_issue': 'workflow-public-command-contract',
     }
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
     write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M314-B003 Runner Unification Report',
+        '# workflow-runner-unification Runner Unification Report',
         '',
         f"- package_script_count: `{payload['package_script_count']}`",
         f"- workflow_action_count: `{payload['workflow_action_count']}`",
@@ -100,7 +100,7 @@ def main() -> None:
             lines.append(f"- `{script_name}`")
     else:
         lines.append('- none')
-    lines.extend(['', 'Next issue: `M314-C001`', ''])
+    lines.extend(['', 'Next issue: `workflow-public-command-contract`', ''])
     markdown = '\n'.join(lines)
     write_text(OUTPUT_MD_PATH, markdown)
     write_text(PLAN_MD_PATH, markdown)

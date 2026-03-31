@@ -8,7 +8,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/synthesized_accessor_lowering_implementation_contract.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-C003"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/synthesized-accessor-lowering-proof"
 SUMMARY_PATH = OUT_DIR / "synthesized_accessor_lowering_implementation_summary.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 
@@ -121,7 +121,7 @@ def main() -> int:
         ok = ok and case_ok
 
     summary = {
-        "issue": "M316-C003",
+        "issue": "runtime-corrective-synthesized-accessor-lowering-proof",
         "contract_id": contract["contract_id"],
         "runbook_mentions_contract": "synthesized_accessor_lowering_implementation_contract.json" in runbook_text,
         "case_count": len(cases),

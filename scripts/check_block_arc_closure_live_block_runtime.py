@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/check_objc3c_runnable_block_arc_end_to_end.py"
 RUNNER_REPORT = ROOT / "tmp/reports/runtime/runnable-block-arc-e2e/summary.json"
-OUT_DIR = ROOT / "tmp/reports/m320/M320-D002"
+OUT_DIR = ROOT / "tmp/reports/block-arc-closure/live-block-runtime"
 JSON_OUT = OUT_DIR / "live_escaping_block_byref_runtime_summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.block_arc.closure.live.escaping.block.byref.runtime.summary.v1"
 

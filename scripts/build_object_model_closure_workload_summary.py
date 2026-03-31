@@ -8,7 +8,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/loader_category_protocol_workload_map.json"
 RUNNER_PATH = ROOT / "scripts/check_objc3c_runnable_object_model_conformance.py"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-B002"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/loader-category-protocol-workload"
 JSON_OUT = OUT_DIR / "loader_category_protocol_workload_summary.json"
 MD_OUT = OUT_DIR / "loader_category_protocol_workload_summary.md"
 
@@ -36,7 +36,7 @@ def main() -> int:
         ),
     }
     summary = {
-        "issue": "M319-B002",
+        "issue": "object-model-closure-loader-category-protocol-workload",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "workload_count": len(contract["workloads"]),
@@ -49,7 +49,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M319-B002 Loader Category Protocol Workload Summary\n\n"
+        "# Object-Model Closure Workload Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Workloads: `{summary['workload_count']}`\n"
         f"- Required case ids: `{summary['required_case_id_count']}`\n"

@@ -10,7 +10,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "anti_regression_reporting_contract.json"
-OUT_DIR = ROOT / "tmp" / "reports" / "m318" / "M318-D002"
+OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "anti-regression"
 SUMMARY_PATH = OUT_DIR / "governance_anti_regression_summary.json"
 HISTORY_PATH = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "anti-regression-history.json"
 

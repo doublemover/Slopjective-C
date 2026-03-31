@@ -8,7 +8,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/realized_object_graph_runtime_implementation_contract.json"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-B003"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/runtime-implementation"
 JSON_OUT = OUT_DIR / "realized_object_graph_runtime_implementation_summary.json"
 MD_OUT = OUT_DIR / "realized_object_graph_runtime_implementation_summary.md"
 
@@ -36,7 +36,7 @@ def main() -> int:
         ),
     }
     summary = {
-        "issue": "M319-B003",
+        "issue": "object-model-closure-runtime-implementation",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "authoritative_runtime_symbol_count": len(contract["authoritative_runtime_symbols"]),
@@ -48,7 +48,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M319-B003 Realized Object Graph Runtime Implementation Summary\n\n"
+        "# Object-Model Closure Runtime Implementation Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Runtime symbols: `{summary['authoritative_runtime_symbol_count']}`\n"
         f"- Implementation invariants: `{summary['implementation_invariant_count']}`\n"

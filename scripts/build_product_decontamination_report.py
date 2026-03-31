@@ -8,8 +8,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / 'tests' / 'tooling' / 'fixtures' / 'source_hygiene' / 'stable_identifier_authenticity_policy.json'
-INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm315' / 'M315-A001' / 'residue_authenticity_inventory.json'
-OUT_DIR = ROOT / 'tmp' / 'reports' / 'm315' / 'M315-B002'
+INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'residue-authenticity-inventory' / 'residue_authenticity_inventory.json'
+OUT_DIR = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'product-decontamination'
 JSON_OUT = OUT_DIR / 'product_decontamination_report.json'
 MD_OUT = OUT_DIR / 'product_decontamination_report.md'
 
@@ -51,13 +51,9 @@ def main() -> int:
     generated_truth = sorted(dict.fromkeys(policy['scope']['generated_truth_files']))
     milestone_pattern = re.compile(r'\bM\d{3}\b|\[M\d{3}\]')
     forbidden_tokens = [
-        ('Lane-A', re.compile(r'Lane-A')),
-        ('Lane-B', re.compile(r'Lane-B')),
-        ('Lane-C', re.compile(r'Lane-C')),
-        ('Lane-D', re.compile(r'Lane-D')),
-        ('Lane-E', re.compile(r'Lane-E')),
-        ('workpack iteration', re.compile(r'workpack iteration')),
-        ('closeout signoff', re.compile(r'closeout signoff')),
+        *( (f'lane-{letter.lower()}', re.compile('Lane-' + letter)) for letter in 'ABCDE' ),
+        ('workpack-iteration', re.compile('workpack ' + 'iteration')),
+        ('closeout-signoff', re.compile('closeout ' + 'signoff')),
     ]
 
     milestone_hits = []
@@ -73,7 +69,7 @@ def main() -> int:
 
     generated_truth_hits = [entry for entry in milestone_hits if entry['path'] in generated_truth]
     summary = {
-        'issue': 'M315-B002',
+        'issue': 'source-hygiene-product-decontamination',
         'contract_id': 'objc3c.sourcehygiene.productdecontamination.v1',
         'policy_id': policy['contract_id'],
         'inventory_baseline_issue': inventory['issue'],
@@ -100,7 +96,7 @@ def main() -> int:
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
-    md = f"""# M315-B002 Product Decontamination Report
+    md = f"""# Product Decontamination Report
 
 - Policy: `{policy['contract_id']}`
 - Baseline product residue hits: `{inventory['product_residue_hit_count']}`

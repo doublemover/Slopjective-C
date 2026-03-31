@@ -8,8 +8,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-B003'
-INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-A001' / 'validation_surface_inventory.json'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-legacy-surface-map'
+INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-surface-inventory' / 'validation_surface_inventory.json'
 POLICY_PATH = PLAN_DIR / 'validation_consolidation_policy.json'
 NAMESPACE_JSON_PATH = PLAN_DIR / 'legacy_validation_surface_map.json'
 NAMESPACE_MD_PATH = PLAN_DIR / 'legacy_validation_surface_map.md'
@@ -120,14 +120,14 @@ def main() -> None:
         state_counts[row['state']] = state_counts.get(row['state'], 0) + 1
 
     payload = {
-        'issue': 'M313-B003',
+        'issue': 'validation-legacy-surface-map',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'policy_id': policy['policy_id'],
         'inventory_issue': inventory['issue'],
         'legacy_surface_count': len(rows),
         'state_counts': state_counts,
         'surfaces': rows,
-        'next_issues': ['M313-C001', 'M313-C003'],
+        'next_issues': ['validation-acceptance-artifact-index', 'validation-legacy-bridge-matrix'],
     }
 
     write_text(NAMESPACE_JSON_PATH, json.dumps(payload, indent=2) + '\n')
@@ -152,7 +152,7 @@ def main() -> None:
         lines.append(f"  - successor_surface: `{row['successor_surface']}`")
         lines.append(f"  - reference_count: `{row['reference_count']}`")
         lines.append(f"  - inventory_gap: `{str(row['inventory_gap']).lower()}`")
-    lines.extend(['', 'Next issues: `M313-C001`, `M313-C003`', ''])
+    lines.extend(['', 'Next issues: `validation-acceptance-artifact-index`, `validation-legacy-bridge-matrix`', ''])
     markdown = '\n'.join(lines)
     write_text(NAMESPACE_MD_PATH, markdown)
     write_text(SUMMARY_MD_PATH, markdown)

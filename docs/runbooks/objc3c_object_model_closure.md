@@ -1,6 +1,6 @@
 # Objective-C 3 Object-Model Closure
 
-This runbook freezes the `M319` object-model closure boundary.
+This runbook freezes the object-model closure boundary.
 
 Canonical checked-in boundary and contract surfaces:
 
@@ -35,7 +35,7 @@ Current closure scope:
 
 Current closure constraints:
 
-- unresolved sends still retain one deterministic miss fallback path, so M319 claims must stay tied to realized runtime-owned behavior instead of universal selector success
+- unresolved sends still retain one deterministic miss fallback path, so object-model closure claims must stay tied to realized runtime-owned behavior instead of universal selector success
 - reflection visibility remains on the private runtime-owned query surface and must not be repackaged as public ABI
 - milestone proof must stay compile-coupled to the live runtime/registration path and not fork into milestone-local scaffolding
 
@@ -46,13 +46,13 @@ Explicit non-goals:
 - probe-local or source-only reflection truth that bypasses runtime-owned query state
 - milestone-local runtime or packaging scaffolds parallel to the shipped acceptance path
 
-Successor milestones:
+Follow-on tracks:
 
-- `M320`: escaping block/byref execution, ownership transfer, and ARC automation
-- `M321`: throws, cleanup, bridged errors, and executable propagation closure
-- `M322`: async/task/actor runtime execution, scheduling, and isolation closure
-- `M323`: metaprogramming, property-behavior runtime materialization, and interop closure
-- `M324`: full-envelope conformance, stability, and production claimability
+- escaping block/byref execution, ownership transfer, and ARC automation
+- throws, cleanup, bridged errors, and executable propagation closure
+- async/task/actor runtime execution, scheduling, and isolation closure
+- metaprogramming, property-behavior runtime materialization, and interop closure
+- full-envelope conformance, stability, and production claimability
 
 Authoritative live surfaces:
 
@@ -77,5 +77,5 @@ Authoritative live surfaces:
 
 Generated evidence:
 
-- `tmp/reports/m319/M319-A001/object_model_closure_boundary_inventory_summary.json`
-- `tmp/reports/m319/M319-A001/object_model_closure_boundary_inventory_summary.md`
+- `tmp/reports/object-model-closure/boundary-inventory/object_model_closure_boundary_inventory_summary.json`
+- `tmp/reports/object-model-closure/boundary-inventory/object_model_closure_boundary_inventory_summary.md`

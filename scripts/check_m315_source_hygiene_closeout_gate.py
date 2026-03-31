@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 AUDIT_SCRIPT = ROOT / "scripts/check_source_hygiene_authenticity.py"
 ARCHIVE_SCRIPT = ROOT / "scripts/build_archive_boundary_compatibility_summary.py"
 AUDIT_SUMMARY_PATH = ROOT / "tmp/reports/source_hygiene/source_hygiene_audit_summary.json"
-ARCHIVE_SUMMARY_PATH = ROOT / "tmp/reports/m315/M315-D003/archive_boundary_compatibility_summary.json"
-OUT_DIR = ROOT / "tmp/reports/m315/M315-E001"
+ARCHIVE_SUMMARY_PATH = ROOT / "tmp/reports/source-hygiene/archive-boundary-compatibility/archive_boundary_compatibility_summary.json"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/closeout-gate"
 JSON_OUT = OUT_DIR / "source_hygiene_closeout_gate.json"
 MD_OUT = OUT_DIR / "source_hygiene_closeout_gate.md"
 
@@ -54,9 +54,9 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M315-E001",
+        "issue": "source-hygiene-closeout-gate",
         "audit_summary_path": "tmp/reports/source_hygiene/source_hygiene_audit_summary.json",
-        "archive_summary_path": "tmp/reports/m315/M315-D003/archive_boundary_compatibility_summary.json",
+        "archive_summary_path": "tmp/reports/source-hygiene/archive-boundary-compatibility/archive_boundary_compatibility_summary.json",
         "audit_check_ids": [entry["check_id"] for entry in audit.get("checks", [])],
         "archive_root_file_counts": archive.get("archive_root_file_counts", {}),
         "checks": checks,
@@ -66,7 +66,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M315-E001 Source Hygiene Closeout Gate\n\n"
+        "# Source Hygiene Closeout Gate\n\n"
         f"- Audit summary: `{summary['audit_summary_path']}`\n"
         f"- Archive summary: `{summary['archive_summary_path']}`\n"
         f"- Live audit checks: `{', '.join(summary['audit_check_ids'])}`\n"

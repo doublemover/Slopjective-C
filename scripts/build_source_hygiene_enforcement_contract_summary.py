@@ -10,7 +10,7 @@ CONTRACT_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/source_hygiene_enf
 POLICY_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json"
 CLASS_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json"
 GENUINE_PATH = ROOT / "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json"
-OUT_DIR = ROOT / "tmp/reports/m315/M315-D001"
+OUT_DIR = ROOT / "tmp/reports/source-hygiene/enforcement-contract"
 JSON_OUT = OUT_DIR / "source_hygiene_enforcement_contract_summary.json"
 MD_OUT = OUT_DIR / "source_hygiene_enforcement_contract_summary.md"
 
@@ -41,7 +41,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M315-D001",
+        "issue": "source-hygiene-enforcement-contract",
         "contract_id": contract["contract_id"],
         "check_ids": check_ids,
         "future_live_audit_entrypoint": contract["future_live_audit_entrypoint"],
@@ -54,7 +54,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M315-D001 Source Hygiene Enforcement Contract Summary\n\n"
+        "# Source Hygiene Enforcement Contract Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Canonical future audit entrypoint: `{summary['future_live_audit_entrypoint']}`\n"
         f"- Enforcement checks: `{', '.join(summary['check_ids'])}`\n"

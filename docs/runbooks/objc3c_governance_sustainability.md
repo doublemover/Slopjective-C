@@ -1,6 +1,6 @@
 # objc3c Governance And Sustainability
 
-This runbook freezes the governance baseline for `M318`.
+This runbook freezes the governance baseline.
 
 Canonical checked-in governance inventory contract:
 
@@ -57,18 +57,18 @@ Replayable governance enforcement:
 
 - `python scripts/check_governance_sustainability_budget_enforcement.py`
 - `python scripts/ci/run_task_hygiene_gate.py`
-- canonical enforcement summary: `tmp/reports/m318/M318-C002/governance_budget_enforcement_summary.json`
+- canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
 
 Long-horizon anti-regression reporting:
 
 - `python scripts/build_governance_anti_regression_summary.py`
 - canonical history artifact: `tmp/artifacts/governance-sustainability/anti-regression-history.json`
-- canonical anti-regression summary: `tmp/reports/m318/M318-D002/governance_anti_regression_summary.json`
+- canonical anti-regression summary: `tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json`
 
 Closeout gate:
 
 - `python scripts/check_governance_sustainability_closeout_gate.py`
-- canonical closeout summary: `tmp/reports/m318/M318-E001/governance_hardening_closeout_gate.json`
+- canonical closeout summary: `tmp/reports/governance-sustainability/closeout-gate/governance_hardening_closeout_gate.json`
 
 Current governance entry surfaces:
 
@@ -81,7 +81,7 @@ Current governance entry surfaces:
 - `docs/runbooks/objc3c_public_command_surface.md`
 - `scripts/objc3c_public_workflow_runner.py`
 
-Current budget surfaces measured by `M318-A001`:
+Current budget surfaces measured by the governance inventory summary:
 
 - package script count and category mix
 - public workflow action count
@@ -103,5 +103,5 @@ Explicit non-goals:
 
 Generated evidence:
 
-- `tmp/reports/m318/M318-A001/governance_budget_inventory_summary.json`
-- `tmp/reports/m318/M318-B001/governance_policy_summary.json`
+- `tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json`
+- `tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json`

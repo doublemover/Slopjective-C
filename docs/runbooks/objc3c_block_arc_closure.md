@@ -1,6 +1,6 @@
 # Objective-C 3 Block And ARC Closure
 
-This runbook freezes the `M320` block/byref/ARC closure boundary.
+This runbook freezes the block/byref/ARC closure boundary.
 
 Canonical checked-in boundary and contract surfaces:
 
@@ -47,7 +47,7 @@ ARC automation and lifetime insertion policy:
 
 - ARC is supported only as emitted retain/release/autorelease/autoreleasepool and weak/current-property helper traffic over the live runtime path
 - cleanup scopes, implicit cleanup, and autorelease returns remain part of one coupled lowering and runtime story
-- property interaction stays within the runtime-owned helper surface already covered by proof, while error and concurrency interaction claims stay deferred to `M321` and `M322`
+- property interaction stays within the runtime-owned helper surface already covered by proof, while error and concurrency interaction claims stay deferred to the dedicated error-runtime and concurrency-closure tracks
 
 Byref promotion, copy/dispose, and forwarding implementation:
 
@@ -74,12 +74,12 @@ Explicit non-goals:
 - milestone-local block/ARC scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims about error or concurrency interaction beyond the existing runtime-owned helper and cleanup surfaces
 
-Successor milestones:
+Follow-on tracks:
 
-- `M321`: throws, cleanup, bridged errors, and executable propagation closure
-- `M322`: async/task/actor runtime execution, scheduling, and isolation closure
-- `M323`: metaprogramming, property-behavior runtime materialization, and interop closure
-- `M324`: full-envelope conformance, stability, and production claimability
+- throws, cleanup, bridged errors, and executable propagation closure
+- async/task/actor runtime execution, scheduling, and isolation closure
+- metaprogramming, property-behavior runtime materialization, and interop closure
+- full-envelope conformance, stability, and production claimability
 
 Authoritative live surfaces:
 
@@ -103,5 +103,5 @@ Authoritative live surfaces:
 
 Generated evidence:
 
-- `tmp/reports/m320/M320-A001/block_arc_closure_boundary_inventory_summary.json`
-- `tmp/reports/m320/M320-A001/block_arc_closure_boundary_inventory_summary.md`
+- `tmp/reports/block-arc-closure/boundary-inventory/block_arc_closure_boundary_inventory_summary.json`
+- `tmp/reports/block-arc-closure/boundary-inventory/block_arc_closure_boundary_inventory_summary.md`

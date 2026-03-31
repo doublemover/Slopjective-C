@@ -8,7 +8,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/governance_sustainability/budget_inventory.json"
-OUT_DIR = ROOT / "tmp/reports/m318/M318-A001"
+OUT_DIR = ROOT / "tmp/reports/governance-sustainability/budget-inventory"
 SUMMARY_PATH = OUT_DIR / "governance_budget_inventory_summary.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_governance_sustainability.md"
 TASK_HYGIENE_PATH = ROOT / "scripts/ci/check_task_hygiene.py"
@@ -103,7 +103,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M318-A001",
+        "issue": "governance-budget-inventory",
         "contract_id": contract["contract_id"],
         "runbook_mentions_contract": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json" in runbook_text,
         "summary_script_matches_runbook": "python scripts/build_governance_budget_inventory_summary.py" in runbook_text,

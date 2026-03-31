@@ -5,9 +5,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'source_hygiene'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm315' / 'M315-B001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'stable-identifier-policy'
 POLICY_PATH = ROOT / 'tests' / 'tooling' / 'fixtures' / 'source_hygiene' / 'stable_identifier_authenticity_policy.json'
-INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm315' / 'M315-A001' / 'residue_authenticity_inventory.json'
+INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'source-hygiene' / 'residue-authenticity-inventory' / 'residue_authenticity_inventory.json'
 PLAN_JSON_PATH = PLAN_DIR / 'stable_identifier_policy_summary.json'
 PLAN_MD_PATH = PLAN_DIR / 'stable_identifier_policy_summary.md'
 REPORT_JSON_PATH = REPORT_DIR / 'stable_identifier_policy_summary.json'
@@ -24,7 +24,7 @@ def main() -> None:
     inventory = json.loads(INVENTORY_PATH.read_text(encoding='utf-8'))
 
     summary = {
-        'issue': 'M315-B001',
+        'issue': 'source-hygiene-stable-identifier-policy',
         'contract_id': policy['contract_id'],
         'policy_path': POLICY_PATH.relative_to(ROOT).as_posix(),
         'inventory_path': INVENTORY_PATH.relative_to(ROOT).as_posix(),
@@ -39,7 +39,7 @@ def main() -> None:
         'generated_truth_must_reach_zero': True,
         'synthetic_fixture_root_examples': policy['authenticity_classes']['synthetic_fixture']['allowed_roots'],
         'archive_only_root_examples': policy['authenticity_classes']['archive_reference']['allowed_roots'],
-        'next_issue': 'M315-B002',
+        'next_issue': 'product-decontamination',
         'checks': {
             'generated_truth_surface_listed': len(policy['scope']['generated_truth_files']) == inventory['generated_truth_file_count'],
             'archive_roots_listed': bool(policy['scope']['archive_only_roots']),
@@ -54,7 +54,7 @@ def main() -> None:
     write_text(REPORT_JSON_PATH, json.dumps(summary, indent=2) + '\n')
 
     lines = [
-        '# M315-B001 Stable Identifier Policy Summary',
+        '# Stable Identifier Policy Summary',
         '',
         f"- contract_id: `{summary['contract_id']}`",
         f"- policy_path: `{summary['policy_path']}`",
@@ -75,7 +75,7 @@ def main() -> None:
     lines.extend(['', '## Checks'])
     for key, value in summary['checks'].items():
         lines.append(f"- `{key}`: `{value}`")
-    lines.extend(['', 'Next issue: `M315-B002`', ''])
+    lines.extend(['', 'Next step: `product-decontamination`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

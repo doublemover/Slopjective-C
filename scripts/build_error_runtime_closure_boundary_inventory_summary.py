@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json"
-OUT_DIR = ROOT / "tmp/reports/m321/M321-A001"
+OUT_DIR = ROOT / "tmp/reports/error-runtime-closure/boundary-inventory"
 JSON_OUT = OUT_DIR / "error_runtime_closure_boundary_inventory_summary.json"
 MD_OUT = OUT_DIR / "error_runtime_closure_boundary_inventory_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -62,7 +62,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M321-A001",
+        "issue": "error-runtime-closure-boundary-inventory",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "focus_track_count": len(contract["focus_tracks"]),
@@ -84,7 +84,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M321-A001 Error Runtime Closure Boundary Inventory Summary\n\n"
+        "# Error Runtime Closure Boundary Inventory Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Focus tracks: `{summary['focus_track_count']}`\n"
         f"- Surface keys: `{summary['authoritative_surface_key_count']}`\n"

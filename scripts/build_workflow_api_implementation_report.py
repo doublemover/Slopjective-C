@@ -7,7 +7,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-C002'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-api-implementation'
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 RUNNER = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
 DEFAULT_CONTRACT_PATH = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
@@ -33,7 +33,7 @@ def main() -> None:
     describe_lint = read_json_from_command([sys.executable, str(RUNNER), '--describe-script', 'lint'])
 
     payload = {
-        'issue': 'M314-C002',
+        'issue': 'workflow-api-implementation',
         'contract_builder': 'scripts/build_objc3c_public_command_contract.py',
         'default_contract_path': DEFAULT_CONTRACT_PATH.relative_to(ROOT).as_posix(),
         'runner_internal_actions': [
@@ -46,13 +46,13 @@ def main() -> None:
         'unmapped_scripts': contract['unmapped_scripts'],
         'extra_runner_public_scripts': contract['extra_runner_public_scripts'],
         'lint_script_action': describe_lint['action'],
-        'next_issue': 'M314-C003',
+        'next_issue': 'workflow-command-budget',
     }
     write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
     write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M314-C002 Workflow API Implementation Report',
+        '# workflow-api-implementation Workflow API Implementation Report',
         '',
         f"- contract_builder: `{payload['contract_builder']}`",
         f"- default_contract_path: `{payload['default_contract_path']}`",
@@ -68,7 +68,7 @@ def main() -> None:
     lines.extend(['', '## Drift checks'])
     lines.append(f"- unmapped_scripts: `{len(payload['unmapped_scripts'])}`")
     lines.append(f"- extra_runner_public_scripts: `{len(payload['extra_runner_public_scripts'])}`")
-    lines.extend(['', 'Next issue: `M314-C003`', ''])
+    lines.extend(['', 'Next issue: `workflow-command-budget`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

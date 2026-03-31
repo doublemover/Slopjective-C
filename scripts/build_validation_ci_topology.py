@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-D001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology'
 SUITE_MATRIX_PATH = PLAN_DIR / 'validation_acceptance_suite_matrix.json'
 OUTPUT_JSON_PATH = PLAN_DIR / 'validation_ci_topology.json'
 OUTPUT_MD_PATH = PLAN_DIR / 'validation_ci_topology.md'
@@ -73,7 +73,7 @@ def main() -> None:
             raise RuntimeError(f'{script_name} topology references unknown families: {missing}')
 
     payload = {
-        'issue': 'M313-D001',
+        'issue': 'validation-ci-topology',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'topology': [
             {
@@ -83,7 +83,7 @@ def main() -> None:
             }
             for script_name, families in TOPOLOGY.items()
         ],
-        'next_issues': ['M313-D002'],
+        'next_issues': ['validation-ci-topology-integration'],
     }
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
     write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
@@ -92,7 +92,7 @@ def main() -> None:
     for row in payload['topology']:
         lines.append(f"- `{row['package_script']}` -> `{row['family_count']}` families")
         lines.append(f"  - families: {', '.join(f'`{family}`' for family in row['families'])}")
-    lines.extend(['', 'Next issue: `M313-D002`', ''])
+    lines.extend(['', 'Next issue: `validation-ci-topology-integration`', ''])
     markdown = '\n'.join(lines)
     write_text(OUTPUT_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

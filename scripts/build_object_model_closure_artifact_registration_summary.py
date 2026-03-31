@@ -8,7 +8,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/object_model_reflection_artifact_runtime_registration_contract.json"
 ACCEPTANCE_SCRIPT = ROOT / "scripts/check_objc3c_runtime_acceptance.py"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-C001"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/artifact-registration"
 JSON_OUT = OUT_DIR / "object_model_reflection_artifact_runtime_registration_summary.json"
 MD_OUT = OUT_DIR / "object_model_reflection_artifact_runtime_registration_summary.md"
 
@@ -31,7 +31,7 @@ def main() -> int:
         ),
     }
     summary = {
-        "issue": "M319-C001",
+        "issue": "object-model-closure-artifact-registration",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "compile_manifest_surface_key_count": len(contract["compile_manifest_surface_keys"]),
@@ -44,7 +44,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M319-C001 Object-Model Reflection Artifact And Runtime Registration Summary\n\n"
+        "# Object-Model Closure Artifact Registration Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Surface keys: `{summary['compile_manifest_surface_key_count']}`\n"
         f"- Builder functions: `{summary['acceptance_builder_function_count']}`\n"

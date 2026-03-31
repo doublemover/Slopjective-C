@@ -10,19 +10,19 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "tmp/reports/m320/M320-E001"
+OUT_DIR = ROOT / "tmp/reports/block-arc-closure/closeout-gate"
 JSON_OUT = OUT_DIR / "block_arc_closure_closeout_gate.json"
 REQUIRED_REPORTS = [
-    ROOT / "tmp/reports/m320/M320-A001/block_arc_closure_boundary_inventory_summary.json",
-    ROOT / "tmp/reports/m320/M320-B001/escaping_block_byref_ownership_semantic_summary.json",
-    ROOT / "tmp/reports/m320/M320-B002/arc_automation_lifetime_insertion_policy_summary.json",
-    ROOT / "tmp/reports/m320/M320-B003/byref_promotion_copy_dispose_forwarding_summary.json",
-    ROOT / "tmp/reports/m320/M320-C001/block_arc_lowering_runtime_abi_summary.json",
-    ROOT / "tmp/reports/m320/M320-C002/escaping_block_promotion_byref_lowering_summary.json",
-    ROOT / "tmp/reports/m320/M320-C003/arc_lifetime_insertion_cleanup_lowering_summary.json",
-    ROOT / "tmp/reports/m320/M320-D001/block_arc_closure_executable_proof_summary.json",
-    ROOT / "tmp/reports/m320/M320-D002/live_escaping_block_byref_runtime_summary.json",
-    ROOT / "tmp/reports/m320/M320-D003/live_arc_automation_ownership_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/boundary-inventory/block_arc_closure_boundary_inventory_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/escaping-block-byref-ownership/escaping_block_byref_ownership_semantic_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/arc-automation-policy/arc_automation_lifetime_insertion_policy_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/byref-promotion-forwarding/byref_promotion_copy_dispose_forwarding_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/lowering-runtime-abi/block_arc_lowering_runtime_abi_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/escaping-block-lowering/escaping_block_promotion_byref_lowering_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/arc-lifetime-lowering/arc_lifetime_insertion_cleanup_lowering_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/executable-proof-abi/block_arc_closure_executable_proof_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/live-block-runtime/live_escaping_block_byref_runtime_summary.json",
+    ROOT / "tmp/reports/block-arc-closure/live-arc-runtime/live_arc_automation_ownership_summary.json",
 ]
 
 

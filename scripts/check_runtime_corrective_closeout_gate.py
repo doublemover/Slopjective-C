@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "tmp/reports/m316/M316-E001"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/closeout-gate"
 SUMMARY_PATH = OUT_DIR / "runtime_corrective_closeout_gate.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_runtime_corrective.md"
 
@@ -15,27 +15,27 @@ COMMANDS = [
     {
         "name": "dispatch-lowering-proof",
         "command": ["python", "scripts/check_runtime_corrective_dispatch_lowering.py"],
-        "summary_path": ROOT / "tmp/reports/m316/M316-C002/dispatch_lowering_implementation_summary.json",
+        "summary_path": ROOT / "tmp/reports/runtime-corrective/dispatch-lowering-proof/dispatch_lowering_implementation_summary.json",
     },
     {
         "name": "synthesized-accessor-lowering-proof",
         "command": ["python", "scripts/check_runtime_corrective_synthesized_accessor_lowering.py"],
-        "summary_path": ROOT / "tmp/reports/m316/M316-C003/synthesized_accessor_lowering_implementation_summary.json",
+        "summary_path": ROOT / "tmp/reports/runtime-corrective/synthesized-accessor-lowering-proof/synthesized_accessor_lowering_implementation_summary.json",
     },
     {
         "name": "executable-proof-contract",
         "command": ["python", "scripts/build_runtime_corrective_executable_proof_summary.py"],
-        "summary_path": ROOT / "tmp/reports/m316/M316-D001/executable_proof_abi_contract_summary.json",
+        "summary_path": ROOT / "tmp/reports/runtime-corrective/executable-proof-abi/executable_proof_abi_contract_summary.json",
     },
     {
         "name": "live-dispatch-runtime-proof",
         "command": ["python", "scripts/check_runtime_corrective_live_dispatch_runtime.py"],
-        "summary_path": ROOT / "tmp/reports/m316/M316-D002/live_dispatch_runtime_summary.json",
+        "summary_path": ROOT / "tmp/reports/runtime-corrective/live-dispatch-runtime/live_dispatch_runtime_summary.json",
     },
     {
         "name": "synthesized-accessor-runtime-proof",
         "command": ["python", "scripts/check_runtime_corrective_synthesized_accessor_runtime.py"],
-        "summary_path": ROOT / "tmp/reports/m316/M316-D003/synthesized_accessor_runtime_summary.json",
+        "summary_path": ROOT / "tmp/reports/runtime-corrective/live-synthesized-accessor-runtime/synthesized_accessor_runtime_summary.json",
     },
     {
         "name": "documentation-surface",
@@ -86,7 +86,7 @@ def main() -> int:
         ok = ok and entry_ok
 
     summary = {
-        "issue": "M316-E001",
+        "issue": "runtime-corrective-closeout-gate",
         "runbook_mentions_closeout_gate": "check_runtime_corrective_closeout_gate.py" in runbook_text,
         "command_count": len(COMMANDS),
         "commands": command_results,

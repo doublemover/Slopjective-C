@@ -16,7 +16,7 @@ FIXTURE_PATH = (
 )
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_maintainer_workflows.md"
 CONTRIBUTING_PATH = ROOT / "CONTRIBUTING.md"
-OUT_DIR = ROOT / "tmp" / "reports" / "m318" / "M318-B002"
+OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "maintainer-review-regression"
 SUMMARY_PATH = OUT_DIR / "governance_maintainer_review_summary.json"
 
 
@@ -49,7 +49,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M318-B002",
+        "issue": "governance-maintainer-review-regression",
         "contract_id": contract["contract_id"],
         "required_review_check_count": len(contract.get("required_review_checks", [])),
         "regression_statuses": [

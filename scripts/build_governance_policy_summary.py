@@ -12,7 +12,7 @@ POLICY_PATH = FIXTURE_ROOT / "sustainable_progress_policy.json"
 BUDGET_INVENTORY_PATH = FIXTURE_ROOT / "budget_inventory.json"
 WAIVER_REGISTRY_PATH = FIXTURE_ROOT / "waiver_registry.json"
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_governance_sustainability.md"
-OUT_DIR = ROOT / "tmp" / "reports" / "m318" / "M318-B001"
+OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "sustainable-progress-policy"
 SUMMARY_PATH = OUT_DIR / "governance_policy_summary.json"
 
 
@@ -93,7 +93,7 @@ def main() -> int:
     )
 
     summary = {
-        "issue": "M318-B001",
+        "issue": "governance-sustainable-progress-policy",
         "contract_id": policy["contract_id"],
         "governed_surface_count": len(governed_surfaces),
         "inventory_surface_count": len(inventory_surface_ids),

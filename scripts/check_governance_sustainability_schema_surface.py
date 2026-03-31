@@ -11,7 +11,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "schema_surface.json"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "m318" / "M318-C001" / "governance_schema_surface_summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "schema-surface" / "governance_schema_surface_summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.governance.sustainability.schema.surface.summary.v1"
 
 

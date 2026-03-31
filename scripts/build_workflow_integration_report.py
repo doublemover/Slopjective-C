@@ -9,7 +9,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-D001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-integration'
 RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 DEFAULT_CONTRACT_PATH = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
@@ -68,7 +68,7 @@ def main() -> None:
     }
 
     payload = {
-        'issue': 'M314-D001',
+        'issue': 'workflow-integration',
         'package_script_count': contract['package_script_count'],
         'public_script_count': contract['public_script_count'],
         'operator_script_count': contract['operator_script_count'],
@@ -101,13 +101,13 @@ def main() -> None:
             for action, payload in internal_maintainer_actions.items()
         },
         'doc_assertions': doc_assertions,
-        'next_issue': 'M314-D002',
+        'next_issue': 'workflow-prototype-retirement',
     }
     write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
     write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
     lines = [
-        '# M314-D001 Workflow Integration Report',
+        '# workflow-integration Workflow Integration Report',
         '',
         f"- package_script_count: `{payload['package_script_count']}`",
         f"- public_script_count: `{payload['public_script_count']}`",
@@ -128,7 +128,7 @@ def main() -> None:
     lines.extend(['', '## Documentation assertions'])
     for key, value in payload['doc_assertions'].items():
         lines.append(f"- `{key}`: `{value}`")
-    lines.extend(['', 'Next issue: `M314-D002`', ''])
+    lines.extend(['', 'Next issue: `workflow-prototype-retirement`', ''])
     markdown = '\n'.join(lines)
     write_text(PLAN_MD_PATH, markdown)
     write_text(REPORT_MD_PATH, markdown)

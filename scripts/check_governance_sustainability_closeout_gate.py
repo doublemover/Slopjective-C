@@ -7,48 +7,48 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT_DIR = ROOT / "tmp" / "reports" / "m318" / "M318-E001"
+OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "closeout-gate"
 SUMMARY_PATH = OUT_DIR / "governance_hardening_closeout_gate.json"
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_governance_sustainability.md"
-PROPOSAL_OUTPUT_DIR = ROOT / "tmp" / "reports" / "m318" / "M318-D001" / "new_work_proposal_closeout"
+PROPOSAL_OUTPUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "new-work-proposal-closeout"
 
 COMMANDS = [
     {
         "name": "governance-budget-inventory",
         "command": ["python", "scripts/build_governance_budget_inventory_summary.py"],
-        "summary_path": ROOT / "tmp/reports/m318/M318-A001/governance_budget_inventory_summary.json",
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-policy",
         "command": ["python", "scripts/build_governance_policy_summary.py"],
-        "summary_path": ROOT / "tmp/reports/m318/M318-B001/governance_policy_summary.json",
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-maintainer-review",
         "command": ["python", "scripts/build_governance_maintainer_review_summary.py"],
-        "summary_path": ROOT / "tmp/reports/m318/M318-B002/governance_maintainer_review_summary.json",
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-schema-surface",
         "command": ["python", "scripts/check_governance_sustainability_schema_surface.py"],
-        "summary_path": ROOT / "tmp/reports/m318/M318-C001/governance_schema_surface_summary.json",
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-budget-enforcement",
         "command": ["python", "scripts/check_governance_sustainability_budget_enforcement.py"],
-        "summary_path": ROOT / "tmp/reports/m318/M318-C002/governance_budget_enforcement_summary.json",
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "governance-anti-regression",
         "command": ["python", "scripts/build_governance_anti_regression_summary.py"],
-        "summary_path": ROOT / "tmp/reports/m318/M318-D002/governance_anti_regression_summary.json",
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
@@ -130,7 +130,7 @@ def main() -> int:
         ok = ok and entry_ok
 
     summary = {
-        "issue": "M318-E001",
+        "issue": "governance-closeout-gate",
         "runbook_mentions_closeout_gate": "check_governance_sustainability_closeout_gate.py" in runbook_text,
         "command_count": len(COMMANDS),
         "commands": command_results,

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json"
 PACKAGE_PATH = ROOT / "package.json"
 RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
-OUT_DIR = ROOT / "tmp/reports/m320/M320-D001"
+OUT_DIR = ROOT / "tmp/reports/block-arc-closure/executable-proof-abi"
 JSON_OUT = OUT_DIR / "block_arc_closure_executable_proof_summary.json"
 MD_OUT = OUT_DIR / "block_arc_closure_executable_proof_summary.md"
 
@@ -30,7 +30,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M320-D001",
+        "issue": "block-arc-closure-executable-proof-abi",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "public_command_surface_count": len(contract["public_command_surfaces"]),
@@ -45,7 +45,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M320-D001 Block ARC Closure Executable Proof Summary\n\n"
+        "# Block ARC Closure Executable Proof Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Public commands: `{summary['public_command_surface_count']}`\n"
         f"- Public workflow actions: `{summary['public_workflow_action_count']}`\n"

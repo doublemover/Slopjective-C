@@ -6,11 +6,11 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-D003'
-INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-A001' / 'validation_surface_inventory.json'
-LEGACY_MAP_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-B003' / 'legacy_validation_surface_map.json'
-SUITE_MATRIX_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-C002' / 'validation_acceptance_suite_matrix.json'
-INTEGRATION_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-D002' / 'validation_ci_topology_integration.json'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-budget-report'
+INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-surface-inventory' / 'validation_surface_inventory.json'
+LEGACY_MAP_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-legacy-surface-map' / 'legacy_validation_surface_map.json'
+SUITE_MATRIX_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-acceptance-suite-matrix' / 'validation_acceptance_suite_matrix.json'
+INTEGRATION_PATH = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology-integration' / 'validation_ci_topology_integration.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_budget_report.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_budget_report.md'
 
@@ -77,7 +77,7 @@ def main() -> None:
     ]
 
     payload = {
-        'issue': 'M313-D003',
+        'issue': 'validation-budget-report',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'status': 'PASS' if all(check['status'] == 'PASS' for check in checks) else 'FAIL',
         'checks': checks,
@@ -87,7 +87,7 @@ def main() -> None:
             'active_surface_count': active_surface_count,
             'acceptance_suite_family_count': suite_family_count,
         },
-        'next_issues': ['M313-E001'],
+        'next_issues': ['validation-closeout-gate'],
     }
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
@@ -103,7 +103,7 @@ def main() -> None:
         lines.append(
             f"- `{check['name']}`: status=`{check['status']}` measured=`{check['measured']}` budget=`{check['budget']}`"
         )
-    lines.extend(['', 'Next issue: `M313-E001`', ''])
+    lines.extend(['', 'Next issue: `validation-closeout-gate`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
 
 

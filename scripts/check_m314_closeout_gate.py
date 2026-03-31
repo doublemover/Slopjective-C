@@ -10,34 +10,34 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'M314-E001'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-closeout-gate'
 JSON_OUT = REPORT_DIR / 'workflow_simplification_closeout_gate.json'
 MD_OUT = REPORT_DIR / 'workflow_simplification_closeout_gate.md'
 REPO = 'doublemover/Slopjective-C'
-M314_TITLE = 'M314 Command-surface reduction, dead-path removal, and workflow simplification'
+WORKFLOW_SIMPLIFICATION_TITLE = 'Command-surface reduction, dead-path removal, and workflow simplification'
 EXPECTED_CODES = [
-    'M314-A001',
-    'M314-B001',
-    'M314-B002',
-    'M314-B003',
-    'M314-C001',
-    'M314-C002',
-    'M314-C003',
-    'M314-D001',
-    'M314-D002',
-    'M314-E001',
+    'workflow-command-surface-inventory',
+    'workflow-simplification-policy',
+    'workflow-alias-retirement',
+    'workflow-runner-unification',
+    'workflow-public-command-contract',
+    'workflow-api-implementation',
+    'workflow-command-budget',
+    'workflow-integration',
+    'workflow-prototype-retirement',
+    'workflow-closeout-gate',
 ]
 CODE_RE = re.compile(r'^\[(M\d+)\]\[Lane-([A-E])\]\[([A-Z]\d{3})\] ')
 EVIDENCE_FILES = [
-    'tmp/reports/m314/M314-A001/command_surface_inventory.json',
-    'tmp/reports/m314/M314-B001/policy_summary.json',
-    'tmp/reports/m314/M314-B002/alias_retirement_report.json',
-    'tmp/reports/m314/M314-B003/runner_unification_report.json',
-    'tmp/reports/m314/M314-C001/public_command_contract.json',
-    'tmp/reports/m314/M314-C002/workflow_api_implementation_report.json',
-    'tmp/reports/m314/M314-C003/command_budget_report.json',
-    'tmp/reports/m314/M314-D001/workflow_integration_report.json',
-    'tmp/reports/m314/M314-D002/prototype_retirement_report.json',
+    'tmp/reports/workflow-simplification/command-surface-inventory/command_surface_inventory.json',
+    'tmp/reports/workflow-simplification/policy-summary/policy_summary.json',
+    'tmp/reports/workflow-simplification/alias-retirement/alias_retirement_report.json',
+    'tmp/reports/workflow-simplification/runner-unification/runner_unification_report.json',
+    'tmp/reports/workflow-simplification/public-command-contract/public_command_contract.json',
+    'tmp/reports/workflow-simplification/workflow-api-implementation/workflow_api_implementation_report.json',
+    'tmp/reports/workflow-simplification/command-budget/command_budget_report.json',
+    'tmp/reports/workflow-simplification/workflow-integration/workflow_integration_report.json',
+    'tmp/reports/workflow-simplification/prototype-retirement/prototype_retirement_report.json',
 ]
 
 
@@ -92,7 +92,7 @@ def main() -> int:
 
     rerun_commands = [
         [sys.executable, str(ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'), '--check'],
-        [sys.executable, str(ROOT / 'scripts' / 'check_objc3c_public_command_budget.py'), '--summary-out', str(ROOT / 'tmp' / 'reports' / 'm314' / 'M314-C003' / 'command_budget_report.json'), '--markdown-out', str(ROOT / 'tmp' / 'reports' / 'm314' / 'M314-C003' / 'command_budget_report.md')],
+        [sys.executable, str(ROOT / 'scripts' / 'check_objc3c_public_command_budget.py'), '--summary-out', str(ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-budget' / 'command_budget_report.json'), '--markdown-out', str(ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-budget' / 'command_budget_report.md')],
         [sys.executable, str(ROOT / 'tmp' / 'planning' / 'workflow_simplification' / 'build_workflow_integration_report.py')],
         [sys.executable, str(ROOT / 'tmp' / 'planning' / 'workflow_simplification' / 'build_prototype_retirement_report.py')],
     ]
@@ -108,16 +108,16 @@ def main() -> int:
         if not evidence_presence[rel]:
             mismatches.append(f'missing evidence file: {rel}')
 
-    budget = read_json(ROOT / 'tmp' / 'reports' / 'm314' / 'M314-C003' / 'command_budget_report.json')
+    budget = read_json(ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-budget' / 'command_budget_report.json')
     if budget.get('status') != 'PASS':
         mismatches.append('C003 command budget report did not pass')
 
-    integration = read_json(ROOT / 'tmp' / 'reports' / 'm314' / 'M314-D001' / 'workflow_integration_report.json')
+    integration = read_json(ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-integration' / 'workflow_integration_report.json')
     doc_assertions = integration.get('doc_assertions', {})
     if not all(bool(value) for value in doc_assertions.values()):
         mismatches.append('D001 workflow integration assertions did not all pass')
 
-    prototype_cleanup = read_json(ROOT / 'tmp' / 'reports' / 'm314' / 'M314-D002' / 'prototype_retirement_report.json')
+    prototype_cleanup = read_json(ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-prototype-retirement' / 'prototype_retirement_report.json')
     if prototype_cleanup.get('status') != 'PASS':
         mismatches.append('D002 prototype retirement report did not pass')
 
@@ -135,9 +135,9 @@ def main() -> int:
         '--slurp',
     ])
     milestones = flatten_pages(milestone_pages)
-    live_m314 = next((milestone for milestone in milestones if milestone.get('title') == M314_TITLE), None)
+    live_m314 = next((milestone for milestone in milestones if milestone.get('title') == WORKFLOW_SIMPLIFICATION_TITLE), None)
     if not live_m314:
-        mismatches.append('live GitHub milestone for M314 not found')
+        mismatches.append('live GitHub workflow-simplification milestone not found')
         milestone_number = None
         live_issues = []
     else:
@@ -171,18 +171,18 @@ def main() -> int:
     missing_live_codes = [code for code in EXPECTED_CODES if code not in live_codes]
     historical_extra_codes = sorted(code for code in live_codes if code not in EXPECTED_CODES)
     if missing_live_codes:
-        mismatches.append(f'live M314 issue set is missing current manifest codes: {missing_live_codes}')
-    if sorted(open_codes) != ['M314-E001']:
-        mismatches.append(f'live M314 open issue set mismatch: {sorted(open_codes)}')
-    expected_closed_codes = sorted(code for code in EXPECTED_CODES if code != 'M314-E001')
+        mismatches.append(f'live workflow-simplification issue set is missing current manifest codes: {missing_live_codes}')
+    if sorted(open_codes) != ['workflow-closeout-gate']:
+        mismatches.append(f'live workflow-simplification open issue set mismatch: {sorted(open_codes)}')
+    expected_closed_codes = sorted(code for code in EXPECTED_CODES if code != 'workflow-closeout-gate')
     missing_closed_codes = [code for code in expected_closed_codes if code not in closed_codes]
     if missing_closed_codes:
-        mismatches.append(f'live M314 closed issue set is missing current closed codes: {missing_closed_codes}')
+        mismatches.append(f'live workflow-simplification closed issue set is missing current closed codes: {missing_closed_codes}')
 
-    commit_lines = [line for line in run(['git', 'log', '--oneline', '--grep', '^M314-', '--max-count', '20']).splitlines() if line]
+    commit_lines = [line for line in run(['git', 'log', '--oneline', '--grep', 'workflow simplification', '--max-count', '20']).splitlines() if line]
 
     report = {
-        'issue': 'M314-E001',
+        'issue': 'workflow-closeout-gate',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'repo': REPO,
         'live_m314_milestone_number': milestone_number,
@@ -206,7 +206,7 @@ def main() -> int:
 
     JSON_OUT.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     lines = [
-        '# M314-E001 Workflow Simplification Closeout Gate',
+        '# workflow-closeout-gate Workflow Simplification Closeout Gate',
         '',
         f"- generated_at: `{report['generated_at']}`",
         f"- live_m314_milestone_number: `{milestone_number}`",

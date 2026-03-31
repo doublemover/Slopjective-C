@@ -12,7 +12,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/check_objc3c_runnable_storage_reflection_end_to_end.py"
 RUNNER_REPORT = ROOT / "tmp/reports/runtime/runnable-storage-reflection-e2e/summary.json"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-D003"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/live-property-reflection"
 JSON_OUT = OUT_DIR / "live_property_ivar_reflection_summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.object_model.closure.live.property.ivar.reflection.summary.v1"
 

@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/object_model_closure/realized_object_graph_reflection_semantic_model.json"
-OUT_DIR = ROOT / "tmp/reports/m319/M319-B001"
+OUT_DIR = ROOT / "tmp/reports/object-model-closure/realized-object-graph-semantic"
 JSON_OUT = OUT_DIR / "realized_object_graph_reflection_semantic_summary.json"
 MD_OUT = OUT_DIR / "realized_object_graph_reflection_semantic_summary.md"
 DOC_PATH = ROOT / "docs/objc3c-native.md"
@@ -37,7 +37,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M319-B001",
+        "issue": "object-model-closure-realized-object-graph-semantic",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "canonical_surface_count": len(contract["canonical_surfaces"]),
@@ -51,7 +51,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M319-B001 Realized Object Graph And Reflection Semantic Summary\n\n"
+        "# Object-Model Closure Semantic Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Canonical surfaces: `{summary['canonical_surface_count']}`\n"
         f"- Public ABI symbols: `{summary['public_runtime_abi_symbol_count']}`\n"

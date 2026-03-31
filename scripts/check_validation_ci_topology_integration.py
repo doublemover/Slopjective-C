@@ -8,7 +8,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
-REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'M313-D002'
+REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology-integration'
 TOPOLOGY_PATH = PLAN_DIR / 'validation_ci_topology.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_ci_topology_integration.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
@@ -70,13 +70,13 @@ def main() -> None:
         })
 
     payload = {
-        'issue': 'M313-D002',
+        'issue': 'validation-ci-topology-integration',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'status': 'PASS' if not failures else 'FAIL',
         'failure_count': len(failures),
         'failures': failures,
         'rows': rows,
-        'next_issues': ['M313-D003', 'M313-E001'],
+        'next_issues': ['validation-budget-report', 'validation-closeout-gate'],
     }
     write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
 
@@ -98,7 +98,7 @@ def main() -> None:
         lines.extend(['', '## Failures'])
         for failure in failures:
             lines.append(f"- {failure}")
-    lines.extend(['', 'Next issues: `M313-D003`, `M313-E001`', ''])
+    lines.extend(['', 'Next issues: `validation-budget-report`, `validation-closeout-gate`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
 
 

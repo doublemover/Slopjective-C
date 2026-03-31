@@ -7,7 +7,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/runtime_corrective/synthesized_accessor_semantic_model.json"
-OUT_DIR = ROOT / "tmp/reports/m316/M316-B002"
+OUT_DIR = ROOT / "tmp/reports/runtime-corrective/synthesized-accessor-semantic"
 JSON_OUT = OUT_DIR / "synthesized_accessor_semantic_summary.json"
 MD_OUT = OUT_DIR / "synthesized_accessor_semantic_summary.md"
 LOWERING_CONTRACT_PATH = ROOT / "native/objc3c/src/lower/objc3_lowering_contract.h"
@@ -77,7 +77,7 @@ def main() -> int:
     }
 
     summary = {
-        "issue": "M316-B002",
+        "issue": "runtime-corrective-synthesized-accessor-semantic",
         "contract_id": contract["contract_id"],
         "surface_kind": contract["surface_kind"],
         "measured_inventory": measured_inventory,
@@ -88,7 +88,7 @@ def main() -> int:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     MD_OUT.write_text(
-        "# M316-B002 Synthesized Accessor Semantic Summary\n\n"
+        "# Runtime Corrective Synthesized Accessor Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
         f"- Authoritative fixtures: `{measured_inventory['authoritative_fixture_count']}`\n"
         f"- Authoritative probes: `{measured_inventory['authoritative_probe_count']}`\n"
