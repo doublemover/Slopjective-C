@@ -1,0 +1,38 @@
+{
+  "contract_id": "objc3c.developer.tooling.language.server.capability.fallback.policy.v1",
+  "surface_kind": "developer-tooling-policy",
+  "milestone": "M325",
+  "issue": "M325-B002",
+  "runbook": "docs/runbooks/objc3c_developer_tooling.md",
+  "summary_script": "scripts/build_developer_tooling_lsp_policy_summary.py",
+  "authoritative_code_paths": [
+    "scripts/objc3c_public_workflow_runner.py",
+    "scripts/check_objc3c_developer_tooling_integration.py",
+    "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp"
+  ],
+  "capability_classes": [
+    "publishDiagnostics",
+    "documentSymbol",
+    "workspaceSymbol",
+    "definition",
+    "documentFormatting",
+    "debugArtifactInspection"
+  ],
+  "fallback_only_capability_classes": [
+    "references",
+    "rename",
+    "semanticTokens",
+    "codeAction",
+    "statementLevelStepping"
+  ],
+  "evidence_roots": [
+    "tmp/reports/objc3c-public-workflow/compile-observability.json",
+    "tmp/reports/objc3c-public-workflow/runtime-inspector.json",
+    "tmp/reports/developer-tooling/integration-summary.json"
+  ],
+  "claim_narrowing_constraints": [
+    "capability publication must stay narrower than the shipped developer-tooling artifact set",
+    "unsupported capabilities must publish explicit fallback metadata instead of partial-success theater",
+    "editor claims must stay rooted in compile-owned diagnostics, declaration coordinates, and emitted artifact presence"
+  ]
+}
