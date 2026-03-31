@@ -1,0 +1,29 @@
+{
+  "contract_id": "objc3c.security.hardening.artifact.reporting.contract.v1",
+  "surface_kind": "security-artifact-reporting-contract",
+  "milestone": "M327",
+  "issue": "M327-C001",
+  "runbook": "docs/runbooks/objc3c_security_hardening.md",
+  "source_contracts": [
+    "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+    "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+    "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json"
+  ],
+  "required_schema_paths": [
+    "schemas/objc3c-security-posture-v1.schema.json",
+    "schemas/objc3c-security-advisory-index-v1.schema.json"
+  ],
+  "artifact_paths": {
+    "security_posture_json": "tmp/artifacts/security-hardening/posture/objc3c-security-posture.json",
+    "security_advisory_index_json": "tmp/artifacts/security-hardening/advisories/objc3c-security-advisory-index.json",
+    "security_advisory_report_md": "tmp/artifacts/security-hardening/advisories/objc3c-security-advisory-report.md",
+    "security_posture_summary_json": "tmp/reports/security-hardening/security-posture-summary.json",
+    "security_publication_summary_json": "tmp/reports/security-hardening/publication-summary.json"
+  },
+  "required_publication_surface_fields": [
+    "inspect_security_posture_command",
+    "publish_security_advisories_command",
+    "validate_security_hardening_command",
+    "validate_security_hardening_end_to_end_command"
+  ]
+}

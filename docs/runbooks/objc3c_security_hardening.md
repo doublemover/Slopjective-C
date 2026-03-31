@@ -225,6 +225,18 @@ Generated security posture and advisory outputs must stay under:
 - `tmp/reports/security-hardening/`
 - `tmp/artifacts/security-hardening/`
 
+Canonical generated artifacts for this milestone are:
+
+- a machine-owned security posture JSON
+- a machine-owned security advisory index JSON
+- a machine-owned markdown advisory report derived from the advisory index
+
+Those artifacts must stay validated by checked-in schema and contract surfaces:
+
+- `schemas/objc3c-security-posture-v1.schema.json`
+- `schemas/objc3c-security-advisory-index-v1.schema.json`
+- `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
+
 Checked-in source-of-truth must stay under:
 
 - `docs/runbooks/`

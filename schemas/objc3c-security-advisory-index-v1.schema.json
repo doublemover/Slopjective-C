@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3.dev/schemas/objc3c-security-advisory-index-v1.schema.json",
+  "title": "objc3c Security Advisory Index",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "security_state",
+    "advisories"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.security.hardening.advisory.index.v1"
+    },
+    "generated_at_utc": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "security_state": {
+      "type": "string",
+      "enum": [
+        "ready",
+        "degraded",
+        "blocked"
+      ]
+    },
+    "advisories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "advisory_id",
+          "severity",
+          "status",
+          "headline"
+        ],
+        "properties": {
+          "advisory_id": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "headline": {
+            "type": "string"
+          },
+          "source_paths": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}
