@@ -1,0 +1,142 @@
+{
+  "contract_id": "objc3c.object_model.closure.class.category.protocol.realization.lowering.summary.v1",
+  "generated_at_utc": "2026-03-31T05:11:56.269138+00:00",
+  "status": "PASS",
+  "runner_path": "scripts/check_object_model_closure_realization_lowering.py",
+  "used_existing_object_model_conformance_report": true,
+  "child_report_paths": [
+    "tmp/reports/runtime/runnable-object-model-conformance/summary.json",
+    "tmp/reports/runtime/acceptance/summary.json"
+  ],
+  "required_surface_contracts": {
+    "runtime_realization_lowering_reflection_artifact_surface": "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1",
+    "runtime_dispatch_table_reflection_record_lowering_surface": "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1",
+    "runtime_cross_module_realized_metadata_replay_preservation_surface": "objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1",
+    "runtime_object_model_abi_query_surface": "objc3c.runtime.object.model.abi.query.surface.v1",
+    "runtime_realization_lookup_reflection_implementation_surface": "objc3c.runtime.realization.lookup.reflection.implementation.surface.v1",
+    "runtime_class_metaclass_protocol_realization_surface": "objc3c.runtime.class.metaclass.protocol.realization.v1",
+    "runtime_category_attachment_merged_dispatch_surface": "objc3c.runtime.category.attachment.merged.dispatch.surface.v1"
+  },
+  "runtime_object_model_abi_query_surface": {
+    "contract_id": "objc3c.runtime.object.model.abi.query.surface.v1",
+    "compile_artifact_set": [
+      "<emit-prefix>.obj",
+      "<emit-prefix>.ll",
+      "<emit-prefix>.manifest.json",
+      "<emit-prefix>.runtime-registration-manifest.json",
+      "<emit-prefix>.runtime-registration-descriptor.json"
+    ],
+    "source_contract_ids": [
+      "objc3c.runtime.object.model.realization.source.surface.v1",
+      "objc3c.runtime.realization.lowering.reflection.artifact.surface.v1",
+      "objc3c.runtime.dispatch.table.reflection.record.lowering.surface.v1",
+      "objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1",
+      "objc3c.runtime.reflection.query.surface.v1",
+      "objc3c.runtime.realization.lookup.semantics.v1",
+      "objc3c.runtime.class.metaclass.protocol.realization.v1",
+      "objc3c.runtime.category.attachment.merged.dispatch.surface.v1",
+      "objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1"
+    ],
+    "public_header_path": "native/objc3c/src/runtime/objc3_runtime.h",
+    "internal_header_path": "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "public_runtime_abi_boundary": [
+      "objc3_runtime_register_image",
+      "objc3_runtime_lookup_selector",
+      "objc3_runtime_dispatch_i32",
+      "objc3_runtime_reset_for_testing"
+    ],
+    "private_object_model_query_boundary": [
+      "objc3_runtime_copy_realized_class_graph_state_for_testing",
+      "objc3_runtime_copy_realized_class_entry_for_testing",
+      "objc3_runtime_copy_property_registry_state_for_testing",
+      "objc3_runtime_copy_property_entry_for_testing",
+      "objc3_runtime_copy_protocol_conformance_query_for_testing",
+      "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+      "objc3_runtime_copy_selector_lookup_entry_for_testing",
+      "objc3_runtime_copy_method_cache_state_for_testing",
+      "objc3_runtime_copy_method_cache_entry_for_testing",
+      "objc3_runtime_copy_dispatch_state_for_testing"
+    ],
+    "object_model_query_boundary_model": "public-runtime-header-plus-private-testing-snapshots-freeze-the-object-model-lookup-and-reflection-query-surface-without-widening-the-public-abi",
+    "authoritative_case_ids": [
+      "imported-runtime-packaging-replay",
+      "canonical-dispatch",
+      "canonical-sample-set",
+      "realization-lookup-reflection-runtime",
+      "dispatch-fast-path",
+      "storage-ownership-reflection",
+      "property-execution",
+      "property-reflection"
+    ],
+    "authoritative_fixture_paths": [
+      "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+      "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+      "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+      "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+      "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+      "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
+      "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+      "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
+    ],
+    "authoritative_probe_paths": [
+      "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+      "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+      "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+      "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+      "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+      "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+      "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+      "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp"
+    ],
+    "requires_coupled_registration_manifest": true,
+    "requires_real_compile_output": true,
+    "requires_linked_runtime_probe": true
+  },
+  "runtime_realization_lookup_reflection_implementation_surface": {
+    "contract_id": "objc3c.runtime.realization.lookup.reflection.implementation.surface.v1",
+    "compile_artifact_set": [
+      "<emit-prefix>.obj",
+      "<emit-prefix>.ll",
+      "<emit-prefix>.manifest.json",
+      "<emit-prefix>.runtime-registration-manifest.json",
+      "<emit-prefix>.runtime-registration-descriptor.json"
+    ],
+    "source_contract_ids": [
+      "objc3c.runtime.object.model.abi.query.surface.v1",
+      "objc3c.runtime.reflection.query.surface.v1",
+      "objc3c.runtime.realization.lookup.semantics.v1",
+      "objc3c.runtime.class.metaclass.protocol.realization.v1",
+      "objc3c.runtime.category.attachment.merged.dispatch.surface.v1",
+      "objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1"
+    ],
+    "internal_header_path": "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "object_model_query_state_snapshot_symbol": "objc3_runtime_copy_object_model_query_state_for_testing",
+    "realized_class_entry_snapshot_symbol": "objc3_runtime_copy_realized_class_entry_for_testing",
+    "property_registry_state_snapshot_symbol": "objc3_runtime_copy_property_registry_state_for_testing",
+    "property_entry_snapshot_symbol": "objc3_runtime_copy_property_entry_for_testing",
+    "protocol_conformance_query_symbol": "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "selector_lookup_table_state_snapshot_symbol": "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+    "selector_lookup_entry_snapshot_symbol": "objc3_runtime_copy_selector_lookup_entry_for_testing",
+    "method_cache_state_snapshot_symbol": "objc3_runtime_copy_method_cache_state_for_testing",
+    "method_cache_entry_snapshot_symbol": "objc3_runtime_copy_method_cache_entry_for_testing",
+    "dispatch_state_snapshot_symbol": "objc3_runtime_copy_dispatch_state_for_testing",
+    "realization_lookup_reflection_implementation_model": "runtime-owned-class-property-protocol-and-method-cache-query-snapshots-publish-coherent-last-query-state-and-live-object-model-counts",
+    "authoritative_case_ids": [
+      "canonical-sample-set",
+      "realization-lookup-reflection-runtime",
+      "dispatch-fast-path"
+    ],
+    "authoritative_fixture_paths": [
+      "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+      "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
+    ],
+    "authoritative_probe_paths": [
+      "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+      "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+      "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp"
+    ],
+    "requires_coupled_registration_manifest": true,
+    "requires_real_compile_output": true,
+    "requires_linked_runtime_probe": true
+  }
+}
