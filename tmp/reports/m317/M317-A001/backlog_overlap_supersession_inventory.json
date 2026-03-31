@@ -1,0 +1,181 @@
+{
+  "mode": "m317-a001-backlog-overlap-supersession-publication-scope-inventory-v2",
+  "generated_at": "2026-03-31T00:04:35.837301+00:00",
+  "repo": "doublemover/Slopjective-C",
+  "count_sources": {
+    "draft_backlog_master_snapshot": "tmp/planning/draft_backlog_master_snapshot.json",
+    "cleanup_count_snapshot": "tmp/planning/cleanup_acceleration_program/count_snapshot.json",
+    "runtime_count_snapshot": "tmp/planning/runtime_envelope_completion_program/count_snapshot.json",
+    "post_count_snapshot": "tmp/planning/post_m324_adoption_program/count_snapshot.json"
+  },
+  "current_counts": {
+    "local_total_milestones": 20,
+    "local_total_issues": 197,
+    "cleanup_milestones": 6,
+    "cleanup_issues": 58,
+    "runtime_milestones": 6,
+    "runtime_issues": 63,
+    "post_m324_milestones": 8,
+    "post_m324_issues": 76,
+    "github_open_milestones": 20,
+    "github_open_issues": 197,
+    "github_open_m317_issues": 6,
+    "package_json_scripts": 144,
+    "check_py_files": 82,
+    "test_check_py_files": 0,
+    "m2xx_refs_in_native_src": 0,
+    "tracked_ll_files": 76,
+    "tracked_stub_ll_files": 0
+  },
+  "publication_scope": {
+    "internal_first_milestones": [
+      "M317"
+    ],
+    "cleanup_overlap_group": [
+      "M313",
+      "M314",
+      "M315"
+    ],
+    "recommended_sequence": [
+      "M317",
+      "M313",
+      "M314",
+      "M315",
+      "M316",
+      "M318",
+      "M319",
+      "M320",
+      "M321",
+      "M322",
+      "M323",
+      "M324",
+      "M325",
+      "M326",
+      "M327",
+      "M330",
+      "M329",
+      "M328",
+      "M331",
+      "M332"
+    ]
+  },
+  "live_milestone_numbers": {
+    "M313": 394,
+    "M314": 395,
+    "M315": 396,
+    "M316": 397,
+    "M317": 398,
+    "M318": 399,
+    "M319": 400,
+    "M320": 401,
+    "M321": 402,
+    "M322": 403,
+    "M323": 404,
+    "M324": 405,
+    "M325": 406,
+    "M326": 407,
+    "M327": 408,
+    "M330": 409,
+    "M329": 410,
+    "M328": 411,
+    "M331": 412,
+    "M332": 413
+  },
+  "m317_live_issues": [
+    {
+      "number": 7833,
+      "title": "[M317][Lane-E][E001] Backlog realignment closeout gate"
+    },
+    {
+      "number": 7832,
+      "title": "[M317][Lane-D][D001] Publish-artifact and consistency-audit implementation"
+    },
+    {
+      "number": 7830,
+      "title": "[M317][Lane-C][C001] Planning packet, manifest, and blocker-graph contract"
+    },
+    {
+      "number": 7828,
+      "title": "[M317][Lane-B][B002] Existing draft and backlog realignment implementation"
+    },
+    {
+      "number": 7827,
+      "title": "[M317][Lane-B][B001] Supersession, blocker, and publication policy"
+    },
+    {
+      "number": 7825,
+      "title": "[M317][Lane-A][A001] Backlog overlap, supersession, and publication-scope inventory"
+    }
+  ],
+  "overlap_families": [
+    {
+      "family_id": "unified_draft_program_generation",
+      "owner": "tmp/planning/regenerate_draft_programs.py",
+      "status": "active",
+      "supersedes": [
+        "tmp/planning/cleanup_acceleration_program/generate_cleanup_acceleration_program.py"
+      ],
+      "reason": "All three draft programs now share one manifest-driven generator; the cleanup-only generator is redundant and drift-prone."
+    },
+    {
+      "family_id": "manifest_driven_publication_pipeline",
+      "owner": "tmp/github-publish/publish_draft_backlog_programs.py + tmp/github-publish/finalize_draft_backlog_publication.py",
+      "status": "active",
+      "supersedes": [
+        "tmp/github-publish/final_runtime_completion_program/publish_final_runtime_completion_program.py",
+        "tmp/github-publish/post_m292_refined_program/publish_post_m292_refined_program.py"
+      ],
+      "reason": "The new backlog set is published from generated manifests and dependency graphs, not from milestone-specific hardcoded publisher scripts."
+    },
+    {
+      "family_id": "cleanup_tranche_live_reuse",
+      "owner": "live GitHub milestones M313-M318",
+      "status": "active",
+      "affected_milestones": [
+        "M313",
+        "M314",
+        "M315",
+        "M316",
+        "M317",
+        "M318"
+      ],
+      "reason": "These milestones already existed on GitHub and were reopened/updated in place instead of being recreated with invented numbers."
+    },
+    {
+      "family_id": "runtime_envelope_publication",
+      "owner": "runtime_envelope_completion_program manifests",
+      "status": "active",
+      "affected_milestones": [
+        "M319",
+        "M320",
+        "M321",
+        "M322",
+        "M323",
+        "M324"
+      ],
+      "reason": "The runtime-envelope tranche is now structurally separated from cleanup and post-adoption work, with direct blocker metadata carried in the generated manifests."
+    },
+    {
+      "family_id": "post_m324_adoption_publication",
+      "owner": "post_m324_adoption_program manifests",
+      "status": "active",
+      "affected_milestones": [
+        "M325",
+        "M326",
+        "M327",
+        "M328",
+        "M329",
+        "M330",
+        "M331",
+        "M332"
+      ],
+      "reason": "Post-closure durability and adoption work now has its own manifest-driven program and no longer relies on the older post-M292 hardcoded publication packet."
+    }
+  ],
+  "non_goals": [
+    "This inventory does not define the supersession policy itself; that belongs to M317-B001.",
+    "This inventory does not change issue templates or publication helpers beyond identifying the active owner surfaces.",
+    "This inventory does not re-open archived tmp/archive milestone-era artifacts; it classifies them as historical references only."
+  ],
+  "next_issue": "M317-B001"
+}
