@@ -16,6 +16,36 @@ Governance focus:
 - keep budget and anti-noise claims tied to existing enforcement anchors
 - treat exceptions and drift as explicit recorded objects instead of tribal knowledge
 
+Sustainable progress policy:
+
+- every governed surface must map to one canonical checked-in owner and one replayable measurement path
+- budget increases are allowed only with a measured delta, a recorded reason, and a follow-on ratchet path
+- new automation should extend existing runner, hygiene, and source-surface checks before adding new wrappers or command aliases
+- governance claims stay narrower than the evidence; unresolved drifts must appear in reports, waivers, or release-blocking status instead of being silently tolerated
+
+Exception model:
+
+- exceptions are checked-in waiver objects, not ad hoc comments
+- each waiver must name:
+  - governed surface
+  - owner
+  - reason
+  - evidence paths
+  - opened timestamp
+  - expiry timestamp
+  - current status
+- expired waivers are release-blocking until removed or superseded
+- budget increases without a corresponding checked-in policy update and measured evidence are invalid
+
+Canonical checked-in policy contracts:
+
+- `tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json`
+- `tests/tooling/fixtures/governance_sustainability/waiver_registry.json`
+
+Replayable policy summary:
+
+- `python scripts/build_governance_policy_summary.py`
+
 Current governance entry surfaces:
 
 - `scripts/ci/check_task_hygiene.py`
@@ -50,3 +80,4 @@ Explicit non-goals:
 Generated evidence:
 
 - `tmp/reports/m318/M318-A001/governance_budget_inventory_summary.json`
+- `tmp/reports/m318/M318-B001/governance_policy_summary.json`

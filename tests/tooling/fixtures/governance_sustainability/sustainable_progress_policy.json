@@ -1,0 +1,104 @@
+{
+  "contract_id": "objc3c.governance.sustainability.policy.v1",
+  "surface_kind": "sustainable-progress-policy-and-exception-model",
+  "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+  "budget_inventory": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+  "waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
+  "summary_script": "scripts/build_governance_policy_summary.py",
+  "governed_budget_surfaces": [
+    {
+      "surface_id": "package-script-budget",
+      "owner_surface": "scripts/ci/check_task_hygiene.py",
+      "default_disposition": "block-on-exceed",
+      "budget_change_requires_measured_delta": true,
+      "allows_time_bounded_waiver": true
+    },
+    {
+      "surface_id": "public-workflow-action-surface",
+      "owner_surface": "scripts/objc3c_public_workflow_runner.py",
+      "default_disposition": "review-before-widening",
+      "budget_change_requires_measured_delta": true,
+      "allows_time_bounded_waiver": false
+    },
+    {
+      "surface_id": "public-command-category-surface",
+      "owner_surface": "docs/runbooks/objc3c_public_command_surface.md",
+      "default_disposition": "review-before-widening",
+      "budget_change_requires_measured_delta": true,
+      "allows_time_bounded_waiver": false
+    },
+    {
+      "surface_id": "checked-in-runbook-surface",
+      "owner_surface": "docs/runbooks/",
+      "default_disposition": "review-for-duplication",
+      "budget_change_requires_measured_delta": true,
+      "allows_time_bounded_waiver": true
+    },
+    {
+      "surface_id": "checked-in-schema-surface",
+      "owner_surface": "schemas/",
+      "default_disposition": "review-for-real-machine-contract-need",
+      "budget_change_requires_measured_delta": true,
+      "allows_time_bounded_waiver": true
+    },
+    {
+      "surface_id": "live-checker-surface",
+      "owner_surface": "scripts/",
+      "default_disposition": "prefer-shared-harness-over-new-checker",
+      "budget_change_requires_measured_delta": true,
+      "allows_time_bounded_waiver": true
+    }
+  ],
+  "exception_requirements": {
+    "required_fields": [
+      "waiver_id",
+      "surface_id",
+      "owner",
+      "reason",
+      "opened_at_utc",
+      "expires_at_utc",
+      "status",
+      "evidence_paths"
+    ],
+    "allowed_statuses": [
+      "active",
+      "expired",
+      "superseded",
+      "retired"
+    ],
+    "expiry_required": true,
+    "owner_required": true,
+    "evidence_paths_required": true,
+    "max_active_waivers_per_surface": 1
+  },
+  "claim_statuses": [
+    {
+      "status": "stable",
+      "requires": [
+        "no_expired_waiver",
+        "no_unowned_exception",
+        "all_governed_surfaces_measured",
+        "all_release_blocking_surfaces_within_budget_or_formally_waived"
+      ]
+    },
+    {
+      "status": "caution",
+      "requires": [
+        "all_governed_surfaces_measured",
+        "no_unknown_surface_drift"
+      ]
+    },
+    {
+      "status": "blocked",
+      "requires": [
+        "fallback-when-any-release-blocking-governance-condition-is-met"
+      ]
+    }
+  ],
+  "required_paths": [
+    "docs/runbooks/objc3c_governance_sustainability.md",
+    "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+    "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/waiver_registry.json"
+  ]
+}
