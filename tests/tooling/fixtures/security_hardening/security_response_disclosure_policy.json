@@ -1,0 +1,63 @@
+{
+  "contract_id": "objc3c.security.hardening.response.disclosure.policy.v1",
+  "surface_kind": "security-response-disclosure-policy",
+  "milestone": "M327",
+  "issue": "M327-B001",
+  "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "upstream_policy_contracts": [
+    "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
+    "tests/tooling/fixtures/external_validation/trust_policy.json"
+  ],
+  "states": [
+    "ready",
+    "degraded",
+    "blocked"
+  ],
+  "blocking_conditions": [
+    "package-channel-install-failure",
+    "rollback-proof-failure",
+    "release-operations-proof-failure",
+    "missing-release-evidence-index",
+    "runtime-hardening-regression",
+    "disclosure-or-license-uncertainty"
+  ],
+  "degraded_conditions": [
+    "candidate-channel-only-warning",
+    "preview-channel-warning",
+    "stale-trust-report-input",
+    "non-blocking-security-publication-drift"
+  ],
+  "incident_classes": [
+    {
+      "incident_id": "supply-chain-integrity",
+      "severity": "high",
+      "required_action": "block security-positive publication until release, provenance, package, and update evidence agree again"
+    },
+    {
+      "incident_id": "rollback-or-install-regression",
+      "severity": "high",
+      "required_action": "retain blocked status until the live packaged install and rollback drill passes"
+    },
+    {
+      "incident_id": "metadata-or-provenance-drift",
+      "severity": "medium",
+      "required_action": "rebuild release-operations, credibility, and security publications from one coherent evidence set"
+    },
+    {
+      "incident_id": "runtime-hardening-regression",
+      "severity": "high",
+      "required_action": "demote runtime hardening claims and require runnable regression evidence before restoring them"
+    },
+    {
+      "incident_id": "disclosure-or-license-uncertainty",
+      "severity": "high",
+      "required_action": "fail closed and keep the affected evidence quarantined or blocked until disclosure compatibility is resolved"
+    }
+  ],
+  "disclosure_rules": [
+    "machine-owned checked-in trust and security outputs are the only public disclosure surface in this milestone",
+    "unresolved disclosure uncertainty must not be published as a trust-positive signal",
+    "sensitive external evidence follows the checked-in quarantine and disclosure compatibility policy",
+    "security publication must stay narrower than the live release, package, and runtime evidence"
+  ]
+}

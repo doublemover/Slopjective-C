@@ -139,6 +139,52 @@ That surface supports repeatable publication and escalation guidance, but it is
 not yet a public advisory program with external intake and hosted response
 infrastructure.
 
+## Security Response And Disclosure Policy
+
+The checked-in response and disclosure policy for this milestone is intentionally
+narrow and fail-closed.
+
+Security response states:
+
+- `ready`:
+  - no blocking trust regressions are active
+  - current release/package/update/runtime evidence remains coherent
+- `degraded`:
+  - non-fatal drift exists and publication must carry explicit caution
+  - examples: stale trust-report inputs, candidate-only warnings, or incomplete
+    but non-blocking publication refresh
+- `blocked`:
+  - install failure, rollback failure, trust drift, evidence gaps, unresolved
+    disclosure risk, or other blocking security regressions are active
+
+Current disclosure model:
+
+- checked-in machine-owned trust and security outputs are the canonical public
+  surface
+- security-sensitive evidence that cannot be published safely remains bounded by
+  the external-validation quarantine policy
+- unresolved disclosure uncertainty must fail closed rather than being published
+  as a partial trust-positive signal
+
+Current incident classes:
+
+- `supply-chain-integrity`
+- `rollback-or-install-regression`
+- `metadata-or-provenance-drift`
+- `runtime-hardening-regression`
+- `disclosure-or-license-uncertainty`
+
+Operator response rules:
+
+- do not publish a trust-positive or security-positive report while state is
+  `blocked`
+- rebuild release-operation, credibility, and security publication together
+  after metadata drift
+- keep advisory and recovery guidance tied to the same checked-in release and
+  package evidence
+- retain the narrower checked-in claim surface when the evidence does not prove
+  a broader public statement
+
 ## Machine-Owned Security Surface
 
 This milestone must leave behind one machine-owned security posture/reporting
