@@ -65,7 +65,7 @@ Executable proof and ABI contract:
 
 - the public command surface for this milestone remains `test:objc3c:error-conformance` and `test:objc3c:runnable-error`
 - the public workflow surface remains `validate-error-conformance` and `validate-runnable-error`
-- error closure still relies on private runtime-owned helper and snapshot surfaces; the public runtime header is not widened by this milestone
+- error closure still relies on the private runtime-owned helper ABI and snapshot surfaces; the public runtime header is not widened by this milestone
 
 Explicit non-goals:
 
@@ -100,3 +100,4 @@ Authoritative live surfaces:
   - `docs/objc3c-native.md`
   - `tests/tooling/runtime/README.md`
   - `docs/runbooks/objc3c_public_command_surface.md`
+

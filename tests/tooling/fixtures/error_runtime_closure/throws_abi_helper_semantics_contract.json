@@ -1,0 +1,55 @@
+{
+  "contract_id": "objc3c.error_runtime.closure.throws.abi.helper.semantics.contract.v1",
+  "surface_kind": "throws-abi-helper-semantics-contract",
+  "milestone": "M321",
+  "issue": "M321-B003",
+  "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
+  "summary_script": "scripts/build_error_runtime_closure_throws_abi_summary.py",
+  "canonical_surfaces": [
+    "runtime_error_runtime_abi_cleanup_surface",
+    "runtime_error_propagation_catch_cleanup_runtime_implementation_surface",
+    "runtime_error_lowering_unwind_bridge_helper_surface"
+  ],
+  "helper_symbols": [
+    "objc3_runtime_store_thrown_error_i32",
+    "objc3_runtime_load_thrown_error_i32",
+    "objc3_runtime_bridge_status_error_i32",
+    "objc3_runtime_bridge_nserror_error_i32",
+    "objc3_runtime_catch_matches_error_i32",
+    "objc3_runtime_copy_error_bridge_state_for_testing"
+  ],
+  "abi_rules": [
+    "throw and catch execution remain supported only through the private runtime-owned helper ABI and emitted lowering packets already exercised by live probes",
+    "cleanup ordering, bridge normalization, and catch matching are one executable runtime story and must not drift into independent proof-only models",
+    "public workflow and package claims stay anchored to validate-error-conformance and validate-runnable-error instead of widening the public runtime header",
+    "cross-module and packaged execution claims remain bounded by the existing manifest, runtime-registration, replay, and probe evidence"
+  ],
+  "authoritative_case_ids": [
+    "error-runtime-abi-cleanup",
+    "live-error-runtime-integration",
+    "executable-throw-catch-cleanup-lowering",
+    "cross-module-error-metadata-replay-preservation"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "scripts/check_objc3c_runnable_error_conformance.py",
+    "scripts/check_objc3c_runnable_error_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+    "tests/tooling/fixtures/native/result_bridge_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/error_runtime_bridge_helper_probe.cpp",
+    "tests/tooling/runtime/live_error_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/live_cleanup_retainable_integration_probe.cpp",
+    "tests/tooling/runtime/cleanup_unwind_autoreleasepool_probe.cpp",
+    "tests/tooling/runtime/cleanup_unwind_nested_autoreleasepool_probe.cpp"
+  ]
+}
