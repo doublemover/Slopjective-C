@@ -1,0 +1,32 @@
+{
+  "contract_id": "objc3c.platform.hardening.platform.matrix.artifact.contract.v1",
+  "surface_kind": "platform-matrix-artifact-contract",
+  "milestone": "M326",
+  "issue": "M326-C001",
+  "schema_path": "schemas/objc3c-platform-support-matrix-v1.schema.json",
+  "generator_script": "scripts/build_objc3c_platform_support_matrix.py",
+  "summary_script": "scripts/build_platform_hardening_artifact_contract_summary.py",
+  "generated_artifact_path": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+  "generated_summary_path": "tmp/reports/platform-hardening/platform-support-matrix-summary.json",
+  "required_fields": [
+    "contract_id",
+    "schema_version",
+    "generated_at_utc",
+    "default_platform_id",
+    "platform_count",
+    "channels",
+    "tiers",
+    "current_host",
+    "required_tool_probes",
+    "claim_boundary",
+    "publication_surface"
+  ],
+  "required_publication_surface_fields": [
+    "package_command",
+    "package_channels_command",
+    "packaging_validation_command",
+    "packaging_end_to_end_command",
+    "release_operations_command",
+    "release_operations_end_to_end_command"
+  ]
+}

@@ -1,0 +1,143 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://objc3c.dev/schemas/objc3c-platform-support-matrix-v1.schema.json",
+  "title": "objc3c Platform Support Matrix",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_version",
+    "generated_at_utc",
+    "default_platform_id",
+    "platform_count",
+    "channels",
+    "tiers",
+    "current_host",
+    "required_tool_probes",
+    "claim_boundary",
+    "publication_surface"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.platform.hardening.support.matrix.v1"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "generated_at_utc": {
+      "type": "string"
+    },
+    "default_platform_id": {
+      "type": "string"
+    },
+    "platform_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "channels": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tiers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tier_id",
+          "display_name",
+          "claim_class",
+          "platform_ids"
+        ],
+        "properties": {
+          "tier_id": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "claim_class": {
+            "type": "string"
+          },
+          "platform_ids": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "current_host": {
+      "type": "object",
+      "required": [
+        "os",
+        "arch"
+      ],
+      "properties": {
+        "os": {
+          "type": "string"
+        },
+        "arch": {
+          "type": "string"
+        }
+      }
+    },
+    "required_tool_probes": {
+      "type": "object"
+    },
+    "claim_boundary": {
+      "type": "object",
+      "required": [
+        "supported_platform_ids",
+        "gap_claims"
+      ],
+      "properties": {
+        "supported_platform_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "gap_claims": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "publication_surface": {
+      "type": "object",
+      "required": [
+        "package_command",
+        "package_channels_command",
+        "packaging_validation_command",
+        "packaging_end_to_end_command",
+        "release_operations_command",
+        "release_operations_end_to_end_command"
+      ],
+      "properties": {
+        "package_command": {
+          "type": "string"
+        },
+        "package_channels_command": {
+          "type": "string"
+        },
+        "packaging_validation_command": {
+          "type": "string"
+        },
+        "packaging_end_to_end_command": {
+          "type": "string"
+        },
+        "release_operations_command": {
+          "type": "string"
+        },
+        "release_operations_end_to_end_command": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
