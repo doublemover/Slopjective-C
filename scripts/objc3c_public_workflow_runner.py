@@ -32,6 +32,7 @@ PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
 SITE_PY = ROOT / "scripts" / "build_site_index.py"
 NATIVE_DOCS_PY = ROOT / "scripts" / "build_objc3c_native_docs.py"
 PUBLIC_COMMAND_SURFACE_PY = ROOT / "scripts" / "render_objc3c_public_command_surface.py"
+PUBLIC_COMMAND_CONTRACT_PY = ROOT / "scripts" / "build_objc3c_public_command_contract.py"
 DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
@@ -251,6 +252,14 @@ def action_build_public_command_surface(_: list[str]) -> int:
 
 def action_check_public_command_surface(_: list[str]) -> int:
     return run([sys.executable, str(PUBLIC_COMMAND_SURFACE_PY), "--check"])
+
+
+def action_build_public_command_contract(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_COMMAND_CONTRACT_PY)])
+
+
+def action_check_public_command_contract(_: list[str]) -> int:
+    return run([sys.executable, str(PUBLIC_COMMAND_CONTRACT_PY), "--check"])
 
 
 def action_check_documentation_surface(_: list[str]) -> int:
@@ -1682,6 +1691,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-native-docs": ActionSpec("check-native-docs", "check generated native implementation docs for drift", "python:scripts/build_objc3c_native_docs.py --check", ("check:docs:native",), validation_tier="docs", guarantee_owner="generated native implementation documentation stays in sync with docs/objc3c-native/src inputs"),
     "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py", ("build:docs:commands",)),
     "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", ("check:docs:commands",), validation_tier="docs", guarantee_owner="operator-facing machine appendix stays in sync with the live workflow runner and package scripts"),
+    "build-public-command-contract": ActionSpec("build-public-command-contract", "build the canonical public command contract artifact", "python:scripts/build_objc3c_public_command_contract.py", ()),
+    "check-public-command-contract": ActionSpec("check-public-command-contract", "check the canonical public command contract artifact for drift", "python:scripts/build_objc3c_public_command_contract.py --check", ()),
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
     "check-markdown": ActionSpec("check-markdown", "check markdown formatting drift across the repo", "npx prettier --check **/*.md", ("check:md",)),
     "format-markdown": ActionSpec("format-markdown", "rewrite markdown formatting across the repo", "npx prettier --write **/*.md", ("format:md",)),
@@ -1831,6 +1842,8 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-native-docs": action_check_native_docs,
     "build-public-command-surface": action_build_public_command_surface,
     "check-public-command-surface": action_check_public_command_surface,
+    "build-public-command-contract": action_build_public_command_contract,
+    "check-public-command-contract": action_check_public_command_contract,
     "check-documentation-surface": action_check_documentation_surface,
     "check-markdown": action_check_markdown,
     "format-markdown": action_format_markdown,
