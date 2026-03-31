@@ -1,0 +1,44 @@
+{
+  "contract_id": "objc3c.source_hygiene.archive_boundary_contract.v1",
+  "schema_version": 1,
+  "policy_contract": "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
+  "archive_roots": [
+    "tmp/planning/",
+    "tmp/github-publish/",
+    "tmp/archive/",
+    "docs/reference/"
+  ],
+  "product_surface_roots": [
+    "README.md",
+    "CONTRIBUTING.md",
+    "site/src/",
+    "site/index.md",
+    "docs/tutorials/",
+    "docs/runbooks/",
+    "docs/objc3c-native/src/",
+    "docs/objc3c-native.md",
+    "showcase/",
+    "stdlib/",
+    "schemas/",
+    "scripts/",
+    "native/objc3c/src/"
+  ],
+  "generated_truth_files": [
+    "site/index.md",
+    "docs/objc3c-native.md",
+    "docs/runbooks/objc3c_public_command_surface.md"
+  ],
+  "historical_reference_patterns": [
+    "\\bM[0-9]{3}\\b",
+    "Lane-[A-E]",
+    "workpack iteration",
+    "closeout signoff"
+  ],
+  "compatibility_rules": [
+    "archive roots may preserve milestone or planning-era references",
+    "archive roots must remain disjoint from product surface roots and generated truth files",
+    "product surface residue checks remain authoritative for live truth cleanliness",
+    "archive summaries must prove history still exists without widening current product claims"
+  ],
+  "canonical_summary_output": "tmp/reports/m315/M315-D003/archive_boundary_compatibility_summary.json"
+}

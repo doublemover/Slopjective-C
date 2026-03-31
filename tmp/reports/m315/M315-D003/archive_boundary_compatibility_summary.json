@@ -1,0 +1,63 @@
+{
+  "issue": "M315-D003",
+  "contract_id": "objc3c.source_hygiene.archive_boundary_contract.v1",
+  "archive_root_file_counts": {
+    "tmp/planning/": 77,
+    "tmp/github-publish/": 15,
+    "tmp/archive/": 0,
+    "docs/reference/": 1
+  },
+  "archive_root_samples": {
+    "tmp/planning/": [
+      "tmp/planning/backlog_publication/README.md",
+      "tmp/planning/backlog_publication/backlog_publication_policy.json",
+      "tmp/planning/backlog_publication/backlog_publication_policy.md",
+      "tmp/planning/backlog_publication/build_backlog_overlap_supersession_inventory.py",
+      "tmp/planning/backlog_publication/check_generated_backlog_consistency.py",
+      "tmp/planning/backlog_publication/check_m317_closeout_gate.py",
+      "tmp/planning/cleanup_acceleration_program/README.md",
+      "tmp/planning/cleanup_acceleration_program/cleanup_acceleration_program_summary.md",
+      "tmp/planning/cleanup_acceleration_program/count_snapshot.json",
+      "tmp/planning/cleanup_acceleration_program/issues/M317-B002.md"
+    ],
+    "tmp/github-publish/": [
+      "tmp/github-publish/backlog_contract/README.md",
+      "tmp/github-publish/backlog_contract/draft_backlog_count_snapshot_v1.schema.json",
+      "tmp/github-publish/backlog_contract/draft_backlog_dependency_graph_v1.schema.json",
+      "tmp/github-publish/backlog_contract/draft_backlog_master_snapshot_v1.schema.json",
+      "tmp/github-publish/backlog_contract/draft_backlog_program_manifest_v1.schema.json",
+      "tmp/github-publish/cleanup_acceleration_program/README.md",
+      "tmp/github-publish/cleanup_acceleration_program/dependency_edges.json",
+      "tmp/github-publish/cleanup_acceleration_program/program_manifest.json",
+      "tmp/github-publish/m318_governance/publish_new_work_proposal.py",
+      "tmp/github-publish/post_m324_adoption_program/README.md"
+    ],
+    "tmp/archive/": [],
+    "docs/reference/": [
+      "docs/reference/legacy_spec_anchor_index.md"
+    ]
+  },
+  "historical_reference_hit_count": 83,
+  "historical_reference_sample": [
+    "tmp/planning/backlog_publication/README.md",
+    "tmp/planning/backlog_publication/backlog_publication_policy.json",
+    "tmp/planning/backlog_publication/backlog_publication_policy.md",
+    "tmp/planning/backlog_publication/build_backlog_overlap_supersession_inventory.py",
+    "tmp/planning/backlog_publication/check_generated_backlog_consistency.py",
+    "tmp/planning/backlog_publication/check_m317_closeout_gate.py",
+    "tmp/planning/cleanup_acceleration_program/README.md",
+    "tmp/planning/cleanup_acceleration_program/cleanup_acceleration_program_summary.md",
+    "tmp/planning/cleanup_acceleration_program/count_snapshot.json",
+    "tmp/planning/cleanup_acceleration_program/issues/M317-B002.md"
+  ],
+  "product_report_path": "tmp/reports/m315/M315-B002/product_decontamination_report.json",
+  "checks": {
+    "archive_roots_have_tracked_files": true,
+    "archive_roots_do_not_overlap_product_roots": true,
+    "generated_truth_files_stay_outside_archive_roots": true,
+    "archive_roots_preserve_historical_references": true,
+    "product_surface_report_stays_clean": true,
+    "product_surface_report_has_zero_residue_hits": true
+  },
+  "ok": true
+}
