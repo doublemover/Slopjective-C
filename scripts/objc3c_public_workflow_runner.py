@@ -109,6 +109,8 @@ RUNNABLE_STDLIB_ADVANCED_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdl
 RUNNABLE_STDLIB_PROGRAM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_program_end_to_end.py"
 PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
+DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
+RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
 RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
@@ -156,6 +158,16 @@ class ActionSpec:
 
 
 ActionHandler = Callable[[list[str]], int]
+MAINTAINER_ONLY_PUBLIC_SCRIPTS = {
+    "check:md",
+    "check:objc3c:boundaries",
+    "check:objc3c:llvm-capabilities",
+    "check:release-evidence",
+    "check:task-hygiene",
+    "format:md",
+    "lint",
+    "lint:md",
+}
 
 
 def run(command: Sequence[str]) -> int:
@@ -243,6 +255,41 @@ def action_check_public_command_surface(_: list[str]) -> int:
 
 def action_check_documentation_surface(_: list[str]) -> int:
     return run([sys.executable, str(DOCUMENTATION_SURFACE_PY)])
+
+
+def action_check_markdown(_: list[str]) -> int:
+    return run([NPX, "prettier", "--check", "**/*.md"])
+
+
+def action_format_markdown(_: list[str]) -> int:
+    return run([NPX, "prettier", "--write", "**/*.md"])
+
+
+def action_lint_markdown(_: list[str]) -> int:
+    return run([NPX, "markdownlint-cli2", "**/*.md"])
+
+
+def action_check_dependency_boundaries(_: list[str]) -> int:
+    return run([sys.executable, str(DEPENDENCY_BOUNDARIES_PY), "--strict"])
+
+
+def action_check_llvm_capabilities(_: list[str]) -> int:
+    return run(
+        [
+            sys.executable,
+            str(LLVM_CAPABILITIES_PROBE_PY),
+            "--summary-out",
+            "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
+        ]
+    )
+
+
+def action_check_release_evidence(_: list[str]) -> int:
+    return run([sys.executable, str(RELEASE_EVIDENCE_PY)])
+
+
+def action_check_task_hygiene(_: list[str]) -> int:
+    return run([sys.executable, str(TASK_HYGIENE_PY)])
 
 
 def action_check_repo_superclean_surface(_: list[str]) -> int:
@@ -963,6 +1010,10 @@ def action_lint_spec(_: list[str]) -> int:
     return run([sys.executable, str(SPEC_LINT_PY)])
 
 
+def action_lint_default(_: list[str]) -> int:
+    return run_steps(["check-task-hygiene", "build-site", "check-markdown"])
+
+
 def action_test_default(_: list[str]) -> int:
     return run_steps(["test-fast"])
 
@@ -1632,6 +1683,14 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "build-public-command-surface": ActionSpec("build-public-command-surface", "build the generated public command-surface appendix", "python:scripts/render_objc3c_public_command_surface.py", ("build:docs:commands",)),
     "check-public-command-surface": ActionSpec("check-public-command-surface", "check the generated public command-surface appendix for drift", "python:scripts/render_objc3c_public_command_surface.py --check", ("check:docs:commands",), validation_tier="docs", guarantee_owner="operator-facing machine appendix stays in sync with the live workflow runner and package scripts"),
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
+    "check-markdown": ActionSpec("check-markdown", "check markdown formatting drift across the repo", "npx prettier --check **/*.md", ("check:md",)),
+    "format-markdown": ActionSpec("format-markdown", "rewrite markdown formatting across the repo", "npx prettier --write **/*.md", ("format:md",)),
+    "lint-markdown": ActionSpec("lint-markdown", "run markdownlint across the repo markdown surface", "npx markdownlint-cli2 **/*.md", ("lint:md",)),
+    "lint-default": ActionSpec("lint-default", "run the canonical maintainer lint workflow", "runner-internal + task hygiene + site build + markdown format check", ("lint",)),
+    "check-dependency-boundaries": ActionSpec("check-dependency-boundaries", "check strict objc3c dependency boundaries", "python:scripts/check_objc3c_dependency_boundaries.py --strict", ("check:objc3c:boundaries",), validation_tier="repo", guarantee_owner="repo dependency boundaries stay explicit and strict"),
+    "check-llvm-capabilities": ActionSpec("check-llvm-capabilities", "probe llvm capability availability and write the summary artifact", "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json", ("check:objc3c:llvm-capabilities",), validation_tier="repo", guarantee_owner="llvm capability probe output stays tied to the live toolchain environment"),
+    "check-release-evidence": ActionSpec("check-release-evidence", "check the checked-in release evidence surface", "python:scripts/check_release_evidence.py", ("check:release-evidence",), validation_tier="repo", guarantee_owner="release evidence packets stay coherent and replayable from the checked-in repo surface"),
+    "check-task-hygiene": ActionSpec("check-task-hygiene", "run the task-hygiene gate over package scripts and checked-in roots", "python:scripts/ci/run_task_hygiene_gate.py", ("check:task-hygiene",), validation_tier="repo", guarantee_owner="task hygiene gate remains executable over the live repo script and path surface"),
     "check-showcase-surface": ActionSpec("check-showcase-surface", "check the live showcase portfolio and compile its example sources through the public compiler path", "python:scripts/check_showcase_surface.py", ("check:showcase:surface",), validation_tier="repo", guarantee_owner="showcase examples stay compile-coupled, checked in, and tied to the public compiler path", pass_through_args=True),
     "check-stdlib-surface": ActionSpec("check-stdlib-surface", "check the checked-in stdlib boundary contracts, canonical module inventory, package alias mapping, and lowering/import artifact contract", "python:scripts/check_stdlib_surface.py", ("check:stdlib:surface",), validation_tier="repo", guarantee_owner="stdlib roots, canonical module inventory, package alias mapping, and lowering/import artifact contract stay checked in and coherent"),
     "validate-showcase-runtime": ActionSpec("validate-showcase-runtime", "compile, link, and run the checked-in showcase examples through the live runtime launch contract", "pwsh:scripts/check_showcase_runtime.ps1", (), validation_tier="repo", guarantee_owner="showcase examples stay runnable through the real runtime archive and launch-contract wiring", pass_through_args=True),
@@ -1773,6 +1832,14 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "build-public-command-surface": action_build_public_command_surface,
     "check-public-command-surface": action_check_public_command_surface,
     "check-documentation-surface": action_check_documentation_surface,
+    "check-markdown": action_check_markdown,
+    "format-markdown": action_format_markdown,
+    "lint-markdown": action_lint_markdown,
+    "lint-default": action_lint_default,
+    "check-dependency-boundaries": action_check_dependency_boundaries,
+    "check-llvm-capabilities": action_check_llvm_capabilities,
+    "check-release-evidence": action_check_release_evidence,
+    "check-task-hygiene": action_check_task_hygiene,
     "check-showcase-surface": action_check_showcase_surface,
     "check-stdlib-surface": action_check_stdlib_surface,
     "validate-showcase-runtime": action_validate_showcase_runtime,
@@ -1907,20 +1974,58 @@ def emit_json(payload: object) -> int:
     return 0
 
 
+def category_for_public_script(script_name: str) -> str:
+    return script_name.split(":", 1)[0]
+
+
+def audience_for_spec(spec: ActionSpec) -> str:
+    if not spec.public_scripts:
+        return "internal"
+    if any(script_name in MAINTAINER_ONLY_PUBLIC_SCRIPTS for script_name in spec.public_scripts):
+        return "maintainer"
+    return "operator"
+
+
+def public_script_to_action_map() -> dict[str, str]:
+    mapping: dict[str, str] = {}
+    for action_name, spec in ACTION_SPECS.items():
+        for public_script in spec.public_scripts:
+            mapping[public_script] = action_name
+    return mapping
+
+
+def enrich_action_payload(spec: ActionSpec) -> dict[str, object]:
+    payload = asdict(spec)
+    payload["mode"] = "public_runner-parameterized-task-runner-v2"
+    payload["runner_path"] = "scripts/objc3c_public_workflow_runner.py"
+    payload["audience"] = audience_for_spec(spec)
+    payload["category"] = category_for_public_script(spec.public_scripts[0]) if spec.public_scripts else "internal"
+    return payload
+
+
 def list_actions_payload() -> dict[str, object]:
+    public_actions = [spec for spec in ACTION_SPECS.values() if spec.public_scripts]
+    internal_action_count = len(ACTION_SPECS) - len(public_actions)
     return {
-        "mode": "public_runner-parameterized-task-runner-v1",
+        "mode": "public_runner-parameterized-task-runner-v2",
         "runner_path": "scripts/objc3c_public_workflow_runner.py",
         "action_count": len(ACTION_SPECS),
-        "actions": [asdict(spec) for spec in ACTION_SPECS.values()],
+        "public_action_count": len(public_actions),
+        "internal_action_count": internal_action_count,
+        "public_script_count": sum(len(spec.public_scripts) for spec in public_actions),
+        "actions": [enrich_action_payload(spec) for spec in ACTION_SPECS.values()],
     }
 
 
 def describe_action_payload(action: str) -> dict[str, object]:
-    spec = ACTION_SPECS[action]
-    payload = asdict(spec)
-    payload["mode"] = "public_runner-parameterized-task-runner-v1"
-    payload["runner_path"] = "scripts/objc3c_public_workflow_runner.py"
+    return enrich_action_payload(ACTION_SPECS[action])
+
+
+def describe_package_script_payload(script_name: str) -> dict[str, object]:
+    mapping = public_script_to_action_map()
+    action_name = mapping[script_name]
+    payload = describe_action_payload(action_name)
+    payload["package_script"] = script_name
     return payload
 
 
@@ -1941,7 +2046,8 @@ def main(argv: Sequence[str]) -> int:
         print(
             "usage: objc3c_public_workflow_runner.py <action> [args...]\n"
             "       objc3c_public_workflow_runner.py --list-json\n"
-            "       objc3c_public_workflow_runner.py --describe <action>",
+            "       objc3c_public_workflow_runner.py --describe <action>\n"
+            "       objc3c_public_workflow_runner.py --describe-script <package-script>",
             file=sys.stderr,
         )
         return 2
@@ -1958,6 +2064,16 @@ def main(argv: Sequence[str]) -> int:
             print(f"unknown action: {describe_action}", file=sys.stderr)
             return 2
         return emit_json(describe_action_payload(describe_action))
+    if action == "--describe-script":
+        if len(rest) != 1:
+            print("usage: objc3c_public_workflow_runner.py --describe-script <package-script>", file=sys.stderr)
+            return 2
+        describe_script = rest[0]
+        mapping = public_script_to_action_map()
+        if describe_script not in mapping:
+            print(f"unknown package script: {describe_script}", file=sys.stderr)
+            return 2
+        return emit_json(describe_package_script_payload(describe_script))
     return execute_registered_action(action, rest)
 
 

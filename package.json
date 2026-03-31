@@ -6,7 +6,7 @@
     "prettier": "^3.2.5"
   },
   "scripts": {
-    "lint": "npm run check:task-hygiene && npm run build:site && npm run check:md",
+    "lint": "python scripts/objc3c_public_workflow_runner.py lint-default",
     "test": "python scripts/objc3c_public_workflow_runner.py test-default",
     "test:fast": "python scripts/objc3c_public_workflow_runner.py test-fast",
     "test:smoke": "python scripts/objc3c_public_workflow_runner.py test-smoke",
@@ -142,12 +142,12 @@
     "publish:objc3c:public-conformance": "python scripts/objc3c_public_workflow_runner.py publish-public-conformance-report",
     "publish:objc3c:performance-report": "python scripts/objc3c_public_workflow_runner.py publish-performance-report",
     "publish:objc3c:release-provenance": "python scripts/objc3c_public_workflow_runner.py publish-release-provenance",
-    "check:objc3c:llvm-capabilities": "python scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
-    "check:release-evidence": "python scripts/check_release_evidence.py",
-    "check:task-hygiene": "python scripts/ci/run_task_hygiene_gate.py",
-    "check:objc3c:boundaries": "python scripts/check_objc3c_dependency_boundaries.py --strict",
-    "lint:md": "markdownlint-cli2 \"**/*.md\"",
-    "format:md": "prettier --write \"**/*.md\"",
-    "check:md": "prettier --check \"**/*.md\""
+    "check:objc3c:llvm-capabilities": "python scripts/objc3c_public_workflow_runner.py check-llvm-capabilities",
+    "check:release-evidence": "python scripts/objc3c_public_workflow_runner.py check-release-evidence",
+    "check:task-hygiene": "python scripts/objc3c_public_workflow_runner.py check-task-hygiene",
+    "check:objc3c:boundaries": "python scripts/objc3c_public_workflow_runner.py check-dependency-boundaries",
+    "lint:md": "python scripts/objc3c_public_workflow_runner.py lint-markdown",
+    "format:md": "python scripts/objc3c_public_workflow_runner.py format-markdown",
+    "check:md": "python scripts/objc3c_public_workflow_runner.py check-markdown"
   }
 }

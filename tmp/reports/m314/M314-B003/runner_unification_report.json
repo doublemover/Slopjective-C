@@ -1,0 +1,36 @@
+{
+  "issue": "M314-B003",
+  "package_script_count": 143,
+  "workflow_action_count": 145,
+  "public_script_count": 144,
+  "unmapped_script_count": 0,
+  "maintainer_script_count": 8,
+  "operator_script_count": 136,
+  "runner_mode": "public_runner-parameterized-task-runner-v2",
+  "retired_alias_count_from_b002": 1,
+  "category_counts": {
+    "build": 11,
+    "check": 26,
+    "compile": 1,
+    "format": 1,
+    "inspect": 15,
+    "lint": 3,
+    "package": 2,
+    "proof": 1,
+    "publish": 6,
+    "test": 76,
+    "trace": 1
+  },
+  "maintainer_scripts": [
+    "check:md",
+    "check:objc3c:boundaries",
+    "check:objc3c:llvm-capabilities",
+    "check:release-evidence",
+    "check:task-hygiene",
+    "format:md",
+    "lint",
+    "lint:md"
+  ],
+  "unmapped_scripts": [],
+  "next_issue": "M314-C001"
+}
