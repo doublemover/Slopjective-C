@@ -39,6 +39,20 @@ def read_json(path: Path) -> object:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def application_architecture_contract_paths() -> dict[str, Path]:
+    application_architecture_root = (
+        ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing"
+    )
+    return {
+        "first_party_testing": application_architecture_root
+        / "first_party_testing_semantics.json",
+        "project_template_workspace": application_architecture_root
+        / "project_template_workspace_semantics.json",
+        "canonical_application_architecture": application_architecture_root
+        / "canonical_application_architecture_semantics.json",
+    }
+
+
 def extract_line_value(stdout: str, prefix: str) -> str:
     for raw_line in stdout.splitlines():
         line = raw_line.strip()
@@ -99,6 +113,7 @@ def main() -> int:
     template_readme = template_root / "README.md"
     template_manifest = template_root / "template.json"
     harness_path = report_root / "demo-harness.json"
+    application_architecture_contracts = application_architecture_contract_paths()
 
     template_source.parent.mkdir(parents=True, exist_ok=True)
     report_root.mkdir(parents=True, exist_ok=True)
@@ -138,11 +153,30 @@ def main() -> int:
                     "docs/tutorials/build_run_verify.md",
                     "docs/tutorials/guided_walkthrough.md",
                 ],
+                "application_architecture_testing_contracts": {
+                    "first_party_testing": display_path(
+                        application_architecture_contracts["first_party_testing"]
+                    ),
+                    "project_template_workspace": display_path(
+                        application_architecture_contracts["project_template_workspace"]
+                    ),
+                    "canonical_application_architecture": display_path(
+                        application_architecture_contracts[
+                            "canonical_application_architecture"
+                        ]
+                    ),
+                },
                 "public_actions": [
                     "materialize-project-template",
-                    "inspect-bonus-tool-integration",
                     "materialize-playground-workspace",
                     "benchmark-runtime-inspector",
+                    "inspect-bonus-tool-integration",
+                ],
+                "recommended_validation_actions": [
+                    "validate-showcase",
+                    "validate-runnable-showcase",
+                    "validate-stdlib-program",
+                    "validate-runnable-stdlib-program",
                 ],
             },
             indent=2,

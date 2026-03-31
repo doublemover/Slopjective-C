@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the first-party testing semantics summary for M330."""
+"""Build the first-party testing semantics summary."""
 
 from __future__ import annotations
 

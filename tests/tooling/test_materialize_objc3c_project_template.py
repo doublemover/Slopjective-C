@@ -71,5 +71,16 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
     template_payload = json.loads(template_path.read_text(encoding="utf-8"))
     harness_payload = json.loads(harness_path.read_text(encoding="utf-8"))
     assert template_payload["contract_id"] == "objc3c.project.template.surface.v1"
+    assert template_payload["application_architecture_testing_contracts"] == {
+        "first_party_testing": "tests/tooling/fixtures/application_architecture_testing/first_party_testing_semantics.json",
+        "project_template_workspace": "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json",
+        "canonical_application_architecture": "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json",
+    }
+    assert template_payload["recommended_validation_actions"] == [
+        "validate-showcase",
+        "validate-runnable-showcase",
+        "validate-stdlib-program",
+        "validate-runnable-stdlib-program",
+    ]
     assert harness_payload["contract_id"] == "objc3c.project.template.demo.harness.v1"
     assert harness_payload["ok"] is True

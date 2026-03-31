@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the project-template/workspace semantics summary for M330."""
+"""Build the project-template/workspace semantics summary."""
 
 from __future__ import annotations
 

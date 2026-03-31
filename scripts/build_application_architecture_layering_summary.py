@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the canonical application layering semantics summary for M330."""
+"""Build the canonical application layering semantics summary."""
 
 from __future__ import annotations
 
