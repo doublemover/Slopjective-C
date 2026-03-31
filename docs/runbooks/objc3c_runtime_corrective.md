@@ -5,10 +5,12 @@ This runbook freezes the narrow corrective scope for `M316`.
 Canonical checked-in boundary contract:
 
 - `tests/tooling/fixtures/runtime_corrective/boundary_inventory.json`
+- `tests/tooling/fixtures/runtime_corrective/realized_dispatch_semantic_model.json`
 
 Replayable summary generator:
 
 - `python scripts/build_runtime_corrective_boundary_inventory_summary.py`
+- `python scripts/build_runtime_corrective_dispatch_summary.py`
 
 Current corrective scope:
 

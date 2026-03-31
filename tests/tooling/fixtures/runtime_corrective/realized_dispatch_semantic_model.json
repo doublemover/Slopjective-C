@@ -1,0 +1,67 @@
+{
+  "contract_id": "objc3c.runtime.realization.lookup.semantics.surface.v1",
+  "surface_kind": "runtime-corrective-realized-dispatch-semantic-model",
+  "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "summary_script": "scripts/build_runtime_corrective_dispatch_summary.py",
+  "authoritative_runtime_entrypoint": "native/objc3c/src/runtime/objc3_runtime.cpp::objc3_runtime_dispatch_i32",
+  "private_lookup_query_boundary": [
+    "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+    "objc3_runtime_copy_selector_lookup_entry_for_testing",
+    "objc3_runtime_copy_method_cache_state_for_testing",
+    "objc3_runtime_copy_method_cache_entry_for_testing",
+    "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_protocol_conformance_query_for_testing"
+  ],
+  "lookup_resolution_order_model": "seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback",
+  "selector_materialization_model": "metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup",
+  "nil_receiver_behavior_model": "zero-receiver-returns-zero-and-publishes-nil-short-circuit-dispatch-path",
+  "unresolved_selector_behavior_model": "negative-cache-entry-preserved-and-deterministic-fallback-returned",
+  "claim_boundary": [
+    "resolved-live-method-claims-require-realized-method-or-builtin-resolution-through-the-live-cache-or-slow-path",
+    "fallback-paths-do-not-count-as-live-method-execution",
+    "all-dispatch-proof-requires-real-compile-output-and-a-linked-runtime-probe",
+    "the-corrective-tranche-does-not-claim-full-object-model-closure"
+  ],
+  "runtime_acceptance_case_ids": [
+    "canonical-dispatch",
+    "canonical-sample-set",
+    "dispatch-fast-path"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+    "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+    "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+    "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
+    "tests/tooling/runtime/class_realization_runtime_probe.cpp",
+    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
+  ],
+  "dispatch_counter_expectations": [
+    "method_cache_hit_count",
+    "method_cache_miss_count",
+    "slow_path_lookup_count",
+    "live_dispatch_count",
+    "fallback_dispatch_count",
+    "fast_path_hit_count"
+  ],
+  "dispatch_path_labels": [
+    "cache-hit-fast-path",
+    "cache-hit-live",
+    "cache-hit-fallback",
+    "slow-path-live",
+    "slow-path-fallback",
+    "invalid-receiver-fallback",
+    "nil-short-circuit"
+  ],
+  "explicit_non_goals": [
+    "no-removal-of-the-deterministic-fallback-in-b001",
+    "no-public-runtime-abi-widening",
+    "no-proof-from-unlinked-probe-or-sidecar-only-artifacts",
+    "no-claim-that-category-protocol-reflection-closure-is-complete"
+  ]
+}
