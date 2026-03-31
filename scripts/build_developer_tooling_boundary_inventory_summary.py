@@ -46,9 +46,9 @@ def main() -> int:
         "all_report_paths_exist": all(resolve_repo_path(path).is_file() for path in contract["report_paths"]),
         "runbook_mentions_current_capability_map": "## Current Capability Map" in runbook_text,
         "runbook_mentions_explicit_gap_inventory": "## Explicit Gap Inventory" in runbook_text,
-        "runbook_mentions_language_server_gap": "language-server capabilities and symbol/navigation responses" in runbook_text,
-        "runbook_mentions_formatter_gap": "formatter contracts and executable formatting output" in runbook_text,
-        "runbook_mentions_debugger_gap": "source-map, debug-info, and stepping semantics" in runbook_text,
+        "runbook_mentions_language_server_surface": "manifest-backed language-server capabilities and navigation" in runbook_text,
+        "runbook_mentions_formatter_surface": "preview formatter output on the supported canonical subset" in runbook_text,
+        "runbook_mentions_debugger_surface": "declaration-breakpoint and object-symbol inspection debug anchors" in runbook_text and "statement-level stepping and full source-map publication remain fail-closed" in runbook_text,
     }
 
     payload = {
