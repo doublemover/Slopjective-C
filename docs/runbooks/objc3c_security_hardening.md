@@ -130,6 +130,20 @@ They do not currently prove:
 - signed-installer publication
 - hosted updater trust
 
+Current installer/update/release-key hardening semantics:
+
+- release-manifest, SBOM, and attestation publication are the canonical checked-in
+  trust anchors for shipped payload lineage
+- package channels, install receipts, rollback proofs, update manifests,
+  compatibility reports, and distribution trust reports must all resolve to the
+  same runnable package family
+- release-key handling is bounded to the local publication environment that
+  emits the checked-in attestation and provenance artifacts
+- security claims must fail closed if manifest, provenance, package, update, or
+  trust-report linkage drifts
+- no part of the current surface implies remote key custody, hosted revocation,
+  automatic rotation, or signed-installer trust beyond the checked-in artifacts
+
 ### Runtime Hardening And Memory-Safety Boundaries
 
 Runtime hardening currently terminates in:

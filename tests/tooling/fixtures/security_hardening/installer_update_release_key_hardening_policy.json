@@ -1,0 +1,40 @@
+{
+  "contract_id": "objc3c.security.hardening.installer.update.release-key.policy.v1",
+  "surface_kind": "installer-update-release-key-hardening-policy",
+  "milestone": "M327",
+  "issue": "M327-B003",
+  "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "upstream_contract_paths": [
+    "tests/tooling/fixtures/release_foundation/provenance_policy.json",
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/packaging_channels/installer_policy.json",
+    "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json"
+  ],
+  "required_artifacts": [
+    "tmp/artifacts/release-foundation/manifest/objc3c-release-manifest.json",
+    "tmp/artifacts/release-foundation/sbom/objc3c-release-sbom.json",
+    "tmp/artifacts/release-foundation/attestation/objc3c-release-attestation.json",
+    "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
+    "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json",
+    "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
+  ],
+  "required_reports": [
+    "tmp/reports/release-foundation/publication-summary.json",
+    "tmp/reports/release-operations/publication-summary.json",
+    "tmp/reports/release-operations/end-to-end-summary.json",
+    "tmp/reports/distribution-credibility/publication-summary.json"
+  ],
+  "required_hardening_rules": [
+    "release provenance and attestation publication are the canonical payload-lineage trust anchors",
+    "package, update, and trust publication must resolve to the same runnable payload family",
+    "release-key handling stays bounded to the checked-in local publication path",
+    "security claims fail closed when manifest, provenance, package, update, or trust-report linkage drifts"
+  ],
+  "non_claims": [
+    "no remote key-custody claim",
+    "no automatic key-rotation claim",
+    "no hosted revocation claim",
+    "no signed-installer trust claim"
+  ]
+}
