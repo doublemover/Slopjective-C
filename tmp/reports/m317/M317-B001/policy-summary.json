@@ -2,8 +2,8 @@
   "issue": "M317-B001",
   "policy_id": "backlog-publication-policy-v1",
   "effective_from_milestone": "M317",
-  "policy_json": "tmp/planning/cleanup_acceleration_program/policies/backlog_publication_policy.json",
-  "policy_markdown": "tmp/planning/cleanup_acceleration_program/policies/backlog_publication_policy.md",
+  "policy_json": "tmp/planning/backlog_publication/backlog_publication_policy.json",
+  "policy_markdown": "tmp/planning/backlog_publication/backlog_publication_policy.md",
   "direct_rules": {
     "stable_identifiers": [
       "milestone codes",

@@ -1,6 +1,6 @@
 {
   "mode": "m317-a001-backlog-overlap-supersession-publication-scope-inventory-v2",
-  "generated_at": "2026-03-31T00:04:35.837301+00:00",
+  "generated_at": "2026-03-31T00:12:10.376810+00:00",
   "repo": "doublemover/Slopjective-C",
   "count_sources": {
     "draft_backlog_master_snapshot": "tmp/planning/draft_backlog_master_snapshot.json",
@@ -18,8 +18,8 @@
     "post_m324_milestones": 8,
     "post_m324_issues": 76,
     "github_open_milestones": 20,
-    "github_open_issues": 197,
-    "github_open_m317_issues": 6,
+    "github_open_issues": 195,
+    "github_open_m317_issues": 4,
     "package_json_scripts": 144,
     "check_py_files": 82,
     "test_check_py_files": 0,
@@ -97,14 +97,6 @@
     {
       "number": 7828,
       "title": "[M317][Lane-B][B002] Existing draft and backlog realignment implementation"
-    },
-    {
-      "number": 7827,
-      "title": "[M317][Lane-B][B001] Supersession, blocker, and publication policy"
-    },
-    {
-      "number": 7825,
-      "title": "[M317][Lane-A][A001] Backlog overlap, supersession, and publication-scope inventory"
     }
   ],
   "overlap_families": [

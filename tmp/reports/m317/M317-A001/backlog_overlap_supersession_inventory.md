@@ -1,9 +1,9 @@
 # M317-A001 Backlog Overlap, Supersession, And Publication-Scope Inventory
 
-- generated_at: `2026-03-31T00:04:35.837301+00:00`
+- generated_at: `2026-03-31T00:12:10.376810+00:00`
 - github_open_milestones: `20`
-- github_open_issues: `197`
-- github_open_m317_issues: `6`
+- github_open_issues: `195`
+- github_open_m317_issues: `4`
 - local_total_milestones: `20`
 - local_total_issues: `197`
 
@@ -47,8 +47,6 @@
 - `#7832` [M317][Lane-D][D001] Publish-artifact and consistency-audit implementation
 - `#7830` [M317][Lane-C][C001] Planning packet, manifest, and blocker-graph contract
 - `#7828` [M317][Lane-B][B002] Existing draft and backlog realignment implementation
-- `#7827` [M317][Lane-B][B001] Supersession, blocker, and publication policy
-- `#7825` [M317][Lane-A][A001] Backlog overlap, supersession, and publication-scope inventory
 
 ## Non-goals
 - This inventory does not define the supersession policy itself; that belongs to M317-B001.

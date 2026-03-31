@@ -2,8 +2,8 @@
 
 - policy: `backlog-publication-policy-v1`
 - effective from milestone: `M317`
-- policy JSON: `tmp/planning/cleanup_acceleration_program/policies/backlog_publication_policy.json`
-- policy Markdown: `tmp/planning/cleanup_acceleration_program/policies/backlog_publication_policy.md`
+- policy JSON: `tmp/planning/backlog_publication/backlog_publication_policy.json`
+- policy Markdown: `tmp/planning/backlog_publication/backlog_publication_policy.md`
 
 ## Canonical rules
 - Use milestone codes and issue codes as stable source identifiers.

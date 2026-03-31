@@ -1,0 +1,54 @@
+{
+  "generated_at": "2026-03-31T00:12:07.734096+00:00",
+  "repo_facts": {
+    "package_scripts": 144,
+    "check_py_files": 82,
+    "test_check_py_files": 0,
+    "m2xx_refs_in_native_src": 0,
+    "tracked_ll_files": 76,
+    "tracked_stub_ll_files": 0,
+    "prototype_semantic_surface_present": false
+  },
+  "total_milestones": 20,
+  "total_issues": 197,
+  "programs": {
+    "cleanup_acceleration_program": {
+      "milestones": 6,
+      "issues": 58,
+      "milestone_order": [
+        "M317",
+        "M313",
+        "M314",
+        "M315",
+        "M316",
+        "M318"
+      ]
+    },
+    "runtime_envelope_completion_program": {
+      "milestones": 6,
+      "issues": 63,
+      "milestone_order": [
+        "M319",
+        "M320",
+        "M321",
+        "M322",
+        "M323",
+        "M324"
+      ]
+    },
+    "post_m324_adoption_program": {
+      "milestones": 8,
+      "issues": 76,
+      "milestone_order": [
+        "M325",
+        "M326",
+        "M327",
+        "M330",
+        "M329",
+        "M328",
+        "M331",
+        "M332"
+      ]
+    }
+  }
+}
