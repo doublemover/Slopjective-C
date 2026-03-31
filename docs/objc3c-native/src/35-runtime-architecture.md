@@ -1842,4 +1842,4 @@ cannot silently overclaim from sidecars or synthetic artifacts.
 
 The runtime-owned subsystem dependency model is anchored in
 `native/objc3c/src/runtime/ARCHITECTURE.md` and enforced by
-`python scripts/check_objc3c_dependency_boundaries.py --strict`.
+`npm run check:objc3c:boundaries`.

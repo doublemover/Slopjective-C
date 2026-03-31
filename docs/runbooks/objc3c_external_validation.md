@@ -144,13 +144,13 @@ Packaged reproducibility surfaces:
 
 Current checked-in source-surface check:
 
-- `python scripts/check_external_validation_source_surface.py`
+- `npm run check:external-validation:surface`
 - `tests/tooling/fixtures/external_validation/source_surface.json`
 
 Current intake and replay tooling:
 
-- `python scripts/run_objc3c_external_validation_replay.py`
-- `python scripts/publish_objc3c_external_repro_corpus.py`
+- `npm run test:objc3c:external-validation:replay`
+- `npm run publish:objc3c:external-repro-corpus`
 
 ## Claim Boundary
 

@@ -1909,7 +1909,7 @@ cannot silently overclaim from sidecars or synthetic artifacts.
 
 The runtime-owned subsystem dependency model is anchored in
 `native/objc3c/src/runtime/ARCHITECTURE.md` and enforced by
-`python scripts/check_objc3c_dependency_boundaries.py --strict`.
+`npm run check:objc3c:boundaries`.
 ## Diagnostics
 
 The live frontend writes deterministic diagnostics in two forms:
@@ -2001,28 +2001,28 @@ Do not treat these as authoritative proof:
 From repo root:
 
 ```powershell
-python scripts/objc3c_public_workflow_runner.py test-fast
-python scripts/objc3c_public_workflow_runner.py test-recovery
-python scripts/objc3c_public_workflow_runner.py test-execution-smoke
-python scripts/objc3c_public_workflow_runner.py test-execution-replay
-python scripts/objc3c_public_workflow_runner.py test-runtime-acceptance
-python scripts/objc3c_public_workflow_runner.py test-full
-python scripts/objc3c_public_workflow_runner.py test-nightly
-python scripts/objc3c_public_workflow_runner.py test-ci
-python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture
-python scripts/objc3c_public_workflow_runner.py proof-objc3c
-python scripts/ci/check_task_hygiene.py
-python scripts/check_objc3c_dependency_boundaries.py --strict
+npm run test:fast
+npm run test:objc3c
+npm run test:objc3c:execution-smoke
+npm run test:objc3c:execution-replay-proof
+npm run test:objc3c:runtime-acceptance
+npm run test:objc3c:full
+npm run test:objc3c:nightly
+npm run test:ci
+npm run test:objc3c:runtime-architecture
+npm run proof:objc3c
+npm run check:task-hygiene
+npm run check:objc3c:boundaries
 ```
 
 Targeted entrypoints accept bounded selectors when you need signal without the full corpus:
 
 ```powershell
-python scripts/objc3c_public_workflow_runner.py test-execution-smoke -Limit 12
-python scripts/objc3c_public_workflow_runner.py test-recovery -Limit 24
-python scripts/objc3c_public_workflow_runner.py test-fixture-matrix -ShardIndex 0 -ShardCount 4
-python scripts/objc3c_public_workflow_runner.py test-negative-expectations -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
-python scripts/objc3c_public_workflow_runner.py test-execution-replay -CaseId synthesized-accessor
+npm run test:objc3c:execution-smoke -- -Limit 12
+npm run test:objc3c -- -Limit 24
+npm run test:objc3c:fixture-matrix -- -ShardIndex 0 -ShardCount 4
+npm run test:objc3c:negative-expectations -- -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
+npm run test:objc3c:execution-replay-proof -- -CaseId synthesized-accessor
 ```
 
 Composite runner entrypoints also write one integrated report to `tmp/reports/objc3c-public-workflow/<action>.json`, with the exact child-suite summary paths captured from the live smoke, runtime-acceptance, replay, recovery, and matrix scripts.

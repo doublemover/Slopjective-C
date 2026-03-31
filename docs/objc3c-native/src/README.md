@@ -46,11 +46,14 @@ adding sidecar scaffolding:
   - `CONTRIBUTING.md`
   - `site/index.md`
 - doc build/check path:
-  - `scripts/build_objc3c_native_docs.py`
+  - `npm run build:docs:native`
+  - `npm run check:docs:native`
 - site index build path:
-  - `scripts/build_site_index.py`
-- public command surface generation:
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run build:site`
+  - `npm run check:site`
+- public command surface build/check path:
+  - `npm run build:docs:commands`
+  - `npm run check:docs:commands`
 
 ## Canonical Naming And Path Rules
 
@@ -89,8 +92,8 @@ These surfaces are generated and must stay tied to their canonical inputs:
   - generator: `python scripts/build_site_index.py`
 - machine-facing generated operator appendix:
   - output: `docs/runbooks/objc3c_public_command_surface.md`
-  - sources: `package.json`, `scripts/objc3c_public_workflow_runner.py`
-  - generator: `python scripts/render_objc3c_public_command_surface.py`
+  - sources: `package.json`, `scripts/objc3c_public_workflow_runner.py`, `scripts/build_objc3c_public_command_contract.py`
+  - build/check: `npm run build:docs:commands` / `npm run check:docs:commands`
 
 Generated proof and report outputs under `tmp/` are evidence, not canonical
 documentation sources.

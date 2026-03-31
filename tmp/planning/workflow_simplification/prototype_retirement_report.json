@@ -1,0 +1,17 @@
+{
+  "issue": "M314-D002",
+  "package_script_count": 143,
+  "invalid_npm_run_references": [],
+  "forbidden_hits": {},
+  "required_missing": {},
+  "checked_files": {
+    "compiler_throughput_runbook": "docs/runbooks/objc3c_compiler_throughput.md",
+    "external_validation_runbook": "docs/runbooks/objc3c_external_validation.md",
+    "native_source_readme": "docs/objc3c-native/src/README.md",
+    "native_runtime_architecture_fragment": "docs/objc3c-native/src/35-runtime-architecture.md",
+    "native_tests_fragment": "docs/objc3c-native/src/60-tests.md",
+    "native_stitched_doc": "docs/objc3c-native.md"
+  },
+  "next_issue": "M314-E001",
+  "status": "PASS"
+}
