@@ -1,0 +1,226 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.support.matrix.claim.taxonomy.v1",
+  "surface_kind": "full-envelope-support-matrix-claim-taxonomy",
+  "milestone": "M324",
+  "issue": "M324-A001",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/build_full_envelope_claimability_support_matrix_summary.py",
+  "support_classes": [
+    {
+      "class": "supported",
+      "meaning": "backed by passing integrated evidence and checked-in runtime/release contracts"
+    },
+    {
+      "class": "experimental",
+      "meaning": "visible and documented, but with intentionally narrow evidence or support-window breadth"
+    },
+    {
+      "class": "unsupported",
+      "meaning": "explicitly fail-closed, diagnostic-backed, or outside the current supported boundary"
+    },
+    {
+      "class": "release-blocking",
+      "meaning": "required release evidence is missing or failing, so the surface cannot be claimed for release"
+    }
+  ],
+  "evidence_families": [
+    {
+      "family": "conformance-corpus",
+      "report": "tmp/reports/conformance/corpus-integration-summary.json",
+      "required_contract_id": "objc3c.conformance.corpus.integration.summary.v1"
+    },
+    {
+      "family": "stress-integration",
+      "report": "tmp/reports/stress/integration-summary.json",
+      "required_contract_id": "objc3c.stress.integration.summary.v1"
+    },
+    {
+      "family": "external-validation",
+      "report": "tmp/reports/external-validation/integration-summary.json",
+      "required_contract_id": "objc3c.external_validation.integration.summary.v1"
+    },
+    {
+      "family": "public-conformance-reporting",
+      "report": "tmp/reports/public-conformance/integration-summary.json",
+      "required_contract_id": "objc3c.public_conformance_reporting.integration.summary.v1"
+    },
+    {
+      "family": "performance-governance",
+      "report": "tmp/reports/performance-governance/integration-summary.json",
+      "required_contract_id": "objc3c.performance.governance.integration.summary.v1"
+    },
+    {
+      "family": "release-foundation",
+      "report": "tmp/reports/release-foundation/integration-summary.json",
+      "required_contract_id": "objc3c.release.foundation.integration.summary.v1"
+    },
+    {
+      "family": "release-operations",
+      "report": "tmp/reports/release-operations/integration-summary.json",
+      "required_contract_id": "objc3c.release.operations.integration.summary.v1"
+    },
+    {
+      "family": "distribution-credibility",
+      "report": "tmp/reports/distribution-credibility/integration-summary.json",
+      "required_contract_id": "objc3c.distribution.credibility.integration.summary.v1"
+    }
+  ],
+  "support_matrix": [
+    {
+      "surface": "object-model-property-reflection-closure",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_object_model_closure.md",
+        "tests/tooling/fixtures/object_model_closure/boundary_inventory.json",
+        "scripts/check_object_model_closure_live_runtime.py",
+        "scripts/check_object_model_closure_live_property_reflection.py"
+      ],
+      "required_evidence_families": [
+        "conformance-corpus",
+        "public-conformance-reporting"
+      ]
+    },
+    {
+      "surface": "block-byref-arc-closure",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_block_arc_closure.md",
+        "tests/tooling/fixtures/block_arc_closure/boundary_inventory.json",
+        "scripts/check_block_arc_closure_live_block_runtime.py",
+        "scripts/check_block_arc_closure_live_arc_runtime.py"
+      ],
+      "required_evidence_families": [
+        "conformance-corpus",
+        "public-conformance-reporting"
+      ]
+    },
+    {
+      "surface": "throws-error-propagation-closure",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_error_runtime_closure.md",
+        "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+        "scripts/check_error_runtime_closure_live_throw_cleanup_runtime.py",
+        "scripts/check_error_runtime_closure_live_bridged_error_runtime.py"
+      ],
+      "required_evidence_families": [
+        "conformance-corpus",
+        "external-validation",
+        "public-conformance-reporting"
+      ]
+    },
+    {
+      "surface": "async-task-actor-concurrency-closure",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+        "tests/tooling/fixtures/concurrency_runtime_closure/boundary_inventory.json",
+        "scripts/check_concurrency_runtime_closure_task_lowering.py",
+        "scripts/check_concurrency_runtime_closure_actor_lowering.py",
+        "scripts/check_concurrency_runtime_closure_live_actor_runtime.py"
+      ],
+      "required_evidence_families": [
+        "conformance-corpus",
+        "stress-integration",
+        "public-conformance-reporting"
+      ]
+    },
+    {
+      "surface": "metaprogramming-property-behavior-interop-closure",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+        "tests/tooling/fixtures/metaprogramming_interop_closure/boundary_inventory.json",
+        "scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py",
+        "scripts/check_metaprogramming_interop_closure_live_interop_runtime.py",
+        "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py"
+      ],
+      "required_evidence_families": [
+        "conformance-corpus",
+        "stress-integration",
+        "external-validation",
+        "public-conformance-reporting",
+        "release-foundation"
+      ]
+    },
+    {
+      "surface": "envelope-level-public-claims",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "README.md",
+        "docs/objc3c-native.md",
+        "docs/runbooks/objc3c_public_conformance_reporting.md",
+        "docs/runbooks/objc3c_performance_governance.md",
+        "docs/runbooks/objc3c_release_foundation.md",
+        "docs/runbooks/objc3c_release_operations.md",
+        "docs/runbooks/objc3c_distribution_credibility.md"
+      ],
+      "required_evidence_families": [
+        "public-conformance-reporting",
+        "performance-governance",
+        "release-foundation",
+        "release-operations",
+        "distribution-credibility"
+      ]
+    },
+    {
+      "surface": "unsupported-runtime-abi-widening-and-foreign-topologies",
+      "current_class": "unsupported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+        "docs/runbooks/objc3c_error_runtime_closure.md",
+        "docs/runbooks/objc3c_concurrency_runtime_closure.md"
+      ],
+      "required_evidence_families": []
+    }
+  ],
+  "demotion_triggers": [
+    {
+      "trigger": "missing-or-failing-integrated-evidence",
+      "demotes_to": "release-blocking",
+      "required_families": [
+        "conformance-corpus",
+        "stress-integration",
+        "external-validation",
+        "public-conformance-reporting",
+        "performance-governance",
+        "release-foundation",
+        "release-operations",
+        "distribution-credibility"
+      ]
+    },
+    {
+      "trigger": "narrow-support-window-or-candidate-only-release-state",
+      "demotes_to": "experimental",
+      "required_families": [
+        "release-operations",
+        "distribution-credibility"
+      ]
+    },
+    {
+      "trigger": "checked-in-runbook-or-contract-marks-surface-fail-closed",
+      "demotes_to": "unsupported",
+      "required_families": []
+    }
+  ],
+  "public_claim_surfaces": [
+    "README.md",
+    "docs/objc3c-native.md",
+    "docs/runbooks/objc3c_public_conformance_reporting.md",
+    "docs/runbooks/objc3c_performance_governance.md",
+    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_distribution_credibility.md",
+    "scripts/objc3c_public_workflow_runner.py"
+  ],
+  "successor_tracks": [
+    "M325",
+    "M326",
+    "M327",
+    "M328",
+    "M329",
+    "M330",
+    "M331",
+    "M332"
+  ]
+}
