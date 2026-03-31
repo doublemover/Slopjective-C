@@ -1,0 +1,33 @@
+{
+  "contract_id": "objc3c.block_arc.closure.block_arc.lowering.runtime.abi.contract.v1",
+  "surface_kind": "block-arc-lowering-runtime-abi-contract",
+  "milestone": "M320",
+  "issue": "M320-C001",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "summary_script": "scripts/build_block_arc_closure_lowering_abi_summary.py",
+  "compile_manifest_surface_keys": [
+    "runtime_block_arc_unified_source_surface",
+    "runtime_ownership_transfer_capture_family_source_surface",
+    "runtime_block_arc_lowering_helper_surface",
+    "runtime_block_arc_runtime_abi_surface"
+  ],
+  "acceptance_builder_functions": [
+    "build_runtime_block_arc_unified_source_surface",
+    "build_runtime_ownership_transfer_capture_family_source_surface",
+    "build_runtime_block_arc_lowering_helper_surface",
+    "build_runtime_block_arc_runtime_abi_surface"
+  ],
+  "required_compile_artifacts": [
+    "<emit-prefix>.obj",
+    "<emit-prefix>.ll",
+    "<emit-prefix>.manifest.json",
+    "<emit-prefix>.runtime-registration-manifest.json",
+    "<emit-prefix>.runtime-registration-descriptor.json"
+  ],
+  "authoritative_generation_paths": [
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runtime_architecture_integration.py",
+    "scripts/check_objc3c_runnable_block_arc_conformance.py",
+    "scripts/check_objc3c_runnable_block_arc_end_to_end.py"
+  ]
+}

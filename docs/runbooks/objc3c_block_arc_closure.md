@@ -55,6 +55,12 @@ Byref promotion, copy/dispose, and forwarding implementation:
 - dispose is deferred until final release and invoke-after-release stays fail-closed
 - byref closure claims are grounded in the live runtime probes and packaged block/ARC execution path, not in proof-only sidecars
 
+Lowering and runtime ABI contract:
+
+- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
+- the four required block/ARC surfaces are `runtime_block_arc_unified_source_surface`, `runtime_ownership_transfer_capture_family_source_surface`, `runtime_block_arc_lowering_helper_surface`, and `runtime_block_arc_runtime_abi_surface`
+- milestone-local checks must consume those emitted surfaces instead of recreating parallel manifest truth
+
 Explicit non-goals:
 
 - public runtime ABI widening for blocks, ARC helpers, or reflection
