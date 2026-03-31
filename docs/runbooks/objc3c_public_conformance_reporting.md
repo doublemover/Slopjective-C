@@ -1,6 +1,6 @@
 # ObjC 3 Public Conformance Reporting
 
-This runbook defines the live `M304` boundary for public conformance
+This runbook defines the live `objc3c.reporting.publicconformance.v1` boundary for public conformance
 reporting, stability scoring, dashboard publication, and third-party-legible
 summaries.
 
@@ -102,7 +102,7 @@ traceable to checked-in contracts.
 
 ## Live Paths Later Issues Must Reuse
 
-Later `M304` issues must stay on these paths:
+Later public-conformance reporting work must stay on these paths:
 
 - checked-in contracts and runbooks:
   - `tests/conformance/corpus_surface.json`

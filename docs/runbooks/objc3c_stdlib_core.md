@@ -1,6 +1,6 @@
 # objc3c Core Stdlib Surface
 
-This runbook defines the live `M306` boundary for foundational utility, text,
+This runbook defines the live `objc3c.stdlib.core.v1` boundary for foundational utility, text,
 data, collection, option, and result work in the checked-in standard library.
 
 It extends `docs/runbooks/objc3c_stdlib_foundation.md` with the exact module
@@ -8,7 +8,7 @@ ownership and API-family split that downstream issues must preserve.
 
 ## Working boundary
 
-Live `M306` work must stay on these paths:
+Live core-stdlib work must stay on these paths:
 
 - `stdlib/core_architecture.json`
 - `stdlib/modules/objc3.core/`
@@ -128,7 +128,7 @@ modules without updating the checked-in architecture contract.
 
 ## Semantic guarantees
 
-- all `M306` helpers remain deterministic and side-effect free
+- all core-stdlib helpers remain deterministic and side-effect free
 - option and presence helpers use `0` for absent and nonzero for present
 - `unwrap_or` helpers return the live payload only when the checked-in
   presence or result tag says it is valid

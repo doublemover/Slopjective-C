@@ -9,8 +9,9 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $PSScriptRoot
 $SummaryDir = Join-Path $RepoRoot "tmp/artifacts/objc3c-native/bootstrap-matrix/$RunId"
 $SummaryPath = Join-Path $SummaryDir "summary.json"
-$C003SummaryPath = Join-Path $RepoRoot "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
-$D003SummaryPath = Join-Path $RepoRoot "tmp/reports/bootstrap_matrix/M263-D003/live_restart_hardening_summary.json"
+$BootstrapMatrixReportRoot = Join-Path $RepoRoot "tmp/reports/bootstrap_matrix"
+$ArchiveReplaySummaryLeaf = "archive_static_link_bootstrap_replay_corpus_summary.json"
+$RestartHardeningSummaryLeaf = "live_restart_hardening_summary.json"
 $NativeExe = "artifacts/bin/objc3c-native.exe"
 $RuntimeLibrary = "artifacts/lib/objc3_runtime.lib"
 
@@ -54,6 +55,33 @@ function Resolve-LlcPath {
   return $null
 }
 
+function Get-RepoRelativePathCompat {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$TargetPath
+  )
+
+  $resolvedRoot = (Resolve-Path -LiteralPath $RootPath).Path
+  $resolvedTarget = (Resolve-Path -LiteralPath $TargetPath).Path
+  if ($resolvedRoot.EndsWith('\') -or $resolvedRoot.EndsWith('/')) {
+    $rootWithSeparator = $resolvedRoot
+  } else {
+    $rootWithSeparator = $resolvedRoot + [System.IO.Path]::DirectorySeparatorChar
+  }
+
+  $relativePath = $null
+  $getRelativeMethod = [System.IO.Path].GetMethod("GetRelativePath", [Type[]]@([string], [string]))
+  if ($null -ne $getRelativeMethod) {
+    $relativePath = [System.IO.Path]::GetRelativePath($resolvedRoot, $resolvedTarget)
+  } else {
+    $rootUri = New-Object System.Uri($rootWithSeparator)
+    $targetUri = New-Object System.Uri($resolvedTarget)
+    $relativeUri = $rootUri.MakeRelativeUri($targetUri)
+    $relativePath = [System.Uri]::UnescapeDataString($relativeUri.ToString())
+  }
+  return $relativePath.Replace('\', '/')
+}
+
 function Get-D003CasePayload {
   param(
     [object]$Summary,
@@ -69,6 +97,23 @@ function Get-D003CasePayload {
   throw "missing D003 case payload for $CaseId"
 }
 
+function Resolve-SummaryArtifactPath {
+  param(
+    [Parameter(Mandatory = $true)][string]$RootPath,
+    [Parameter(Mandatory = $true)][string]$LeafName
+  )
+
+  $matches = @(Get-ChildItem -LiteralPath $RootPath -File -Recurse -Filter $LeafName)
+  if ($matches.Count -eq 0) {
+    throw "missing required summary artifact named $LeafName under $RootPath"
+  }
+  if ($matches.Count -gt 1) {
+    $rendered = ($matches | ForEach-Object { $_.FullName }) -join "; "
+    throw "ambiguous summary artifact named $LeafName under ${RootPath}: $rendered"
+  }
+  return $matches[0].FullName
+}
+
 $ResolvedLlcPath = Resolve-LlcPath -ExplicitPath $LlcPath
 if ($ResolvedLlcPath) {
   $env:PATH = "$(Split-Path -Parent $ResolvedLlcPath);$env:PATH"
@@ -79,6 +124,11 @@ New-Item -ItemType Directory -Force -Path $SummaryDir | Out-Null
 Invoke-Step -Label "build:objc3c-native" -Command @("npm.cmd", "run", "build:objc3c-native")
 Invoke-Step -Label "bootstrap_matrix-archive-static-link-replay" -Command @("python", "scripts/check_m263_archive_static_link_bootstrap_replay_corpus.py")
 Invoke-Step -Label "bootstrap_matrix-live-restart-hardening" -Command @("python", "scripts/check_m263_live_restart_hardening.py")
+
+$C003SummaryPath = Resolve-SummaryArtifactPath -RootPath $BootstrapMatrixReportRoot -LeafName $ArchiveReplaySummaryLeaf
+$D003SummaryPath = Resolve-SummaryArtifactPath -RootPath $BootstrapMatrixReportRoot -LeafName $RestartHardeningSummaryLeaf
+$C003SummaryRel = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $C003SummaryPath
+$D003SummaryRel = Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $D003SummaryPath
 
 $C003 = Get-Content -LiteralPath $C003SummaryPath -Raw | ConvertFrom-Json
 $D003 = Get-Content -LiteralPath $D003SummaryPath -Raw | ConvertFrom-Json
@@ -97,7 +147,7 @@ $Cases = @(
     post_reset_registered_image_count = [int]$DefaultD003.post_reset_registered_image_count
     post_restart_registered_image_count = [int]$DefaultD003.second_restart_registered_image_count
     second_restart_replay_generation = [int]$DefaultD003.second_restart_replay_generation
-    source_summary = "tmp/reports/bootstrap_matrix/M263-D003/live_restart_hardening_summary.json"
+    source_summary = $D003SummaryRel
   }
   [ordered]@{
     case_id = "single-image-explicit"
@@ -107,7 +157,7 @@ $Cases = @(
     post_reset_registered_image_count = [int]$ExplicitD003.post_reset_registered_image_count
     post_restart_registered_image_count = [int]$ExplicitD003.second_restart_registered_image_count
     second_restart_replay_generation = [int]$ExplicitD003.second_restart_replay_generation
-    source_summary = "tmp/reports/bootstrap_matrix/M263-D003/live_restart_hardening_summary.json"
+    source_summary = $D003SummaryRel
   }
   [ordered]@{
     case_id = "archive-backed-plain"
@@ -116,7 +166,7 @@ $Cases = @(
     retention = "unretained"
     startup_registered_image_count = [int]$PlainC003.startup_registered_image_count
     post_replay_registered_image_count = [int]$PlainC003.post_replay_registered_image_count
-    source_summary = "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
+    source_summary = $C003SummaryRel
   }
   [ordered]@{
     case_id = "archive-backed-single-retained"
@@ -125,7 +175,7 @@ $Cases = @(
     retention = "single-retained"
     startup_registered_image_count = [int]$SingleC003.startup_registered_image_count
     post_replay_registered_image_count = [int]$SingleC003.post_replay_registered_image_count
-    source_summary = "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
+    source_summary = $C003SummaryRel
   }
   [ordered]@{
     case_id = "archive-backed-merged-retained"
@@ -135,7 +185,7 @@ $Cases = @(
     startup_registered_image_count = [int]$MergedC003.startup_registered_image_count
     post_replay_registered_image_count = [int]$MergedC003.post_replay_registered_image_count
     post_replay_next_expected_registration_order_ordinal = [int]$MergedC003.post_replay_next_expected_registration_order_ordinal
-    source_summary = "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
+    source_summary = $C003SummaryRel
   }
 )
 
@@ -148,8 +198,8 @@ $Summary = [ordered]@{
   native_exe = $NativeExe
   runtime_library = $RuntimeLibrary
   llc_source = $ResolvedLlcPath
-  archive_replay_summary = "tmp/reports/bootstrap_matrix/M263-C003/archive_static_link_bootstrap_replay_corpus_summary.json"
-  restart_hardening_summary = "tmp/reports/bootstrap_matrix/M263-D003/live_restart_hardening_summary.json"
+  archive_replay_summary = $C003SummaryRel
+  restart_hardening_summary = $D003SummaryRel
   cases = $Cases
   commands = [ordered]@{
     build = "npm run build:objc3c-native"

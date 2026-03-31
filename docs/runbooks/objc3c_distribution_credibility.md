@@ -18,9 +18,9 @@ manual release-status bookkeeping outside the checked-in public workflow surface
 Distribution credibility is a derived reporting layer over existing release work.
 The canonical upstream surfaces are:
 
-- `M297` release-foundation manifests, SBOMs, and provenance attestations
-- `M298` packaging-channel payloads, install receipts, and rollback proofs
-- `M299` update manifests, compatibility reports, and rollback guidance
+- release-foundation manifests, SBOMs, and provenance attestations
+- packaging-channel payloads, install receipts, and rollback proofs
+- release-operations update manifests, compatibility reports, and rollback guidance
 - the existing release-evidence index from `scripts/check_release_evidence.py`
 
 No credibility claim may bypass those live outputs. If a trust signal cannot be
@@ -96,8 +96,8 @@ Do not publish a trust-positive summary when the state is `blocked`.
 
 This milestone uses the existing package and metadata surfaces for release drills:
 
-- package-channel install and rollback smoke from `M298`
-- update-manifest and compatibility publication from `M299`
+- package-channel install and rollback smoke from the packaging-channel surface
+- update-manifest and compatibility publication from the release-operations surface
 - release-evidence index generation from the existing evidence gate
 
 The drill model is intentionally narrow:

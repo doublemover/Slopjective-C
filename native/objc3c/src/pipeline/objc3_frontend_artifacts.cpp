@@ -1366,8 +1366,8 @@ std::string BuildToolingDiagnosticTaxonomyPortabilityContractSummaryJson(
       << EscapeJsonString(summary.semantic_model)
       << "\",\"portability_model\":\""
       << EscapeJsonString(summary.portability_model)
-      << "\",\"portability_dependency_issue_ids\":"
-      << BuildStringArrayJson(summary.portability_dependency_issue_ids)
+      << "\",\"portability_dependency_surface_ids\":"
+      << BuildStringArrayJson(summary.portability_dependency_surface_ids)
       << ",\"diagnostic_namespace\":\""
       << EscapeJsonString(summary.diagnostic_namespace)
       << "\",\"portability_dependency_count\":"
@@ -6209,7 +6209,7 @@ std::string BuildRuntimeAwareImportModuleSurfaceSummaryJson(
       << ",\"deterministic\":"
       << (module_import_graph_lowering_contract.deterministic ? "true" : "false")
       << ",\"ready_for_core_feature_implementation\":true"
-      << ",\"next_issue\":\"M258-A002\""
+      << ",\"next_issue\":\"objc3c.importmodule.runtimeaware.corefeature.v1\""
       << ",\"replay_key\":\""
       << EscapeJsonString(BuildRuntimeAwareImportModuleSurfaceReplayKey(
              program,
@@ -17133,7 +17133,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       throws_propagation_lowering_contract.deterministic &&
       ns_error_bridging_lowering_contract.deterministic &&
       unwind_cleanup_lowering_contract.deterministic;
-  // replay continuity anchor: \",\"next_issue\":\"M267-C003\"
+  // replay continuity anchor: \",\"next_issue\":\"objc3c.errors.throws.propagationlowering.v1\"
   const std::string error_handling_throws_abi_propagation_lowering_replay_key =
       Objc3ErrorHandlingThrowsAbiPropagationLoweringSummary() +
       ";throws_replay_key=" + throws_propagation_lowering_replay_key +
@@ -17143,7 +17143,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       ";deterministic=" +
       (deterministic_error_handling_throws_abi_propagation_lowering ? "true" : "false") +
       ";ready_for_runtime_execution=true" +
-      ";next_issue=M267-C003";
+      ";follow_on_surface=objc3c.errors.throws.propagationlowering.v1";
   const auto error_handling_result_and_bridging_artifact_replay_summary =
       BuildErrorHandlingResultAndBridgingArtifactReplaySummary(
           error_handling_throws_abi_propagation_lowering_replay_key,
@@ -22179,7 +22179,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << ",\"ready_for_runtime_execution\":true"
            << ",\"fail_closed_model\":\""
            << kObjc3ErrorHandlingThrowsAbiPropagationLoweringFailClosedModel
-           << "\",\"next_issue\":\"M267-D001\"}"
+           << "\",\"next_issue\":\"objc3c.errors.resultbridging.artifactsurface.v1\"}"
            << ",\"objc_error_handling_result_and_bridging_artifact_replay\":"
            << BuildErrorHandlingResultAndBridgingArtifactReplaySummaryJson(
                   error_handling_result_and_bridging_artifact_replay_summary)

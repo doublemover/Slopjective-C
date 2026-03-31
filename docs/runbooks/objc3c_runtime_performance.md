@@ -2,7 +2,7 @@
 
 ## Working Boundary
 
-This runbook defines the live runtime-performance boundary for `M294`.
+This runbook defines the live runtime-performance boundary for `objc3c.performance.runtimeboundary.v1`.
 
 Use it when changing:
 
@@ -12,7 +12,7 @@ Use it when changing:
 - ARC, weak, autoreleasepool, and ownership-helper hot paths
 - runtime performance summaries, regression artifacts, and packaged validation
 
-Downstream `M294` work must stay on the existing runtime library, runtime
+Downstream runtime-performance work must stay on the existing runtime library, runtime
 acceptance helpers, public workflow runner, and runnable toolchain package
 surfaces listed here. Do not add a milestone-local runtime benchmark harness,
 standalone spreadsheet flow, or synthetic performance proof path.

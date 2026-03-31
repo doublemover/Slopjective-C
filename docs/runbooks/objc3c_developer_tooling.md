@@ -8,7 +8,7 @@ surface for objc3c.
 Use it when changing developer ergonomics, explainability, runtime inspection,
 or debug-reporting behavior.
 
-Downstream work in `M291` must stay on the existing implementation paths below
+Downstream developer-tooling work must stay on the existing implementation paths below
 instead of introducing sidecar drivers, milestone-local wrappers, or proof-only
 inspection flows.
 

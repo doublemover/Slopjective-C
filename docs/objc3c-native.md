@@ -969,13 +969,13 @@ milestone-local notes.
     - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
     - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
 
-This is the authoritative lowering/helper boundary for `M281` lane C. It
+This is the authoritative lowering/helper boundary for `objc3c.runtime.blockarc.loweringhelpersurface.v1`. It
 freezes the live semantic lowering packets, manifest replay keys, emitted LLVM
 helper summaries, and private runtime hook symbols that together describe the
 current executable block/ARC lowering story, including escaping byref and owned
 capture lowering through the native runtime path. Cross-module preservation and
 runtime-ABI widening work must extend this emitted surface instead of inferring
-lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
+boundary truth from one-off probes, sidecar notes, or milestone-local scaffolds.
 
 ## Block/ARC Runtime ABI Surface
 
@@ -1011,7 +1011,7 @@ lane-C truth from one-off probes, sidecar notes, or milestone-local scaffolds.
 - authoritative proof path:
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
 
-This is the authoritative live runtime ABI boundary for `M281` lane D. It
+This is the authoritative live runtime ABI boundary for `objc3c.runtime.blockarc.runtimeabisurface.v1`. It
 freezes the supported private block-promotion, block-invoke, ARC helper, weak
 property helper, and testing snapshot entrypoints without widening the public
 runtime header. It composes directly on top of

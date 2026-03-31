@@ -91,7 +91,7 @@
     ]
   },
   "non_goals": [
-    "duplicating the M306 core helper contract",
+    "duplicating the core stdlib helper contract",
     "claiming runtime-backed reflection or executor semantics before live helper exports exist",
     "widening strict-system helpers into always-on core imports",
     "adding a second stdlib packaging flow outside the existing runnable toolchain bundle"

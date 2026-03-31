@@ -778,7 +778,7 @@ int objc3_runtime_copy_interop_bridge_generation_snapshot_for_testing(
 // system-helper/runtime-contract anchor: Part 8 cleanup execution,
 // resource invalidation proof, and retainable-family helper integration now
 // freeze this same private ARC/autorelease helper cluster plus the paired
-// memory-management and ARC-debug snapshots. Lane-D does not add a dedicated
+// memory-management and ARC-debug snapshots. Runtime integration does not add a dedicated
 // borrowed-pointer runtime helper or widen the public runtime header.
 // live cleanup/runtime integration anchor: the supported Part 8
 // fixture path now links and executes through this same private helper slice,

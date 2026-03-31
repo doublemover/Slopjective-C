@@ -1,0 +1,25 @@
+{
+  "issue": "M315-B002",
+  "contract_id": "objc3c.sourcehygiene.productdecontamination.v1",
+  "policy_id": "objc3c.source_hygiene.stable_identifier_authenticity_policy.v1",
+  "inventory_baseline_issue": "M315-A001",
+  "baseline_product_residue_hit_count": 59,
+  "baseline_generated_truth_residue_hit_count": 1,
+  "product_surface_file_count": 435,
+  "generated_truth_file_count": 3,
+  "product_milestone_residue_hit_count": 0,
+  "generated_truth_milestone_residue_hit_count": 0,
+  "forbidden_annotation_hit_count": 0,
+  "product_milestone_residue_hits": [],
+  "generated_truth_milestone_residue_hits": [],
+  "forbidden_annotation_hits": [],
+  "modified_surface_families": [
+    "docs-and-runbooks",
+    "generated-native-docs",
+    "stdlib-contracts",
+    "native-runtime-and-lowering-contracts",
+    "schema-surface",
+    "script-metadata-and-report-roots"
+  ],
+  "ok": true
+}

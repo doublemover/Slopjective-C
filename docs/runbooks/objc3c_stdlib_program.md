@@ -1,6 +1,6 @@
 # objc3c Stdlib Program Surface
 
-This runbook defines the live `M308` boundary for standard-library docs,
+This runbook defines the live `objc3c.stdlib.program.v1` boundary for standard-library docs,
 examples, packaging-facing onboarding, and capability-driven adoption work.
 
 It extends `docs/runbooks/objc3c_stdlib_foundation.md`,
@@ -10,7 +10,7 @@ that later issues must edit directly.
 
 ## Working Boundary
 
-Live `M308` work must stay on these paths:
+Live stdlib-program work must stay on these paths:
 
 - `stdlib/program_surface.json`
 - `stdlib/README.md`

@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-02-27
 - Deciders: objc3c native maintainers
-- Related issue: M132-A001 (#4228)
+- Related surface: `objc3c.frontend.layeredboundaries.v1`
 
 ## Context
 

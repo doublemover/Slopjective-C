@@ -45,10 +45,10 @@ long-term support program in this milestone.
 
 ## Channel And Upgrade Boundary
 
-`M299` layers on top of:
+The release-operations surface layers on top of:
 
-- `M297` release-foundation publication artifacts
-- `M298` portable archive, installer image, and offline-bundle package channels
+- release-foundation publication artifacts
+- portable archive, installer image, and offline-bundle package channels
 
 Update and upgrade metadata are derived views over those existing outputs. The
 canonical payload remains the runnable toolchain package and its release-

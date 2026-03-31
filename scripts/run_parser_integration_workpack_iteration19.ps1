@@ -1,5 +1,5 @@
 param(
-  [string]$ReportRoot = "tmp/reports/parser_build/M226-A019"
+  [string]$ReportRoot = "tmp/reports/parser_build/parser_integration_shard1"
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,10 +48,10 @@ $reportDir = Join-Path $repoRoot $ReportRoot
 New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 
 $upstream = @(
-  @{ packet = "A015"; path = "tmp/reports/parser_build/M226-A015/parser_advanced_core_workpack_summary.json" },
-  @{ packet = "A016"; path = "tmp/reports/parser_build/M226-A016/parser_advanced_edge_compat_workpack_summary.json" },
-  @{ packet = "A017"; path = "tmp/reports/parser_build/M226-A017/parser_advanced_diagnostics_workpack_summary.json" },
-  @{ packet = "A018"; path = "tmp/reports/parser_build/M226-A018/parser_conformance_summary.json" }
+  @{ packet = "A015"; path = "tmp/reports/parser_build/parser_advanced_core_shard1/parser_advanced_core_workpack_summary.json" },
+  @{ packet = "A016"; path = "tmp/reports/parser_build/parser_advanced_edge_compat_shard1/parser_advanced_edge_compat_workpack_summary.json" },
+  @{ packet = "A017"; path = "tmp/reports/parser_build/parser_advanced_diagnostics_shard1/parser_advanced_diagnostics_workpack_summary.json" },
+  @{ packet = "A018"; path = "tmp/reports/parser_build/parser_conformance_shard1/parser_conformance_summary.json" }
 )
 
 $upstreamResults = New-Object System.Collections.Generic.List[object]

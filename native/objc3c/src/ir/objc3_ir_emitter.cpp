@@ -961,7 +961,7 @@ class Objc3IREmitter {
         << ";surface=" << kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath
         << ";helper_count=8;task_group_helper_count=4;runtime_snapshot="
         << "objc3_runtime_copy_task_runtime_state_for_testing"
-        << ";next_issue=M269-D001\n";
+        << ";follow_on_surface=objc3c.concurrency.taskruntime.helpersurface.v1\n";
     // scheduler/executor runtime freeze anchor: publish the private
     // task-runtime helper ABI and snapshot boundary as the truthful runtime
     // contract above the C003 ABI packet without claiming broader scheduler
@@ -1119,7 +1119,7 @@ class Objc3IREmitter {
           << ";compatibility_consumed_sites="
           << frontend_metadata_
                  .ownership_borrowed_retainable_compatibility_consumed_sites
-          << ";next_issue=M271-D001\n";
+          << ";follow_on_surface=objc3c.ownership.helperruntime.surface.v1\n";
       // runtime/helper-freeze anchor: publish the private Part 8
       // runtime/helper contract above the existing lowering and ABI packets so
       // emitted IR truthfully advertises that cleanup/resource proof and
@@ -8655,17 +8655,17 @@ class Objc3IREmitter {
         << "\n";
     out << "; runtime_metadata_emission_gate = "
         << Objc3RuntimeMetadataEmissionGateSummary()
-        << ";source_to_section_matrix_issue=M253-A002"
-        << ";object_format_policy_issue=M253-B003"
-        << ";binary_inspection_issue=M253-C006"
-        << ";archive_static_link_issue=M253-D003"
+        << ";source_to_section_matrix_surface=objc3c.runtime.metadata.sourcetosectionmatrix.v1"
+        << ";object_format_policy_surface=objc3c.runtime.metadata.objectformatpolicy.v1"
+        << ";binary_inspection_surface=objc3c.runtime.metadata.binaryinspection.v1"
+        << ";archive_static_link_surface=objc3c.runtime.metadata.archivestaticlink.v1"
         << "\n";
     out << "; runtime_metadata_object_emission_closeout = "
         << Objc3RuntimeMetadataObjectEmissionCloseoutSummary()
-        << ";dependency_gate_issue=M253-E001"
-        << ";class_object_case_issue=M253-A002"
-        << ";binary_object_case_issue=M253-C006"
-        << ";linker_fanin_issue=M253-D003"
+        << ";dependency_gate_surface=objc3c.runtime.metadata.dependencygate.v1"
+        << ";class_object_case_surface=objc3c.runtime.metadata.sourcetosectionmatrix.v1"
+        << ";binary_object_case_surface=objc3c.runtime.metadata.binaryinspection.v1"
+        << ";linker_fanin_surface=objc3c.runtime.metadata.archivestaticlink.v1"
         << "\n";
     out << "; runtime metadata section publication globals\n";
 

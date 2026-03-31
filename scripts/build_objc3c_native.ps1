@@ -70,14 +70,14 @@ if (!(Test-Path -LiteralPath $nativeSourceRoot -PathType Container)) { throw "na
 if ($null -eq $cmakeTool) { throw "cmake not found. ensure cmake is on PATH" }
 if ($null -eq $ninjaTool) { throw "ninja not found. ensure ninja is on PATH" }
 
-# M276-A002 build-graph-and-toolchain-parity anchor:
+# objc3c.nativebuild.toolchainparity.v1 anchor:
 # - authoritative toolchain flow today is `LLVM_ROOT` -> direct wrapper
 #   resolution for clang++, llvm-lib, libclang, and include/library discovery
 # - later incremental backend work must preserve this authoritative wrapper
 #   contract when forwarding configuration into CMake/Ninja
 # - compile database parity frozen to `tmp/build-objc3c-native/compile_commands.json`
 #
-# M276-C001 persistent-cmake-ninja-incremental-backend anchor:
+# objc3c.nativebuild.incrementalbackend.v1 anchor:
 # - native binaries now build through a persistent CMake/Ninja tree rooted at
 #   `tmp/build-objc3c-native`
 # - canonical outputs remain published at `artifacts/bin` and `artifacts/lib`
@@ -96,7 +96,7 @@ $cmakeSourceDir = Join-Path $repoRoot "native/objc3c"
 $compileCommandsPath = Join-Path $tmpOutDir "compile_commands.json"
 $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.json"
 
-# M276-A001 native-build-command-surface anchor:
+# objc3c.nativebuild.commandsurface.v1 anchor:
 # - current truthful state: this script remains the authoritative wrapper
 #   behind the public npm build surface
 # - the public npm command taxonomy now maps to:
@@ -107,7 +107,7 @@ $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.j
 # - direct script callers still default to `full` until the helper/runner
 #   migration tranche lands
 
-# M276-C001 native-binary-backend anchor:
+# objc3c.nativebuild.incrementalbackend.runtime.v1 anchor:
 # - native binary compilation now routes through a persistent CMake/Ninja build
 #   tree under `tmp/build-objc3c-native`
 # - final published native artifacts remain under `artifacts/bin` and
@@ -115,12 +115,12 @@ $buildFingerprintPath = Join-Path $tmpOutDir "native_build_backend_fingerprint.j
 # - the wrapper still owns frontend contract-artifact generation after the native binaries
 #   are built
 #
-# M276-C003 contract-artifact-dependency-shape anchor:
+# objc3c.nativebuild.contractartifactshape.v1 anchor:
 # - contract-artifact generation is internally classified into source-derived,
 #   binary-derived, and closeout-derived families
 # - the wrapper can execute those contract-artifact families independently without
 #   silently re-triggering native binary compilation
-# - public command-surface exposure remains the responsibility of M276-C002
+# - public command-surface exposure remains the responsibility of the shared command contract surface
 $runSuffix = "{0}_{1}" -f (Get-Date -Format "yyyyMMdd_HHmmss_fff"), $PID
 $stagedOutExe = Join-Path $tmpOutDir ("objc3c-native.{0}.exe" -f $runSuffix)
 $stagedOutCapiExe = Join-Path $tmpOutDir ("objc3c-frontend-c-api-runner.{0}.exe" -f $runSuffix)
@@ -1953,7 +1953,7 @@ function Write-FrontendConformanceCorpusArtifact {
     $summaryMode = [string]$segments[3]
     $compileArgs = New-Object System.Collections.Generic.List[string]
     $compileArgs.Add("tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3")
-    $compileArgs.Add("--out-dir=tmp/reports/parser_build/M226-D010/out")
+    $compileArgs.Add("--out-dir=tmp/reports/parser_build/backend_route_capability_smoke/out")
     if ($backendMode -ne "default") {
       $compileArgs.Add("--objc3-ir-object-backend=$backendMode")
     }
@@ -1983,7 +1983,7 @@ function Write-FrontendConformanceCorpusArtifact {
       expected_diagnostic = "--objc3-route-backend-from-capabilities requires --llvm-capabilities-summary"
       compile_args = @(
         "tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3"
-        "--out-dir=tmp/reports/parser_build/M226-D010/out"
+        "--out-dir=tmp/reports/parser_build/backend_route_capability_smoke/out"
         "--objc3-route-backend-from-capabilities"
       )
     }
@@ -1995,7 +1995,7 @@ function Write-FrontendConformanceCorpusArtifact {
       expected_diagnostic = "unsupported value '<backend>' for --objc3-ir-object-backend"
       compile_args = @(
         "tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3"
-        "--out-dir=tmp/reports/parser_build/M226-D010/out"
+        "--out-dir=tmp/reports/parser_build/backend_route_capability_smoke/out"
         "--objc3-ir-object-backend=unsupported-backend"
       )
     }
@@ -2007,7 +2007,7 @@ function Write-FrontendConformanceCorpusArtifact {
       expected_diagnostic = "--objc3-ir-object-backend can be provided at most once"
       compile_args = @(
         "tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3"
-        "--out-dir=tmp/reports/parser_build/M226-D010/out"
+        "--out-dir=tmp/reports/parser_build/backend_route_capability_smoke/out"
         "--objc3-ir-object-backend=clang"
         "--objc3-ir-object-backend=llvm-direct"
       )
@@ -2020,7 +2020,7 @@ function Write-FrontendConformanceCorpusArtifact {
       expected_diagnostic = "--llvm-capabilities-summary must not contain '..' relative segments"
       compile_args = @(
         "tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3"
-        "--out-dir=tmp/reports/parser_build/M226-D010/out"
+        "--out-dir=tmp/reports/parser_build/backend_route_capability_smoke/out"
         "--llvm-capabilities-summary=../outside/capabilities.json"
       )
     }
@@ -2032,7 +2032,7 @@ function Write-FrontendConformanceCorpusArtifact {
       expected_diagnostic = "--objc3-route-backend-from-capabilities can be provided at most once"
       compile_args = @(
         "tests/tooling/fixtures/parser_conformance_corpus/accept_void_pointer_param.objc3"
-        "--out-dir=tmp/reports/parser_build/M226-D010/out"
+        "--out-dir=tmp/reports/parser_build/backend_route_capability_smoke/out"
         "--llvm-capabilities-summary=tmp/artifacts/objc3c-native/llvm_capabilities_summary.json"
         "--objc3-route-backend-from-capabilities"
         "--objc3-route-backend-from-capabilities"

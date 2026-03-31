@@ -2,7 +2,7 @@
 
 ## Working Boundary
 
-This runbook defines the live `M302` boundary for generative, fuzz, replay,
+This runbook defines the live `objc3c.validation.stresssurface.v1` boundary for generative, fuzz, replay,
 and stress validation work in the checked-in objc3c repo.
 
 Use it when changing:
@@ -13,7 +13,7 @@ Use it when changing:
 - reducer, minimization, crash triage, and replay artifacts
 - public workflow and runnable-package stress validation commands
 
-Downstream `M302` issues must stay on the existing compiler, conformance,
+Downstream stress-validation work must stay on the existing compiler, conformance,
 execution-smoke, package, and public workflow surfaces listed here. Do not add
 a sidecar fuzz harness app, hidden fixture root, or milestone-local reducer
 wrapper outside the checked-in repo paths named below.
@@ -111,7 +111,7 @@ Downstream work must preserve these rules:
   - `tmp/reports/conformance/`
   - `tmp/reports/runtime/`
   - `tmp/pkg/objc3c-native-runnable-toolchain/`
-- new machine-owned stress roots for downstream `M302` issues:
+- new machine-owned stress roots for downstream stress-validation work:
   - `tmp/artifacts/stress/`
   - `tmp/reports/stress/`
 - machine-owned reducer and triage roots that downstream work must populate:

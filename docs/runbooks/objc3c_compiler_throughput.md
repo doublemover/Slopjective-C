@@ -2,7 +2,7 @@
 
 ## Working Boundary
 
-This runbook defines the live compiler-throughput boundary for `M295`.
+This runbook defines the live compiler-throughput boundary for `objc3c.performance.compilerthroughput.v1`.
 
 Use it when changing:
 
@@ -12,7 +12,7 @@ Use it when changing:
 - heavyweight validation-tier ownership and duplicate compile removal
 - compiler-throughput summaries, cache-proof artifacts, and packaged validation
 
-Downstream `M295` work must stay on the existing native compiler executable,
+Downstream compiler-throughput work must stay on the existing native compiler executable,
 compile wrapper, public workflow runner, native build wrapper, and validation
 scripts listed here. Do not add a second benchmark harness, spreadsheet-only
 measurement flow, or milestone-local validation packet.
@@ -205,6 +205,7 @@ Disallowed optimization moves:
 
 - benchmark the live direct-compile throughput and wrapper cache surface:
   - `npm run inspect:objc3c:compiler-throughput`
+  - `python scripts/objc3c_public_workflow_runner.py benchmark-compiler-throughput`
 - build the compile-coupled docs generators used by this milestone:
   - `npm run build:docs:native`
   - `npm run build:docs:commands`

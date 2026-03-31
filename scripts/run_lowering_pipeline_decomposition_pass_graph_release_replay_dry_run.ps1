@@ -1,6 +1,6 @@
 param(
   [string]$SourcePath = "tests/tooling/fixtures/native/hello.objc3",
-  [string]$ReportRoot = "tmp/reports/lowering_pipeline/M228-A014"
+  [string]$ReportRoot = "tmp/reports/lowering_pipeline/pass_graph_release_replay_dry_run"
 )
 
 $ErrorActionPreference = "Stop"

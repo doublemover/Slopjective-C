@@ -13,7 +13,7 @@ Use it when changing:
 - visual runtime inspection and capability-explorer flows
 - starter-template and project-generator flows
 
-Downstream `M292` issues must stay on the existing implementation paths below
+Downstream bonus-experience work must stay on the existing implementation paths below
 instead of inventing a sidecar app, milestone-local launcher, or proof-only
 demo surface.
 

@@ -102,7 +102,7 @@
   },
   "non_goals": [
     "allocator or ownership ABI claims",
-    "runtime-backed string or bytes storage in M306-B001",
+    "runtime-backed string or bytes storage before a checked-in core stdlib contract update",
     "generic collection ABI promises",
     "moving error bridges into objc3.core",
     "claiming runtime-backed executor or reflection semantics before the checked-in helper exports exist",

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compatibility bridge generator for M313-C003."""
+"""Historical checker compatibility bridge generator."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ def build_bridge_summary(bridge: dict[str, object], summary_out: Path | None) ->
         "artifact_class": "compatibility_bridge_summary",
         "producer": {
             "tool": "scripts/historical_checker_compatibility_bridge.py",
-            "issue": "M313-C003",
+            "surface_id": "objc3c.validation.acceptance.compatibilitybridge.v1",
             "validation_posture": "migration_bridge",
         },
         "ok": True,

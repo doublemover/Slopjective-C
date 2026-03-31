@@ -224,7 +224,7 @@ inline constexpr const char *kObjc3RuntimeLiveDispatchGateShimBoundaryModel =
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
     "fail-closed-on-live-dispatch-evidence-drift";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
-    "M255-E002";
+    "objc3c.runtime.livedispatch.closeout.v1";
 // live-dispatch smoke/replay closeout anchor: lane-E now replaces
 // the last shim-era smoke/replay assumptions with canonical live runtime
 // dispatch evidence. Execution smoke and replay must publish
@@ -1570,7 +1570,7 @@ inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataLaneContract 
 // lowering contract that carries cleanup/resource ownership counts, borrowed
 // boundary counts, and retainable-family callable counts into manifests and IR
 // metadata without overclaiming live runtime cleanup or borrowed lifetime
-// execution. Lane-D must widen this exact contract family rather than inventing
+// execution. Runtime integration must widen this exact contract family rather than inventing
 // a second system-extension lowering boundary.
 // lowering-implementation anchor: live Part 8 lowering now consumes
 // this frozen contract directly for native helper emission and object proof.

@@ -734,7 +734,7 @@ inline constexpr const char *kObjc3ExecutablePropertyAttributeModel =
     "property-attribute-and-effective-accessor-source-model-publishes-deterministic-ownership-and-selector-profiles";
 // accessor/layout lowering freeze anchor: AST remains the canonical
 // source of property attribute/accessor profiles, synthesized-binding
-// identities, and ivar layout identities. Lane-C lowering may only serialize
+// identities, and ivar layout identities. Lowering may only serialize
 // this handoff into emitted metadata/object artifacts; it must not synthesize
 // accessor bodies or invent runtime storage/layout beyond the sema-approved
 // source model.

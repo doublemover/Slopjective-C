@@ -21,7 +21,7 @@
       "type": "string"
     },
     "milestone_code": {
-      "const": "M313"
+      "pattern": "^[A-Z][0-9]{3}$"
     },
     "policy_id": {
       "type": "string",
@@ -47,7 +47,7 @@
         "properties": {
           "issue_code": {
             "type": "string",
-            "pattern": "^M313-[A-Z][0-9]{3}$"
+            "pattern": "^[A-Z][0-9]{3}-[A-Z][0-9]{3}$"
           },
           "artifact_kind": {
             "type": "string",
@@ -82,7 +82,7 @@
       "minItems": 1,
       "items": {
         "type": "string",
-        "pattern": "^M313-[A-Z][0-9]{3}$"
+        "pattern": "^[A-Z][0-9]{3}-[A-Z][0-9]{3}$"
       }
     }
   }

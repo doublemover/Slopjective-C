@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-02-27
 - Deciders: objc3c native maintainers
-- Related issues: M132-A001 (#4228), M132-D001 (#4234), M132-D002 (#4235)
+- Related surfaces: `objc3c.frontend.layeredboundaries.v1`, `objc3c.frontend.diagnosticsdeterminism.probe.v1`, `objc3c.frontend.diagnosticsdeterminism.closeout.v1`
 
 ## Context
 

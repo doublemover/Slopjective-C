@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish the M264 release/runtime claim matrix."""
+"""Publish the release/runtime claim matrix."""
 
 from __future__ import annotations
 
@@ -10,17 +10,14 @@ from pathlib import Path
 from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
-JSON_OUT = ROOT / "tmp" / "reports" / "release_claims" / "M264-E002" / "release_runtime_claim_matrix.json"
-MD_OUT = ROOT / "tmp" / "reports" / "release_claims" / "M264-E002" / "release_runtime_claim_matrix.md"
+REPORT_ROOT = ROOT / "tmp" / "reports" / "release_claims" / "publication_matrix"
+JSON_OUT = REPORT_ROOT / "release_runtime_claim_matrix.json"
+MD_OUT = REPORT_ROOT / "release_runtime_claim_matrix.md"
 NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 RUNNER_EXE = ROOT / "artifacts" / "bin" / "objc3c-frontend-c-api-runner.exe"
 HELLO_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 METADATA_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "runtime_metadata_source_records_class_protocol_property_ivar.objc3"
-A002_SUMMARY = ROOT / "tmp" / "reports" / "release_claims" / "M264-A002" / "frontend_feature_claim_and_strictness_truthfulness_wiring_summary.json"
-B003_SUMMARY = ROOT / "tmp" / "reports" / "release_claims" / "M264-B003" / "canonical_interface_and_feature_macro_truthfulness_summary.json"
-C002_SUMMARY = ROOT / "tmp" / "reports" / "release_claims" / "M264-C002" / "machine_readable_runtime_capability_reporting_summary.json"
-D002_SUMMARY = ROOT / "tmp" / "reports" / "release_claims" / "M264-D002" / "cli_and_toolchain_conformance_claim_operations_summary.json"
-E001_SUMMARY = ROOT / "tmp" / "reports" / "release_claims" / "M264-E001" / "versioning_and_conformance_truth_gate_summary.json"
+RELEASE_CLAIMS_ROOT = ROOT / "tmp" / "reports" / "release_claims"
 
 
 def display_path(path: Path) -> str:
@@ -48,6 +45,16 @@ def load_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise TypeError(f"expected object JSON in {display_path(path)}")
     return payload
+
+
+def find_summary_by_name(filename: str) -> Path:
+    matches = sorted(RELEASE_CLAIMS_ROOT.rglob(filename))
+    if not matches:
+        raise SystemExit(f"missing summary artifact: {filename}")
+    if len(matches) > 1:
+        rendered = ", ".join(display_path(path) for path in matches)
+        raise SystemExit(f"ambiguous summary artifact {filename}: {rendered}")
+    return matches[0]
 
 
 def summary_status(payload: dict[str, Any]) -> bool:
@@ -79,7 +86,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     json_out.parent.mkdir(parents=True, exist_ok=True)
     md_out.parent.mkdir(parents=True, exist_ok=True)
 
-    ensure_summary = ROOT / "tmp" / "reports" / "release_claims" / "M264-E002" / "ensure_build_summary.json"
+    ensure_summary = REPORT_ROOT / "ensure_build_summary.json"
     build = run([
         "python",
         "scripts/ensure_objc3c_native_build.py",
@@ -93,12 +100,24 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
     ensure_success(build, "ensure_objc3c_native_build")
 
     dependency_cases = {
-        "M264-A002": {"summary_path": A002_SUMMARY, "payload": load_json(A002_SUMMARY)},
-        "M264-B003": {"summary_path": B003_SUMMARY, "payload": load_json(B003_SUMMARY)},
-        "M264-C002": {"summary_path": C002_SUMMARY, "payload": load_json(C002_SUMMARY)},
-        "M264-D002": {"summary_path": D002_SUMMARY, "payload": load_json(D002_SUMMARY)},
-        "M264-E001": {"summary_path": E001_SUMMARY, "payload": load_json(E001_SUMMARY)},
+        "objc3c.releaseclaims.frontendfeaturetruth.surface.v1": {
+            "summary_path": find_summary_by_name("frontend_feature_claim_and_strictness_truthfulness_wiring_summary.json"),
+        },
+        "objc3c.releaseclaims.canonicalinterface.featuremacro.v1": {
+            "summary_path": find_summary_by_name("canonical_interface_and_feature_macro_truthfulness_summary.json"),
+        },
+        "objc3c.releaseclaims.runtimecapabilityreporting.surface.v1": {
+            "summary_path": find_summary_by_name("machine_readable_runtime_capability_reporting_summary.json"),
+        },
+        "objc3c.releaseclaims.toolchainconformance.surface.v1": {
+            "summary_path": find_summary_by_name("cli_and_toolchain_conformance_claim_operations_summary.json"),
+        },
+        "objc3c.releaseclaims.versioningtruthgate.surface.v1": {
+            "summary_path": find_summary_by_name("versioning_and_conformance_truth_gate_summary.json"),
+        },
     }
+    for case in dependency_cases.values():
+        case["payload"] = load_json(case["summary_path"])
     for name, case in dependency_cases.items():
         if not summary_status(case["payload"]):
             raise SystemExit(f"{name} summary is not green: {display_path(case['summary_path'])}")
@@ -261,12 +280,12 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
                 "diagnostic": first_line(yaml_reject.stderr or yaml_reject.stdout),
             },
         },
-        "next_issue": "M265-A001",
+        "follow_on_surface": "objc3c.releaseclaims.compatibilityupgrade.boundary.v1",
         "ready": True,
     }
     json_out.write_text(json.dumps(matrix, indent=2) + "\n", encoding="utf-8")
 
-    md = f"""# M264 Release/Runtime Claim Matrix
+    md = f"""# Release/Runtime Claim Matrix
 
 | Surface | Current state |
 | --- | --- |
@@ -279,7 +298,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
 | Native CLI sidecars | report + publication + validation |
 | Frontend C API sidecars | report + publication |
 | Optional features | `throws`, `async-await`, `actors`, `blocks`, and `arc` remain not claimed |
-| Next issue | `M265-A001` |
+| Follow-on surface | `objc3c.releaseclaims.compatibilityupgrade.boundary.v1` |
 
 ## Live proofs
 

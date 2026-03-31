@@ -227,13 +227,13 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceMatrixKey(
 inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceCorpusKey(
     const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface) {
   const std::string accept_case_id =
-      surface.backend_route_key == "clang" ? "M228-D010-C001"
-      : (surface.backend_route_key == "llvm-direct" ? "M228-D010-C002"
-                                                     : "M228-D010-C000");
+      surface.backend_route_key == "clang" ? "objc3c.toolchain.backendroute.capabilities.clang.accept.v1"
+      : (surface.backend_route_key == "llvm-direct" ? "objc3c.toolchain.backendroute.capabilities.llvmdirect.accept.v1"
+                                                     : "objc3c.toolchain.backendroute.capabilities.generic.accept.v1");
   const std::string reject_case_id =
-      surface.backend_route_key == "clang" ? "M228-D010-R001"
-      : (surface.backend_route_key == "llvm-direct" ? "M228-D010-R002"
-                                                     : "M228-D010-R000");
+      surface.backend_route_key == "clang" ? "objc3c.toolchain.backendroute.capabilities.clang.reject.v1"
+      : (surface.backend_route_key == "llvm-direct" ? "objc3c.toolchain.backendroute.capabilities.llvmdirect.reject.v1"
+                                                     : "objc3c.toolchain.backendroute.capabilities.generic.reject.v1");
 
   std::ostringstream key;
   key << "toolchain-runtime-ga-operations-conformance-corpus:v1:"

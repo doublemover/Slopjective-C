@@ -1154,7 +1154,7 @@ std::string Objc3RunnableBlockRuntimeGateSummary() {
       << Expr::kObjc3RunnableBlockRuntimeGateNonGoalModel
       << ";fail_closed_model="
       << Expr::kObjc3RunnableBlockRuntimeGateFailClosedModel
-      << ";next_issue=M261-E002";
+      << ";follow_on_surface=objc3c.runtime.block.runnablegate.closeout.v1";
   return out.str();
 }
 
@@ -1184,7 +1184,7 @@ std::string Objc3RunnableBlockExecutionMatrixSummary() {
       << Expr::kObjc3RunnableBlockExecutionMatrixNonGoalModel
       << ";fail_closed_model="
       << Expr::kObjc3RunnableBlockExecutionMatrixFailClosedModel
-      << ";next_issue=M262-A001";
+      << ";follow_on_surface=objc3c.arc.executionmatrix.surface.v1";
   return out.str();
 }
 
@@ -1277,7 +1277,7 @@ std::string Objc3ArcSourceModeBoundarySummary() {
       << Expr::kObjc3ArcSourceModeBoundaryNonGoalModel
       << ";fail_closed_model="
       << Expr::kObjc3ArcSourceModeBoundaryFailClosedModel
-      << ";next_issue=M262-A002";
+      << ";follow_on_surface=objc3c.arc.sourcemode.boundary.v1";
   return out.str();
 }
 
@@ -1303,7 +1303,7 @@ std::string Objc3ArcModeHandlingSummary(bool arc_mode_enabled) {
       << ";block_runtime_gate=" << Expr::kObjc3RunnableBlockRuntimeGateContractId
       << ";fail_closed_model=" << Expr::kObjc3ArcModeHandlingFailClosedModel
       << ";non_goal_model=" << Expr::kObjc3ArcModeHandlingNonGoalModel
-      << ";next_issue=M262-B001";
+      << ";follow_on_surface=objc3c.arc.modehandling.surface.v1";
   return out.str();
 }
 
@@ -1320,7 +1320,7 @@ std::string Objc3ArcSemanticRulesSummary() {
       << ";arc_fixit_lane=" << kObjc3ArcDiagnosticsFixitLoweringLaneContract
       << ";fail_closed_model=" << Expr::kObjc3ArcSemanticRulesFailClosedModel
       << ";non_goal_model=" << Expr::kObjc3ArcSemanticRulesNonGoalModel
-      << ";next_issue=M262-B002";
+      << ";follow_on_surface=objc3c.arc.semanticrules.surface.v1";
   return out.str();
 }
 
@@ -1343,7 +1343,7 @@ std::string Objc3ArcInferenceLifetimeSummary() {
       << ";fail_closed_model="
       << Expr::kObjc3ArcInferenceLifetimeFailClosedModel
       << ";non_goal_model=" << Expr::kObjc3ArcInferenceLifetimeNonGoalModel
-      << ";next_issue=M262-B003";
+      << ";follow_on_surface=objc3c.arc.inferencelifetime.surface.v1";
   return out.str();
 }
 
@@ -1370,7 +1370,7 @@ std::string Objc3ArcInteractionSemanticsSummary() {
       << Expr::kObjc3ArcInteractionSemanticsFailClosedModel
       << ";non_goal_model="
       << Expr::kObjc3ArcInteractionSemanticsNonGoalModel
-      << ";next_issue=M262-C001";
+      << ";follow_on_surface=objc3c.arc.interactionsemantics.surface.v1";
   return out.str();
 }
 
@@ -1408,7 +1408,7 @@ std::string Objc3ArcLoweringAbiCleanupModelSummary() {
       << kObjc3ArcLoweringAbiCleanupModelFailClosedModel
       << ";non_goal_model="
       << kObjc3ArcLoweringAbiCleanupModelNonGoalModel
-      << ";next_issue=M262-C002";
+      << ";follow_on_surface=objc3c.arc.loweringabicleanup.surface.v1";
   return out.str();
 }
 
@@ -1416,7 +1416,7 @@ std::string Objc3ErrorHandlingThrowsAbiPropagationLoweringSummary() {
   std::ostringstream out;
   // Part 6 lowering freeze anchor: lane-C first froze the combined
   // throws ABI and propagation packet before the runnable implementation
-  // tranche landed. ;next_issue=M267-C002
+  // tranche landed. ;follow_on_surface=objc3c.errors.throws.loweringboundary.v1
   // Part 6 lowering implementation anchor: lane-C now materializes
   // the runnable hidden error-out ABI, propagation operators, status/NSError
   // bridge propagation, and do/catch control-flow in real native IR/object
@@ -1439,7 +1439,7 @@ std::string Objc3ErrorHandlingThrowsAbiPropagationLoweringSummary() {
       << kObjc3ErrorHandlingThrowsAbiPropagationLoweringFailClosedModel
       << ";non_goal_model="
       << kObjc3ErrorHandlingThrowsAbiPropagationLoweringNonGoalModel
-      << ";next_issue=M267-C003";
+      << ";follow_on_surface=objc3c.errors.throws.propagationlowering.v1";
   return out.str();
 }
 
@@ -1465,7 +1465,7 @@ std::string Objc3ErrorHandlingResultAndBridgingArtifactReplaySummary() {
       << kObjc3ErrorHandlingResultAndBridgingArtifactReplayArtifactSuffix
       << ";fail_closed_model="
       << kObjc3ErrorHandlingResultAndBridgingArtifactReplayFailClosedModel
-      << ";next_issue=M267-D001";
+      << ";follow_on_surface=objc3c.errors.resultbridging.artifactsurface.v1";
   return out.str();
 }
 
@@ -1488,7 +1488,7 @@ std::string Objc3ErrorHandlingErrorRuntimeBridgeHelperSummary() {
       << ";catch_match_symbol=" << kObjc3RuntimeCatchMatchesErrorI32Symbol
       << ";fail_closed_model="
       << kObjc3ErrorHandlingErrorRuntimeBridgeHelperFailClosedModel
-      << ";next_issue=M267-D002";
+      << ";follow_on_surface=objc3c.errors.runtimebridge.helpersurface.v1";
   return out.str();
 }
 
@@ -1516,7 +1516,7 @@ std::string Objc3ErrorHandlingLiveErrorRuntimeIntegrationSummary() {
       << ";snapshot_symbol=objc3_runtime_copy_error_bridge_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ErrorHandlingLiveErrorRuntimeIntegrationFailClosedModel
-      << ";next_issue=M267-D003";
+      << ";follow_on_surface=objc3c.errors.liveruntime.integration.v1";
   return out.str();
 }
 
@@ -1548,7 +1548,7 @@ std::string Objc3OwnershipSystemHelperRuntimeContractSummary() {
       << ";arc_debug_snapshot_symbol="
       << "objc3_runtime_copy_arc_debug_state_for_testing"
       << ";fail_closed_model=" << kObjc3OwnershipSystemHelperRuntimeFailClosedModel
-      << ";next_issue=M271-D002";
+      << ";follow_on_surface=objc3c.ownership.systemhelper.runtime.v1";
   return out.str();
 }
 
@@ -1582,7 +1582,7 @@ std::string Objc3OwnershipLiveCleanupRetainableIntegrationSummary() {
       << "objc3_runtime_copy_arc_debug_state_for_testing"
       << ";fail_closed_model="
       << kObjc3OwnershipLiveCleanupRetainableIntegrationFailClosedModel
-      << ";next_issue=M271-D003";
+      << ";follow_on_surface=objc3c.ownership.livecleanup.integration.v1";
   return out.str();
 }
 
@@ -1612,7 +1612,7 @@ std::string Objc3ConcurrencyContinuationRuntimeHelperSummary() {
       << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ConcurrencyContinuationRuntimeHelperFailClosedModel
-      << ";next_issue=M268-D002";
+      << ";follow_on_surface=objc3c.concurrency.continuation.runtimehelpersurface.v1";
   return out.str();
 }
 
@@ -1641,7 +1641,7 @@ std::string Objc3ConcurrencyLiveContinuationRuntimeIntegrationSummary() {
       << ";snapshot_symbol=objc3_runtime_copy_async_continuation_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ConcurrencyLiveContinuationRuntimeIntegrationFailClosedModel
-      << ";next_issue=M268-D003";
+      << ";follow_on_surface=objc3c.concurrency.continuation.liveruntimeintegration.v1";
   return out.str();
 }
 
@@ -1661,7 +1661,7 @@ std::string Objc3ConcurrencySchedulerExecutorRuntimeSummary() {
       << ";snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ConcurrencySchedulerExecutorRuntimeFailClosedModel
-      << ";next_issue=M269-D002";
+      << ";follow_on_surface=objc3c.concurrency.schedulerexecutor.runtime.v1";
   return out.str();
 }
 
@@ -1693,7 +1693,7 @@ std::string Objc3ConcurrencyLiveTaskRuntimeIntegrationSummary() {
       << ";snapshot_symbol=objc3_runtime_copy_task_runtime_state_for_testing"
       << ";fail_closed_model="
       << kObjc3ConcurrencyLiveTaskRuntimeIntegrationFailClosedModel
-      << ";next_issue=M269-D003";
+      << ";follow_on_surface=objc3c.concurrency.taskruntime.liveintegration.v1";
   return out.str();
 }
 
@@ -1715,7 +1715,7 @@ std::string Objc3ConcurrencyTaskRuntimeHardeningSummary() {
       << ";push_scope_symbol=" << kObjc3RuntimePushAutoreleasepoolScopeSymbol
       << ";pop_scope_symbol=" << kObjc3RuntimePopAutoreleasepoolScopeSymbol
       << ";fail_closed_model=" << kObjc3ConcurrencyTaskRuntimeHardeningFailClosedModel
-      << ";next_issue=M269-E001";
+      << ";follow_on_surface=objc3c.concurrency.taskruntime.hardening.v1";
   return out.str();
 }
 
@@ -1737,7 +1737,7 @@ std::string Objc3ArcAutomaticInsertionSummary() {
       << ";autorelease_symbol=" << kObjc3RuntimeAutoreleaseI32Symbol
       << ";fail_closed_model=" << kObjc3ArcAutomaticInsertionFailureModel
       << ";non_goal_model=" << kObjc3ArcAutomaticInsertionNonGoalModel
-      << ";next_issue=M262-C003";
+      << ";follow_on_surface=objc3c.arc.automaticinsertion.surface.v1";
   return out.str();
 }
 
@@ -1763,7 +1763,7 @@ std::string Objc3ArcCleanupWeakLifetimeHooksSummary() {
       << ";fail_closed_model="
       << kObjc3ArcCleanupWeakLifetimeHooksFailureModel
       << ";non_goal_model=" << kObjc3ArcCleanupWeakLifetimeHooksNonGoalModel
-      << ";next_issue=M262-C004";
+      << ";follow_on_surface=objc3c.arc.cleanupweaklifetime.surface.v1";
   return out.str();
 }
 
@@ -1793,7 +1793,7 @@ std::string Objc3ArcBlockAutoreleaseReturnLoweringSummary() {
       << kObjc3ArcBlockAutoreleaseReturnLoweringFailureModel
       << ";non_goal_model="
       << kObjc3ArcBlockAutoreleaseReturnLoweringNonGoalModel
-      << ";next_issue=M262-D001";
+      << ";follow_on_surface=objc3c.arc.blockautoreleasereturn.surface.v1";
   return out.str();
 }
 
@@ -1827,7 +1827,7 @@ std::string Objc3RuntimeArcHelperApiSurfaceSummary() {
       << kObjc3RuntimePopAutoreleasepoolScopeSymbol
       << ";fail_closed_model="
       << kObjc3RuntimeArcHelperApiSurfaceFailClosedModel
-      << ";next_issue=M262-D002";
+      << ";follow_on_surface=objc3c.arc.runtimehelperapi.surface.v1";
   return out.str();
 }
 
@@ -1857,7 +1857,7 @@ std::string Objc3RuntimeArcHelperRuntimeSupportSummary() {
       << kObjc3RuntimePopAutoreleasepoolScopeSymbol
       << ";fail_closed_model="
       << kObjc3RuntimeArcHelperRuntimeSupportFailClosedModel
-      << ";next_issue=M262-D003";
+      << ";follow_on_surface=objc3c.arc.runtimehelpersupport.surface.v1";
   return out.str();
 }
 
@@ -1893,7 +1893,7 @@ std::string Objc3RuntimeArcDebugInstrumentationSummary() {
       << kObjc3RuntimePopAutoreleasepoolScopeSymbol
       << ";fail_closed_model="
       << kObjc3RuntimeArcDebugInstrumentationFailClosedModel
-      << ";next_issue=M262-E001";
+      << ";follow_on_surface=objc3c.arc.debuginstrumentation.surface.v1";
   return out.str();
 }
 
@@ -1913,7 +1913,7 @@ std::string Objc3RunnableArcRuntimeGateSummary() {
       << kObjc3ArcBlockAutoreleaseReturnLoweringContractId
       << ";runtime_contract=" << kObjc3RuntimeArcDebugInstrumentationContractId
       << ";fail_closed_model=" << kObjc3RunnableArcRuntimeGateFailClosedModel
-      << ";next_issue=M262-E002";
+      << ";follow_on_surface=objc3c.arc.runnablegate.surface.v1";
   return out.str();
 }
 
@@ -1929,7 +1929,7 @@ std::string Objc3RunnableArcCloseoutSummary() {
       << ";gate_contract=" << kObjc3RunnableArcRuntimeGateContractId
       << ";runtime_contract=" << kObjc3RuntimeArcDebugInstrumentationContractId
       << ";fail_closed_model=" << kObjc3RunnableArcCloseoutFailClosedModel
-      << ";next_issue=M263-A001";
+      << ";follow_on_surface=objc3c.arc.closeout.surface.v1";
   return out.str();
 }
 
@@ -4660,7 +4660,7 @@ std::string Objc3InteropBridgePackagingToolchainSummary() {
       << ";module_generation_ready=false"
       << ";bridge_generation_ready=false"
       << ";deterministic=true"
-      << ";next_issue=M274-D002";
+      << ";follow_on_surface=objc3c.interop.bridgegeneration.runtime.v1";
   return out.str();
 }
 
@@ -4746,7 +4746,7 @@ std::string Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary() {
       << kObjc3MetaprogrammingModuleInterfaceReplayPreservationModel
       << ";fail_closed_model="
       << kObjc3MetaprogrammingModuleInterfaceReplayPreservationFailClosedModel
-      << ";next_issue=M273-D001";
+      << ";follow_on_surface=objc3c.metaprogramming.moduleinterface.replaypreservation.v1";
   return out.str();
 }
 
@@ -4770,7 +4770,7 @@ std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary() {
       << ";macro_host_process_launch_ready=false"
       << ";runtime_package_loader_ready=false"
       << ";deterministic=true"
-      << ";next_issue=M273-D002";
+      << ";follow_on_surface=objc3c.metaprogramming.runtimepackage.loader.v1";
   return out.str();
 }
 
@@ -4800,7 +4800,7 @@ std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary()
       << ";macro_host_process_launch_ready=true"
       << ";runtime_package_loader_ready=false"
       << ";deterministic=true"
-      << ";next_issue=M273-D003";
+      << ";follow_on_surface=objc3c.metaprogramming.crossmodule.packaging.v1";
   return out.str();
 }
 
@@ -4823,7 +4823,7 @@ std::string Objc3DispatchDispatchMetadataInterfacePreservationSummary() {
       << kObjc3DispatchDispatchMetadataInterfacePreservationModel
       << ";fail_closed_model="
       << kObjc3DispatchDispatchMetadataInterfacePreservationFailClosedModel
-      << ";next_issue=M272-D001";
+      << ";follow_on_surface=objc3c.dispatch.metadata.interfacepreservation.v1";
   return out.str();
 }
 

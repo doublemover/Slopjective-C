@@ -12,7 +12,7 @@ Use it when changing:
 - comparative baseline workloads for ObjC2, Swift, and C++
 - telemetry packets, normalization logic, and benchmark claim output
 
-Downstream `M293` issues must stay on the existing compiler, showcase,
+Downstream benchmark-surface work must stay on the existing compiler, showcase,
 packaging, and public workflow surfaces listed here. Do not add a sidecar
 benchmark app, synthetic spreadsheet workflow, or milestone-local measurement
 wrapper.

@@ -1,6 +1,6 @@
 # ObjC 3 Conformance Corpus
 
-This runbook defines the checked-in corpus foundation used for `M301`.
+This runbook defines the checked-in corpus foundation used for `objc3c.validation.conformancecorpus.v1`.
 
 ## Source Of Truth
 

@@ -1,6 +1,6 @@
 param(
   [string]$SourcePath = "tests/tooling/fixtures/native/hello.objc3",
-  [string]$ReportRoot = "tmp/reports/installer_support/M249-D014"
+  [string]$ReportRoot = "tmp/reports/installer_support/release_replay_dry_run"
 )
 
 $ErrorActionPreference = "Stop"

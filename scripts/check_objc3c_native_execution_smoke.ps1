@@ -22,40 +22,40 @@ $suiteRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/execution-smoke"
 # execution behavior. Recovery, replay/native-truth, runtime acceptance, and
 # negative-fixture header enforcement must stay on their dedicated suites so the
 # public runner can remove duplicate heavy recompilation.
-# M259-A001 runnable-sample-surface anchor: execution smoke remains the
+# objc3c.execution.runnablesample.surface.v1 anchor: execution smoke remains the
 # scalar/core corpus boundary rooted at tests/tooling/fixtures/native/execution.
 # Broader object/property/import-module samples stay frozen as separate proof
-# families until M259-A002 widens the canonical sample set.
-# M259-A002 canonical-runnable-sample-set anchor: the integrated object/property/category/protocol sample exists as a dedicated proof asset,
+# families until the canonical runnable sample surface widens the sample set.
+# objc3c.execution.canonicalrunnablesamples.v1 anchor: the integrated object/property/category/protocol sample exists as a dedicated proof asset,
 # but execution smoke still remains the scalar/core corpus gate in this issue.
-# M259-B001 runnable-core-compatibility-guard anchor: advanced unsupported features must fail closed instead of counting as runnable smoke coverage.
-# M259-B002 unsupported-advanced-feature-diagnostics anchor: `O3S221` fail-closed diagnostics for accepted advanced surfaces
+# objc3c.execution.runnablecore.compatibilityguard.v1 anchor: advanced unsupported features must fail closed instead of counting as runnable smoke coverage.
+# objc3c.execution.unsupportedfeature.diagnostics.v1 anchor: `O3S221` fail-closed diagnostics for accepted advanced surfaces
 # must stay outside runnable smoke counts and never be treated as successful runtime coverage.
-# M259-C001 replay-inspection-freeze anchor: execution smoke remains the
+# objc3c.execution.replayinspection.freeze.v1 anchor: execution smoke remains the
 # canonical runnable replay corpus boundary for scalar/core coverage. Broader
 # object inspection is frozen onto the dedicated A002 sample instead of widening
 # this smoke script.
-# M259-C002 object-ir-replay-proof anchor: scalar/core smoke remains the base
+# objc3c.execution.objectir.replayproof.v1 anchor: scalar/core smoke remains the base
 # runtime replay corpus, while canonical object/IR replay plus metadata section
 # inspection is delegated to execution replay proof over the A002 runnable
 # sample.
-# M259-D001 toolchain-runtime-operations anchor: execution smoke remains one of
-# the frozen runnable-core operations, and installer or cross-platform packaging claims remain outside this freeze until M259-D002.
-# M259-D002 workflow-package anchor: this script must run unchanged from a
+# objc3c.execution.toolchainruntime.operations.v1 anchor: execution smoke remains one of
+# the frozen runnable-core operations, and installer or cross-platform packaging claims remain outside this freeze until the workflow-package surface widens.
+# objc3c.execution.workflowpackage.surface.v1 anchor: this script must run unchanged from a
 # staged runnable toolchain bundle root that preserves the current repo-relative
 # scripts/artifacts/tests layout under a local package root.
-# M259-D003 platform-bringup anchor: supported repo-root/package-root execution
+# objc3c.execution.platformbringup.surface.v1 anchor: supported repo-root/package-root execution
 # must document the live override surface for `OBJC3C_NATIVE_EXECUTABLE`,
 # `OBJC3C_NATIVE_EXECUTION_CLANG_PATH`, `OBJC3C_NATIVE_EXECUTION_LLC_PATH`, and
 # `OBJC3C_NATIVE_EXECUTION_RUN_ID` on the supported Windows host baseline.
-# M259-E001 release-gate-freeze anchor: execution smoke remains one preserved
-# lane-E release-gate input alongside `M259-A002`, `M259-B002`, `M259-C002`,
-# and `M259-D003`; full matrix expansion remains deferred to `M259-E002`.
-# M259-E002 conformance-matrix anchor: execution smoke remains one concrete
+# objc3c.execution.releasegate.freeze.v1 anchor: execution smoke remains one preserved
+# closeout-gate input alongside the canonical runnable sample, unsupported-feature diagnostics, and object replay proof surfaces,
+# plus the platform-bringup surface; full matrix expansion remains deferred to the conformance-matrix surface.
+# objc3c.execution.conformancematrix.surface.v1 anchor: execution smoke remains one concrete
 # command-backed row in the runnable conformance matrix rather than an implicit
 # blanket claim about unsupported runtime surfaces.
-# M259-E003 closeout-signoff anchor: execution smoke remains one preserved
-# operator command in the final `M259` closeout runbook and sign-off summary.
+# objc3c.execution.closeoutsummary.surface.v1 anchor: execution smoke remains one preserved
+# operator command in the final execution closeout runbook and sign-off summary.
 $configuredRunId = $env:OBJC3C_NATIVE_EXECUTION_RUN_ID
 $runId = if ([string]::IsNullOrWhiteSpace($configuredRunId)) { Get-Date -Format "yyyyMMdd_HHmmss_fff" } else { $configuredRunId }
 $runDir = Join-Path $suiteRoot $runId

@@ -1,4 +1,4 @@
-# Site Index Source Policy (M132-C002)
+# Site Index Source Policy
 
 `site/index.md` is generated output. Manual edits are unsupported.
 

@@ -117,8 +117,8 @@
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
     "objc3.errors": "error identity, result helpers, and optional-to-error bridges",
     "objc3.keypath": "typed key-path helpers that need text/data compatibility naming stability",
-    "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the M307 advanced-helper contract",
-    "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the M307 advanced-helper contract"
+    "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the advanced stdlib contract",
+    "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the advanced stdlib contract"
   },
   "non_goals": [
     "parallel stdlib trees",

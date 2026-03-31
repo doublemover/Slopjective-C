@@ -1,6 +1,6 @@
 param(
   [string]$FixtureRoot = "tests/tooling/fixtures/native",
-  [string]$ReportRoot = "tmp/reports/parser_build/M226-A026"
+  [string]$ReportRoot = "tmp/reports/parser_build/parser_performance_shard2"
 )
 
 $ErrorActionPreference = "Stop"

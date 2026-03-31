@@ -1,5 +1,5 @@
 param(
-  [string]$ReportRoot = "tmp/reports/parser_build/M226-A032"
+  [string]$ReportRoot = "tmp/reports/parser_build/parser_integration_closeout"
 )
 
 $ErrorActionPreference = "Stop"
@@ -48,8 +48,8 @@ $reportDir = Join-Path $repoRoot $ReportRoot
 New-Item -ItemType Directory -Force -Path $reportDir | Out-Null
 
 $upstream = @(
-  @{ packet = "A025"; path = "tmp/reports/parser_build/M226-A025/parser_integration_shard2_summary.json" },
-  @{ packet = "A031"; path = "tmp/reports/parser_build/M226-A031/parser_integration_shard3_summary.json" }
+  @{ packet = "A025"; path = "tmp/reports/parser_build/parser_integration_shard2/parser_integration_shard2_summary.json" },
+  @{ packet = "A031"; path = "tmp/reports/parser_build/parser_integration_shard3/parser_integration_shard3_summary.json" }
 )
 
 $upstreamResults = New-Object System.Collections.Generic.List[object]

@@ -1,16 +1,16 @@
 # objc3c Advanced Stdlib Helper Surface
 
-This runbook defines the live `M307` boundary for concurrency, reflection,
+This runbook defines the live `objc3c.stdlib.advanced.v1` boundary for concurrency, reflection,
 interop, and runtime-composition helper work in the checked-in standard
 library.
 
 It extends `docs/runbooks/objc3c_stdlib_foundation.md` and
 `docs/runbooks/objc3c_stdlib_core.md` with the exact ownership split for the
-advanced helper modules that sit above the `M306` core surface.
+advanced helper modules that sit above the core stdlib surface.
 
 ## Working boundary
 
-Live `M307` work must stay on these paths:
+Live advanced-stdlib work must stay on these paths:
 
 - `stdlib/advanced_architecture.json`
 - `stdlib/advanced_helper_package_surface.json`
@@ -127,7 +127,7 @@ the checked-in architecture contract.
 - `objc3.keypath` may depend on `objc3.core` and `objc3.errors`
 - `objc3.system` may depend on `objc3.core`, `objc3.errors`,
   `objc3.concurrency`, and `objc3.keypath`
-- `M307` does not move `M306` core helpers out of their existing modules
+- the advanced stdlib surface does not move core stdlib helpers out of their existing modules
 
 ## Semantic guarantees
 

@@ -2,7 +2,7 @@
 
 ## Working Boundary
 
-This runbook defines the live `M296` boundary for performance budgets,
+This runbook defines the live `objc3c.performance.governance.v1` boundary for performance budgets,
 regression diagnosis, report publication, and release-ready evidence.
 
 Use these checked-in surfaces directly:

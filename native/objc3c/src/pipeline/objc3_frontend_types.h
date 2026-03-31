@@ -2080,10 +2080,10 @@ struct Objc3ToolingDiagnosticTaxonomyPortabilityContractSummary {
       kObjc3ToolingDiagnosticTaxonomyPortabilitySemanticModel;
   std::string portability_model =
       kObjc3ToolingDiagnosticTaxonomyPortabilityPortabilityModel;
-  std::vector<std::string> portability_dependency_issue_ids = {
-      "M264-E002", "M265-E002", "M266-E002", "M267-E002", "M268-E002",
-      "M269-E002", "M270-E002", "M271-E002", "M272-E002", "M273-E002",
-      "M274-E002",
+  std::vector<std::string> portability_dependency_surface_ids = {
+      "objc3c.releaseclaims.publicationmatrix.surface.v1", "objc3c.releaseclaims.compatibility.closeout.v1", "objc3c.releaseclaims.abiobjectmodel.closeout.v1", "objc3c.errors.closeout.surface.v1", "objc3c.concurrency.continuation.closeout.surface.v1",
+      "objc3c.concurrency.taskruntime.closeout.surface.v1", "objc3c.concurrency.actor.closeout.surface.v1", "objc3c.ownership.closeout.surface.v1", "objc3c.dispatch.closeout.surface.v1", "objc3c.metaprogramming.closeout.surface.v1",
+      "objc3c.interop.closeout.surface.v1",
   };
   std::string diagnostic_namespace =
       kObjc3ToolingDiagnosticTaxonomyPortabilityDiagnosticNamespace;

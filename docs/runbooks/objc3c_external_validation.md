@@ -1,6 +1,6 @@
 # ObjC 3 External Validation
 
-This runbook defines the live `M303` boundary for external fixture intake,
+This runbook defines the live `objc3c.validation.externalreplay.v1` boundary for external fixture intake,
 independent replay, and ecosystem-facing credibility work.
 
 ## Working Boundary
