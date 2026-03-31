@@ -1,0 +1,46 @@
+{
+  "issue": "M313-D003",
+  "generated_at": "2026-03-31T01:13:15.117118+00:00",
+  "status": "PASS",
+  "checks": [
+    {
+      "name": "retained_static_guard_budget",
+      "measured": 19,
+      "budget": 20,
+      "status": "PASS"
+    },
+    {
+      "name": "migration_only_surface_budget",
+      "measured": 4,
+      "budget": 4,
+      "status": "PASS"
+    },
+    {
+      "name": "unclassified_surface_budget",
+      "measured": 0,
+      "budget": 0,
+      "status": "PASS"
+    },
+    {
+      "name": "acceptance_suite_family_floor",
+      "measured": 20,
+      "budget": 20,
+      "status": "PASS"
+    },
+    {
+      "name": "ci_topology_integration_status",
+      "measured": 0,
+      "budget": 0,
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "retained_static_guard_count": 19,
+    "migration_only_surface_count": 4,
+    "active_surface_count": 3,
+    "acceptance_suite_family_count": 20
+  },
+  "next_issues": [
+    "M313-E001"
+  ]
+}
