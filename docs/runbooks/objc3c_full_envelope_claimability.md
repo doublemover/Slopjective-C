@@ -20,6 +20,7 @@ Replayable generators and validators:
 - `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
 - `python scripts/check_full_envelope_claimability_rollout_readiness.py`
 - `python scripts/build_full_envelope_claimability_dashboard_contract_summary.py`
+- `python scripts/build_full_envelope_claimability_dashboard.py`
 
 ## Claim Taxonomy
 
