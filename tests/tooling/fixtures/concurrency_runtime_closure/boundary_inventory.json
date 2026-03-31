@@ -1,0 +1,160 @@
+{
+  "contract_id": "objc3c.concurrency.runtime.closure.boundary.inventory.v1",
+  "surface_kind": "concurrency-runtime-closure-boundary-inventory",
+  "milestone": "M322",
+  "issue": "M322-A001",
+  "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+  "summary_script": "scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py",
+  "generated_report_root": "tmp/reports/concurrency-runtime-closure/boundary-inventory",
+  "focus_tracks": [
+    "continuation-and-task-runtime-closure",
+    "actor-runtime-isolation-and-mailbox-closure",
+    "scheduler-executor-and-cross-module-replay-closure"
+  ],
+  "authoritative_surface_keys": [
+    "runtime_unified_concurrency_source_surface",
+    "runtime_async_task_actor_normalization_completion_surface",
+    "runtime_unified_concurrency_lowering_metadata_surface",
+    "runtime_unified_concurrency_runtime_abi_surface"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/ast/objc3_ast.h",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/runtime/objc3_runtime.h",
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runnable_concurrency_conformance.py",
+    "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "docs/objc3c-native.md"
+  ],
+  "authoritative_runtime_symbols": [
+    "objc3_runtime_allocate_async_continuation_i32",
+    "objc3_runtime_handoff_async_continuation_to_executor_i32",
+    "objc3_runtime_resume_async_continuation_i32",
+    "objc3_runtime_spawn_task_i32",
+    "objc3_runtime_enter_task_group_scope_i32",
+    "objc3_runtime_add_task_group_task_i32",
+    "objc3_runtime_wait_task_group_next_i32",
+    "objc3_runtime_cancel_task_group_i32",
+    "objc3_runtime_task_is_cancelled_i32",
+    "objc3_runtime_task_on_cancel_i32",
+    "objc3_runtime_executor_hop_i32",
+    "objc3_runtime_actor_enter_isolation_thunk_i32",
+    "objc3_runtime_actor_enter_nonisolated_i32",
+    "objc3_runtime_actor_hop_to_executor_i32",
+    "objc3_runtime_actor_record_replay_proof_i32",
+    "objc3_runtime_actor_record_race_guard_i32",
+    "objc3_runtime_actor_bind_executor_i32",
+    "objc3_runtime_actor_mailbox_enqueue_i32",
+    "objc3_runtime_actor_mailbox_drain_next_i32",
+    "objc3_runtime_copy_async_continuation_state_for_testing",
+    "objc3_runtime_copy_task_runtime_state_for_testing",
+    "objc3_runtime_copy_actor_runtime_state_for_testing"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/continuation_runtime_helper_probe.cpp",
+    "tests/tooling/runtime/live_continuation_runtime_integration_probe.cpp",
+    "tests/tooling/runtime/task_runtime_lowering_probe.cpp",
+    "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+    "tests/tooling/runtime/task_runtime_abi_completion_probe.cpp",
+    "tests/tooling/runtime/task_runtime_hardening_probe.cpp",
+    "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+    "tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp",
+    "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+    "tests/tooling/runtime/scheduler_executor_runtime_contract_probe.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3",
+    "tests/tooling/fixtures/native/async_lowering_positive.objc3",
+    "tests/tooling/fixtures/native/continuation_runtime_helper_positive.objc3",
+    "tests/tooling/fixtures/native/live_continuation_runtime_integration_positive.objc3",
+    "tests/tooling/fixtures/native/live_task_runtime_and_executor_implementation_positive.objc3",
+    "tests/tooling/fixtures/native/task_runtime_abi_completion_positive.objc3",
+    "tests/tooling/fixtures/native/task_runtime_hardening_positive.objc3",
+    "tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3",
+    "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/actor_runtime_executor_contract_positive.objc3",
+    "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
+    "tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3"
+  ],
+  "public_command_surfaces": [
+    "test:objc3c:concurrency-conformance",
+    "test:objc3c:runnable-concurrency"
+  ],
+  "public_workflow_actions": [
+    "validate-concurrency-conformance",
+    "validate-runnable-concurrency"
+  ],
+  "current_gaps": [
+    "shared conformance and packaged e2e reports exist, but there is no checked-in milestone runbook or closure contract tying task runtime, actor runtime, scheduler/executor behavior, and isolation claims together",
+    "the docs currently freeze source, normalization, and lowering boundaries, but they do not publish a matching runtime-closure runbook for the live concurrency helper cluster",
+    "public claims must stay narrower than the private continuation, task, actor, and snapshot helper ABI already published by the runtime and conformance reports",
+    "arc, thrown-error cleanup, and broader interop interaction claims remain deferred even though the runtime helper cluster and packaged workflows already exist"
+  ],
+  "explicit_non_goals": [
+    "no-public-concurrency-runtime-abi-widening",
+    "no-milestone-specific-runtime-scaffolding",
+    "no-claims-about-arc-error-or-interop-interaction-beyond-current-concurrency-evidence",
+    "no-distributed-actor-or-external-executor-transport-claim",
+    "no-cross-module-claim-beyond-current-manifest-runtime-registration-and-replay-proof"
+  ],
+  "successor_milestones": [
+    "M323",
+    "M324",
+    "M325"
+  ],
+  "measured_query_sources": [
+    {
+      "kind": "runtime-source-search",
+      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "patterns": [
+        "objc3_runtime_allocate_async_continuation_i32",
+        "objc3_runtime_handoff_async_continuation_to_executor_i32",
+        "objc3_runtime_resume_async_continuation_i32",
+        "objc3_runtime_spawn_task_i32",
+        "objc3_runtime_enter_task_group_scope_i32",
+        "objc3_runtime_add_task_group_task_i32",
+        "objc3_runtime_wait_task_group_next_i32",
+        "objc3_runtime_cancel_task_group_i32",
+        "objc3_runtime_task_is_cancelled_i32",
+        "objc3_runtime_task_on_cancel_i32",
+        "objc3_runtime_executor_hop_i32",
+        "objc3_runtime_actor_enter_isolation_thunk_i32",
+        "objc3_runtime_actor_enter_nonisolated_i32",
+        "objc3_runtime_actor_hop_to_executor_i32",
+        "objc3_runtime_actor_record_replay_proof_i32",
+        "objc3_runtime_actor_record_race_guard_i32",
+        "objc3_runtime_actor_bind_executor_i32",
+        "objc3_runtime_actor_mailbox_enqueue_i32",
+        "objc3_runtime_actor_mailbox_drain_next_i32",
+        "objc3_runtime_copy_async_continuation_state_for_testing",
+        "objc3_runtime_copy_task_runtime_state_for_testing",
+        "objc3_runtime_copy_actor_runtime_state_for_testing"
+      ]
+    },
+    {
+      "kind": "documentation-search",
+      "path": "docs/objc3c-native.md",
+      "patterns": [
+        "## Unified Concurrency Runtime Source Surface",
+        "## Async/Task/Actor Normalization Completion Surface",
+        "## Unified Concurrency Lowering/Metadata Surface"
+      ]
+    },
+    {
+      "kind": "path-existence",
+      "paths": [
+        "tests/tooling/runtime/live_task_runtime_and_executor_implementation_probe.cpp",
+        "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp",
+        "scripts/check_objc3c_runnable_concurrency_conformance.py",
+        "scripts/check_objc3c_runnable_concurrency_end_to_end.py"
+      ]
+    }
+  ]
+}
