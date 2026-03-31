@@ -133,6 +133,28 @@ story.
 - archive and installer compatibility claims remain `windows-x64` only until
   another host is proved on the same public workflow surface
 
+## Toolchain-Range And Archive Compatibility Policy
+
+Toolchain-range and archive compatibility claims must also stay narrower than
+the evidence.
+
+- the current live claim boundary is the checked-in `windows-x64` package and
+  install surface produced from the local runnable toolchain bundle
+- packaged archive reuse, installer replay, rollback, and update publication
+  are only claimable for the same checked-in host family
+- toolchain presence by itself does not imply archive or install compatibility
+- a new LLVM or Clang major line is not automatically supported just because the
+  current host can launch it
+
+Archive compatibility rules:
+
+- portable archive, installer archive, and offline bundle must all resolve to
+  the same runnable payload family
+- package-channel publication and release-operations metadata must describe the
+  same host and channel boundary
+- archive compatibility claims remain fail-closed outside the checked-in
+  `windows-x64` package/install/update path
+
 ## Explicit Unsupported-Host Behavior
 
 Unsupported hosts and unsupported toolchain shapes must not degrade into vague

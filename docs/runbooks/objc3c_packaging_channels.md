@@ -89,6 +89,8 @@ Compatibility rules:
 - installer scripts may assume `pwsh` and local filesystem access
 - installer validation must prove install, bootstrap, and rollback under a
   temp-owned root
+- archive compatibility claims must remain tied to the same `windows-x64`
+  runnable payload family; publishing a package does not imply cross-host reuse
 
 ## Workflow Surface
 
