@@ -25,6 +25,7 @@ Replayable generators and validators:
 - `python scripts/build_objc3c_platform_support_matrix.py`
 - `python scripts/build_platform_hardening_artifact_contract_summary.py`
 - `python scripts/check_platform_hardening_build_package_validation.py`
+- `python scripts/check_platform_hardening_toolchain_range_replay.py`
 - `python scripts/check_objc3c_packaging_channels_integration.py`
 - `python scripts/check_objc3c_packaging_channels_end_to_end.py`
 - `python scripts/check_objc3c_release_operations_integration.py`
@@ -244,6 +245,21 @@ The matrix validator for this slice is:
 
 It must fail closed if the current host is outside the checked-in support
 matrix.
+
+## Toolchain Replay And Compatibility Evidence
+
+Toolchain-range evidence for this milestone must come from replayable host
+probes plus the checked-in release/update compatibility outputs.
+
+The replay surface for this slice is:
+
+- `python scripts/probe_objc3c_llvm_capabilities.py`
+- `python scripts/check_objc3c_release_operations_integration.py`
+- `python scripts/check_objc3c_release_operations_end_to_end.py`
+- `python scripts/check_platform_hardening_toolchain_range_replay.py`
+
+This surface proves the current host/toolchain shape that the checked-in matrix
+can actually claim and keeps broader toolchain-range rhetoric fail-closed.
 
 ## Explicit Non-Goals
 

@@ -1,0 +1,25 @@
+{
+  "contract_id": "objc3c.platform.hardening.toolchain.range.replay.contract.v1",
+  "surface_kind": "toolchain-range-replay-contract",
+  "milestone": "M326",
+  "issue": "M326-C003",
+  "summary_script": "scripts/check_platform_hardening_toolchain_range_replay.py",
+  "support_matrix_artifact": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
+  "toolchain_probe_summary": "tmp/reports/platform-hardening/toolchain-range-replay/llvm-capabilities.json",
+  "required_steps": [
+    "probe-objc3c-llvm-capabilities",
+    "check-release-operations-integration",
+    "check-release-operations-end-to-end"
+  ],
+  "required_reports": [
+    "tmp/reports/release-operations/integration-summary.json",
+    "tmp/reports/release-operations/end-to-end-summary.json",
+    "tmp/reports/release-operations/update-manifest-summary.json",
+    "tmp/reports/release-operations/publication-summary.json"
+  ],
+  "required_toolchain_claims": [
+    "clang and llc discovery are narrower than support claims",
+    "release operations artifacts stay on the checked-in windows-x64 package-channel set",
+    "new LLVM or Clang major lines remain unclaimed until replayable package and install evidence lands"
+  ]
+}
