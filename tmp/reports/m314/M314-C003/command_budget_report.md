@@ -3,8 +3,8 @@
 - status: `PASS`
 - package_script_count: `143`
 - public_script_count: `143`
-- workflow_action_count: `147`
-- internal_action_count: `4`
+- workflow_action_count: `148`
+- internal_action_count: `5`
 - operator_script_count: `135`
 - maintainer_script_count: `8` / `8`
 
