@@ -1,0 +1,248 @@
+#!/usr/bin/env python3
+"""Validate template and canonical application integration on the live workflow."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+TEMPLATE_HARNESS_PY = ROOT / "scripts" / "check_application_architecture_template_harness.py"
+CANONICAL_WORKSPACE_PY = ROOT / "scripts" / "materialize_objc3c_canonical_application_workspace.py"
+SHOWCASE_INTEGRATION_PY = ROOT / "scripts" / "check_showcase_integration.py"
+STDLIB_PROGRAM_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_program_integration.py"
+TEMPLATE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "template-harness-summary.json"
+CANONICAL_SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "canonical-application-workspace-summary.json"
+SHOWCASE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "showcase" / "integration-summary.json"
+STDLIB_PROGRAM_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "program-integration-summary.json"
+REPORT_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "runnable-template-canonical-app-summary.json"
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def run_capture(command: list[str]) -> subprocess.CompletedProcess[str]:
+    result = subprocess.run(
+        command,
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    return result
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def expect(condition: bool, message: str, failures: list[str]) -> None:
+    if not condition:
+        failures.append(message)
+
+
+def summary_passes(payload: dict[str, Any]) -> bool:
+    return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
+
+
+def require_or_reuse_summary(
+    *,
+    name: str,
+    summary_path: Path,
+    failures: list[str],
+    command: list[str] | None = None,
+) -> dict[str, Any]:
+    step_result: dict[str, Any] = {
+        "name": name,
+        "command": command,
+        "summary_path": repo_rel(summary_path),
+        "mode": "reused-summary" if command is None else "executed",
+    }
+    if command is not None:
+        result = run_capture(command)
+        step_result["exit_code"] = result.returncode
+        step_result["mode"] = "executed"
+        expect(result.returncode == 0, f"{name} failed", failures)
+
+    if not summary_path.is_file():
+        failures.append(f"{name} missing expected summary {repo_rel(summary_path)}")
+        step_result["summary_ok"] = False
+        return step_result
+
+    summary = load_json(summary_path)
+    step_result["summary_ok"] = summary_passes(summary)
+    step_result["summary_status"] = summary.get("status", summary.get("ok"))
+    if not step_result["summary_ok"]:
+        failures.append(f"{name} summary did not report PASS")
+    return summary
+
+
+def main() -> int:
+    failures: list[str] = []
+    step_results = []
+
+    template_summary = require_or_reuse_summary(
+        name="template-harness",
+        command=[sys.executable, str(TEMPLATE_HARNESS_PY)],
+        summary_path=TEMPLATE_SUMMARY_PATH,
+        failures=failures,
+    )
+    step_results.append(
+        {
+            "name": "template-harness",
+            "command": [sys.executable, str(TEMPLATE_HARNESS_PY)],
+            "summary_path": repo_rel(TEMPLATE_SUMMARY_PATH),
+            "mode": "executed",
+            "summary_ok": summary_passes(template_summary) if isinstance(template_summary, dict) else False,
+            "summary_status": template_summary.get("status", template_summary.get("ok")) if isinstance(template_summary, dict) else None,
+        }
+    )
+    canonical_summary = require_or_reuse_summary(
+        name="canonical-workspace",
+        command=[sys.executable, str(CANONICAL_WORKSPACE_PY)],
+        summary_path=CANONICAL_SUMMARY_PATH,
+        failures=failures,
+    )
+    step_results.append(
+        {
+            "name": "canonical-workspace",
+            "command": [sys.executable, str(CANONICAL_WORKSPACE_PY)],
+            "summary_path": repo_rel(CANONICAL_SUMMARY_PATH),
+            "mode": "executed",
+            "summary_ok": summary_passes(canonical_summary) if isinstance(canonical_summary, dict) else False,
+            "summary_status": canonical_summary.get("status", canonical_summary.get("ok")) if isinstance(canonical_summary, dict) else None,
+        }
+    )
+
+    showcase_summary = load_json(SHOWCASE_SUMMARY_PATH) if SHOWCASE_SUMMARY_PATH.is_file() else {}
+    if summary_passes(showcase_summary):
+        step_results.append(
+            {
+                "name": "showcase-integration",
+                "command": None,
+                "summary_path": repo_rel(SHOWCASE_SUMMARY_PATH),
+                "mode": "reused-summary",
+                "summary_ok": True,
+                "summary_status": showcase_summary.get("status", showcase_summary.get("ok")),
+            }
+        )
+    else:
+        result = run_capture([sys.executable, str(SHOWCASE_INTEGRATION_PY)])
+        showcase_summary = load_json(SHOWCASE_SUMMARY_PATH) if SHOWCASE_SUMMARY_PATH.is_file() else {}
+        step_results.append(
+            {
+                "name": "showcase-integration",
+                "command": [sys.executable, str(SHOWCASE_INTEGRATION_PY)],
+                "exit_code": result.returncode,
+                "summary_path": repo_rel(SHOWCASE_SUMMARY_PATH),
+                "mode": "executed",
+                "summary_ok": summary_passes(showcase_summary) if isinstance(showcase_summary, dict) else False,
+                "summary_status": showcase_summary.get("status", showcase_summary.get("ok")) if isinstance(showcase_summary, dict) else None,
+            }
+        )
+        if not summary_passes(showcase_summary):
+            expect(result.returncode == 0, "showcase-integration failed", failures)
+            expect(summary_passes(showcase_summary), "showcase integration summary did not report PASS", failures)
+
+    stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY_PATH) if STDLIB_PROGRAM_SUMMARY_PATH.is_file() else {}
+    if summary_passes(stdlib_program_summary):
+        step_results.append(
+            {
+                "name": "stdlib-program-integration",
+                "command": None,
+                "summary_path": repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
+                "mode": "reused-summary",
+                "summary_ok": True,
+                "summary_status": stdlib_program_summary.get("status", stdlib_program_summary.get("ok")),
+            }
+        )
+    else:
+        result = run_capture([sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)])
+        stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY_PATH) if STDLIB_PROGRAM_SUMMARY_PATH.is_file() else {}
+        step_results.append(
+            {
+                "name": "stdlib-program-integration",
+                "command": [sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)],
+                "exit_code": result.returncode,
+                "summary_path": repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
+                "mode": "executed",
+                "summary_ok": summary_passes(stdlib_program_summary) if isinstance(stdlib_program_summary, dict) else False,
+                "summary_status": stdlib_program_summary.get("status", stdlib_program_summary.get("ok")) if isinstance(stdlib_program_summary, dict) else None,
+            }
+        )
+        if not summary_passes(stdlib_program_summary):
+            expect(result.returncode == 0, "stdlib-program-integration failed", failures)
+            expect(summary_passes(stdlib_program_summary), "stdlib program integration summary did not report PASS", failures)
+
+    expect(template_summary.get("status") == "PASS", "template harness summary did not report PASS", failures)
+    expect(
+        canonical_summary.get("status") == "PASS",
+        "canonical application workspace summary did not report PASS",
+        failures,
+    )
+    expect(
+        canonical_summary.get("example_count") == 3,
+        "canonical application workspace did not include all showcase examples",
+        failures,
+    )
+    expect(
+        canonical_summary.get("architecture_layer_count") == 4,
+        "canonical application workspace layer count drifted from the canonical contract",
+        failures,
+    )
+    expect(
+        showcase_summary.get("contract_id") == "objc3c.showcase.integration.summary.v1",
+        "showcase integration summary contract drifted",
+        failures,
+    )
+    expect(
+        stdlib_program_summary.get("contract_id") == "objc3c.stdlib.program.integration.summary.v1",
+        "stdlib program integration summary contract drifted",
+        failures,
+    )
+
+    payload = {
+        "contract_id": "objc3c.application.architecture.testing.integration.summary.v1",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "PASS" if not failures else "FAIL",
+        "runner_path": "scripts/check_objc3c_application_architecture_integration.py",
+        "workflow_actions": [
+            "materialize-project-template",
+            "materialize-canonical-application-workspace",
+            "validate-showcase",
+            "validate-stdlib-program",
+            "validate-application-architecture",
+        ],
+        "child_report_paths": [
+            repo_rel(TEMPLATE_SUMMARY_PATH),
+            repo_rel(CANONICAL_SUMMARY_PATH),
+            repo_rel(SHOWCASE_SUMMARY_PATH),
+            repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
+        ],
+        "steps": step_results,
+        "failures": failures,
+    }
+    REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(REPORT_PATH)}")
+    if failures:
+        print("application-architecture-integration: FAIL", file=sys.stderr)
+        for failure in failures:
+            print(f"- {failure}", file=sys.stderr)
+        return 1
+    print("application-architecture-integration: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

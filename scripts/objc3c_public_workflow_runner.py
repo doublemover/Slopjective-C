@@ -124,6 +124,8 @@ RUNNABLE_STDLIB_FOUNDATION_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_st
 RUNNABLE_STDLIB_ADVANCED_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_advanced_end_to_end.py"
 RUNNABLE_STDLIB_PROGRAM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_stdlib_program_end_to_end.py"
 PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_project_template.py"
+CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_canonical_application_workspace.py"
+APPLICATION_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_application_architecture_integration.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
@@ -357,6 +359,10 @@ def action_materialize_stdlib_workspace(rest: list[str]) -> int:
     return run([sys.executable, str(MATERIALIZE_STDLIB_PY), *rest])
 
 
+def action_materialize_canonical_application_workspace(rest: list[str]) -> int:
+    return run([sys.executable, str(CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY), *rest])
+
+
 def action_validate_showcase_runtime(rest: list[str]) -> int:
     return pwsh_file(SHOWCASE_RUNTIME_PS1, *rest)
 
@@ -375,6 +381,10 @@ def action_validate_stdlib_advanced(_: list[str]) -> int:
 
 def action_validate_stdlib_program(_: list[str]) -> int:
     return run([sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)])
+
+
+def action_validate_application_architecture(_: list[str]) -> int:
+    return run([sys.executable, str(APPLICATION_ARCHITECTURE_INTEGRATION_PY)])
 
 
 def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
@@ -1892,9 +1902,11 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
     "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared proof-only buckets", pass_through_args=True),
     "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace and lowering/import contracts into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", ("build:objc3c:stdlib",), validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface", pass_through_args=True),
+    "materialize-canonical-application-workspace": ActionSpec("materialize-canonical-application-workspace", "materialize the canonical application workspace from the checked-in showcase and stdlib surfaces", "python:scripts/materialize_objc3c_canonical_application_workspace.py", ("build:objc3c:application-workspace",), validation_tier="repo", guarantee_owner="canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts", pass_through_args=True),
     "validate-stdlib-foundation": ActionSpec("validate-stdlib-foundation", "run the integrated stdlib boundary and smoke validation flow", "python:scripts/check_objc3c_stdlib_foundation_integration.py", ("test:stdlib",), validation_tier="repo", guarantee_owner="stdlib boundary contracts, lowering/import artifact expectations, workspace materialization, and smoke compilation stay executable on the live public workflow"),
     "validate-stdlib-advanced": ActionSpec("validate-stdlib-advanced", "run the integrated advanced stdlib helper validation flow", "python:scripts/check_objc3c_stdlib_advanced_integration.py", ("test:stdlib:advanced",), validation_tier="repo", guarantee_owner="advanced stdlib helper module contracts, profile gates, and shared smoke compilation stay executable on the live public workflow"),
     "validate-stdlib-program": ActionSpec("validate-stdlib-program", "run the integrated stdlib program docs, showcase, tutorial, and capability-adoption validation flow", "python:scripts/check_objc3c_stdlib_program_integration.py", ("test:stdlib:program",), validation_tier="repo", guarantee_owner="stdlib publish/adoption docs, capability demos, tutorial routing, and stdlib smoke integration stay executable on the live public workflow"),
+    "validate-application-architecture": ActionSpec("validate-application-architecture", "run the integrated template and canonical application workspace validation flow", "python:scripts/check_objc3c_application_architecture_integration.py", ("test:objc3c:application-architecture",), validation_tier="repo", guarantee_owner="template harnesses and canonical application workspaces stay derived from live showcase, stdlib, and public workflow surfaces"),
     "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", ("test:stdlib:advanced:e2e",), validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", ("test:stdlib:program:e2e",), validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
@@ -2143,11 +2155,13 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-security-hardening-end-to-end": action_validate_security_hardening_end_to_end,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
+    "materialize-canonical-application-workspace": action_materialize_canonical_application_workspace,
     "trace-compile-stages": action_trace_compile_stages,
     "validate-developer-tooling": action_validate_developer_tooling,
     "validate-runnable-developer-tooling": action_validate_runnable_developer_tooling,
     "validate-bonus-experiences": action_validate_bonus_experiences,
     "validate-runnable-bonus-experiences": action_validate_runnable_bonus_experiences,
+    "validate-application-architecture": action_validate_application_architecture,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,

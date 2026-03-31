@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `156`
-- Operator command count: `147`
+- Current package script count: `158`
+- Operator command count: `149`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -21,6 +21,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c-native:contracts` | `build-native-contracts` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:full` | `build-native-full` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:reconfigure` | `build-native-reconfigure` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
+| `build:objc3c:application-workspace` | `materialize-canonical-application-workspace` | `repo` | `canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts` | `pass-through` | `python:scripts/materialize_objc3c_canonical_application_workspace.py` |
 | `build:objc3c:playground` | `materialize-playground-workspace` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared proof-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `build:objc3c:stdlib` | `materialize-stdlib-workspace` | `repo` | `stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface` | `pass-through` | `python:scripts/materialize_objc3c_stdlib_workspace.py` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
@@ -87,6 +88,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:getting-started` | `validate-getting-started` | `repo` | `getting-started tutorials stay compile-coupled, runnable, and wired into the normal repo validation path` | `fixed-shape` | `python:scripts/check_getting_started_integration.py` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
+| `test:objc3c:application-architecture` | `validate-application-architecture` | `repo` | `template harnesses and canonical application workspaces stay derived from live showcase, stdlib, and public workflow surfaces` | `fixed-shape` | `python:scripts/check_objc3c_application_architecture_integration.py` |
 | `test:objc3c:block-arc-conformance` | `validate-block-arc-conformance` | `full` | `integrated block/ARC conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_block_arc_conformance.py` |
 | `test:objc3c:compiler-throughput` | `validate-compiler-throughput` | `repo` | `compiler-throughput benchmark outputs stay executable across the live native compiler, wrapper cache proof, macro-host artifact path, and docs generators` | `fixed-shape` | `python:scripts/check_objc3c_compiler_throughput_integration.py` |
 | `test:objc3c:concurrency-conformance` | `validate-concurrency-conformance` | `full` | `integrated async/task/executor/actor conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_concurrency_conformance.py` |

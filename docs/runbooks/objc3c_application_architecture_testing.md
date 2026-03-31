@@ -29,6 +29,8 @@ Replayable boundary inventory:
 - `python scripts/build_application_architecture_artifact_contract_summary.py`
 - `python scripts/check_application_architecture_template_harness.py`
 - `python scripts/materialize_objc3c_canonical_application_workspace.py`
+- `python scripts/check_objc3c_application_architecture_integration.py`
+- `python scripts/objc3c_public_workflow_runner.py validate-application-architecture`
 
 ## Current Boundary
 
@@ -70,6 +72,14 @@ The live meaning is:
   copyable project shape
 - machine-owned evidence for this milestone publishes under one shared report
   root and one shared schema/contract pair
+
+The integration path is intentionally narrow:
+
+- template harnesses and canonical application workspaces run live on every invocation
+- showcase and stdlib-program dependencies may reuse existing authoritative passing
+  summaries when those child surfaces are already green
+- package/install manifest pressure for canonical applications lands separately from
+  the repo-scope integration flow
 
 ## Non-Goals
 
