@@ -1,0 +1,48 @@
+{
+  "contract_id": "objc3c.runtime.corrective.lowering.provenance.artifact.contract.v1",
+  "surface_kind": "runtime-corrective-lowering-provenance-artifact-contract",
+  "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
+  "native_output_truth_policy_contract_id": "objc3c.runtime.corrective.native.output.truth.policy.v1",
+  "dispatch_semantic_contract_id": "objc3c.runtime.realization.lookup.semantics.surface.v1",
+  "synthesized_accessor_semantic_contract_id": "objc3c.runtime.corrective.synthesized.accessor.semantic.model.v1",
+  "compile_output_provenance_contract_id": "objc3c.native.compile.output.provenance.v1",
+  "compile_output_truthfulness_contract_id": "objc3c.native.compile.output.truthfulness.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "summary_script": "scripts/build_runtime_corrective_lowering_provenance_summary.py",
+  "authoritative_generation_paths": [
+    "scripts/objc3c_native_compile.ps1",
+    "scripts/check_objc3c_execution_replay_proof.ps1",
+    "scripts/shared_compiler_runtime_acceptance_harness.py",
+    "scripts/check_objc3c_runtime_acceptance.py"
+  ],
+  "required_artifacts": [
+    "module.manifest.json",
+    "module.runtime-registration-manifest.json",
+    "module.compile-provenance.json",
+    "module.ll",
+    "module.obj",
+    "module.object-backend.txt"
+  ],
+  "required_bundle_bindings": [
+    "compile_output_provenance.contract_id",
+    "compile_output_truthfulness.contract_id",
+    "registration_manifest.compile_output_provenance_artifact",
+    "registration_manifest.compile_output_truthfulness_contract_id",
+    "registration_manifest.compile_output_artifact_set_digest_sha256"
+  ],
+  "lowering_surface_contract_ids": [
+    "objc3c.lowering.dispatch_and_synthesized_accessor_surface.v1",
+    "objc3c.executable.synthesized.accessor.property.lowering.v1"
+  ],
+  "evidence_coupling_model": [
+    "lowering-surface-claims-must-be-backed-by-emitted-ir-and-object-output-from-the-same-compile-run",
+    "native-proof-claims-must-keep-the-registration-manifest-and-compile-provenance-coupled",
+    "linked-runtime-probe-proof-must-consume-the-same-emitted-object-bundle"
+  ],
+  "explicit_non_goals": [
+    "no-duplicate-milestone-local-proof-bundle-format",
+    "no-sidecar-only-lowering-proof",
+    "no-proof-from-emitted-ir-without-object-and-manifest-coupling",
+    "no-publication-claim-without-truthfulness-envelope"
+  ]
+}
