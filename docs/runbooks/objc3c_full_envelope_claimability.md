@@ -9,10 +9,12 @@ language/runtime envelope.
 Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json`
+- `tests/tooling/fixtures/full_envelope_claimability/production_strength_claim_policy.json`
 
 Replayable generators and validators:
 
 - `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
+- `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
 
 ## Claim Taxonomy
 
@@ -31,6 +33,29 @@ The canonical support classes for full-envelope claims are:
 These classes apply to public and internal claim surfaces equally. No release
 note, dashboard, tutorial, showcase, or README statement may imply a wider
 class than the checked-in matrix.
+
+## Production-Strength Claim And Support-Window Policy
+
+Production-strength claims are allowed only when:
+
+- the surface is currently classified as `supported`
+- required integrated evidence families are passing
+- the release channel and support window are consistent with
+  `docs/runbooks/objc3c_release_operations.md`
+- the public claim surface stays narrower than the current runtime-owned helper,
+  package, trust, and fail-closed boundaries
+
+Current support-window rules for production-strength claims:
+
+- `stable`: allowed to carry production-strength claims for supported surfaces
+- `candidate`: allowed to carry pre-release production-strength claims only when
+  the same evidence stack is passing and the claim remains explicitly
+  candidate-scoped
+- `preview`: never carries production-strength claims; at most it may publish
+  experimental or unsupported guidance
+
+No production-strength claim may widen support beyond the checked-in release
+channel, support-window, or runtime-boundary contracts.
 
 ## Evidence Families
 

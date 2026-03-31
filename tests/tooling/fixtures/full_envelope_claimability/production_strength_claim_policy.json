@@ -1,0 +1,63 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.production.strength.claim.policy.v1",
+  "surface_kind": "full-envelope-production-strength-claim-policy",
+  "milestone": "M324",
+  "issue": "M324-B001",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/build_full_envelope_claimability_claim_policy_summary.py",
+  "support_windows": [
+    {
+      "window": "stable",
+      "claim_class": "production-strength-supported",
+      "allowed_support_classes": [
+        "supported"
+      ]
+    },
+    {
+      "window": "candidate",
+      "claim_class": "production-strength-candidate-scoped",
+      "allowed_support_classes": [
+        "supported"
+      ]
+    },
+    {
+      "window": "preview",
+      "claim_class": "non-production-preview-only",
+      "allowed_support_classes": [
+        "experimental",
+        "unsupported"
+      ]
+    }
+  ],
+  "required_evidence_families": [
+    "conformance-corpus",
+    "stress-integration",
+    "external-validation",
+    "public-conformance-reporting",
+    "performance-governance",
+    "release-foundation",
+    "release-operations",
+    "distribution-credibility"
+  ],
+  "required_public_claim_surfaces": [
+    "README.md",
+    "docs/objc3c-native.md",
+    "docs/runbooks/objc3c_public_conformance_reporting.md",
+    "docs/runbooks/objc3c_performance_governance.md",
+    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_distribution_credibility.md"
+  ],
+  "required_runtime_boundary_runbooks": [
+    "docs/runbooks/objc3c_object_model_closure.md",
+    "docs/runbooks/objc3c_block_arc_closure.md",
+    "docs/runbooks/objc3c_error_runtime_closure.md",
+    "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+    "docs/runbooks/objc3c_metaprogramming_interop_closure.md"
+  ],
+  "required_release_operations_strings": [
+    "stable",
+    "candidate",
+    "preview"
+  ]
+}
