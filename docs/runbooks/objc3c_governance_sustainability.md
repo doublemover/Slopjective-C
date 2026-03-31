@@ -65,6 +65,11 @@ Long-horizon anti-regression reporting:
 - canonical history artifact: `tmp/artifacts/governance-sustainability/anti-regression-history.json`
 - canonical anti-regression summary: `tmp/reports/m318/M318-D002/governance_anti_regression_summary.json`
 
+Closeout gate:
+
+- `python scripts/check_governance_sustainability_closeout_gate.py`
+- canonical closeout summary: `tmp/reports/m318/M318-E001/governance_hardening_closeout_gate.json`
+
 Current governance entry surfaces:
 
 - `scripts/ci/check_task_hygiene.py`
