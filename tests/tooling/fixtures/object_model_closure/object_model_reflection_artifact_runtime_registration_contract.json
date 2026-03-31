@@ -1,0 +1,36 @@
+{
+  "contract_id": "objc3c.object_model.closure.object_model_reflection_artifact.runtime_registration_contract.v1",
+  "surface_kind": "object-model-reflection-artifact-runtime-registration-contract",
+  "milestone": "M319",
+  "issue": "M319-C001",
+  "runbook": "docs/runbooks/objc3c_object_model_closure.md",
+  "summary_script": "scripts/build_object_model_closure_artifact_registration_summary.py",
+  "compile_manifest_surface_keys": [
+    "runtime_realization_lowering_reflection_artifact_surface",
+    "runtime_dispatch_table_reflection_record_lowering_surface",
+    "runtime_cross_module_realized_metadata_replay_preservation_surface",
+    "runtime_object_model_abi_query_surface",
+    "runtime_realization_lookup_reflection_implementation_surface",
+    "runtime_property_ivar_accessor_reflection_implementation_surface"
+  ],
+  "acceptance_builder_functions": [
+    "build_runtime_realization_lowering_reflection_artifact_surface",
+    "build_runtime_dispatch_table_reflection_record_lowering_surface",
+    "build_runtime_cross_module_realized_metadata_replay_preservation_surface",
+    "build_runtime_object_model_abi_query_surface",
+    "build_runtime_realization_lookup_reflection_implementation_surface"
+  ],
+  "required_compile_artifacts": [
+    "<emit-prefix>.obj",
+    "<emit-prefix>.ll",
+    "<emit-prefix>.manifest.json",
+    "<emit-prefix>.runtime-registration-manifest.json",
+    "<emit-prefix>.runtime-registration-descriptor.json"
+  ],
+  "authoritative_generation_paths": [
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runtime_architecture_integration.py",
+    "scripts/check_objc3c_runnable_object_model_conformance.py",
+    "scripts/check_objc3c_runnable_storage_reflection_conformance.py"
+  ]
+}
