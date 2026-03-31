@@ -86,6 +86,8 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - runtime/debug report roots:
   - `tmp/reports/runtime/`
   - `tmp/reports/objc3c-public-workflow/`
+  - `tmp/artifacts/playground/`
+  - `tmp/reports/playground/`
 - developer-tooling dump artifacts:
   - `tmp/reports/objc3c-public-workflow/inspect-compile-observability-summary.json`
   - `tmp/reports/objc3c-public-workflow/compile-observability.json`
@@ -103,6 +105,9 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run build:objc3c-native:contracts`
 - compile one source through the public compiler path:
   - `npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3`
+- materialize a runnable workspace with editor/debug drill references:
+  - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
+  - `npm run build:objc3c:playground -- tests/tooling/fixtures/native/hello.objc3`
 - inspect the direct compiler/summary boundary:
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 --summary-out tmp/reports/objc3c-public-workflow/frontend-c-api-runner-summary.json`
 - dump the structured developer observability object through the public command surface:
@@ -175,11 +180,12 @@ full editor product:
   - manifest-backed language-server capabilities and navigation
   - preview formatter output on the supported canonical subset
   - declaration-breakpoint and object-symbol inspection debug anchors
+  - runnable workspace drill materialization with editor/debug references
   - integrated developer-tooling validation
 - explicit remaining gaps after the current implementation slice:
   - references, rename, semantic tokens, and code actions remain fail-closed
   - statement-level stepping and full source-map publication remain fail-closed
-  - runnable workspace drill and packaged tooling handoff contracts remain future work
+  - packaged tooling handoff contracts remain future work
 
 Downstream work must extend the real frontend runner, runtime artifacts, and
 public workflow commands instead of creating an editor-only shadow parser or
@@ -191,8 +197,8 @@ Current remaining gaps after the current developer-tooling slice:
 
 - no checked-in references/rename/semantic-token/code-action contract
 - no checked-in statement-level stepping or full source-map publication contract
-- no runnable workspace drill that proves editor/debug handoff over a packaged
-  tooling surface
+- no runnable packaged-tooling drill that proves editor/debug handoff over the
+  shipped bundle surface
 
 These remaining gaps stay fail-closed; they are not implied by the preview
 formatter or declaration-breakpoint debug surface.
@@ -283,11 +289,13 @@ The current and follow-on public entrypoints for the surface converge on:
 - `python scripts/objc3c_public_workflow_runner.py format-objc3c`
 - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
 
-Exact implementation anchors for the new formatter/debug slice:
+Exact implementation anchors for the current formatter/debug/workspace slice:
 
 - `scripts/format_objc3c_source.py`
 - `scripts/build_objc3c_editor_tooling_surface.py`
 - `scripts/check_developer_tooling_formatter_debug_surface.py`
+- `scripts/check_developer_tooling_workspace_integration.py`
+- `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
 
 The npm entrypoints must route to the same action family once implemented:
 

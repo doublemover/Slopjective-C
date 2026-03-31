@@ -12,6 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
 FORMATTER_DEBUG_SURFACE_PY = ROOT / "scripts" / "check_developer_tooling_formatter_debug_surface.py"
+WORKSPACE_INTEGRATION_PY = ROOT / "scripts" / "check_developer_tooling_workspace_integration.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "developer-tooling" / "integration-summary.json"
 
@@ -63,6 +64,10 @@ def main() -> int:
             [sys.executable, str(FORMATTER_DEBUG_SURFACE_PY)],
         ),
         run_step(
+            "check-workspace-editor-debug-surface",
+            [sys.executable, str(WORKSPACE_INTEGRATION_PY)],
+        ),
+        run_step(
             "inspect-capability-explorer",
             [sys.executable, str(PUBLIC_RUNNER), "inspect-capability-explorer"],
         ),
@@ -85,6 +90,7 @@ def main() -> int:
     stage_trace_path = PUBLIC_WORKFLOW_REPORT_ROOT / "compile-stage-trace.json"
     editor_surface_path = ROOT / "tmp" / "reports" / "developer-tooling" / "editor-surface" / "hello-3bb3df22f2ea" / "editor-surface.json"
     formatter_debug_summary_path = ROOT / "tmp" / "reports" / "developer-tooling" / "formatter-debug" / "formatter_debug_summary.json"
+    workspace_integration_summary_path = ROOT / "tmp" / "reports" / "developer-tooling" / "workspace-integration-summary.json"
     for path in (
         observability_path,
         runtime_inspector_path,
@@ -93,6 +99,7 @@ def main() -> int:
         stage_trace_path,
         editor_surface_path,
         formatter_debug_summary_path,
+        workspace_integration_summary_path,
     ):
         expect(path.is_file(), f"missing expected report: {path.relative_to(ROOT).as_posix()}", failures)
     observability = read_json(observability_path) if observability_path.is_file() else {}
@@ -102,6 +109,7 @@ def main() -> int:
     stage_trace = read_json(stage_trace_path) if stage_trace_path.is_file() else {}
     editor_surface = read_json(editor_surface_path) if editor_surface_path.is_file() else {}
     formatter_debug_summary = read_json(formatter_debug_summary_path) if formatter_debug_summary_path.is_file() else {}
+    workspace_integration_summary = read_json(workspace_integration_summary_path) if workspace_integration_summary_path.is_file() else {}
     expect(observability.get("status_name") == "ok", "expected compile observability status_name=ok", failures)
     expect("summary" in observability.get("dump_commands", {}), "expected compile observability dump_commands.summary", failures)
     expect(runtime_inspector.get("contract_id") == "objc3c.runtime.metadata.object.inspection.harness.v1", "expected runtime inspector contract id", failures)
@@ -111,6 +119,7 @@ def main() -> int:
     expect(editor_surface.get("debug", {}).get("supported") is True, "expected editor tooling debug surface to report supported=true", failures)
     expect(editor_surface.get("debug", {}).get("statement_level_stepping") is False, "expected editor tooling debug surface to keep statement stepping fail-closed", failures)
     expect(formatter_debug_summary.get("ok") is True, "expected formatter/debug surface validation ok=true", failures)
+    expect(workspace_integration_summary.get("ok") is True, "expected workspace editor/debug integration ok=true", failures)
     expect(capability_explorer.get("mode") == "objc3c-llvm-capabilities-v2", "expected capability explorer mode", failures)
     expect(capability_explorer.get("ok") is True, "expected capability explorer ok=true", failures)
     expect(capability_explorer.get("clang", {}).get("found") is True, "expected capability explorer clang probe to succeed", failures)
@@ -143,6 +152,7 @@ def main() -> int:
             "runtime_inspector": runtime_inspector_path.relative_to(ROOT).as_posix(),
             "editor_surface": editor_surface_path.relative_to(ROOT).as_posix(),
             "formatter_debug_summary": formatter_debug_summary_path.relative_to(ROOT).as_posix(),
+            "workspace_integration_summary": workspace_integration_summary_path.relative_to(ROOT).as_posix(),
             "capability_explorer": capability_explorer_path.relative_to(ROOT).as_posix(),
             "runtime_inspector_benchmark": runtime_inspector_benchmark_path.relative_to(ROOT).as_posix(),
             "compile_stage_trace": stage_trace_path.relative_to(ROOT).as_posix(),

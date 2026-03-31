@@ -200,6 +200,21 @@ def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
     return result
 
 
+def load_json(path: Path) -> dict[str, object]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"expected JSON object at {path}")
+    return payload
+
+
+def extract_output_line(stdout: str, prefix: str) -> str:
+    for raw_line in stdout.splitlines():
+        line = raw_line.strip()
+        if line.startswith(prefix):
+            return line.split(":", 1)[1].strip()
+    return ""
+
+
 def pwsh_file(script: Path, *args: str) -> int:
     return run([PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), *args])
 
@@ -527,6 +542,42 @@ def _run_playground_workspace(
 
     dump_path.write_text(json.dumps(playground_payload, indent=2) + "\n", encoding="utf-8")
 
+    editor_result = subprocess.run(
+        [sys.executable, str(EDITOR_TOOLING_SURFACE_PY), source_display],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+        env=env,
+    )
+    if editor_result.stdout:
+        sys.stdout.write(editor_result.stdout)
+    if editor_result.stderr:
+        sys.stderr.write(editor_result.stderr)
+    if editor_result.returncode != 0:
+        return editor_result.returncode
+
+    editor_surface_path_text = extract_output_line(editor_result.stdout, "dump_path:")
+    capabilities_path_text = extract_output_line(editor_result.stdout, "capabilities_path:")
+    navigation_path_text = extract_output_line(editor_result.stdout, "navigation_path:")
+    formatter_path_text = extract_output_line(editor_result.stdout, "formatter_path:")
+    debug_path_text = extract_output_line(editor_result.stdout, "debug_path:")
+    if not editor_surface_path_text:
+        print("playground-workspace: editor tooling action did not publish dump_path", file=sys.stderr)
+        return 1
+    editor_surface_path = ROOT / editor_surface_path_text
+    if not editor_surface_path.is_file():
+        print(f"playground-workspace: missing editor tooling surface {editor_surface_path_text}", file=sys.stderr)
+        return 1
+    editor_surface_payload = load_json(editor_surface_path)
+    formatter_payload = editor_surface_payload.get("formatter", {})
+    debug_payload = editor_surface_payload.get("debug", {})
+    workspace_drill_commands = {
+        "inspect_editor_tooling": f"python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling {source_display}",
+        "format_preview": f"python scripts/objc3c_public_workflow_runner.py format-objc3c {source_display}",
+        "object_symbol_inventory": str(debug_payload.get("object_symbol_inventory_command", "")),
+    }
+
     workspace_payload = {
         "contract_id": PLAYGROUND_WORKSPACE_CONTRACT_ID,
         "schema_version": 1,
@@ -544,12 +595,28 @@ def _run_playground_workspace(
             "compile-objc3c",
             "inspect-playground-repro",
             "inspect-compile-observability",
+            "inspect-editor-tooling",
+            "format-objc3c",
             "trace-compile-stages",
+            "validate-developer-tooling",
         ],
         "compile_profile": playground_payload.get("compile_profile", {}),
         "artifact_paths": playground_payload.get("artifact_paths", {}),
         "showcase_examples": playground_payload.get("showcase_examples", []),
         "repro_command": playground_payload.get("dump_commands", {}).get("repro_runner", ""),
+        "editor_tooling": {
+            "editor_surface_path": editor_surface_path_text,
+            "language_server_capabilities_path": capabilities_path_text,
+            "navigation_path": navigation_path_text,
+            "formatter_path": formatter_path_text,
+            "debug_path": debug_path_text,
+            "formatted_output_path": formatter_payload.get("formatted_output_path"),
+            "format_preview_supported": formatter_payload.get("supported"),
+            "debugger_model": debug_payload.get("debugger_model", ""),
+            "declaration_breakpoint_anchor_count": debug_payload.get("declaration_breakpoint_anchor_count", 0),
+            "statement_level_stepping": debug_payload.get("statement_level_stepping"),
+        },
+        "workspace_drill_commands": workspace_drill_commands,
     }
     workspace_manifest_path.write_text(
         json.dumps(workspace_payload, indent=2) + "\n",
@@ -1739,7 +1806,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
-    "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets", pass_through_args=True),
+    "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared proof-only buckets", pass_through_args=True),
     "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace and lowering/import contracts into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", ("build:objc3c:stdlib",), validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface", pass_through_args=True),
     "validate-stdlib-foundation": ActionSpec("validate-stdlib-foundation", "run the integrated stdlib boundary and smoke validation flow", "python:scripts/check_objc3c_stdlib_foundation_integration.py", ("test:stdlib",), validation_tier="repo", guarantee_owner="stdlib boundary contracts, lowering/import artifact expectations, workspace materialization, and smoke compilation stay executable on the live public workflow"),
     "validate-stdlib-advanced": ActionSpec("validate-stdlib-advanced", "run the integrated advanced stdlib helper validation flow", "python:scripts/check_objc3c_stdlib_advanced_integration.py", ("test:stdlib:advanced",), validation_tier="repo", guarantee_owner="advanced stdlib helper module contracts, profile gates, and shared smoke compilation stay executable on the live public workflow"),

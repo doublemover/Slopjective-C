@@ -21,7 +21,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c-native:contracts` | `build-native-contracts` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:full` | `build-native-full` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:reconfigure` | `build-native-reconfigure` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
-| `build:objc3c:playground` | `materialize-playground-workspace` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs instead of shared proof-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
+| `build:objc3c:playground` | `materialize-playground-workspace` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared proof-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `build:objc3c:stdlib` | `materialize-stdlib-workspace` | `repo` | `stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface` | `pass-through` | `python:scripts/materialize_objc3c_stdlib_workspace.py` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
 | `build:site` | `build-site` | `-` | `-` | `fixed-shape` | `python:scripts/build_site_index.py + npx prettier` |
