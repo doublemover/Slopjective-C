@@ -76,6 +76,13 @@ npm run test:fast
 - docs drift: `python scripts/build_objc3c_native_docs.py --check`
 - repo superclean surface: `npm run check:repo:surface`
 
+When a change widens package scripts, runbooks, schemas, checker surfaces, or
+publication helpers, also refresh the governance summaries:
+
+- governance inventory: `python scripts/build_governance_budget_inventory_summary.py`
+- governance policy: `python scripts/build_governance_policy_summary.py`
+- maintainer review surface: `python scripts/build_governance_maintainer_review_summary.py`
+
 ## PR Expectations
 
 - describe what changed

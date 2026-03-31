@@ -103,6 +103,21 @@ Performance-governance entrypoint:
   dashboard derivation, and publication before widening release-performance
   claims or waiver semantics
 
+Governance-sustainability entrypoint:
+
+- `docs/runbooks/objc3c_governance_sustainability.md` is the maintainer
+  boundary for repo-shape budgets, anti-noise ratchets, waiver ownership,
+  maintainer review expectations, and long-horizon regression evidence
+- governance sustainability must stay on the existing task-hygiene,
+  repo-superclean, documentation-surface, dependency-boundary, and public
+  workflow-runner surfaces instead of inventing sidecar milestone wrappers,
+  duplicate planning roots, or spreadsheet-only waiver tracking
+- use the replayable governance summaries before widening package scripts,
+  runbooks, schemas, checker surfaces, or publication workflows:
+  - `python scripts/build_governance_budget_inventory_summary.py`
+  - `python scripts/build_governance_policy_summary.py`
+  - `python scripts/build_governance_maintainer_review_summary.py`
+
 Release-foundation entrypoint:
 
 - `docs/runbooks/objc3c_release_foundation.md` is the maintainer boundary for

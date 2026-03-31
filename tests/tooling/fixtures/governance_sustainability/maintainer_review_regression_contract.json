@@ -1,0 +1,71 @@
+{
+  "contract_id": "objc3c.governance.sustainability.maintainer.review.v1",
+  "surface_kind": "maintainer-review-and-regression-handling-contract",
+  "runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
+  "contributor_surface": "CONTRIBUTING.md",
+  "summary_script": "scripts/build_governance_maintainer_review_summary.py",
+  "required_review_checks": [
+    {
+      "check_id": "task-hygiene",
+      "command": "python scripts/ci/check_task_hygiene.py",
+      "owner_surface": "scripts/ci/check_task_hygiene.py"
+    },
+    {
+      "check_id": "repo-superclean",
+      "command": "npm run check:repo:surface",
+      "owner_surface": "scripts/check_repo_superclean_surface.py"
+    },
+    {
+      "check_id": "dependency-boundaries",
+      "command": "python scripts/check_objc3c_dependency_boundaries.py --strict",
+      "owner_surface": "scripts/check_objc3c_dependency_boundaries.py"
+    },
+    {
+      "check_id": "governance-inventory",
+      "command": "python scripts/build_governance_budget_inventory_summary.py",
+      "owner_surface": "scripts/build_governance_budget_inventory_summary.py"
+    },
+    {
+      "check_id": "governance-policy",
+      "command": "python scripts/build_governance_policy_summary.py",
+      "owner_surface": "scripts/build_governance_policy_summary.py"
+    },
+    {
+      "check_id": "governance-maintainer-review",
+      "command": "python scripts/build_governance_maintainer_review_summary.py",
+      "owner_surface": "scripts/build_governance_maintainer_review_summary.py"
+    }
+  ],
+  "regression_statuses": [
+    {
+      "status": "expected-drift",
+      "requires": [
+        "measured-delta",
+        "owner",
+        "follow-on-ratchet"
+      ]
+    },
+    {
+      "status": "waived",
+      "requires": [
+        "checked-in-waiver",
+        "expiry",
+        "evidence-paths"
+      ]
+    },
+    {
+      "status": "release-blocking",
+      "requires": [
+        "no-valid-waiver",
+        "or-expired-waiver",
+        "or-unknown-surface-drift"
+      ]
+    }
+  ],
+  "required_paths": [
+    "docs/runbooks/objc3c_maintainer_workflows.md",
+    "CONTRIBUTING.md",
+    "tests/tooling/fixtures/governance_sustainability/maintainer_review_regression_contract.json",
+    "scripts/build_governance_maintainer_review_summary.py"
+  ]
+}
