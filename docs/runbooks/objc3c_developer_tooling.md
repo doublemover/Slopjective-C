@@ -249,6 +249,35 @@ toolchain path, the public debug surface must describe itself as
 declaration-breakpoint and artifact-inspection driven rather than as a full
 statement debugger.
 
+## Editor Protocol And Debug Artifact Contract
+
+`M325` must publish one machine-owned editor tooling surface instead of
+scattering separate editor-only payloads across ad hoc scripts.
+
+The canonical generated surface must group:
+
+- diagnostics summary and per-diagnostic entries
+- language-server capability publication and fallback metadata
+- navigation and declaration coordinates rooted in compile-owned manifest data
+- formatter execution results and formatted output references
+- debug artifact inspection, breakpoint anchors, and stepping availability
+
+The authoritative report family lives under `tmp/reports/developer-tooling/`
+and must be produced by the public runner plus replayable checked-in scripts.
+
+The canonical public entrypoints for the surface are delivered by the
+follow-on implementation issues and must converge on:
+
+- `python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling`
+- `python scripts/objc3c_public_workflow_runner.py format-objc3c`
+- `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
+
+The npm entrypoints must route to the same action family once implemented:
+
+- `npm run inspect:objc3c:editor`
+- `npm run format:objc3c -- <source>`
+- `npm run test:objc3c:developer-tooling`
+
 ## Explicit Non-Goals
 
 - no milestone-local debug launcher

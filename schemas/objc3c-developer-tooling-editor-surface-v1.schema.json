@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.dev/schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
+  "title": "objc3c Developer Tooling Editor Surface",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "source_path",
+    "summary_path",
+    "diagnostics",
+    "language_server",
+    "navigation",
+    "formatter",
+    "debug"
+  ],
+  "properties": {
+    "contract_id": {"type": "string"},
+    "source_path": {"type": "string"},
+    "summary_path": {"type": "string"},
+    "manifest_path": {"type": ["string", "null"]},
+    "diagnostics_path": {"type": "string"},
+    "diagnostics": {
+      "type": "object",
+      "required": ["status_name", "total", "entries"],
+      "properties": {
+        "status_name": {"type": "string"},
+        "total": {"type": "integer", "minimum": 0},
+        "entries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["severity", "line", "column", "code", "message"],
+            "properties": {
+              "severity": {"type": "string"},
+              "line": {"type": "integer", "minimum": 0},
+              "column": {"type": "integer", "minimum": 0},
+              "code": {"type": "string"},
+              "message": {"type": "string"}
+            },
+            "additionalProperties": true
+          }
+        }
+      },
+      "additionalProperties": true
+    },
+    "language_server": {"type": "object"},
+    "navigation": {"type": "object"},
+    "formatter": {"type": "object"},
+    "debug": {"type": "object"}
+  },
+  "additionalProperties": true
+}

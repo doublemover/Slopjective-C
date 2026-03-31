@@ -1,0 +1,47 @@
+{
+  "contract_id": "objc3c.developer.tooling.editor.protocol.debug.artifact.contract.v1",
+  "surface_kind": "developer-tooling-artifact-contract",
+  "milestone": "M325",
+  "issue": "M325-C001",
+  "runbook": "docs/runbooks/objc3c_developer_tooling.md",
+  "summary_script": "scripts/build_developer_tooling_artifact_contract_summary.py",
+  "schema_paths": [
+    "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
+  ],
+  "canonical_report_paths": [
+    "tmp/reports/developer-tooling/editor-surface/editor-surface.json",
+    "tmp/reports/developer-tooling/editor-surface/language-server-capabilities.json",
+    "tmp/reports/developer-tooling/editor-surface/navigation-index.json",
+    "tmp/reports/developer-tooling/editor-surface/formatter-output.json",
+    "tmp/reports/developer-tooling/editor-surface/debug-map.json"
+  ],
+  "public_actions": [
+    "inspect-editor-tooling",
+    "format-objc3c",
+    "validate-developer-tooling"
+  ],
+  "public_scripts": [
+    "inspect:objc3c:editor",
+    "format:objc3c",
+    "test:objc3c:developer-tooling"
+  ],
+  "artifact_sections": [
+    "diagnostics",
+    "language_server",
+    "navigation",
+    "formatter",
+    "debug"
+  ],
+  "source_artifacts": [
+    "summary",
+    "diagnostics",
+    "manifest",
+    "object",
+    "runtime-inspector"
+  ],
+  "claim_narrowing_constraints": [
+    "one combined editor surface must remain canonical over split ad hoc payloads",
+    "public entrypoints must route through the public workflow runner instead of milestone-local wrappers",
+    "all generated editor/debug artifacts remain under tmp while checked-in contracts stay under docs, fixtures, scripts, and schemas"
+  ]
+}
