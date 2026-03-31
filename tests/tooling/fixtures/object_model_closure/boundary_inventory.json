@@ -1,0 +1,179 @@
+{
+  "contract_id": "objc3c.object_model.closure.boundary.inventory.v1",
+  "surface_kind": "object-model-closure-boundary-inventory",
+  "milestone": "M319",
+  "issue": "M319-A001",
+  "runbook": "docs/runbooks/objc3c_object_model_closure.md",
+  "summary_script": "scripts/build_object_model_closure_boundary_inventory_summary.py",
+  "canonical_planning_root": "tmp/planning/object_model_closure",
+  "report_root": "tmp/reports/m319/M319-A001",
+  "focus": [
+    "realized-class-metaclass-protocol-category-runtime-closure",
+    "property-ivar-and-aggregate-reflection-coherence-over-runtime-owned-state",
+    "compile-coupled-object-model-proof-and-packaged-validation-without-public-abi-widening"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "native/objc3c/src/lower/objc3_lowering_contract.h",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "scripts/check_objc3c_runtime_acceptance.py",
+    "scripts/check_objc3c_runnable_object_model_conformance.py",
+    "scripts/check_objc3c_runnable_storage_reflection_conformance.py",
+    "scripts/check_objc3c_runnable_object_model_end_to_end.py",
+    "scripts/check_objc3c_runnable_storage_reflection_end_to_end.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "docs/objc3c-native.md",
+    "tests/tooling/runtime/README.md"
+  ],
+  "authoritative_runtime_symbols": [
+    "objc3_runtime_register_image",
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_copy_realized_class_graph_state_for_testing",
+    "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_property_registry_state_for_testing",
+    "objc3_runtime_copy_property_entry_for_testing",
+    "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "objc3_runtime_copy_object_model_query_state_for_testing",
+    "objc3_runtime_replay_registered_images_for_testing",
+    "objc3_runtime_reset_for_testing"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/class_realization_runtime_probe.cpp",
+    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+    "tests/tooling/runtime/property_layout_runtime_probe.cpp",
+    "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
+    "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/runtime_packaging_provider.objc3",
+    "tests/tooling/fixtures/native/runtime_packaging_consumer.objc3",
+    "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+    "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
+    "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
+    "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
+    "tests/tooling/fixtures/native/property_ivar_execution_matrix_positive.objc3",
+    "tests/tooling/fixtures/native/runtime_backed_storage_ownership_reflection_positive.objc3"
+  ],
+  "claim_surfaces": [
+    "README.md",
+    "docs/objc3c-native.md",
+    "tests/tooling/runtime/README.md",
+    "docs/runbooks/objc3c_public_command_surface.md"
+  ],
+  "current_closure_gaps": [
+    {
+      "gap_id": "proof-remains-split-across-object-model-and-storage-reflection-surfaces",
+      "summary": "The live runtime already publishes realized-object and storage-reflection proofs, but M319 still needs one truthful closure boundary and closeout gate tying both proof families to the same object-model claim surface.",
+      "evidence_references": [
+        "scripts/check_objc3c_runnable_object_model_conformance.py",
+        "scripts/check_objc3c_runnable_storage_reflection_conformance.py",
+        "docs/objc3c-native.md"
+      ],
+      "successor_issue_codes": [
+        "M319-B001",
+        "M319-C001",
+        "M319-D001",
+        "M319-E001"
+      ]
+    },
+    {
+      "gap_id": "reflection-visibility-remains-private-runtime-query-surface",
+      "summary": "Aggregate object-model and property reflection are runtime-backed today, but the supported query surface remains private testing API and must stay explicitly fail-closed rather than being overclaimed as public reflection ABI.",
+      "evidence_references": [
+        "docs/objc3c-native.md",
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+        "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp"
+      ],
+      "successor_issue_codes": [
+        "M319-B001",
+        "M319-C003",
+        "M319-D003"
+      ]
+    },
+    {
+      "gap_id": "loader-order-category-attachment-and-protocol-workload-not-frozen-as-one-map",
+      "summary": "Class realization, category attachment, protocol conformance, cross-module replay, and aggregate reflection are covered by live probes, but the canonical workload map for full object-model closure is not yet frozen as one milestone-owned contract.",
+      "evidence_references": [
+        "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+        "tests/tooling/runtime/import_module_execution_matrix_probe.cpp",
+        "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp"
+      ],
+      "successor_issue_codes": [
+        "M319-B002",
+        "M319-B003",
+        "M319-C002",
+        "M319-D002"
+      ]
+    }
+  ],
+  "explicit_non_goals": [
+    "no-public-runtime-abi-widening",
+    "no-claim-that-unresolved-dispatch-miss-fallback-is-part-of-supported-object-model-closure",
+    "no-source-only-or-probe-local-reflection-truth-outside-runtime-owned-query-state",
+    "no-milestone-local-runtime-or-packaging-scaffolding-parallel-to-shared-acceptance-path"
+  ],
+  "successor_map": [
+    {
+      "milestone": "M320",
+      "reason": "escaping block/byref execution, ownership transfer, and ARC automation"
+    },
+    {
+      "milestone": "M321",
+      "reason": "throws, cleanup, bridged errors, and executable propagation closure"
+    },
+    {
+      "milestone": "M322",
+      "reason": "async/task/actor runtime execution, scheduling, and isolation closure"
+    },
+    {
+      "milestone": "M323",
+      "reason": "metaprogramming, property-behavior runtime materialization, and interop closure"
+    },
+    {
+      "milestone": "M324",
+      "reason": "full-envelope conformance, stability, and production claimability"
+    }
+  ],
+  "measured_query_sources": [
+    {
+      "query_id": "runtime-object-model-symbol-exports",
+      "kind": "source-search",
+      "path": "native/objc3c/src/runtime/objc3_runtime.cpp",
+      "patterns": [
+        "objc3_runtime_copy_realized_class_graph_state_for_testing",
+        "objc3_runtime_copy_realized_class_entry_for_testing",
+        "objc3_runtime_copy_property_registry_state_for_testing",
+        "objc3_runtime_copy_property_entry_for_testing",
+        "objc3_runtime_copy_protocol_conformance_query_for_testing",
+        "objc3_runtime_copy_object_model_query_state_for_testing"
+      ]
+    },
+    {
+      "query_id": "object-model-claim-surfaces",
+      "kind": "documentation-search",
+      "path": "docs/objc3c-native.md",
+      "patterns": [
+        "This is the authoritative object-model runtime ABI/query boundary.",
+        "This is the authoritative live implementation boundary for realization lookup",
+        "private-testing-snapshots-remain-the-only-reflection-visibility-surface-and-publish-runtime-owned-class-property-and-protocol-state"
+      ]
+    },
+    {
+      "query_id": "authoritative-probe-existence",
+      "kind": "path-existence",
+      "root": "tests/tooling/runtime"
+    },
+    {
+      "query_id": "authoritative-fixture-existence",
+      "kind": "path-existence",
+      "root": "tests/tooling/fixtures/native"
+    }
+  ]
+}
