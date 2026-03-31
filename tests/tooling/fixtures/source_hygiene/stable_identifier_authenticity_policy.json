@@ -23,9 +23,6 @@
       "docs/runbooks/objc3c_public_command_surface.md"
     ],
     "archive_only_roots": [
-      "tmp/planning/",
-      "tmp/github-publish/",
-      "tmp/archive/",
       "docs/reference/"
     ]
   },
@@ -96,9 +93,6 @@
       "claim_strength": "historical_only",
       "description": "tracked planning, publication, or redirect material that may retain milestone references but must not drive live product claims",
       "allowed_roots": [
-        "tmp/planning/",
-        "tmp/github-publish/",
-        "tmp/archive/",
         "docs/reference/"
       ],
       "must_not_drive_product_claims": true

@@ -56,9 +56,9 @@ COMMANDS = [
         "name": "new-work-proposal-render",
         "command": [
             "python",
-            "tmp/github-publish/m318_governance/publish_new_work_proposal.py",
+            "scripts/publish_new_work_proposal.py",
             "--proposal",
-            "tmp/planning/m318_governance/new_work_proposal_sample.json",
+            "tests/tooling/fixtures/governance_sustainability/new_work_proposal_sample.json",
             "--output-dir",
             str(PROPOSAL_OUTPUT_DIR.relative_to(ROOT)).replace('\\', '/'),
         ],

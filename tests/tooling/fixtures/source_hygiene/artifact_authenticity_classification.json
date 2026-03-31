@@ -51,7 +51,7 @@
             "explicit_fixture_label"
           ],
           "label_rollout_status": "implemented-in-c003",
-          "reference_implementation": "tmp/planning/source_hygiene/sync_replay_fixture_authenticity.py"
+          "reference_implementation": "scripts/sync_replay_fixture_authenticity.py"
         },
         {
           "rule_id": "objc3c.fixture.synthetic.replaymanifest.v1",
@@ -68,7 +68,7 @@
             "explicit_fixture_label"
           ],
           "label_rollout_status": "implemented-in-c003",
-          "reference_implementation": "tmp/planning/source_hygiene/sync_replay_fixture_authenticity.py"
+          "reference_implementation": "scripts/sync_replay_fixture_authenticity.py"
         },
         {
           "rule_id": "objc3c.fixture.synthetic.testjson.v1",
@@ -104,9 +104,6 @@
     "archive_reference": {
       "classification_mode": "archive_roots",
       "roots": [
-        "tmp/planning/",
-        "tmp/github-publish/",
-        "tmp/archive/",
         "docs/reference/"
       ],
       "required_annotations": [

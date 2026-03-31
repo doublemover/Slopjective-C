@@ -68,7 +68,7 @@ def main() -> int:
     summary = {
         "contract_id": contract["contract_id"],
         "future_live_audit_entrypoint": contract["future_live_audit_entrypoint"],
-        "canonical_report_root": contract["canonical_report_root"],
+        "generated_report_root": contract["generated_report_root"],
         "checks": check_results,
         "ok": all(item["returncode"] == 0 and item["report_ok"] for item in check_results),
     }

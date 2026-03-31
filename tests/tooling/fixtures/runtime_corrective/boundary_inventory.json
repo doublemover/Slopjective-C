@@ -5,8 +5,7 @@
   "issue": "M316-A001",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
   "summary_script": "scripts/build_runtime_corrective_boundary_inventory_summary.py",
-  "canonical_planning_root": "tmp/planning/runtime_corrective",
-  "report_root": "tmp/reports/m316/M316-A001",
+  "generated_report_root": "tmp/reports/m316/M316-A001",
   "focus": [
     "realized-dispatch-over-the-live-object-graph",
     "synthesized-accessor-codegen-and-execution",

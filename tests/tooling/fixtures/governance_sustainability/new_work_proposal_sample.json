@@ -1,0 +1,48 @@
+{
+  "issue_code": "M400-A001",
+  "title_core": "Example proposal publication boundary",
+  "kind": "contract-and-implementation-entrypoint",
+  "milestone_focus_summary": "Demonstrate governance-compliant future work proposal publication without introducing another ad hoc issue seeding path.",
+  "why_it_matters": "Future roadmap work should pass through one governance-aware publication path so labels, blockers, budget posture, and milestone targeting stay disciplined.",
+  "acceptance_criteria": [
+    "Render an issue body that follows the current backlog publication and governance template.",
+    "Run the governance preflight before any publish step.",
+    "Resolve milestone targeting from the stable milestone title/code instead of a guessed GitHub number."
+  ],
+  "primary_implementation_surfaces": [
+    "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+    "scripts/publish_new_work_proposal.py",
+    "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json"
+  ],
+  "dependencies": [],
+  "validation_posture": "generator_contract_only",
+  "budget_impact": "no_budget_growth",
+  "label_names": [
+    "type:roadmap",
+    "priority:P1",
+    "area:governance",
+    "lane:A",
+    "source:planning-checklist",
+    "domain:governance-and-sustainability"
+  ],
+  "milestone_title": "M400 Example future planning milestone",
+  "design_corrections_folded_in": [
+    "Uses one governed proposal path instead of manual issue seeding and guessed milestone numbers."
+  ],
+  "notes": [
+    "This sample remains render-only and exists to prove the proposal tool chain."
+  ],
+  "execution_order": {
+    "cleanup_program_slot": "example-slot",
+    "cleanup_program_phase": "example-phase",
+    "global_sequence": "M400 -> M401",
+    "blocked_by_prior_milestones": [
+      "M399"
+    ],
+    "direct_issue_blockers": [],
+    "directly_unblocks": [
+      "M400-B001"
+    ],
+    "instruction": "Example execution ordering only; replace with real sequencing when used for publication."
+  }
+}

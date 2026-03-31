@@ -3,9 +3,6 @@
   "schema_version": 1,
   "policy_contract": "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
   "archive_roots": [
-    "tmp/planning/",
-    "tmp/github-publish/",
-    "tmp/archive/",
     "docs/reference/"
   ],
   "product_surface_roots": [

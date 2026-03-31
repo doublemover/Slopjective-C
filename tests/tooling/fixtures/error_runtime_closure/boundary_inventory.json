@@ -5,8 +5,7 @@
   "issue": "M321-A001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
-  "canonical_planning_root": "tmp/planning/error_runtime_closure",
-  "canonical_report_root": "tmp/reports/m321/M321-A001",
+  "generated_report_root": "tmp/reports/m321/M321-A001",
   "focus_tracks": [
     "throw-catch-cleanup-unwind-runtime-closure",
     "nserror-status-result-bridge-runtime-closure",

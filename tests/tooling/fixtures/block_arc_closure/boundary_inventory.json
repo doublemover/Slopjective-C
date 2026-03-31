@@ -5,8 +5,7 @@
   "issue": "M320-A001",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
   "summary_script": "scripts/build_block_arc_closure_boundary_inventory_summary.py",
-  "canonical_planning_root": "tmp/planning/block_arc_closure",
-  "report_root": "tmp/reports/m320/M320-A001",
+  "generated_report_root": "tmp/reports/m320/M320-A001",
   "focus": [
     "escaping-block-promotion-and-invoke-runtime-closure",
     "byref-forwarding-copy-dispose-and-heap-promotion-closure",
@@ -102,7 +101,7 @@
       "gap_id": "interaction-with-properties-errors-and-concurrency-not-frozen-as-one-map",
       "summary": "The milestone focus includes property, cleanup, and future error/concurrency interaction, but the current live proof surface only publishes the block/ARC/runtime-helper slice and must keep broader interaction claims narrow until successor milestones land.",
       "evidence_references": [
-        "tmp/planning/runtime_envelope_completion_program/milestones/M320.md",
+        "docs/runbooks/objc3c_block_arc_closure.md",
         "docs/objc3c-native.md",
         "scripts/check_objc3c_runtime_acceptance.py"
       ],
