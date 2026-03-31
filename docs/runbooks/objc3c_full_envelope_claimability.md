@@ -21,6 +21,7 @@ Replayable generators and validators:
 - `python scripts/check_full_envelope_claimability_rollout_readiness.py`
 - `python scripts/build_full_envelope_claimability_dashboard_contract_summary.py`
 - `python scripts/build_full_envelope_claimability_dashboard.py`
+- `python scripts/check_full_envelope_claimability_soak_external_validation.py`
 
 ## Claim Taxonomy
 
@@ -124,6 +125,19 @@ The envelope dashboard is a projection over the support matrix, claim policy,
 release-blocker summary, rollout-readiness summary, and the live conformance,
 performance, release, and trust integration reports. It is not allowed to
 become a separate manual truth source.
+
+## Soak, Stress, And External Validation Integration
+
+Full-envelope claimability must keep the long-running validation surfaces live:
+
+- conformance corpus integration
+- stress integration
+- external validation integration
+- public-conformance publication that projects over those validation families
+
+Later evidence packaging and closeout gates must consume the shared full-envelope
+dashboard and the live validation integrations instead of publishing a second
+soak or external-validation truth surface.
 
 ## Evidence Families
 

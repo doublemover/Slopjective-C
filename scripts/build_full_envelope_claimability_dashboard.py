@@ -69,6 +69,21 @@ def main() -> int:
 
     acceptance_matrix = [
         {
+            "family": "conformance-corpus",
+            "status": integration_reports["tmp/reports/conformance/corpus-integration-summary.json"].get("status"),
+            "claim_signal": "passing-corpus-gate",
+        },
+        {
+            "family": "stress-integration",
+            "status": integration_reports["tmp/reports/stress/integration-summary.json"].get("status"),
+            "claim_signal": "passing-stress-gate",
+        },
+        {
+            "family": "external-validation",
+            "status": integration_reports["tmp/reports/external-validation/integration-summary.json"].get("status"),
+            "claim_signal": "passing-external-validation-gate",
+        },
+        {
             "family": "public-conformance",
             "status": public_conformance.get("status"),
             "claim_signal": public_conformance.get("public_status"),

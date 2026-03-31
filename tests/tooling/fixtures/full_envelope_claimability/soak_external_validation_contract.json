@@ -1,0 +1,21 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.soak.external.validation.contract.v1",
+  "surface_kind": "full-envelope-soak-stress-external-validation-contract",
+  "milestone": "M324",
+  "issue": "M324-D001",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/check_full_envelope_claimability_soak_external_validation.py",
+  "required_reports": [
+    "tmp/reports/full-envelope-claimability/dashboard-summary.json",
+    "tmp/reports/conformance/corpus-integration-summary.json",
+    "tmp/reports/stress/integration-summary.json",
+    "tmp/reports/external-validation/integration-summary.json",
+    "tmp/reports/public-conformance/integration-summary.json"
+  ],
+  "required_acceptance_matrix_families": [
+    "conformance-corpus",
+    "stress-integration",
+    "external-validation",
+    "public-conformance"
+  ]
+}

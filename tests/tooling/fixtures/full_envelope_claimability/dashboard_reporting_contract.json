@@ -12,6 +12,9 @@
     "tmp/reports/full-envelope-claimability/rollout-readiness/rollout_readiness_summary.json"
   ],
   "required_integration_reports": [
+    "tmp/reports/conformance/corpus-integration-summary.json",
+    "tmp/reports/stress/integration-summary.json",
+    "tmp/reports/external-validation/integration-summary.json",
     "tmp/reports/public-conformance/integration-summary.json",
     "tmp/reports/performance-governance/integration-summary.json",
     "tmp/reports/release-foundation/integration-summary.json",
