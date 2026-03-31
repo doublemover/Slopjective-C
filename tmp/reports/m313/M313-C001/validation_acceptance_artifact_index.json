@@ -1,0 +1,90 @@
+{
+  "contract_id": "objc3c.validation.acceptance.artifact.index.v1",
+  "generated_at_utc": "2026-03-31T01:08:15.723310+00:00",
+  "milestone_code": "M313",
+  "policy_id": "validation-consolidation-policy-v1",
+  "artifact_count": 4,
+  "artifacts": [
+    {
+      "issue_code": "M313-A001",
+      "artifact_kind": "validation-surface-inventory",
+      "report_path": "tmp/reports/m313/M313-A001/validation_surface_inventory.json",
+      "planning_source_paths": [
+        "tmp/planning/validation_consolidation/build_validation_surface_inventory.py"
+      ],
+      "highlights": {
+        "package_scripts_total": 144,
+        "check_py_files": 82,
+        "retained_static_guard_count": 19,
+        "executable_validation_count": 63
+      }
+    },
+    {
+      "issue_code": "M313-B001",
+      "artifact_kind": "validation-policy",
+      "report_path": "tmp/reports/m313/M313-B001/policy_summary.json",
+      "planning_source_paths": [
+        "tmp/planning/validation_consolidation/validation_consolidation_policy.json",
+        "tmp/planning/validation_consolidation/build_validation_policy_summary.py"
+      ],
+      "highlights": {
+        "canonical_truth_order": [
+          "shared_acceptance_harness",
+          "public_workflow_validate_actions",
+          "integration_validators",
+          "runnable_end_to_end_validators",
+          "retained_static_policy_guards"
+        ],
+        "retained_static_guard_classes": [
+          "retain:task-hygiene",
+          "retain:repo-shape",
+          "retain:docs-surface",
+          "retain:product-surface",
+          "retain:source-surface-contract",
+          "retain:schema-contract"
+        ],
+        "legacy_surface_states": [
+          "active",
+          "migration-only",
+          "archival",
+          "prohibited"
+        ]
+      }
+    },
+    {
+      "issue_code": "M313-B002",
+      "artifact_kind": "validation-harness-catalog",
+      "report_path": "tmp/reports/m313/M313-B002/validation_harness_catalog.json",
+      "planning_source_paths": [
+        "tmp/planning/validation_consolidation/build_validation_harness_catalog.py",
+        "tmp/planning/validation_consolidation/validation_harness_catalog.json"
+      ],
+      "highlights": {
+        "shared_acceptance_suite_count": 3,
+        "workflow_action_count": 135,
+        "workflow_family_count": 22
+      }
+    },
+    {
+      "issue_code": "M313-B003",
+      "artifact_kind": "legacy-validation-surface-map",
+      "report_path": "tmp/reports/m313/M313-B003/legacy_validation_surface_map.json",
+      "planning_source_paths": [
+        "tmp/planning/validation_consolidation/build_legacy_validation_surface_map.py",
+        "tmp/planning/validation_consolidation/legacy_validation_surface_map.json"
+      ],
+      "highlights": {
+        "legacy_surface_count": 7,
+        "state_counts": {
+          "migration-only": 4,
+          "active": 3
+        }
+      }
+    }
+  ],
+  "next_issues": [
+    "M313-C002",
+    "M313-C003",
+    "M313-D001"
+  ]
+}

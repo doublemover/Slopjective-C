@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.dev/schemas/objc3c-validation-acceptance-artifact-index-v1.schema.json",
+  "title": "ObjC3C Validation Acceptance Artifact Index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "milestone_code",
+    "policy_id",
+    "artifact_count",
+    "artifacts",
+    "next_issues"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.validation.acceptance.artifact.index.v1"
+    },
+    "generated_at_utc": {
+      "type": "string"
+    },
+    "milestone_code": {
+      "const": "M313"
+    },
+    "policy_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_count": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_code",
+          "artifact_kind",
+          "report_path",
+          "planning_source_paths",
+          "highlights"
+        ],
+        "properties": {
+          "issue_code": {
+            "type": "string",
+            "pattern": "^M313-[A-Z][0-9]{3}$"
+          },
+          "artifact_kind": {
+            "type": "string",
+            "enum": [
+              "validation-surface-inventory",
+              "validation-policy",
+              "validation-harness-catalog",
+              "legacy-validation-surface-map"
+            ]
+          },
+          "report_path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "planning_source_paths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "highlights": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        }
+      }
+    },
+    "next_issues": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "pattern": "^M313-[A-Z][0-9]{3}$"
+      }
+    }
+  }
+}
