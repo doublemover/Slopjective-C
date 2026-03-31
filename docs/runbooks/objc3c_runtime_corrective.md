@@ -7,12 +7,14 @@ Canonical checked-in boundary contract:
 - `tests/tooling/fixtures/runtime_corrective/boundary_inventory.json`
 - `tests/tooling/fixtures/runtime_corrective/realized_dispatch_semantic_model.json`
 - `tests/tooling/fixtures/runtime_corrective/synthesized_accessor_semantic_model.json`
+- `tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json`
 
 Replayable summary generator:
 
 - `python scripts/build_runtime_corrective_boundary_inventory_summary.py`
 - `python scripts/build_runtime_corrective_dispatch_summary.py`
 - `python scripts/build_runtime_corrective_synthesized_accessor_summary.py`
+- `python scripts/build_runtime_corrective_native_output_truth_summary.py`
 
 Current corrective scope:
 

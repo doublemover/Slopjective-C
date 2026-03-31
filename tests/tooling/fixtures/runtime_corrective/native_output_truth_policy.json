@@ -1,0 +1,48 @@
+{
+  "contract_id": "objc3c.runtime.corrective.native.output.truth.policy.v1",
+  "surface_kind": "runtime-corrective-native-output-truth-policy",
+  "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
+  "compile_output_truthfulness_contract_id": "objc3c.native.compile.output.truthfulness.v1",
+  "compile_output_provenance_contract_id": "objc3c.native.compile.output.provenance.v1",
+  "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
+  "summary_script": "scripts/build_runtime_corrective_native_output_truth_summary.py",
+  "authoritative_suite_path": "scripts/check_objc3c_runtime_acceptance.py",
+  "authoritative_replay_proof_path": "scripts/check_objc3c_execution_replay_proof.ps1",
+  "required_coupled_artifacts": [
+    "module.manifest.json",
+    "module.runtime-registration-manifest.json",
+    "module.compile-provenance.json",
+    "module.obj",
+    "module.ll"
+  ],
+  "required_truth_bindings": [
+    "compile_output_truthfulness.contract_id",
+    "compile_output_truthfulness.truthful",
+    "registration_manifest.compile_output_truthfulness_contract_id",
+    "registration_manifest.compile_output_truthful",
+    "registration_manifest.compile_output_artifact_set_digest_sha256"
+  ],
+  "authoritative_claim_classes": [
+    "linked-runtime-probe",
+    "compile-coupled-inspection"
+  ],
+  "allowed_proof_sources": [
+    "reproducible-compiler-invocation",
+    "emitted-llvm-ir-coupled-to-provenance",
+    "emitted-object-coupled-to-provenance",
+    "registration-manifest-coupled-to-provenance",
+    "linked-runtime-probe-coupled-to-the-same-compile-run"
+  ],
+  "forbidden_proof_sources": [
+    "hand-authored-ll",
+    "sidecar-only-report-or-manifest-without-coupled-compile-output",
+    "unlinked-runtime-probe",
+    "compile-output-without-truthfulness-envelope"
+  ],
+  "explicit_non_goals": [
+    "no-proof-from-replay-text-alone",
+    "no-proof-from-manifests-without-emitted-object-and-linked-probe",
+    "no-milestone-local-proof-theater",
+    "no-claim-that-compatibility-shims-alone-prove-native-output-truth"
+  ]
+}
