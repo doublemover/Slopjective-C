@@ -1,0 +1,20 @@
+{
+  "issue": "M320-B003",
+  "contract_id": "objc3c.block_arc.closure.byref.promotion.copy.dispose.forwarding.implementation_contract.v1",
+  "surface_kind": "byref-promotion-copy-dispose-forwarding-implementation-contract",
+  "authoritative_runtime_symbol_count": 4,
+  "implementation_invariant_count": 3,
+  "authoritative_proof_path_count": 5,
+  "authoritative_fixture_path_count": 3,
+  "claim_narrowing_constraint_count": 3,
+  "checks": {
+    "summary_script_link_matches": true,
+    "all_authoritative_proof_paths_exist": true,
+    "all_authoritative_fixture_paths_exist": true,
+    "all_authoritative_runtime_symbols_exported": true,
+    "runtime_keeps_byref_forwarding_anchor": true,
+    "runbook_mentions_byref_forwarding_runtime_path": true
+  },
+  "status": "PASS",
+  "ok": true
+}

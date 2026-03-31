@@ -49,6 +49,12 @@ ARC automation and lifetime insertion policy:
 - cleanup scopes, implicit cleanup, and autorelease returns remain part of one coupled lowering and runtime story
 - property interaction stays within the runtime-owned helper surface already covered by proof, while error and concurrency interaction claims stay deferred to `M321` and `M322`
 
+Byref promotion, copy/dispose, and forwarding implementation:
+
+- byref forwarding remains supported only through the runtime-owned promotion, invoke, and final-release path
+- dispose is deferred until final release and invoke-after-release stays fail-closed
+- byref closure claims are grounded in the live runtime probes and packaged block/ARC execution path, not in proof-only sidecars
+
 Explicit non-goals:
 
 - public runtime ABI widening for blocks, ARC helpers, or reflection

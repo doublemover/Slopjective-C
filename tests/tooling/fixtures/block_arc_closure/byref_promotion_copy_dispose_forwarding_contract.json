@@ -1,0 +1,45 @@
+{
+  "contract_id": "objc3c.block_arc.closure.byref.promotion.copy.dispose.forwarding.implementation_contract.v1",
+  "surface_kind": "byref-promotion-copy-dispose-forwarding-implementation-contract",
+  "milestone": "M320",
+  "issue": "M320-B003",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "summary_script": "scripts/build_block_arc_closure_byref_summary.py",
+  "authoritative_runtime_symbols": [
+    "objc3_runtime_promote_block_i32",
+    "objc3_runtime_invoke_block_i32",
+    "objc3_runtime_release_i32",
+    "objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing"
+  ],
+  "implementation_invariants": [
+    {
+      "invariant_id": "promotion-runs-copy-helper-once-for-owned-capture-storage",
+      "summary": "Promotion must preserve exactly one copy-helper transition into the runtime-owned block state for the canonical byref probe."
+    },
+    {
+      "invariant_id": "forwarded-byref-state-remains-live-until-final-release",
+      "summary": "Dispose is deferred until final release and invoke-after-release must fail closed."
+    },
+    {
+      "invariant_id": "forwarded-payload-remains-stable-through-runtime-owned-storage",
+      "summary": "The disposed payload and invoke results must reflect the promoted storage rather than post-promotion stack mutation."
+    }
+  ],
+  "authoritative_proof_paths": [
+    "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+    "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "tests/tooling/runtime/block_arc_runtime_abi_probe.cpp",
+    "scripts/check_objc3c_runnable_block_arc_conformance.py",
+    "scripts/check_objc3c_runnable_block_arc_end_to_end.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_byref_positive.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3"
+  ],
+  "claim_narrowing_constraints": [
+    "no-stack-only-byref-success-claim",
+    "no-proof-only-promotion-helper-claim",
+    "no-public-runtime-abi-widening"
+  ]
+}
