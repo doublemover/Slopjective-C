@@ -1,0 +1,36 @@
+{
+  "contract_id": "objc3c.developer.tooling.diagnostics.formatting.symbol.policy.v1",
+  "surface_kind": "developer-tooling-policy",
+  "milestone": "M325",
+  "issue": "M325-B001",
+  "runbook": "docs/runbooks/objc3c_developer_tooling.md",
+  "summary_script": "scripts/build_developer_tooling_diagnostics_policy_summary.py",
+  "authoritative_code_paths": [
+    "scripts/objc3c_public_workflow_runner.py",
+    "scripts/check_objc3c_developer_tooling_integration.py",
+    "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/hello.objc3",
+    "tests/tooling/fixtures/native/negative_undefined_symbol.objc3"
+  ],
+  "diagnostics_source_of_truth": [
+    "frontend runner summary JSON is authoritative for compile status, blocking stage, and aggregate diagnostic severity",
+    "emitted diagnostics JSON is authoritative for per-diagnostic line, column, severity, code, and message fields"
+  ],
+  "symbol_resolution_source_of_truth": [
+    "emitted manifest declaration records are authoritative for globals, functions, interfaces, implementations, protocols, and categories",
+    "manifest-published declaration line and column coordinates are authoritative over text-only scans"
+  ],
+  "formatting_policy": [
+    "formatter output must be generated through the canonical developer-tooling surface after a real compile attempt",
+    "formatter claims must fail closed outside the supported canonical subset",
+    "formatter output must never override compile-owned diagnostics or declaration coordinates"
+  ],
+  "claim_narrowing_constraints": [
+    "no editor-only shadow parser may become the source of truth for diagnostics or symbol resolution",
+    "formatting support must be described as preview or fail-closed until a replayable formatter output surface exists",
+    "symbol navigation claims must stay limited to compile-owned declarations and artifact-backed locations"
+  ]
+}

@@ -190,6 +190,65 @@ Current gaps after `M324`:
 These gaps are deliberate scope for `M325`; they are not already supported by
 the inspect/trace workflow.
 
+## Diagnostics, Formatting, And Symbol Resolution Policy
+
+Diagnostics, formatting, and symbol resolution must stay coupled to the live
+frontend runner output model.
+
+- diagnostics source of truth:
+  - the frontend runner summary JSON
+  - the emitted diagnostics JSON with real line, column, severity, code, and
+    message entries
+- symbol resolution source of truth:
+  - the emitted manifest declaration records for globals, functions,
+    interfaces, implementations, protocols, and categories
+  - declaration coordinates published by the real compile output
+- formatting source of truth:
+  - machine-owned formatter output must be generated from the canonical
+    developer-tooling surface after a real compile attempt
+  - formatter claims must fail closed when the source is outside the supported
+    canonical subset
+
+Downstream editor and navigation work must use compile-owned declaration
+coordinates instead of building a shadow symbol index from ad hoc text scans.
+
+## Language-Server Capability And Fallback Policy
+
+Language-server claims must stay narrower than the real shipped capability set.
+
+- supported capability claims may only be published when they can be backed by:
+  - compile-owned diagnostics
+  - compile-owned declaration coordinates
+  - emitted artifact presence and runtime inspection facts
+- unsupported capability classes must fail closed with explicit fallback
+  metadata instead of pretending partial support:
+  - references
+  - rename
+  - semantic tokens
+  - code actions
+  - statement-level debugger stepping
+
+The public developer-tooling surface must publish one canonical capability map
+with capability status, fallback status, and evidence roots instead of
+duplicating per-editor interpretations.
+
+## Debugger, Source-Map, And Stepping Semantics
+
+Debugger and stepping behavior must stay tied to emitted artifacts and truthful
+availability rules.
+
+- breakpoint and navigation anchors come from compile-owned declaration
+  coordinates
+- object-backed symbol visibility comes from the emitted object artifact and the
+  runtime inspector symbol inventory path
+- statement-level stepping and full source-map claims remain fail-closed until
+  the emitted toolchain artifacts prove them directly
+
+Until native line-table and full debugger metadata are emitted on the canonical
+toolchain path, the public debug surface must describe itself as
+declaration-breakpoint and artifact-inspection driven rather than as a full
+statement debugger.
+
 ## Explicit Non-Goals
 
 - no milestone-local debug launcher
