@@ -1,0 +1,98 @@
+{
+  "contract_id": "objc3c.concurrency.runtime.closure.actor.isolation.sendability.hop.contract.v1",
+  "surface_kind": "actor-isolation-sendability-hop-contract",
+  "milestone": "M322",
+  "issue": "M322-B004",
+  "runbook": "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+  "summary_script": "scripts/build_concurrency_runtime_closure_actor_semantics_summary.py",
+  "actor_models": [
+    "actor-isolation-entry-nonisolated-entry-and-hop-semantics-remain-runtime-owned-behavior-backed-by-private-helper-entrypoints-and-testing-snapshots",
+    "replay-proof-race-guard-executor-binding-and-mailbox-drain-ownership-remain-one-deterministic-actor-runtime-story",
+    "sendability-and-isolation-claims-stay-grounded-in-live-lowering-probes-executor-contract-probes-and-packaged-runnable-e2e-evidence",
+    "broader-interop-and-public-actor-runtime-abi-claims-remain-fail-closed-until-successor-evidence-lands"
+  ],
+  "authoritative_case_ids": [
+    "unified-concurrency-runtime-abi",
+    "live-unified-concurrency-runtime-implementation",
+    "cross-module-concurrency-actor-artifact-preservation"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
+    "native/objc3c/src/runtime/objc3_runtime.cpp",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "scripts/check_objc3c_runnable_concurrency_conformance.py",
+    "scripts/check_objc3c_runnable_concurrency_end_to_end.py"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3",
+    "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/actor_runtime_executor_contract_positive.objc3",
+    "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/cross_module_actor_isolation_provider.objc3",
+    "tests/tooling/fixtures/native/cross_module_actor_isolation_consumer.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/actor_lowering_runtime_probe.cpp",
+    "tests/tooling/runtime/actor_runtime_executor_contract_probe.cpp",
+    "tests/tooling/runtime/live_actor_mailbox_runtime_probe.cpp"
+  ],
+  "required_actor_probe_payload": {
+    "replay": 1,
+    "guard": 1,
+    "isolation": 1,
+    "bound": 1,
+    "enqueued": 23,
+    "drained": 23,
+    "replay_proof_call_count": 1,
+    "race_guard_call_count": 1,
+    "isolation_thunk_call_count": 1,
+    "bind_executor_call_count": 1,
+    "mailbox_enqueue_call_count": 1,
+    "mailbox_drain_call_count": 1,
+    "last_replay_proof_executor_tag": 1,
+    "last_race_guard_executor_tag": 1,
+    "last_isolation_executor_tag": 1,
+    "last_bound_actor_handle": 41,
+    "last_bound_executor_tag": 1,
+    "last_mailbox_actor_handle": 41,
+    "last_mailbox_enqueued_value": 23,
+    "last_mailbox_executor_tag": 1,
+    "last_mailbox_depth": 0,
+    "last_mailbox_drained_value": 23
+  },
+  "required_actor_lowering_probe_values": {
+    "isolation": 1,
+    "nonisolated": 7,
+    "hopped": 9,
+    "isolation_thunk_call_count": 1,
+    "nonisolated_entry_call_count": 1,
+    "hop_to_executor_call_count": 1,
+    "last_isolation_executor_tag": 1,
+    "last_nonisolated_value": 7,
+    "last_nonisolated_executor_tag": 0,
+    "last_hop_value": 9,
+    "last_hop_executor_tag": 1,
+    "last_hop_result": 9
+  },
+  "required_actor_executor_contract_probe_values": {
+    "replay": 1,
+    "guard": 1,
+    "isolation": 1,
+    "nonisolated": 5,
+    "hopped": 17,
+    "replay_proof_call_count": 1,
+    "race_guard_call_count": 1,
+    "isolation_thunk_call_count": 1,
+    "nonisolated_entry_call_count": 1,
+    "hop_to_executor_call_count": 1,
+    "last_replay_proof_executor_tag": 1,
+    "last_race_guard_executor_tag": 1,
+    "last_isolation_executor_tag": 1,
+    "last_nonisolated_value": 5,
+    "last_nonisolated_executor_tag": 0,
+    "last_hop_value": 17,
+    "last_hop_executor_tag": 1,
+    "last_hop_result": 17
+  }
+}
