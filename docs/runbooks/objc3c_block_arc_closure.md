@@ -37,6 +37,12 @@ Current closure constraints:
 - packaged and conformance proof already exist, but the milestone still needs one truthful closure boundary tying block/byref and ARC automation claims together
 - interaction claims for properties, cleanup, and future error/concurrency surfaces must stay narrower than the evidence published today
 
+Escaping block, byref, and ownership semantic model:
+
+- capture-family truth stays sema-owned before lowering, including explicit capture modes, cleanup ownership transfer, and retainable-family legality
+- escaping byref behavior is only supported through the runtime-owned promotion, forwarding, copy, and dispose helper path already targeted by lowering
+- milestone claims stay narrower than the shared acceptance, runtime-probe, and packaged-e2e evidence and do not widen the public ABI
+
 Explicit non-goals:
 
 - public runtime ABI widening for blocks, ARC helpers, or reflection

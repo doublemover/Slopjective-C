@@ -1,0 +1,86 @@
+{
+  "contract_id": "objc3c.block_arc.closure.escaping.block.byref.ownership.semantic_model.v1",
+  "surface_kind": "escaping-block-byref-ownership-semantic-model",
+  "milestone": "M320",
+  "issue": "M320-B001",
+  "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
+  "summary_script": "scripts/build_block_arc_closure_semantic_summary.py",
+  "ownership_transfer_capture_family_source_surface_contract_id": "objc3c.runtime.ownership.transfer.capture.family.source.surface.v1",
+  "canonical_surfaces": [
+    "runtime_ownership_transfer_capture_family_source_surface",
+    "runtime_block_arc_unified_source_surface",
+    "runtime_block_arc_lowering_helper_surface",
+    "runtime_block_arc_runtime_abi_surface"
+  ],
+  "semantic_surface_paths": [
+    "frontend.pipeline.semantic_surface.objc_ownership_resource_move_and_use_after_move_semantics",
+    "frontend.pipeline.semantic_surface.objc_ownership_capture_list_and_retainable_family_legality_completion",
+    "frontend.pipeline.semantic_surface.objc_block_storage_escape_lowering_surface",
+    "frontend.pipeline.semantic_surface.objc_block_copy_dispose_lowering_surface"
+  ],
+  "capture_profile_fields": [
+    "Expr.block_runtime_capture_ownership_profile",
+    "Expr.block_runtime_owned_object_capture_count",
+    "Expr.block_runtime_weak_object_capture_count",
+    "Expr.block_runtime_unowned_object_capture_count",
+    "cleanup_ownership_transfer_enforced",
+    "explicit_capture_ownership_mode_enforced",
+    "retainable_family_conflict_enforced"
+  ],
+  "frozen_semantic_models": [
+    {
+      "semantic_id": "escaping-block-capture-family-truth-stays-sema-owned-before-lowering",
+      "summary": "Owned, weak, and unowned capture-family truth is fixed on the semantic surface before lowering and must not be reinterpreted by milestone-local helpers."
+    },
+    {
+      "semantic_id": "byref-forwarding-is-only-valid-through-runtime-owned-promotion-and-helper-paths",
+      "summary": "Escaping byref cells become live only through the runtime promotion, forwarding, copy, and dispose helper path that the emitted lowering already targets."
+    },
+    {
+      "semantic_id": "ownership-transfer-cleanup-is-part-of-one-executable-block-story",
+      "summary": "Move/use-after-move, explicit capture modes, cleanup ownership transfer, and retainable-family legality are one executable ownership story and cannot drift independently."
+    },
+    {
+      "semantic_id": "claims-stay-narrower-than-shared-runtime-proof",
+      "summary": "The supported closure claim is limited to the existing acceptance and runtime probe evidence and does not widen the public ABI or invent parallel semantics."
+    }
+  ],
+  "claim_narrowing_constraints": [
+    "no-public-block-or-arc-abi-widening",
+    "no-lowering-owned-reinterpretation-of-capture-family-truth",
+    "no-proof-only-sidecar-ownership-model"
+  ],
+  "authoritative_case_ids": [
+    "escaping-block-capture-legality",
+    "block-storage-arc-automation-semantics",
+    "block-helper-runtime-execution",
+    "arc-property-helper-abi"
+  ],
+  "authoritative_code_paths": [
+    "native/objc3c/src/ast/objc3_ast.h",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp",
+    "native/objc3c/src/runtime/objc3_runtime.cpp"
+  ],
+  "authoritative_fixture_paths": [
+    "tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3",
+    "tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/nonowning_object_capture_helper_elided_positive.objc3",
+    "tests/tooling/fixtures/native/nonowning_object_capture_runtime_positive.objc3",
+    "tests/tooling/fixtures/native/weak_object_capture_mutation_negative.objc3",
+    "tests/tooling/fixtures/native/unowned_object_capture_mutation_negative.objc3",
+    "tests/tooling/fixtures/native/escaping_block_runtime_hook_owned_capture_positive.objc3",
+    "tests/tooling/fixtures/native/arc_inference_lifetime_positive.objc3",
+    "tests/tooling/fixtures/native/arc_cleanup_scope_positive.objc3",
+    "tests/tooling/fixtures/native/arc_implicit_cleanup_void_positive.objc3",
+    "tests/tooling/fixtures/native/arc_block_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/arc_autorelease_return_positive.objc3",
+    "tests/tooling/fixtures/native/capture_list_and_retainable_family_legality_completion_positive.objc3"
+  ],
+  "authoritative_probe_paths": [
+    "tests/tooling/runtime/block_runtime_copy_dispose_invoke_probe.cpp",
+    "tests/tooling/runtime/block_runtime_byref_forwarding_probe.cpp",
+    "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp"
+  ]
+}
