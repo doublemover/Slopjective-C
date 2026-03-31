@@ -28,6 +28,7 @@ Replayable boundary inventory:
 - `python scripts/build_application_architecture_layering_summary.py`
 - `python scripts/build_application_architecture_artifact_contract_summary.py`
 - `python scripts/check_application_architecture_template_harness.py`
+- `python scripts/materialize_objc3c_canonical_application_workspace.py`
 
 ## Current Boundary
 
