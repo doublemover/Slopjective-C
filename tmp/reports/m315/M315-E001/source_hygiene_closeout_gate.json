@@ -1,0 +1,29 @@
+{
+  "issue": "M315-E001",
+  "audit_summary_path": "tmp/reports/source_hygiene/source_hygiene_audit_summary.json",
+  "archive_summary_path": "tmp/reports/m315/M315-D003/archive_boundary_compatibility_summary.json",
+  "audit_check_ids": [
+    "product_surface_residue_zero",
+    "synthetic_fixture_classification_surface",
+    "genuine_generated_output_provenance",
+    "replay_fixture_labeling"
+  ],
+  "archive_root_file_counts": {
+    "tmp/planning/": 78,
+    "tmp/github-publish/": 15,
+    "tmp/archive/": 0,
+    "docs/reference/": 1
+  },
+  "checks": {
+    "source_hygiene_audit_exit_zero": true,
+    "source_hygiene_audit_ok": true,
+    "archive_boundary_exit_zero": true,
+    "archive_boundary_ok": true,
+    "archive_boundary_contract_present": true,
+    "source_hygiene_contract_present": true,
+    "all_live_checks_report_ok": true,
+    "product_surface_cleanliness_preserved": true,
+    "archive_history_preserved": true
+  },
+  "ok": true
+}
