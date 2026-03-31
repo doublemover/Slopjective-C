@@ -1,0 +1,22 @@
+{
+  "issue": "M319-B001",
+  "contract_id": "objc3c.object_model.closure.realized_object_graph.reflection.semantic_model.v1",
+  "surface_kind": "realized-object-graph-reflection-semantic-model",
+  "canonical_surface_count": 6,
+  "public_runtime_abi_symbol_count": 4,
+  "private_runtime_query_symbol_count": 11,
+  "frozen_semantic_model_count": 5,
+  "claim_narrowing_constraint_count": 3,
+  "checks": {
+    "summary_script_link_matches": true,
+    "all_authoritative_proof_paths_exist": true,
+    "aggregate_query_symbol_exported": true,
+    "realized_class_entry_query_exported": true,
+    "property_entry_query_exported": true,
+    "protocol_query_exported": true,
+    "docs_publish_object_model_abi_query_boundary": true,
+    "docs_publish_realization_lookup_boundary": true,
+    "docs_publish_private_reflection_constraint": true
+  },
+  "ok": true
+}

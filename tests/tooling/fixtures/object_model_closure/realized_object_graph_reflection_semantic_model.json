@@ -1,0 +1,71 @@
+{
+  "contract_id": "objc3c.object_model.closure.realized_object_graph.reflection.semantic_model.v1",
+  "surface_kind": "realized-object-graph-reflection-semantic-model",
+  "milestone": "M319",
+  "issue": "M319-B001",
+  "runbook": "docs/runbooks/objc3c_object_model_closure.md",
+  "summary_script": "scripts/build_object_model_closure_semantic_summary.py",
+  "canonical_surfaces": [
+    "runtime_object_model_abi_query_surface",
+    "runtime_realization_lookup_reflection_implementation_surface",
+    "runtime_class_metaclass_protocol_realization_surface",
+    "runtime_category_attachment_merged_dispatch_surface",
+    "runtime_reflection_visibility_coherence_diagnostics_surface",
+    "runtime_property_ivar_accessor_reflection_implementation_surface"
+  ],
+  "public_runtime_abi": [
+    "objc3_runtime_register_image",
+    "objc3_runtime_lookup_selector",
+    "objc3_runtime_dispatch_i32",
+    "objc3_runtime_reset_for_testing"
+  ],
+  "private_runtime_query_symbols": [
+    "objc3_runtime_copy_realized_class_graph_state_for_testing",
+    "objc3_runtime_copy_realized_class_entry_for_testing",
+    "objc3_runtime_copy_property_registry_state_for_testing",
+    "objc3_runtime_copy_property_entry_for_testing",
+    "objc3_runtime_copy_protocol_conformance_query_for_testing",
+    "objc3_runtime_copy_selector_lookup_table_state_for_testing",
+    "objc3_runtime_copy_selector_lookup_entry_for_testing",
+    "objc3_runtime_copy_method_cache_state_for_testing",
+    "objc3_runtime_copy_method_cache_entry_for_testing",
+    "objc3_runtime_copy_dispatch_state_for_testing",
+    "objc3_runtime_copy_object_model_query_state_for_testing"
+  ],
+  "frozen_semantic_models": [
+    {
+      "semantic_id": "runtime-owned-realized-object-graph-is-the-only-truth-surface",
+      "summary": "Class, metaclass, category, protocol, property, and ivar answers must come from runtime-owned realized state and not be reconstructed from source-only manifests or probe-local sidecars."
+    },
+    {
+      "semantic_id": "aggregate-object-model-query-must-agree-with-live-dispatch-and-property-lookups",
+      "summary": "The aggregate object-model query snapshot must publish the same class, property, protocol, cache, and dispatch truth already observed through live execution and supporting query surfaces."
+    },
+    {
+      "semantic_id": "reflection-coherence-is-defined-against-observed-runtime-behavior",
+      "summary": "Property and ivar reflection is only correct when selectors, owner identities, slot/layout facts, and ownership profiles match live runtime-backed execution."
+    },
+    {
+      "semantic_id": "private-query-surface-is-supported-without-public-abi-widening",
+      "summary": "The supported closure path keeps reflection and aggregate object-model answers on the private runtime-owned query surface instead of widening the public ABI."
+    },
+    {
+      "semantic_id": "unresolved-dispatch-miss-fallback-is-outside-supported-closure-claims",
+      "summary": "Deterministic miss fallback remains outside the supported full object-model closure claim and must not be presented as successful realized-method execution."
+    }
+  ],
+  "claim_narrowing_constraints": [
+    "no-public-reflection-abi-claim",
+    "no-universal-selector-success-claim",
+    "no-source-only-metadata-equals-runtime-truth-claim"
+  ],
+  "authoritative_proof_paths": [
+    "tests/tooling/runtime/category_attachment_protocol_runtime_probe.cpp",
+    "tests/tooling/runtime/object_model_lookup_reflection_runtime_probe.cpp",
+    "tests/tooling/runtime/runtime_property_metadata_reflection_probe.cpp",
+    "tests/tooling/runtime/property_ivar_execution_matrix_probe.cpp",
+    "tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp",
+    "scripts/check_objc3c_runnable_object_model_conformance.py",
+    "scripts/check_objc3c_runnable_storage_reflection_conformance.py"
+  ]
+}
