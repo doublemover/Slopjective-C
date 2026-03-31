@@ -117,6 +117,8 @@ Governance-sustainability entrypoint:
   - `python scripts/build_governance_budget_inventory_summary.py`
   - `python scripts/build_governance_policy_summary.py`
   - `python scripts/build_governance_maintainer_review_summary.py`
+  - `python scripts/check_governance_sustainability_budget_enforcement.py`
+  - `python scripts/build_governance_anti_regression_summary.py`
 
 Release-foundation entrypoint:
 

@@ -1,0 +1,23 @@
+{
+  "contract_id": "objc3c.governance.sustainability.anti_regression.reporting.v1",
+  "surface_kind": "long-horizon-governance-anti-regression-reporting-contract",
+  "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+  "history_artifact": "tmp/artifacts/governance-sustainability/anti-regression-history.json",
+  "summary_script": "scripts/build_governance_anti_regression_summary.py",
+  "summary_schema": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
+  "source_summaries": [
+    "tmp/reports/m318/M318-A001/governance_budget_inventory_summary.json",
+    "tmp/reports/m318/M318-B001/governance_policy_summary.json",
+    "tmp/reports/m318/M318-B002/governance_maintainer_review_summary.json",
+    "tmp/reports/m318/M318-C002/governance_budget_enforcement_summary.json"
+  ],
+  "tracked_metrics": [
+    "package_script_count",
+    "public_workflow_action_count",
+    "runbook_count",
+    "schema_count",
+    "live_check_script_count",
+    "active_waiver_count",
+    "failure_count"
+  ]
+}

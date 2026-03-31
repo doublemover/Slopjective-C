@@ -59,6 +59,12 @@ Replayable governance enforcement:
 - `python scripts/ci/run_task_hygiene_gate.py`
 - canonical enforcement summary: `tmp/reports/m318/M318-C002/governance_budget_enforcement_summary.json`
 
+Long-horizon anti-regression reporting:
+
+- `python scripts/build_governance_anti_regression_summary.py`
+- canonical history artifact: `tmp/artifacts/governance-sustainability/anti-regression-history.json`
+- canonical anti-regression summary: `tmp/reports/m318/M318-D002/governance_anti_regression_summary.json`
+
 Current governance entry surfaces:
 
 - `scripts/ci/check_task_hygiene.py`
