@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `150`
-- Operator command count: `141`
+- Current package script count: `156`
+- Operator command count: `147`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -41,6 +41,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:objc3c:release-foundation:surface` | `check-release-foundation-surface` | `repo` | `release foundation only publishes from the checked-in release taxonomy, trust, payload, and provenance contracts` | `fixed-shape` | `python:scripts/check_release_foundation_source_surface.py` |
 | `check:objc3c:release-operations:schemas` | `check-release-operations-schema-surface` | `repo` | `update manifest and compatibility-report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_release_operations_schema_surface.py` |
 | `check:objc3c:release-operations:surface` | `check-release-operations-surface` | `repo` | `release operations only publish from the checked-in versioning, upgrade, warning, and fallback policy contracts` | `fixed-shape` | `python:scripts/check_release_operations_source_surface.py` |
+| `check:objc3c:security-hardening:schemas` | `check-security-hardening-schema-surface` | `repo` | `security posture and advisory artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_security_hardening_schema_surface.py` |
+| `check:objc3c:security-hardening:surface` | `check-security-hardening-surface` | `repo` | `security hardening only publishes from the checked-in trust boundary, policy, and workflow contracts` | `fixed-shape` | `python:scripts/check_security_hardening_source_surface.py` |
 | `check:repo:surface` | `check-repo-superclean-surface` | `repo` | `native build emits the canonical repo-cleanup roots, outputs, and command names as one source-of-truth artifact` | `fixed-shape` | `python:scripts/check_repo_superclean_surface.py` |
 | `check:showcase:surface` | `check-showcase-surface` | `repo` | `showcase examples stay compile-coupled, checked in, and tied to the public compiler path` | `pass-through` | `python:scripts/check_showcase_surface.py` |
 | `check:site` | `check-site` | `docs` | `published site index generation stays in sync with site/src inputs` | `fixed-shape` | `python:scripts/build_site_index.py --check` |
@@ -64,6 +66,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:release-manifest` | `build-release-manifest` | `repo` | `release payload selection and reproducibility proof stay tied to the live runnable package manifest and release-evidence boundary` | `fixed-shape` | `python:scripts/build_objc3c_release_manifest.py` |
 | `inspect:objc3c:runtime` | `inspect-runtime-inspector` | `repo` | `developer-facing runtime inspection stays tied to the real emitted object artifact and runtime ABI boundary models` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `inspect:objc3c:runtime-performance` | `benchmark-runtime-performance` | `repo` | `runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_performance.py` |
+| `inspect:objc3c:security-posture` | `build-security-posture` | `repo` | `security posture stays derived from the live trust boundary, release, and runtime evidence` | `fixed-shape` | `python:scripts/build_objc3c_security_posture.py` |
 | `inspect:objc3c:update-manifest` | `build-update-manifest` | `repo` | `versioned channel metadata stays tied to the live release and packaging surfaces` | `fixed-shape` | `python:scripts/build_objc3c_update_manifest.py` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `-` | `-` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `package:objc3c:channels` | `build-package-channels` | `repo` | `package channels stay derived from the live runnable package and release-foundation artifacts` | `fixed-shape` | `python:scripts/build_objc3c_package_channels.py` |
@@ -75,6 +78,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `publish:objc3c:public-conformance` | `publish-public-conformance-report` | `repo` | `public conformance summary and publication artifacts stay derived from the live scorecard and checked-in schema surface` | `fixed-shape` | `python:scripts/publish_objc3c_public_conformance_report.py` |
 | `publish:objc3c:release-operations` | `publish-release-operations` | `repo` | `release-operations publication stays traceable to the checked-in compatibility, warning, and fallback policy contracts` | `fixed-shape` | `python:scripts/publish_objc3c_release_operations_metadata.py` |
 | `publish:objc3c:release-provenance` | `publish-release-provenance` | `repo` | `release provenance publication stays traceable to the live release manifest, package manifest, and release-evidence index` | `fixed-shape` | `python:scripts/publish_objc3c_release_provenance.py` |
+| `publish:objc3c:security-advisories` | `publish-security-advisories` | `repo` | `security advisory publication stays traceable to the live posture and checked-in hardening policies` | `fixed-shape` | `python:scripts/publish_objc3c_security_advisories.py` |
 | `test` | `test-default` | `-` | `-` | `fixed-shape` | `runner-internal` |
 | `test:bonus-experiences` | `validate-bonus-experiences` | `repo` | `bonus-experience workflows stay executable, template-derived, and tied to the live showcase tutorial and developer-tooling surfaces` | `fixed-shape` | `python:scripts/check_objc3c_bonus_experience_integration.py` |
 | `test:bonus-experiences:e2e` | `validate-runnable-bonus-experiences` | `full` | `staged runnable toolchain bundles preserve bonus-experience template compilation runtime execution and capability-probe semantics` | `fixed-shape` | `python:scripts/check_objc3c_runnable_bonus_experience_end_to_end.py` |
@@ -138,6 +142,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:runtime-acceptance` | `test-runtime-acceptance` | `fast` | `runtime acceptance and ABI/accessor proof` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py` |
 | `test:objc3c:runtime-architecture` | `validate-runtime-architecture` | `full` | `full public workflow and runtime architecture proof packet alignment` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_integration.py` |
 | `test:objc3c:runtime-performance` | `validate-runtime-performance` | `repo` | `runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_runtime_performance_integration.py` |
+| `test:objc3c:security-hardening` | `validate-security-hardening` | `nightly` | `security posture and advisory publication stay executable on the live release, trust, and hardening surfaces` | `fixed-shape` | `runner-internal + direct security-hardening commands` |
+| `test:objc3c:security-hardening:e2e` | `validate-security-hardening-end-to-end` | `full` | `security-hardening entrypoints and publication artifacts stay coherent with the live command and evidence surfaces` | `fixed-shape` | `python:scripts/check_objc3c_security_hardening_end_to_end.py` |
 | `test:objc3c:storage-reflection-conformance` | `validate-storage-reflection-conformance` | `full` | `integrated storage/accessor/reflection conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_storage_reflection_conformance.py` |
 | `test:objc3c:stress` | `validate-stress` | `repo` | `checked-in stress roots, deterministic malformed-input coverage, mixed-module differential validation, reducer output, and crash-triage indexes stay executable on the live workflow` | `fixed-shape` | `runner-internal + direct stress validation commands` |
 | `test:objc3c:stress-crash-triage` | `test-stress-crash-triage` | `repo` | `crash-signature grouping and replay requests stay derived from machine-owned minimized stress artifacts` | `pass-through` | `python:scripts/run_objc3c_stress_crash_triage.py` |

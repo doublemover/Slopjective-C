@@ -1,0 +1,36 @@
+{
+  "contract_id": "objc3c.security.hardening.source.surface.v1",
+  "schema_version": 1,
+  "surface_kind": "security-hardening-source-surface",
+  "runbook": "docs/runbooks/objc3c_security_hardening.md",
+  "boundary_inventory": "tests/tooling/fixtures/security_hardening/boundary_inventory.json",
+  "response_policy": "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
+  "macro_trust_policy": "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
+  "release_key_policy": "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+  "artifact_reporting_contract": "tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json",
+  "supply_chain_audit_contract": "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json",
+  "schema_surface": "tests/tooling/fixtures/security_hardening/schema_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
+  "checked_in_sources": [
+    "docs/runbooks/objc3c_security_hardening.md",
+    "schemas/objc3c-security-posture-v1.schema.json",
+    "schemas/objc3c-security-advisory-index-v1.schema.json",
+    "scripts/check_security_hardening_source_surface.py",
+    "scripts/check_security_hardening_schema_surface.py",
+    "scripts/build_objc3c_security_posture.py",
+    "scripts/publish_objc3c_security_advisories.py",
+    "scripts/objc3c_public_workflow_runner.py",
+    "package.json"
+  ],
+  "machine_owned_output_roots": [
+    "tmp/reports/security-hardening",
+    "tmp/artifacts/security-hardening"
+  ],
+  "explicit_non_goals": [
+    "no hosted security portal",
+    "no remote key-management service",
+    "no signed-installer trust claim",
+    "no hostile-host execution safety guarantee",
+    "no second release package or runtime validation lane"
+  ]
+}

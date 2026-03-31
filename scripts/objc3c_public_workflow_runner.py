@@ -107,6 +107,11 @@ DISTRIBUTION_CREDIBILITY_DASHBOARD_PY = ROOT / "scripts" / "build_objc3c_distrib
 DISTRIBUTION_CREDIBILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_distribution_trust_report.py"
 DISTRIBUTION_CREDIBILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_integration.py"
 DISTRIBUTION_CREDIBILITY_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_end_to_end.py"
+SECURITY_HARDENING_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_security_hardening_source_surface.py"
+SECURITY_HARDENING_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_security_hardening_schema_surface.py"
+SECURITY_HARDENING_POSTURE_PY = ROOT / "scripts" / "build_objc3c_security_posture.py"
+SECURITY_HARDENING_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_security_advisories.py"
+SECURITY_HARDENING_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_security_hardening_end_to_end.py"
 STDLIB_SURFACE_PY = ROOT / "scripts" / "check_stdlib_surface.py"
 MATERIALIZE_STDLIB_PY = ROOT / "scripts" / "materialize_objc3c_stdlib_workspace.py"
 STDLIB_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stdlib_foundation_integration.py"
@@ -1087,6 +1092,38 @@ def action_validate_distribution_credibility_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_END_TO_END_PY)])
 
 
+def action_check_security_hardening_surface(_: list[str]) -> int:
+    return run([sys.executable, str(SECURITY_HARDENING_SOURCE_SURFACE_PY)])
+
+
+def action_check_security_hardening_schema_surface(_: list[str]) -> int:
+    return run([sys.executable, str(SECURITY_HARDENING_SCHEMA_SURFACE_PY)])
+
+
+def action_build_security_posture(_: list[str]) -> int:
+    return run([sys.executable, str(SECURITY_HARDENING_POSTURE_PY)])
+
+
+def action_publish_security_advisories(_: list[str]) -> int:
+    return run([sys.executable, str(SECURITY_HARDENING_PUBLICATION_PY)])
+
+
+def action_validate_security_hardening(_: list[str]) -> int:
+    return run_composite_validation(
+        "validate-security-hardening",
+        [
+            ("check-security-hardening-surface", [sys.executable, str(SECURITY_HARDENING_SOURCE_SURFACE_PY)]),
+            ("check-security-hardening-schema-surface", [sys.executable, str(SECURITY_HARDENING_SCHEMA_SURFACE_PY)]),
+            ("build-security-posture", [sys.executable, str(SECURITY_HARDENING_POSTURE_PY)]),
+            ("publish-security-advisories", [sys.executable, str(SECURITY_HARDENING_PUBLICATION_PY)]),
+        ],
+    )
+
+
+def action_validate_security_hardening_end_to_end(_: list[str]) -> int:
+    return run([sys.executable, str(SECURITY_HARDENING_END_TO_END_PY)])
+
+
 def action_inspect_bonus_tool_integration(_: list[str]) -> int:
     rc = execute_registered_action("build-native-contracts", [])
     if rc != 0:
@@ -1929,6 +1966,12 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "publish-distribution-credibility": ActionSpec("publish-distribution-credibility", "publish the machine-owned distribution trust report artifacts", "python:scripts/publish_objc3c_distribution_trust_report.py", ("publish:objc3c:distribution-credibility",), validation_tier="repo", guarantee_owner="distribution trust reporting stays derived from the live release drill artifacts and checked-in credibility policies"),
     "validate-distribution-credibility": ActionSpec("validate-distribution-credibility", "run the integrated distribution-credibility workflow", "runner-internal + direct distribution-credibility commands", ("test:objc3c:distribution-credibility",), validation_tier="nightly", guarantee_owner="distribution trust signals and release-drill reporting stay executable on the live shipped release surfaces"),
     "validate-distribution-credibility-end-to-end": ActionSpec("validate-distribution-credibility-end-to-end", "validate distribution trust-report publication and evidence linkage end to end", "python:scripts/check_objc3c_distribution_credibility_end_to_end.py", ("test:objc3c:distribution-credibility:e2e",), validation_tier="full", guarantee_owner="distribution credibility artifacts stay coherent with the live package-channel and release-operations evidence paths"),
+    "check-security-hardening-surface": ActionSpec("check-security-hardening-surface", "validate the checked-in security-hardening source surface", "python:scripts/check_security_hardening_source_surface.py", ("check:objc3c:security-hardening:surface",), validation_tier="repo", guarantee_owner="security hardening only publishes from the checked-in trust boundary, policy, and workflow contracts"),
+    "check-security-hardening-schema-surface": ActionSpec("check-security-hardening-schema-surface", "validate the checked-in security-hardening schema surface", "python:scripts/check_security_hardening_schema_surface.py", ("check:objc3c:security-hardening:schemas",), validation_tier="repo", guarantee_owner="security posture and advisory artifacts stay on checked-in schema contracts"),
+    "build-security-posture": ActionSpec("build-security-posture", "derive the machine-owned security posture from live hardening evidence", "python:scripts/build_objc3c_security_posture.py", ("inspect:objc3c:security-posture",), validation_tier="repo", guarantee_owner="security posture stays derived from the live trust boundary, release, and runtime evidence"),
+    "publish-security-advisories": ActionSpec("publish-security-advisories", "publish the machine-owned security advisory artifacts", "python:scripts/publish_objc3c_security_advisories.py", ("publish:objc3c:security-advisories",), validation_tier="repo", guarantee_owner="security advisory publication stays traceable to the live posture and checked-in hardening policies"),
+    "validate-security-hardening": ActionSpec("validate-security-hardening", "run the integrated security-hardening publication workflow", "runner-internal + direct security-hardening commands", ("test:objc3c:security-hardening",), validation_tier="nightly", guarantee_owner="security posture and advisory publication stay executable on the live release, trust, and hardening surfaces"),
+    "validate-security-hardening-end-to-end": ActionSpec("validate-security-hardening-end-to-end", "validate security-hardening entrypoints, command-surface sync, and publication artifacts end to end", "python:scripts/check_objc3c_security_hardening_end_to_end.py", ("test:objc3c:security-hardening:e2e",), validation_tier="full", guarantee_owner="security-hardening entrypoints and publication artifacts stay coherent with the live command and evidence surfaces"),
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", ("inspect:objc3c:bonus-tools",), validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", ("build:objc3c:template",), validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
     "trace-compile-stages": ActionSpec("trace-compile-stages", "compile one source through the frontend C API runner and dump the stage trace object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("trace:objc3c:stages",), validation_tier="repo", guarantee_owner="developer-facing compile stage traces stay tied to the real frontend runner stage summaries and process exit semantics", pass_through_args=True),
@@ -2087,6 +2130,12 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "publish-distribution-credibility": action_publish_distribution_credibility,
     "validate-distribution-credibility": action_validate_distribution_credibility,
     "validate-distribution-credibility-end-to-end": action_validate_distribution_credibility_end_to_end,
+    "check-security-hardening-surface": action_check_security_hardening_surface,
+    "check-security-hardening-schema-surface": action_check_security_hardening_schema_surface,
+    "build-security-posture": action_build_security_posture,
+    "publish-security-advisories": action_publish_security_advisories,
+    "validate-security-hardening": action_validate_security_hardening,
+    "validate-security-hardening-end-to-end": action_validate_security_hardening_end_to_end,
     "inspect-bonus-tool-integration": action_inspect_bonus_tool_integration,
     "materialize-project-template": action_materialize_project_template,
     "trace-compile-stages": action_trace_compile_stages,

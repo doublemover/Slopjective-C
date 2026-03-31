@@ -7,7 +7,8 @@
   "source_contracts": [
     "tests/tooling/fixtures/security_hardening/security_response_disclosure_policy.json",
     "tests/tooling/fixtures/security_hardening/macro_package_provenance_trust_policy.json",
-    "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json"
+    "tests/tooling/fixtures/security_hardening/installer_update_release_key_hardening_policy.json",
+    "tests/tooling/fixtures/security_hardening/supply_chain_audit_contract.json"
   ],
   "required_schema_paths": [
     "schemas/objc3c-security-posture-v1.schema.json",

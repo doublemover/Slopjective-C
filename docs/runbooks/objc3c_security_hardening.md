@@ -25,7 +25,11 @@ Canonical checked-in boundary and contract surfaces:
 Replayable generators and validators:
 
 - `python scripts/build_security_hardening_boundary_inventory_summary.py`
+- `python scripts/check_security_hardening_source_surface.py`
+- `python scripts/check_security_hardening_schema_surface.py`
 - `python scripts/check_security_hardening_supply_chain_audit.py`
+- `python scripts/build_objc3c_security_posture.py`
+- `python scripts/publish_objc3c_security_advisories.py`
 - `python scripts/check_release_evidence.py`
 - `python scripts/check_source_hygiene_authenticity.py`
 - `python scripts/check_objc3c_distribution_credibility_integration.py`
@@ -231,6 +235,7 @@ Canonical generated artifacts for this milestone are:
 - a machine-owned security posture JSON
 - a machine-owned security advisory index JSON
 - a machine-owned markdown advisory report derived from the advisory index
+- a machine-owned publication summary tying posture and advisory outputs back to the live evidence
 
 Those artifacts must stay validated by checked-in schema and contract surfaces:
 
