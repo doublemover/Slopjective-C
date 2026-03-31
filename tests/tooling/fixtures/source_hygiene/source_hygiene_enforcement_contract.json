@@ -1,0 +1,50 @@
+{
+  "contract_id": "objc3c.source_hygiene.enforcement_contract.v1",
+  "schema_version": 1,
+  "policy_contract": "tests/tooling/fixtures/source_hygiene/stable_identifier_authenticity_policy.json",
+  "classification_contract": "tests/tooling/fixtures/source_hygiene/artifact_authenticity_classification.json",
+  "genuine_provenance_contract": "tests/tooling/fixtures/source_hygiene/genuine_artifact_provenance_contract.json",
+  "future_archive_boundary_contract": "tests/tooling/fixtures/source_hygiene/archive_boundary_contract.json",
+  "future_live_audit_entrypoint": "python scripts/check_source_hygiene_authenticity.py",
+  "canonical_report_root": "tmp/reports/source_hygiene",
+  "enforcement_checks": [
+    {
+      "check_id": "product_surface_residue_zero",
+      "entrypoint": "python tmp/planning/source_hygiene/build_product_decontamination_report.py",
+      "expected_report": "tmp/reports/m315/M315-B002/product_decontamination_report.json",
+      "required_ok_field": "ok",
+      "failure_condition": "product or generated truth surfaces retain milestone residue or forbidden annotations"
+    },
+    {
+      "check_id": "synthetic_fixture_classification_surface",
+      "entrypoint": "python tmp/planning/source_hygiene/build_artifact_authenticity_classification_summary.py",
+      "expected_report": "tmp/reports/m315/M315-B003/artifact_authenticity_classification_summary.json",
+      "required_ok_field": "ok",
+      "failure_condition": "synthetic fixture rules or generated truth path coverage drift from the classification contract"
+    },
+    {
+      "check_id": "genuine_generated_output_provenance",
+      "entrypoint": "python tmp/planning/source_hygiene/build_genuine_artifact_provenance_implementation_summary.py",
+      "expected_report": "tmp/reports/m315/M315-C002/genuine_artifact_provenance_implementation_summary.json",
+      "required_ok_field": "ok",
+      "failure_condition": "genuine generated outputs lack shared authenticity envelopes or replay instructions"
+    },
+    {
+      "check_id": "replay_fixture_labeling",
+      "entrypoint": "python tmp/planning/source_hygiene/sync_replay_fixture_authenticity.py --check",
+      "expected_report": "tmp/reports/m315/M315-C003/synthetic_fixture_labeling_summary.json",
+      "required_ok_field": "ok",
+      "failure_condition": "replay ll or replay manifest fixtures are unlabeled or drift from the explicit synthetic fixture contract"
+    }
+  ],
+  "fail_closed_conditions": [
+    "generated truth files listed by policy must reach zero milestone residue hits",
+    "genuine generated outputs under tmp/reports or tmp/artifacts must carry the shared authenticity schema and replayable provenance",
+    "replay ll and replay manifest fixtures under tests/tooling/fixtures/objc3c/**/replay_run_* must stay explicitly labeled as synthetic_fixture",
+    "archive-only roots may preserve planning history but must not be treated as product or generated truth surfaces"
+  ],
+  "notes": [
+    "d001 defines the stable contract only; d002 is responsible for the live audit implementation and runner integration",
+    "archive-boundary compatibility is intentionally split into d003 so historical references can be preserved without weakening the main proof-hygiene gate"
+  ]
+}
