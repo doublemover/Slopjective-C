@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 from typing import Any
@@ -103,12 +104,29 @@ def parse_ll_metadata(path: Path) -> dict[str, str]:
     return metadata
 
 
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        prog="sync_replay_fixture_authenticity.py",
+        description="Apply or check synthetic authenticity labels on replay fixture ll/manifests.",
+    )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Validate the replay fixture labeling contract without rewriting files.",
+    )
+    return parser
+
+
 def main() -> int:
+    args = build_parser().parse_args()
     ll_paths = sorted(FIXTURE_ROOT.glob("**/replay_run_*/module.ll"))
     manifest_paths = sorted(FIXTURE_ROOT.glob("**/replay_run_*/module.manifest.json"))
 
-    ll_changed = sum(1 for path in ll_paths if apply_ll_headers(path))
-    manifest_changed = sum(1 for path in manifest_paths if apply_manifest_envelope(path))
+    ll_changed = 0
+    manifest_changed = 0
+    if not args.check:
+        ll_changed = sum(1 for path in ll_paths if apply_ll_headers(path))
+        manifest_changed = sum(1 for path in manifest_paths if apply_manifest_envelope(path))
 
     classification = read_json(CLASSIFICATION_PATH)
     replay_rules = {
@@ -169,6 +187,7 @@ def main() -> int:
             "all_replay_ll_labeled": all(ll_checks),
             "all_replay_manifests_labeled": all(manifest_checks),
             "ll_and_manifest_counts_match": len(ll_paths) == len(manifest_paths),
+            "check_mode_detects_no_pending_rewrites": (not args.check) or (ll_changed == 0 and manifest_changed == 0),
         },
     }
     summary["ok"] = all(summary["checks"].values())

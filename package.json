@@ -144,6 +144,7 @@
     "publish:objc3c:release-provenance": "python scripts/objc3c_public_workflow_runner.py publish-release-provenance",
     "check:objc3c:llvm-capabilities": "python scripts/objc3c_public_workflow_runner.py check-llvm-capabilities",
     "check:release-evidence": "python scripts/objc3c_public_workflow_runner.py check-release-evidence",
+    "check:objc3c:source-hygiene": "python scripts/objc3c_public_workflow_runner.py check-source-hygiene-authenticity",
     "check:task-hygiene": "python scripts/objc3c_public_workflow_runner.py check-task-hygiene",
     "check:objc3c:boundaries": "python scripts/objc3c_public_workflow_runner.py check-dependency-boundaries",
     "lint:md": "python scripts/objc3c_public_workflow_runner.py lint-markdown",

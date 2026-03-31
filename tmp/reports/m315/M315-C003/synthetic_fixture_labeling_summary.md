@@ -2,7 +2,7 @@
 
 - Replay `.ll` fixtures: `76`
 - Replay manifest fixtures: `76`
-- Tracked `tests/**/*.json`: `2417`
+- Tracked `tests/**/*.json`: `2418`
 - Replay `.ll` files updated this run: `0`
 - Replay manifests updated this run: `0`
 - Status: `PASS`

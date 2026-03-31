@@ -2,7 +2,7 @@
   "issue": "M315-C003",
   "replay_ll_count": 76,
   "replay_manifest_count": 76,
-  "tests_json_count": 2417,
+  "tests_json_count": 2418,
   "ll_changed_count": 0,
   "manifest_changed_count": 0,
   "reference_paths": {
@@ -20,7 +20,8 @@
     "tests_json_path_fenced": true,
     "all_replay_ll_labeled": true,
     "all_replay_manifests_labeled": true,
-    "ll_and_manifest_counts_match": true
+    "ll_and_manifest_counts_match": true,
+    "check_mode_detects_no_pending_rewrites": true
   },
   "ok": true
 }

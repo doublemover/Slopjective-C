@@ -113,6 +113,7 @@ PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_projec
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
+SOURCE_HYGIENE_AUTHENTICITY_PY = ROOT / "scripts" / "check_source_hygiene_authenticity.py"
 RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
@@ -165,6 +166,7 @@ MAINTAINER_ONLY_PUBLIC_SCRIPTS = {
     "check:objc3c:boundaries",
     "check:objc3c:llvm-capabilities",
     "check:release-evidence",
+    "check:objc3c:source-hygiene",
     "check:task-hygiene",
     "format:md",
     "lint",
@@ -302,6 +304,10 @@ def action_check_release_evidence(_: list[str]) -> int:
     return run([sys.executable, str(RELEASE_EVIDENCE_PY)])
 
 
+def action_check_source_hygiene_authenticity(_: list[str]) -> int:
+    return run([sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)])
+
+
 def action_check_task_hygiene(_: list[str]) -> int:
     return run([sys.executable, str(TASK_HYGIENE_PY)])
 
@@ -381,6 +387,7 @@ def action_validate_repo_superclean(_: list[str]) -> int:
         [
             ("build-native-contracts", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(BUILD_PS1), "-ExecutionMode", "contracts-binary"]),
             ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
+            ("source-hygiene", [sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)]),
         ],
     )
 
@@ -1707,6 +1714,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-dependency-boundaries": ActionSpec("check-dependency-boundaries", "check strict objc3c dependency boundaries", "python:scripts/check_objc3c_dependency_boundaries.py --strict", ("check:objc3c:boundaries",), validation_tier="repo", guarantee_owner="repo dependency boundaries stay explicit and strict"),
     "check-llvm-capabilities": ActionSpec("check-llvm-capabilities", "probe llvm capability availability and write the summary artifact", "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json", ("check:objc3c:llvm-capabilities",), validation_tier="repo", guarantee_owner="llvm capability probe output stays tied to the live toolchain environment"),
     "check-release-evidence": ActionSpec("check-release-evidence", "check the checked-in release evidence surface", "python:scripts/check_release_evidence.py", ("check:release-evidence",), validation_tier="repo", guarantee_owner="release evidence packets stay coherent and replayable from the checked-in repo surface"),
+    "check-source-hygiene-authenticity": ActionSpec("check-source-hygiene-authenticity", "check source-hygiene residue removal, authenticity labeling, and genuine-output provenance against the live enforcement contract", "python:scripts/check_source_hygiene_authenticity.py", ("check:objc3c:source-hygiene",), validation_tier="repo", guarantee_owner="product truth surfaces, synthetic fixtures, and genuine generated outputs stay mechanically distinguished and fail closed when provenance drifts"),
     "check-task-hygiene": ActionSpec("check-task-hygiene", "run the task-hygiene gate over package scripts and checked-in roots", "python:scripts/ci/run_task_hygiene_gate.py", ("check:task-hygiene",), validation_tier="repo", guarantee_owner="task hygiene gate remains executable over the live repo script and path surface"),
     "check-showcase-surface": ActionSpec("check-showcase-surface", "check the live showcase portfolio and compile its example sources through the public compiler path", "python:scripts/check_showcase_surface.py", ("check:showcase:surface",), validation_tier="repo", guarantee_owner="showcase examples stay compile-coupled, checked in, and tied to the public compiler path", pass_through_args=True),
     "check-stdlib-surface": ActionSpec("check-stdlib-surface", "check the checked-in stdlib boundary contracts, canonical module inventory, package alias mapping, and lowering/import artifact contract", "python:scripts/check_stdlib_surface.py", ("check:stdlib:surface",), validation_tier="repo", guarantee_owner="stdlib roots, canonical module inventory, package alias mapping, and lowering/import artifact contract stay checked in and coherent"),
@@ -1859,6 +1867,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-dependency-boundaries": action_check_dependency_boundaries,
     "check-llvm-capabilities": action_check_llvm_capabilities,
     "check-release-evidence": action_check_release_evidence,
+    "check-source-hygiene-authenticity": action_check_source_hygiene_authenticity,
     "check-task-hygiene": action_check_task_hygiene,
     "check-showcase-surface": action_check_showcase_surface,
     "check-stdlib-surface": action_check_stdlib_surface,

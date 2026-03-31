@@ -3,9 +3,9 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `143`
+- Current package script count: `144`
 - Operator command count: `135`
-- Maintainer command count: `8`
+- Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
@@ -157,6 +157,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:md` | `check-markdown` | `-` | `-` | `fixed-shape` | `npx prettier --check **/*.md` |
 | `check:objc3c:boundaries` | `check-dependency-boundaries` | `repo` | `repo dependency boundaries stay explicit and strict` | `fixed-shape` | `python:scripts/check_objc3c_dependency_boundaries.py --strict` |
 | `check:objc3c:llvm-capabilities` | `check-llvm-capabilities` | `repo` | `llvm capability probe output stays tied to the live toolchain environment` | `fixed-shape` | `python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json` |
+| `check:objc3c:source-hygiene` | `check-source-hygiene-authenticity` | `repo` | `product truth surfaces, synthetic fixtures, and genuine generated outputs stay mechanically distinguished and fail closed when provenance drifts` | `fixed-shape` | `python:scripts/check_source_hygiene_authenticity.py` |
 | `check:release-evidence` | `check-release-evidence` | `repo` | `release evidence packets stay coherent and replayable from the checked-in repo surface` | `fixed-shape` | `python:scripts/check_release_evidence.py` |
 | `check:task-hygiene` | `check-task-hygiene` | `repo` | `task hygiene gate remains executable over the live repo script and path surface` | `fixed-shape` | `python:scripts/ci/run_task_hygiene_gate.py` |
 | `format:md` | `format-markdown` | `-` | `-` | `fixed-shape` | `npx prettier --write **/*.md` |
