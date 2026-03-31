@@ -1,0 +1,43 @@
+{
+  "contract_id": "objc3c.application.architecture.testing.boundary.inventory.v1",
+  "surface_kind": "application-architecture-testing-boundary-inventory",
+  "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
+  "portfolio_manifest": "showcase/portfolio.json",
+  "stdlib_workspace_contract": "stdlib/workspace.json",
+  "tutorial_roots": [
+    "docs/tutorials"
+  ],
+  "template_materializers": [
+    "scripts/materialize_objc3c_project_template.py",
+    "scripts/materialize_objc3c_stdlib_workspace.py"
+  ],
+  "existing_testing_surfaces": [
+    "tests/tooling/test_materialize_objc3c_project_template.py",
+    "scripts/run_objc3c_stdlib_workspace_smoke.py",
+    "scripts/check_developer_tooling_workspace_integration.py"
+  ],
+  "required_public_scripts": [
+    "build:objc3c:template",
+    "build:objc3c:stdlib",
+    "test:showcase",
+    "test:showcase:e2e",
+    "test:objc3c:runnable-developer-tooling"
+  ],
+  "direct_successor_milestones": [
+    "M329",
+    "M331"
+  ],
+  "working_scope": [
+    "checked-in showcase examples and workspace manifests",
+    "checked-in stdlib workspace and program surfaces",
+    "machine-owned project-template and stdlib-workspace materializers under scripts/",
+    "tutorial and runbook guidance for real project structure and testing",
+    "runnable package and validation reuse through the existing objc3c public workflow"
+  ],
+  "non_goals": [
+    "a second example tree outside showcase and stdlib",
+    "a hosted package or registry design inside this milestone",
+    "UI-only or screenshot-only demo architecture with no runnable workspace evidence",
+    "a second package/install workflow outside the existing runnable toolchain bundle"
+  ]
+}

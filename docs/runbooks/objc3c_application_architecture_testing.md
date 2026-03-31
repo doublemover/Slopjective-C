@@ -1,0 +1,55 @@
+# objc3c Application Architecture And Testing
+
+## Working Boundary
+
+This runbook defines the live `M330` boundary for first-party testing,
+project templates, and canonical application architecture.
+
+Use it when changing:
+
+- first-party test harness expectations and fixture layout
+- project-template and workspace structure
+- canonical medium-sized application guidance
+- runnable template/app validation that reuses the existing public workflow
+
+Canonical checked-in boundary surfaces:
+
+- `tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json`
+- `showcase/portfolio.json`
+- `stdlib/workspace.json`
+- `scripts/materialize_objc3c_project_template.py`
+- `scripts/materialize_objc3c_stdlib_workspace.py`
+
+Replayable boundary inventory:
+
+- `python scripts/build_application_architecture_testing_boundary_inventory_summary.py`
+
+## Current Boundary
+
+The current checked-in boundary is narrower than a full application framework.
+
+- real structured workspaces already exist in:
+  - `showcase/*/workspace.json`
+  - `stdlib/workspace.json`
+- machine-owned template/workspace materialization already exists in:
+  - `scripts/materialize_objc3c_project_template.py`
+  - `scripts/materialize_objc3c_stdlib_workspace.py`
+- current runnable examples are still centered on:
+  - showcase examples
+  - stdlib program surfaces
+  - developer-tooling workspace drills
+
+That means `M330` starts from real runnable surfaces, but it still needs:
+
+- first-party testing semantics that people can copy into real projects
+- one canonical project-template/workspace structure
+- one canonical medium-sized application layering model
+- artifact contracts and runnable evidence that tie those surfaces back to the
+  existing package/install/public-workflow path
+
+## Non-Goals
+
+- no second example tree outside `showcase/` and `stdlib/`
+- no hosted package-manager or registry design in this milestone
+- no screenshot-only demo architecture with no runnable workspace evidence
+- no second package/install workflow outside the existing runnable toolchain bundle

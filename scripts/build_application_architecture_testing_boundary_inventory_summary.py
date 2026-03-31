@@ -1,0 +1,95 @@
+#!/usr/bin/env python3
+"""Build the application-architecture/testing boundary inventory summary."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "boundary_inventory.json"
+PACKAGE_JSON = ROOT / "package.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "boundary-inventory-summary.json"
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def main() -> int:
+    contract = load_json(CONTRACT_PATH)
+    package = load_json(PACKAGE_JSON)
+    portfolio = load_json(ROOT / str(contract["portfolio_manifest"]))
+    stdlib_workspace = load_json(ROOT / str(contract["stdlib_workspace_contract"]))
+
+    tutorial_docs: list[str] = []
+    for raw_root in contract["tutorial_roots"]:
+        tutorial_root = ROOT / str(raw_root)
+        tutorial_docs.extend(sorted(repo_rel(path) for path in tutorial_root.glob("*.md")))
+
+    showcase_examples = portfolio.get("examples", [])
+    showcase_workspace_manifests = [
+        str(entry["workspace_manifest"])
+        for entry in showcase_examples
+        if isinstance(entry, dict) and isinstance(entry.get("workspace_manifest"), str)
+    ]
+    showcase_workspace_filesystem = sorted(repo_rel(path) for path in (ROOT / "showcase").glob("*/workspace.json"))
+
+    template_materializers = [str(path) for path in contract["template_materializers"]]
+    existing_testing_surfaces = [str(path) for path in contract["existing_testing_surfaces"]]
+    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
+    package_scripts = package.get("scripts", {})
+    if not isinstance(package_scripts, dict):
+        raise RuntimeError("package.json scripts field drifted from an object")
+
+    missing_paths = [
+        raw_path
+        for raw_path in template_materializers + existing_testing_surfaces
+        if not (ROOT / raw_path).is_file()
+    ]
+    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+
+    payload = {
+        "contract_id": "objc3c.application.architecture.testing.boundary.inventory.summary.v1",
+        "status": "PASS" if not missing_paths and not missing_public_scripts else "FAIL",
+        "boundary_contract": repo_rel(CONTRACT_PATH),
+        "runbook": str(contract["runbook"]),
+        "showcase_example_count": len(showcase_examples) if isinstance(showcase_examples, list) else 0,
+        "showcase_workspace_manifest_count": len(showcase_workspace_manifests),
+        "showcase_workspace_filesystem_count": len(showcase_workspace_filesystem),
+        "tutorial_doc_count": len(tutorial_docs),
+        "template_materializer_count": len(template_materializers),
+        "existing_testing_surface_count": len(existing_testing_surfaces),
+        "required_public_script_count": len(required_public_scripts),
+        "direct_successor_milestone_count": len(contract["direct_successor_milestones"]),
+        "stdlib_workspace_contract_id": stdlib_workspace.get("contract_id"),
+        "showcase_workspace_manifests": showcase_workspace_manifests,
+        "showcase_workspace_filesystem": showcase_workspace_filesystem,
+        "tutorial_docs": tutorial_docs,
+        "template_materializers": template_materializers,
+        "existing_testing_surfaces": existing_testing_surfaces,
+        "required_public_scripts": required_public_scripts,
+        "missing_paths": missing_paths,
+        "missing_public_scripts": missing_public_scripts,
+        "working_scope": contract["working_scope"],
+        "non_goals": contract["non_goals"],
+        "direct_successor_milestones": contract["direct_successor_milestones"],
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print("application-architecture-testing-boundary-inventory: PASS" if payload["status"] == "PASS" else "application-architecture-testing-boundary-inventory: FAIL")
+    return 0 if payload["status"] == "PASS" else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
