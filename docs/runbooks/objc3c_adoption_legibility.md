@@ -33,6 +33,37 @@ Replayable boundary inventory:
 
 - `python scripts/build_adoption_legibility_boundary_inventory_summary.py`
 
+## Public Adoption And Migration Claim Policy
+
+The canonical public-claim policy is checked in at:
+
+- `tests/tooling/fixtures/adoption_legibility/public_claim_policy.json`
+
+Replay it with:
+
+- `python scripts/build_adoption_legibility_public_claim_policy_summary.py`
+
+Public adoption and migration claims are intentionally narrower than the
+available implementation surface. Any claim that describes production fit,
+migration safety, ecosystem maturity, performance, conformance, or support must
+name its evidence class and must stay inside the support class published by the
+release, package, conformance, performance, and long-horizon runbooks.
+
+Adoption copy may say that objc3c has a runnable evaluator path only when it
+points to checked-in README, site, tutorial, showcase, public-command,
+package, and support evidence. Migration copy may describe incremental
+Objective-C 2 migration only when it stays same-major scoped and names package
+locks, compatibility support, rollback guidance, and deferred unsupported
+runtime behavior.
+
+The policy fails closed on:
+
+- unsupported source-compatibility or performance-leadership claims
+- cross-major migration safety without generated migration evidence
+- package-manager, hosted registry, or IDE marketplace parity claims
+- tutorial-only migration guidance that bypasses support-window evidence
+- adoption metrics that are hand-maintained instead of generated
+
 ## Current Boundary
 
 Adoption work starts from existing public surfaces rather than inventing a new

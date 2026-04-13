@@ -1,0 +1,101 @@
+{
+  "contract_id": "objc3c.adoption_legibility.public_claim_policy.v1",
+  "schema_version": 1,
+  "depends_on": [
+    "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
+    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/performance_governance/claim_policy.json",
+    "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
+    "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
+    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+  ],
+  "claim_classes": [
+    {
+      "claim_id": "evaluator-runnable-path",
+      "allowed_scope": "external evaluator can run checked-in docs, showcase, package, conformance, performance, and support commands locally",
+      "support_class": "evaluator-path",
+      "requires_evidence": [
+        "boundary-inventory-summary",
+        "public-command-surface",
+        "tutorial-surface",
+        "showcase-surface",
+        "package-workflow",
+        "long-horizon-support"
+      ],
+      "required_reference_surfaces": [
+        "README.md",
+        "site/index.md",
+        "docs/tutorials/getting_started.md",
+        "showcase/README.md",
+        "docs/runbooks/objc3c_public_command_surface.md"
+      ]
+    },
+    {
+      "claim_id": "incremental-objc2-migration",
+      "allowed_scope": "same-major incremental migration with generated compatibility, package-lock, rollback, and tutorial evidence",
+      "support_class": "same-major-migration",
+      "requires_evidence": [
+        "objc2-migration-guide",
+        "release-compatibility-policy",
+        "package-lock-workflow",
+        "long-horizon-migration-rollback"
+      ],
+      "required_reference_surfaces": [
+        "docs/tutorials/objc2_to_objc3_migration.md",
+        "docs/runbooks/objc3c_release_operations.md",
+        "docs/runbooks/objc3c_package_ecosystem.md",
+        "docs/runbooks/objc3c_long_horizon_operations.md"
+      ]
+    },
+    {
+      "claim_id": "capability-comparison",
+      "allowed_scope": "qualitative comparison only when conformance, performance, interop, package, and support evidence are linked",
+      "support_class": "evidence-linked-comparison",
+      "requires_evidence": [
+        "public-conformance-scorecard",
+        "performance-governance-claim-policy",
+        "runtime-and-interop-runbooks",
+        "long-horizon-support"
+      ],
+      "required_reference_surfaces": [
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "docs/runbooks/objc3c_public_conformance_reporting.md",
+        "docs/runbooks/objc3c_performance_governance.md",
+        "docs/runbooks/objc3c_metaprogramming_interop_closure.md"
+      ]
+    }
+  ],
+  "fail_closed_conditions": [
+    "claim omits a checked-in evidence surface",
+    "claim says or implies cross-major migration safety",
+    "claim says or implies hosted registry, package-manager parity, or IDE marketplace parity",
+    "claim says or implies performance leadership without release-ready performance governance status",
+    "claim says or implies full source compatibility with Objective-C 2",
+    "claim uses hand-maintained adoption counts",
+    "claim relies on private maintainer context to evaluate fit"
+  ],
+  "forbidden_claims": [
+    "drop-in Objective-C 2 replacement",
+    "zero-risk migration",
+    "forever compatible",
+    "performance leader",
+    "package-manager parity",
+    "hosted registry available",
+    "IDE marketplace ready",
+    "automatic cross-major migration",
+    "manual adoption metric"
+  ],
+  "required_publication_fields": [
+    "claim_id",
+    "support_class",
+    "allowed_scope",
+    "evidence_paths",
+    "deferred_behavior",
+    "last_generated_utc"
+  ],
+  "deferred_behavior_policy": {
+    "must_be_named": true,
+    "must_link_successor_surface": true,
+    "claim_status_when_deferred_behavior_is_unnamed": "blocked"
+  }
+}
