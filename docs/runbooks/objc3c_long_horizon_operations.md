@@ -115,6 +115,32 @@ blocked unless a generated long-horizon migration replay artifact names the
 source version, target version, package lock, canonical application workspace,
 and rollback target.
 
+## Aging Regression And Release Cadence
+
+The canonical criteria contract is checked in at:
+
+- `tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json`
+
+Replay it with:
+
+- `python scripts/build_long_horizon_operations_aging_cadence_summary.py`
+
+A release cadence is supportable only when aging evidence is fresh enough to
+trust and broad enough to cover the public claim. M328 consumes existing
+performance-governance freshness budgets from
+`tests/tooling/fixtures/performance_governance/budget_model.json` and
+full-envelope soak inputs from
+`tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json`.
+
+Cadence claims must block when:
+
+- performance, compiler-throughput, or runtime-performance freshness exceeds a
+  blocking budget
+- conformance, stress, external-validation, public-conformance, package, or
+  canonical-application evidence is missing
+- soak evidence is hand-written or cannot be regenerated
+- a release trains forward while rollback evidence is stale or absent
+
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later

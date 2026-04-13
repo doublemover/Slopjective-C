@@ -1,0 +1,72 @@
+{
+  "contract_id": "objc3c.long_horizon_operations.aging_regression_release_cadence_criteria.v1",
+  "schema_version": 1,
+  "depends_on": [
+    "tests/tooling/fixtures/performance_governance/budget_model.json",
+    "tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json",
+    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+  ],
+  "cadence_classes": [
+    {
+      "cadence_id": "patch-repair",
+      "allowed_scope": "same minor, same major",
+      "minimum_evidence_families": [
+        "release-operations",
+        "package-ecosystem",
+        "application-architecture",
+        "performance-governance"
+      ],
+      "rollback_required": true
+    },
+    {
+      "cadence_id": "minor-additive",
+      "allowed_scope": "same major",
+      "minimum_evidence_families": [
+        "release-operations",
+        "package-ecosystem",
+        "application-architecture",
+        "performance-governance",
+        "conformance-corpus",
+        "stress-integration"
+      ],
+      "rollback_required": true
+    },
+    {
+      "cadence_id": "preview-aging",
+      "allowed_scope": "best-effort preview only",
+      "minimum_evidence_families": [
+        "release-operations",
+        "performance-governance",
+        "external-validation",
+        "public-conformance"
+      ],
+      "rollback_required": true
+    }
+  ],
+  "aging_regression_rules": [
+    "Performance publication-freshness blocking values from performance governance are release-blocking.",
+    "Soak evidence must include conformance, stress, external-validation, and public-conformance families before a production-strength claim can mention stability.",
+    "Migration and rollback evidence must be regenerated for every release-cadence class that changes package or application behavior.",
+    "Any stale package or application evidence demotes cadence claims to release-drill only."
+  ],
+  "required_public_scripts": [
+    "test:objc3c:performance-governance",
+    "test:objc3c:performance-governance:integration",
+    "test:objc3c:performance-governance:e2e",
+    "test:objc3c:package-ecosystem",
+    "test:objc3c:package-ecosystem:e2e",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e",
+    "test:objc3c:stress:integration",
+    "test:objc3c:external-validation:integration",
+    "test:objc3c:public-conformance:integration"
+  ],
+  "release_blocking_conditions": [
+    "freshness budget breach",
+    "missing soak family",
+    "missing package ecosystem evidence",
+    "missing canonical application evidence",
+    "missing rollback guidance",
+    "manual or non-replayable aging evidence"
+  ]
+}
