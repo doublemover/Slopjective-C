@@ -262,6 +262,13 @@ typedef struct objc3_runtime_property_entry_snapshot {
   uint64_t offset_bytes;
   uint64_t size_bytes;
   uint64_t alignment_bytes;
+  uint64_t padding_bytes;
+  uint64_t inherited_slot_count;
+  uint64_t inherited_size_bytes;
+  uint64_t owner_size_bytes;
+  uint64_t init_order_index;
+  uint64_t destroy_order_index;
+  int layout_valid;
   uint64_t instance_size_bytes;
   const char *queried_class_name;
   const char *resolved_class_name;
@@ -275,6 +282,7 @@ typedef struct objc3_runtime_property_entry_snapshot {
   const char *ivar_binding_symbol;
   const char *synthesized_binding_symbol;
   const char *ivar_layout_symbol;
+  const char *ivar_layout_replay_key;
   const char *property_attribute_profile;
   const char *ownership_lifetime_profile;
   const char *ownership_runtime_hook_profile;

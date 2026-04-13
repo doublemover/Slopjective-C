@@ -7,6 +7,7 @@
     "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
     "tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3",
     "tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3",
     "tests/tooling/fixtures/native/actor_lowering_runtime_positive.objc3",
     "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
     "tests/tooling/fixtures/native/live_actor_mailbox_runtime_positive.objc3"

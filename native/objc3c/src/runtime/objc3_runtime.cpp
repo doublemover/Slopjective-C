@@ -308,9 +308,18 @@ struct EmittedPropertyDescriptor {
   const char *accessor_ownership_profile;
   const void *getter_implementation;
   const void *setter_implementation;
+  const char *ivar_layout_replay_key;
   std::uint64_t ivar_layout_slot_index;
   std::uint64_t ivar_layout_size_bytes;
   std::uint64_t ivar_layout_alignment_bytes;
+  std::uint64_t ivar_layout_offset_bytes;
+  std::uint64_t ivar_layout_padding_bytes;
+  std::uint64_t ivar_layout_inherited_slot_count;
+  std::uint64_t ivar_layout_inherited_size_bytes;
+  std::uint64_t ivar_layout_owner_size_bytes;
+  std::uint64_t ivar_init_order_index;
+  std::uint64_t ivar_destroy_order_index;
+  bool ivar_layout_valid;
   bool has_getter;
   bool has_setter;
   bool effective_setter_available;
@@ -318,10 +327,18 @@ struct EmittedPropertyDescriptor {
 
 struct EmittedIvarLayoutRecord {
   const char *layout_symbol;
+  const char *layout_replay_key;
   std::uint64_t slot_index;
   std::uint64_t offset_bytes;
   std::uint64_t size_bytes;
   std::uint64_t alignment_bytes;
+  std::uint64_t padding_bytes;
+  std::uint64_t inherited_slot_count;
+  std::uint64_t inherited_size_bytes;
+  std::uint64_t owner_size_bytes;
+  std::uint64_t init_order_index;
+  std::uint64_t destroy_order_index;
+  bool layout_valid;
 };
 
 struct EmittedIvarDescriptor {
@@ -333,10 +350,18 @@ struct EmittedIvarDescriptor {
   const char *ivar_binding_symbol;
   const EmittedIvarLayoutRecord *layout_record;
   const std::uint64_t *offset_global;
+  const char *layout_replay_key;
   std::uint64_t slot_index;
   std::uint64_t offset_bytes;
   std::uint64_t size_bytes;
   std::uint64_t alignment_bytes;
+  std::uint64_t padding_bytes;
+  std::uint64_t inherited_slot_count;
+  std::uint64_t inherited_size_bytes;
+  std::uint64_t owner_size_bytes;
+  std::uint64_t init_order_index;
+  std::uint64_t destroy_order_index;
+  bool layout_valid;
 };
 
 struct RealizedPropertyAccessor {
@@ -1570,6 +1595,7 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
   std::unordered_map<std::string, const EmittedIvarDescriptor *> ivar_by_property;
   std::size_t max_end = 0u;
   std::size_t max_alignment = 1u;
+  std::size_t published_owner_size = 0u;
   for (std::uint64_t index = 0; index < node.image->ivar_descriptor_count; ++index) {
     const auto *descriptor = static_cast<const EmittedIvarDescriptor *>(
         AggregateEntry(node.image->ivar_descriptor_root, index));
@@ -1580,6 +1606,14 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
     if (ivar_owner_identity != descriptor->declaration_owner_identity) {
       continue;
     }
+    if (descriptor->layout_record == nullptr || !descriptor->layout_valid ||
+        !descriptor->layout_record->layout_valid ||
+        descriptor->layout_record->layout_replay_key == nullptr ||
+        descriptor->layout_record->layout_replay_key[0] == '\0' ||
+        descriptor->layout_replay_key == nullptr ||
+        descriptor->layout_replay_key[0] == '\0') {
+      return false;
+    }
     const std::size_t offset = descriptor->offset_global != nullptr
                                    ? static_cast<std::size_t>(*descriptor->offset_global)
                                    : static_cast<std::size_t>(descriptor->offset_bytes);
@@ -1587,14 +1621,38 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
     const std::size_t alignment =
         std::max<std::size_t>(static_cast<std::size_t>(descriptor->alignment_bytes),
                               1u);
+    if (descriptor->layout_record->offset_bytes != descriptor->offset_bytes ||
+        descriptor->layout_record->size_bytes != descriptor->size_bytes ||
+        descriptor->layout_record->alignment_bytes !=
+            descriptor->alignment_bytes ||
+        descriptor->layout_record->padding_bytes != descriptor->padding_bytes ||
+        descriptor->layout_record->inherited_slot_count !=
+            descriptor->inherited_slot_count ||
+        descriptor->layout_record->inherited_size_bytes !=
+            descriptor->inherited_size_bytes ||
+        descriptor->layout_record->owner_size_bytes !=
+            descriptor->owner_size_bytes ||
+        descriptor->layout_record->init_order_index !=
+            descriptor->init_order_index ||
+        descriptor->layout_record->destroy_order_index !=
+            descriptor->destroy_order_index ||
+        offset != static_cast<std::size_t>(descriptor->offset_bytes) ||
+        (alignment != 0u && offset % alignment != 0u)) {
+      return false;
+    }
     if (size != 0u) {
       max_end = std::max(max_end, offset + size);
       max_alignment = std::max(max_alignment, alignment);
     }
+    published_owner_size =
+        std::max<std::size_t>(published_owner_size,
+                              static_cast<std::size_t>(
+                                  descriptor->owner_size_bytes));
     ivar_by_binding.emplace(descriptor->ivar_binding_symbol, descriptor);
     ivar_by_property.emplace(descriptor->property_name, descriptor);
   }
-  node.runtime_instance_size_bytes = AlignTo(max_end, max_alignment);
+  node.runtime_instance_size_bytes =
+      std::max<std::size_t>(published_owner_size, AlignTo(max_end, max_alignment));
 
   for (std::uint64_t index = 0; index < node.image->property_descriptor_count; ++index) {
     const auto *descriptor = static_cast<const EmittedPropertyDescriptor *>(
@@ -4462,6 +4520,13 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->offset_bytes = 0;
   snapshot->size_bytes = 0;
   snapshot->alignment_bytes = 0;
+  snapshot->padding_bytes = 0;
+  snapshot->inherited_slot_count = 0;
+  snapshot->inherited_size_bytes = 0;
+  snapshot->owner_size_bytes = 0;
+  snapshot->init_order_index = 0;
+  snapshot->destroy_order_index = 0;
+  snapshot->layout_valid = 0;
   snapshot->instance_size_bytes = 0;
   snapshot->queried_class_name = nullptr;
   snapshot->resolved_class_name = nullptr;
@@ -4475,6 +4540,7 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->ivar_binding_symbol = nullptr;
   snapshot->synthesized_binding_symbol = nullptr;
   snapshot->ivar_layout_symbol = nullptr;
+  snapshot->ivar_layout_replay_key = nullptr;
   snapshot->property_attribute_profile = nullptr;
   snapshot->ownership_lifetime_profile = nullptr;
   snapshot->ownership_runtime_hook_profile = nullptr;
@@ -4550,6 +4616,34 @@ int objc3_runtime_copy_property_entry_for_testing(
       accessor->ivar_descriptor != nullptr
           ? accessor->ivar_descriptor->alignment_bytes
           : descriptor.ivar_layout_alignment_bytes;
+  snapshot->padding_bytes =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->padding_bytes
+          : descriptor.ivar_layout_padding_bytes;
+  snapshot->inherited_slot_count =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->inherited_slot_count
+          : descriptor.ivar_layout_inherited_slot_count;
+  snapshot->inherited_size_bytes =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->inherited_size_bytes
+          : descriptor.ivar_layout_inherited_size_bytes;
+  snapshot->owner_size_bytes =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->owner_size_bytes
+          : descriptor.ivar_layout_owner_size_bytes;
+  snapshot->init_order_index =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->init_order_index
+          : descriptor.ivar_init_order_index;
+  snapshot->destroy_order_index =
+      accessor->ivar_descriptor != nullptr
+          ? accessor->ivar_descriptor->destroy_order_index
+          : descriptor.ivar_destroy_order_index;
+  snapshot->layout_valid =
+      accessor->ivar_descriptor != nullptr
+          ? (accessor->ivar_descriptor->layout_valid ? 1 : 0)
+          : (descriptor.ivar_layout_valid ? 1 : 0);
   snapshot->instance_size_bytes =
       static_cast<std::uint64_t>(resolved_node->runtime_instance_size_bytes);
   snapshot->resolved_class_name =
@@ -4585,6 +4679,11 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->ivar_layout_symbol =
       descriptor.ivar_layout_symbol != nullptr ? descriptor.ivar_layout_symbol
                                                : nullptr;
+  snapshot->ivar_layout_replay_key =
+      accessor->ivar_descriptor != nullptr &&
+              accessor->ivar_descriptor->layout_replay_key != nullptr
+          ? accessor->ivar_descriptor->layout_replay_key
+          : descriptor.ivar_layout_replay_key;
   snapshot->property_attribute_profile =
       descriptor.property_attribute_profile != nullptr
           ? descriptor.property_attribute_profile

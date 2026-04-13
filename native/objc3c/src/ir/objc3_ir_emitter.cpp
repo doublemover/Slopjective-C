@@ -9056,6 +9056,12 @@ class Objc3IREmitter {
                     : BuildRuntimeMetadataAuxiliarySymbol(
                           layout_policy.descriptor_symbol_prefix, family.kind,
                           "ivar_layout", i);
+            const std::string ivar_layout_replay_key_symbol =
+                bundle.executable_ivar_layout_replay_key.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "ivar_layout_replay", i);
             const std::string property_attribute_profile_symbol =
                 bundle.property_attribute_profile.empty()
                     ? std::string{"null"}
@@ -9164,6 +9170,16 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
             }
+            if (!bundle.executable_ivar_layout_replay_key.empty()) {
+              out << ivar_layout_replay_key_symbol
+                  << " = private constant ["
+                  << (bundle.executable_ivar_layout_replay_key.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(
+                         bundle.executable_ivar_layout_replay_key)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
             if (!bundle.property_attribute_profile.empty()) {
               out << property_attribute_profile_symbol
                   << " = private constant ["
@@ -9236,7 +9252,7 @@ class Objc3IREmitter {
             }
 
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i1, i1, i1 } "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i1, i1, i1, i1 } "
                    "{ ptr "
                 << property_name_symbol << ", ptr " << type_name_symbol
                 << ", ptr " << owner_identity_symbol << ", ptr "
@@ -9252,10 +9268,21 @@ class Objc3IREmitter {
                 << ownership_runtime_hook_profile_symbol << ", ptr "
                 << accessor_ownership_profile_symbol << ", ptr "
                 << getter_implementation_symbol << ", ptr "
-                << setter_implementation_symbol << ", i64 "
+                << setter_implementation_symbol << ", ptr "
+                << ivar_layout_replay_key_symbol << ", i64 "
                 << bundle.executable_ivar_layout_slot_index << ", i64 "
                 << bundle.executable_ivar_layout_size_bytes << ", i64 "
-                << bundle.executable_ivar_layout_alignment_bytes << ", i1 "
+                << bundle.executable_ivar_layout_alignment_bytes << ", i64 "
+                << bundle.executable_ivar_layout_offset_bytes << ", i64 "
+                << bundle.executable_ivar_layout_padding_bytes << ", i64 "
+                << bundle.executable_ivar_layout_inherited_slot_count
+                << ", i64 "
+                << bundle.executable_ivar_layout_inherited_size_bytes
+                << ", i64 "
+                << bundle.executable_ivar_layout_owner_size_bytes << ", i64 "
+                << bundle.executable_ivar_init_order_index << ", i64 "
+                << bundle.executable_ivar_destroy_order_index << ", i1 "
+                << (bundle.executable_ivar_layout_valid ? 1 : 0) << ", i1 "
                 << (bundle.has_getter ? 1 : 0) << ", i1 "
                 << (bundle.has_setter ? 1 : 0) << ", i1 "
                 << (bundle.effective_setter_available ? 1 : 0)
@@ -9289,72 +9316,14 @@ class Objc3IREmitter {
 
     const auto emit_ivar_descriptor_section =
         [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
-          const auto align_to = [](std::size_t value, std::size_t alignment) {
-            const std::size_t effective_alignment =
-                std::max<std::size_t>(alignment, 1u);
-            const std::size_t remainder = value % effective_alignment;
-            return remainder == 0u ? value
-                                   : value + (effective_alignment - remainder);
-          };
-
-          std::vector<std::size_t> descriptor_offsets(
-              frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
-                  .size(),
-              0u);
-          std::map<std::string, std::vector<std::size_t>>
-              ivar_indexes_by_declaration_owner_identity;
-          for (std::size_t i = 0;
-               i <
-               frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
-                   .size();
-               ++i) {
-            const auto &bundle =
-                frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
-                    [i];
-            ivar_indexes_by_declaration_owner_identity
-                [bundle.declaration_owner_identity]
-                    .push_back(i);
-          }
           std::map<std::string, std::size_t> instance_size_by_owner_identity;
-          for (auto &[owner_identity, indexes] :
-               ivar_indexes_by_declaration_owner_identity) {
-            std::stable_sort(
-                indexes.begin(), indexes.end(),
-                [&](std::size_t lhs_index, std::size_t rhs_index) {
-                  const auto &lhs =
-                      frontend_metadata_
-                          .runtime_metadata_ivar_bundles_lexicographic[lhs_index];
-                  const auto &rhs =
-                      frontend_metadata_
-                          .runtime_metadata_ivar_bundles_lexicographic[rhs_index];
-                  return std::tie(lhs.executable_ivar_layout_slot_index,
-                                  lhs.property_name, lhs.owner_identity) <
-                         std::tie(rhs.executable_ivar_layout_slot_index,
-                                  rhs.property_name, rhs.owner_identity);
-                });
-            std::size_t running_offset = 0u;
-            std::size_t max_alignment = 1u;
-            for (const std::size_t index : indexes) {
-              const auto &bundle =
-                  frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
-                      [index];
-              const std::size_t alignment =
-                  std::max<std::size_t>(
-                      bundle.executable_ivar_layout_alignment_bytes, 1u);
-              running_offset = align_to(running_offset, alignment);
-              descriptor_offsets[index] = running_offset;
-              running_offset += bundle.executable_ivar_layout_size_bytes;
-              max_alignment = std::max(max_alignment, alignment);
-            }
-            instance_size_by_owner_identity[owner_identity] =
-                align_to(running_offset, max_alignment);
-          }
 
           std::vector<std::string> descriptor_symbols;
           descriptor_symbols.reserve(
               frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic
                   .size());
-          std::map<std::string, std::vector<std::string>>
+          std::map<std::string,
+                   std::vector<std::pair<std::size_t, std::string>>>
               descriptor_symbols_by_declaration_owner_identity;
           for (std::size_t i = 0;
                i <
@@ -9405,10 +9374,22 @@ class Objc3IREmitter {
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
                     "layout_record", i);
+            const std::string layout_replay_key_symbol =
+                bundle.executable_ivar_layout_replay_key.empty()
+                    ? std::string{"null"}
+                    : BuildRuntimeMetadataAuxiliarySymbol(
+                          layout_policy.descriptor_symbol_prefix, family.kind,
+                          "layout_replay", i);
             descriptor_symbols.push_back(descriptor_symbol);
             descriptor_symbols_by_declaration_owner_identity
                 [bundle.declaration_owner_identity]
-                    .push_back(descriptor_symbol);
+                    .push_back(std::make_pair(
+                        bundle.executable_ivar_layout_slot_index,
+                        descriptor_symbol));
+            instance_size_by_owner_identity[bundle.declaration_owner_identity] =
+                std::max(instance_size_by_owner_identity
+                             [bundle.declaration_owner_identity],
+                         bundle.executable_ivar_layout_owner_size_bytes);
 
             out << owner_identity_symbol << " = private constant ["
                 << (bundle.owner_identity.size() + 1u) << " x i8] c\""
@@ -9450,42 +9431,82 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
             }
+            if (!bundle.executable_ivar_layout_replay_key.empty()) {
+              out << layout_replay_key_symbol << " = private constant ["
+                  << (bundle.executable_ivar_layout_replay_key.size() + 1u)
+                  << " x i8] c\""
+                  << EscapeCStringLiteral(
+                         bundle.executable_ivar_layout_replay_key)
+                  << "\\00\", section \"" << family.emitted_section_name
+                  << "\", align 1\n";
+            }
             out << offset_global_symbol << " = private global i64 "
-                << descriptor_offsets[i] << ", section \""
+                << bundle.executable_ivar_layout_offset_bytes << ", section \""
                 << family.emitted_section_name << "\", align 8\n";
             emit_retained(offset_global_symbol);
             out << layout_record_symbol
-                << " = private global { ptr, i64, i64, i64, i64 } { ptr "
-                << layout_symbol << ", i64 "
+                << " = private global { ptr, ptr, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i1 } { ptr "
+                << layout_symbol << ", ptr " << layout_replay_key_symbol
+                << ", i64 "
                 << bundle.executable_ivar_layout_slot_index << ", i64 "
-                << descriptor_offsets[i] << ", i64 "
+                << bundle.executable_ivar_layout_offset_bytes << ", i64 "
                 << bundle.executable_ivar_layout_size_bytes << ", i64 "
                 << bundle.executable_ivar_layout_alignment_bytes
+                << ", i64 " << bundle.executable_ivar_layout_padding_bytes
+                << ", i64 "
+                << bundle.executable_ivar_layout_inherited_slot_count
+                << ", i64 "
+                << bundle.executable_ivar_layout_inherited_size_bytes
+                << ", i64 "
+                << bundle.executable_ivar_layout_owner_size_bytes
+                << ", i64 " << bundle.executable_ivar_init_order_index
+                << ", i64 " << bundle.executable_ivar_destroy_order_index
+                << ", i1 "
+                << (bundle.executable_ivar_layout_valid ? 1 : 0)
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
             emit_retained(layout_record_symbol);
 
             out << descriptor_symbol
-                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i64 } { ptr "
+                << " = private global { ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, ptr, i64, i64, i64, i64, i64, i64, i64, i64, i64, i64, i1 } { ptr "
                 << owner_identity_symbol << ", ptr "
                 << declaration_owner_identity_symbol << ", ptr "
                 << export_owner_identity_symbol << ", ptr "
                 << property_owner_identity_symbol << ", ptr "
                 << property_name_symbol << ", ptr " << ivar_binding_symbol
                 << ", ptr " << layout_record_symbol << ", ptr "
-                << offset_global_symbol << ", i64 "
+                << offset_global_symbol << ", ptr "
+                << layout_replay_key_symbol << ", i64 "
                 << bundle.executable_ivar_layout_slot_index << ", i64 "
-                << descriptor_offsets[i] << ", i64 "
+                << bundle.executable_ivar_layout_offset_bytes << ", i64 "
                 << bundle.executable_ivar_layout_size_bytes << ", i64 "
                 << bundle.executable_ivar_layout_alignment_bytes
+                << ", i64 " << bundle.executable_ivar_layout_padding_bytes
+                << ", i64 "
+                << bundle.executable_ivar_layout_inherited_slot_count
+                << ", i64 "
+                << bundle.executable_ivar_layout_inherited_size_bytes
+                << ", i64 "
+                << bundle.executable_ivar_layout_owner_size_bytes
+                << ", i64 " << bundle.executable_ivar_init_order_index
+                << ", i64 " << bundle.executable_ivar_destroy_order_index
+                << ", i1 "
+                << (bundle.executable_ivar_layout_valid ? 1 : 0)
                 << " }, section \"" << family.emitted_section_name
                 << "\", align 8\n";
             emit_retained(descriptor_symbol);
           }
 
           std::size_t layout_table_ordinal = 0u;
-          for (const auto &[owner_identity, owner_descriptor_symbols] :
+          for (auto &[owner_identity, owner_descriptor_symbols] :
                descriptor_symbols_by_declaration_owner_identity) {
+            std::stable_sort(
+                owner_descriptor_symbols.begin(),
+                owner_descriptor_symbols.end(),
+                [](const auto &lhs, const auto &rhs) {
+                  return lhs.first < rhs.first ||
+                         (lhs.first == rhs.first && lhs.second < rhs.second);
+                });
             const std::string owner_identity_symbol =
                 BuildRuntimeMetadataAuxiliarySymbol(
                     layout_policy.descriptor_symbol_prefix, family.kind,
@@ -9514,7 +9535,7 @@ class Objc3IREmitter {
                 if (symbol_index != 0u) {
                   out << ", ";
                 }
-                out << "ptr " << owner_descriptor_symbols[symbol_index];
+                out << "ptr " << owner_descriptor_symbols[symbol_index].second;
               }
               out << "], i64 "
                   << instance_size_by_owner_identity[owner_identity] << " }";
@@ -14630,4 +14651,3 @@ bool EmitObjc3IRText(const Objc3Program &program,
   Objc3IREmitter emitter(program, lowering_contract, frontend_metadata);
   return emitter.Emit(ir, error);
 }
-

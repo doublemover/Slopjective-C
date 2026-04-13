@@ -356,9 +356,9 @@ inline constexpr const char *kObjc3RuntimeMethodListEmissionPayloadModel =
 inline constexpr const char *kObjc3RuntimeMethodListEmissionGroupingModel =
     "declaration-owner-plus-class-kind-lexicographic";
 inline constexpr const char *kObjc3RuntimePropertyDescriptorEmissionPayloadModel =
-    "property-descriptor-records-with-accessor-and-binding-strings";
+    "property-descriptor-records-with-accessor-binding-and-sema-ivar-layout-fields";
 inline constexpr const char *kObjc3RuntimeIvarDescriptorEmissionPayloadModel =
-    "ivar-descriptor-records-with-property-binding-strings";
+    "ivar-descriptor-records-with-property-binding-layout-replay-key-and-offset-global";
 // selector/string pool expansion anchor: runtime-adjacent selector
 // globals now expand into canonical selector and string pool families with
 // stable ordinal aggregates, while existing descriptor bundles remain shape
@@ -410,7 +410,7 @@ inline constexpr const char
         "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records";
 inline constexpr const char
     *kObjc3ExecutablePropertyAccessorLayoutLoweringIvarLayoutModel =
-        "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records";
+        "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records";
 inline constexpr const char
     *kObjc3ExecutablePropertyAccessorLayoutLoweringAccessorBindingModel =
         "effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis";
@@ -428,7 +428,7 @@ inline constexpr const char
 inline constexpr const char *kObjc3ExecutableIvarLayoutEmissionContractId =
     "objc3c.executable.ivar.layout.emission.v1";
 inline constexpr const char *kObjc3ExecutableIvarLayoutDescriptorModel =
-    "ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment";
+    "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering";
 inline constexpr const char *kObjc3ExecutableIvarOffsetGlobalModel =
     "one-retained-i64-offset-global-per-emitted-ivar-binding";
 inline constexpr const char *kObjc3ExecutableIvarLayoutTableModel =

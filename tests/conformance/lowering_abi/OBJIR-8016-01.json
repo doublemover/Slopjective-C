@@ -1,0 +1,60 @@
+{
+  "id": "OBJIR-8016-01",
+  "title": "Lower inherited object-model ivar layout into IR without recomputing offsets",
+  "feature": "object model metadata IR lowering",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp::emit_ivar_descriptor_section",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp::BuildObjc3FrontendArtifacts",
+    "native/objc3c/src/runtime/objc3_runtime.cpp::AttachRealizedPropertyLayoutRecordsUnlocked",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-ir %s\n@interface OC3LayoutBase : NSObject\n@property bool enabled;\n@property int baseCount;\n@end\n@implementation OC3LayoutBase\n@end\n@interface OC3LayoutChild : OC3LayoutBase\n@property id token;\n@property bool childFlag;\n@end\n@implementation OC3LayoutChild\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "native-ir",
+          "flags": [
+            "-fobjc-version=3",
+            "-fobjc3-strictness=strict",
+            "--emit-ir"
+          ],
+          "abi_requirements": [
+            "Objc3IRRuntimeMetadataPropertyBundle and Objc3IRRuntimeMetadataIvarBundle carry sema-owned offset, padding, inherited-slot, inherited-size, owner-size, init-order, destroy-order, validity, and replay-key fields",
+            "emit_ivar_descriptor_section writes @__objc3_meta_ivar_offset_* globals from executable_ivar_layout_offset_bytes instead of recomputing owner-local offsets",
+            "OC3LayoutChild.token lowers to offset 8 and OC3LayoutChild.childFlag lowers to offset 16 because OC3LayoutBase contributes two inherited slots and owner size 8",
+            "per-owner layout tables are ordered by executable_ivar_layout_slot_index and publish OC3LayoutChild owner size 24",
+            "property and ivar descriptor records both carry the layout replay key so runtime reflection does not infer layout from source declarations"
+          ],
+          "runtime_requirements": [
+            "AttachRealizedPropertyLayoutRecordsUnlocked validates descriptor/layout-record/offset-global consistency before marking runtime_layout_ready",
+            "runtime instance size uses the sema-published owner_size_bytes when it is larger than a local max-end alignment calculation",
+            "objc3_runtime_property_entry_snapshot exposes padding, inherited layout counts, owner size, order indexes, layout validity, and replay key for testing"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "object_model.ivar_layout.offset",
+          "contract_anchor": "native/objc3c/src/ir/objc3_ir_emitter.cpp::emit_ivar_descriptor_section",
+          "stability_property": "IR offset globals are a direct serialization of sema-approved executable_ivar_layout_offset_bytes",
+          "must_match_modes": [
+            "native-ir"
+          ]
+        },
+        {
+          "field_id": "object_model.ivar_layout.replay_key",
+          "contract_anchor": "native/objc3c/src/runtime/objc3_runtime.cpp::EmittedIvarLayoutRecord",
+          "stability_property": "runtime-facing descriptors preserve the exact sema replay key for layout provenance and replay checks",
+          "must_match_modes": [
+            "native-ir"
+          ]
+        }
+      ]
+    }
+  }
+}

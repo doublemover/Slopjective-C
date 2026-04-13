@@ -1,0 +1,56 @@
+{
+  "id": "OBJIR-8016-02",
+  "title": "Reject cyclic interface inheritance before object-model layout IR emission",
+  "feature": "object model metadata IR lowering diagnostics",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "native/objc3c/src/parse/objc3_parser.cpp::FinalizeObjcProgramPropertyIvarLayoutClosure",
+    "native/objc3c/src/parse/objc3_parser.cpp::FinalizeObjcInterfacePropertyIvarLayoutClosure",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp::emit_ivar_descriptor_section",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3"
+  ],
+  "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-strictness=strict --emit-ir %s\n@interface OC3CycleA : OC3CycleB\n@property int a;\n@end\n@interface OC3CycleB : OC3CycleA\n@property int b;\n@end\n@implementation OC3CycleA\n@end\n@implementation OC3CycleB\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "O3P150",
+        "severity": "error",
+        "span": {
+          "start": {
+            "line": 4,
+            "column": 1
+          },
+          "end": {
+            "line": 4,
+            "column": 1
+          }
+        },
+        "message": "cyclic Objective-C interface inheritance cannot produce a stable ivar layout"
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "native-ir-negative",
+          "flags": [
+            "-fobjc-version=3",
+            "-fobjc3-strictness=strict",
+            "--emit-ir"
+          ],
+          "abi_requirements": [
+            "FinalizeObjcProgramPropertyIvarLayoutClosure emits O3P150 for cyclic inheritance before runtime metadata export",
+            "invalid inherited layouts do not reach emit_ivar_descriptor_section as valid descriptor records",
+            "runtime metadata export remains fail-closed when sema cannot provide a stable layout replay key"
+          ]
+        }
+      ],
+      "negative_requirements": [
+        "no @__objc3_meta_ivar_offset_* globals are accepted as authoritative for cyclic inheritance input",
+        "no runtime property/ivar descriptor should be treated as layout_valid for the rejected cycle",
+        "the diagnostic is deterministic and independent of declaration traversal order"
+      ]
+    }
+  }
+}

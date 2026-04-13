@@ -1128,6 +1128,15 @@
       "files": [
         "M183-D001.json"
       ]
+    },
+    {
+      "name": "issue_8016_object_model_ir_lowering_closure",
+      "feature": "Object-model metadata, inherited ivar layout, property descriptors, and runtime layout replay key lowering",
+      "issue": 8016,
+      "files": [
+        "OBJIR-8016-01.json",
+        "OBJIR-8016-02.json"
+      ]
     }
   ]
 }

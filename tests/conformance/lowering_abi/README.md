@@ -60,6 +60,10 @@ Minimum scope:
 - `M183-D001.json`: M183 Lane D NSError-bridging lowering replay fixture
   covering deterministic replay-key/profile/metadata parity anchors and
   integration coverage for issue `#4507`.
+- `OBJIR-8016-01.json`, `OBJIR-8016-02.json`: object-model IR lowering
+  closure fixtures for issue `#8016`, covering inherited ivar offset
+  serialization, replay-key descriptor payloads, runtime layout validation, and
+  cyclic-inheritance fail-closed diagnostics.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

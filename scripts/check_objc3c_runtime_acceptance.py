@@ -1796,7 +1796,7 @@ def compile_fixture_with_args(
             "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records"
         ),
         "ivar_layout_model": (
-            "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records"
+            "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records"
         ),
         "accessor_binding_model": (
             "effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis"
@@ -1899,7 +1899,7 @@ def compile_fixture_with_args(
             EXECUTABLE_PROPERTY_ACCESSOR_LAYOUT_LOWERING_SURFACE_CONTRACT_ID
         ),
         "descriptor_model": (
-            "ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment"
+            "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering"
         ),
         "offset_global_model": (
             "one-retained-i64-offset-global-per-emitted-ivar-binding"
@@ -7251,7 +7251,7 @@ def build_executable_property_accessor_layout_lowering_surface(
             "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records"
         ),
         "ivar_layout_model": (
-            "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records"
+            "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records"
         ),
         "accessor_binding_model": (
             "effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis"
@@ -7313,7 +7313,7 @@ def build_executable_ivar_layout_emission_surface(
             "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
         ],
         "descriptor_model": (
-            "ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment"
+            "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering"
         ),
         "offset_global_model": (
             "one-retained-i64-offset-global-per-emitted-ivar-binding"
@@ -16702,7 +16702,7 @@ def check_property_accessor_layout_lowering_case(run_dir: Path) -> CaseResult:
             "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records"
         ),
         "ivar_layout_model": (
-            "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records"
+            "ivar-descriptor-bundles-carry-sema-approved-layout-symbol-replay-key-slot-offset-size-alignment-padding-inheritance-owner-size-records"
         ),
         "accessor_binding_model": (
             "effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis"
@@ -16773,7 +16773,7 @@ def check_property_accessor_layout_lowering_case(run_dir: Path) -> CaseResult:
             "objc3c.executable.property.accessor.layout.lowering.v1"
         ),
         "descriptor_model": (
-            "ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment"
+            "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering"
         ),
         "offset_global_model": "one-retained-i64-offset-global-per-emitted-ivar-binding",
         "layout_table_model": (

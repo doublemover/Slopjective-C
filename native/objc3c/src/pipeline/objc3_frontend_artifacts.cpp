@@ -27411,6 +27411,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             property_node.executable_ivar_layout_size_bytes;
         bundle.executable_ivar_layout_alignment_bytes =
             property_node.executable_ivar_layout_alignment_bytes;
+        bundle.executable_ivar_layout_offset_bytes =
+            property_node.executable_ivar_layout_offset_bytes;
+        bundle.executable_ivar_layout_padding_bytes =
+            property_node.executable_ivar_layout_padding_bytes;
+        bundle.executable_ivar_layout_inherited_slot_count =
+            property_node.executable_ivar_layout_inherited_slot_count;
+        bundle.executable_ivar_layout_inherited_size_bytes =
+            property_node.executable_ivar_layout_inherited_size_bytes;
+        bundle.executable_ivar_layout_owner_size_bytes =
+            property_node.executable_ivar_layout_owner_size_bytes;
+        bundle.executable_ivar_init_order_index =
+            property_node.executable_ivar_init_order_index;
+        bundle.executable_ivar_destroy_order_index =
+            property_node.executable_ivar_destroy_order_index;
+        bundle.executable_ivar_layout_valid =
+            property_node.executable_ivar_layout_valid;
+        bundle.executable_ivar_layout_replay_key =
+            property_node.executable_ivar_layout_replay_key;
         property_bundles.push_back(std::move(bundle));
       }
       std::sort(
@@ -27464,6 +27482,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               ivar_node.executable_ivar_layout_size_bytes;
           bundle.executable_ivar_layout_alignment_bytes =
               ivar_node.executable_ivar_layout_alignment_bytes;
+          bundle.executable_ivar_layout_offset_bytes =
+              ivar_node.executable_ivar_layout_offset_bytes;
+          bundle.executable_ivar_layout_padding_bytes =
+              ivar_node.executable_ivar_layout_padding_bytes;
+          bundle.executable_ivar_layout_inherited_slot_count =
+              ivar_node.executable_ivar_layout_inherited_slot_count;
+          bundle.executable_ivar_layout_inherited_size_bytes =
+              ivar_node.executable_ivar_layout_inherited_size_bytes;
+          bundle.executable_ivar_layout_owner_size_bytes =
+              ivar_node.executable_ivar_layout_owner_size_bytes;
+          bundle.executable_ivar_init_order_index =
+              ivar_node.executable_ivar_init_order_index;
+          bundle.executable_ivar_destroy_order_index =
+              ivar_node.executable_ivar_destroy_order_index;
+          bundle.executable_ivar_layout_valid =
+              ivar_node.executable_ivar_layout_valid;
+          bundle.executable_ivar_layout_replay_key =
+              ivar_node.executable_ivar_layout_replay_key;
           ivar_bundles.push_back(std::move(bundle));
         }
       }
@@ -27792,6 +27828,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               bundle.executable_ivar_layout_symbol.empty() ||
               bundle.executable_ivar_layout_alignment_bytes == 0u ||
               bundle.executable_ivar_layout_size_bytes == 0u ||
+              !bundle.executable_ivar_layout_valid ||
+              bundle.executable_ivar_layout_replay_key.empty() ||
               bundle.ivar_binding_symbol.empty()) {
             ivar_layout_emission_complete = false;
             break;
