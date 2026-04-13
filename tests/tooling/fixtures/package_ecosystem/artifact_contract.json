@@ -25,7 +25,8 @@
     "package-lock-summary.json",
     "package-authoring-workflow-summary.json",
     "package-mirror-summary.json",
-    "registry-mirror-reproducibility-summary.json"
+    "registry-mirror-reproducibility-summary.json",
+    "integration-summary.json"
   ],
   "artifact_claim_rules": [
     "lockfiles and mirror indexes are generated artifacts, not checked-in source authority",
@@ -35,6 +36,9 @@
   ],
   "required_public_scripts": [
     "package:objc3c-native:runnable-toolchain",
+    "build:objc3c:package-lock",
+    "test:objc3c:package-authoring",
+    "test:objc3c:package-ecosystem",
     "package:objc3c:channels",
     "inspect:objc3c:release-manifest",
     "inspect:objc3c:update-manifest",

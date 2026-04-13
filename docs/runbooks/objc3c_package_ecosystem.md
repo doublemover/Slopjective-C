@@ -35,6 +35,7 @@ Replayable boundary inventory:
 - `python scripts/check_objc3c_package_authoring_workflow.py`
 - `python scripts/build_objc3c_package_mirror.py`
 - `python scripts/check_objc3c_package_registry_mirror_reproducibility.py`
+- `python scripts/check_objc3c_package_ecosystem_integration.py`
 
 ## Current Boundary
 
@@ -185,6 +186,18 @@ The replayable implementation is:
 The mirror generator consumes the generated lock, writes an offline mirror index,
 local registry index, and publication metadata under
 `tmp/artifacts/package-ecosystem/`, and refuses to claim hosted registry support.
+
+## Public Workflow Integration
+
+The repo-scope package ecosystem workflow is:
+
+- `npm run build:objc3c:package-lock`
+- `npm run test:objc3c:package-authoring`
+- `npm run test:objc3c:package-ecosystem`
+
+`test:objc3c:package-ecosystem` composes the local package authoring workflow
+with the canonical application architecture and stdlib program integration
+surfaces so package claims remain user-shaped instead of package-only probes.
 
 ## Successor Pressure
 

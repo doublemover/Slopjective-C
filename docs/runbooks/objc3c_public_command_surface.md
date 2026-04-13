@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `159`
-- Operator command count: `150`
+- Current package script count: `162`
+- Operator command count: `153`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -22,6 +22,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `build:objc3c-native:full` | `build-native-full` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c-native:reconfigure` | `build-native-reconfigure` | `-` | `-` | `fixed-shape` | `pwsh:scripts/build_objc3c_native.ps1` |
 | `build:objc3c:application-workspace` | `materialize-canonical-application-workspace` | `repo` | `canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts` | `pass-through` | `python:scripts/materialize_objc3c_canonical_application_workspace.py` |
+| `build:objc3c:package-lock` | `build-package-lock` | `repo` | `package locks stay deterministic, provenance-bearing, and derived from checked-in local package surfaces` | `fixed-shape` | `python:scripts/build_objc3c_package_lock.py` |
 | `build:objc3c:playground` | `materialize-playground-workspace` | `repo` | `playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared proof-only buckets` | `pass-through` | `runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe` |
 | `build:objc3c:stdlib` | `materialize-stdlib-workspace` | `repo` | `stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface` | `pass-through` | `python:scripts/materialize_objc3c_stdlib_workspace.py` |
 | `build:objc3c:template` | `materialize-project-template` | `repo` | `starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions` | `pass-through` | `python:scripts/materialize_objc3c_project_template.py` |
@@ -113,6 +114,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:negative-expectations` | `test-negative-expectations` | `nightly` | `negative expectation header and token enforcement` | `pass-through` | `pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1` |
 | `test:objc3c:nightly` | `test-nightly` | `nightly` | `full validation plus performance governance reporting, release-foundation publication, conformance corpus indexing, recovery, and broad corpus sweeps` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `test:objc3c:object-model-conformance` | `validate-object-model-conformance` | `full` | `integrated object-model conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_conformance.py` |
+| `test:objc3c:package-authoring` | `validate-package-authoring` | `repo` | `package authoring stays replayable through checked-in package surfaces and public workflow commands` | `fixed-shape` | `python:scripts/check_objc3c_package_authoring_workflow.py` |
+| `test:objc3c:package-ecosystem` | `validate-package-ecosystem` | `repo` | `package ecosystem claims stay grounded in deterministic locks, stdlib programs, and canonical application workspaces` | `fixed-shape` | `python:scripts/check_objc3c_package_ecosystem_integration.py` |
 | `test:objc3c:packaging-channels` | `validate-packaging-channels` | `nightly` | `portable archive installer image and offline bundle generation stay executable on the live release surface` | `fixed-shape` | `runner-internal + direct packaging-channel commands` |
 | `test:objc3c:packaging-channels:e2e` | `validate-packaging-channels-end-to-end` | `full` | `packaging-channel artifacts stay installable rollback-safe and offline-bootstrappable under temp-owned roots` | `fixed-shape` | `python:scripts/check_objc3c_packaging_channels_end_to_end.py` |
 | `test:objc3c:performance` | `validate-performance-foundation` | `repo` | `benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_performance_integration.py` |

@@ -127,6 +127,9 @@ PROJECT_TEMPLATE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_projec
 CANONICAL_APPLICATION_WORKSPACE_MATERIALIZER_PY = ROOT / "scripts" / "materialize_objc3c_canonical_application_workspace.py"
 APPLICATION_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_application_architecture_integration.py"
 RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_application_architecture_end_to_end.py"
+PACKAGE_LOCK_PY = ROOT / "scripts" / "build_objc3c_package_lock.py"
+PACKAGE_AUTHORING_WORKFLOW_PY = ROOT / "scripts" / "check_objc3c_package_authoring_workflow.py"
+PACKAGE_ECOSYSTEM_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_package_ecosystem_integration.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
@@ -390,6 +393,18 @@ def action_validate_application_architecture(_: list[str]) -> int:
 
 def action_validate_runnable_application_architecture(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_APPLICATION_ARCHITECTURE_E2E_PY)])
+
+
+def action_build_package_lock(_: list[str]) -> int:
+    return run([sys.executable, str(PACKAGE_LOCK_PY)])
+
+
+def action_validate_package_authoring(_: list[str]) -> int:
+    return run([sys.executable, str(PACKAGE_AUTHORING_WORKFLOW_PY)])
+
+
+def action_validate_package_ecosystem(_: list[str]) -> int:
+    return run([sys.executable, str(PACKAGE_ECOSYSTEM_INTEGRATION_PY)])
 
 
 def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
@@ -1915,6 +1930,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-stdlib-program": ActionSpec("validate-stdlib-program", "run the integrated stdlib program docs, showcase, tutorial, and capability-adoption validation flow", "python:scripts/check_objc3c_stdlib_program_integration.py", ("test:stdlib:program",), validation_tier="repo", guarantee_owner="stdlib publish/adoption docs, capability demos, tutorial routing, and stdlib smoke integration stay executable on the live public workflow"),
     "validate-application-architecture": ActionSpec("validate-application-architecture", "run the integrated template and canonical application workspace validation flow", "python:scripts/check_objc3c_application_architecture_integration.py", ("test:objc3c:application-architecture",), validation_tier="repo", guarantee_owner="template harnesses and canonical application workspaces stay derived from live showcase, stdlib, and public workflow surfaces"),
     "validate-runnable-application-architecture": ActionSpec("validate-runnable-application-architecture", "validate packaged canonical application workspace and template surfaces end to end from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_application_architecture_end_to_end.py", ("test:objc3c:application-architecture:e2e",), validation_tier="full", guarantee_owner="packaged canonical application workspaces and template harness validation stay reproducible from the staged runnable toolchain bundle"),
+    "build-package-lock": ActionSpec("build-package-lock", "generate the local package lock from checked-in stdlib and showcase package surfaces", "python:scripts/build_objc3c_package_lock.py", ("build:objc3c:package-lock",), validation_tier="repo", guarantee_owner="package locks stay deterministic, provenance-bearing, and derived from checked-in local package surfaces"),
+    "validate-package-authoring": ActionSpec("validate-package-authoring", "validate local package authoring and deterministic lock generation", "python:scripts/check_objc3c_package_authoring_workflow.py", ("test:objc3c:package-authoring",), validation_tier="repo", guarantee_owner="package authoring stays replayable through checked-in package surfaces and public workflow commands"),
+    "validate-package-ecosystem": ActionSpec("validate-package-ecosystem", "validate the integrated package ecosystem workflow against stdlib program and canonical application surfaces", "python:scripts/check_objc3c_package_ecosystem_integration.py", ("test:objc3c:package-ecosystem",), validation_tier="repo", guarantee_owner="package ecosystem claims stay grounded in deterministic locks, stdlib programs, and canonical application workspaces"),
     "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", ("test:stdlib:advanced:e2e",), validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", ("test:stdlib:program:e2e",), validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
@@ -2171,6 +2189,9 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-runnable-bonus-experiences": action_validate_runnable_bonus_experiences,
     "validate-application-architecture": action_validate_application_architecture,
     "validate-runnable-application-architecture": action_validate_runnable_application_architecture,
+    "build-package-lock": action_build_package_lock,
+    "validate-package-authoring": action_validate_package_authoring,
+    "validate-package-ecosystem": action_validate_package_ecosystem,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,
