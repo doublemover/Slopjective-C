@@ -1978,7 +1978,7 @@ def write_composite_validation_report(
 def run_composite_step(action: str, command: Sequence[str]) -> dict[str, object]:
     started_at = perf_counter()
     if (
-        action == "test-runtime-acceptance"
+        action.startswith("test-runtime-acceptance")
         and os.environ.get("OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN") == "1"
     ):
         return {
@@ -1987,6 +1987,7 @@ def run_composite_step(action: str, command: Sequence[str]) -> dict[str, object]
             "exit_code": 0,
             "report_paths": ["tmp/reports/runtime/acceptance/summary.json"],
             "report_reused": True,
+            "report_reuse_source": "OBJC3C_SKIP_RUNTIME_ACCEPTANCE_RERUN",
             "duration_seconds": round(perf_counter() - started_at, 6),
         }
     normalized = [str(token) for token in command]
@@ -2048,7 +2049,7 @@ def action_test_fast(_: list[str]) -> int:
         "test-fast",
         [
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "12"]),
-            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
+            ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
         ],
     )
@@ -2090,6 +2091,26 @@ def action_test_execution_replay(rest: list[str]) -> int:
 
 def action_test_runtime_acceptance(_: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY)])
+
+
+def action_test_runtime_acceptance_fast(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"])
+
+
+def action_test_runtime_acceptance_diagnostics(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "diagnostics"])
+
+
+def action_test_runtime_acceptance_cross_module(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "cross-module"])
+
+
+def action_test_runtime_acceptance_block_arc(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "block-arc"])
+
+
+def action_test_runtime_acceptance_concurrency(_: list[str]) -> int:
+    return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "concurrency"])
 
 
 def action_test_compile_wrapper_self_audit(_: list[str]) -> int:
@@ -2549,7 +2570,7 @@ def action_test_full(_: list[str]) -> int:
         [
             ("test-compile-wrapper-self-audit", [sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "24"]),
-            ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
+            ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
         ],
     )
@@ -2738,7 +2759,12 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-compile-wrapper-self-audit": ActionSpec("test-compile-wrapper-self-audit", "native compile wrapper self-audit", "python:scripts/check_objc3c_compile_wrapper_self_audit.py", ("test:objc3c:compile-wrapper",), validation_tier="fast", guarantee_owner="one wrapper compile proves invariant compile-output provenance, truthfulness, registration digest binding, and required artifact publication"),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
-    "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py", ("test:objc3c:runtime-acceptance",), validation_tier="fast", guarantee_owner="runtime acceptance and ABI/accessor proof"),
+    "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "full runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite full", ("test:objc3c:runtime-acceptance", "test:objc3c:runtime-acceptance:full"), validation_tier="full", guarantee_owner="exhaustive runtime acceptance and ABI/accessor proof"),
+    "test-runtime-acceptance-fast": ActionSpec("test-runtime-acceptance-fast", "fast runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite fast", ("test:objc3c:runtime-acceptance:fast",), validation_tier="fast", guarantee_owner="high-signal runtime acceptance slice for developer validation"),
+    "test-runtime-acceptance-diagnostics": ActionSpec("test-runtime-acceptance-diagnostics", "diagnostic runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite diagnostics", ("test:objc3c:runtime-acceptance:diagnostics",), validation_tier="fast", guarantee_owner="negative diagnostics and fail-closed runtime acceptance surfaces"),
+    "test-runtime-acceptance-cross-module": ActionSpec("test-runtime-acceptance-cross-module", "cross-module runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite cross-module", ("test:objc3c:runtime-acceptance:cross-module",), validation_tier="fast", guarantee_owner="cross-module import, replay, package, and link-plan runtime acceptance surfaces"),
+    "test-runtime-acceptance-block-arc": ActionSpec("test-runtime-acceptance-block-arc", "Block/ARC runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite block-arc", ("test:objc3c:runtime-acceptance:block-arc",), validation_tier="fast", guarantee_owner="Block, byref, ownership transfer, and ARC runtime acceptance surfaces"),
+    "test-runtime-acceptance-concurrency": ActionSpec("test-runtime-acceptance-concurrency", "concurrency runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite concurrency", ("test:objc3c:runtime-acceptance:concurrency",), validation_tier="fast", guarantee_owner="async/task/actor runtime acceptance surfaces"),
     "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture proof packet", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py", ("proof:objc3c:runtime-architecture",)),
     "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and proof packet", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture proof packet alignment"),
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", ("test:objc3c:runnable-bootstrap",), validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
@@ -2920,6 +2946,11 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-execution-smoke": action_test_execution_smoke,
     "test-execution-replay": action_test_execution_replay,
     "test-runtime-acceptance": action_test_runtime_acceptance,
+    "test-runtime-acceptance-fast": action_test_runtime_acceptance_fast,
+    "test-runtime-acceptance-diagnostics": action_test_runtime_acceptance_diagnostics,
+    "test-runtime-acceptance-cross-module": action_test_runtime_acceptance_cross_module,
+    "test-runtime-acceptance-block-arc": action_test_runtime_acceptance_block_arc,
+    "test-runtime-acceptance-concurrency": action_test_runtime_acceptance_concurrency,
     "proof-runtime-architecture": action_proof_runtime_architecture,
     "validate-runtime-architecture": action_validate_runtime_architecture,
     "validate-runnable-bootstrap": action_validate_runnable_bootstrap,

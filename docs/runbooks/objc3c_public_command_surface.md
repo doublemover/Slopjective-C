@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `172`
-- Operator command count: `163`
+- Current package script count: `178`
+- Operator command count: `169`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -155,7 +155,13 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:runnable-release-candidate` | `validate-runnable-release-candidate` | `full` | `packaged compile, release-candidate validation, runtime probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_release_candidate_end_to_end.py` |
 | `test:objc3c:runnable-runtime-performance` | `validate-runnable-runtime-performance` | `full` | `packaged runtime-performance fixtures, contracts, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_runtime_performance_end_to_end.py` |
 | `test:objc3c:runnable-storage-reflection` | `validate-runnable-storage-reflection` | `full` | `packaged compile, storage/reflection probe execution, smoke, and replay from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_storage_reflection_end_to_end.py` |
-| `test:objc3c:runtime-acceptance` | `test-runtime-acceptance` | `fast` | `runtime acceptance and ABI/accessor proof` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py` |
+| `test:objc3c:runtime-acceptance` | `test-runtime-acceptance` | `full` | `exhaustive runtime acceptance and ABI/accessor proof` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite full` |
+| `test:objc3c:runtime-acceptance:block-arc` | `test-runtime-acceptance-block-arc` | `fast` | `Block, byref, ownership transfer, and ARC runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite block-arc` |
+| `test:objc3c:runtime-acceptance:concurrency` | `test-runtime-acceptance-concurrency` | `fast` | `async/task/actor runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite concurrency` |
+| `test:objc3c:runtime-acceptance:cross-module` | `test-runtime-acceptance-cross-module` | `fast` | `cross-module import, replay, package, and link-plan runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite cross-module` |
+| `test:objc3c:runtime-acceptance:diagnostics` | `test-runtime-acceptance-diagnostics` | `fast` | `negative diagnostics and fail-closed runtime acceptance surfaces` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite diagnostics` |
+| `test:objc3c:runtime-acceptance:fast` | `test-runtime-acceptance-fast` | `fast` | `high-signal runtime acceptance slice for developer validation` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite fast` |
+| `test:objc3c:runtime-acceptance:full` | `test-runtime-acceptance` | `full` | `exhaustive runtime acceptance and ABI/accessor proof` | `fixed-shape` | `python:scripts/check_objc3c_runtime_acceptance.py --suite full` |
 | `test:objc3c:runtime-architecture` | `validate-runtime-architecture` | `full` | `full public workflow and runtime architecture proof packet alignment` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_integration.py` |
 | `test:objc3c:runtime-performance` | `validate-runtime-performance` | `repo` | `runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_runtime_performance_integration.py` |
 | `test:objc3c:security-hardening` | `validate-security-hardening` | `nightly` | `security posture and advisory publication stay executable on the live release, trust, and hardening surfaces` | `fixed-shape` | `runner-internal + direct security-hardening commands` |

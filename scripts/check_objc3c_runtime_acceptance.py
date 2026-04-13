@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import hashlib
 import os
@@ -5208,6 +5209,116 @@ class CaseResult:
     claim_class: str
     passed: bool
     summary: dict[str, Any]
+
+
+RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
+    "full": (),
+    "fast": (
+        "runtime-library",
+        "compile-backend-parity",
+        "artifact-registry-key-isolation",
+        "installation-lifecycle",
+        "metaprogramming-source-surface",
+        "live-metaprogramming-cache-runtime-integration",
+        "cross-module-runtime-package-interop-source-surface",
+        "unified-concurrency-runtime-abi",
+        "live-error-runtime-integration",
+        "canonical-dispatch",
+        "live-dispatch-fast-path",
+        "storage-ownership-reflection",
+        "accessor-storage-lowering-metadata-surface",
+        "property-layout",
+        "escaping-block-capture-legality",
+        "block-arc-runtime-abi",
+        "arc-property-helper",
+    ),
+    "diagnostics": (
+        "metaprogramming-derive-property-behavior-semantics",
+        "metaprogramming-macro-safety-cache-diagnostics",
+        "import-version-feature-claim-diagnostics",
+        "scaffold-retirement-deprecated-sidecar-compatibility-diagnostics",
+        "executable-try-throw-do-catch-semantics",
+        "bridging-filter-unwind-compatibility-diagnostics",
+        "property-reflection-accessor-compatibility-diagnostics",
+        "property-synthesis-storage-binding-semantics",
+        "storage-legality-semantics",
+        "escaping-block-capture-legality",
+        "block-storage-arc-automation-semantics",
+    ),
+    "cross-module": (
+        "cross-module-metaprogramming-artifact-preservation",
+        "cross-module-runtime-package-interop-source-surface",
+        "mixed-image-compatibility-interop-semantics",
+        "c-cpp-swift-bridge-compatibility-semantics",
+        "runtime-packaging-bridge-loader-artifact-surface",
+        "mixed-image-package-lowering-bridge-emission",
+        "cross-language-replay-import-surface-preservation",
+        "live-package-loading-interop-runtime-implementation",
+        "cross-module-error-metadata-replay-preservation",
+        "cross-module-concurrency-actor-artifact-preservation",
+        "cross-module-block-ownership-artifact-preservation",
+        "cross-module-storage-reflection-artifact-preservation",
+        "imported-runtime-packaging-replay",
+    ),
+    "block-arc": (
+        "escaping-block-capture-legality",
+        "block-storage-arc-automation-semantics",
+        "block-arc-runtime-abi",
+        "block-helper-runtime-execution",
+        "arc-property-helper",
+        "cross-module-block-ownership-artifact-preservation",
+    ),
+    "concurrency": (
+        "unified-concurrency-runtime-architecture",
+        "async-task-actor-normalization-completion",
+        "unified-concurrency-lowering-metadata-surface",
+        "unified-concurrency-runtime-abi",
+        "live-unified-concurrency-runtime-implementation",
+        "cross-module-concurrency-actor-artifact-preservation",
+    ),
+}
+
+
+def parse_args(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run ObjC3 runtime acceptance suites."
+    )
+    parser.add_argument(
+        "--suite",
+        choices=sorted(RUNTIME_ACCEPTANCE_SUITE_CASES),
+        default="full",
+        help="named runtime acceptance suite to run",
+    )
+    parser.add_argument(
+        "--case",
+        action="append",
+        default=[],
+        dest="cases",
+        help="run one case label; may be repeated and overrides --suite",
+    )
+    parser.add_argument(
+        "--list-suites",
+        action="store_true",
+        help="print suite names and case labels without running acceptance",
+    )
+    return parser.parse_args(argv)
+
+
+def filter_case_factories(
+    case_factories: list[tuple[str, Callable[[], CaseResult]]],
+    *,
+    selected_suite: str,
+    selected_cases: list[str],
+) -> list[tuple[str, Callable[[], CaseResult]]]:
+    available = {label for label, _ in case_factories}
+    requested = tuple(selected_cases) or RUNTIME_ACCEPTANCE_SUITE_CASES[selected_suite]
+    if selected_suite == "full" and not selected_cases:
+        return case_factories
+    unknown = [label for label in requested if label not in available]
+    if unknown:
+        raise RuntimeError("unknown runtime acceptance case(s): " + ", ".join(unknown))
+    requested_set = set(requested)
+    return [(label, factory) for label, factory in case_factories if label in requested_set]
 
 
 def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:
@@ -20325,8 +20436,9 @@ def check_live_package_loading_interop_runtime_implementation_case(
     )
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     global ACCEPTANCE_PROGRESS
+    args = parse_args(sys.argv[1:] if argv is None else argv)
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
@@ -20413,6 +20525,17 @@ def main() -> int:
         ("block-helper-runtime-execution", lambda: check_block_helper_runtime_execution_case(clangxx, run_dir)),
         ("arc-property-helper", lambda: check_arc_property_helper_case(clangxx, run_dir)),
     ]
+    if args.list_suites:
+        print(json.dumps({
+            suite: list(cases) if cases else [label for label, _ in case_factories]
+            for suite, cases in RUNTIME_ACCEPTANCE_SUITE_CASES.items()
+        }, indent=2))
+        return 0
+    case_factories = filter_case_factories(
+        case_factories,
+        selected_suite=args.suite,
+        selected_cases=list(args.cases),
+    )
 
     ACCEPTANCE_PROGRESS = RuntimeAcceptanceProgress(
         run_id=run_id,
@@ -20448,6 +20571,12 @@ def main() -> int:
         "clangxx": clangxx,
         "runtime_library": str(RUNTIME_LIB.relative_to(ROOT)).replace("\\", "/"),
         "case_count": len(results),
+        "selected_suite": args.suite,
+        "selected_cases": list(args.cases),
+        "available_suites": {
+            suite: list(cases) if cases else "all"
+            for suite, cases in RUNTIME_ACCEPTANCE_SUITE_CASES.items()
+        },
         "default_compile_backend": DEFAULT_COMPILE_BACKEND,
         "direct_compile_backend": DIRECT_COMPILE_BACKEND,
         "wrapper_compile_backend": WRAPPER_COMPILE_BACKEND,
