@@ -66,6 +66,29 @@ def main() -> int:
         public_claim_class = "production-strength"
     elif rollout["current_rollout_class"] == "candidate":
         public_claim_class = "candidate-scoped"
+    dashboard_release_blocker_projection = release_blockers.get(
+        "dashboard_release_blocker_projection"
+    )
+    expect(
+        isinstance(dashboard_release_blocker_projection, dict),
+        "release blocker summary missing dashboard_release_blocker_projection",
+    )
+    expect(
+        dashboard_release_blocker_projection.get("current_rollout_class")
+        == rollout["current_rollout_class"],
+        "dashboard release-blocker projection rollout class drifted",
+    )
+    expect(
+        dashboard_release_blocker_projection.get("public_claim_class")
+        == public_claim_class,
+        "dashboard release-blocker projection public claim class drifted",
+    )
+    if dashboard_release_blocker_projection.get("blocks_production_strength_claim"):
+        expect(
+            dashboard_release_blocker_projection["blocker"]
+            in release_blockers["triggered_blockers"],
+            "dashboard release-blocker projection did not trigger its blocker",
+        )
 
     acceptance_matrix = [
         {
@@ -121,6 +144,7 @@ def main() -> int:
         "public_claim_class": public_claim_class,
         "support_row_counts_by_class": support_matrix["support_row_counts_by_class"],
         "triggered_release_blockers": release_blockers["triggered_blockers"],
+        "dashboard_release_blocker_projection": dashboard_release_blocker_projection,
         "acceptance_matrix": acceptance_matrix,
         "release_artifacts": {
             "release_manifest_path": release_foundation.get("release_manifest_path"),
@@ -143,6 +167,10 @@ def main() -> int:
         "public_claim_class": public_claim_class,
         "production_strength_claimable": dashboard_payload["production_strength_claimable"],
         "triggered_reason_count": len(dashboard_payload["triggered_reasons"]),
+        "dashboard_release_blocker": dashboard_release_blocker_projection["blocker"],
+        "dashboard_blocks_production_strength_claim": dashboard_release_blocker_projection[
+            "blocks_production_strength_claim"
+        ],
         "report_markdown_path": repo_rel(REPORT_MD),
     }
 
@@ -151,6 +179,8 @@ def main() -> int:
         f"- Rollout class: `{dashboard_payload['current_rollout_class']}`\n"
         f"- Public claim class: `{public_claim_class}`\n"
         f"- Production-strength claimable: `{dashboard_payload['production_strength_claimable']}`\n"
+        f"- Dashboard release blocker: `{dashboard_release_blocker_projection['blocker']}`\n"
+        f"- Dashboard blocks production-strength claim: `{dashboard_release_blocker_projection['blocks_production_strength_claim']}`\n"
         f"- Triggered release blockers: `{len(dashboard_payload['triggered_release_blockers'])}`\n"
         f"- Triggered reasons: `{len(dashboard_payload['triggered_reasons'])}`\n\n"
         "## Acceptance Matrix\n\n"

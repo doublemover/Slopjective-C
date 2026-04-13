@@ -1,0 +1,7 @@
+{
+  "contract_id": "fixture.release-foundation",
+  "status": "PASS",
+  "release_manifest_path": "tmp/artifacts/release-foundation/release-manifest.json",
+  "published_sbom": "tmp/artifacts/release-foundation/sbom.json",
+  "published_attestation": "tmp/artifacts/release-foundation/attestation.json"
+}

@@ -1,0 +1,6 @@
+{
+  "contract_id": "fixture.performance",
+  "status": "PASS",
+  "claim_ready": false,
+  "release_status": "blocked"
+}

@@ -33,6 +33,59 @@ def repo_rel(path: Path) -> str:
     return str(path.relative_to(ROOT)).replace("\\", "/")
 
 
+def public_claim_class_for_rollout(
+    current_rollout_class: str,
+    production_strength_claimable: bool,
+) -> str:
+    if current_rollout_class == "stable" and production_strength_claimable:
+        return "production-strength"
+    if current_rollout_class == "candidate":
+        return "candidate-scoped"
+    return "preview-only"
+
+
+def build_dashboard_release_blocker_projection(
+    contract: dict[str, Any],
+    current_rollout_class: str,
+    production_strength_claimable: bool,
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    projection_contract = contract.get("dashboard_release_blocker_projection")
+    expect(
+        isinstance(projection_contract, dict),
+        "release blocker policy must define dashboard_release_blocker_projection",
+    )
+    public_claim_class = public_claim_class_for_rollout(
+        current_rollout_class, production_strength_claimable
+    )
+    blocking_public_claim_classes = set(
+        projection_contract["blocking_public_claim_classes"]
+    )
+    blocking_rollout_classes = set(projection_contract["blocking_rollout_classes"])
+    blocks_production_strength_claim = (
+        public_claim_class in blocking_public_claim_classes
+        or current_rollout_class in blocking_rollout_classes
+    )
+    projection = {
+        "blocker": projection_contract["blocker"],
+        "dashboard_summary_path": projection_contract["dashboard_summary_path"],
+        "public_summary_path": projection_contract["public_summary_path"],
+        "required_dashboard_fields": projection_contract["required_dashboard_fields"],
+        "current_rollout_class": current_rollout_class,
+        "public_claim_class": public_claim_class,
+        "production_strength_claimable": production_strength_claimable,
+        "blocks_production_strength_claim": blocks_production_strength_claim,
+    }
+    dashboard_blocker = None
+    if blocks_production_strength_claim:
+        dashboard_blocker = {
+            "blocker": projection_contract["blocker"],
+            "source_report": "full-envelope-dashboard-projection",
+            "field": "public_claim_class",
+            "blocking_values": sorted(blocking_public_claim_classes),
+        }
+    return projection, dashboard_blocker
+
+
 def main() -> int:
     contract = read_json(POLICY_CONTRACT_PATH)
     runbook_text = RUNBOOK_PATH.read_text(encoding="utf-8")
@@ -49,7 +102,7 @@ def main() -> int:
             "passes": payload.get("status") == "PASS",
         }
 
-    triggered_blockers: list[dict[str, Any]] = []
+    triggered_policy_blockers: list[dict[str, Any]] = []
     for blocker in contract["release_blockers"]:
         if "source_reports" in blocker:
             triggered = any(
@@ -64,13 +117,20 @@ def main() -> int:
             triggered = payload.get(blocker["field"]) in blocker["blocking_values"]
 
         if triggered:
-            triggered_blockers.append(blocker)
+            triggered_policy_blockers.append(blocker)
 
     current_rollout_class = "stable"
-    if triggered_blockers:
+    if triggered_policy_blockers:
         current_rollout_class = "preview"
     elif reports["public-conformance"]["payload"].get("public_status") == "caution":
         current_rollout_class = "candidate"
+    production_strength_claimable = current_rollout_class == "stable"
+    dashboard_projection, dashboard_blocker = build_dashboard_release_blocker_projection(
+        contract, current_rollout_class, production_strength_claimable
+    )
+    triggered_blockers = list(triggered_policy_blockers)
+    if dashboard_blocker is not None:
+        triggered_blockers.append(dashboard_blocker)
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_full_envelope_claimability_release_blocker_summary.py",
@@ -90,6 +150,16 @@ def main() -> int:
         ),
         "current_state_triggers_at_least_one_release_blocker": len(triggered_blockers) > 0,
         "current_state_is_not_stable_rollout_ready": current_rollout_class != "stable",
+        "dashboard_projection_configured": bool(dashboard_projection["blocker"]),
+        "dashboard_projection_blocks_non_production_public_claims": (
+            dashboard_projection["blocks_production_strength_claim"]
+            == (dashboard_projection["public_claim_class"] != "production-strength")
+        ),
+        "triggered_blockers_include_dashboard_projection": (
+            not dashboard_projection["blocks_production_strength_claim"]
+            or dashboard_projection["blocker"]
+            in {blocker["blocker"] for blocker in triggered_blockers}
+        ),
     }
 
     payload = {
@@ -100,9 +170,13 @@ def main() -> int:
         "runbook": repo_rel(RUNBOOK_PATH),
         "required_report_count": len(contract["required_reports"]),
         "release_blocker_count": len(contract["release_blockers"]),
+        "policy_triggered_blocker_count": len(triggered_policy_blockers),
+        "dashboard_triggered_blocker_count": 1 if dashboard_blocker else 0,
         "triggered_blocker_count": len(triggered_blockers),
         "current_rollout_class": current_rollout_class,
+        "production_strength_claimable": production_strength_claimable,
         "triggered_blockers": [blocker["blocker"] for blocker in triggered_blockers],
+        "dashboard_release_blocker_projection": dashboard_projection,
         "checks": checks,
     }
 

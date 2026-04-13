@@ -1,0 +1,7 @@
+{
+  "contract_id": "fixture.release-operations",
+  "status": "PASS",
+  "update_manifest_path": "tmp/artifacts/release-operations/update-manifest.json",
+  "compatibility_report": "tmp/artifacts/release-operations/compatibility-report.json",
+  "channel_catalog": "tmp/artifacts/release-operations/channel-catalog.json"
+}

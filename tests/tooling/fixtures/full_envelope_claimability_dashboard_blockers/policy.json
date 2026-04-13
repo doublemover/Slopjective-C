@@ -1,0 +1,77 @@
+{
+  "contract_id": "objc3c.full_envelope.claimability.release.blocker.rollout.policy.v1",
+  "summary_script": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
+  "required_reports": [
+    {
+      "name": "public-conformance",
+      "path": "reports/public-conformance.json",
+      "required_contract_id": "fixture.public"
+    },
+    {
+      "name": "performance-governance",
+      "path": "reports/performance.json",
+      "required_contract_id": "fixture.performance"
+    },
+    {
+      "name": "release-foundation",
+      "path": "reports/release-foundation.json",
+      "required_contract_id": "fixture.release-foundation"
+    },
+    {
+      "name": "release-operations",
+      "path": "reports/release-operations.json",
+      "required_contract_id": "fixture.release-operations"
+    },
+    {
+      "name": "distribution-credibility",
+      "path": "reports/distribution.json",
+      "required_contract_id": "fixture.distribution"
+    }
+  ],
+  "rollout_classes": [
+    {
+      "class": "stable",
+      "requires_production_strength_claim": true,
+      "allows_release_blocking": false
+    },
+    {
+      "class": "candidate",
+      "requires_production_strength_claim": false,
+      "allows_release_blocking": false
+    },
+    {
+      "class": "preview",
+      "requires_production_strength_claim": false,
+      "allows_release_blocking": true
+    }
+  ],
+  "release_blockers": [
+    {
+      "blocker": "performance-claim-not-ready",
+      "source_report": "performance-governance",
+      "field": "claim_ready",
+      "blocking_values": [
+        false
+      ]
+    }
+  ],
+  "dashboard_release_blocker_projection": {
+    "blocker": "claimability-dashboard-not-production-strength",
+    "dashboard_summary_path": "tmp/reports/full-envelope-claimability/dashboard-summary.json",
+    "public_summary_path": "tmp/reports/full-envelope-claimability/public-summary.json",
+    "blocking_public_claim_classes": [
+      "preview-only",
+      "candidate-scoped"
+    ],
+    "blocking_rollout_classes": [
+      "preview",
+      "candidate"
+    ],
+    "required_dashboard_fields": [
+      "current_rollout_class",
+      "public_claim_class",
+      "production_strength_claimable",
+      "triggered_release_blockers"
+    ]
+  }
+}

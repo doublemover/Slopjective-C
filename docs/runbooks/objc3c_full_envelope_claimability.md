@@ -17,6 +17,7 @@ Replayable generators and validators:
 
 - `python scripts/build_objc3c_support_classification.py`
 - `python scripts/check_objc3c_public_claim_drift.py`
+- `python scripts/build_objc3c_claimability_dashboard_release_blocker_contract.py`
 - `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
 - `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
 - `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
@@ -108,10 +109,18 @@ The canonical release blockers for this milestone are:
 - release-operations compatibility or update artifacts are missing
 - distribution credibility is not `ready`
 - a surface is marked `unsupported` but is being promoted as `supported`
+- the full-envelope dashboard projection would publish `preview-only` or
+  `candidate-scoped` instead of `production-strength`
 
 This milestone is allowed to conclude that the current envelope remains
 release-blocked. The policy surface must state that explicitly instead of
 implicitly treating every passing integration script as enough for release.
+
+The release-blocker summary owns the dashboard release-blocker projection. The
+dashboard consumes that projection and must not invent a separate claim class,
+blocker list, or production-strength decision. Any dashboard state that is not
+`production-strength` is a stable-release blocker until the upstream evidence
+and release-blocker summary both converge.
 
 ## Stability Regression And Rollout Implementation
 
@@ -147,6 +156,13 @@ The envelope dashboard is a projection over the support matrix, claim policy,
 release-blocker summary, rollout-readiness summary, and the live conformance,
 performance, release, and trust integration reports. It is not allowed to
 become a separate manual truth source.
+
+The dashboard must carry the `dashboard_release_blocker_projection` emitted by
+`scripts/build_full_envelope_claimability_release_blocker_summary.py`. The
+projection names the dashboard/public-summary output paths, required dashboard
+fields, current rollout class, public claim class, and whether the dashboard
+blocks production-strength release claims. The dashboard builder fails if its
+derived public claim class drifts from this release-blocker projection.
 
 ## Soak, Stress, And External Validation Integration
 
