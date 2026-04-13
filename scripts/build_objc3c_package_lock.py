@@ -1,0 +1,164 @@
+#!/usr/bin/env python3
+"""Generate the local objc3c package lock from checked-in package surfaces."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "package_authoring_workflow_contract.json"
+LOCK_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "locks" / "objc3c-package-lock.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-lock-summary.json"
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def digest_for_paths(paths: list[str]) -> str:
+    digest = hashlib.sha256()
+    for raw_path in sorted(paths):
+        path = ROOT / raw_path
+        digest.update(raw_path.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    return digest.hexdigest()
+
+
+def provenance_id(package_id: str) -> str:
+    return "prov-" + package_id.replace(":", "-").replace(".", "-")
+
+
+def main() -> int:
+    contract = load_json(CONTRACT_PATH)
+    sources = contract["package_sources"]
+    module_inventory = load_json(ROOT / str(sources["stdlib_module_inventory"]))
+    package_surface = load_json(ROOT / str(sources["stdlib_package_surface"]))
+    showcase_portfolio = load_json(ROOT / str(sources["showcase_portfolio"]))
+
+    modules = module_inventory.get("canonical_modules", [])
+    examples = showcase_portfolio.get("examples", [])
+    if not isinstance(modules, list) or not isinstance(examples, list):
+        raise RuntimeError("package source inventories drifted from list shapes")
+
+    packages: list[dict[str, str]] = []
+    dependencies: list[dict[str, str]] = []
+    provenance: list[dict[str, str]] = []
+    digest_inputs: list[str] = [
+        str(sources["stdlib_module_inventory"]),
+        str(sources["stdlib_package_surface"]),
+        str(sources["showcase_portfolio"]),
+    ]
+
+    for module in sorted((entry for entry in modules if isinstance(entry, dict)), key=lambda entry: str(entry.get("module", ""))):
+        module_id = str(module["module"])
+        package_id = f"stdlib:{module_id}"
+        source = str(module["manifest"])
+        packages.append(
+            {
+                "package_id": package_id,
+                "source": source,
+                "provenance_id": provenance_id(package_id),
+            }
+        )
+        provenance.append(
+            {
+                "provenance_id": provenance_id(package_id),
+                "source_path": source,
+                "generator": "scripts/build_objc3c_package_lock.py",
+                "replay_command": "python scripts/build_objc3c_package_lock.py",
+            }
+        )
+        digest_inputs.append(source)
+
+    for example in sorted((entry for entry in examples if isinstance(entry, dict)), key=lambda entry: str(entry.get("id", ""))):
+        example_id = str(example["id"])
+        package_id = f"showcase:{example_id}"
+        source = str(example["workspace_manifest"])
+        packages.append(
+            {
+                "package_id": package_id,
+                "source": source,
+                "provenance_id": provenance_id(package_id),
+            }
+        )
+        provenance.append(
+            {
+                "provenance_id": provenance_id(package_id),
+                "source_path": source,
+                "generator": "scripts/build_objc3c_package_lock.py",
+                "replay_command": "python scripts/build_objc3c_package_lock.py",
+            }
+        )
+        digest_inputs.append(source)
+        for dependency in sorted(str(name) for name in example.get("stdlib_followup_modules", []) if isinstance(name, str)):
+            dependencies.append(
+                {
+                    "from": package_id,
+                    "to": f"stdlib:{dependency}",
+                    "source": "checked-in-local-workspace",
+                }
+            )
+
+    packages = sorted(packages, key=lambda entry: entry["package_id"])
+    dependencies = sorted(dependencies, key=lambda entry: (entry["from"], entry["to"]))
+    provenance = sorted(provenance, key=lambda entry: entry["provenance_id"])
+    digest_inputs = sorted(set(digest_inputs))
+    lock = {
+        "contract_id": "objc3c.package_ecosystem.lockfile.v1",
+        "lockfile_version": 1,
+        "workspace": {
+            "workspace_id": "objc3c-local-package-workspace",
+            "source": "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+        },
+        "packages": packages,
+        "dependencies": dependencies,
+        "provenance": provenance,
+        "digest_inputs": digest_inputs,
+        "replay": {
+            "commands": [
+                "python scripts/build_objc3c_package_lock.py",
+                "python scripts/check_objc3c_package_authoring_workflow.py",
+            ]
+        },
+    }
+
+    LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
+    LOCK_PATH.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+    summary = {
+        "contract_id": "objc3c.package_ecosystem.package_lock.summary.v1",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "PASS",
+        "lock_path": repo_rel(LOCK_PATH),
+        "lock_digest": digest_for_paths(digest_inputs),
+        "package_count": len(packages),
+        "dependency_count": len(dependencies),
+        "provenance_count": len(provenance),
+        "digest_input_count": len(digest_inputs),
+        "source_package_surface_contract_id": package_surface.get("contract_id"),
+        "showcase_portfolio_contract_id": showcase_portfolio.get("contract_id"),
+        "stdlib_module_inventory_contract_id": module_inventory.get("contract_id"),
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(f"lock_path: {repo_rel(LOCK_PATH)}")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print("objc3c-package-lock: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

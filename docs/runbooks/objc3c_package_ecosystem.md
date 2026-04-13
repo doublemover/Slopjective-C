@@ -31,6 +31,8 @@ Replayable boundary inventory:
 - `python scripts/build_package_ecosystem_local_workspace_mirror_summary.py`
 - `python scripts/build_package_ecosystem_registry_publication_summary.py`
 - `python scripts/build_package_ecosystem_artifact_contract_summary.py`
+- `python scripts/build_objc3c_package_lock.py`
+- `python scripts/check_objc3c_package_authoring_workflow.py`
 
 ## Current Boundary
 
@@ -150,6 +152,22 @@ Machine-owned generated outputs stay under:
 
 No package ecosystem artifact is claimable unless it can be regenerated from
 checked-in contracts and validated through the public workflow runner.
+
+## Local Package Authoring Workflow
+
+The local package authoring workflow is checked in at:
+
+- `tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json`
+
+The replayable implementation is:
+
+- `scripts/build_objc3c_package_lock.py`
+- `scripts/check_objc3c_package_authoring_workflow.py`
+
+The lock generator derives packages from `stdlib/module_inventory.json` and
+`showcase/portfolio.json`, emits a deterministic lock under
+`tmp/artifacts/package-ecosystem/locks/`, and writes a summary under
+`tmp/reports/package-ecosystem/`.
 
 ## Successor Pressure
 

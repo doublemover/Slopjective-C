@@ -21,7 +21,9 @@
     "dependency-lock-policy-summary.json",
     "local-workspace-mirror-semantics-summary.json",
     "registry-publication-semantics-summary.json",
-    "artifact-contract-summary.json"
+    "artifact-contract-summary.json",
+    "package-lock-summary.json",
+    "package-authoring-workflow-summary.json"
   ],
   "artifact_claim_rules": [
     "lockfiles and mirror indexes are generated artifacts, not checked-in source authority",

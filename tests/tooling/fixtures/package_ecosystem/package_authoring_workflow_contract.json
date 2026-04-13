@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.package_ecosystem.package_authoring_workflow.v1",
+  "surface_kind": "package-ecosystem-package-authoring-workflow",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "artifact_contract": "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+  "lock_schema": "schemas/objc3c-package-lock-v1.schema.json",
+  "package_sources": {
+    "stdlib_module_inventory": "stdlib/module_inventory.json",
+    "stdlib_package_surface": "stdlib/package_surface.json",
+    "showcase_portfolio": "showcase/portfolio.json"
+  },
+  "generated_outputs": {
+    "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
+    "summary": "tmp/reports/package-ecosystem/package-lock-summary.json",
+    "authoring_summary": "tmp/reports/package-ecosystem/package-authoring-workflow-summary.json"
+  },
+  "required_public_scripts": [
+    "build:objc3c:stdlib",
+    "build:objc3c:application-workspace",
+    "test:stdlib:program",
+    "test:objc3c:application-architecture",
+    "package:objc3c-native:runnable-toolchain"
+  ],
+  "authoring_rules": [
+    "stdlib modules become package ids derived from canonical module names",
+    "showcase examples become local app package ids with explicit stdlib dependencies",
+    "dependencies are sorted deterministically by package edge",
+    "each package references a provenance entry with source path and replay command",
+    "generated locks are replayable through public workflow commands"
+  ]
+}

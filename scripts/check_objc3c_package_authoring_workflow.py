@@ -1,0 +1,107 @@
+#!/usr/bin/env python3
+"""Validate the local package authoring workflow and generated lock."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "package_ecosystem" / "package_authoring_workflow_contract.json"
+LOCK_PATH = ROOT / "tmp" / "artifacts" / "package-ecosystem" / "locks" / "objc3c-package-lock.json"
+LOCK_SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-lock-summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "package-authoring-workflow-summary.json"
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def expect(condition: bool, message: str, failures: list[str]) -> None:
+    if not condition:
+        failures.append(message)
+
+
+def main() -> int:
+    contract = load_json(CONTRACT_PATH)
+    package = load_json(ROOT / "package.json")
+    package_scripts = package.get("scripts", {})
+    if not isinstance(package_scripts, dict):
+        raise RuntimeError("package.json scripts field drifted from an object")
+
+    result = subprocess.run(
+        [sys.executable, "scripts/build_objc3c_package_lock.py"],
+        cwd=ROOT,
+        check=False,
+        text=True,
+        capture_output=True,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+
+    failures: list[str] = []
+    expect(result.returncode == 0, "package lock generator failed", failures)
+    expect(LOCK_PATH.is_file(), f"missing generated lock {repo_rel(LOCK_PATH)}", failures)
+    expect(LOCK_SUMMARY_PATH.is_file(), f"missing package lock summary {repo_rel(LOCK_SUMMARY_PATH)}", failures)
+
+    lock = load_json(LOCK_PATH) if LOCK_PATH.is_file() else {}
+    lock_summary = load_json(LOCK_SUMMARY_PATH) if LOCK_SUMMARY_PATH.is_file() else {}
+    packages = lock.get("packages", [])
+    dependencies = lock.get("dependencies", [])
+    provenance = lock.get("provenance", [])
+    digest_inputs = lock.get("digest_inputs", [])
+    replay = lock.get("replay", {})
+    required_public_scripts = [str(name) for name in contract["required_public_scripts"]]
+    missing_public_scripts = [name for name in required_public_scripts if name not in package_scripts]
+
+    expect(lock.get("contract_id") == "objc3c.package_ecosystem.lockfile.v1", "lock contract id drifted", failures)
+    expect(isinstance(packages, list) and len(packages) == lock_summary.get("package_count"), "lock package count drifted", failures)
+    expect(isinstance(dependencies, list) and len(dependencies) == lock_summary.get("dependency_count"), "lock dependency count drifted", failures)
+    expect(isinstance(provenance, list) and len(provenance) == lock_summary.get("provenance_count"), "lock provenance count drifted", failures)
+    expect(isinstance(digest_inputs, list) and digest_inputs == sorted(digest_inputs), "lock digest inputs are not deterministic", failures)
+    expect(isinstance(packages, list) and packages == sorted(packages, key=lambda entry: entry["package_id"]), "lock packages are not sorted", failures)
+    expect(isinstance(dependencies, list) and dependencies == sorted(dependencies, key=lambda entry: (entry["from"], entry["to"])), "lock dependencies are not sorted", failures)
+    expect(isinstance(replay, dict) and "python scripts/check_objc3c_package_authoring_workflow.py" in replay.get("commands", []), "lock replay commands missing authoring check", failures)
+    expect(not missing_public_scripts, "package authoring workflow missing public scripts", failures)
+
+    payload = {
+        "contract_id": "objc3c.package_ecosystem.package_authoring_workflow.summary.v1",
+        "status": "PASS" if not failures else "FAIL",
+        "contract": repo_rel(CONTRACT_PATH),
+        "lock_path": repo_rel(LOCK_PATH),
+        "lock_summary_path": repo_rel(LOCK_SUMMARY_PATH),
+        "package_count": len(packages) if isinstance(packages, list) else 0,
+        "dependency_count": len(dependencies) if isinstance(dependencies, list) else 0,
+        "provenance_count": len(provenance) if isinstance(provenance, list) else 0,
+        "digest_input_count": len(digest_inputs) if isinstance(digest_inputs, list) else 0,
+        "required_public_scripts": required_public_scripts,
+        "missing_public_scripts": missing_public_scripts,
+        "failures": failures,
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    if failures:
+        print("objc3c-package-authoring-workflow: FAIL", file=sys.stderr)
+        for failure in failures:
+            print(f"- {failure}", file=sys.stderr)
+        return 1
+    print("objc3c-package-authoring-workflow: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
