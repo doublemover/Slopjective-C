@@ -93,6 +93,28 @@ metadata, not a forever-compatible language/runtime claim. Deprecations must:
 - remain demoted until migration replay and rollback evidence exists for the
   affected package/application path
 
+## Migration, Rollback, And Support Windows
+
+The canonical semantics contract is checked in at:
+
+- `tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json`
+
+Replay it with:
+
+- `python scripts/build_long_horizon_operations_migration_rollback_summary.py`
+
+Migration and rollback are operator-visible behaviors. The replay path uses:
+
+- `scripts/build_objc3c_update_manifest.py`
+- `scripts/publish_objc3c_release_operations_metadata.py`
+
+Generated evidence is valid only when the update manifest and compatibility
+report agree on the current version, supported platform ids, support windows,
+upgrade paths, and rollback guidance. Cross-major migration claims remain
+blocked unless a generated long-horizon migration replay artifact names the
+source version, target version, package lock, canonical application workspace,
+and rollback target.
+
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later
