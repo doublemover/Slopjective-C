@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `178`
-- Operator command count: `169`
+- Current package script count: `179`
+- Operator command count: `170`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -106,6 +106,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:distribution-credibility:e2e` | `validate-distribution-credibility-end-to-end` | `full` | `distribution credibility artifacts stay coherent with the live package-channel and release-operations evidence paths` | `fixed-shape` | `python:scripts/check_objc3c_distribution_credibility_end_to_end.py` |
 | `test:objc3c:error-conformance` | `validate-error-conformance` | `full` | `integrated error conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_error_conformance.py` |
 | `test:objc3c:execution-replay-proof` | `test-execution-replay` | `full` | `replay and native-output truth` | `pass-through` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1` |
+| `test:objc3c:execution-replay-proof:focused` | `test-execution-replay-focused` | `fast` | `one canonical replay case for ordinary developer validation while exhaustive replay remains available` | `fixed-shape` | `pwsh:scripts/check_objc3c_execution_replay_proof.ps1 -Limit 1` |
 | `test:objc3c:execution-smoke` | `test-execution-smoke` | `smoke` | `compile/link/run execution behavior` | `pass-through` | `pwsh:scripts/check_objc3c_native_execution_smoke.ps1` |
 | `test:objc3c:external-validation` | `validate-external-validation` | `repo` | `external evidence intake, replay, and publication stay executable on the live workflow` | `fixed-shape` | `runner-internal + direct external validation commands` |
 | `test:objc3c:external-validation:integration` | `validate-external-validation-integration` | `repo` | `integrated external-validation reports stay coherent across source-surface, replay, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_external_validation_integration.py` |

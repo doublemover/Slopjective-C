@@ -2095,7 +2095,7 @@ def action_test_fast(_: list[str]) -> int:
         [
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "12"]),
             ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
-            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+            ("test-execution-replay-focused", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1), "-Limit", "1"]),
         ],
     )
 
@@ -2132,6 +2132,10 @@ def action_test_execution_smoke(rest: list[str]) -> int:
 
 def action_test_execution_replay(rest: list[str]) -> int:
     return pwsh_file(REPLAY_PS1, *rest)
+
+
+def action_test_execution_replay_focused(_: list[str]) -> int:
+    return pwsh_file(REPLAY_PS1, "-Limit", "1")
 
 
 def action_test_runtime_acceptance(_: list[str]) -> int:
@@ -2283,7 +2287,7 @@ VALIDATION_PROFILE_RULES: dict[str, dict[str, object]] = {
         "recommended_actions": (
             "test-runtime-acceptance-fast",
             "test-runtime-acceptance-diagnostics",
-            "test-execution-replay",
+            "test-execution-replay-focused",
             "test-execution-smoke -- -Limit 12",
         ),
         "exhaustive_actions": ("test-full", "test-nightly"),
@@ -2300,7 +2304,7 @@ VALIDATION_PROFILE_RULES: dict[str, dict[str, object]] = {
             "test-runtime-acceptance-block-arc",
             "test-runtime-acceptance-concurrency",
             "test-execution-smoke",
-            "test-execution-replay",
+            "test-execution-replay-focused",
         ),
         "exhaustive_actions": ("test-runtime-acceptance", "test-nightly"),
         "skipped_by_default": ("release packaging validations",),
@@ -2619,7 +2623,7 @@ def action_test_full(_: list[str]) -> int:
             ("test-compile-wrapper-self-audit", [sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "24"]),
             ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
-            ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
+            ("test-execution-replay-focused", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1), "-Limit", "1"]),
         ],
     )
 
@@ -2807,6 +2811,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-compile-wrapper-self-audit": ActionSpec("test-compile-wrapper-self-audit", "native compile wrapper self-audit", "python:scripts/check_objc3c_compile_wrapper_self_audit.py", ("test:objc3c:compile-wrapper",), validation_tier="fast", guarantee_owner="one wrapper compile proves invariant compile-output provenance, truthfulness, registration digest binding, and required artifact publication"),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
+    "test-execution-replay-focused": ActionSpec("test-execution-replay-focused", "focused native execution replay proof slice", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1 -Limit 1", ("test:objc3c:execution-replay-proof:focused",), validation_tier="fast", guarantee_owner="one canonical replay case for ordinary developer validation while exhaustive replay remains available"),
     "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "full runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite full", ("test:objc3c:runtime-acceptance", "test:objc3c:runtime-acceptance:full"), validation_tier="full", guarantee_owner="exhaustive runtime acceptance and ABI/accessor proof"),
     "test-runtime-acceptance-fast": ActionSpec("test-runtime-acceptance-fast", "fast runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite fast", ("test:objc3c:runtime-acceptance:fast",), validation_tier="fast", guarantee_owner="high-signal runtime acceptance slice for developer validation"),
     "test-runtime-acceptance-diagnostics": ActionSpec("test-runtime-acceptance-diagnostics", "diagnostic runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite diagnostics", ("test:objc3c:runtime-acceptance:diagnostics",), validation_tier="fast", guarantee_owner="negative diagnostics and fail-closed runtime acceptance surfaces"),
@@ -2993,6 +2998,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-compile-wrapper-self-audit": action_test_compile_wrapper_self_audit,
     "test-execution-smoke": action_test_execution_smoke,
     "test-execution-replay": action_test_execution_replay,
+    "test-execution-replay-focused": action_test_execution_replay_focused,
     "test-runtime-acceptance": action_test_runtime_acceptance,
     "test-runtime-acceptance-fast": action_test_runtime_acceptance_fast,
     "test-runtime-acceptance-diagnostics": action_test_runtime_acceptance_diagnostics,
