@@ -7586,6 +7586,10 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.concurrency_task_executor_cancellation_semantic_model_summary,
           result.concurrency_actor_isolation_sendable_semantic_model_summary,
           result.interop_interop_semantic_model_summary);
+  result.cross_module_semantic_contracts_diagnostics_summary =
+      BuildCrossModuleSemanticContractsDiagnosticsSummary(
+          result.integration_surface,
+          result.interop_interop_semantic_model_summary);
   result.interop_interop_runtime_parity_summary =
       BuildInteropInteropRuntimeParitySummary(
           Objc3ParsedProgramAst(result.program),

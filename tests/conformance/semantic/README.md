@@ -35,6 +35,13 @@ Current semantic fixtures for the E.3.3 type-system lane:
   `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_effects_ownership_async_throws.objc3`,
   and `scripts/build_objc3c_effects_ownership_semantic_model.py`.
+- `XMOD-8015-01.json`, `XMOD-8015-02.json` for issue #8015 cross-module
+  semantic contract and diagnostic closure across module import graph,
+  namespace/API partitioning, incremental cache invalidation, conformance,
+  diagnostics, and interop import metadata. These are backed by
+  `tests/tooling/fixtures/native/cross_module_semantic_contracts_diagnostics_positive.objc3`,
+  `tests/tooling/fixtures/native/recovery/negative/negative_cross_module_semantic_contracts_duplicate_module.objc3`,
+  and `scripts/build_objc3c_cross_module_semantic_contracts_diagnostics.py`.
 - `DEF-70-01.json`, `DEF-70-02.json` for `defer` LIFO scope-exit semantics.
 - `GRD-72-01.json`, `GRD-72-02.json` for `guard` early-exit/refinement
   semantics.

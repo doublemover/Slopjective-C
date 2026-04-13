@@ -6244,6 +6244,8 @@ struct Objc3FrontendPipelineResult {
       ownership_system_extension_semantic_model_summary;
   Objc3EffectsOwnershipSemanticModelSummary
       effects_ownership_semantic_model_summary;
+  Objc3CrossModuleSemanticContractsDiagnosticsSummary
+      cross_module_semantic_contracts_diagnostics_summary;
   Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
       metaprogramming_expansion_behavior_semantic_model_summary;
   Objc3MetaprogrammingDeriveExpansionInventorySummary

@@ -41,6 +41,10 @@ Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSumm
     const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary &task_summary,
     const Objc3ConcurrencyActorIsolationSendableSemanticModelSummary &actor_summary,
     const Objc3InteropInteropSemanticModelSummary &interop_summary);
+Objc3CrossModuleSemanticContractsDiagnosticsSummary
+BuildCrossModuleSemanticContractsDiagnosticsSummary(
+    const Objc3SemanticIntegrationSurface &surface,
+    const Objc3InteropInteropSemanticModelSummary &interop_summary);
 Objc3ControlFlowControlFlowSemanticModelSummary BuildControlFlowControlFlowSemanticModelSummary(
     const Objc3Program &ast);
 Objc3ErrorHandlingErrorSemanticModelSummary BuildErrorHandlingErrorSemanticModelSummary(

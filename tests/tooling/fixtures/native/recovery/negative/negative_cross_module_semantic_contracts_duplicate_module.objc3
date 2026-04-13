@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3S200.
+module NegativeCrossModuleSemanticContractsDiagnostics;
+module NegativeCrossModuleSemanticContractsDiagnosticsDuplicate;
+
+fn main() -> i32 {
+  return 0;
+}

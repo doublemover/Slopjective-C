@@ -1,0 +1,22 @@
+{
+  "id": "XMOD-8015-02",
+  "title": "Reject duplicate cross-module identity with stable diagnostics",
+  "feature": "Objective-C 3.0 cross-module semantic contracts and diagnostics closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_cross_module_semantic_contracts_duplicate_module.objc3",
+    "reports/claimability/cross-module-semantic-contracts-diagnostics/cross_module_semantic_contracts_diagnostics_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S200.\nmodule NegativeCrossModuleSemanticContractsDiagnostics;\nmodule NegativeCrossModuleSemanticContractsDiagnosticsDuplicate;\n\nfn main() -> i32 {\n  return 0;\n}\r\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S200",
+        "line": 3,
+        "column": 8
+      }
+    ]
+  }
+}
