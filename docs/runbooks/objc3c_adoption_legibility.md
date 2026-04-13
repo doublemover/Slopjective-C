@@ -64,6 +64,23 @@ The policy fails closed on:
 - tutorial-only migration guidance that bypasses support-window evidence
 - adoption metrics that are hand-maintained instead of generated
 
+## Capability Narrative And Comparison Semantics
+
+The canonical comparison semantics contract is checked in at:
+
+- `tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json`
+
+Replay it with:
+
+- `python scripts/build_adoption_legibility_capability_comparison_summary.py`
+
+Comparison language must answer a concrete evaluator question, name the
+Objective-C 2, Swift, or C++ comparison axis, then link to runnable examples and
+evidence. It must not claim parity, superiority, or migration safety unless the
+claim is backed by conformance, performance, interop, package, release, and
+support evidence. Unsupported or intentionally deferred behavior must remain
+visible in the comparison text.
+
 ## Current Boundary
 
 Adoption work starts from existing public surfaces rather than inventing a new

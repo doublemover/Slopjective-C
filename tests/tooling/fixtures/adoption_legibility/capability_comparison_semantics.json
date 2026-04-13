@@ -1,0 +1,87 @@
+{
+  "contract_id": "objc3c.adoption_legibility.capability_comparison_semantics.v1",
+  "schema_version": 1,
+  "depends_on": [
+    "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+    "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
+    "tests/tooling/fixtures/performance_governance/claim_policy.json",
+    "tests/tooling/fixtures/performance/benchmark_portfolio.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json"
+  ],
+  "comparison_axes": [
+    {
+      "axis_id": "objc2-migration",
+      "adjacent_ecosystem": "Objective-C 2",
+      "allowed_claim_shape": "migration-oriented comparison over runnable ObjC3 examples, package locks, support windows, and explicitly named deferred behavior",
+      "required_evidence": [
+        "docs/tutorials/objc2_to_objc3_migration.md",
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "showcase/auroraBoard/main.objc3",
+        "docs/runbooks/objc3c_release_operations.md",
+        "docs/runbooks/objc3c_long_horizon_operations.md"
+      ],
+      "forbidden_claim_shapes": [
+        "drop-in source compatibility",
+        "automatic cross-major migration",
+        "full runtime parity without live runtime evidence"
+      ]
+    },
+    {
+      "axis_id": "swift-evaluation",
+      "adjacent_ecosystem": "Swift",
+      "allowed_claim_shape": "ergonomics and capability comparison over concurrency, messaging, ownership, package, conformance, and performance evidence",
+      "required_evidence": [
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "showcase/signalMesh/main.objc3",
+        "tests/tooling/fixtures/performance/baselines/swift_reference_workload.swift",
+        "docs/runbooks/objc3c_concurrency_runtime_closure.md",
+        "docs/runbooks/objc3c_performance_governance.md"
+      ],
+      "forbidden_claim_shapes": [
+        "Swift replacement",
+        "performance leadership",
+        "complete actor parity without runtime-backed evidence"
+      ]
+    },
+    {
+      "axis_id": "cpp-interop",
+      "adjacent_ecosystem": "C++",
+      "allowed_claim_shape": "systems and interop comparison over explicit C/C++ boundary, macro/property behavior, package, benchmark, and runtime evidence",
+      "required_evidence": [
+        "docs/tutorials/objc2_swift_cpp_comparison.md",
+        "showcase/patchKit/main.objc3",
+        "tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp",
+        "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
+        "docs/runbooks/objc3c_runtime_performance.md"
+      ],
+      "forbidden_claim_shapes": [
+        "C++ replacement",
+        "ABI parity",
+        "zero-cost interop without measured runtime evidence"
+      ]
+    }
+  ],
+  "required_common_surfaces": [
+    "README.md",
+    "site/index.md",
+    "docs/runbooks/objc3c_public_command_surface.md",
+    "docs/runbooks/objc3c_public_conformance_reporting.md",
+    "docs/runbooks/objc3c_package_ecosystem.md"
+  ],
+  "required_publication_fields": [
+    "axis_id",
+    "adjacent_ecosystem",
+    "allowed_claim_shape",
+    "evidence_paths",
+    "forbidden_claim_shapes",
+    "deferred_behavior"
+  ],
+  "fail_closed_conditions": [
+    "comparison axis has no runnable source example",
+    "comparison axis lacks conformance or performance evidence",
+    "comparison uses parity or replacement wording",
+    "comparison omits deferred behavior",
+    "comparison is detached from public command discovery"
+  ]
+}

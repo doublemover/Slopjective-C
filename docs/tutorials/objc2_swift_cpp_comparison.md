@@ -2,6 +2,13 @@
 
 This file is the live comparison boundary for migration-oriented teaching work.
 
+The canonical policy contract for this surface is
+`tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json`;
+replay it with
+`python scripts/build_adoption_legibility_capability_comparison_summary.py`.
+When prose and policy disagree, fix the prose or the contract before widening a
+public comparison claim.
+
 Use it to explain Objective-C 3 choices against:
 
 - Objective-C 2 source habits,
