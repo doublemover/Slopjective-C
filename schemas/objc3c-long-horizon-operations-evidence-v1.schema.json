@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/objc3c-long-horizon-operations-evidence-v1.schema.json",
+  "title": "objc3c Long-Horizon Operations Evidence",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_version",
+    "generated_from",
+    "support_window",
+    "migration_replay",
+    "rollback",
+    "soak",
+    "aging_regression",
+    "claim_audit"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.long_horizon_operations.evidence.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "generated_at_utc": {
+      "type": "string"
+    },
+    "generated_from": {
+      "type": "object",
+      "required": ["contracts", "commands"],
+      "properties": {
+        "contracts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "commands": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "support_window": {
+      "type": "object",
+      "required": ["current_version", "supported_major_line", "channels"],
+      "properties": {
+        "current_version": {"type": "string"},
+        "supported_major_line": {"type": "integer"},
+        "channels": {
+          "type": "array",
+          "items": {"type": "object"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "migration_replay": {
+      "type": "object",
+      "required": ["status", "source_version", "target_version", "evidence_paths"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "source_version": {"type": "string"},
+        "target_version": {"type": "string"},
+        "evidence_paths": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "rollback": {
+      "type": "object",
+      "required": ["status", "channels", "evidence_paths"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL"]},
+        "channels": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "soak": {
+      "type": "object",
+      "required": ["status", "required_families", "evidence_paths"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "required_families": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    },
+    "aging_regression": {
+      "type": "object",
+      "required": ["status", "cadence_classes", "freshness_budget"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "cadence_classes": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "freshness_budget": {"type": "object"}
+      },
+      "additionalProperties": true
+    },
+    "claim_audit": {
+      "type": "object",
+      "required": ["support_state", "earned_claims", "demoted_or_out_of_scope_claims", "release_blockers"],
+      "properties": {
+        "support_state": {"type": "string"},
+        "earned_claims": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "demoted_or_out_of_scope_claims": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "release_blockers": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

@@ -141,6 +141,28 @@ Cadence claims must block when:
 - soak evidence is hand-written or cannot be regenerated
 - a release trains forward while rollback evidence is stale or absent
 
+## Artifact Contract
+
+The canonical long-horizon operations artifact contract is checked in at:
+
+- `tests/tooling/fixtures/long_horizon_operations/artifact_contract.json`
+
+Schema surface:
+
+- `schemas/objc3c-long-horizon-operations-evidence-v1.schema.json`
+
+Replay it with:
+
+- `python scripts/build_long_horizon_operations_artifact_contract_summary.py`
+
+Generated machine-owned outputs stay under:
+
+- `tmp/artifacts/long-horizon-operations/`
+- `tmp/reports/long-horizon-operations/`
+
+No long-horizon claim is supportable unless it can be regenerated from the
+checked-in policy contracts and validated through this artifact contract.
+
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later
