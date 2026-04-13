@@ -137,6 +137,21 @@ semantics, migration playbook semantics, and artifact contract summaries before
 writing artifacts. Generated evidence is temporary output; checked-in contracts,
 docs, and scripts remain the source of truth.
 
+## Public Workflow Integration
+
+The repo-scope adoption workflow is:
+
+- `npm run test:objc3c:adoption-legibility`
+
+It maps to:
+
+- `python scripts/objc3c_public_workflow_runner.py validate-adoption-legibility`
+- `python scripts/check_objc3c_adoption_legibility_integration.py`
+
+The public workflow validates the generated evidence artifact shape, evaluator
+entrypoints, migration phases, comparison axes, onboarding workspaces, support
+state, and claim-audit blockers.
+
 ## Current Boundary
 
 Adoption work starts from existing public surfaces rather than inventing a new

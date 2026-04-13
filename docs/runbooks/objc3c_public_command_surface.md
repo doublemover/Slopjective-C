@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `166`
-- Operator command count: `157`
+- Current package script count: `167`
+- Operator command count: `158`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -90,6 +90,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:fast` | `test-fast` | `fast` | `runtime acceptance, canonical replay, and a bounded smoke slice` | `fixed-shape` | `runner-internal + targeted smoke slice` |
 | `test:getting-started` | `validate-getting-started` | `repo` | `getting-started tutorials stay compile-coupled, runnable, and wired into the normal repo validation path` | `fixed-shape` | `python:scripts/check_getting_started_integration.py` |
 | `test:objc3c` | `test-recovery` | `recovery` | `recovery compile success and deterministic recovery diagnostics` | `pass-through` | `pwsh:scripts/check_objc3c_native_recovery_contract.ps1` |
+| `test:objc3c:adoption-legibility` | `validate-adoption-legibility` | `repo` | `external evaluator and migration claims stay backed by generated adoption evidence and checked-in public docs` | `fixed-shape` | `python:scripts/check_objc3c_adoption_legibility_integration.py` |
 | `test:objc3c:application-architecture` | `validate-application-architecture` | `repo` | `template harnesses and canonical application workspaces stay derived from live showcase, stdlib, and public workflow surfaces` | `fixed-shape` | `python:scripts/check_objc3c_application_architecture_integration.py` |
 | `test:objc3c:application-architecture:e2e` | `validate-runnable-application-architecture` | `full` | `packaged canonical application workspaces and template harness validation stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_application_architecture_end_to_end.py` |
 | `test:objc3c:block-arc-conformance` | `validate-block-arc-conformance` | `full` | `integrated block/ARC conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_block_arc_conformance.py` |
