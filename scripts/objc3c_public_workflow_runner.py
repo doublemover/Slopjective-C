@@ -1466,12 +1466,23 @@ def summarize_execution_replay_report(
     }
 
 
+def validation_speed_budget_mode() -> str:
+    budget_mode = os.environ.get(
+        "OBJC3C_VALIDATION_SPEED_BUDGET_MODE",
+        "warn",
+    ).strip().lower()
+    if budget_mode not in {"warn", "fail"}:
+        return "warn"
+    return budget_mode
+
+
 def validation_speed_budgets(
     runtime_acceptance: dict[str, object] | None,
     execution_smoke: dict[str, object] | None,
     execution_replay: dict[str, object] | None,
     total_seconds: float,
 ) -> list[dict[str, object]]:
+    budget_mode = validation_speed_budget_mode()
     budgets = [
         {
             "name": "runtime_acceptance_elapsed_seconds",
@@ -1509,7 +1520,7 @@ def validation_speed_budgets(
             budget["status"] = "PASS"
         else:
             budget["status"] = "WARN"
-        budget["mode"] = "warning-only"
+        budget["mode"] = "fail" if budget_mode == "fail" else "warning-only"
     if runtime_acceptance is not None:
         command_groups = runtime_acceptance.get("command_groups", {})
         wrapper_count = None
@@ -1527,10 +1538,20 @@ def validation_speed_budgets(
                 else "UNKNOWN"
                 if wrapper_count is None
                 else "WARN",
-                "mode": "warning-only",
+                "mode": "fail" if budget_mode == "fail" else "warning-only",
             }
         )
     return budgets
+
+
+def validation_budget_violations(
+    budgets: Sequence[dict[str, object]],
+) -> list[dict[str, object]]:
+    return [
+        budget
+        for budget in budgets
+        if budget.get("mode") == "fail" and budget.get("status") == "WARN"
+    ]
 
 
 def collect_child_timing(
@@ -1593,9 +1614,20 @@ def write_composite_validation_report(
     PUBLIC_WORKFLOW_REPORT_ROOT.mkdir(parents=True, exist_ok=True)
     report_path = PUBLIC_WORKFLOW_REPORT_ROOT / f"{action}.json"
     child_timing = collect_child_timing(steps)
+    budgets = child_timing.get("budgets", [])
+    budget_violations = (
+        validation_budget_violations(budgets)
+        if isinstance(budgets, list)
+        else []
+    )
+    effective_status = (
+        "FAIL"
+        if status == "PASS" and budget_violations
+        else status
+    )
     payload = {
         "action": action,
-        "status": status,
+        "status": effective_status,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "runner_path": "scripts/objc3c_public_workflow_runner.py",
         "timing": {
@@ -1619,6 +1651,16 @@ def write_composite_validation_report(
             "estimated_no_skip_seconds": child_timing["estimated_no_skip_seconds"],
         },
         "child_timing": child_timing,
+        "budget_policy": {
+            "contract_id": "objc3c.validation.speed.budget.policy.v1",
+            "mode": (
+                "fail"
+                if validation_speed_budget_mode() == "fail"
+                else "warning-only"
+            ),
+            "violations": budget_violations,
+            "fail_closed": True,
+        },
         "claim_boundary": {
             "contract_id": "objc3c.runtime.execution.claim.boundary.v1",
             "reports_are_authoritative_only_when_child_steps_are_compile-coupled": True,
@@ -2041,6 +2083,9 @@ def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]
             return int(step["exit_code"])
     report_path = write_composite_validation_report(action, results, status="PASS")
     print(f"public-workflow-report: {report_path.relative_to(ROOT).as_posix()}")
+    report_payload = load_latest_report_payload(report_path)
+    if isinstance(report_payload, dict) and report_payload.get("status") != "PASS":
+        return 1
     return 0
 
 
