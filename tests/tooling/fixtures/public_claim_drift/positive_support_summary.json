@@ -1,0 +1,48 @@
+{
+  "contract_id": "objc3c.support.classification.generator.summary.v1",
+  "status": "PASS",
+  "classifications": [
+    {
+      "surface": "fixture-supported-runtime",
+      "current_class": "supported",
+      "claim_class": "production-claimable",
+      "fail_closed": false,
+      "release_blocking": false,
+      "required_evidence_families": [
+        "fixture-public-evidence"
+      ],
+      "checked_in_surfaces": [
+        "docs/good.md",
+        "scripts/good_evidence.py"
+      ]
+    },
+    {
+      "surface": "fixture-unsupported-foreign-topology",
+      "current_class": "unsupported",
+      "claim_class": "fail-closed",
+      "fail_closed": true,
+      "release_blocking": false,
+      "required_evidence_families": [],
+      "checked_in_surfaces": [
+        "docs/unsupported.md"
+      ]
+    },
+    {
+      "surface": "envelope-level-public-claims",
+      "current_class": "supported",
+      "claim_class": "production-claimable",
+      "fail_closed": false,
+      "release_blocking": false,
+      "required_evidence_families": [
+        "fixture-public-evidence"
+      ],
+      "checked_in_surfaces": [
+        "docs/good.md"
+      ]
+    }
+  ],
+  "public_claim_surfaces": [
+    "docs/good.md",
+    "docs/unsupported.md"
+  ]
+}

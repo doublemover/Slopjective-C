@@ -12,6 +12,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCRIPT = ROOT / "scripts" / "generate_conformance_evidence_index.py"
+PUBLIC_CLAIM_DRIFT_SCRIPT = ROOT / "scripts" / "check_objc3c_public_claim_drift.py"
 INDEX_OUTPUT = ROOT / "tmp" / "reports" / "release_evidence" / "evidence-index.json"
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
@@ -50,6 +51,24 @@ def load_json(relative_path: str) -> dict[str, Any] | list[Any]:
 def main() -> int:
     if not INDEX_SCRIPT.is_file():
         return fail("missing index generator scripts/generate_conformance_evidence_index.py")
+    if not PUBLIC_CLAIM_DRIFT_SCRIPT.is_file():
+        return fail("missing public claim drift checker scripts/check_objc3c_public_claim_drift.py")
+
+    claim_drift_result = subprocess.run(
+        [sys.executable, str(PUBLIC_CLAIM_DRIFT_SCRIPT), "--check"],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if claim_drift_result.stdout:
+        sys.stdout.write(claim_drift_result.stdout)
+    if claim_drift_result.stderr:
+        sys.stderr.write(claim_drift_result.stderr)
+    if claim_drift_result.returncode != 0:
+        return fail(
+            f"public claim drift gate failed with exit code {claim_drift_result.returncode}"
+        )
 
     required_artifact_paths: set[str] = set()
     for schema_path, data_path in REQUIRED_SCHEMA_DATA_PAIRS:

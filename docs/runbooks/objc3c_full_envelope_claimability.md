@@ -16,6 +16,7 @@ Canonical checked-in boundary and contract surfaces:
 Replayable generators and validators:
 
 - `python scripts/build_objc3c_support_classification.py`
+- `python scripts/check_objc3c_public_claim_drift.py`
 - `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
 - `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
 - `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
@@ -52,6 +53,15 @@ emits the stable classification summary under
 generated under `tmp/`, but they are not source-of-truth inputs for class
 definition, public-claim surface enumeration, or checked-in runtime boundary
 classification.
+
+The public claim drift gate is `scripts/check_objc3c_public_claim_drift.py`. It
+consumes the durable support-classification summary, scans the public claim
+surfaces plus fail-closed runtime-boundary runbooks, maps claim-bearing lines to
+their checked-in evidence families, and rejects unguarded public wording that
+would imply unsupported runtime ABI widening, foreign topology support, or
+full-envelope completeness. The release-evidence gate runs this checker in
+`--check` mode, so public docs and release evidence cannot drift apart without
+updating `reports/claimability/public-claim-drift/` in the same change.
 
 ## Production-Strength Claim And Support-Window Policy
 
