@@ -106,6 +106,37 @@ function Invoke-LoggedCommand {
   }
 }
 
+function Add-StageDuration {
+  param(
+    [Parameter(Mandatory = $true)][string]$StageKey,
+    [Parameter(Mandatory = $true)][double]$DurationSeconds
+  )
+
+  if (-not $script:stageTimings.Contains($StageKey)) {
+    $script:stageTimings[$StageKey] = 0.0
+  }
+  $script:stageTimings[$StageKey] = [double]$script:stageTimings[$StageKey] + $DurationSeconds
+}
+
+function Invoke-TimedLoggedCommand {
+  param(
+    [Parameter(Mandatory = $true)][string]$StageKey,
+    [Parameter(Mandatory = $true)][string]$Command,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Arguments,
+    [Parameter(Mandatory = $true)][string]$LogPath
+  )
+
+  $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+  $exitCode = Invoke-LoggedCommand -Command $Command -Arguments $Arguments -LogPath $LogPath
+  $stopwatch.Stop()
+  $durationSeconds = [math]::Round($stopwatch.Elapsed.TotalSeconds, 6)
+  Add-StageDuration -StageKey $StageKey -DurationSeconds $durationSeconds
+  return [pscustomobject]@{
+    exit_code = [int]$exitCode
+    duration_seconds = $durationSeconds
+  }
+}
+
 function Ensure-NativeCompilerExecutable {
   param(
     [Parameter(Mandatory = $true)][string]$NativeExePath,
@@ -381,7 +412,8 @@ function Invoke-ReplayCompile {
   if (!(Test-Path -LiteralPath $compileScript -PathType Leaf)) {
     throw "execution replay proof FAIL: compile wrapper missing at $compileScript"
   }
-  $compileExit = Invoke-LoggedCommand -Command $shellCommand -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $compileScript, $fixturePath, "--out-dir", $outDir, "--emit-prefix", "module") -LogPath $compileLog
+  $compileStep = Invoke-TimedLoggedCommand -StageKey "compile_seconds" -Command $shellCommand -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $compileScript, $fixturePath, "--out-dir", $outDir, "--emit-prefix", "module") -LogPath $compileLog
+  $compileExit = [int]$compileStep.exit_code
   if ($compileExit -ne 0) {
     throw "execution replay proof FAIL: compile failed for $caseId $RunLabel (exit=$compileExit)"
   }
@@ -409,7 +441,8 @@ function Invoke-ReplayCompile {
   $requiredSections = @($Case.required_runtime_sections)
   if ($requiredSections.Count -gt 0) {
     $readobjLogPath = Join-Path $artifactRoot "readobj-sections.log"
-    $readobjExit = Invoke-LoggedCommand -Command $llvmReadobjCommand -Arguments @("--sections", $objPath) -LogPath $readobjLogPath
+    $readobjStep = Invoke-TimedLoggedCommand -StageKey "readobj_seconds" -Command $llvmReadobjCommand -Arguments @("--sections", $objPath) -LogPath $readobjLogPath
+    $readobjExit = [int]$readobjStep.exit_code
     if ($readobjExit -ne 0) {
       throw "execution replay proof FAIL: llvm-readobj --sections failed for $caseId $RunLabel (exit=$readobjExit)"
     }
@@ -445,21 +478,39 @@ function Invoke-ReplayCompile {
     artifact_set_digest_sha256 = [string]$provenance.artifact_set_digest_sha256
     section_inspection_sha256 = $sectionInspectionSha
     section_names = @($sectionNames)
+    timing = [ordered]@{
+      compile_seconds = [double]$compileStep.duration_seconds
+      readobj_seconds = if ($requiredSections.Count -gt 0) { [double]$readobjStep.duration_seconds } else { 0.0 }
+    }
   }
 }
 
 New-Item -ItemType Directory -Force -Path $proofDir | Out-Null
 Push-Location $repoRoot
 try {
+  $suiteStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+  $script:stageTimings = [ordered]@{
+    compile_seconds = 0.0
+    readobj_seconds = 0.0
+    comparison_seconds = 0.0
+    output_report_seconds = 0.0
+  }
   Ensure-NativeCompilerExecutable -NativeExePath $nativeExe -NativeExeExplicit $nativeExeExplicit -BuildScriptPath $buildScript
 
   $selectedProofCases = @(Select-ProofCases -Cases $proofCases)
   Write-Output ("selection: cases={0}" -f $selectedProofCases.Count)
   $caseSummaries = @()
+  $caseTimings = @()
+  $caseIndex = 0
+  $lastCompletedCase = "none"
   foreach ($case in $selectedProofCases) {
+    $caseIndex += 1
+    $caseStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Output ("execution-replay-progress: [{0}/{1}] START case={2} elapsed={3:n3}s last={4}" -f $caseIndex, $selectedProofCases.Count, $case.case_id, $suiteStopwatch.Elapsed.TotalSeconds, $lastCompletedCase)
     $run1 = Invoke-ReplayCompile -Case $case -RunLabel "run1" -NativeExePath $nativeExe
     $run2 = Invoke-ReplayCompile -Case $case -RunLabel "run2" -NativeExePath $nativeExe
 
+    $comparisonStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     foreach ($field in @("manifest_sha256", "registration_manifest_sha256", "provenance_sha256", "diagnostics_sha256", "ir_sha256", "object_sha256", "artifact_set_digest_sha256")) {
       if ([string]$run1[$field] -ne [string]$run2[$field]) {
         throw "execution replay proof FAIL: $field drift across replay for $($case.case_id) (run1=$($run1[$field]) run2=$($run2[$field]))"
@@ -473,16 +524,37 @@ try {
         throw "execution replay proof FAIL: section inventory drift across replay for $($case.case_id)"
       }
     }
+    $comparisonStopwatch.Stop()
+    Add-StageDuration -StageKey "comparison_seconds" -DurationSeconds ([math]::Round($comparisonStopwatch.Elapsed.TotalSeconds, 6))
+    $caseStopwatch.Stop()
 
     $caseSummaries += [ordered]@{
       case_id = [string]$case.case_id
       claim_class = "compile-coupled-replay-proof"
       run1 = $run1
       run2 = $run2
+      timing = [ordered]@{
+        duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
+        run1_compile_seconds = [double]$run1.timing.compile_seconds
+        run2_compile_seconds = [double]$run2.timing.compile_seconds
+        run1_readobj_seconds = [double]$run1.timing.readobj_seconds
+        run2_readobj_seconds = [double]$run2.timing.readobj_seconds
+        comparison_seconds = [math]::Round($comparisonStopwatch.Elapsed.TotalSeconds, 6)
+      }
       status = "PASS"
     }
+    $caseTimings += [ordered]@{
+      case_id = [string]$case.case_id
+      duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
+      compile_seconds = [math]::Round(([double]$run1.timing.compile_seconds + [double]$run2.timing.compile_seconds), 6)
+      readobj_seconds = [math]::Round(([double]$run1.timing.readobj_seconds + [double]$run2.timing.readobj_seconds), 6)
+      comparison_seconds = [math]::Round($comparisonStopwatch.Elapsed.TotalSeconds, 6)
+    }
+    $lastCompletedCase = [string]$case.case_id
+    Write-Output ("execution-replay-progress: [{0}/{1}] DONE case={2} duration={3:n3}s elapsed={4:n3}s" -f $caseIndex, $selectedProofCases.Count, $case.case_id, $caseStopwatch.Elapsed.TotalSeconds, $suiteStopwatch.Elapsed.TotalSeconds)
   }
 
+  $reportStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
   $summary = [ordered]@{
     proof_run_id = $proofRunId
     native_exe = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
@@ -515,8 +587,18 @@ try {
       selected_cases = $selectedProofCases.Count
     }
     cases = $caseSummaries
+    timing = [ordered]@{
+      elapsed_seconds = [math]::Round($suiteStopwatch.Elapsed.TotalSeconds, 6)
+      stage_totals = $script:stageTimings
+      slowest_cases = @($caseTimings | Sort-Object -Property duration_seconds -Descending | Select-Object -First 10)
+      case_timings = @($caseTimings)
+    }
     status = "PASS"
   }
+  $reportStopwatch.Stop()
+  Add-StageDuration -StageKey "output_report_seconds" -DurationSeconds ([math]::Round($reportStopwatch.Elapsed.TotalSeconds, 6))
+  $summary.timing.stage_totals = $script:stageTimings
+  $summary.timing.elapsed_seconds = [math]::Round($suiteStopwatch.Elapsed.TotalSeconds, 6)
   $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath -Encoding utf8
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $summaryPath -Root $repoRoot)"
   Write-Output "status: PASS"
