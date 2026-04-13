@@ -1,0 +1,78 @@
+# objc3c Long-Horizon Operations
+
+## Working Boundary
+
+This runbook defines the compatibility-maintenance, migration, rollback, soak,
+aging-regression, and support-window boundary for objc3c.
+
+Use it when changing:
+
+- release support windows, channel aging, and deprecation policy
+- migration replay and rollback drills
+- long-running soak or aging-regression evidence
+- operator-facing compatibility and support claims
+- package and canonical-application workflows that feed compatibility evidence
+
+Canonical checked-in boundary surfaces:
+
+- `tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json`
+- `docs/runbooks/objc3c_release_operations.md`
+- `docs/runbooks/objc3c_distribution_credibility.md`
+- `docs/runbooks/objc3c_performance_governance.md`
+- `docs/runbooks/objc3c_package_ecosystem.md`
+- `docs/runbooks/objc3c_application_architecture_testing.md`
+- `scripts/build_objc3c_update_manifest.py`
+- `scripts/publish_objc3c_release_operations_metadata.py`
+- `scripts/check_objc3c_release_operations_integration.py`
+- `scripts/check_objc3c_release_operations_end_to_end.py`
+- `scripts/check_objc3c_package_ecosystem_integration.py`
+- `scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
+
+Replayable boundary inventory:
+
+- `python scripts/build_long_horizon_operations_boundary_inventory_summary.py`
+
+## Current Boundary
+
+Long-horizon operations start after release, package, and canonical application
+workflows are executable. This milestone does not invent a new package manager,
+registry, release transport, or compiler runtime. It composes existing live
+surfaces and adds durable maintenance evidence around them.
+
+The current usable substrate is:
+
+- release operations: update manifests, compatibility reports, release-channel
+  catalogs, rollback guidance, and support windows
+- package ecosystem: deterministic local package locks, package authoring, and
+  offline mirror validation
+- application architecture: project template and canonical application workspace
+  replay through the public workflow runner
+- performance governance: generated performance dashboards and budget evidence
+- distribution credibility: release trust reports, provenance, and generated
+  publication metadata
+
+## Claim Boundary
+
+Supported in this boundary:
+
+- same-major compatibility maintenance tied to generated release metadata
+- explicit deprecation and support-window policy
+- migration replay drills over checked-in package and application surfaces
+- rollback drills that consume generated update and release-operation metadata
+- soak and aging evidence that can be replayed under `tmp/reports/`
+- operator-visible support-window publication through the public workflow runner
+
+Not supported in this boundary:
+
+- evergreen or forever-compatible release claims
+- cross-major compatibility without a generated migration proof
+- hosted registry availability or network-backed dependency resolution
+- background auto-update behavior
+- manual waiver-only compatibility status
+- soak evidence that cannot be regenerated from checked-in contracts
+
+## Successor Pressure
+
+This milestone feeds production-readiness and governance closeout. Later
+claims about release cadence, compatibility, or stability must consume generated
+long-horizon evidence rather than manually restating release intent.

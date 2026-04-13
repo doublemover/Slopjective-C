@@ -1,0 +1,69 @@
+{
+  "contract_id": "objc3c.long_horizon_operations.boundary_inventory.v1",
+  "schema_version": 1,
+  "milestone": "M328",
+  "runbook": "docs/runbooks/objc3c_long_horizon_operations.md",
+  "working_scope": [
+    "compatibility maintenance policy over release, package, and canonical application workflows",
+    "migration replay and rollback evidence generated from checked-in surfaces",
+    "soak and aging-regression evidence that remains replayable under tmp/reports/",
+    "operator-visible support-window publication and long-horizon workflow entrypoints"
+  ],
+  "non_goals": [
+    "hosted package registry service",
+    "network-backed dependency resolution",
+    "background auto-update daemon",
+    "cross-major compatibility claims without generated migration evidence",
+    "manual compatibility waivers as a substitute for generated evidence"
+  ],
+  "substrate_runbooks": [
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_distribution_credibility.md",
+    "docs/runbooks/objc3c_performance_governance.md",
+    "docs/runbooks/objc3c_package_ecosystem.md",
+    "docs/runbooks/objc3c_application_architecture_testing.md"
+  ],
+  "substrate_fixture_surfaces": [
+    "tests/tooling/fixtures/release_operations/versioning_model.json",
+    "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
+    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/update_channel_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+    "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+    "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+    "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+    "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json"
+  ],
+  "substrate_scripts": [
+    "scripts/build_objc3c_update_manifest.py",
+    "scripts/publish_objc3c_release_operations_metadata.py",
+    "scripts/check_objc3c_release_operations_integration.py",
+    "scripts/check_objc3c_release_operations_end_to_end.py",
+    "scripts/check_objc3c_package_ecosystem_integration.py",
+    "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py",
+    "scripts/check_objc3c_application_architecture_integration.py",
+    "scripts/check_objc3c_runnable_application_architecture_end_to_end.py",
+    "scripts/check_objc3c_performance_governance_integration.py",
+    "scripts/check_objc3c_distribution_credibility_integration.py"
+  ],
+  "required_existing_public_scripts": [
+    "inspect:objc3c:update-manifest",
+    "publish:objc3c:release-operations",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e",
+    "test:objc3c:package-ecosystem",
+    "test:objc3c:package-ecosystem:e2e",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e",
+    "test:objc3c:performance-governance",
+    "test:objc3c:distribution-credibility"
+  ],
+  "machine_owned_output_roots": [
+    "tmp/reports/long-horizon-operations/",
+    "tmp/artifacts/long-horizon-operations/"
+  ],
+  "successor_surfaces": [
+    "M331 production-readiness support and operations evidence",
+    "M332 final full-envelope stability and claimability closeout"
+  ]
+}
