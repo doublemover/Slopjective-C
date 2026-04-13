@@ -60,6 +60,18 @@ changes must consume release operations, long-horizon support, package
 ecosystem, adoption-legibility, and security hardening evidence instead of
 standing on prose-only review.
 
+Maintainer, contributor, and package stewardship semantics:
+
+- `tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json`
+- `python scripts/build_governance_stewardship_semantics_summary.py`
+
+Stewardship review keeps normal contributors on `CONTRIBUTING.md`, maintainers
+on `docs/runbooks/objc3c_maintainer_workflows.md`, and package-governance
+changes on the package ecosystem contracts. Any governance change that widens
+public package scripts, public workflow actions, package metadata, or support
+claims must run the maintainer review checks and either stay within budget or
+carry a checked-in waiver.
+
 Machine-owned governance schema surface:
 
 - `tests/tooling/fixtures/governance_sustainability/schema_surface.json`

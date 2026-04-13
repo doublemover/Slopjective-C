@@ -1,0 +1,70 @@
+{
+  "contract_id": "objc3c.governance.stewardship_semantics.v1",
+  "schema_version": 1,
+  "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+  "maintainer_runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
+  "contributor_surface": "CONTRIBUTING.md",
+  "depends_on": [
+    "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+    "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
+    "tests/tooling/fixtures/governance_sustainability/maintainer_review_regression_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+    "tests/tooling/fixtures/adoption_legibility/artifact_contract.json"
+  ],
+  "role_surfaces": [
+    {
+      "role": "contributor",
+      "entry_surface": "CONTRIBUTING.md",
+      "responsibilities": [
+        "keep changes scoped",
+        "run relevant validation",
+        "declare budget or public-surface impact",
+        "avoid tmp or artifacts as canonical inputs"
+      ]
+    },
+    {
+      "role": "maintainer",
+      "entry_surface": "docs/runbooks/objc3c_maintainer_workflows.md",
+      "responsibilities": [
+        "apply review checks",
+        "own budget and waiver decisions",
+        "refresh generated command and site surfaces",
+        "block evidence-widening claims without generated support"
+      ]
+    },
+    {
+      "role": "package-steward",
+      "entry_surface": "docs/runbooks/objc3c_package_ecosystem.md",
+      "responsibilities": [
+        "preserve deterministic package locks",
+        "preserve offline mirror reproducibility",
+        "couple package claims to adoption and support evidence",
+        "block hosted-registry claims until evidence exists"
+      ]
+    }
+  ],
+  "required_review_checks": [
+    "task-hygiene",
+    "repo-superclean",
+    "dependency-boundaries",
+    "governance-inventory",
+    "governance-policy",
+    "governance-maintainer-review",
+    "extension-review-policy"
+  ],
+  "package_governance_rules": [
+    "package metadata changes must point to checked-in package ecosystem contracts",
+    "public package script growth must update measured budget evidence",
+    "package publication claims must remain local/offline until hosted registry evidence exists",
+    "adoption-facing package guidance must consume adoption-legibility evidence"
+  ],
+  "fail_closed_conditions": [
+    "role has no checked-in entry surface",
+    "required review check has no maintainer contract entry",
+    "package governance change bypasses package ecosystem artifact contract",
+    "budget growth lacks measured inventory update or waiver",
+    "contributor docs contradict maintainer governance runbook"
+  ]
+}

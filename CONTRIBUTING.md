@@ -82,6 +82,7 @@ publication helpers, also refresh the governance summaries:
 - governance inventory: `python scripts/build_governance_budget_inventory_summary.py`
 - governance policy: `python scripts/build_governance_policy_summary.py`
 - maintainer review surface: `python scripts/build_governance_maintainer_review_summary.py`
+- stewardship semantics: `python scripts/build_governance_stewardship_semantics_summary.py`
 
 ## PR Expectations
 
