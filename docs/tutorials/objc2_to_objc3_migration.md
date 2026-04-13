@@ -2,6 +2,12 @@
 
 This file is the live migration guide for people moving existing ObjC2 habits into the current runnable ObjC3 subset.
 
+The canonical migration playbook contract for this guide is
+`tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`;
+replay it with
+`python scripts/build_adoption_legibility_migration_playbook_summary.py`.
+Keep this guide narrower than that contract, never broader.
+
 Use it together with the checked-in showcase examples. The guide is only authoritative where the repo already compiles or validates the behavior it describes.
 
 ## Migration Boundary

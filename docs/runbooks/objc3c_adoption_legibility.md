@@ -81,6 +81,22 @@ claim is backed by conformance, performance, interop, package, release, and
 support evidence. Unsupported or intentionally deferred behavior must remain
 visible in the comparison text.
 
+## Migration Playbook And Interop Guidance
+
+The canonical migration playbook semantics contract is checked in at:
+
+- `tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`
+
+Replay it with:
+
+- `python scripts/build_adoption_legibility_migration_playbook_summary.py`
+
+Migration guidance has four ordered phases: orient on public docs, compile the
+showcase anchors, create or validate package/application workspace state, then
+check support and rollback evidence. Interop guidance is part of that path; it
+must name the runnable example and runbook that prove the current Objective-C 2,
+Swift-facing, or C++-facing boundary.
+
 ## Current Boundary
 
 Adoption work starts from existing public surfaces rather than inventing a new
