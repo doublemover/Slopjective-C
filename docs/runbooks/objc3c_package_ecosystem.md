@@ -37,7 +37,7 @@ Replayable boundary inventory:
 - `python scripts/check_objc3c_package_registry_mirror_reproducibility.py`
 - `python scripts/check_objc3c_package_ecosystem_integration.py`
 - `python scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
-- `python scripts/check_m329_package_ecosystem_closeout_gate.py`
+- `python scripts/check_objc3c_package_ecosystem_integration.py`
 
 ## Current Boundary
 

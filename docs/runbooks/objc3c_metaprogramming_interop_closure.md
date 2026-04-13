@@ -25,7 +25,7 @@ Replayable generators and validators:
 - `python scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py`
 - `python scripts/check_metaprogramming_interop_closure_live_interop_runtime.py`
 - `python scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py`
-- `python scripts/check_m323_metaprogramming_interop_closeout_gate.py`
+- `python scripts/check_objc3c_runnable_metaprogramming_end_to_end.py`
 
 Current closure scope:
 

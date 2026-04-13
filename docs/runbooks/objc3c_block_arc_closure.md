@@ -23,7 +23,7 @@ Replayable generators and validators:
 - `python scripts/build_block_arc_closure_executable_proof_summary.py`
 - `python scripts/check_block_arc_closure_live_block_runtime.py`
 - `python scripts/check_block_arc_closure_live_arc_runtime.py`
-- `python scripts/check_m320_block_arc_closure_closeout_gate.py`
+- `python scripts/check_objc3c_runnable_block_arc_end_to_end.py`
 
 Current closure scope:
 

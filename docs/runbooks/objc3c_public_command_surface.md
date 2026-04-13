@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `168`
-- Operator command count: `159`
+- Current package script count: `169`
+- Operator command count: `160`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -110,6 +110,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive dispatch and artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `test:objc3c:fuzz-safety` | `test-fuzz-safety` | `repo` | `malformed parser/sema inputs stay fail-closed and deterministic through the live compiler path` | `pass-through` | `python:scripts/run_objc3c_fuzz_safety.py` |
+| `test:objc3c:governance-sustainability` | `validate-governance-sustainability` | `repo` | `governance and extension-review claims stay executable across checked-in contracts, public workflow entrypoints, and generated evidence` | `fixed-shape` | `python:scripts/check_objc3c_governance_sustainability_integration.py` |
 | `test:objc3c:interop-conformance` | `validate-interop-conformance` | `full` | `integrated mixed-module runtime packaging and interop conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_conformance.py` |
 | `test:objc3c:long-horizon-operations` | `validate-long-horizon-operations` | `full` | `long-horizon compatibility claims stay backed by generated migration, rollback, soak, aging, package, application, performance, and conformance evidence` | `fixed-shape` | `python:scripts/check_objc3c_long_horizon_operations_integration.py` |
 | `test:objc3c:lowering-runtime-stress` | `test-lowering-runtime-stress` | `repo` | `lowering-heavy compile paths and execution-smoke subsets stay runnable through the live compiler and runtime path` | `pass-through` | `python:scripts/run_objc3c_lowering_runtime_stress.py` |

@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
+sys.dont_write_bytecode = True
+
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_JSON = ROOT / 'package.json'
 RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'

@@ -25,7 +25,7 @@ Replayable generators and validators:
 - `python scripts/build_object_model_closure_executable_proof_summary.py`
 - `python scripts/check_object_model_closure_live_runtime.py`
 - `python scripts/check_object_model_closure_live_property_reflection.py`
-- `python scripts/check_m319_object_model_closure_closeout_gate.py`
+- `python scripts/check_objc3c_runnable_object_model_end_to_end.py`
 
 Current closure scope:
 

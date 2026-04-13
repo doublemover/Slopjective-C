@@ -29,7 +29,8 @@
     "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
     "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
     "tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json",
-    "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json"
+    "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json",
+    "tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json"
   ],
   "required_generation_scripts": [
     "scripts/build_governance_budget_inventory_summary.py",
@@ -41,7 +42,8 @@
     "scripts/check_governance_sustainability_schema_surface.py",
     "scripts/check_governance_sustainability_budget_enforcement.py",
     "scripts/build_governance_anti_regression_summary.py",
-    "scripts/build_governance_artifact_contract_summary.py"
+    "scripts/build_governance_artifact_contract_summary.py",
+    "scripts/check_objc3c_governance_sustainability_integration.py"
   ],
   "publication_rules": [
     "checked-in contracts are the source of truth",

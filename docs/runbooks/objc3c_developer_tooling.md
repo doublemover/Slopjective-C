@@ -20,7 +20,7 @@ Replayable generators and validators:
 
 - `python scripts/build_developer_tooling_boundary_inventory_summary.py`
 - `python scripts/check_objc3c_developer_tooling_integration.py`
-- `python scripts/check_m325_developer_tooling_closeout_gate.py`
+- `python scripts/check_objc3c_developer_tooling_integration.py`
 
 ## Exact Live Implementation Paths
 

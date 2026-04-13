@@ -13,9 +13,8 @@
     "sequence": 1
   },
   "references": [
-    "docs/contracts/direct_llvm_emission_expectations.md#m145-matrix-extension-lane-d",
-    "docs/objc3c-native.md#direct-llvm-object-emission-matrix-lane-d-contract-m145-d001",
-    "scripts/check_m145_direct_llvm_matrix_contract.py"
+    "docs/objc3c-native.md",
+    "scripts/check_objc3c_runtime_acceptance.py"
   ],
   "source": "// RUN: objc3c --emit-obj --objc3-ir-object-backend llvm-direct --llc /tmp/missing-llc-executable.exe %s\n// RUN: not objc3c --emit-obj --objc3-ir-object-backend llvm-direct --llc /tmp/missing-llc-executable.exe %s\n// EXPECT: O3E001 llvm-direct object emission failed: llc executable not found\n// EXPECT: O3E002 LLVM object emission failed\n\nmodule m145_lane_d_fail_closed;\n\nfn main() -> i32 {\n    return 0;\n}\n",
   "expect": {

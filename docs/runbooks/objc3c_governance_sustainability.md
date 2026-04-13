@@ -98,9 +98,12 @@ replayable outputs only and must never become implementation inputs.
 
 Replayable governance enforcement:
 
+- `python scripts/check_objc3c_governance_sustainability_integration.py`
 - `python scripts/check_governance_sustainability_budget_enforcement.py`
 - `python scripts/ci/run_task_hygiene_gate.py`
+- public package command: `npm run test:objc3c:governance-sustainability`
 - canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
+- canonical integration summary: `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
 
 Long-horizon anti-regression reporting:
 
@@ -133,9 +136,7 @@ Current budget surfaces measured by the governance inventory summary:
 - live `check_*.py` script count
 - must-remain-absent repo roots and workflow patterns
 - known live governance drifts that later issues must ratchet:
-  - milestone-scoped checkers
-  - live Python bytecode
-  - live `__pycache__` directories
+  - none for numeric milestone checkers, live Python bytecode, or live `__pycache__` directories
 
 Explicit non-goals:
 
@@ -150,3 +151,4 @@ Generated evidence:
 - `tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json`
 - `tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json`
 - `tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json`
+- `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`

@@ -70,23 +70,17 @@
     {
       "surface_id": "legacy-npm-alias-references",
       "pattern": "npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)"
+    },
+    {
+      "surface_id": "numeric-milestone-checker-references",
+      "pattern": "scripts/check_m\\d"
     }
   ],
   "known_live_governance_drifts": [
     {
       "surface_id": "milestone-scoped-checkers",
-      "glob": "scripts/check_m*.py",
-      "intended_follow_on_issue": "M332-D001"
-    },
-    {
-      "surface_id": "live-python-bytecode",
-      "glob": "**/*.pyc",
-      "intended_follow_on_issue": "M332-D001"
-    },
-    {
-      "surface_id": "live-pycache-directories",
-      "glob": "**/__pycache__",
-      "intended_follow_on_issue": "M332-D001"
+      "glob": "scripts/check_m[0-9]*.py",
+      "disposition": "must-remain-absent"
     }
   ],
   "governance_entry_surfaces": [
@@ -104,6 +98,7 @@
     "docs/runbooks/objc3c_security_hardening.md",
     "docs/governance/extension_author_guide_v1.md",
     "docs/governance/faq_v1.md",
+    "scripts/check_objc3c_governance_sustainability_integration.py",
     "scripts/objc3c_public_workflow_runner.py"
   ],
   "explicit_non_goals": [

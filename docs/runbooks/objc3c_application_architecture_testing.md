@@ -33,7 +33,7 @@ Replayable boundary inventory:
 - `python scripts/objc3c_public_workflow_runner.py validate-application-architecture`
 - `python scripts/check_objc3c_runnable_application_architecture_end_to_end.py`
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-application-architecture`
-- `python scripts/check_m330_application_architecture_testing_closeout_gate.py`
+- `python scripts/check_objc3c_application_architecture_integration.py`
 
 ## Current Boundary
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 PACKAGE_JSON = ROOT / "package.json"
-PACKAGE_SCRIPT_BUDGET = 168
+PACKAGE_SCRIPT_BUDGET = 169
 REMOVED_FAMILY_PATTERNS = (
     r"^check:objc3c:m",
     r"^test:tooling:m",
@@ -31,6 +31,7 @@ LIVE_SCAN_ROOTS = [
 ]
 LEGACY_ALIAS_RE = re.compile(r"npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)")
 MILESTONE_WORKFLOW_RE = re.compile(r"^m\d+.*\.yml$")
+MILESTONE_CHECKER_REF_RE = re.compile(r"scripts/check_m\d")
 
 
 def iter_live_files():
@@ -68,7 +69,7 @@ def main() -> int:
         errors.append('compiler prototype tree must not be live')
     if any((ROOT / '.github' / 'workflows').glob('m*.yml')):
         errors.append('milestone-named workflows must not be live')
-    if any((ROOT / 'scripts').glob('check_m*.py')):
+    if any((ROOT / 'scripts').glob('check_m[0-9]*.py')):
         errors.append('milestone checkers must not be live')
     if list((ROOT / 'tests' / 'tooling').glob('test_check_*.py')):
         errors.append('checker-wrapper pytest files must not be live')
@@ -87,6 +88,9 @@ def main() -> int:
             continue
         if LEGACY_ALIAS_RE.search(text):
             errors.append(f'legacy npm alias reference still live: {path.relative_to(ROOT).as_posix()}')
+            break
+        if MILESTONE_CHECKER_REF_RE.search(text):
+            errors.append(f'numeric milestone checker reference still live: {path.relative_to(ROOT).as_posix()}')
             break
     ll_stubs = [
         ROOT / 'tests/tooling/fixtures/native/library_cli_parity/cli/module.ll',

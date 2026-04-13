@@ -25,7 +25,7 @@ Replayable generators and validators:
 - `python scripts/build_concurrency_runtime_closure_executable_proof_summary.py`
 - `python scripts/check_concurrency_runtime_closure_live_task_runtime.py`
 - `python scripts/check_concurrency_runtime_closure_live_actor_runtime.py`
-- `python scripts/check_m322_concurrency_runtime_closeout_gate.py`
+- `python scripts/check_objc3c_runnable_concurrency_end_to_end.py`
 
 Current closure scope:
 

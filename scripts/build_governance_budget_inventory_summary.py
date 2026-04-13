@@ -65,7 +65,9 @@ def main() -> int:
     legacy_alias_re = re.compile(
         r"npm run (check:objc3c:m|test:tooling:m|check:compiler-closeout:m|run:objc3c:|plan:compiler-dispatch:|refresh:compiler-dispatch:|dev:objc3c:)"
     )
+    milestone_checker_ref_re = re.compile(r"scripts/check_m\d")
     legacy_alias_hits = []
+    milestone_checker_ref_hits = []
     for path in iter_live_files(live_roots):
         try:
             text = path.read_text(encoding="utf-8", errors="ignore")
@@ -73,6 +75,8 @@ def main() -> int:
             continue
         if legacy_alias_re.search(text):
             legacy_alias_hits.append(path.relative_to(ROOT).as_posix())
+        if milestone_checker_ref_re.search(text):
+            milestone_checker_ref_hits.append(path.relative_to(ROOT).as_posix())
 
     measured = {
         "package_script_count": len(package_scripts),
@@ -92,10 +96,12 @@ def main() -> int:
             "lane_readiness_runner_count": len(list((ROOT / "scripts").rglob("run_*_lane_*_readiness.py"))),
             "legacy_alias_reference_count": len(legacy_alias_hits),
             "legacy_alias_reference_examples": legacy_alias_hits[:5],
+            "numeric_milestone_checker_reference_count": len(milestone_checker_ref_hits),
+            "numeric_milestone_checker_reference_examples": milestone_checker_ref_hits[:5],
         },
         "known_live_governance_drifts": {
-            "milestone_checker_count": len(list((ROOT / "scripts").glob("check_m*.py"))),
-            "milestone_checker_examples": [path.relative_to(ROOT).as_posix() for path in sorted((ROOT / "scripts").glob("check_m*.py"))[:5]],
+            "milestone_checker_count": len(list((ROOT / "scripts").glob("check_m[0-9]*.py"))),
+            "milestone_checker_examples": [path.relative_to(ROOT).as_posix() for path in sorted((ROOT / "scripts").glob("check_m[0-9]*.py"))[:5]],
             "live_pyc_count": len([path for path in ROOT.rglob("*.pyc") if "tmp" not in path.parts]),
             "live_pycache_dir_count": len([path for path in ROOT.rglob("__pycache__") if "tmp" not in path.parts]),
         },
@@ -123,6 +129,7 @@ def main() -> int:
             measured["must_remain_absent"]["checker_wrapper_test_count"] == 0,
             measured["must_remain_absent"]["lane_readiness_runner_count"] == 0,
             measured["must_remain_absent"]["legacy_alias_reference_count"] == 0,
+            measured["must_remain_absent"]["numeric_milestone_checker_reference_count"] == 0,
         ]
     )
 

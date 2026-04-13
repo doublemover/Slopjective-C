@@ -25,7 +25,7 @@ Replayable generators and validators:
 - `python scripts/build_objc3c_platform_support_matrix.py`
 - `python scripts/check_objc3c_platform_hardening_integration.py`
 - `python scripts/check_objc3c_runnable_platform_hardening_end_to_end.py`
-- `python scripts/check_m326_platform_hardening_closeout_gate.py`
+- `python scripts/check_objc3c_platform_hardening_integration.py`
 - `python scripts/build_platform_hardening_artifact_contract_summary.py`
 - `python scripts/check_platform_hardening_build_package_validation.py`
 - `python scripts/check_platform_hardening_toolchain_range_replay.py`
@@ -258,7 +258,7 @@ matrix.
 Use this command before widening any host, toolchain, package, install, or
 release claim:
 
-- `python scripts/check_m326_platform_hardening_closeout_gate.py`
+- `python scripts/check_objc3c_platform_hardening_integration.py`
 
 The closeout gate reruns the milestone summary builders and validators, then
 verifies that the published support boundary still resolves to exactly:

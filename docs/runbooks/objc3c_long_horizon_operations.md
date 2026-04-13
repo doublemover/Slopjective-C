@@ -207,7 +207,7 @@ Support-window publication emits:
 
 The closeout gate is:
 
-- `python scripts/check_m328_long_horizon_operations_closeout_gate.py`
+- `python scripts/check_objc3c_long_horizon_operations_integration.py`
 
 It replays all long-horizon summaries, integration, support-window publication, public
 command rendering, documentation/repository surface checks, and source hygiene.

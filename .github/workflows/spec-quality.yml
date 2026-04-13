@@ -21,8 +21,6 @@ jobs:
         run: python scripts/build_objc3c_native_docs.py --check
       - name: Enforce generated-only published site drift contract
         run: npm run check:site
-      - name: Enforce M135 direct-LLVM packet/docs contract
-        run: python scripts/check_m135_direct_llvm_contract.py
       - name: Install Node dependencies
         run: npm ci
       - name: Run spec structural lint suite

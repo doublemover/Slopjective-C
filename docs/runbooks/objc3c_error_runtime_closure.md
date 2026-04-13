@@ -23,7 +23,7 @@ Replayable generators and validators:
 - `python scripts/build_error_runtime_closure_executable_proof_summary.py`
 - `python scripts/check_error_runtime_closure_live_throw_cleanup_runtime.py`
 - `python scripts/check_error_runtime_closure_live_bridged_error_runtime.py`
-- `python scripts/check_m321_error_runtime_closeout_gate.py`
+- `python scripts/check_objc3c_runnable_error_end_to_end.py`
 
 Current closure scope:
 
