@@ -28,6 +28,7 @@ Replayable boundary inventory:
 
 - `python scripts/build_package_ecosystem_boundary_inventory_summary.py`
 - `python scripts/build_package_ecosystem_dependency_lock_policy_summary.py`
+- `python scripts/build_package_ecosystem_local_workspace_mirror_summary.py`
 
 ## Current Boundary
 
@@ -91,6 +92,23 @@ Resolution is intentionally local-first:
 The initial lock model does not claim network fetching. Registry names may appear
 only as generated metadata layered over local package artifacts until later
 evidence proves hosted behavior.
+
+## Local Workspace And Offline Mirror Semantics
+
+The canonical workspace and mirror semantics are checked in at:
+
+- `tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json`
+
+Local package workspaces are materialized from checked-in stdlib, showcase, and
+canonical application surfaces. Lockfiles and mirrors are generated outputs:
+
+- lockfiles publish under `tmp/artifacts/package-ecosystem/locks/`
+- mirror indexes publish under `tmp/artifacts/package-ecosystem/mirrors/`
+- replay and validation summaries publish under `tmp/reports/package-ecosystem/`
+
+An offline mirror is a local artifact cache plus an index generated from a
+locked package graph. It must not fetch from the network during validation, and
+it is invalid if it contains package identities not present in the lock.
 
 ## Successor Pressure
 

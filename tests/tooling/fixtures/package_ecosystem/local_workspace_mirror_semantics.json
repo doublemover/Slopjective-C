@@ -1,0 +1,68 @@
+{
+  "contract_id": "objc3c.package_ecosystem.local_workspace_mirror_semantics.v1",
+  "surface_kind": "package-ecosystem-local-workspace-mirror-semantics",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "boundary_inventory": "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+  "dependency_lock_policy": "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+  "workspace_inputs": [
+    {
+      "workspace_id": "stdlib-workspace",
+      "source": "stdlib/workspace.json",
+      "materializer": "scripts/materialize_objc3c_stdlib_workspace.py",
+      "validation_script": "scripts/check_objc3c_stdlib_program_integration.py"
+    },
+    {
+      "workspace_id": "canonical-application-workspace",
+      "source": "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json",
+      "materializer": "scripts/materialize_objc3c_canonical_application_workspace.py",
+      "validation_script": "scripts/check_objc3c_application_architecture_integration.py"
+    },
+    {
+      "workspace_id": "runnable-package-workspace",
+      "source": "stdlib/package_surface.json",
+      "materializer": "scripts/package_objc3c_runnable_toolchain.ps1",
+      "validation_script": "scripts/check_objc3c_runnable_stdlib_program_end_to_end.py"
+    }
+  ],
+  "generated_roots": {
+    "lock_root": "tmp/artifacts/package-ecosystem/locks",
+    "mirror_root": "tmp/artifacts/package-ecosystem/mirrors",
+    "report_root": "tmp/reports/package-ecosystem"
+  },
+  "lockfile_semantics": {
+    "lockfile_contract_id": "objc3c.package_ecosystem.lockfile.v1",
+    "ordering": "stable-by-package-id-then-source-path",
+    "identity_model": "canonical-module-id-plus-source-package-surface",
+    "digest_model": "source-path-and-generator-command-digest-inputs",
+    "replay_model": "public-workflow-runner-command-list"
+  },
+  "offline_mirror_semantics": {
+    "mirror_contract_id": "objc3c.package_ecosystem.offline_mirror.v1",
+    "index_model": "lock-derived-package-index",
+    "cache_model": "local-artifact-cache-derived-from-locked-package-graph",
+    "network_policy": "no-network-during-validation",
+    "failure_model": "missing-cache-entry-extra-package-or-network-request-fails-validation"
+  },
+  "workspace_rules": [
+    "workspace roots must come from checked-in package/workspace surfaces",
+    "workspace materialization must be replayable from scripts/",
+    "lockfiles and mirrors are generated artifacts under tmp and never source authority",
+    "offline mirrors are valid only when derived from the current lock graph",
+    "canonical applications and stdlib programs must pressure the same package semantics"
+  ],
+  "required_public_scripts": [
+    "build:objc3c:stdlib",
+    "build:objc3c:application-workspace",
+    "package:objc3c-native:runnable-toolchain",
+    "test:stdlib:program",
+    "test:stdlib:program:e2e",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e"
+  ],
+  "non_goals": [
+    "hosted mirror service",
+    "network-backed package restore",
+    "hand-authored lockfiles as source authority",
+    "mirror indexes disconnected from the lock graph"
+  ]
+}
