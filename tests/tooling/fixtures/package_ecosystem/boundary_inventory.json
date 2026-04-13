@@ -1,0 +1,77 @@
+{
+  "contract_id": "objc3c.package_ecosystem.boundary_inventory.v1",
+  "surface_kind": "package-ecosystem-boundary-inventory",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "stdlib_workspace_contract": "stdlib/workspace.json",
+  "stdlib_package_surface": "stdlib/package_surface.json",
+  "advanced_helper_package_surface": "stdlib/advanced_helper_package_surface.json",
+  "application_architecture_boundary": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
+  "release_and_package_channel_runbooks": [
+    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_packaging_channels.md",
+    "docs/runbooks/objc3c_application_architecture_testing.md"
+  ],
+  "release_and_package_channel_schemas": [
+    "schemas/objc3c-release-manifest-v1.schema.json",
+    "schemas/objc3c-release-sbom-v1.schema.json",
+    "schemas/objc3c-release-attestation-v1.schema.json",
+    "schemas/objc3c-update-manifest-v1.schema.json",
+    "schemas/objc3c-package-channels-manifest-v1.schema.json",
+    "schemas/objc3c-package-install-receipt-v1.schema.json"
+  ],
+  "package_workflow_generators": [
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/build_objc3c_package_channels.py",
+    "scripts/build_objc3c_release_manifest.py",
+    "scripts/build_objc3c_update_manifest.py",
+    "scripts/materialize_objc3c_stdlib_workspace.py",
+    "scripts/materialize_objc3c_canonical_application_workspace.py"
+  ],
+  "existing_package_validation_surfaces": [
+    "scripts/check_objc3c_stdlib_foundation_integration.py",
+    "scripts/check_objc3c_stdlib_advanced_integration.py",
+    "scripts/check_objc3c_stdlib_program_integration.py",
+    "scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py",
+    "scripts/check_objc3c_runnable_stdlib_program_end_to_end.py",
+    "scripts/check_objc3c_application_architecture_integration.py",
+    "scripts/check_objc3c_runnable_application_architecture_end_to_end.py",
+    "scripts/check_objc3c_release_operations_integration.py",
+    "scripts/check_objc3c_release_operations_end_to_end.py"
+  ],
+  "required_public_scripts": [
+    "build:objc3c:stdlib",
+    "build:objc3c:application-workspace",
+    "package:objc3c-native:runnable-toolchain",
+    "package:objc3c:channels",
+    "inspect:objc3c:release-manifest",
+    "inspect:objc3c:update-manifest",
+    "test:stdlib:advanced",
+    "test:stdlib:advanced:e2e",
+    "test:stdlib:program",
+    "test:stdlib:program:e2e",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e"
+  ],
+  "direct_successor_milestones": [
+    "M328",
+    "M331",
+    "M332"
+  ],
+  "working_scope": [
+    "checked-in stdlib workspace and package surfaces",
+    "dependency-resolution, lockfile, and package-authoring semantics generated from checked-in contracts",
+    "offline mirror and registry metadata modeled as local replayable artifacts before any hosted service claim",
+    "canonical application and template pressure through the existing public workflow runner",
+    "runnable package, package-channel, release-manifest, and update-manifest integration through existing scripts"
+  ],
+  "non_goals": [
+    "hosted package registry service",
+    "network-backed dependency resolution",
+    "system package manager publication",
+    "manual package manifests outside checked-in contracts and generated artifacts",
+    "a second compiler payload, package layout, or install workflow"
+  ]
+}
