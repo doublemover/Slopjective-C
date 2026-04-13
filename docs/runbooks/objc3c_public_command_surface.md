@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `162`
-- Operator command count: `153`
+- Current package script count: `164`
+- Operator command count: `155`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -116,6 +116,8 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:object-model-conformance` | `validate-object-model-conformance` | `full` | `integrated object-model conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_object_model_conformance.py` |
 | `test:objc3c:package-authoring` | `validate-package-authoring` | `repo` | `package authoring stays replayable through checked-in package surfaces and public workflow commands` | `fixed-shape` | `python:scripts/check_objc3c_package_authoring_workflow.py` |
 | `test:objc3c:package-ecosystem` | `validate-package-ecosystem` | `repo` | `package ecosystem claims stay grounded in deterministic locks, stdlib programs, and canonical application workspaces` | `fixed-shape` | `python:scripts/check_objc3c_package_ecosystem_integration.py` |
+| `test:objc3c:package-ecosystem:e2e` | `validate-runnable-package-ecosystem` | `full` | `packaged dependency and offline mirror workflows stay reproducible from the staged runnable toolchain bundle` | `fixed-shape` | `python:scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py` |
+| `test:objc3c:package-mirror` | `validate-package-mirror` | `repo` | `offline mirror and local registry metadata stay lock-derived, no-network, and hosted-registry-deferred` | `fixed-shape` | `python:scripts/check_objc3c_package_registry_mirror_reproducibility.py` |
 | `test:objc3c:packaging-channels` | `validate-packaging-channels` | `nightly` | `portable archive installer image and offline bundle generation stay executable on the live release surface` | `fixed-shape` | `runner-internal + direct packaging-channel commands` |
 | `test:objc3c:packaging-channels:e2e` | `validate-packaging-channels-end-to-end` | `full` | `packaging-channel artifacts stay installable rollback-safe and offline-bootstrappable under temp-owned roots` | `fixed-shape` | `python:scripts/check_objc3c_packaging_channels_end_to_end.py` |
 | `test:objc3c:performance` | `validate-performance-foundation` | `repo` | `benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle` | `fixed-shape` | `python:scripts/check_objc3c_performance_integration.py` |

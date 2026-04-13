@@ -199,6 +199,17 @@ $requiredRelativeFiles = @(
   "scripts/build_application_architecture_template_workspace_summary.py",
   "scripts/build_application_architecture_layering_summary.py",
   "scripts/build_application_architecture_artifact_contract_summary.py",
+  "scripts/build_package_ecosystem_boundary_inventory_summary.py",
+  "scripts/build_package_ecosystem_dependency_lock_policy_summary.py",
+  "scripts/build_package_ecosystem_local_workspace_mirror_summary.py",
+  "scripts/build_package_ecosystem_registry_publication_summary.py",
+  "scripts/build_package_ecosystem_artifact_contract_summary.py",
+  "scripts/build_objc3c_package_lock.py",
+  "scripts/check_objc3c_package_authoring_workflow.py",
+  "scripts/build_objc3c_package_mirror.py",
+  "scripts/check_objc3c_package_registry_mirror_reproducibility.py",
+  "scripts/check_objc3c_package_ecosystem_integration.py",
+  "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py",
   "scripts/build_objc3c_editor_tooling_surface.py",
   "scripts/format_objc3c_source.py",
   "scripts/check_developer_tooling_language_server_navigation.py",
@@ -223,6 +234,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_application_architecture_testing.md",
+  "docs/runbooks/objc3c_package_ecosystem.md",
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
   "docs/runbooks/objc3c_developer_tooling.md",
@@ -273,6 +285,8 @@ $requiredRelativeFiles = @(
   "schemas/objc3c-platform-support-matrix-v1.schema.json",
   "schemas/objc3c-package-channels-manifest-v1.schema.json",
   "schemas/objc3c-package-install-receipt-v1.schema.json",
+  "schemas/objc3c-package-lock-v1.schema.json",
+  "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
   "schemas/objc3c-update-manifest-v1.schema.json",
   "schemas/objc3c-compatibility-report-v1.schema.json",
   "schemas/objc3c-release-manifest-v1.schema.json",
@@ -327,6 +341,13 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/application_architecture_testing/project_template_workspace_semantics.json",
   "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json",
   "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json",
+  "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+  "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+  "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+  "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+  "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+  "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+  "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
   "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
   "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
   "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
@@ -582,6 +603,51 @@ $manifestPayload = [ordered]@{
     "test:objc3c:application-architecture",
     "test:objc3c:application-architecture:e2e"
   )
+  package_ecosystem_runbook = "docs/runbooks/objc3c_package_ecosystem.md"
+  package_ecosystem_boundary_inventory = "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json"
+  package_ecosystem_dependency_lock_policy = "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json"
+  package_ecosystem_local_workspace_mirror_semantics = "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json"
+  package_ecosystem_registry_publication_semantics = "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json"
+  package_ecosystem_artifact_contract = "tests/tooling/fixtures/package_ecosystem/artifact_contract.json"
+  package_ecosystem_package_authoring_contract = "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json"
+  package_ecosystem_registry_mirror_contract = "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json"
+  package_ecosystem_lock_schema = "schemas/objc3c-package-lock-v1.schema.json"
+  package_ecosystem_mirror_schema = "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+  package_ecosystem_surface = [ordered]@{
+    lock_generator = "scripts/build_objc3c_package_lock.py"
+    authoring_validation = "scripts/check_objc3c_package_authoring_workflow.py"
+    mirror_generator = "scripts/build_objc3c_package_mirror.py"
+    mirror_validation = "scripts/check_objc3c_package_registry_mirror_reproducibility.py"
+    integration_validation = "scripts/check_objc3c_package_ecosystem_integration.py"
+    runnable_end_to_end_validation = "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py"
+  }
+  package_ecosystem_scripts = [ordered]@{
+    boundary_inventory_summary = "scripts/build_package_ecosystem_boundary_inventory_summary.py"
+    dependency_lock_policy_summary = "scripts/build_package_ecosystem_dependency_lock_policy_summary.py"
+    local_workspace_mirror_summary = "scripts/build_package_ecosystem_local_workspace_mirror_summary.py"
+    registry_publication_summary = "scripts/build_package_ecosystem_registry_publication_summary.py"
+    artifact_contract_summary = "scripts/build_package_ecosystem_artifact_contract_summary.py"
+    lock_generator = "scripts/build_objc3c_package_lock.py"
+    authoring_validation = "scripts/check_objc3c_package_authoring_workflow.py"
+    mirror_generator = "scripts/build_objc3c_package_mirror.py"
+    mirror_validation = "scripts/check_objc3c_package_registry_mirror_reproducibility.py"
+    integration_validation = "scripts/check_objc3c_package_ecosystem_integration.py"
+    runnable_end_to_end_validation = "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py"
+  }
+  package_ecosystem_public_actions = @(
+    "build-package-lock",
+    "validate-package-authoring",
+    "validate-package-mirror",
+    "validate-package-ecosystem",
+    "validate-runnable-package-ecosystem"
+  )
+  package_ecosystem_public_scripts = @(
+    "build:objc3c:package-lock",
+    "test:objc3c:package-authoring",
+    "test:objc3c:package-mirror",
+    "test:objc3c:package-ecosystem",
+    "test:objc3c:package-ecosystem:e2e"
+  )
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
   platform_support_tier_policy = "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"
@@ -739,10 +805,15 @@ $manifestPayload = [ordered]@{
     compile = "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module"
     build_playground = "npm run build:objc3c:playground"
     build_application_workspace = "npm run build:objc3c:application-workspace"
+    build_package_lock = "npm run build:objc3c:package-lock"
     build_stdlib = "npm run build:objc3c:stdlib"
     build_template = "npm run build:objc3c:template"
     application_architecture = "npm run test:objc3c:application-architecture"
     application_architecture_e2e = "npm run test:objc3c:application-architecture:e2e"
+    package_authoring = "npm run test:objc3c:package-authoring"
+    package_mirror = "npm run test:objc3c:package-mirror"
+    package_ecosystem = "npm run test:objc3c:package-ecosystem"
+    package_ecosystem_e2e = "npm run test:objc3c:package-ecosystem:e2e"
     bonus_experiences = "npm run test:bonus-experiences"
     bonus_experiences_e2e = "npm run test:bonus-experiences:e2e"
     check_stdlib_surface = "npm run check:stdlib:surface"

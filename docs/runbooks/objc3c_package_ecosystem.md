@@ -36,6 +36,7 @@ Replayable boundary inventory:
 - `python scripts/build_objc3c_package_mirror.py`
 - `python scripts/check_objc3c_package_registry_mirror_reproducibility.py`
 - `python scripts/check_objc3c_package_ecosystem_integration.py`
+- `python scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
 
 ## Current Boundary
 
@@ -193,11 +194,15 @@ The repo-scope package ecosystem workflow is:
 
 - `npm run build:objc3c:package-lock`
 - `npm run test:objc3c:package-authoring`
+- `npm run test:objc3c:package-mirror`
 - `npm run test:objc3c:package-ecosystem`
+- `npm run test:objc3c:package-ecosystem:e2e`
 
 `test:objc3c:package-ecosystem` composes the local package authoring workflow
 with the canonical application architecture and stdlib program integration
 surfaces so package claims remain user-shaped instead of package-only probes.
+`test:objc3c:package-ecosystem:e2e` stages the runnable toolchain bundle and
+reruns package authoring plus offline mirror validation from the package root.
 
 ## Successor Pressure
 
