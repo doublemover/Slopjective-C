@@ -97,6 +97,29 @@ check support and rollback evidence. Interop guidance is part of that path; it
 must name the runnable example and runbook that prove the current Objective-C 2,
 Swift-facing, or C++-facing boundary.
 
+## Artifact Contract
+
+The canonical adoption and legibility artifact contract is checked in at:
+
+- `tests/tooling/fixtures/adoption_legibility/artifact_contract.json`
+
+Schema surface:
+
+- `schemas/objc3c-adoption-legibility-evidence-v1.schema.json`
+
+Replay it with:
+
+- `python scripts/build_adoption_legibility_artifact_contract_summary.py`
+
+Generated machine-owned outputs stay under:
+
+- `tmp/artifacts/adoption-legibility/`
+- `tmp/reports/adoption-legibility/`
+
+No evaluator, migration, comparison, onboarding, or adoption claim is canonical
+unless it can be regenerated from checked-in contracts and validated through the
+schema above.
+
 ## Current Boundary
 
 Adoption work starts from existing public surfaces rather than inventing a new

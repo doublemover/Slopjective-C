@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
+  "title": "objc3c Adoption And Legibility Evidence",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "schema_version",
+    "generated_from",
+    "evaluator_path",
+    "migration_playbook",
+    "comparison_matrix",
+    "onboarding",
+    "candidate_claims",
+    "claim_audit"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.adoption_legibility.evidence.v1"
+    },
+    "schema_version": {
+      "const": 1
+    },
+    "generated_at_utc": {
+      "type": "string"
+    },
+    "generated_from": {
+      "type": "object",
+      "required": ["contracts", "commands"],
+      "properties": {
+        "contracts": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "commands": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "evaluator_path": {
+      "type": "object",
+      "required": ["status", "entrypoints", "public_commands"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "entrypoints": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "public_commands": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "migration_playbook": {
+      "type": "object",
+      "required": ["status", "phases", "interop_axes", "replay_fields"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "phases": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "interop_axes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "replay_fields": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "comparison_matrix": {
+      "type": "object",
+      "required": ["status", "axes", "evidence_paths"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "axes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "evidence_paths": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "onboarding": {
+      "type": "object",
+      "required": ["status", "tutorials", "showcase_workspaces", "package_commands"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "tutorials": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "showcase_workspaces": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "package_commands": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "candidate_claims": {
+      "type": "object",
+      "required": ["status", "claim_classes", "publication_fields"],
+      "properties": {
+        "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
+        "claim_classes": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        },
+        "publication_fields": {
+          "type": "array",
+          "items": {"type": "string"},
+          "minItems": 1
+        }
+      },
+      "additionalProperties": true
+    },
+    "claim_audit": {
+      "type": "object",
+      "required": ["support_state", "earned_claims", "demoted_or_out_of_scope_claims", "release_blockers"],
+      "properties": {
+        "support_state": {"type": "string"},
+        "earned_claims": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "demoted_or_out_of_scope_claims": {
+          "type": "array",
+          "items": {"type": "string"}
+        },
+        "release_blockers": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}
