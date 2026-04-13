@@ -197,6 +197,37 @@ function Invoke-LoggedCommand {
   }
 }
 
+function Add-StageDuration {
+  param(
+    [Parameter(Mandatory = $true)][string]$StageKey,
+    [Parameter(Mandatory = $true)][double]$DurationSeconds
+  )
+
+  if (-not $script:stageTimings.Contains($StageKey)) {
+    $script:stageTimings[$StageKey] = 0.0
+  }
+  $script:stageTimings[$StageKey] = [double]$script:stageTimings[$StageKey] + $DurationSeconds
+}
+
+function Invoke-TimedLoggedCommand {
+  param(
+    [Parameter(Mandatory = $true)][string]$StageKey,
+    [Parameter(Mandatory = $true)][string]$Command,
+    [Parameter(Mandatory = $true)][AllowEmptyCollection()][string[]]$Arguments,
+    [Parameter(Mandatory = $true)][string]$LogPath
+  )
+
+  $stopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+  $exitCode = Invoke-LoggedCommand -Command $Command -Arguments $Arguments -LogPath $LogPath
+  $stopwatch.Stop()
+  $durationSeconds = [math]::Round($stopwatch.Elapsed.TotalSeconds, 6)
+  Add-StageDuration -StageKey $StageKey -DurationSeconds $durationSeconds
+  return [pscustomobject]@{
+    exit_code = [int]$exitCode
+    duration_seconds = $durationSeconds
+  }
+}
+
 function Get-Fixtures {
   param(
     [Parameter(Mandatory = $true)][string]$Directory,
@@ -604,6 +635,17 @@ function Assert-RuntimeDispatchParityFromLl {
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 Push-Location $repoRoot
 try {
+  $suiteStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+  $script:stageTimings = [ordered]@{
+    positive_compile_seconds = 0.0
+    positive_link_seconds = 0.0
+    positive_run_seconds = 0.0
+    negative_compile_seconds = 0.0
+    negative_link_seconds = 0.0
+    negative_run_seconds = 0.0
+    output_report_seconds = 0.0
+  }
+
   Ensure-NativeCompilerExecutable -NativeExePath $nativeExe -NativeExeExplicit $nativeExeExplicit -BuildScriptPath $buildScript
 
   $clangCheckExit = Invoke-LoggedCommand -Command $clangCommand -Arguments @("--version") -LogPath (Join-Path $runDir "clang-version.log")
@@ -642,9 +684,16 @@ try {
   Write-Output ("selection: positive={0} negative={1}" -f $selectedPositiveFixtures.Count, $selectedNegativeFixtures.Count)
 
   $results = @()
+  $caseTimings = @()
+  $totalSelectedFixtures = $selectedPositiveFixtures.Count + $selectedNegativeFixtures.Count
+  $fixtureIndex = 0
+  $lastCompletedFixture = "none"
 
   foreach ($fixture in $selectedPositiveFixtures) {
+    $fixtureIndex += 1
+    $caseStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
+    Write-Output ("execution-smoke-progress: [{0}/{1}] START kind=positive fixture={2} elapsed={3:n3}s last={4}" -f $fixtureIndex, $totalSelectedFixtures, $fixtureRel, $suiteStopwatch.Elapsed.TotalSeconds, $lastCompletedFixture)
     $expectation = Get-PositiveExpectation -FixturePath $fixture.FullName
     $caseDirName = Get-CaseDirectoryName `
       -RunDir $runDir `
@@ -662,7 +711,8 @@ try {
     if ($expectation.compile_args.Count -gt 0) {
       $nativeArgs += @($expectation.compile_args)
     }
-    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments $nativeArgs -LogPath $compileLog
+    $compileStep = Invoke-TimedLoggedCommand -StageKey "positive_compile_seconds" -Command $nativeExe -Arguments $nativeArgs -LogPath $compileLog
+    $compileExit = [int]$compileStep.exit_code
     if ($compileExit -ne 0) {
       throw "execution smoke FAIL: compile failed for $fixtureRel (exit=$compileExit)"
     }
@@ -686,7 +736,8 @@ try {
     }
     $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags)
     $linkArgs += @("-o", $exePath, "-fno-color-diagnostics")
-    $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
+    $linkStep = Invoke-TimedLoggedCommand -StageKey "positive_link_seconds" -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
+    $linkExit = [int]$linkStep.exit_code
     if ($linkExit -ne 0) {
       throw "execution smoke FAIL: link failed for $fixtureRel (exit=$linkExit)"
     }
@@ -695,7 +746,8 @@ try {
     }
 
     $runLog = Join-Path $caseDir "run.log"
-    $runExit = Invoke-LoggedCommand -Command $exePath -Arguments @() -LogPath $runLog
+    $runStep = Invoke-TimedLoggedCommand -StageKey "positive_run_seconds" -Command $exePath -Arguments @() -LogPath $runLog
+    $runExit = [int]$runStep.exit_code
     $expectedExit = [int]$expectation.expected_exit
     $passed = ($runExit -eq $expectedExit)
     if (-not $passed) {
@@ -721,13 +773,33 @@ try {
       run_exit = $runExit
       expected_exit = $expectedExit
       passed = $true
+      timing = [ordered]@{
+        compile_seconds = [double]$compileStep.duration_seconds
+        link_seconds = [double]$linkStep.duration_seconds
+        run_seconds = [double]$runStep.duration_seconds
+      }
       out_dir = Get-RepoRelativePath -Path $caseDir -Root $repoRoot
     }
+    $caseStopwatch.Stop()
+    $caseTiming = [ordered]@{
+      kind = "positive"
+      fixture = $fixtureRel
+      duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
+      compile_seconds = [double]$compileStep.duration_seconds
+      link_seconds = [double]$linkStep.duration_seconds
+      run_seconds = [double]$runStep.duration_seconds
+    }
+    $caseTimings += $caseTiming
+    $lastCompletedFixture = $fixtureRel
     Write-Output "[PASS] positive $fixtureRel (run_exit=$runExit)"
+    Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=positive fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $fixtureIndex, $totalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $suiteStopwatch.Elapsed.TotalSeconds)
   }
 
   foreach ($fixture in $selectedNegativeFixtures) {
+    $fixtureIndex += 1
+    $caseStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
     $fixtureRel = Get-RepoRelativePath -Path $fixture.FullName -Root $repoRoot
+    Write-Output ("execution-smoke-progress: [{0}/{1}] START kind=negative fixture={2} elapsed={3:n3}s last={4}" -f $fixtureIndex, $totalSelectedFixtures, $fixtureRel, $suiteStopwatch.Elapsed.TotalSeconds, $lastCompletedFixture)
     $spec = Get-NegativeExpectation -FixturePath $fixture.FullName
     $caseDirName = Get-CaseDirectoryName `
       -RunDir $runDir `
@@ -742,7 +814,8 @@ try {
     $runLog = Join-Path $caseDir "run.log"
     New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
 
-    $compileExit = Invoke-LoggedCommand -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
+    $compileStep = Invoke-TimedLoggedCommand -StageKey "negative_compile_seconds" -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
+    $compileExit = [int]$compileStep.exit_code
     $compileDiagPath = Join-Path $compileDir "module.diagnostics.txt"
     $compileText = if (Test-Path -LiteralPath $compileDiagPath -PathType Leaf) {
       Get-Content -LiteralPath $compileDiagPath -Raw
@@ -773,9 +846,27 @@ try {
         required_link_tokens = $spec.required_link_tokens
         missing_link_tokens = @()
         passed = $true
+        timing = [ordered]@{
+          compile_seconds = [double]$compileStep.duration_seconds
+          link_seconds = 0.0
+          run_seconds = 0.0
+        }
         out_dir = Get-RepoRelativePath -Path $caseDir -Root $repoRoot
       }
+      $caseStopwatch.Stop()
+      $caseTiming = [ordered]@{
+        kind = "negative"
+        fixture = $fixtureRel
+        stage = $spec.stage
+        duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
+        compile_seconds = [double]$compileStep.duration_seconds
+        link_seconds = 0.0
+        run_seconds = 0.0
+      }
+      $caseTimings += $caseTiming
+      $lastCompletedFixture = $fixtureRel
       Write-Output "[PASS] negative $fixtureRel (stage=compile compile_exit=$compileExit)"
+      Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=negative fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $fixtureIndex, $totalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $suiteStopwatch.Elapsed.TotalSeconds)
       continue
     }
 
@@ -802,7 +893,8 @@ try {
     $objPath = Resolve-NativeObjectPath -CompileDir $compileDir -FixtureRel $fixtureRel
     $linkArgs = @($objPath, "-o", $exePath, "-fno-color-diagnostics")
     if ($spec.stage -eq "link") {
-      $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
+      $linkStep = Invoke-TimedLoggedCommand -StageKey "negative_link_seconds" -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
+      $linkExit = [int]$linkStep.exit_code
       if ($linkExit -eq 0) {
         throw "execution smoke FAIL: expected link failure for negative fixture $fixtureRel"
       }
@@ -836,20 +928,40 @@ try {
         missing_link_tokens = @()
         link_diagnostics = Get-RepoRelativePath -Path $linkDiagnosticsPath -Root $repoRoot
         passed = $true
+        timing = [ordered]@{
+          compile_seconds = [double]$compileStep.duration_seconds
+          link_seconds = [double]$linkStep.duration_seconds
+          run_seconds = 0.0
+        }
         out_dir = Get-RepoRelativePath -Path $caseDir -Root $repoRoot
       }
+      $caseStopwatch.Stop()
+      $caseTiming = [ordered]@{
+        kind = "negative"
+        fixture = $fixtureRel
+        stage = $spec.stage
+        duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
+        compile_seconds = [double]$compileStep.duration_seconds
+        link_seconds = [double]$linkStep.duration_seconds
+        run_seconds = 0.0
+      }
+      $caseTimings += $caseTiming
+      $lastCompletedFixture = $fixtureRel
       Write-Output "[PASS] negative $fixtureRel (stage=link link_exit=$linkExit)"
+      Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=negative fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $fixtureIndex, $totalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $suiteStopwatch.Elapsed.TotalSeconds)
       continue
     }
 
     if ($spec.stage -eq "run") {
       $linkArgs = @($objPath, $runtimeLibrary.path) + @($launchContract.driver_linker_flags) + @("-o", $exePath, "-fno-color-diagnostics")
-      $linkExit = Invoke-LoggedCommand -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
+      $linkStep = Invoke-TimedLoggedCommand -StageKey "negative_link_seconds" -Command $clangCommand -Arguments $linkArgs -LogPath $linkLog
+      $linkExit = [int]$linkStep.exit_code
       if ($linkExit -ne 0) {
         throw "execution smoke FAIL: expected successful link for run-stage negative fixture $fixtureRel (exit=$linkExit)"
       }
 
-      $runExit = Invoke-LoggedCommand -Command $exePath -Arguments @() -LogPath $runLog
+      $runStep = Invoke-TimedLoggedCommand -StageKey "negative_run_seconds" -Command $exePath -Arguments @() -LogPath $runLog
+      $runExit = [int]$runStep.exit_code
       if ($runExit -eq 0) {
         throw "execution smoke FAIL: expected non-zero run exit for negative fixture $fixtureRel"
       }
@@ -877,9 +989,27 @@ try {
         required_link_tokens = $spec.required_link_tokens
         missing_link_tokens = @()
         passed = $true
+        timing = [ordered]@{
+          compile_seconds = [double]$compileStep.duration_seconds
+          link_seconds = [double]$linkStep.duration_seconds
+          run_seconds = [double]$runStep.duration_seconds
+        }
         out_dir = Get-RepoRelativePath -Path $caseDir -Root $repoRoot
       }
+      $caseStopwatch.Stop()
+      $caseTiming = [ordered]@{
+        kind = "negative"
+        fixture = $fixtureRel
+        stage = $spec.stage
+        duration_seconds = [math]::Round($caseStopwatch.Elapsed.TotalSeconds, 6)
+        compile_seconds = [double]$compileStep.duration_seconds
+        link_seconds = [double]$linkStep.duration_seconds
+        run_seconds = [double]$runStep.duration_seconds
+      }
+      $caseTimings += $caseTiming
+      $lastCompletedFixture = $fixtureRel
       Write-Output "[PASS] negative $fixtureRel (stage=run run_exit=$runExit)"
+      Write-Output ("execution-smoke-progress: [{0}/{1}] DONE kind=negative fixture={2} duration={3:n3}s elapsed={4:n3}s" -f $fixtureIndex, $totalSelectedFixtures, $fixtureRel, $caseTiming.duration_seconds, $suiteStopwatch.Elapsed.TotalSeconds)
       continue
     }
 
@@ -889,6 +1019,8 @@ try {
   $total = $results.Count
   $passedCount = @($results | Where-Object { $_.passed }).Count
   $failedCount = $total - $passedCount
+  $reportStopwatch = [System.Diagnostics.Stopwatch]::StartNew()
+  $slowestFixtures = @($caseTimings | Sort-Object -Property duration_seconds -Descending | Select-Object -First 10)
   $summary = [ordered]@{
     run_dir = Get-RepoRelativePath -Path $runDir -Root $repoRoot
     compile_command = if (Test-Path -LiteralPath $nativeExe -PathType Leaf) { Get-RepoRelativePath -Path $nativeExe -Root $repoRoot } else { $nativeExe }
@@ -912,8 +1044,18 @@ try {
     passed = $passedCount
     failed = $failedCount
     status = if ($failedCount -eq 0) { "PASS" } else { "FAIL" }
+    timing = [ordered]@{
+      elapsed_seconds = [math]::Round($suiteStopwatch.Elapsed.TotalSeconds, 6)
+      stage_totals = $script:stageTimings
+      slowest_fixtures = @($slowestFixtures)
+      fixture_timings = @($caseTimings)
+    }
     results = $results
   }
+  $reportStopwatch.Stop()
+  Add-StageDuration -StageKey "output_report_seconds" -DurationSeconds ([math]::Round($reportStopwatch.Elapsed.TotalSeconds, 6))
+  $summary.timing.stage_totals = $script:stageTimings
+  $summary.timing.elapsed_seconds = [math]::Round($suiteStopwatch.Elapsed.TotalSeconds, 6)
   $summary | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $summaryPath -Encoding utf8
   Write-Output "summary_path: $(Get-RepoRelativePath -Path $summaryPath -Root $repoRoot)"
   Write-Output "status: PASS"
