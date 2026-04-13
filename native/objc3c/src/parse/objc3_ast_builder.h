@@ -13,4 +13,6 @@ class Objc3AstBuilder {
   void AddInterfaceDecl(Objc3ParsedProgram &program, Objc3ParsedInterfaceDecl decl) const;
   void AddImplementationDecl(Objc3ParsedProgram &program, Objc3ParsedImplementationDecl decl) const;
   void AddFunctionDecl(Objc3ParsedProgram &program, Objc3ParsedFunctionDecl decl) const;
+  void SetDraftSyntaxSurfaceSummary(Objc3ParsedProgram &program,
+                                    Objc3DraftSyntaxSurfaceSummary summary) const;
 };

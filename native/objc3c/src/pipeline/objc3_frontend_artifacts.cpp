@@ -17446,6 +17446,14 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
            << pipeline_result.parser_contract_snapshot.function_prototype_count
            << ",\"function_pure\":"
            << pipeline_result.parser_contract_snapshot.function_pure_count
+           << ",\"draft_syntax_surface_count\":"
+           << pipeline_result.parser_contract_snapshot.draft_syntax_surface_count
+           << ",\"draft_syntax_surface_fingerprint\":"
+           << pipeline_result.parser_contract_snapshot.draft_syntax_surface_fingerprint
+           << ",\"draft_syntax_surface_handoff_key\":\""
+           << pipeline_result.parser_contract_snapshot.draft_syntax_surface_handoff_key
+           << "\",\"draft_syntax_surface_deterministic\":"
+           << (pipeline_result.parser_contract_snapshot.draft_syntax_surface_handoff_deterministic ? "true" : "false")
            << ",\"long_tail_grammar_constructs\":"
            << pipeline_result.parser_contract_snapshot.long_tail_grammar_construct_count
            << ",\"long_tail_grammar_covered_constructs\":"

@@ -1,0 +1,7 @@
+// Negative fixture: macro attributes require the canonical named("...") payload.
+// Expected diagnostic code(s): O3P341.
+module NegativeParserDraftSyntaxMacroPayload;
+
+pure fn traced() -> i32 __attribute__((objc_macro("Trace"))) {
+  return 1;
+}

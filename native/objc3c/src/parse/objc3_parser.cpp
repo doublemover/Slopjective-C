@@ -5481,6 +5481,8 @@ class Objc3Parser {
       }
     }
     FinalizeObjcProgramPropertyIvarLayoutClosure(program);
+    ast_builder_.SetDraftSyntaxSurfaceSummary(
+        program, BuildObjc3DraftSyntaxSurfaceSummary(program));
     return program;
   }
 
@@ -8705,6 +8707,213 @@ class Objc3Parser {
           implementation.property_synthesis_symbols_lexicographic,
           implementation.ivar_binding_symbols_lexicographic);
     }
+  }
+
+  void CountDraftSyntaxExpr(const Expr *expr,
+                            Objc3DraftSyntaxSurfaceSummary &summary) const {
+    if (expr == nullptr) {
+      return;
+    }
+    if (expr->kind == Expr::Kind::BlockLiteral) {
+      ++summary.block_literal_sites;
+      CountDraftSyntaxStatements(expr->block_body, summary);
+    }
+    if (expr->try_expression_enabled) {
+      ++summary.try_expression_sites;
+    }
+    if (expr->throw_statement_enabled) {
+      ++summary.throw_statement_sites;
+    }
+    if (expr->await_expression_enabled) {
+      ++summary.await_expression_sites;
+    }
+    CountDraftSyntaxExpr(expr->receiver.get(), summary);
+    CountDraftSyntaxExpr(expr->left.get(), summary);
+    CountDraftSyntaxExpr(expr->right.get(), summary);
+    CountDraftSyntaxExpr(expr->third.get(), summary);
+    for (const auto &arg : expr->args) {
+      CountDraftSyntaxExpr(arg.get(), summary);
+    }
+  }
+
+  void CountDraftSyntaxForClause(const ForClause &clause,
+                                 Objc3DraftSyntaxSurfaceSummary &summary) const {
+    CountDraftSyntaxExpr(clause.value.get(), summary);
+  }
+
+  void CountDraftSyntaxBlock(const BlockStmt *block,
+                             Objc3DraftSyntaxSurfaceSummary &summary) const {
+    if (block == nullptr) {
+      return;
+    }
+    if (block->is_do_catch_scope) {
+      ++summary.do_catch_sites;
+    }
+    CountDraftSyntaxStatements(block->body, summary);
+    for (const auto &clause : block->catch_clauses) {
+      CountDraftSyntaxStatements(clause.body, summary);
+    }
+  }
+
+  void CountDraftSyntaxStmt(const Stmt *stmt,
+                            Objc3DraftSyntaxSurfaceSummary &summary) const {
+    if (stmt == nullptr) {
+      return;
+    }
+    CountDraftSyntaxBlock(stmt->block_stmt.get(), summary);
+    if (stmt->let_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->let_stmt->value.get(), summary);
+    }
+    if (stmt->assign_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->assign_stmt->value.get(), summary);
+    }
+    if (stmt->return_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->return_stmt->value.get(), summary);
+    }
+    if (stmt->expr_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->expr_stmt->value.get(), summary);
+    }
+    if (stmt->if_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->if_stmt->condition.get(), summary);
+      CountDraftSyntaxStatements(stmt->if_stmt->then_body, summary);
+      CountDraftSyntaxStatements(stmt->if_stmt->else_body, summary);
+      for (const auto &condition : stmt->if_stmt->guard_condition_exprs) {
+        CountDraftSyntaxExpr(condition.get(), summary);
+      }
+    }
+    if (stmt->do_while_stmt != nullptr) {
+      CountDraftSyntaxStatements(stmt->do_while_stmt->body, summary);
+      CountDraftSyntaxExpr(stmt->do_while_stmt->condition.get(), summary);
+    }
+    if (stmt->for_stmt != nullptr) {
+      CountDraftSyntaxForClause(stmt->for_stmt->init, summary);
+      CountDraftSyntaxExpr(stmt->for_stmt->condition.get(), summary);
+      CountDraftSyntaxForClause(stmt->for_stmt->step, summary);
+      CountDraftSyntaxStatements(stmt->for_stmt->body, summary);
+    }
+    if (stmt->switch_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->switch_stmt->condition.get(), summary);
+      for (const auto &case_stmt : stmt->switch_stmt->cases) {
+        CountDraftSyntaxStatements(case_stmt.body, summary);
+      }
+    }
+    if (stmt->while_stmt != nullptr) {
+      CountDraftSyntaxExpr(stmt->while_stmt->condition.get(), summary);
+      CountDraftSyntaxStatements(stmt->while_stmt->body, summary);
+    }
+  }
+
+  void CountDraftSyntaxStatements(
+      const std::vector<std::unique_ptr<Stmt>> &statements,
+      Objc3DraftSyntaxSurfaceSummary &summary) const {
+    for (const auto &stmt : statements) {
+      CountDraftSyntaxStmt(stmt.get(), summary);
+    }
+  }
+
+  template <typename TCallableDecl>
+  void CountDraftSyntaxCallable(const TCallableDecl &decl,
+                                Objc3DraftSyntaxSurfaceSummary &summary) const {
+    if (decl.throws_declared) {
+      ++summary.throws_callable_sites;
+    }
+    if (decl.async_declared) {
+      ++summary.async_callable_sites;
+    }
+    if (decl.objc_macro_declared) {
+      ++summary.macro_attribute_sites;
+    }
+    if (decl.objc_macro_package_declared) {
+      ++summary.macro_package_sites;
+    }
+    if (decl.objc_macro_provenance_declared) {
+      ++summary.macro_provenance_sites;
+    }
+    if (decl.objc_foreign_declared || decl.objc_import_module_declared ||
+        decl.objc_swift_name_declared || decl.objc_swift_private_declared ||
+        decl.objc_cxx_name_declared || decl.objc_header_name_declared ||
+        decl.objc_nserror_declared || decl.objc_status_code_declared) {
+      ++summary.interop_attribute_sites;
+    }
+    CountDraftSyntaxStatements(decl.body, summary);
+  }
+
+  void CountDraftSyntaxProperties(
+      const std::vector<Objc3PropertyDecl> &properties,
+      Objc3DraftSyntaxSurfaceSummary &summary) const {
+    for (const auto &property : properties) {
+      if (property.property_behavior_declared) {
+        ++summary.property_behavior_sites;
+      }
+    }
+  }
+
+  std::string BuildObjc3DraftSyntaxSurfaceReplayKey(
+      const Objc3DraftSyntaxSurfaceSummary &summary) const {
+    std::ostringstream out;
+    out << "draft-syntax-surfaces:v1"
+        << ";blocks=" << summary.block_literal_sites
+        << ";try=" << summary.try_expression_sites
+        << ";throw=" << summary.throw_statement_sites
+        << ";do_catch=" << summary.do_catch_sites
+        << ";throws_callables=" << summary.throws_callable_sites
+        << ";async_callables=" << summary.async_callable_sites
+        << ";await=" << summary.await_expression_sites
+        << ";actors=" << summary.actor_interface_sites
+        << ";macro_attrs=" << summary.macro_attribute_sites
+        << ";macro_packages=" << summary.macro_package_sites
+        << ";macro_provenance=" << summary.macro_provenance_sites
+        << ";property_behaviors=" << summary.property_behavior_sites
+        << ";interop_attrs=" << summary.interop_attribute_sites
+        << ";total=" << summary.draft_syntax_surface_sites;
+    return out.str();
+  }
+
+  Objc3DraftSyntaxSurfaceSummary BuildObjc3DraftSyntaxSurfaceSummary(
+      const Objc3ParsedProgram &program) const {
+    Objc3DraftSyntaxSurfaceSummary summary;
+    const Objc3Program &ast = Objc3ParsedProgramAst(program);
+    for (const auto &global : ast.globals) {
+      CountDraftSyntaxExpr(global.value.get(), summary);
+    }
+    for (const auto &protocol_decl : ast.protocols) {
+      CountDraftSyntaxProperties(protocol_decl.properties, summary);
+      for (const auto &method : protocol_decl.methods) {
+        CountDraftSyntaxCallable(method, summary);
+      }
+    }
+    for (const auto &interface_decl : ast.interfaces) {
+      if (interface_decl.is_actor) {
+        ++summary.actor_interface_sites;
+      }
+      CountDraftSyntaxProperties(interface_decl.properties, summary);
+      for (const auto &method : interface_decl.methods) {
+        CountDraftSyntaxCallable(method, summary);
+      }
+    }
+    for (const auto &implementation_decl : ast.implementations) {
+      CountDraftSyntaxProperties(implementation_decl.properties, summary);
+      for (const auto &method : implementation_decl.methods) {
+        CountDraftSyntaxCallable(method, summary);
+      }
+    }
+    for (const auto &function : ast.functions) {
+      CountDraftSyntaxCallable(function, summary);
+    }
+    summary.draft_syntax_surface_sites =
+        summary.block_literal_sites + summary.try_expression_sites +
+        summary.throw_statement_sites + summary.do_catch_sites +
+        summary.throws_callable_sites + summary.async_callable_sites +
+        summary.await_expression_sites + summary.actor_interface_sites +
+        summary.macro_attribute_sites + summary.macro_package_sites +
+        summary.macro_provenance_sites + summary.property_behavior_sites +
+        summary.interop_attribute_sites;
+    summary.replay_key = BuildObjc3DraftSyntaxSurfaceReplayKey(summary);
+    summary.normalized =
+        !summary.replay_key.empty() &&
+        summary.draft_syntax_surface_sites >= summary.block_literal_sites &&
+        summary.draft_syntax_surface_sites >= summary.interop_attribute_sites;
+    return summary;
   }
 
   std::string BuildExecutablePropertyAttributeProfile(

@@ -38,6 +38,10 @@ struct Objc3ParserContractSnapshot {
   std::size_t implementation_category_decl_count = 0;
   std::size_t function_prototype_count = 0;
   std::size_t function_pure_count = 0;
+  std::size_t draft_syntax_surface_count = 0;
+  std::uint64_t draft_syntax_surface_fingerprint = 1469598103934665603ull;
+  std::string draft_syntax_surface_handoff_key;
+  bool draft_syntax_surface_handoff_deterministic = true;
   std::size_t long_tail_grammar_construct_count = 0;
   std::size_t long_tail_grammar_covered_construct_count = 0;
   std::uint64_t long_tail_grammar_fingerprint = 1469598103934665603ull;
@@ -87,6 +91,15 @@ inline std::uint64_t BuildObjc3ParsedProgramAstShapeFingerprint(const Objc3Parse
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.interfaces.size()));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.implementations.size()));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(ast.functions.size()));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(ast.draft_syntax_surface_summary.draft_syntax_surface_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      ast.draft_syntax_surface_summary.normalized ? 1ull : 0ull);
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      ast.draft_syntax_surface_summary.replay_key);
 
   for (const auto &global : ast.globals) {
     fingerprint = MixObjc3ParserContractFingerprintString(fingerprint, global.name);
@@ -250,9 +263,65 @@ inline std::uint64_t BuildObjc3LongTailGrammarFingerprint(const Objc3ParserContr
       static_cast<std::uint64_t>(snapshot.function_pure_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_shape_fingerprint);
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.ast_top_level_layout_fingerprint);
+  fingerprint = MixObjc3ParserContractFingerprint(fingerprint, snapshot.draft_syntax_surface_fingerprint);
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
       static_cast<std::uint64_t>(snapshot.parser_diagnostic_count));
+  return fingerprint;
+}
+
+inline std::uint64_t BuildObjc3DraftSyntaxSurfaceFingerprint(
+    const Objc3DraftSyntaxSurfaceSummary &summary) {
+  constexpr std::uint64_t kInitialFingerprint = 1469598103934665603ull;
+  std::uint64_t fingerprint = kInitialFingerprint;
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.block_literal_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.try_expression_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.throw_statement_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.do_catch_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.throws_callable_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.async_callable_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.await_expression_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.actor_interface_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.macro_attribute_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.macro_package_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.macro_provenance_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.property_behavior_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_attribute_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.draft_syntax_surface_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      summary.normalized ? 1ull : 0ull);
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      summary.replay_key);
   return fingerprint;
 }
 
@@ -322,6 +391,18 @@ inline std::uint64_t BuildObjc3ParserContractSnapshotFingerprint(const Objc3Pars
   fingerprint =
       MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_prototype_count));
   fingerprint = MixObjc3ParserContractFingerprint(fingerprint, static_cast<std::uint64_t>(snapshot.function_pure_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(snapshot.draft_syntax_surface_count));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      snapshot.draft_syntax_surface_fingerprint);
+  fingerprint = MixObjc3ParserContractFingerprintString(
+      fingerprint,
+      snapshot.draft_syntax_surface_handoff_key);
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      snapshot.draft_syntax_surface_handoff_deterministic ? 1ull : 0ull);
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
       static_cast<std::uint64_t>(snapshot.long_tail_grammar_construct_count));
@@ -407,6 +488,16 @@ inline Objc3ParserContractSnapshot BuildObjc3ParserContractSnapshot(
       ast.functions.begin(),
       ast.functions.end(),
       [](const FunctionDecl &function_decl) { return function_decl.is_pure; }));
+  snapshot.draft_syntax_surface_count =
+      ast.draft_syntax_surface_summary.draft_syntax_surface_sites;
+  snapshot.draft_syntax_surface_fingerprint =
+      BuildObjc3DraftSyntaxSurfaceFingerprint(ast.draft_syntax_surface_summary);
+  snapshot.draft_syntax_surface_handoff_key =
+      ast.draft_syntax_surface_summary.replay_key;
+  snapshot.draft_syntax_surface_handoff_deterministic =
+      ast.draft_syntax_surface_summary.normalized &&
+      snapshot.draft_syntax_surface_fingerprint != 0u &&
+      !snapshot.draft_syntax_surface_handoff_key.empty();
   snapshot.ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(program);
   snapshot.ast_top_level_layout_fingerprint = BuildObjc3ParsedProgramTopLevelLayoutFingerprint(program);
   snapshot.top_level_declaration_count = snapshot.global_decl_count + snapshot.protocol_decl_count +

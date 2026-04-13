@@ -27,3 +27,10 @@ void Objc3AstBuilder::AddImplementationDecl(Objc3ParsedProgram &program, Objc3Pa
 void Objc3AstBuilder::AddFunctionDecl(Objc3ParsedProgram &program, Objc3ParsedFunctionDecl decl) const {
   MutableObjc3ParsedProgramAst(program).functions.push_back(std::move(decl));
 }
+
+void Objc3AstBuilder::SetDraftSyntaxSurfaceSummary(
+    Objc3ParsedProgram &program,
+    Objc3DraftSyntaxSurfaceSummary summary) const {
+  MutableObjc3ParsedProgramAst(program).draft_syntax_surface_summary =
+      std::move(summary);
+}

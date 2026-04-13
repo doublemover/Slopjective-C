@@ -1,0 +1,72 @@
+module ParserDraftSyntaxSurfaces;
+
+__attribute__((objc_derive(named("Equatable"))))
+@interface SyntaxBox
+@property (strong, behavior=Observed, getter=currentValue, setter=setCurrentValue:) id value;
+- (i32)load async __attribute__((objc_executor(main)));
+@end
+
+actor class SyntaxActor
+@property (strong, behavior=Observed) id token;
+- (i32)hop async __attribute__((objc_executor(named("parser.actor"))));
+@end
+
+@implementation SyntaxBox
+@property (strong, behavior=Observed, getter=currentValue, setter=setCurrentValue:) id value;
+- (i32)load async __attribute__((objc_executor(main))) {
+  return await produce();
+}
+@end
+
+@implementation SyntaxActor
+@property (strong, behavior=Observed) id token;
+- (i32)hop async __attribute__((objc_executor(named("parser.actor")))) {
+  return await produce();
+}
+@end
+
+extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("ParserKit"))));
+extern fn bridgeStatus(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
+
+fn mapStatus(status: i32) -> NSError {
+  return status;
+}
+
+pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:abc123")))) {
+  return 3;
+}
+
+fn risky(value: i32) throws -> i32 {
+  if (value == 1) {
+    throw 7;
+  }
+  return value;
+}
+
+fn recover() throws -> i32 {
+  let direct = try risky(0);
+  do {
+    let bridged = try? bridgeStatus(1, 0);
+    return direct + bridged;
+  } catch (NSError* error) {
+    return error;
+  } catch {
+    return 0;
+  }
+}
+
+fn produce() -> i32 {
+  return 5;
+}
+
+async fn runTask() -> i32 __attribute__((objc_executor(main))) {
+  return await produce();
+}
+
+fn main() -> i32 {
+  let seed = traced();
+  let callback = ^(i32 value) {
+    return seed + value;
+  };
+  return seed + foreignEntry();
+}

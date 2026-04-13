@@ -1,0 +1,106 @@
+{
+  "checks": {
+    "artifact_manifest": {
+      "draft_syntax_surface_count": true,
+      "draft_syntax_surface_deterministic": true,
+      "draft_syntax_surface_fingerprint": true,
+      "draft_syntax_surface_handoff_key": true
+    },
+    "ast_builder": {
+      "header_declares_summary_setter": true,
+      "source_writes_summary_to_program": true
+    },
+    "ast_fields": {
+      "actor_interface_sites": true,
+      "async_callable_sites": true,
+      "await_expression_sites": true,
+      "block_literal_sites": true,
+      "do_catch_sites": true,
+      "draft_syntax_surface_sites": true,
+      "draft_syntax_surface_summary": true,
+      "interop_attribute_sites": true,
+      "macro_attribute_sites": true,
+      "macro_package_sites": true,
+      "macro_provenance_sites": true,
+      "property_behavior_sites": true,
+      "struct Objc3DraftSyntaxSurfaceSummary": true,
+      "throw_statement_sites": true,
+      "throws_callable_sites": true,
+      "try_expression_sites": true
+    },
+    "negative_fixture": {
+      "expects_o3p341": true,
+      "malformed_macro_payload": true,
+      "negative_fixture_exists": true
+    },
+    "parser_anchors": {
+      "BuildObjc3DraftSyntaxSurfaceReplayKey": true,
+      "BuildObjc3DraftSyntaxSurfaceSummary": true,
+      "CountDraftSyntaxCallable": true,
+      "CountDraftSyntaxExpr": true,
+      "ParseBlockLiteralExpression": true,
+      "ParseObjcActorInterfaceDecl": true,
+      "ParseOptionalAsyncClause": true,
+      "ParseOptionalThrowsClause": true,
+      "objc_import_module": true,
+      "objc_macro_package": true,
+      "objc_macro_provenance": true,
+      "objc_status_code": true,
+      "property_behavior_declared": true
+    },
+    "parser_contract": {
+      "BuildObjc3DraftSyntaxSurfaceFingerprint": true,
+      "draft_syntax_surface_count": true,
+      "draft_syntax_surface_fingerprint": true,
+      "draft_syntax_surface_handoff_deterministic": true,
+      "draft_syntax_surface_handoff_key": true
+    },
+    "positive_fixture": {
+      "actor class SyntaxActor": true,
+      "async fn runTask()": true,
+      "behavior=Observed": true,
+      "catch (NSError* error)": true,
+      "do {": true,
+      "fn risky(value: i32) throws -> i32": true,
+      "let bridged = try? bridgeStatus(1, 0);": true,
+      "let callback = ^(i32 value)": true,
+      "let direct = try risky(0);": true,
+      "objc_executor(named(\"parser.actor\"))": true,
+      "objc_foreign": true,
+      "objc_import_module(named(\"ParserKit\"))": true,
+      "objc_macro(named(\"Trace\"))": true,
+      "objc_macro_package(named(\"std.metaprogramming.trace\"))": true,
+      "objc_macro_provenance(named(\"sha256:abc123\"))": true,
+      "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)": true,
+      "return await produce();": true,
+      "throw 7;": true
+    },
+    "readme": {
+      "references_issue": true,
+      "references_negative_fixture": true,
+      "references_positive_fixture": true
+    }
+  },
+  "contract_id": "objc3c.parser.draft-syntax-surface.v1",
+  "issue": "#8011",
+  "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3",
+  "no_tmp_source_truth": true,
+  "positive_fixture": "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
+  "source_truth_paths": [
+    "native/objc3c/src/ast/objc3_ast.h",
+    "native/objc3c/src/parse/objc3_parser.cpp",
+    "native/objc3c/src/parse/objc3_ast_builder.h",
+    "native/objc3c/src/parse/objc3_ast_builder.cpp",
+    "native/objc3c/src/parse/objc3_parser_contract.h",
+    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3",
+    "tests/conformance/parser/README.md"
+  ],
+  "status": "PASS",
+  "validation_commands": [
+    "npm run test:objc3c:fixture-matrix",
+    "npm run test:objc3c:negative-expectations",
+    "npm run test:objc3c:execution-replay-proof"
+  ]
+}

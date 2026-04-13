@@ -75,3 +75,17 @@ These fixtures cover parser-owned container, property, and ivar layout closure:
 - `tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3`:
   rejects cyclic interface inheritance with `O3P150` before layout metadata is
   treated as claimable.
+
+## Objective-C 3.0 draft syntax surface fixture set (issue #8011)
+
+These fixtures cover parser-owned block/error/async/actor/macro/property
+behavior/interop syntax admission and deterministic replay accounting:
+
+- `tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3`:
+  accepts one aggregate public-workflow fixture spanning a bound block literal,
+  `throws`/`try`/`throw`/`do catch`, async/await executor annotations,
+  contextual `actor class`, macro package/provenance attributes,
+  `behavior=...` properties, and foreign/header interop annotations.
+- `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3`:
+  rejects malformed macro payload syntax with `O3P341` so macro admission stays
+  fail-closed and source-range stable.
