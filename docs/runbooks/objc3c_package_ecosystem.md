@@ -27,6 +27,7 @@ Canonical checked-in boundary surfaces:
 Replayable boundary inventory:
 
 - `python scripts/build_package_ecosystem_boundary_inventory_summary.py`
+- `python scripts/build_package_ecosystem_dependency_lock_policy_summary.py`
 
 ## Current Boundary
 
@@ -70,6 +71,26 @@ Not supported in this boundary:
 - system package manager publication
 - manual package manifests that bypass the public workflow runner
 - a second compiler payload, package layout, or install workflow
+
+## Dependency Resolution And Lock Policy
+
+The canonical dependency policy is checked in at:
+
+- `tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json`
+
+Resolution is intentionally local-first:
+
+- package roots are discovered from checked-in workspace and package surfaces
+- package identities are canonical module ids plus source paths, not hosted
+  registry slugs
+- locks capture provenance, digest inputs, selected version/source identity, and
+  replay command intent
+- dependency resolution fails closed when a dependency is missing, ambiguous,
+  unpinned, provenance-free, or outside the allowed local/mirror roots
+
+The initial lock model does not claim network fetching. Registry names may appear
+only as generated metadata layered over local package artifacts until later
+evidence proves hosted behavior.
 
 ## Successor Pressure
 

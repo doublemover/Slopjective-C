@@ -1,0 +1,88 @@
+{
+  "contract_id": "objc3c.package_ecosystem.dependency_lock_policy.v1",
+  "surface_kind": "package-ecosystem-dependency-lock-policy",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "boundary_inventory": "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+  "source_package_surfaces": [
+    "stdlib/package_surface.json",
+    "stdlib/advanced_helper_package_surface.json",
+    "stdlib/program_surface.json",
+    "showcase/portfolio.json",
+    "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json"
+  ],
+  "resolver_stages": [
+    {
+      "stage_id": "discover-local-package-roots",
+      "input": "checked-in workspace and package surfaces",
+      "output": "canonical package root inventory",
+      "failure_mode": "missing or duplicate package roots fail resolution"
+    },
+    {
+      "stage_id": "normalize-dependency-identity",
+      "input": "canonical module ids, implementation module aliases, and workspace source paths",
+      "output": "stable local package identity",
+      "failure_mode": "unmapped aliases or ambiguous ids fail resolution"
+    },
+    {
+      "stage_id": "capture-provenance",
+      "input": "checked-in source paths and generator command surfaces",
+      "output": "provenance envelope with source path, generator, and replay command",
+      "failure_mode": "dependency edges without provenance are not lockable"
+    },
+    {
+      "stage_id": "write-deterministic-lock",
+      "input": "resolved package inventory and provenance envelope",
+      "output": "machine-owned lock artifact under tmp/artifacts/package-ecosystem",
+      "failure_mode": "unstable ordering, missing digest inputs, or unpinned refs fail the lock"
+    },
+    {
+      "stage_id": "replay-locked-workflow",
+      "input": "lock artifact plus public workflow commands",
+      "output": "reproducibility report under tmp/reports/package-ecosystem",
+      "failure_mode": "a lock that cannot replay through the public runner is unsupported"
+    }
+  ],
+  "lock_required_fields": [
+    "contract_id",
+    "lockfile_version",
+    "workspace",
+    "packages",
+    "dependencies",
+    "provenance",
+    "digest_inputs",
+    "replay"
+  ],
+  "allowed_dependency_sources": [
+    "checked-in-local-workspace",
+    "generated-local-package-artifact",
+    "offline-mirror-artifact"
+  ],
+  "forbidden_dependency_sources": [
+    "implicit-network-fetch",
+    "unpinned-hosted-registry-reference",
+    "manual-sidecar-manifest",
+    "tmp-only-source-of-truth"
+  ],
+  "required_public_scripts": [
+    "build:objc3c:stdlib",
+    "build:objc3c:application-workspace",
+    "package:objc3c-native:runnable-toolchain",
+    "test:stdlib:program",
+    "test:stdlib:program:e2e",
+    "test:objc3c:application-architecture",
+    "test:objc3c:application-architecture:e2e"
+  ],
+  "claim_rules": [
+    "dependency resolution starts from checked-in local package surfaces",
+    "lockfiles must be deterministic and provenance-bearing before registry publication can be claimed",
+    "network-backed dependency resolution is unsupported until represented by replayable evidence",
+    "tmp outputs may contain generated locks and reports but may not become source authority"
+  ],
+  "release_blocking_conditions": [
+    "missing dependency provenance",
+    "ambiguous package identity",
+    "unstable lock ordering or digest input set",
+    "public workflow replay failure",
+    "registry claim without local package evidence"
+  ]
+}
