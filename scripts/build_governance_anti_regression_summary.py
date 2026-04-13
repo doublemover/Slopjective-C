@@ -67,7 +67,7 @@ def main() -> int:
     tracked_metrics = list(contract.get("tracked_metrics", []))
     current_metrics = {metric_id: metric_value(metric_id, inventory, enforcement) for metric_id in tracked_metrics}
     current_snapshot = {
-        "snapshot_id": f"m318-d002-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
+        "snapshot_id": f"governance-sustainability-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
         "metrics": current_metrics,
         "inventory_ok": bool(inventory.get("ok", False)),

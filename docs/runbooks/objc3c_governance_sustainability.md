@@ -77,7 +77,21 @@ Machine-owned governance schema surface:
 - `tests/tooling/fixtures/governance_sustainability/schema_surface.json`
 - `schemas/objc3c-governance-budget-summary-v1.schema.json`
 - `schemas/objc3c-governance-anti-regression-summary-v1.schema.json`
+- `schemas/objc3c-governance-sustainability-evidence-v1.schema.json`
 - `python scripts/check_governance_sustainability_schema_surface.py`
+
+Machine-owned governance artifact contract:
+
+- `tests/tooling/fixtures/governance_sustainability/artifact_contract.json`
+- `python scripts/build_governance_artifact_contract_summary.py`
+- canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
+- canonical publication artifacts:
+  - `tmp/artifacts/governance-sustainability/stewardship-publication.json`
+  - `tmp/artifacts/governance-sustainability/extension-review-publication.json`
+
+The checked-in contracts under `tests/tooling/fixtures/governance_sustainability/`
+are the source of truth. Files under `tmp/reports/` and `tmp/artifacts/` are
+replayable outputs only and must never become implementation inputs.
 
 Replayable governance enforcement:
 
@@ -131,3 +145,4 @@ Generated evidence:
 
 - `tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json`
 - `tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json`
+- `tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json`

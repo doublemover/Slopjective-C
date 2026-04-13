@@ -3,5 +3,6 @@
   "schema_version": 1,
   "schema_check_script": "scripts/check_governance_sustainability_schema_surface.py",
   "budget_summary_schema": "schemas/objc3c-governance-budget-summary-v1.schema.json",
-  "anti_regression_summary_schema": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json"
+  "anti_regression_summary_schema": "schemas/objc3c-governance-anti-regression-summary-v1.schema.json",
+  "governance_evidence_schema": "schemas/objc3c-governance-sustainability-evidence-v1.schema.json"
 }

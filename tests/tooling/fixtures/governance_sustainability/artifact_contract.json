@@ -1,0 +1,57 @@
+{
+  "contract_id": "objc3c.governance.sustainability.artifact_contract.v1",
+  "schema_version": 1,
+  "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+  "summary_script": "scripts/build_governance_artifact_contract_summary.py",
+  "evidence_schema": "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
+  "evidence_artifact": "tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json",
+  "publication_artifacts": [
+    "tmp/artifacts/governance-sustainability/stewardship-publication.json",
+    "tmp/artifacts/governance-sustainability/extension-review-publication.json"
+  ],
+  "source_contracts": [
+    "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+    "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
+    "tests/tooling/fixtures/governance_sustainability/maintainer_review_regression_contract.json",
+    "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+    "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
+    "tests/tooling/fixtures/governance_sustainability/schema_surface.json",
+    "tests/tooling/fixtures/governance_sustainability/anti_regression_reporting_contract.json"
+  ],
+  "generated_reports": [
+    "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
+    "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
+    "tmp/reports/governance-sustainability/maintainer-review/governance_maintainer_review_summary.json",
+    "tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json",
+    "tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json",
+    "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
+    "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
+    "tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json",
+    "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json"
+  ],
+  "required_generation_scripts": [
+    "scripts/build_governance_budget_inventory_summary.py",
+    "scripts/build_governance_policy_summary.py",
+    "scripts/build_governance_maintainer_review_summary.py",
+    "scripts/build_governance_extension_review_policy_summary.py",
+    "scripts/build_governance_stewardship_semantics_summary.py",
+    "scripts/check_governance_sustainability_schema_surface.py",
+    "scripts/check_governance_sustainability_budget_enforcement.py",
+    "scripts/build_governance_anti_regression_summary.py",
+    "scripts/build_governance_artifact_contract_summary.py"
+  ],
+  "publication_rules": [
+    "checked-in contracts are the source of truth",
+    "tmp reports and artifacts are replayable outputs only",
+    "GitHub milestone numbers must come from the GitHub API at publish time",
+    "public claims must point to generated evidence artifacts and stay narrower than passing evidence"
+  ],
+  "fail_closed_conditions": [
+    "missing checked-in source contract",
+    "missing generation script for a generated report",
+    "schema surface omits the governance evidence schema",
+    "publication artifact has no replayable producer",
+    "runtime evidence depends on tmp as source of truth"
+  ]
+}

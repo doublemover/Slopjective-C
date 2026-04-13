@@ -52,18 +52,24 @@ def main() -> int:
 
     budget_schema = surface.get("budget_summary_schema")
     anti_regression_schema = surface.get("anti_regression_summary_schema")
+    evidence_schema = surface.get("governance_evidence_schema")
     if budget_schema != "schemas/objc3c-governance-budget-summary-v1.schema.json":
         return fail("budget_summary_schema drifted")
     if anti_regression_schema != "schemas/objc3c-governance-anti-regression-summary-v1.schema.json":
         return fail("anti_regression_summary_schema drifted")
+    if evidence_schema != "schemas/objc3c-governance-sustainability-evidence-v1.schema.json":
+        return fail("governance_evidence_schema drifted")
 
     budget_payload = load_json(require_path(budget_schema, kind="budget summary schema"))
     anti_regression_payload = load_json(require_path(anti_regression_schema, kind="anti-regression summary schema"))
+    evidence_payload = load_json(require_path(evidence_schema, kind="governance evidence schema"))
 
     if budget_payload.get("properties", {}).get("contract_id", {}).get("const") != "objc3c.governance.sustainability.budget.summary.v1":
         return fail("budget summary schema contract identity drifted")
     if anti_regression_payload.get("properties", {}).get("contract_id", {}).get("const") != "objc3c.governance.sustainability.anti_regression.summary.v1":
         return fail("anti-regression summary schema contract identity drifted")
+    if evidence_payload.get("properties", {}).get("contract_id", {}).get("const") != "objc3c.governance.sustainability.evidence.v1":
+        return fail("governance evidence schema contract identity drifted")
 
     summary = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -71,7 +77,8 @@ def main() -> int:
         "status": "PASS",
         "schema_surface_contract": repo_rel(SCHEMA_SURFACE),
         "budget_summary_schema": budget_schema,
-        "anti_regression_summary_schema": anti_regression_schema
+        "anti_regression_summary_schema": anti_regression_schema,
+        "governance_evidence_schema": evidence_schema
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

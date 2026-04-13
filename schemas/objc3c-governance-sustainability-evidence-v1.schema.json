@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "generated_at_utc",
+    "status",
+    "artifact_contract",
+    "source_contracts",
+    "generated_reports",
+    "publication_artifacts",
+    "failures"
+  ],
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.governance.sustainability.evidence.v1"
+    },
+    "generated_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "PASS",
+        "FAIL"
+      ]
+    },
+    "artifact_contract": {
+      "type": "string"
+    },
+    "source_contracts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generated_reports": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "publication_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": true
+}
