@@ -510,6 +510,9 @@ class RuntimeAcceptanceProgress:
         self.case_timings: list[dict[str, Any]] = []
         self.command_timings: list[dict[str, Any]] = []
         self._command_sequence = 0
+        self.progress_write_count = 0
+        self.progress_write_seconds = 0.0
+        self.progress_write_max_seconds = 0.0
 
     def elapsed_seconds(self) -> float:
         return round_seconds(perf_counter() - self.started_at)
@@ -532,6 +535,23 @@ class RuntimeAcceptanceProgress:
             "last_completed_case": self.last_completed_case,
             "case_timings": self.case_timings,
             "command_timings": self.command_timings,
+            "progress_report_write_overhead": {
+                "contract_id": "objc3c.runtime.acceptance.progress.write.overhead.v1",
+                "write_count": self.progress_write_count,
+                "total_seconds": round_seconds(self.progress_write_seconds),
+                "max_seconds": round_seconds(self.progress_write_max_seconds),
+                "overhead_percent_of_elapsed": round_seconds(
+                    (
+                        self.progress_write_seconds
+                        / max(perf_counter() - self.started_at, 0.000001)
+                    )
+                    * 100.0
+                ),
+                "model": (
+                    "console progress stays immediate; progress.json remains the "
+                    "durable current-state snapshot while report-write overhead is measured"
+                ),
+            },
             "slowest_cases": sorted(
                 self.case_timings,
                 key=lambda entry: float(entry.get("duration_seconds", 0.0)),
@@ -546,9 +566,17 @@ class RuntimeAcceptanceProgress:
 
     def write_progress(self) -> None:
         self.progress_path.parent.mkdir(parents=True, exist_ok=True)
+        started_at = perf_counter()
         self.progress_path.write_text(
             json.dumps(self.snapshot(), indent=2) + "\n",
             encoding="utf-8",
+        )
+        duration = perf_counter() - started_at
+        self.progress_write_count += 1
+        self.progress_write_seconds += duration
+        self.progress_write_max_seconds = max(
+            self.progress_write_max_seconds,
+            duration,
         )
 
     def start_case(self, *, index: int, label: str) -> float:
