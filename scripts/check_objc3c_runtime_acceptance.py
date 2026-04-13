@@ -5015,6 +5015,16 @@ def compile_fixture_outputs_with_args(
     return obj_path, ll_path, manifest_path
 
 
+@dataclass(frozen=True)
+class NegativeDiagnosticExpectation:
+    key: str
+    fixture: Path
+    expected_snippets: list[str]
+    expected_codes: list[str]
+    extra_args: list[str] | None = None
+    allow_missing_structured_diagnostics: bool = False
+
+
 def compile_fixture_expect_failure(
     fixture: Path,
     out_dir: Path,
@@ -5074,6 +5084,53 @@ def compile_fixture_expect_failure(
         "diagnostic_codes": sorted(observed_codes),
         "stderr": result.stderr,
         "diagnostics_path": str(diagnostics_json_path.relative_to(ROOT)).replace("\\", "/"),
+    }
+
+
+def compile_negative_diagnostic_batch(
+    *,
+    case_id: str,
+    out_dir: Path,
+    expectations: list[NegativeDiagnosticExpectation],
+) -> dict[str, Any]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+    started_at = perf_counter()
+    results: list[dict[str, Any]] = []
+    for expectation in expectations:
+        fixture_started_at = perf_counter()
+        negative_result = compile_fixture_expect_failure(
+            expectation.fixture,
+            out_dir / expectation.key,
+            expected_snippets=expectation.expected_snippets,
+            expected_codes=expectation.expected_codes,
+            extra_args=expectation.extra_args,
+            allow_missing_structured_diagnostics=(
+                expectation.allow_missing_structured_diagnostics
+            ),
+        )
+        results.append(
+            {
+                "key": expectation.key,
+                "fixture": repo_display_path(expectation.fixture),
+                "expected_codes": list(expectation.expected_codes),
+                "diagnostic_codes": negative_result["diagnostic_codes"],
+                "diagnostic_count": negative_result["diagnostic_count"],
+                "diagnostics": negative_result["diagnostics_path"],
+                "returncode": negative_result["returncode"],
+                "duration_seconds": round_seconds(perf_counter() - fixture_started_at),
+            }
+        )
+    return {
+        "contract_id": "objc3c.runtime.acceptance.negative.diagnostics.batch.v1",
+        "case_id": case_id,
+        "batch_out_dir": repo_display_path(out_dir),
+        "fixture_count": len(results),
+        "total_seconds": round_seconds(perf_counter() - started_at),
+        "results": results,
+        "preserves_per_fixture_expected_diagnostic_codes": True,
+        "preserves_per_fixture_expected_diagnostic_snippets": True,
+        "fail_closed_on_unexpected_success": True,
+        "fail_closed_on_missing_structured_diagnostics": True,
     }
 
 
@@ -10107,19 +10164,28 @@ def check_metaprogramming_macro_safety_cache_diagnostics_case(
             "not sandbox-admitted",
         ),
     }
-    negative_summary: dict[str, Any] = {}
-    for negative_key, (fixture_path, expected_code, expected_message) in negative_fixtures.items():
-        negative_result = compile_fixture_expect_failure(
-            fixture_path,
-            case_dir / negative_key / "compile",
-            expected_snippets=[expected_message],
-            expected_codes=[expected_code],
-        )
-        negative_summary[negative_key] = {
-            "fixture": str(fixture_path.relative_to(ROOT)).replace("\\", "/"),
-            "diagnostics": negative_result.get("diagnostics_path"),
-            "expected_code": expected_code,
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="metaprogramming-macro-safety-cache-diagnostics",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key=negative_key,
+                fixture=fixture_path,
+                expected_snippets=[expected_message],
+                expected_codes=[expected_code],
+            )
+            for negative_key, (fixture_path, expected_code, expected_message) in negative_fixtures.items()
+        ],
+    )
+    negative_summary = {
+        entry["key"]: {
+            "fixture": entry["fixture"],
+            "diagnostics": entry["diagnostics"],
+            "expected_code": entry["expected_codes"][0],
+            "duration_seconds": entry["duration_seconds"],
         }
+        for entry in negative_batch["results"]
+    }
 
     return CaseResult(
         case_id="metaprogramming-macro-safety-cache-diagnostics",
@@ -10142,6 +10208,7 @@ def check_metaprogramming_macro_safety_cache_diagnostics_case(
                 ),
             },
             "negative_cases": negative_summary,
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -12346,23 +12413,27 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
             ["O3S269"],
         ),
     ]
-    negative_summaries: list[dict[str, Any]] = []
-    for fixture_name, expected_snippets, expected_codes in negatives:
-        negative_fixture = (
-            ROOT / "tests" / "tooling" / "fixtures" / "native" / fixture_name
-        )
-        negative_summary = compile_fixture_expect_failure(
-            negative_fixture,
-            case_dir / negative_fixture.stem,
-            expected_snippets=expected_snippets,
-            expected_codes=expected_codes,
-        )
-        negative_summaries.append(
-            {
-                "fixture": str(negative_fixture.relative_to(ROOT)).replace("\\", "/"),
-                "diagnostic_codes": negative_summary["diagnostic_codes"],
-            }
-        )
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="executable-try-throw-do-catch-semantics",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key=Path(fixture_name).stem,
+                fixture=ROOT / "tests" / "tooling" / "fixtures" / "native" / fixture_name,
+                expected_snippets=expected_snippets,
+                expected_codes=expected_codes,
+            )
+            for fixture_name, expected_snippets, expected_codes in negatives
+        ],
+    )
+    negative_summaries = [
+        {
+            "fixture": entry["fixture"],
+            "diagnostic_codes": entry["diagnostic_codes"],
+            "duration_seconds": entry["duration_seconds"],
+        }
+        for entry in negative_batch["results"]
+    ]
 
     native_fail_closed_fixture = (
         ROOT
@@ -12411,6 +12482,7 @@ def check_executable_try_throw_do_catch_semantics_case(run_dir: Path) -> CaseRes
                 ),
             },
             "negative_fixtures": negative_summaries,
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -12538,23 +12610,27 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
             ["O3S281"],
         ),
     ]
-    negative_summaries: list[dict[str, Any]] = []
-    for fixture_name, expected_snippets, expected_codes in negatives:
-        negative_fixture = (
-            ROOT / "tests" / "tooling" / "fixtures" / "native" / fixture_name
-        )
-        negative_summary = compile_fixture_expect_failure(
-            negative_fixture,
-            case_dir / negative_fixture.stem,
-            expected_snippets=expected_snippets,
-            expected_codes=expected_codes,
-        )
-        negative_summaries.append(
-            {
-                "fixture": str(negative_fixture.relative_to(ROOT)).replace("\\", "/"),
-                "diagnostic_codes": negative_summary["diagnostic_codes"],
-            }
-        )
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="bridging-filter-unwind-compatibility-diagnostics",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key=Path(fixture_name).stem,
+                fixture=ROOT / "tests" / "tooling" / "fixtures" / "native" / fixture_name,
+                expected_snippets=expected_snippets,
+                expected_codes=expected_codes,
+            )
+            for fixture_name, expected_snippets, expected_codes in negatives
+        ],
+    )
+    negative_summaries = [
+        {
+            "fixture": entry["fixture"],
+            "diagnostic_codes": entry["diagnostic_codes"],
+            "duration_seconds": entry["duration_seconds"],
+        }
+        for entry in negative_batch["results"]
+    ]
 
     return CaseResult(
         case_id="bridging-filter-unwind-compatibility-diagnostics",
@@ -12574,6 +12650,7 @@ def check_bridging_filter_unwind_compatibility_diagnostics_case(
                 ),
             },
             "negative_fixtures": negative_summaries,
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -15332,30 +15409,38 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
         .get("objc_block_copy_dispose_lowering_surface", {})
     )
 
-    bad_call_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "capture_legality_escape_invocation_bad_call.objc3",
-        case_dir / "bad-call-negative",
-        expected_snippets=[
-            "type mismatch: expected 'i32' argument for parameter 0 of callable 'closure', got 'bool'"
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="escaping-block-capture-legality",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key="bad-call-negative",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "capture_legality_escape_invocation_bad_call.objc3",
+                expected_snippets=[
+                    "type mismatch: expected 'i32' argument for parameter 0 of callable 'closure', got 'bool'"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="missing-capture-negative",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "capture_legality_escape_invocation_missing_capture.objc3",
+                expected_snippets=["undefined capture 'seed' in block literal"],
+                expected_codes=["O3S202"],
+            ),
         ],
-        expected_codes=["O3S206"],
     )
-    missing_capture_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "capture_legality_escape_invocation_missing_capture.objc3",
-        case_dir / "missing-capture-negative",
-        expected_snippets=["undefined capture 'seed' in block literal"],
-        expected_codes=["O3S202"],
-    )
+    bad_call_negative = negative_batch["results"][0]
+    missing_capture_negative = negative_batch["results"][1]
     byref_escape_fixture = (
         ROOT
         / "tests"
@@ -15479,6 +15564,7 @@ def check_escaping_block_capture_legality_case(run_dir: Path) -> CaseResult:
             "owned_copy_helper_required_sites": (
                 owned_escape_copy_dispose_surface.get("copy_helper_required_sites")
             ),
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -15661,32 +15747,40 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
         "frontend", {}
     ).get("pipeline", {}).get("sema_pass_manager", {})
 
-    weak_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "weak_object_capture_mutation_negative.objc3",
-        case_dir / "weak-mutation-negative",
-        expected_snippets=[
-            "type mismatch: block mutated capture 'weakValue' requires owned runtime-backed storage"
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="block-storage-arc-automation-semantics",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key="weak-mutation-negative",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "weak_object_capture_mutation_negative.objc3",
+                expected_snippets=[
+                    "type mismatch: block mutated capture 'weakValue' requires owned runtime-backed storage"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="unowned-mutation-negative",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "unowned_object_capture_mutation_negative.objc3",
+                expected_snippets=[
+                    "type mismatch: block mutated capture 'borrowedValue' requires owned runtime-backed storage"
+                ],
+                expected_codes=["O3S206"],
+            ),
         ],
-        expected_codes=["O3S206"],
     )
-    unowned_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "unowned_object_capture_mutation_negative.objc3",
-        case_dir / "unowned-mutation-negative",
-        expected_snippets=[
-            "type mismatch: block mutated capture 'borrowedValue' requires owned runtime-backed storage"
-        ],
-        expected_codes=["O3S206"],
-    )
+    weak_negative = negative_batch["results"][0]
+    unowned_negative = negative_batch["results"][1]
 
     expect(
         owned_manifest.get("runtime_block_arc_unified_source_surface", {}).get(
@@ -15882,6 +15976,7 @@ def check_block_storage_arc_automation_semantics_case(run_dir: Path) -> CaseResu
             ),
             "weak_negative_diagnostic_count": weak_negative["diagnostic_count"],
             "unowned_negative_diagnostic_count": unowned_negative["diagnostic_count"],
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -16860,97 +16955,106 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
             f"expected storage legality positive fixture to publish {label} in LLVM IR",
         )
 
-    atomic_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "property_atomic_ownership_negative.objc3",
-        case_dir / "negative-atomic-ownership",
-        expected_snippets=[
-            "atomic ownership-aware property 'value' in interface 'Widget' is unsupported until executable accessor storage semantics land"
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="storage-legality-semantics",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key="negative-atomic-ownership",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "property_atomic_ownership_negative.objc3",
+                expected_snippets=[
+                    "atomic ownership-aware property 'value' in interface 'Widget' is unsupported until executable accessor storage semantics land"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="negative-weak-mismatch",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
+                expected_snippets=[
+                    "property ownership qualifier '__weak' conflicts with @property ownership modifier 'assign'"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="negative-unowned-mismatch",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "runtime_backed_storage_ownership_unowned_mismatch_negative.objc3",
+                expected_snippets=[
+                    "property ownership qualifier '__unsafe_unretained' conflicts with @property ownership modifier 'unowned'"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="negative-scalar-ownership",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "property_scalar_ownership_negative.objc3",
+                expected_snippets=[
+                    "@property ownership modifier 'strong' requires an Objective-C object property"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="negative-duplicate-getter",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "accessor_duplicate_getter_negative.objc3",
+                expected_snippets=[
+                    "duplicate effective getter selector 'value' for properties 'token' and 'alias'"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="negative-duplicate-setter",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "accessor_duplicate_setter_negative.objc3",
+                expected_snippets=[
+                    "duplicate effective setter selector 'setValue:' for properties 'token' and 'alias'"
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="negative-readonly-setter",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "property_readonly_setter_negative.objc3",
+                expected_snippets=[
+                    "readonly property 'value' in interface 'Widget' must not declare a setter modifier"
+                ],
+                expected_codes=["O3S206"],
+            ),
         ],
-        expected_codes=["O3S206"],
     )
-    weak_mismatch_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "runtime_backed_storage_ownership_weak_mismatch_negative.objc3",
-        case_dir / "negative-weak-mismatch",
-        expected_snippets=[
-            "property ownership qualifier '__weak' conflicts with @property ownership modifier 'assign'"
-        ],
-        expected_codes=["O3S206"],
-    )
-    unowned_mismatch_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "runtime_backed_storage_ownership_unowned_mismatch_negative.objc3",
-        case_dir / "negative-unowned-mismatch",
-        expected_snippets=[
-            "property ownership qualifier '__unsafe_unretained' conflicts with @property ownership modifier 'unowned'"
-        ],
-        expected_codes=["O3S206"],
-    )
-    scalar_ownership_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "property_scalar_ownership_negative.objc3",
-        case_dir / "negative-scalar-ownership",
-        expected_snippets=[
-            "@property ownership modifier 'strong' requires an Objective-C object property"
-        ],
-        expected_codes=["O3S206"],
-    )
-    duplicate_getter_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "accessor_duplicate_getter_negative.objc3",
-        case_dir / "negative-duplicate-getter",
-        expected_snippets=[
-            "duplicate effective getter selector 'value' for properties 'token' and 'alias'"
-        ],
-        expected_codes=["O3S206"],
-    )
-    duplicate_setter_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "accessor_duplicate_setter_negative.objc3",
-        case_dir / "negative-duplicate-setter",
-        expected_snippets=[
-            "duplicate effective setter selector 'setValue:' for properties 'token' and 'alias'"
-        ],
-        expected_codes=["O3S206"],
-    )
-    readonly_setter_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "property_readonly_setter_negative.objc3",
-        case_dir / "negative-readonly-setter",
-        expected_snippets=[
-            "readonly property 'value' in interface 'Widget' must not declare a setter modifier"
-        ],
-        expected_codes=["O3S206"],
-    )
+    storage_negative_results = {
+        str(entry["key"]): entry for entry in negative_batch["results"]
+    }
 
     return CaseResult(
         case_id="storage-legality-semantics",
@@ -16967,21 +17071,34 @@ def check_storage_legality_semantics_case(run_dir: Path) -> CaseResult:
             "runtime_export_property_attribute_contract_violations": sema_pass_manager_manifest.get(
                 "runtime_export_property_attribute_contract_violations"
             ),
-            "atomic_negative_diagnostic_count": atomic_negative["diagnostic_count"],
-            "weak_mismatch_diagnostic_count": weak_mismatch_negative["diagnostic_count"],
-            "unowned_mismatch_diagnostic_count": unowned_mismatch_negative["diagnostic_count"],
-            "scalar_ownership_negative_diagnostic_count": scalar_ownership_negative[
+            "atomic_negative_diagnostic_count": storage_negative_results[
+                "negative-atomic-ownership"
+            ]["diagnostic_count"],
+            "weak_mismatch_diagnostic_count": storage_negative_results[
+                "negative-weak-mismatch"
+            ]["diagnostic_count"],
+            "unowned_mismatch_diagnostic_count": storage_negative_results[
+                "negative-unowned-mismatch"
+            ]["diagnostic_count"],
+            "scalar_ownership_negative_diagnostic_count": storage_negative_results[
+                "negative-scalar-ownership"
+            ]["diagnostic_count"],
+            "duplicate_getter_negative_diagnostic_count": storage_negative_results[
+                "negative-duplicate-getter"
+            ][
                 "diagnostic_count"
             ],
-            "duplicate_getter_negative_diagnostic_count": duplicate_getter_negative[
+            "duplicate_setter_negative_diagnostic_count": storage_negative_results[
+                "negative-duplicate-setter"
+            ][
                 "diagnostic_count"
             ],
-            "duplicate_setter_negative_diagnostic_count": duplicate_setter_negative[
+            "readonly_setter_negative_diagnostic_count": storage_negative_results[
+                "negative-readonly-setter"
+            ][
                 "diagnostic_count"
             ],
-            "readonly_setter_negative_diagnostic_count": readonly_setter_negative[
-                "diagnostic_count"
-            ],
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -17146,45 +17263,52 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
     run_dir: Path,
 ) -> CaseResult:
     case_dir = run_dir / "property-reflection-accessor-compatibility-diagnostics"
-    getter_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "property_accessor_selector_compatibility_negative.objc3",
-        case_dir / "accessor-selector-mismatch",
-        expected_snippets=[
-            "type mismatch: effective getter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id="property-reflection-accessor-compatibility-diagnostics",
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key="accessor-selector-mismatch",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "property_accessor_selector_compatibility_negative.objc3",
+                expected_snippets=[
+                    "type mismatch: effective getter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="setter-selector-mismatch",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "property_setter_selector_compatibility_negative.objc3",
+                expected_snippets=[
+                    "type mismatch: effective setter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+                ],
+                expected_codes=["O3S206"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="reflection-attribute-mismatch",
+                fixture=ROOT
+                / "tests"
+                / "tooling"
+                / "fixtures"
+                / "native"
+                / "property_reflection_attribute_compatibility_negative.objc3",
+                expected_snippets=[
+                    "type mismatch: reflected property attribute and ownership profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
+                ],
+                expected_codes=["O3S206"],
+            ),
         ],
-        expected_codes=["O3S206"],
     )
-    setter_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "property_setter_selector_compatibility_negative.objc3",
-        case_dir / "setter-selector-mismatch",
-        expected_snippets=[
-            "type mismatch: effective setter selector profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
-        ],
-        expected_codes=["O3S206"],
-    )
-    reflection_negative = compile_fixture_expect_failure(
-        ROOT
-        / "tests"
-        / "tooling"
-        / "fixtures"
-        / "native"
-        / "property_reflection_attribute_compatibility_negative.objc3",
-        case_dir / "reflection-attribute-mismatch",
-        expected_snippets=[
-            "type mismatch: reflected property attribute and ownership profile for property 'value' in implementation 'Widget' drifted from the interface declaration",
-        ],
-        expected_codes=["O3S206"],
-    )
+    negative_results = {str(entry["key"]): entry for entry in negative_batch["results"]}
 
     return CaseResult(
         case_id="property-reflection-accessor-compatibility-diagnostics",
@@ -17193,15 +17317,22 @@ def check_property_reflection_accessor_compatibility_diagnostics_case(
         claim_class="compile-coupled-inspection",
         passed=True,
         summary={
-            "getter_selector_negative_diagnostic_count": getter_negative[
+            "getter_selector_negative_diagnostic_count": negative_results[
+                "accessor-selector-mismatch"
+            ][
                 "diagnostic_count"
             ],
-            "setter_selector_negative_diagnostic_count": setter_negative[
+            "setter_selector_negative_diagnostic_count": negative_results[
+                "setter-selector-mismatch"
+            ][
                 "diagnostic_count"
             ],
-            "reflection_attribute_negative_diagnostic_count": reflection_negative[
+            "reflection_attribute_negative_diagnostic_count": negative_results[
+                "reflection-attribute-mismatch"
+            ][
                 "diagnostic_count"
             ],
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
