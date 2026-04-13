@@ -151,6 +151,7 @@ std::string Objc3CliUsage() {
          "[--validate-objc3-conformance <report.json>] "
          "[--objc3-migration-assist] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
+         "[--objc3-metaprogramming-cache-root <dir>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--llvm-capabilities-summary <path>] [--objc3-route-backend-from-capabilities] "
          "[--objc3-max-message-args <0-" +
@@ -181,6 +182,11 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
 
   options = Objc3CliOptions{};
   options.llc_path = DefaultLlcPath();
+  const std::string metaprogramming_cache_root =
+      ReadEnvironmentVariable("OBJC3C_METAPROGRAMMING_CACHE_ROOT");
+  if (!metaprogramming_cache_root.empty()) {
+    options.metaprogramming_cache_root = metaprogramming_cache_root;
+  }
   int index = 1;
   if (argv[1][0] != '-') {
     options.input = argv[1];
@@ -254,6 +260,12 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
         return false;
       }
       options.bootstrap_registration_order_ordinal = parsed_ordinal;
+    } else if (flag == "--objc3-metaprogramming-cache-root" && i + 1 < argc) {
+      options.metaprogramming_cache_root = argv[++i];
+      if (options.metaprogramming_cache_root.empty()) {
+        error = "invalid --objc3-metaprogramming-cache-root (expected non-empty path)";
+        return false;
+      }
     } else if (flag == "--clang" && i + 1 < argc) {
       options.clang_path = argv[++i];
       options.clang_path_explicit = true;

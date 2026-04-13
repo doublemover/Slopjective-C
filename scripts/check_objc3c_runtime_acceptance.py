@@ -831,13 +831,23 @@ class RuntimeAcceptanceArtifactRegistry:
 ACCEPTANCE_ARTIFACT_REGISTRY = RuntimeAcceptanceArtifactRegistry()
 
 
-def run(command: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
+def run(
+    command: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
     resolved_cwd = cwd or ROOT
     progress = ACCEPTANCE_PROGRESS
     started_at = progress.start_command(command, resolved_cwd) if progress else perf_counter()
+    subprocess_env = None
+    if env:
+        subprocess_env = os.environ.copy()
+        subprocess_env.update(env)
     result = subprocess.run(
         command,
         cwd=str(resolved_cwd),
+        env=subprocess_env,
         text=True,
         capture_output=True,
         check=False,
@@ -1150,7 +1160,6 @@ def write_compile_output_provenance(
         registration_manifest["compile_output_artifact_set_digest_sha256"] = (
             artifact_set_digest
         )
-        registration_manifest["compile_backend"] = compile_backend
         registration_manifest_path.write_text(
             json.dumps(registration_manifest, indent=2) + "\n",
             encoding="utf-8",
@@ -5117,8 +5126,10 @@ def link_fixture_executable(clangxx: str, obj_path: Path, exe_path: Path) -> Non
         )
 
 
-def run_probe(exe_path: Path) -> subprocess.CompletedProcess[str]:
-    result = run([str(exe_path)])
+def run_probe(
+    exe_path: Path, *, env: dict[str, str] | None = None
+) -> subprocess.CompletedProcess[str]:
+    result = run([str(exe_path)], env=env)
     if result.returncode != 0:
         raise RuntimeError(
             f"probe execution failed for {exe_path} (exit={result.returncode}):\n"
@@ -5211,10 +5222,16 @@ def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:
     case_dir = run_dir / "compile-backend-parity"
     direct_dir = case_dir / "direct"
     wrapper_dir = case_dir / "wrapper"
+    parity_cache_root = case_dir / "metaprogramming-cache-root"
+    parity_args = [
+        "--objc3-metaprogramming-cache-root",
+        repo_display_path(parity_cache_root),
+    ]
     direct_result, direct_backend = run_fixture_compile(
         fixture,
         direct_dir,
         backend=DIRECT_COMPILE_BACKEND,
+        extra_args=parity_args,
     )
     if direct_result.returncode != 0:
         raise RuntimeError(
@@ -5223,10 +5240,12 @@ def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:
             + "\nSTDERR:\n"
             + direct_result.stderr
         )
+    shutil.rmtree(parity_cache_root, ignore_errors=True)
     wrapper_result, wrapper_backend = run_fixture_compile(
         fixture,
         wrapper_dir,
         backend=WRAPPER_COMPILE_BACKEND,
+        extra_args=parity_args,
     )
     if wrapper_result.returncode != 0:
         raise RuntimeError(
@@ -5295,6 +5314,121 @@ def check_compile_backend_parity_case(run_dir: Path) -> CaseResult:
             "provenance_contract_id": direct_provenance.get("contract_id"),
             "compile_output_truthfulness_contract_id": direct_truthfulness.get(
                 "contract_id"
+            ),
+        },
+    )
+
+
+def check_artifact_registry_key_isolation_case(run_dir: Path) -> CaseResult:
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
+    case_dir = run_dir / "artifact-registry-key-isolation"
+    args_a = ["--objc3-bootstrap-registration-order-ordinal", "21"]
+    args_b = ["--objc3-bootstrap-registration-order-ordinal", "22"]
+    reuse_before = len(ACCEPTANCE_ARTIFACT_REGISTRY.reuse_events)
+    miss_before = len(ACCEPTANCE_ARTIFACT_REGISTRY.miss_events)
+
+    def compile_direct(
+        out_dir: Path, extra_args: list[str]
+    ) -> subprocess.CompletedProcess[str]:
+        result, selected_backend = run_fixture_compile(
+            fixture,
+            out_dir,
+            extra_args=extra_args,
+            backend=DIRECT_COMPILE_BACKEND,
+            reuse_policy="immutable-inspection",
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                "artifact registry key isolation compile failed for "
+                f"{fixture}:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            )
+        expect(
+            selected_backend == DIRECT_COMPILE_BACKEND,
+            "expected artifact registry key isolation to use direct-native backend",
+        )
+        ACCEPTANCE_ARTIFACT_REGISTRY.validate_artifacts(out_dir, "module")
+        return result
+
+    first_result = compile_direct(case_dir / "ordinal-21-producer", args_a)
+    second_result = compile_direct(case_dir / "ordinal-22-distinct-args", args_b)
+    reuse_after_distinct_args = len(ACCEPTANCE_ARTIFACT_REGISTRY.reuse_events)
+    expect(
+        reuse_after_distinct_args == reuse_before,
+        "artifact registry reused stale outputs after bootstrap ordinal changed",
+    )
+    third_result = compile_direct(case_dir / "ordinal-21-consumer", args_a)
+    reuse_after_same_args = len(ACCEPTANCE_ARTIFACT_REGISTRY.reuse_events)
+    expect(
+        reuse_after_same_args == reuse_before + 1,
+        "artifact registry did not reuse immutable outputs when the key was unchanged",
+    )
+    reuse_event = ACCEPTANCE_ARTIFACT_REGISTRY.reuse_events[-1]
+    expect(
+        reuse_event.get("producer_dir")
+        == repo_display_path(case_dir / "ordinal-21-producer")
+        and reuse_event.get("consumer_dir")
+        == repo_display_path(case_dir / "ordinal-21-consumer"),
+        "artifact registry reused from an unexpected producer or consumer directory",
+    )
+
+    key_a, key_payload_a = ACCEPTANCE_ARTIFACT_REGISTRY.cache_key(
+        fixture,
+        extra_args=args_a,
+        backend=DIRECT_COMPILE_BACKEND,
+        emit_prefix="module",
+    )
+    key_b, key_payload_b = ACCEPTANCE_ARTIFACT_REGISTRY.cache_key(
+        fixture,
+        extra_args=args_b,
+        backend=DIRECT_COMPILE_BACKEND,
+        emit_prefix="module",
+    )
+    import_surface_a = repo_display_path(case_dir / "surface-a.runtime-import-surface.json")
+    import_surface_b = repo_display_path(case_dir / "surface-b.runtime-import-surface.json")
+    key_import_a, key_payload_import_a = ACCEPTANCE_ARTIFACT_REGISTRY.cache_key(
+        fixture,
+        extra_args=["--objc3-import-runtime-surface", import_surface_a],
+        backend=DIRECT_COMPILE_BACKEND,
+        emit_prefix="module",
+    )
+    key_import_b, key_payload_import_b = ACCEPTANCE_ARTIFACT_REGISTRY.cache_key(
+        fixture,
+        extra_args=["--objc3-import-runtime-surface", import_surface_b],
+        backend=DIRECT_COMPILE_BACKEND,
+        emit_prefix="module",
+    )
+    expect(
+        key_a != key_b and key_import_a != key_import_b,
+        "artifact registry key did not distinguish changed args or changed import surfaces",
+    )
+
+    return CaseResult(
+        case_id="artifact-registry-key-isolation",
+        probe="direct-native-artifact-registry-negative-reuse-proof",
+        fixture=repo_display_path(fixture),
+        claim_class="compile-coupled-inspection",
+        passed=True,
+        summary={
+            "producer_returncode": first_result.returncode,
+            "distinct_args_returncode": second_result.returncode,
+            "same_args_reuse_returncode": third_result.returncode,
+            "reuse_events_before": reuse_before,
+            "reuse_events_after_distinct_args": reuse_after_distinct_args,
+            "reuse_events_after_same_args": reuse_after_same_args,
+            "miss_events_added": len(ACCEPTANCE_ARTIFACT_REGISTRY.miss_events)
+            - miss_before,
+            "changed_args_key_a": key_a,
+            "changed_args_key_b": key_b,
+            "changed_args_payload_a": key_payload_a,
+            "changed_args_payload_b": key_payload_b,
+            "changed_import_surface_key_a": key_import_a,
+            "changed_import_surface_key_b": key_import_b,
+            "changed_import_surface_payload_a": key_payload_import_a,
+            "changed_import_surface_payload_b": key_payload_import_b,
+            "negative_reuse_model": (
+                "changed bootstrap args and changed import-surface paths produce "
+                "different immutable artifact registry keys; only exact key "
+                "matches may copy producer artifacts"
             ),
         },
     )
@@ -10663,6 +10797,12 @@ def check_live_metaprogramming_cache_runtime_integration_case(
     provider_source = provider_fixture.read_text(encoding="utf-8")
     unique_suffix = datetime.now().strftime("%H%M%S%f")
     unique_module_name = f"MetaprogrammingHostProcessProvider{unique_suffix}"
+    cache_root = case_dir / "metaprogramming-cache-root"
+    cache_root_override = repo_display_path(cache_root)
+    cache_root_args = [
+        "--objc3-metaprogramming-cache-root",
+        cache_root_override,
+    ]
     provider_source = provider_source.replace(
         "module MetaprogrammingHostProcessProvider;",
         f"module {unique_module_name};",
@@ -10682,7 +10822,11 @@ def check_live_metaprogramming_cache_runtime_integration_case(
         compile_fixture_with_args(
             temp_provider_fixture,
             compile_dir,
-            ["--objc3-bootstrap-registration-order-ordinal", "1"],
+            [
+                "--objc3-bootstrap-registration-order-ordinal",
+                "1",
+                *cache_root_args,
+            ],
         )
         host_cache_artifact_path = (
             compile_dir / "module.metaprogramming-macro-host-cache.json"
@@ -10792,6 +10936,17 @@ def check_live_metaprogramming_cache_runtime_integration_case(
         "expected first metaprogramming host-cache materialization compile to publish the unique module name",
     )
     expect(
+        first_host_cache_artifact.get("cache_root_relative_path") == cache_root_override
+        and first_host_cache_import_surface.get("cache_root_relative_path")
+        == cache_root_override,
+        "expected first metaprogramming host-cache materialization compile to use the test-owned cache root override",
+    )
+    expect(
+        first_host_cache_artifact.get("cache_root_relative_path")
+        != "tmp/artifacts/objc3c-native/cache/metaprogramming",
+        "expected live metaprogramming host-cache test not to depend on the shared scratch cache root",
+    )
+    expect(
         first_host_cache_import_surface.get("host_executable_relative_path")
         == first_host_cache_artifact.get("host_executable_relative_path")
         and first_host_cache_import_surface.get("cache_root_relative_path")
@@ -10803,7 +10958,11 @@ def check_live_metaprogramming_cache_runtime_integration_case(
     compile_fixture_with_args(
         temp_provider_fixture,
         second_compile_dir,
-        ["--objc3-bootstrap-registration-order-ordinal", "1"],
+        [
+            "--objc3-bootstrap-registration-order-ordinal",
+            "1",
+            *cache_root_args,
+        ],
     )
     second_host_cache_artifact_path = (
         second_compile_dir / "module.metaprogramming-macro-host-cache.json"
@@ -10871,6 +11030,7 @@ def check_live_metaprogramming_cache_runtime_integration_case(
             "2",
             "--objc3-import-runtime-surface",
             str(first_runtime_import_path),
+            *cache_root_args,
         ],
     )
     link_plan_path = consumer_compile_dir / "module.cross-module-runtime-link-plan.json"
@@ -10941,7 +11101,10 @@ def check_live_metaprogramming_cache_runtime_integration_case(
     host_cache_exe = case_dir / "macro_host_process_cache_integration_probe.exe"
     compile_probe(clangxx, host_cache_probe, host_cache_exe, [])
     host_cache_payload = parse_key_value_output(
-        run_probe(host_cache_exe),
+        run_probe(
+            host_cache_exe,
+            env={"OBJC3C_METAPROGRAMMING_CACHE_ROOT": cache_root_override},
+        ),
         "live metaprogramming host-cache runtime integration probe",
     )
     expect(
@@ -10965,6 +11128,11 @@ def check_live_metaprogramming_cache_runtime_integration_case(
                 "\\", "/"
             ),
             "provider_module_name": unique_module_name,
+            "cache_root_override_flag": "--objc3-metaprogramming-cache-root",
+            "cache_root_environment_variable": "OBJC3C_METAPROGRAMMING_CACHE_ROOT",
+            "cache_root_relative_path": cache_root_override,
+            "cache_root_is_test_owned": True,
+            "shared_cache_prune_used": False,
             "first_host_cache_artifact": {
                 "path": str(first_host_cache_artifact_path.relative_to(ROOT)).replace(
                     "\\", "/"
@@ -20173,6 +20341,7 @@ def main() -> int:
     case_factories: list[tuple[str, Callable[[], CaseResult]]] = [
         ("runtime-library", lambda: check_runtime_library_case(clangxx, run_dir)),
         ("compile-backend-parity", lambda: check_compile_backend_parity_case(run_dir)),
+        ("artifact-registry-key-isolation", lambda: check_artifact_registry_key_isolation_case(run_dir)),
         ("installation-lifecycle", lambda: check_installation_lifecycle_case(clangxx, run_dir)),
         ("metaprogramming-source-surface", lambda: check_metaprogramming_source_surface_case(run_dir)),
         ("metaprogramming-package-provenance-source-surface", lambda: check_metaprogramming_package_provenance_source_surface_case(run_dir)),

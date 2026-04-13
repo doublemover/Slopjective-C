@@ -1,6 +1,17 @@
+#if defined(_WIN32) && !defined(_CRT_SECURE_NO_WARNINGS)
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#if defined(_WIN32) && !defined(WIN32_LEAN_AND_MEAN)
+#define WIN32_LEAN_AND_MEAN
+#endif
+#if defined(_WIN32) && !defined(NOMINMAX)
+#define NOMINMAX
+#endif
+
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
 #include <cstdint>
 #include <deque>
@@ -12,11 +23,17 @@
 #include <unordered_set>
 #include <vector>
 
+#if defined(_WIN32)
+#include <windows.h>
+#endif
+
 namespace {
 
 constexpr std::int64_t kDispatchModulus = 2147483629LL;
 constexpr std::uint64_t kReceiverIdentityBase = 1024;
 constexpr std::uint64_t kReceiverIdentityStride = 17;
+constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
+    "tmp/artifacts/objc3c-native/cache/metaprogramming";
 [[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =
     "objc3c.driver.conformance.report.publication.v1";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimOperationsContractId =
@@ -36,7 +53,30 @@ constexpr std::uint64_t kReceiverIdentityStride = 17;
         "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1";
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureEvidenceGateScriptPath =
-        "scripts/check_release_evidence.py";
+    "scripts/check_release_evidence.py";
+
+const char *MetaprogrammingHostCacheRootForTesting() {
+#if defined(_WIN32)
+  char buffer[32768] = {};
+  const DWORD length = GetEnvironmentVariableA(
+      "OBJC3C_METAPROGRAMMING_CACHE_ROOT", buffer,
+      static_cast<DWORD>(sizeof(buffer)));
+  if (length == 0 || length >= sizeof(buffer)) {
+    return kObjc3DefaultMetaprogrammingHostCacheRoot;
+  }
+  static std::string cached_override;
+  cached_override.assign(buffer, static_cast<std::size_t>(length));
+  return cached_override.c_str();
+#else
+  const char *override_value = std::getenv("OBJC3C_METAPROGRAMMING_CACHE_ROOT");
+  if (override_value == nullptr || override_value[0] == '\0') {
+    return kObjc3DefaultMetaprogrammingHostCacheRoot;
+  }
+  static std::string cached_override;
+  cached_override = override_value;
+  return cached_override.c_str();
+#endif
+}
 [[maybe_unused]] constexpr const char
     *kObjc3AdvancedFeatureEvidenceRunbookPath =
         "spec/conformance/release_evidence_gate_maintenance.md";
@@ -5248,7 +5288,7 @@ int objc3_runtime_copy_metaprogramming_macro_host_process_cache_integration_snap
   snapshot->host_executable_relative_path =
       "artifacts/bin/objc3c-frontend-c-api-runner.exe";
   snapshot->cache_root_relative_path =
-      "tmp/artifacts/objc3c-native/cache/metaprogramming";
+      MetaprogrammingHostCacheRootForTesting();
   snapshot->host_model =
       "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-metaprogramming-expansion-cache-materialization";
   snapshot->toolchain_model =

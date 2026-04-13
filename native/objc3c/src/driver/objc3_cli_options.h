@@ -55,6 +55,7 @@ struct Objc3CliOptions {
   std::filesystem::path validate_conformance_report_path;
   bool migration_assist = false;
   std::uint64_t bootstrap_registration_order_ordinal = 1;
+  std::filesystem::path metaprogramming_cache_root;
   std::vector<std::filesystem::path> imported_runtime_surface_paths;
   std::size_t max_message_send_args = 4;
   std::string runtime_dispatch_symbol = "objc3_runtime_dispatch_i32";

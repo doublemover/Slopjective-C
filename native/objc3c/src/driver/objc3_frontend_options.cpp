@@ -15,6 +15,8 @@ Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_option
   options.emit_object = true;
   options.bootstrap_registration_order_ordinal =
       cli_options.bootstrap_registration_order_ordinal;
+  options.metaprogramming_cache_root_relative_path =
+      cli_options.metaprogramming_cache_root.generic_string();
   for (const auto &path : cli_options.imported_runtime_surface_paths) {
     options.imported_runtime_surface_paths.push_back(path.generic_string());
   }

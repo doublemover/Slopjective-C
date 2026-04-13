@@ -20,6 +20,7 @@ struct Objc3FrontendArtifactBundle {
   std::string error_handling_result_bridge_artifact_replay_json;
   bool metaprogramming_macro_host_process_cache_runtime_integration_ready = false;
   std::string metaprogramming_macro_host_process_cache_runtime_integration_replay_key;
+  std::string metaprogramming_macro_host_process_cache_runtime_integration_cache_root_relative_path;
   std::string versioned_conformance_report_artifact_json;
   Objc3RuntimeAwareImportModuleFrontendClosureSummary
       runtime_aware_import_module_frontend_closure_summary;

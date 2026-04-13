@@ -418,7 +418,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
                .host_executable_relative_path =
                    kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath,
                .cache_root_relative_path =
-                   kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath,
+                   artifacts
+                       .metaprogramming_macro_host_process_cache_runtime_integration_cache_root_relative_path,
                .host_model =
                    kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostModel,
                .toolchain_model =
@@ -1383,7 +1384,8 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           link_plan_inputs.expected_metaprogramming_host_cache_executable_relative_path =
               kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath;
           link_plan_inputs.expected_metaprogramming_host_cache_root_relative_path =
-              kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath;
+              artifacts
+                  .metaprogramming_macro_host_process_cache_runtime_integration_cache_root_relative_path;
           link_plan_inputs.expected_block_ownership_contract_id =
               kObjc3RuntimeBlockOwnershipArtifactPreservationContractId;
           link_plan_inputs.expected_block_ownership_source_contract_id =

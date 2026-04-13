@@ -5029,8 +5029,13 @@ BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
     const Objc3MetaprogrammingModuleInterfaceReplayPreservationSurfaceSummary
         &module_interface_summary,
     const std::vector<Objc3ImportedRuntimeModuleSurface>
-        &imported_runtime_module_surfaces) {
+        &imported_runtime_module_surfaces,
+    const Objc3FrontendOptions &options) {
   Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary summary;
+  if (!options.metaprogramming_cache_root_relative_path.empty()) {
+    summary.cache_root_relative_path =
+        options.metaprogramming_cache_root_relative_path;
+  }
   summary.metaprogramming_replay_key = module_interface_summary.replay_key;
   summary.local_macro_artifact_count =
       module_interface_summary.local_macro_artifact_count;
@@ -5061,6 +5066,7 @@ BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
              << ";local_property_behavior_artifact_count="
              << summary.local_property_behavior_artifact_count
              << ";imported_module_count=" << summary.imported_module_count
+             << ";cache_root_relative_path=" << summary.cache_root_relative_path
              << ";runtime_import_artifact_ready="
              << (summary.runtime_import_artifact_ready ? "true" : "false")
              << ";separate_compilation_ready="
@@ -17440,7 +17446,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const auto metaprogramming_macro_host_process_cache_runtime_integration_summary =
       BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary(
           metaprogramming_module_interface_replay_preservation_summary,
-          imported_runtime_module_surfaces);
+          imported_runtime_module_surfaces,
+          options);
   std::size_t interface_class_method_symbols = 0;
   std::size_t interface_instance_method_symbols = 0;
   for (const auto &interface_metadata : type_metadata_handoff.interfaces_lexicographic) {
@@ -25218,6 +25225,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
           .runtime_import_artifact_ready;
   bundle.metaprogramming_macro_host_process_cache_runtime_integration_replay_key =
       metaprogramming_macro_host_process_cache_runtime_integration_summary.replay_key;
+  bundle
+      .metaprogramming_macro_host_process_cache_runtime_integration_cache_root_relative_path =
+      metaprogramming_macro_host_process_cache_runtime_integration_summary
+          .cache_root_relative_path;
   if (error_handling_result_and_bridging_artifact_replay_summary
           .binary_artifact_replay_ready) {
     bundle.error_handling_result_bridge_artifact_replay_json =
