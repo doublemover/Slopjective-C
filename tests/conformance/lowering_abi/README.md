@@ -64,6 +64,11 @@ Minimum scope:
   closure fixtures for issue `#8016`, covering inherited ivar offset
   serialization, replay-key descriptor payloads, runtime layout validation, and
   cyclic-inheritance fail-closed diagnostics.
+- `RTBACK-8017-01.json`, `RTBACK-8017-02.json`: runtime-backed semantics
+  closure fixtures for issue `#8017`, covering block promotion/copy-dispose,
+  ARC helper automation, error runtime bridges, continuation/task/actor helper
+  declarations, and fail-closed diagnostics for unsupported escape, throw,
+  task-group, and actor-hop edges.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

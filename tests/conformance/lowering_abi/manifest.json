@@ -1137,6 +1137,15 @@
         "OBJIR-8016-01.json",
         "OBJIR-8016-02.json"
       ]
+    },
+    {
+      "name": "issue_8017_runtime_backed_semantics_closure",
+      "feature": "Runtime-backed block, ARC, error, async/task, and actor semantics closure",
+      "issue": 8017,
+      "files": [
+        "RTBACK-8017-01.json",
+        "RTBACK-8017-02.json"
+      ]
     }
   ]
 }

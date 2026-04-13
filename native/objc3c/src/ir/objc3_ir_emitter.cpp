@@ -1921,6 +1921,11 @@ class Objc3IREmitter {
     // without widening the supported ARC semantics or runtime ABI.
     out << "; runnable_arc_closeout = " << Objc3RunnableArcCloseoutSummary()
         << "\n";
+    // runtime-backed semantics closure anchor: issue #8017 consumes the
+    // existing block, ARC, error, async/task, and actor runtime-backed slices
+    // through one emitted contract line plus a durable claimability report.
+    out << "; runtime_backed_semantics_closure = "
+        << Objc3RuntimeBackedSemanticsClosureSummary() << "\n";
     out << "; frontend_objc_ownership_qualifier_lowering_profile = ownership_qualifier_sites="
         << frontend_metadata_.ownership_qualifier_lowering_ownership_qualifier_sites
         << ", invalid_ownership_qualifier_sites="
