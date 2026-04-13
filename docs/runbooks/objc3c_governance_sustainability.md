@@ -48,6 +48,18 @@ Replayable policy summary:
 
 - `python scripts/build_governance_policy_summary.py`
 
+Extension, RFC, and compatibility review policy:
+
+- `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json`
+- `python scripts/build_governance_extension_review_policy_summary.py`
+
+Extension review is allowed to advance only when the proposal names its
+language surface, compatibility class, evidence dependencies, package/release
+impact, adoption impact, and rollback or demotion path. Compatibility-impacting
+changes must consume release operations, long-horizon support, package
+ecosystem, adoption-legibility, and security hardening evidence instead of
+standing on prose-only review.
+
 Machine-owned governance schema surface:
 
 - `tests/tooling/fixtures/governance_sustainability/schema_surface.json`

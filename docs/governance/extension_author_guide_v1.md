@@ -10,6 +10,16 @@ Primary references:
 - `templates/vendor_extension_conformance_claim.md` (`C-08` declaration contract)
 - `registries/experimental_extensions/index.schema.json` (`C-11` publication format)
 - `docs/reference/legacy_spec_anchor_index.md#planning-issue-170-review-board-operating-model-package` (`C-10` decision publication model)
+- `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json` (current review policy contract)
+
+Current review policy:
+
+- replay with `python scripts/build_governance_extension_review_policy_summary.py`
+- route compatibility-impacting changes through release operations,
+  long-horizon support, package ecosystem, adoption-legibility, and security
+  hardening evidence
+- block proposal publication when required evidence, owners, rollback path, or
+  deferred-behavior demotion is missing
 
 ## 2. End-to-End Workflow (`ONB-01`..`ONB-09`)
 
