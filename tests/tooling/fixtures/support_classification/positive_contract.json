@@ -1,0 +1,76 @@
+{
+  "contract_id": "objc3c.support_classification.fixture.positive.v1",
+  "surface_kind": "support-classification-positive-fixture",
+  "milestone": "OC3-T01",
+  "issue": "OC3-T01-001",
+  "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
+  "summary_script": "scripts/build_objc3c_support_classification.py",
+  "support_classes": [
+    {
+      "class": "supported",
+      "meaning": "backed by passing integrated evidence and checked-in runtime/release contracts"
+    },
+    {
+      "class": "experimental",
+      "meaning": "visible and documented, but intentionally narrower than production claims"
+    },
+    {
+      "class": "unsupported",
+      "meaning": "explicitly fail-closed or outside the current supported boundary"
+    },
+    {
+      "class": "release-blocking",
+      "meaning": "required release evidence is missing or failing"
+    }
+  ],
+  "evidence_families": [
+    {
+      "family": "fixture-evidence",
+      "report": "tmp/reports/support-classification/fixture-summary.json",
+      "required_contract_id": "objc3c.support_classification.fixture.evidence.v1"
+    }
+  ],
+  "support_matrix": [
+    {
+      "surface": "fixture-supported-surface",
+      "current_class": "supported",
+      "checked_in_surfaces": [
+        "README.md",
+        "scripts/build_objc3c_support_classification.py"
+      ],
+      "required_evidence_families": [
+        "fixture-evidence"
+      ]
+    },
+    {
+      "surface": "fixture-unsupported-surface",
+      "current_class": "unsupported",
+      "checked_in_surfaces": [
+        "docs/runbooks/objc3c_full_envelope_claimability.md"
+      ],
+      "required_evidence_families": []
+    }
+  ],
+  "demotion_triggers": [
+    {
+      "trigger": "fixture-evidence-missing",
+      "demotes_to": "release-blocking",
+      "required_families": [
+        "fixture-evidence"
+      ]
+    },
+    {
+      "trigger": "fixture-fail-closed",
+      "demotes_to": "unsupported",
+      "required_families": []
+    }
+  ],
+  "public_claim_surfaces": [
+    "README.md",
+    "docs/runbooks/objc3c_full_envelope_claimability.md",
+    "scripts/build_objc3c_support_classification.py"
+  ],
+  "successor_tracks": [
+    "OC3-T01"
+  ]
+}

@@ -15,6 +15,7 @@ Canonical checked-in boundary and contract surfaces:
 
 Replayable generators and validators:
 
+- `python scripts/build_objc3c_support_classification.py`
 - `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
 - `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
 - `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
@@ -42,6 +43,15 @@ The canonical support classes for full-envelope claims are:
 These classes apply to public and internal claim surfaces equally. No release
 note, dashboard, tutorial, showcase, or README statement may imply a wider
 class than the checked-in matrix.
+
+The durable support-classification generator is
+`scripts/build_objc3c_support_classification.py`. It validates the checked-in
+taxonomy, rejects unknown support classes or missing source-truth paths, and
+emits the stable classification summary under
+`reports/claimability/support-classification/`. Evidence-family reports may be
+generated under `tmp/`, but they are not source-of-truth inputs for class
+definition, public-claim surface enumeration, or checked-in runtime boundary
+classification.
 
 ## Production-Strength Claim And Support-Window Policy
 
