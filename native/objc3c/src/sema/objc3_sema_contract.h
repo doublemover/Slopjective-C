@@ -297,8 +297,15 @@ struct Objc3TypeSystemTypeSemanticModelSummary {
   std::size_t typed_keypath_literal_sites = 0;
   std::size_t typed_keypath_self_root_sites = 0;
   std::size_t typed_keypath_class_root_sites = 0;
+  std::size_t object_pointer_semantic_sites = 0;
+  std::size_t protocol_composition_semantic_sites = 0;
+  std::size_t generic_suffix_semantic_sites = 0;
   std::size_t generic_erasure_semantic_sites = 0;
+  std::size_t nullability_suffix_semantic_sites = 0;
   std::size_t nullability_semantic_sites = 0;
+  std::size_t invalid_generic_suffix_semantic_sites = 0;
+  std::size_t invalid_nullability_suffix_semantic_sites = 0;
+  std::size_t invalid_protocol_composition_semantic_sites = 0;
   std::size_t optional_binding_contract_violation_sites = 0;
   std::size_t optional_send_contract_violation_sites = 0;
   std::size_t optional_flow_contract_violation_sites = 0;

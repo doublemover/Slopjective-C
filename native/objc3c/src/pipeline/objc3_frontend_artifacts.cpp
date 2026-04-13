@@ -2212,10 +2212,24 @@ std::string BuildTypeSystemTypeSemanticModelSummaryJson(
       << summary.typed_keypath_self_root_sites
       << ",\"typed_keypath_class_root_sites\":"
       << summary.typed_keypath_class_root_sites
+      << ",\"object_pointer_semantic_sites\":"
+      << summary.object_pointer_semantic_sites
+      << ",\"protocol_composition_semantic_sites\":"
+      << summary.protocol_composition_semantic_sites
+      << ",\"generic_suffix_semantic_sites\":"
+      << summary.generic_suffix_semantic_sites
       << ",\"generic_erasure_semantic_sites\":"
       << summary.generic_erasure_semantic_sites
+      << ",\"nullability_suffix_semantic_sites\":"
+      << summary.nullability_suffix_semantic_sites
       << ",\"nullability_semantic_sites\":"
       << summary.nullability_semantic_sites
+      << ",\"invalid_generic_suffix_semantic_sites\":"
+      << summary.invalid_generic_suffix_semantic_sites
+      << ",\"invalid_nullability_suffix_semantic_sites\":"
+      << summary.invalid_nullability_suffix_semantic_sites
+      << ",\"invalid_protocol_composition_semantic_sites\":"
+      << summary.invalid_protocol_composition_semantic_sites
       << ",\"optional_binding_contract_violation_sites\":"
       << summary.optional_binding_contract_violation_sites
       << ",\"optional_send_contract_violation_sites\":"

@@ -22,6 +22,12 @@ Current semantic fixtures for the E.3.3 type-system lane:
   behavior.
 - `KPATH-66-01.json`, `KPATH-66-02.json` for key path support and
   unsupported-mode diagnostics.
+- `TYP-8013-01.json`, `TYP-8013-02.json` for issue #8013 typed object,
+  nullability, protocol-composition, generic-suffix, optional-flow, and key-path
+  semantic model closure. These are backed by
+  `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`,
+  `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`,
+  and `scripts/build_objc3c_type_semantic_model_closure.py`.
 - `DEF-70-01.json`, `DEF-70-02.json` for `defer` LIFO scope-exit semantics.
 - `GRD-72-01.json`, `GRD-72-02.json` for `guard` early-exit/refinement
   semantics.

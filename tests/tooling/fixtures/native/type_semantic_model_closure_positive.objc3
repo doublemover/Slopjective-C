@@ -1,0 +1,41 @@
+module typeSemanticModelClosure;
+
+@protocol SemanticValue
+@required
+@property (readonly) id requiredToken;
+- (id<SemanticValue>*?)requiredNode;
+@optional
+@property (readonly) id optionalToken;
+@end
+
+@interface SemanticBox
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+fn choose(flag: bool, when_true: id<SemanticValue>*?, when_false: id<SemanticValue>*!) -> id<SemanticValue>*? {
+  if (flag) {
+    return when_true;
+  }
+  return when_false;
+}
+
+fn main(maybeValue: id?, fallback: id, box: id<SemanticValue>*?) -> i32 {
+  if let chosen = maybeValue {
+    let local = chosen;
+  } else {
+    return 1;
+  }
+
+  guard let ready = maybeValue else {
+    return 2;
+  }
+
+  let resolved = maybeValue ?? fallback;
+  let sent = [maybeValue? description];
+  let path = @keypath(SemanticBox, title);
+  let selected = choose(true, box, box);
+  return 0;
+}

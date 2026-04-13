@@ -1,0 +1,9 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticDuplicateProtocolComposition;
+
+@protocol SourceValue
+@end
+
+fn consume(value: id<SourceValue, SourceValue>*?) -> i32 {
+  return 0;
+}

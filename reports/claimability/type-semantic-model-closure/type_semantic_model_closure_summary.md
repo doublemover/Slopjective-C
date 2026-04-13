@@ -1,0 +1,62 @@
+# Type Semantic Model Closure
+
+- Contract: `objc3c.semantic.type-semantic-model-closure.v1`
+- Status: `PASS`
+- Issue: `#8013`
+- Positive fixture: `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`
+- Negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`
+
+## Checks
+- `positive_fixture_compiles`: `PASS`
+- `positive_manifest_emitted`: `PASS`
+- `positive_llvm_ir_emitted`: `PASS`
+- `manifest_has_type_semantic_model`: `PASS`
+- `all_summary_fields_emitted`: `PASS`
+- `ready_for_lowering_and_runtime`: `PASS`
+- `deterministic`: `PASS`
+- `minimum_positive_counts_observed`: `PASS`
+- `positive_contract_violations_zero`: `PASS`
+- `replay_key_covers_typed_surfaces`: `PASS`
+- `protocol_generic_nullability_counts_bound_to_object_pointers`: `PASS`
+- `negative_fixture_fails_closed`: `PASS`
+- `negative_diagnostics_json_emitted`: `PASS`
+- `negative_duplicate_protocol_diagnostic_observed`: `PASS`
+- `semantic_manifest_indexes_typ_8013_01`: `PASS`
+- `semantic_manifest_indexes_typ_8013_02`: `PASS`
+- `semantic_readme_mentions_issue_8013`: `PASS`
+- `semantic_readme_mentions_positive_fixture`: `PASS`
+- `semantic_readme_mentions_negative_fixture`: `PASS`
+- `positive_conformance_references_fixture`: `PASS`
+- `negative_conformance_references_fixture`: `PASS`
+- `negative_conformance_expects_o3s206_location`: `PASS`
+- `stress_manifest_compiles_positive_fixture`: `PASS`
+- `no_tmp_source_truth`: `PASS`
+- `static_sema_contract_fields_present`: `PASS`
+- `static_semantic_pass_sources_present`: `PASS`
+- `static_artifact_json_fields_present`: `PASS`
+- `runtime_lowering_and_ir_source_refs_exist`: `PASS`
+
+## Observed Positive Counts
+- `optional_binding_sites`: `2`
+- `optional_binding_clause_sites`: `2`
+- `guard_binding_sites`: `1`
+- `optional_send_sites`: `1`
+- `nil_coalescing_sites`: `1`
+- `optional_propagation_sites`: `1`
+- `optional_flow_refinement_sites`: `2`
+- `guard_binding_exit_enforcement_sites`: `1`
+- `typed_keypath_literal_sites`: `1`
+- `typed_keypath_class_root_sites`: `1`
+- `object_pointer_semantic_sites`: `7`
+- `protocol_composition_semantic_sites`: `4`
+- `generic_suffix_semantic_sites`: `4`
+- `generic_erasure_semantic_sites`: `4`
+- `nullability_suffix_semantic_sites`: `5`
+- `nullability_semantic_sites`: `5`
+
+## Validation Commands
+- `python scripts/build_objc3c_type_semantic_model_closure.py --check`
+- `python -m pytest tests/tooling/test_build_objc3c_type_semantic_model_closure.py`
+- `npm run test:objc3c:execution-replay-proof`
+- `npm run test:objc3c:lowering-runtime-stress`
+- `npm run test:objc3c:full`

@@ -8499,10 +8499,24 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
     const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
     std::size_t max_message_send_args) {
   Objc3TypeSystemTypeSemanticModelSummary summary;
+  summary.object_pointer_semantic_sites =
+      surface.type_annotation_surface_summary.object_pointer_type_sites;
+  summary.protocol_composition_semantic_sites =
+      surface.protocol_qualified_object_type_summary.protocol_composition_sites;
+  summary.generic_suffix_semantic_sites =
+      surface.type_annotation_surface_summary.generic_suffix_sites;
   summary.generic_erasure_semantic_sites =
       surface.generic_metadata_abi_summary.generic_metadata_abi_sites;
+  summary.nullability_suffix_semantic_sites =
+      surface.type_annotation_surface_summary.nullability_suffix_sites;
   summary.nullability_semantic_sites =
       surface.nullability_flow_warning_precision_summary.nullability_flow_sites;
+  summary.invalid_generic_suffix_semantic_sites =
+      surface.type_annotation_surface_summary.invalid_generic_suffix_sites;
+  summary.invalid_nullability_suffix_semantic_sites =
+      surface.type_annotation_surface_summary.invalid_nullability_suffix_sites;
+  summary.invalid_protocol_composition_semantic_sites =
+      surface.protocol_qualified_object_type_summary.contract_violation_sites;
   std::unordered_map<std::string, ValueType> body_globals = surface.globals;
   for (const auto &interface_decl : ast.interfaces) {
     body_globals.try_emplace(interface_decl.name, ValueType::ObjCClass);
@@ -8567,6 +8581,18 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
           summary.typed_keypath_literal_sites &&
       summary.typed_keypath_self_root_sites <= summary.typed_keypath_literal_sites &&
       summary.typed_keypath_class_root_sites <= summary.typed_keypath_literal_sites &&
+      summary.protocol_composition_semantic_sites <=
+          summary.object_pointer_semantic_sites &&
+      summary.generic_suffix_semantic_sites <=
+          summary.object_pointer_semantic_sites &&
+      summary.nullability_suffix_semantic_sites <=
+          summary.object_pointer_semantic_sites &&
+      summary.invalid_generic_suffix_semantic_sites <=
+          summary.generic_suffix_semantic_sites &&
+      summary.invalid_nullability_suffix_semantic_sites <=
+          summary.nullability_suffix_semantic_sites &&
+      summary.invalid_protocol_composition_semantic_sites <=
+          summary.protocol_composition_semantic_sites &&
       summary.optional_propagation_sites == summary.nil_coalescing_sites &&
       summary.guard_binding_exit_enforcement_sites <=
           summary.guard_binding_sites;
@@ -8583,8 +8609,20 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       << ";keypaths=" << summary.typed_keypath_literal_sites
       << ";keypath-self=" << summary.typed_keypath_self_root_sites
       << ";keypath-class=" << summary.typed_keypath_class_root_sites
+      << ";object-pointers=" << summary.object_pointer_semantic_sites
+      << ";protocol-compositions="
+      << summary.protocol_composition_semantic_sites
+      << ";generic-suffixes=" << summary.generic_suffix_semantic_sites
       << ";generic-erasure=" << summary.generic_erasure_semantic_sites
+      << ";nullability-suffixes="
+      << summary.nullability_suffix_semantic_sites
       << ";nullability=" << summary.nullability_semantic_sites
+      << ";invalid-generic-suffixes="
+      << summary.invalid_generic_suffix_semantic_sites
+      << ";invalid-nullability-suffixes="
+      << summary.invalid_nullability_suffix_semantic_sites
+      << ";invalid-protocol-compositions="
+      << summary.invalid_protocol_composition_semantic_sites
       << ";binding-violations=" << summary.optional_binding_contract_violation_sites
       << ";optional-send-violations=" << summary.optional_send_contract_violation_sites
       << ";flow-violations=" << summary.optional_flow_contract_violation_sites

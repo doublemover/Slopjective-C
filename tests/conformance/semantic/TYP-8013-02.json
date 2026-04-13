@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-02",
+  "title": "Reject duplicate protocol identifiers in typed object protocol composition suffixes",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S206.\nmodule NegativeTypeSemanticDuplicateProtocolComposition;\n\n@protocol SourceValue\n@end\n\nfn consume(value: id<SourceValue, SourceValue>*?) -> i32 {\n  return 0;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S206",
+        "line": 7,
+        "column": 21
+      }
+    ]
+  }
+}
