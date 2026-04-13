@@ -1,0 +1,21 @@
+module parserContainerInheritedIvarLayout;
+
+@interface OC3LayoutBase
+@property bool enabled;
+@property i32 baseCount;
+@end
+
+@interface OC3LayoutChild : OC3LayoutBase
+@property id token;
+@property bool childFlag;
+@end
+
+@implementation OC3LayoutBase
+@end
+
+@implementation OC3LayoutChild
+@end
+
+fn main() -> i32 {
+  return 0;
+}

@@ -822,10 +822,24 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
               property.executable_ivar_layout_size_bytes;
           property_record.executable_ivar_layout_alignment_bytes =
               property.executable_ivar_layout_alignment_bytes;
+          property_record.executable_ivar_layout_offset_bytes =
+              property.executable_ivar_layout_offset_bytes;
+          property_record.executable_ivar_layout_padding_bytes =
+              property.executable_ivar_layout_padding_bytes;
+          property_record.executable_ivar_layout_inherited_slot_count =
+              property.executable_ivar_layout_inherited_slot_count;
+          property_record.executable_ivar_layout_inherited_size_bytes =
+              property.executable_ivar_layout_inherited_size_bytes;
+          property_record.executable_ivar_layout_owner_size_bytes =
+              property.executable_ivar_layout_owner_size_bytes;
           property_record.executable_ivar_init_order_index =
               property.executable_ivar_init_order_index;
           property_record.executable_ivar_destroy_order_index =
               property.executable_ivar_destroy_order_index;
+          property_record.executable_ivar_layout_valid =
+              property.executable_ivar_layout_valid;
+          property_record.executable_ivar_layout_replay_key =
+              property.executable_ivar_layout_replay_key;
           property_record.line = property.line;
           property_record.column = property.column;
           records.properties_lexicographic.push_back(std::move(property_record));
@@ -848,10 +862,24 @@ Objc3RuntimeMetadataSourceRecordSet BuildRuntimeMetadataSourceRecordSet(
                 property.executable_ivar_layout_size_bytes;
             ivar_record.executable_ivar_layout_alignment_bytes =
                 property.executable_ivar_layout_alignment_bytes;
+            ivar_record.executable_ivar_layout_offset_bytes =
+                property.executable_ivar_layout_offset_bytes;
+            ivar_record.executable_ivar_layout_padding_bytes =
+                property.executable_ivar_layout_padding_bytes;
+            ivar_record.executable_ivar_layout_inherited_slot_count =
+                property.executable_ivar_layout_inherited_slot_count;
+            ivar_record.executable_ivar_layout_inherited_size_bytes =
+                property.executable_ivar_layout_inherited_size_bytes;
+            ivar_record.executable_ivar_layout_owner_size_bytes =
+                property.executable_ivar_layout_owner_size_bytes;
             ivar_record.executable_ivar_init_order_index =
                 property.executable_ivar_init_order_index;
             ivar_record.executable_ivar_destroy_order_index =
                 property.executable_ivar_destroy_order_index;
+            ivar_record.executable_ivar_layout_valid =
+                property.executable_ivar_layout_valid;
+            ivar_record.executable_ivar_layout_replay_key =
+                property.executable_ivar_layout_replay_key;
             ivar_record.line = property.line;
             ivar_record.column = property.column;
             records.ivars_lexicographic.push_back(std::move(ivar_record));
@@ -1226,10 +1254,24 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
               property.executable_ivar_layout_size_bytes;
           node.executable_ivar_layout_alignment_bytes =
               property.executable_ivar_layout_alignment_bytes;
+          node.executable_ivar_layout_offset_bytes =
+              property.executable_ivar_layout_offset_bytes;
+          node.executable_ivar_layout_padding_bytes =
+              property.executable_ivar_layout_padding_bytes;
+          node.executable_ivar_layout_inherited_slot_count =
+              property.executable_ivar_layout_inherited_slot_count;
+          node.executable_ivar_layout_inherited_size_bytes =
+              property.executable_ivar_layout_inherited_size_bytes;
+          node.executable_ivar_layout_owner_size_bytes =
+              property.executable_ivar_layout_owner_size_bytes;
           node.executable_ivar_init_order_index =
               property.executable_ivar_init_order_index;
           node.executable_ivar_destroy_order_index =
               property.executable_ivar_destroy_order_index;
+          node.executable_ivar_layout_valid =
+              property.executable_ivar_layout_valid;
+          node.executable_ivar_layout_replay_key =
+              property.executable_ivar_layout_replay_key;
           node.line = property.line;
           node.column = property.column;
           graph.property_nodes_lexicographic.push_back(node);
@@ -1262,10 +1304,24 @@ Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
                 property.executable_ivar_layout_size_bytes;
             ivar_node.executable_ivar_layout_alignment_bytes =
                 property.executable_ivar_layout_alignment_bytes;
+            ivar_node.executable_ivar_layout_offset_bytes =
+                property.executable_ivar_layout_offset_bytes;
+            ivar_node.executable_ivar_layout_padding_bytes =
+                property.executable_ivar_layout_padding_bytes;
+            ivar_node.executable_ivar_layout_inherited_slot_count =
+                property.executable_ivar_layout_inherited_slot_count;
+            ivar_node.executable_ivar_layout_inherited_size_bytes =
+                property.executable_ivar_layout_inherited_size_bytes;
+            ivar_node.executable_ivar_layout_owner_size_bytes =
+                property.executable_ivar_layout_owner_size_bytes;
             ivar_node.executable_ivar_init_order_index =
                 property.executable_ivar_init_order_index;
             ivar_node.executable_ivar_destroy_order_index =
                 property.executable_ivar_destroy_order_index;
+            ivar_node.executable_ivar_layout_valid =
+                property.executable_ivar_layout_valid;
+            ivar_node.executable_ivar_layout_replay_key =
+                property.executable_ivar_layout_replay_key;
             ivar_node.line = property.line;
             ivar_node.column = property.column;
             graph.ivar_nodes_lexicographic.push_back(ivar_node);
@@ -3510,7 +3566,21 @@ bool AreCompatibleRuntimePropertyRedeclarations(
          interface_record.executable_ivar_layout_size_bytes ==
              implementation_record.executable_ivar_layout_size_bytes &&
          interface_record.executable_ivar_layout_alignment_bytes ==
-             implementation_record.executable_ivar_layout_alignment_bytes;
+             implementation_record.executable_ivar_layout_alignment_bytes &&
+         interface_record.executable_ivar_layout_offset_bytes ==
+             implementation_record.executable_ivar_layout_offset_bytes &&
+         interface_record.executable_ivar_layout_padding_bytes ==
+             implementation_record.executable_ivar_layout_padding_bytes &&
+         interface_record.executable_ivar_layout_inherited_slot_count ==
+             implementation_record.executable_ivar_layout_inherited_slot_count &&
+         interface_record.executable_ivar_layout_inherited_size_bytes ==
+             implementation_record.executable_ivar_layout_inherited_size_bytes &&
+         interface_record.executable_ivar_layout_owner_size_bytes ==
+             implementation_record.executable_ivar_layout_owner_size_bytes &&
+         interface_record.executable_ivar_layout_valid ==
+             implementation_record.executable_ivar_layout_valid &&
+         interface_record.executable_ivar_layout_replay_key ==
+             implementation_record.executable_ivar_layout_replay_key;
 }
 
 bool AreCompatibleRuntimeMethodRedeclarations(

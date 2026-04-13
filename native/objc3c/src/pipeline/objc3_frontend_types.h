@@ -2375,8 +2375,15 @@ struct Objc3RuntimeMetadataPropertySourceRecord {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_layout_offset_bytes = 0;
+  std::size_t executable_ivar_layout_padding_bytes = 0;
+  std::size_t executable_ivar_layout_inherited_slot_count = 0;
+  std::size_t executable_ivar_layout_inherited_size_bytes = 0;
+  std::size_t executable_ivar_layout_owner_size_bytes = 0;
   std::size_t executable_ivar_init_order_index = 0;
   std::size_t executable_ivar_destroy_order_index = 0;
+  bool executable_ivar_layout_valid = false;
+  std::string executable_ivar_layout_replay_key;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -2406,8 +2413,15 @@ struct Objc3RuntimeMetadataIvarSourceRecord {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_layout_offset_bytes = 0;
+  std::size_t executable_ivar_layout_padding_bytes = 0;
+  std::size_t executable_ivar_layout_inherited_slot_count = 0;
+  std::size_t executable_ivar_layout_inherited_size_bytes = 0;
+  std::size_t executable_ivar_layout_owner_size_bytes = 0;
   std::size_t executable_ivar_init_order_index = 0;
   std::size_t executable_ivar_destroy_order_index = 0;
+  bool executable_ivar_layout_valid = false;
+  std::string executable_ivar_layout_replay_key;
   std::string source_model = kObjc3RuntimeMetadataIvarSourceModel;
   unsigned line = 1;
   unsigned column = 1;
@@ -3479,8 +3493,15 @@ struct Objc3ExecutableMetadataPropertyGraphNode {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_layout_offset_bytes = 0;
+  std::size_t executable_ivar_layout_padding_bytes = 0;
+  std::size_t executable_ivar_layout_inherited_slot_count = 0;
+  std::size_t executable_ivar_layout_inherited_size_bytes = 0;
+  std::size_t executable_ivar_layout_owner_size_bytes = 0;
   std::size_t executable_ivar_init_order_index = 0;
   std::size_t executable_ivar_destroy_order_index = 0;
+  bool executable_ivar_layout_valid = false;
+  std::string executable_ivar_layout_replay_key;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -3517,8 +3538,15 @@ struct Objc3ExecutableMetadataIvarGraphNode {
   std::size_t executable_ivar_layout_slot_index = 0;
   std::size_t executable_ivar_layout_size_bytes = 0;
   std::size_t executable_ivar_layout_alignment_bytes = 0;
+  std::size_t executable_ivar_layout_offset_bytes = 0;
+  std::size_t executable_ivar_layout_padding_bytes = 0;
+  std::size_t executable_ivar_layout_inherited_slot_count = 0;
+  std::size_t executable_ivar_layout_inherited_size_bytes = 0;
+  std::size_t executable_ivar_layout_owner_size_bytes = 0;
   std::size_t executable_ivar_init_order_index = 0;
   std::size_t executable_ivar_destroy_order_index = 0;
+  bool executable_ivar_layout_valid = false;
+  std::string executable_ivar_layout_replay_key;
   unsigned line = 1;
   unsigned column = 1;
 };
@@ -6272,4 +6300,3 @@ struct Objc3FrontendPipelineResult {
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaParityContractSurface sema_parity_surface;
 };
-

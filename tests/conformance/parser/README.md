@@ -64,3 +64,14 @@ These fixtures cover canonical performance/dynamism attributes:
 
 - `PERF-ATTR-01.json`, `PERF-ATTR-02.json`: canonical parsing for
   `objc_direct`, `objc_final`, and `objc_sealed`.
+
+## Objective-C 3.0 container layout fixture set (issue #8010)
+
+These fixtures cover parser-owned container, property, and ivar layout closure:
+
+- `tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3`:
+  accepts superclass/subclass interfaces and checks that the public workflow can
+  emit stable runtime metadata for inherited property-backed ivar slots.
+- `tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3`:
+  rejects cyclic interface inheritance with `O3P150` before layout metadata is
+  treated as claimable.

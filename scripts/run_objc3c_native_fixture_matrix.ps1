@@ -189,6 +189,30 @@ function Invoke-LoggedNativeCommand {
   }
 }
 
+function Get-FixtureNativeCompileArgs {
+  param([object]$Fixture)
+
+  $metaPath = Join-Path $Fixture.DirectoryName ("{0}.meta.json" -f $Fixture.BaseName)
+  if (!(Test-Path -LiteralPath $metaPath -PathType Leaf)) {
+    return @()
+  }
+
+  $meta = Get-Content -LiteralPath $metaPath -Raw | ConvertFrom-Json
+  if (!($meta.PSObject.Properties.Name -contains "execution")) {
+    return @()
+  }
+  $execution = $meta.execution
+  if (!($execution.PSObject.Properties.Name -contains "native_compile_args")) {
+    return @()
+  }
+
+  $args = @()
+  foreach ($arg in @($execution.native_compile_args)) {
+    $args += [string]$arg
+  }
+  return $args
+}
+
 New-Item -ItemType Directory -Force -Path $runDir | Out-Null
 
 $results = @()
@@ -230,9 +254,12 @@ try {
     $compileLog = Join-Path $caseDir "compile.log"
     New-Item -ItemType Directory -Force -Path $caseDir | Out-Null
 
+    $fixtureNativeCompileArgs = @(Get-FixtureNativeCompileArgs -Fixture $fixture)
+    $compilerArgs = @($fixture.FullName, "--out-dir", $caseDir, "--emit-prefix", "module") + $fixtureNativeCompileArgs
+
     $exitCode = Invoke-LoggedNativeCommand `
       -Command $exe `
-      -Arguments @($fixture.FullName, "--out-dir", $caseDir, "--emit-prefix", "module") `
+      -Arguments $compilerArgs `
       -LogPath $compileLog
 
     $objPath = Join-Path $caseDir "module.obj"

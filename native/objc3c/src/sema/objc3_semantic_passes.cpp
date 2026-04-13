@@ -5224,10 +5224,24 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       property.executable_ivar_layout_size_bytes;
   info.executable_ivar_layout_alignment_bytes =
       property.executable_ivar_layout_alignment_bytes;
+  info.executable_ivar_layout_offset_bytes =
+      property.executable_ivar_layout_offset_bytes;
+  info.executable_ivar_layout_padding_bytes =
+      property.executable_ivar_layout_padding_bytes;
+  info.executable_ivar_layout_inherited_slot_count =
+      property.executable_ivar_layout_inherited_slot_count;
+  info.executable_ivar_layout_inherited_size_bytes =
+      property.executable_ivar_layout_inherited_size_bytes;
+  info.executable_ivar_layout_owner_size_bytes =
+      property.executable_ivar_layout_owner_size_bytes;
   info.executable_ivar_init_order_index =
       property.executable_ivar_init_order_index;
   info.executable_ivar_destroy_order_index =
       property.executable_ivar_destroy_order_index;
+  info.executable_ivar_layout_valid =
+      property.executable_ivar_layout_valid;
+  info.executable_ivar_layout_replay_key =
+      property.executable_ivar_layout_replay_key;
   info.line = property.line;
   info.column = property.column;
 
@@ -16433,10 +16447,24 @@ static bool HasCompatibleResolvedDefaultIvarBinding(
              implementation_property.executable_ivar_layout_size_bytes &&
          interface_property.executable_ivar_layout_alignment_bytes ==
              implementation_property.executable_ivar_layout_alignment_bytes &&
+         interface_property.executable_ivar_layout_offset_bytes ==
+             implementation_property.executable_ivar_layout_offset_bytes &&
+         interface_property.executable_ivar_layout_padding_bytes ==
+             implementation_property.executable_ivar_layout_padding_bytes &&
+         interface_property.executable_ivar_layout_inherited_slot_count ==
+             implementation_property.executable_ivar_layout_inherited_slot_count &&
+         interface_property.executable_ivar_layout_inherited_size_bytes ==
+             implementation_property.executable_ivar_layout_inherited_size_bytes &&
+         interface_property.executable_ivar_layout_owner_size_bytes ==
+             implementation_property.executable_ivar_layout_owner_size_bytes &&
          interface_property.executable_ivar_init_order_index ==
              implementation_property.executable_ivar_init_order_index &&
          interface_property.executable_ivar_destroy_order_index ==
-             implementation_property.executable_ivar_destroy_order_index;
+             implementation_property.executable_ivar_destroy_order_index &&
+         interface_property.executable_ivar_layout_valid ==
+             implementation_property.executable_ivar_layout_valid &&
+         interface_property.executable_ivar_layout_replay_key ==
+             implementation_property.executable_ivar_layout_replay_key;
 }
 
 static bool HasCompatibleResolvedDefaultIvarBinding(
@@ -16456,10 +16484,24 @@ static bool HasCompatibleResolvedDefaultIvarBinding(
              implementation_property.executable_ivar_layout_size_bytes &&
          interface_property.executable_ivar_layout_alignment_bytes ==
              implementation_property.executable_ivar_layout_alignment_bytes &&
+         interface_property.executable_ivar_layout_offset_bytes ==
+             implementation_property.executable_ivar_layout_offset_bytes &&
+         interface_property.executable_ivar_layout_padding_bytes ==
+             implementation_property.executable_ivar_layout_padding_bytes &&
+         interface_property.executable_ivar_layout_inherited_slot_count ==
+             implementation_property.executable_ivar_layout_inherited_slot_count &&
+         interface_property.executable_ivar_layout_inherited_size_bytes ==
+             implementation_property.executable_ivar_layout_inherited_size_bytes &&
+         interface_property.executable_ivar_layout_owner_size_bytes ==
+             implementation_property.executable_ivar_layout_owner_size_bytes &&
          interface_property.executable_ivar_init_order_index ==
              implementation_property.executable_ivar_init_order_index &&
          interface_property.executable_ivar_destroy_order_index ==
-             implementation_property.executable_ivar_destroy_order_index;
+             implementation_property.executable_ivar_destroy_order_index &&
+         interface_property.executable_ivar_layout_valid ==
+             implementation_property.executable_ivar_layout_valid &&
+         interface_property.executable_ivar_layout_replay_key ==
+             implementation_property.executable_ivar_layout_replay_key;
 }
 
 static void OverlayAuthoritativeDefaultIvarBinding(
@@ -16479,10 +16521,24 @@ static void OverlayAuthoritativeDefaultIvarBinding(
       interface_property.executable_ivar_layout_size_bytes;
   implementation_property.executable_ivar_layout_alignment_bytes =
       interface_property.executable_ivar_layout_alignment_bytes;
+  implementation_property.executable_ivar_layout_offset_bytes =
+      interface_property.executable_ivar_layout_offset_bytes;
+  implementation_property.executable_ivar_layout_padding_bytes =
+      interface_property.executable_ivar_layout_padding_bytes;
+  implementation_property.executable_ivar_layout_inherited_slot_count =
+      interface_property.executable_ivar_layout_inherited_slot_count;
+  implementation_property.executable_ivar_layout_inherited_size_bytes =
+      interface_property.executable_ivar_layout_inherited_size_bytes;
+  implementation_property.executable_ivar_layout_owner_size_bytes =
+      interface_property.executable_ivar_layout_owner_size_bytes;
   implementation_property.executable_ivar_init_order_index =
       interface_property.executable_ivar_init_order_index;
   implementation_property.executable_ivar_destroy_order_index =
       interface_property.executable_ivar_destroy_order_index;
+  implementation_property.executable_ivar_layout_valid =
+      interface_property.executable_ivar_layout_valid;
+  implementation_property.executable_ivar_layout_replay_key =
+      interface_property.executable_ivar_layout_replay_key;
 }
 
 static Objc3PropertySynthesisIvarBindingSummary BuildPropertySynthesisIvarBindingSummaryFromIntegrationSurface(
@@ -21705,10 +21761,24 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_ivar_layout_size_bytes;
       property_metadata.executable_ivar_layout_alignment_bytes =
           source.executable_ivar_layout_alignment_bytes;
+      property_metadata.executable_ivar_layout_offset_bytes =
+          source.executable_ivar_layout_offset_bytes;
+      property_metadata.executable_ivar_layout_padding_bytes =
+          source.executable_ivar_layout_padding_bytes;
+      property_metadata.executable_ivar_layout_inherited_slot_count =
+          source.executable_ivar_layout_inherited_slot_count;
+      property_metadata.executable_ivar_layout_inherited_size_bytes =
+          source.executable_ivar_layout_inherited_size_bytes;
+      property_metadata.executable_ivar_layout_owner_size_bytes =
+          source.executable_ivar_layout_owner_size_bytes;
       property_metadata.executable_ivar_init_order_index =
           source.executable_ivar_init_order_index;
       property_metadata.executable_ivar_destroy_order_index =
           source.executable_ivar_destroy_order_index;
+      property_metadata.executable_ivar_layout_valid =
+          source.executable_ivar_layout_valid;
+      property_metadata.executable_ivar_layout_replay_key =
+          source.executable_ivar_layout_replay_key;
       property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
       property_metadata.property_contract_violations = source.property_contract_violations;
       property_metadata.has_unknown_attribute = source.has_unknown_attribute;
@@ -22019,10 +22089,24 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
           source.executable_ivar_layout_size_bytes;
       property_metadata.executable_ivar_layout_alignment_bytes =
           source.executable_ivar_layout_alignment_bytes;
+      property_metadata.executable_ivar_layout_offset_bytes =
+          source.executable_ivar_layout_offset_bytes;
+      property_metadata.executable_ivar_layout_padding_bytes =
+          source.executable_ivar_layout_padding_bytes;
+      property_metadata.executable_ivar_layout_inherited_slot_count =
+          source.executable_ivar_layout_inherited_slot_count;
+      property_metadata.executable_ivar_layout_inherited_size_bytes =
+          source.executable_ivar_layout_inherited_size_bytes;
+      property_metadata.executable_ivar_layout_owner_size_bytes =
+          source.executable_ivar_layout_owner_size_bytes;
       property_metadata.executable_ivar_init_order_index =
           source.executable_ivar_init_order_index;
       property_metadata.executable_ivar_destroy_order_index =
           source.executable_ivar_destroy_order_index;
+      property_metadata.executable_ivar_layout_valid =
+          source.executable_ivar_layout_valid;
+      property_metadata.executable_ivar_layout_replay_key =
+          source.executable_ivar_layout_replay_key;
       property_metadata.invalid_attribute_entries = source.invalid_attribute_entries;
       property_metadata.property_contract_violations = source.property_contract_violations;
       property_metadata.has_unknown_attribute = source.has_unknown_attribute;

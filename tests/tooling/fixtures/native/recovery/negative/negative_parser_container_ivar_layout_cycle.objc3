@@ -1,0 +1,20 @@
+// Expected diagnostic code(s): O3P150.
+module negativeParserContainerIvarLayoutCycle;
+
+@interface OC3CycleA : OC3CycleB
+@property i32 a;
+@end
+
+@interface OC3CycleB : OC3CycleA
+@property i32 b;
+@end
+
+@implementation OC3CycleA
+@end
+
+@implementation OC3CycleB
+@end
+
+fn main() -> i32 {
+  return 0;
+}

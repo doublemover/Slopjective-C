@@ -581,6 +581,15 @@ bool ParsePropertyRecord(const JsonValue::Object &object,
          ReadOptionalSizeMember(object, "executable_ivar_layout_slot_index", record.executable_ivar_layout_slot_index, error) &&
          ReadOptionalSizeMember(object, "executable_ivar_layout_size_bytes", record.executable_ivar_layout_size_bytes, error) &&
          ReadOptionalSizeMember(object, "executable_ivar_layout_alignment_bytes", record.executable_ivar_layout_alignment_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_offset_bytes", record.executable_ivar_layout_offset_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_padding_bytes", record.executable_ivar_layout_padding_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_inherited_slot_count", record.executable_ivar_layout_inherited_slot_count, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_inherited_size_bytes", record.executable_ivar_layout_inherited_size_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_owner_size_bytes", record.executable_ivar_layout_owner_size_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_init_order_index", record.executable_ivar_init_order_index, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_destroy_order_index", record.executable_ivar_destroy_order_index, error) &&
+         ReadOptionalBoolMember(object, "executable_ivar_layout_valid", record.executable_ivar_layout_valid, error) &&
+         ReadOptionalStringMember(object, "executable_ivar_layout_replay_key", record.executable_ivar_layout_replay_key, error) &&
          ReadUnsignedMember(object, "line", record.line, error) &&
          ReadUnsignedMember(object, "column", record.column, error);
 }
@@ -616,6 +625,15 @@ bool ParseIvarRecord(const JsonValue::Object &object,
          ReadOptionalSizeMember(object, "executable_ivar_layout_slot_index", record.executable_ivar_layout_slot_index, error) &&
          ReadOptionalSizeMember(object, "executable_ivar_layout_size_bytes", record.executable_ivar_layout_size_bytes, error) &&
          ReadOptionalSizeMember(object, "executable_ivar_layout_alignment_bytes", record.executable_ivar_layout_alignment_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_offset_bytes", record.executable_ivar_layout_offset_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_padding_bytes", record.executable_ivar_layout_padding_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_inherited_slot_count", record.executable_ivar_layout_inherited_slot_count, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_inherited_size_bytes", record.executable_ivar_layout_inherited_size_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_layout_owner_size_bytes", record.executable_ivar_layout_owner_size_bytes, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_init_order_index", record.executable_ivar_init_order_index, error) &&
+         ReadOptionalSizeMember(object, "executable_ivar_destroy_order_index", record.executable_ivar_destroy_order_index, error) &&
+         ReadOptionalBoolMember(object, "executable_ivar_layout_valid", record.executable_ivar_layout_valid, error) &&
+         ReadOptionalStringMember(object, "executable_ivar_layout_replay_key", record.executable_ivar_layout_replay_key, error) &&
          ReadOptionalStringMember(object, "source_model", record.source_model, error) &&
          ReadUnsignedMember(object, "line", record.line, error) &&
          ReadUnsignedMember(object, "column", record.column, error);

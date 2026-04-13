@@ -7941,10 +7941,25 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << property_record.executable_ivar_layout_size_bytes
         << ",\"executable_ivar_layout_alignment_bytes\":"
         << property_record.executable_ivar_layout_alignment_bytes
+        << ",\"executable_ivar_layout_offset_bytes\":"
+        << property_record.executable_ivar_layout_offset_bytes
+        << ",\"executable_ivar_layout_padding_bytes\":"
+        << property_record.executable_ivar_layout_padding_bytes
+        << ",\"executable_ivar_layout_inherited_slot_count\":"
+        << property_record.executable_ivar_layout_inherited_slot_count
+        << ",\"executable_ivar_layout_inherited_size_bytes\":"
+        << property_record.executable_ivar_layout_inherited_size_bytes
+        << ",\"executable_ivar_layout_owner_size_bytes\":"
+        << property_record.executable_ivar_layout_owner_size_bytes
         << ",\"executable_ivar_init_order_index\":"
         << property_record.executable_ivar_init_order_index
         << ",\"executable_ivar_destroy_order_index\":"
         << property_record.executable_ivar_destroy_order_index
+        << ",\"executable_ivar_layout_valid\":"
+        << (property_record.executable_ivar_layout_valid ? "true" : "false")
+        << ",\"executable_ivar_layout_replay_key\":\""
+        << EscapeJsonString(property_record.executable_ivar_layout_replay_key)
+        << "\""
         << ",\"line\":" << property_record.line
         << ",\"column\":" << property_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
@@ -7997,10 +8012,25 @@ std::string BuildRuntimeOwnedDeclarationsJson(
         << ivar_record.executable_ivar_layout_size_bytes
         << ",\"executable_ivar_layout_alignment_bytes\":"
         << ivar_record.executable_ivar_layout_alignment_bytes
+        << ",\"executable_ivar_layout_offset_bytes\":"
+        << ivar_record.executable_ivar_layout_offset_bytes
+        << ",\"executable_ivar_layout_padding_bytes\":"
+        << ivar_record.executable_ivar_layout_padding_bytes
+        << ",\"executable_ivar_layout_inherited_slot_count\":"
+        << ivar_record.executable_ivar_layout_inherited_slot_count
+        << ",\"executable_ivar_layout_inherited_size_bytes\":"
+        << ivar_record.executable_ivar_layout_inherited_size_bytes
+        << ",\"executable_ivar_layout_owner_size_bytes\":"
+        << ivar_record.executable_ivar_layout_owner_size_bytes
         << ",\"executable_ivar_init_order_index\":"
         << ivar_record.executable_ivar_init_order_index
         << ",\"executable_ivar_destroy_order_index\":"
         << ivar_record.executable_ivar_destroy_order_index
+        << ",\"executable_ivar_layout_valid\":"
+        << (ivar_record.executable_ivar_layout_valid ? "true" : "false")
+        << ",\"executable_ivar_layout_replay_key\":\""
+        << EscapeJsonString(ivar_record.executable_ivar_layout_replay_key)
+        << "\""
         << ",\"source_model\":\""
         << EscapeJsonString(ivar_record.source_model)
         << "\",\"line\":" << ivar_record.line
@@ -24844,10 +24874,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
              << property_record.executable_ivar_layout_size_bytes
              << ",\"executable_ivar_layout_alignment_bytes\":"
              << property_record.executable_ivar_layout_alignment_bytes
+             << ",\"executable_ivar_layout_offset_bytes\":"
+             << property_record.executable_ivar_layout_offset_bytes
+             << ",\"executable_ivar_layout_padding_bytes\":"
+             << property_record.executable_ivar_layout_padding_bytes
+             << ",\"executable_ivar_layout_inherited_slot_count\":"
+             << property_record.executable_ivar_layout_inherited_slot_count
+             << ",\"executable_ivar_layout_inherited_size_bytes\":"
+             << property_record.executable_ivar_layout_inherited_size_bytes
+             << ",\"executable_ivar_layout_owner_size_bytes\":"
+             << property_record.executable_ivar_layout_owner_size_bytes
              << ",\"executable_ivar_init_order_index\":"
              << property_record.executable_ivar_init_order_index
              << ",\"executable_ivar_destroy_order_index\":"
              << property_record.executable_ivar_destroy_order_index
+             << ",\"executable_ivar_layout_valid\":"
+             << (property_record.executable_ivar_layout_valid ? "true" : "false")
+             << ",\"executable_ivar_layout_replay_key\":\""
+             << property_record.executable_ivar_layout_replay_key << "\""
              << ",\"line\":" << property_record.line
              << ",\"column\":" << property_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.properties_lexicographic.size()) {
@@ -24890,10 +24934,24 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
              << ivar_record.executable_ivar_layout_size_bytes
              << ",\"executable_ivar_layout_alignment_bytes\":"
              << ivar_record.executable_ivar_layout_alignment_bytes
+             << ",\"executable_ivar_layout_offset_bytes\":"
+             << ivar_record.executable_ivar_layout_offset_bytes
+             << ",\"executable_ivar_layout_padding_bytes\":"
+             << ivar_record.executable_ivar_layout_padding_bytes
+             << ",\"executable_ivar_layout_inherited_slot_count\":"
+             << ivar_record.executable_ivar_layout_inherited_slot_count
+             << ",\"executable_ivar_layout_inherited_size_bytes\":"
+             << ivar_record.executable_ivar_layout_inherited_size_bytes
+             << ",\"executable_ivar_layout_owner_size_bytes\":"
+             << ivar_record.executable_ivar_layout_owner_size_bytes
              << ",\"executable_ivar_init_order_index\":"
              << ivar_record.executable_ivar_init_order_index
              << ",\"executable_ivar_destroy_order_index\":"
              << ivar_record.executable_ivar_destroy_order_index
+             << ",\"executable_ivar_layout_valid\":"
+             << (ivar_record.executable_ivar_layout_valid ? "true" : "false")
+             << ",\"executable_ivar_layout_replay_key\":\""
+             << ivar_record.executable_ivar_layout_replay_key << "\""
              << ",\"source_model\":\"" << ivar_record.source_model << "\",\"line\":"
              << ivar_record.line << ",\"column\":" << ivar_record.column << "}";
     if (i + 1 != runtime_metadata_source_records.ivars_lexicographic.size()) {
@@ -28015,5 +28073,3 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
 
   return bundle;
 }
-
-
