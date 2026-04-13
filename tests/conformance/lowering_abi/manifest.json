@@ -1146,6 +1146,15 @@
         "RTBACK-8017-01.json",
         "RTBACK-8017-02.json"
       ]
+    },
+    {
+      "name": "issue_8018_manifest_object_ir_truth_gate",
+      "feature": "Manifest, emitted object, IR, registration artifact, and release-claim truth gate",
+      "issue": 8018,
+      "files": [
+        "TRUTH-8018-01.json",
+        "TRUTH-8018-02.json"
+      ]
     }
   ]
 }

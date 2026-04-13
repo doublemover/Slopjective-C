@@ -1,0 +1,54 @@
+{
+  "id": "TRUTH-8018-02",
+  "title": "Fail closed when semantic layout drift prevents manifest, IR, and object emission",
+  "feature": "manifest/object/IR truth gate diagnostics",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "native/objc3c/src/sema/objc3_sema_pass_manager.cpp::SemaPassManager",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp::ResolveGlobalInitializerValues",
+    "native/objc3c/src/sema/objc3_static_analysis.cpp::BlockAlwaysReturns",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp::Objc3IREmitter",
+    "scripts/build_objc3c_manifest_object_ir_truth_gate.py",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_container_ivar_layout_cycle.objc3"
+  ],
+  "source": "// RUN: python scripts/build_objc3c_manifest_object_ir_truth_gate.py --check\n@interface OC3CycleA : OC3CycleB\n@property int a;\n@end\n@interface OC3CycleB : OC3CycleA\n@property int b;\n@end\n@implementation OC3CycleA\n@end\n@implementation OC3CycleB\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [
+      {
+        "code": "O3P150",
+        "severity": "error",
+        "message": "cyclic Objective-C interface inheritance cannot produce a stable ivar layout"
+      },
+      {
+        "code": "O3S260",
+        "severity": "error",
+        "message": "runtime metadata export blocked: runtime metadata export shape drift detected before lowering"
+      }
+    ],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "native-manifest-object-ir-truth-gate-negative",
+          "flags": [
+            "-fobjc-version=3",
+            "-fobjc3-strictness=strict",
+            "--emit-ir"
+          ],
+          "abi_requirements": [
+            "Cyclic interface inheritance emits deterministic O3P150 and O3S260 diagnostics before a manifest, IR, or object artifact is accepted as a claim source",
+            "The truth-gate report performs two negative compiler runs and verifies deterministic diagnostic output",
+            "Rejected input does not produce module.manifest.json, module.ll, or module.obj in the checked negative scratch runs",
+            "tmp/artifacts may be used only as regenerated scratch output; all truth-gate source inputs and committed reports remain outside tmp/"
+          ]
+        }
+      ],
+      "negative_requirements": [
+        "No manifest-only, IR-only, or object-only success path may satisfy the gate",
+        "Missing artifact, hash drift, object section drift, or unsupported negative emission must fail the gate",
+        "Public claim reports remain separate durable inputs and must not be inferred from tmp scratch output"
+      ]
+    }
+  }
+}

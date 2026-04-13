@@ -8672,6 +8672,18 @@ class Objc3IREmitter {
         << ";binary_object_case_surface=objc3c.runtime.metadata.binaryinspection.v1"
         << ";linker_fanin_surface=objc3c.runtime.metadata.archivestaticlink.v1"
         << "\n";
+    // manifest/object/IR truth gate anchor: publish the single artifact truth
+    // boundary that the manifest, LLVM IR, native object, registration sidecars,
+    // and release-claim sidecars must all satisfy together.
+    out << "; manifest_object_ir_truth_gate = "
+        << Objc3ManifestObjectIrTruthGateSummary()
+        << ";manifest_artifact=module.manifest.json"
+        << ";ir_artifact=module.ll"
+        << ";object_artifact=module.obj"
+        << ";registration_descriptor_artifact=module.runtime-registration-descriptor.json"
+        << ";registration_manifest_artifact=module.runtime-registration-manifest.json"
+        << ";conformance_report_artifact=module.objc3-conformance-report.json"
+        << "\n";
     out << "; runtime metadata section publication globals\n";
 
     std::vector<std::string> retained_globals;

@@ -1,0 +1,62 @@
+{
+  "id": "TRUTH-8018-01",
+  "title": "Bind manifest, LLVM IR, native object, registration sidecars, and claim sidecars into one truth gate",
+  "feature": "manifest/object/IR truth gate",
+  "bucket": "lowering_abi",
+  "profile": "strict",
+  "references": [
+    "native/objc3c/src/lower/objc3_lowering_contract.cpp::Objc3ManifestObjectIrTruthGateSummary",
+    "native/objc3c/src/ir/objc3_ir_emitter.cpp::Objc3IREmitter",
+    "native/objc3c/src/sema/objc3_sema_pass_manager.cpp::SemaPassManager",
+    "native/objc3c/src/sema/objc3_semantic_passes.cpp::ResolveGlobalInitializerValues",
+    "scripts/build_objc3c_manifest_object_ir_truth_gate.py",
+    "reports/claimability/manifest-object-ir-truth-gate/manifest_object_ir_truth_gate_summary.json",
+    "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3"
+  ],
+  "source": "// RUN: python scripts/build_objc3c_manifest_object_ir_truth_gate.py --check\n@interface OC3LayoutBase : NSObject\n@property bool enabled;\n@property int baseCount;\n@end\n@implementation OC3LayoutBase\n@end\n@interface OC3LayoutChild : OC3LayoutBase\n@property id token;\n@property bool childFlag;\n@end\n@implementation OC3LayoutChild\n@end\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "lowering": {
+      "mode_matrix": [
+        {
+          "name": "native-manifest-object-ir-truth-gate",
+          "flags": [
+            "-fobjc-version=3",
+            "-fobjc3-strictness=strict",
+            "--emit-ir"
+          ],
+          "abi_requirements": [
+            "Objc3ManifestObjectIrTruthGateSummary emits contract objc3c.manifest.object.ir.truth.gate.v1 above the existing runtime metadata emission and object emission closeout gates",
+            "Objc3IREmitter publishes manifest_object_ir_truth_gate in module.ll and names module.manifest.json, module.ll, module.obj, module.runtime-registration-descriptor.json, module.runtime-registration-manifest.json, and module.objc3-conformance-report.json as bound artifacts",
+            "The truth-gate report regenerates two positive compiler runs and verifies deterministic hashes for manifest, IR, object, registration, runtime metadata, discovery/linker, and conformance publication artifacts",
+            "The native object inspected with llvm-readobj/llvm-objdump contains the same objc3.runtime.* sections and __objc3_* aggregate symbols that the IR and manifest advertise",
+            "Versioned conformance and runtime capability sidecars are ready and remain bound to the same generated artifact set"
+          ],
+          "runtime_requirements": [
+            "module.obj contains objc3.runtime.image_info, class/protocol/category/property/ivar descriptor sections, selector/string pools, discovery root, linker anchor, image root, and registration descriptor sections",
+            "module.obj contains __objc3_sec_* aggregate symbols, runtime discovery/link anchors, registration table, image root, registration descriptor, and bootstrap registration references"
+          ]
+        }
+      ],
+      "abi_field_stability": [
+        {
+          "field_id": "truth_gate.contract_id",
+          "contract_anchor": "native/objc3c/src/lower/objc3_lowering_contract.cpp::Objc3ManifestObjectIrTruthGateSummary",
+          "stability_property": "The emitted truth-gate contract id must remain objc3c.manifest.object.ir.truth.gate.v1 until an intentional version bump",
+          "must_match_modes": [
+            "native-manifest-object-ir-truth-gate"
+          ]
+        },
+        {
+          "field_id": "truth_gate.required_artifacts",
+          "contract_anchor": "scripts/build_objc3c_manifest_object_ir_truth_gate.py::REQUIRED_ARTIFACTS",
+          "stability_property": "Manifest, IR, object, registration, runtime metadata, discovery/linker, conformance, and release-candidate sidecars must be regenerated together",
+          "must_match_modes": [
+            "native-manifest-object-ir-truth-gate"
+          ]
+        }
+      ]
+    }
+  }
+}

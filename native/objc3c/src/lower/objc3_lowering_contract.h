@@ -1434,6 +1434,23 @@ inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutEvidence
     "integrated-summary-plus-native-object-emission-probes";
 inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel =
     "fail-closed-on-summary-or-integrated-probe-drift";
+// manifest/object/IR truth gate anchor: this binds the compiler sidecar
+// manifest, emitted LLVM IR, native object, runtime registration artifacts,
+// and release-claim sidecars into one deterministic evidence boundary.
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateContractId =
+    "objc3c.manifest.object.ir.truth.gate.v1";
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateEvidenceModel =
+    "manifest-ir-object-registration-and-conformance-sidecars-form-one-regenerated-truth-set";
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateManifestModel =
+    "module.manifest.json-publishes-the-semantic-lowering-runtime-metadata-and-replay-key-source-of-truth";
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateIrModel =
+    "module.ll-republishes-the-same-contract-boundaries-and-runtime-registration-roots-as-reviewable-ir-evidence";
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateObjectModel =
+    "module.obj-materializes-the-same-objc3-runtime-sections-symbols-and-registration-roots-observed-in-ir";
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateClaimModel =
+    "versioned-conformance-and-runtime-capability-sidecars-are-bound-to-the-same-replay-key-and-remain-narrower-than-evidence";
+inline constexpr const char *kObjc3ManifestObjectIrTruthGateFailureModel =
+    "missing-artifact-hash-drift-object-section-drift-or-unsupported-negative-emission-fails-closed";
 // normalized layout policy anchor: semantic finalization of runtime
 // metadata ordering, visibility, relocation, and retention now flows through
 // one lowering-owned normalized policy packet before the IR emitter materializes
@@ -2846,6 +2863,7 @@ std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary(
 std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
+std::string Objc3ManifestObjectIrTruthGateSummary();
 std::string Objc3ToolingMachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary();
 std::string Objc3ToolingCorpusShardingReleaseEvidencePackagingLoweringSummary();

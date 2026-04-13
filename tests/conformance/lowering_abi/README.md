@@ -69,6 +69,10 @@ Minimum scope:
   ARC helper automation, error runtime bridges, continuation/task/actor helper
   declarations, and fail-closed diagnostics for unsupported escape, throw,
   task-group, and actor-hop edges.
+- `TRUTH-8018-01.json`, `TRUTH-8018-02.json`: manifest/object/IR truth-gate
+  fixtures for issue `#8018`, covering deterministic manifest, IR, object,
+  registration, runtime metadata, discovery/linker, conformance sidecars, and
+  fail-closed diagnostics when semantic layout drift blocks artifact emission.
 
 See `tests/conformance/lowering_abi/manifest.json` for machine-readable
 indexing.

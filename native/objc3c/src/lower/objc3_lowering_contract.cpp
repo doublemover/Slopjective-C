@@ -2314,6 +2314,31 @@ std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary() {
   return out.str();
 }
 
+std::string Objc3ManifestObjectIrTruthGateSummary() {
+  std::ostringstream out;
+  // manifest/object/IR truth gate anchor: issue #8018 freezes one regenerated
+  // artifact set above the existing metadata-emission and object-emission gates
+  // so release claims cannot be widened from only one sidecar or object probe.
+  out << "contract=" << kObjc3ManifestObjectIrTruthGateContractId
+      << ";evidence_model=" << kObjc3ManifestObjectIrTruthGateEvidenceModel
+      << ";manifest_model=" << kObjc3ManifestObjectIrTruthGateManifestModel
+      << ";ir_model=" << kObjc3ManifestObjectIrTruthGateIrModel
+      << ";object_model=" << kObjc3ManifestObjectIrTruthGateObjectModel
+      << ";claim_model=" << kObjc3ManifestObjectIrTruthGateClaimModel
+      << ";metadata_gate_contract="
+      << kObjc3RuntimeMetadataEmissionGateContractId
+      << ";object_closeout_contract="
+      << kObjc3RuntimeMetadataObjectEmissionCloseoutContractId
+      << ";versioned_conformance_contract="
+      << kObjc3VersionedConformanceReportLoweringContractId
+      << ";runtime_capability_contract="
+      << kObjc3RuntimeCapabilityReportingContractId
+      << ";required_artifacts=module.manifest.json,module.ll,module.obj,module.runtime-registration-descriptor.json,module.runtime-registration-manifest.json,module.runtime-metadata.bin,module.runtime-metadata-discovery.json,module.runtime-metadata-linker-options.rsp,module.objc3-conformance-report.json,module.objc3-conformance-publication.json,module.objc3-advanced-feature-gate.json,module.objc3-release-candidate-matrix.json"
+      << ";failure_model=" << kObjc3ManifestObjectIrTruthGateFailureModel
+      << ";follow_on_surface=objc3c.manifest.object.ir.truthgate.closeout.v1";
+  return out.str();
+}
+
 std::string Objc3VersionedConformanceReportLoweringContractSummary() {
   std::ostringstream out;
   // lowering freeze anchor: lane-C lowers the existing A/B truth
