@@ -40,6 +40,7 @@ Use this page in three passes:
 | follow the guided showcase walkthrough | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md) |
 | follow the ObjC2-to-ObjC3 migration guide | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md) |
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
+| evaluate adoption, migration, and support claims | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md) |
 | find the right draft section | [Specification Map](#toc-front-matter) |
 | build and validate the implementation | [README.md](../README.md) |
 | inspect the native implementation boundary | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/` |

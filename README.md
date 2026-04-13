@@ -97,6 +97,7 @@ Use the shortest path that matches what you are trying to do.
 | pick the right capability-backed example first | [showcase/README.md](showcase/README.md) | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text |
 | migrate ObjC2 code or check Swift-facing migration expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md) | then follow the showcase examples that back the comparison |
+| evaluate adoption, migration, and support claims | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md) | replay `python scripts/build_objc3c_adoption_legibility_evidence.py` and inspect the generated evidence summary |
 | inspect performance surfaces | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md) | then use the performance and compiler-throughput commands |
 | inspect conformance, fuzz, and reporting work | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md) | then use the stress, external-validation, and public-conformance workflows |
 | inspect package, installer, and release flows | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md) | then follow packaging channels, release operations, and distribution credibility |

@@ -41,6 +41,7 @@
     "scripts/build_adoption_legibility_public_claim_policy_summary.py",
     "scripts/build_adoption_legibility_capability_comparison_summary.py",
     "scripts/build_adoption_legibility_migration_playbook_summary.py",
-    "scripts/build_adoption_legibility_artifact_contract_summary.py"
+    "scripts/build_adoption_legibility_artifact_contract_summary.py",
+    "scripts/build_objc3c_adoption_legibility_evidence.py"
   ]
 }

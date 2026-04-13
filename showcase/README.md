@@ -28,6 +28,23 @@ Choose the story that matches the question before you read deeper docs:
 Use `stdlib/README.md` after choosing the example when you want the checked-in
 stdlib module surface that matches the same story.
 
+## Adoption Evidence Anchors
+
+The adoption evidence generator treats this portfolio as the runnable proof for
+onboarding and comparison claims:
+
+- `auroraBoard` anchors Objective-C 2 object-model migration guidance.
+- `signalMesh` anchors Swift-facing async, executor, and messaging comparison.
+- `patchKit` anchors macro, derive, property-behavior, and C++-facing interop
+  comparison.
+
+Replay the adoption evidence with:
+
+- `python scripts/build_objc3c_adoption_legibility_evidence.py`
+
+Generated adoption reports stay under `tmp/reports/adoption-legibility/` and
+generated artifacts stay under `tmp/artifacts/adoption-legibility/`.
+
 ## Portfolio Boundary
 
 Canonical checked-in inputs:

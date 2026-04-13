@@ -120,6 +120,23 @@ No evaluator, migration, comparison, onboarding, or adoption claim is canonical
 unless it can be regenerated from checked-in contracts and validated through the
 schema above.
 
+## Evidence Generation
+
+The canonical evidence generator is:
+
+- `python scripts/build_objc3c_adoption_legibility_evidence.py`
+
+It generates:
+
+- `tmp/artifacts/adoption-legibility/adoption-legibility-evidence.json`
+- `tmp/artifacts/adoption-legibility/evaluator-publication.json`
+- `tmp/reports/adoption-legibility/evidence-summary.json`
+
+The generator replays the boundary inventory, public claim policy, comparison
+semantics, migration playbook semantics, and artifact contract summaries before
+writing artifacts. Generated evidence is temporary output; checked-in contracts,
+docs, and scripts remain the source of truth.
+
 ## Current Boundary
 
 Adoption work starts from existing public surfaces rather than inventing a new
