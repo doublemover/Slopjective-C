@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, Callable
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -458,14 +458,211 @@ COMPILE_PROVENANCE_CONTRACT_ID = "objc3c.native.compile.output.provenance.v1"
 COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID = "objc3c.native.compile.output.truthfulness.v1"
 
 
+def round_seconds(seconds: float) -> float:
+    return round(seconds, 6)
+
+
+def format_seconds(seconds: float) -> str:
+    return f"{seconds:.3f}s"
+
+
+def repo_display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(ROOT)).replace("\\", "/")
+    except ValueError:
+        return str(path).replace("\\", "/")
+
+
+def command_display(command: list[str]) -> str:
+    display_parts: list[str] = []
+    for token in command:
+        token_path = Path(token)
+        if token_path.is_absolute():
+            display_parts.append(repo_display_path(token_path))
+        else:
+            display_parts.append(token)
+    rendered = " ".join(display_parts)
+    if len(rendered) > 240:
+        return rendered[:237] + "..."
+    return rendered
+
+
+class RuntimeAcceptanceProgress:
+    def __init__(self, *, run_id: str, run_dir: Path, progress_path: Path, total_cases: int) -> None:
+        self.run_id = run_id
+        self.run_dir = run_dir
+        self.progress_path = progress_path
+        self.total_cases = total_cases
+        self.started_at = perf_counter()
+        self.current_case: dict[str, Any] | None = None
+        self.current_command: dict[str, Any] | None = None
+        self.last_completed_case: dict[str, Any] | None = None
+        self.case_timings: list[dict[str, Any]] = []
+        self.command_timings: list[dict[str, Any]] = []
+        self._command_sequence = 0
+
+    def elapsed_seconds(self) -> float:
+        return round_seconds(perf_counter() - self.started_at)
+
+    def emit(self, message: str) -> None:
+        print(f"runtime-acceptance-progress: {message}", flush=True)
+        self.write_progress()
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "status": "RUNNING",
+            "run_id": self.run_id,
+            "run_dir": repo_display_path(self.run_dir),
+            "progress_path": repo_display_path(self.progress_path),
+            "elapsed_seconds": self.elapsed_seconds(),
+            "total_case_count": self.total_cases,
+            "completed_case_count": len(self.case_timings),
+            "current_case": self.current_case,
+            "current_command": self.current_command,
+            "last_completed_case": self.last_completed_case,
+            "case_timings": self.case_timings,
+            "command_timings": self.command_timings,
+            "slowest_cases": sorted(
+                self.case_timings,
+                key=lambda entry: float(entry.get("duration_seconds", 0.0)),
+                reverse=True,
+            )[:10],
+            "slowest_commands": sorted(
+                self.command_timings,
+                key=lambda entry: float(entry.get("duration_seconds", 0.0)),
+                reverse=True,
+            )[:10],
+        }
+
+    def write_progress(self) -> None:
+        self.progress_path.parent.mkdir(parents=True, exist_ok=True)
+        self.progress_path.write_text(
+            json.dumps(self.snapshot(), indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def start_case(self, *, index: int, label: str) -> float:
+        start = perf_counter()
+        previous = self.last_completed_case["case_id"] if self.last_completed_case else "none"
+        self.current_case = {
+            "index": index,
+            "total": self.total_cases,
+            "label": label,
+            "started_after_seconds": self.elapsed_seconds(),
+            "last_completed_case_id": previous,
+        }
+        self.current_command = None
+        self.emit(
+            f"[{index}/{self.total_cases}] START case={label} elapsed={format_seconds(self.elapsed_seconds())} last={previous}"
+        )
+        return start
+
+    def finish_case(self, *, index: int, label: str, result: "CaseResult", started_at: float) -> None:
+        duration = round_seconds(perf_counter() - started_at)
+        entry = {
+            "index": index,
+            "total": self.total_cases,
+            "label": label,
+            "case_id": result.case_id,
+            "probe": result.probe,
+            "fixture": result.fixture,
+            "claim_class": result.claim_class,
+            "passed": result.passed,
+            "duration_seconds": duration,
+            "elapsed_seconds": self.elapsed_seconds(),
+        }
+        self.case_timings.append(entry)
+        self.last_completed_case = entry
+        self.current_case = None
+        self.current_command = None
+        self.emit(
+            f"[{index}/{self.total_cases}] DONE case={result.case_id} duration={format_seconds(duration)} elapsed={format_seconds(self.elapsed_seconds())}"
+        )
+
+    def fail_case(self, *, index: int, label: str, started_at: float, error: BaseException) -> None:
+        duration = round_seconds(perf_counter() - started_at)
+        self.current_case = {
+            "index": index,
+            "total": self.total_cases,
+            "label": label,
+            "failed_after_seconds": duration,
+            "error": str(error),
+        }
+        self.emit(
+            f"[{index}/{self.total_cases}] FAIL case={label} duration={format_seconds(duration)} error={error}"
+        )
+
+    def start_command(self, command: list[str], cwd: Path) -> float:
+        self._command_sequence += 1
+        start = perf_counter()
+        self.current_command = {
+            "sequence": self._command_sequence,
+            "case_label": self.current_case.get("label") if self.current_case else None,
+            "case_index": self.current_case.get("index") if self.current_case else None,
+            "cwd": repo_display_path(cwd),
+            "command": command_display(command),
+            "started_after_seconds": self.elapsed_seconds(),
+        }
+        self.emit(
+            f"COMMAND start seq={self._command_sequence} case={self.current_command.get('case_label')} command={self.current_command['command']}"
+        )
+        return start
+
+    def finish_command(
+        self,
+        *,
+        command: list[str],
+        cwd: Path,
+        started_at: float,
+        returncode: int,
+    ) -> None:
+        duration = round_seconds(perf_counter() - started_at)
+        entry = {
+            "sequence": self._command_sequence,
+            "case_label": self.current_case.get("label") if self.current_case else None,
+            "case_index": self.current_case.get("index") if self.current_case else None,
+            "cwd": repo_display_path(cwd),
+            "command": command_display(command),
+            "returncode": returncode,
+            "duration_seconds": duration,
+            "elapsed_seconds": self.elapsed_seconds(),
+        }
+        self.command_timings.append(entry)
+        self.current_command = None
+        self.emit(
+            f"COMMAND done seq={entry['sequence']} rc={returncode} duration={format_seconds(duration)}"
+        )
+
+    def final_summary(self) -> dict[str, Any]:
+        summary = self.snapshot()
+        summary["status"] = "PASS"
+        summary["current_case"] = None
+        summary["current_command"] = None
+        return summary
+
+
+ACCEPTANCE_PROGRESS: RuntimeAcceptanceProgress | None = None
+
+
 def run(command: list[str], *, cwd: Path | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
+    resolved_cwd = cwd or ROOT
+    progress = ACCEPTANCE_PROGRESS
+    started_at = progress.start_command(command, resolved_cwd) if progress else perf_counter()
+    result = subprocess.run(
         command,
-        cwd=str(cwd or ROOT),
+        cwd=str(resolved_cwd),
         text=True,
         capture_output=True,
         check=False,
     )
+    if progress:
+        progress.finish_command(
+            command=command,
+            cwd=resolved_cwd,
+            started_at=started_at,
+            returncode=result.returncode,
+        )
+    return result
 
 
 def ensure_native_binaries() -> None:
@@ -4367,6 +4564,25 @@ def parse_json_output(result: subprocess.CompletedProcess[str], label: str) -> d
     if not isinstance(payload, dict):
         raise RuntimeError(f"{label} did not produce a JSON object")
     return payload
+
+
+def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -> bool:
+    relative_entry = artifact.get("cache_entry_relative_path")
+    if not isinstance(relative_entry, str) or relative_entry == "":
+        return False
+    cache_entry = ROOT / Path(relative_entry)
+    allowed_root = ROOT / "tmp" / "artifacts" / "objc3c-native" / "cache" / "metaprogramming"
+    try:
+        cache_entry.resolve().relative_to(allowed_root.resolve())
+    except ValueError:
+        return False
+    if cache_entry.is_dir():
+        shutil.rmtree(cache_entry)
+        return True
+    if cache_entry.is_file():
+        cache_entry.unlink()
+        return True
+    return False
 
 
 def parse_key_value_output(
@@ -9790,6 +10006,36 @@ def check_live_metaprogramming_cache_runtime_integration_case(
     first_host_cache_artifact: dict[str, Any] | None = None
     first_runtime_import_surface: dict[str, Any] | None = None
     first_host_cache_import_surface: dict[str, Any] | None = None
+
+    def compile_candidate(
+        compile_dir: Path,
+    ) -> tuple[Path, Path, dict[str, Any], dict[str, Any], dict[str, Any]]:
+        compile_fixture_with_args(
+            temp_provider_fixture,
+            compile_dir,
+            ["--objc3-bootstrap-registration-order-ordinal", "1"],
+        )
+        host_cache_artifact_path = (
+            compile_dir / "module.metaprogramming-macro-host-cache.json"
+        )
+        runtime_import_path = compile_dir / "module.runtime-import-surface.json"
+        host_cache_artifact = json.loads(
+            host_cache_artifact_path.read_text(encoding="utf-8")
+        )
+        runtime_import_surface = json.loads(
+            runtime_import_path.read_text(encoding="utf-8")
+        )
+        host_cache_import_surface = runtime_import_surface.get(
+            "objc_metaprogramming_macro_host_process_and_cache_runtime_integration", {}
+        )
+        return (
+            host_cache_artifact_path,
+            runtime_import_path,
+            host_cache_artifact,
+            runtime_import_surface,
+            host_cache_import_surface,
+        )
+
     for materialization_attempt in range(0, 16):
         extra_macros = "".join(
             [
@@ -9805,24 +10051,25 @@ def check_live_metaprogramming_cache_runtime_integration_case(
         )
         temp_provider_fixture.write_text(provider_source + extra_macros, encoding="utf-8")
         compile_dir = case_dir / f"provider-first-{materialization_attempt:02d}"
-        compile_fixture_with_args(
-            temp_provider_fixture,
-            compile_dir,
-            ["--objc3-bootstrap-registration-order-ordinal", "1"],
-        )
-        candidate_host_cache_artifact_path = (
-            compile_dir / "module.metaprogramming-macro-host-cache.json"
-        )
-        candidate_runtime_import_path = compile_dir / "module.runtime-import-surface.json"
-        candidate_host_cache_artifact = json.loads(
-            candidate_host_cache_artifact_path.read_text(encoding="utf-8")
-        )
-        candidate_runtime_import_surface = json.loads(
-            candidate_runtime_import_path.read_text(encoding="utf-8")
-        )
-        candidate_host_cache_import_surface = candidate_runtime_import_surface.get(
-            "objc_metaprogramming_macro_host_process_and_cache_runtime_integration", {}
-        )
+        (
+            candidate_host_cache_artifact_path,
+            candidate_runtime_import_path,
+            candidate_host_cache_artifact,
+            candidate_runtime_import_surface,
+            candidate_host_cache_import_surface,
+        ) = compile_candidate(compile_dir)
+        if (
+            candidate_host_cache_artifact.get("launch_attempted") is not True
+            and remove_metaprogramming_cache_entry_from_artifact(candidate_host_cache_artifact)
+        ):
+            compile_dir = case_dir / f"provider-first-{materialization_attempt:02d}-materialize"
+            (
+                candidate_host_cache_artifact_path,
+                candidate_runtime_import_path,
+                candidate_host_cache_artifact,
+                candidate_runtime_import_surface,
+                candidate_host_cache_import_surface,
+            ) = compile_candidate(compile_dir)
         if candidate_host_cache_artifact.get("launch_attempted") is True:
             first_compile_dir = compile_dir
             first_host_cache_artifact_path = candidate_host_cache_artifact_path
@@ -19242,96 +19489,119 @@ def check_live_package_loading_interop_runtime_implementation_case(
 
 
 def main() -> int:
+    global ACCEPTANCE_PROGRESS
+
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
     run_dir = TMP_ROOT / run_id
     report_path = REPORT_ROOT / "summary.json"
+    progress_path = REPORT_ROOT / "progress.json"
     run_dir.mkdir(parents=True, exist_ok=True)
     report_path.parent.mkdir(parents=True, exist_ok=True)
 
     ensure_native_binaries()
     clangxx = find_clangxx()
 
-    results = [
-        check_runtime_library_case(clangxx, run_dir),
-        check_installation_lifecycle_case(clangxx, run_dir),
-        check_metaprogramming_source_surface_case(run_dir),
-        check_metaprogramming_package_provenance_source_surface_case(run_dir),
-        check_metaprogramming_semantics_case(run_dir),
-        check_metaprogramming_derive_property_behavior_semantics_case(run_dir),
-        check_metaprogramming_macro_safety_cache_diagnostics_case(run_dir),
-        check_metaprogramming_lowering_host_cache_surface_case(run_dir),
-        check_metaprogramming_executable_lowering_case(clangxx, run_dir),
-        check_cross_module_metaprogramming_artifact_preservation_case(run_dir),
-        check_metaprogramming_runtime_abi_cache_surface_case(clangxx, run_dir),
-        check_live_metaprogramming_cache_runtime_integration_case(clangxx, run_dir),
-        check_cross_module_runtime_package_interop_source_surface_case(run_dir),
-        check_textual_binary_interface_parity_source_surface_case(run_dir),
-        check_claimable_surface_residual_non_claimable_gaps_source_surface_case(
-            run_dir
-        ),
-        check_strict_profile_feature_claim_source_surface_case(run_dir),
-        check_claimability_semantics_release_policy_case(run_dir),
-        check_strict_profile_claim_implementation_case(run_dir),
-        check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
-            run_dir
-        ),
-        check_claim_publication_dashboard_schema_surface_case(run_dir),
-        check_final_claim_publication_deprecated_path_shutdown_case(run_dir),
-        check_release_candidate_runtime_claim_abi_case(clangxx, run_dir),
-        check_final_release_evidence_descaffolding_implementation_case(
-            clangxx, run_dir
-        ),
-        check_mixed_image_compatibility_interop_semantics_case(run_dir),
-        check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir),
-        check_import_version_feature_claim_diagnostics_case(run_dir),
-        check_runtime_packaging_bridge_loader_artifact_surface_case(run_dir),
-        check_mixed_image_package_lowering_bridge_emission_case(run_dir),
-        check_cross_language_replay_import_surface_preservation_case(run_dir),
-        check_runtime_package_loader_bridge_abi_case(clangxx, run_dir),
-        check_live_package_loading_interop_runtime_implementation_case(
-            clangxx, run_dir
-        ),
-        check_unified_concurrency_runtime_architecture_case(run_dir),
-        check_async_task_actor_normalization_completion_case(run_dir),
-        check_unified_concurrency_lowering_metadata_surface_case(run_dir),
-        check_unified_concurrency_runtime_abi_case(clangxx, run_dir),
-        check_live_unified_concurrency_runtime_implementation_case(clangxx, run_dir),
-        check_error_execution_cleanup_source_case(run_dir),
-        check_catch_filter_finalization_source_case(run_dir),
-        check_error_propagation_cleanup_semantics_case(run_dir),
-        check_executable_try_throw_do_catch_semantics_case(run_dir),
-        check_bridging_filter_unwind_compatibility_diagnostics_case(run_dir),
-        check_error_lowering_unwind_bridge_helper_surface_case(run_dir),
-        check_executable_throw_catch_cleanup_lowering_case(run_dir),
-        check_cross_module_error_metadata_replay_preservation_case(run_dir),
-        check_error_runtime_abi_cleanup_case(clangxx, run_dir),
-        check_live_error_runtime_integration_case(clangxx, run_dir),
-        check_cross_module_concurrency_actor_artifact_preservation_case(run_dir),
-        check_cross_module_block_ownership_artifact_preservation_case(run_dir),
-        check_cross_module_storage_reflection_artifact_preservation_case(run_dir),
-        check_imported_runtime_packaging_replay_case(clangxx, run_dir),
-        check_canonical_dispatch_case(clangxx, run_dir),
-        check_canonical_sample_set_case(clangxx, run_dir),
-        check_realization_lookup_reflection_runtime_case(clangxx, run_dir),
-        check_live_dispatch_fast_path_case(clangxx, run_dir),
-        check_storage_ownership_reflection_case(clangxx, run_dir),
-        check_property_ivar_ordering_semantics_case(run_dir),
-        check_accessor_storage_lowering_metadata_surface_case(run_dir),
-        check_property_accessor_layout_lowering_case(run_dir),
-        check_property_reflection_accessor_compatibility_diagnostics_case(run_dir),
-        check_property_synthesis_storage_binding_semantics_case(run_dir),
-        check_storage_legality_semantics_case(run_dir),
-        check_synthesized_accessor_codegen_case(run_dir),
-        check_synthesized_accessor_runtime_case(clangxx, run_dir),
-        check_property_layout_case(clangxx, run_dir),
-        check_property_execution_case(clangxx, run_dir),
-        check_property_reflection_case(clangxx, run_dir),
-        check_escaping_block_capture_legality_case(run_dir),
-        check_block_storage_arc_automation_semantics_case(run_dir),
-        check_block_arc_runtime_abi_case(clangxx, run_dir),
-        check_block_helper_runtime_execution_case(clangxx, run_dir),
-        check_arc_property_helper_case(clangxx, run_dir),
+    case_factories: list[tuple[str, Callable[[], CaseResult]]] = [
+        ("runtime-library", lambda: check_runtime_library_case(clangxx, run_dir)),
+        ("installation-lifecycle", lambda: check_installation_lifecycle_case(clangxx, run_dir)),
+        ("metaprogramming-source-surface", lambda: check_metaprogramming_source_surface_case(run_dir)),
+        ("metaprogramming-package-provenance-source-surface", lambda: check_metaprogramming_package_provenance_source_surface_case(run_dir)),
+        ("metaprogramming-semantics", lambda: check_metaprogramming_semantics_case(run_dir)),
+        ("metaprogramming-derive-property-behavior-semantics", lambda: check_metaprogramming_derive_property_behavior_semantics_case(run_dir)),
+        ("metaprogramming-macro-safety-cache-diagnostics", lambda: check_metaprogramming_macro_safety_cache_diagnostics_case(run_dir)),
+        ("metaprogramming-lowering-host-cache-surface", lambda: check_metaprogramming_lowering_host_cache_surface_case(run_dir)),
+        ("metaprogramming-executable-lowering", lambda: check_metaprogramming_executable_lowering_case(clangxx, run_dir)),
+        ("cross-module-metaprogramming-artifact-preservation", lambda: check_cross_module_metaprogramming_artifact_preservation_case(run_dir)),
+        ("metaprogramming-runtime-abi-cache-surface", lambda: check_metaprogramming_runtime_abi_cache_surface_case(clangxx, run_dir)),
+        ("live-metaprogramming-cache-runtime-integration", lambda: check_live_metaprogramming_cache_runtime_integration_case(clangxx, run_dir)),
+        ("cross-module-runtime-package-interop-source-surface", lambda: check_cross_module_runtime_package_interop_source_surface_case(run_dir)),
+        ("textual-binary-interface-parity-source-surface", lambda: check_textual_binary_interface_parity_source_surface_case(run_dir)),
+        ("claimable-surface-residual-non-claimable-gaps-source-surface", lambda: check_claimable_surface_residual_non_claimable_gaps_source_surface_case(run_dir)),
+        ("strict-profile-feature-claim-source-surface", lambda: check_strict_profile_feature_claim_source_surface_case(run_dir)),
+        ("claimability-semantics-release-policy", lambda: check_claimability_semantics_release_policy_case(run_dir)),
+        ("strict-profile-claim-implementation", lambda: check_strict_profile_claim_implementation_case(run_dir)),
+        ("scaffold-retirement-deprecated-sidecar-compatibility-diagnostics", lambda: check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(run_dir)),
+        ("claim-publication-dashboard-schema-surface", lambda: check_claim_publication_dashboard_schema_surface_case(run_dir)),
+        ("final-claim-publication-deprecated-path-shutdown", lambda: check_final_claim_publication_deprecated_path_shutdown_case(run_dir)),
+        ("release-candidate-runtime-claim-abi", lambda: check_release_candidate_runtime_claim_abi_case(clangxx, run_dir)),
+        ("final-release-evidence-descaffolding-implementation", lambda: check_final_release_evidence_descaffolding_implementation_case(clangxx, run_dir)),
+        ("mixed-image-compatibility-interop-semantics", lambda: check_mixed_image_compatibility_interop_semantics_case(run_dir)),
+        ("c-cpp-swift-bridge-compatibility-semantics", lambda: check_c_cpp_swift_bridge_compatibility_semantics_case(run_dir)),
+        ("import-version-feature-claim-diagnostics", lambda: check_import_version_feature_claim_diagnostics_case(run_dir)),
+        ("runtime-packaging-bridge-loader-artifact-surface", lambda: check_runtime_packaging_bridge_loader_artifact_surface_case(run_dir)),
+        ("mixed-image-package-lowering-bridge-emission", lambda: check_mixed_image_package_lowering_bridge_emission_case(run_dir)),
+        ("cross-language-replay-import-surface-preservation", lambda: check_cross_language_replay_import_surface_preservation_case(run_dir)),
+        ("runtime-package-loader-bridge-abi", lambda: check_runtime_package_loader_bridge_abi_case(clangxx, run_dir)),
+        ("live-package-loading-interop-runtime-implementation", lambda: check_live_package_loading_interop_runtime_implementation_case(clangxx, run_dir)),
+        ("unified-concurrency-runtime-architecture", lambda: check_unified_concurrency_runtime_architecture_case(run_dir)),
+        ("async-task-actor-normalization-completion", lambda: check_async_task_actor_normalization_completion_case(run_dir)),
+        ("unified-concurrency-lowering-metadata-surface", lambda: check_unified_concurrency_lowering_metadata_surface_case(run_dir)),
+        ("unified-concurrency-runtime-abi", lambda: check_unified_concurrency_runtime_abi_case(clangxx, run_dir)),
+        ("live-unified-concurrency-runtime-implementation", lambda: check_live_unified_concurrency_runtime_implementation_case(clangxx, run_dir)),
+        ("error-execution-cleanup-source", lambda: check_error_execution_cleanup_source_case(run_dir)),
+        ("catch-filter-finalization-source", lambda: check_catch_filter_finalization_source_case(run_dir)),
+        ("error-propagation-cleanup-semantics", lambda: check_error_propagation_cleanup_semantics_case(run_dir)),
+        ("executable-try-throw-do-catch-semantics", lambda: check_executable_try_throw_do_catch_semantics_case(run_dir)),
+        ("bridging-filter-unwind-compatibility-diagnostics", lambda: check_bridging_filter_unwind_compatibility_diagnostics_case(run_dir)),
+        ("error-lowering-unwind-bridge-helper-surface", lambda: check_error_lowering_unwind_bridge_helper_surface_case(run_dir)),
+        ("executable-throw-catch-cleanup-lowering", lambda: check_executable_throw_catch_cleanup_lowering_case(run_dir)),
+        ("cross-module-error-metadata-replay-preservation", lambda: check_cross_module_error_metadata_replay_preservation_case(run_dir)),
+        ("error-runtime-abi-cleanup", lambda: check_error_runtime_abi_cleanup_case(clangxx, run_dir)),
+        ("live-error-runtime-integration", lambda: check_live_error_runtime_integration_case(clangxx, run_dir)),
+        ("cross-module-concurrency-actor-artifact-preservation", lambda: check_cross_module_concurrency_actor_artifact_preservation_case(run_dir)),
+        ("cross-module-block-ownership-artifact-preservation", lambda: check_cross_module_block_ownership_artifact_preservation_case(run_dir)),
+        ("cross-module-storage-reflection-artifact-preservation", lambda: check_cross_module_storage_reflection_artifact_preservation_case(run_dir)),
+        ("imported-runtime-packaging-replay", lambda: check_imported_runtime_packaging_replay_case(clangxx, run_dir)),
+        ("canonical-dispatch", lambda: check_canonical_dispatch_case(clangxx, run_dir)),
+        ("canonical-sample-set", lambda: check_canonical_sample_set_case(clangxx, run_dir)),
+        ("realization-lookup-reflection-runtime", lambda: check_realization_lookup_reflection_runtime_case(clangxx, run_dir)),
+        ("live-dispatch-fast-path", lambda: check_live_dispatch_fast_path_case(clangxx, run_dir)),
+        ("storage-ownership-reflection", lambda: check_storage_ownership_reflection_case(clangxx, run_dir)),
+        ("property-ivar-ordering-semantics", lambda: check_property_ivar_ordering_semantics_case(run_dir)),
+        ("accessor-storage-lowering-metadata-surface", lambda: check_accessor_storage_lowering_metadata_surface_case(run_dir)),
+        ("property-accessor-layout-lowering", lambda: check_property_accessor_layout_lowering_case(run_dir)),
+        ("property-reflection-accessor-compatibility-diagnostics", lambda: check_property_reflection_accessor_compatibility_diagnostics_case(run_dir)),
+        ("property-synthesis-storage-binding-semantics", lambda: check_property_synthesis_storage_binding_semantics_case(run_dir)),
+        ("storage-legality-semantics", lambda: check_storage_legality_semantics_case(run_dir)),
+        ("synthesized-accessor-codegen", lambda: check_synthesized_accessor_codegen_case(run_dir)),
+        ("synthesized-accessor-runtime", lambda: check_synthesized_accessor_runtime_case(clangxx, run_dir)),
+        ("property-layout", lambda: check_property_layout_case(clangxx, run_dir)),
+        ("property-execution", lambda: check_property_execution_case(clangxx, run_dir)),
+        ("property-reflection", lambda: check_property_reflection_case(clangxx, run_dir)),
+        ("escaping-block-capture-legality", lambda: check_escaping_block_capture_legality_case(run_dir)),
+        ("block-storage-arc-automation-semantics", lambda: check_block_storage_arc_automation_semantics_case(run_dir)),
+        ("block-arc-runtime-abi", lambda: check_block_arc_runtime_abi_case(clangxx, run_dir)),
+        ("block-helper-runtime-execution", lambda: check_block_helper_runtime_execution_case(clangxx, run_dir)),
+        ("arc-property-helper", lambda: check_arc_property_helper_case(clangxx, run_dir)),
     ]
+
+    ACCEPTANCE_PROGRESS = RuntimeAcceptanceProgress(
+        run_id=run_id,
+        run_dir=run_dir,
+        progress_path=progress_path,
+        total_cases=len(case_factories),
+    )
+    print(f"runtime-acceptance-progress-log: {repo_display_path(progress_path)}", flush=True)
+    results: list[CaseResult] = []
+    for index, (label, factory) in enumerate(case_factories, start=1):
+        case_started_at = ACCEPTANCE_PROGRESS.start_case(index=index, label=label)
+        try:
+            result = factory()
+        except BaseException as exc:
+            ACCEPTANCE_PROGRESS.fail_case(
+                index=index,
+                label=label,
+                started_at=case_started_at,
+                error=exc,
+            )
+            raise
+        ACCEPTANCE_PROGRESS.finish_case(
+            index=index,
+            label=label,
+            result=result,
+            started_at=case_started_at,
+        )
+        results.append(result)
 
     summary = {
         "status": "PASS",
@@ -19339,6 +19609,8 @@ def main() -> int:
         "clangxx": clangxx,
         "runtime_library": str(RUNTIME_LIB.relative_to(ROOT)).replace("\\", "/"),
         "case_count": len(results),
+        "progress_report_path": repo_display_path(progress_path),
+        "timing": ACCEPTANCE_PROGRESS.final_summary(),
         "cases": [
             {
                 "case_id": result.case_id,
@@ -19646,6 +19918,10 @@ def main() -> int:
             "deterministic": True,
         },
     }
+    progress_path.write_text(
+        json.dumps(ACCEPTANCE_PROGRESS.final_summary(), indent=2) + "\n",
+        encoding="utf-8",
+    )
     report_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
     print(f"runtime-acceptance: PASS ({report_path})")
     return 0
