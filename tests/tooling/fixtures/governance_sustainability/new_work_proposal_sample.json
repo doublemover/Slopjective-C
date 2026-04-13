@@ -17,6 +17,14 @@
   "dependencies": [],
   "validation_posture": "generator_contract_only",
   "budget_impact": "no_budget_growth",
+  "review_class": "language-extension",
+  "compatibility_classification": "additive-example-only",
+  "rollback_or_demote_path": "Keep the sample render-only and remove the generated tmp output if validation fails.",
+  "evidence_surfaces": [
+    "docs/objc3c-native.md",
+    "docs/runbooks/objc3c_public_conformance_reporting.md",
+    "docs/runbooks/objc3c_adoption_legibility.md"
+  ],
   "label_names": [
     "type:roadmap",
     "priority:P1",

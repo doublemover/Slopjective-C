@@ -82,6 +82,10 @@
     "dependencies",
     "validation_posture",
     "budget_impact",
+    "review_class",
+    "compatibility_classification",
+    "rollback_or_demote_path",
+    "evidence_surfaces",
     "label_names"
   ],
   "fail_closed_conditions": [

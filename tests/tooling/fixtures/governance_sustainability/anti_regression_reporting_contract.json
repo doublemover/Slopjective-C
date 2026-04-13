@@ -8,7 +8,7 @@
   "source_summaries": [
     "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
     "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
-    "tmp/reports/governance-sustainability/maintainer-review/governance_maintainer_review_summary.json",
+    "tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json",
     "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json"
   ],
   "tracked_metrics": [

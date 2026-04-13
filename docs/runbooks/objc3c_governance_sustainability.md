@@ -51,14 +51,17 @@ Replayable policy summary:
 Extension, RFC, and compatibility review policy:
 
 - `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json`
+- `tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json`
 - `python scripts/build_governance_extension_review_policy_summary.py`
+- `python scripts/build_governance_extension_review_workflow_summary.py`
+- `python scripts/publish_new_work_proposal.py`
 
 Extension review is allowed to advance only when the proposal names its
-language surface, compatibility class, evidence dependencies, package/release
-impact, adoption impact, and rollback or demotion path. Compatibility-impacting
-changes must consume release operations, long-horizon support, package
-ecosystem, adoption-legibility, and security hardening evidence instead of
-standing on prose-only review.
+language surface, review class, compatibility classification, evidence
+dependencies, package/release impact, adoption impact, and rollback or
+demotion path. Compatibility-impacting changes must consume release operations,
+long-horizon support, package ecosystem, adoption-legibility, and security
+hardening evidence instead of standing on prose-only review.
 
 Maintainer, contributor, and package stewardship semantics:
 
@@ -146,3 +149,4 @@ Generated evidence:
 - `tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json`
 - `tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json`
 - `tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json`
+- `tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json`

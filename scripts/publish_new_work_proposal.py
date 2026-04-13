@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 GOVERNANCE_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "sustainable_progress_policy.json"
 WAIVER_REGISTRY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "waiver_registry.json"
 DEFAULT_TEMPLATE = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "new_work_proposal_template.json"
-DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "m318" / "governance" / "new_work_proposal"
+DEFAULT_OUTPUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "new-work-proposal"
 MILESTONE_CODE_RE = re.compile(r"^(M\d{3})")
 
 
@@ -37,6 +37,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--proposal", type=Path, required=True)
     parser.add_argument("--template", type=Path, default=DEFAULT_TEMPLATE)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--preflight-mode", choices=["full", "proposal-only"], default="full")
     parser.add_argument("--publish", action="store_true")
     parser.add_argument("--repo")
     return parser.parse_args(argv)
@@ -115,6 +116,8 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
         failures.append("dependencies must be a list")
     if not isinstance(proposal.get("label_names"), list) or not proposal["label_names"]:
         failures.append("label_names must be a non-empty list")
+    if not isinstance(proposal.get("evidence_surfaces"), list) or not proposal["evidence_surfaces"]:
+        failures.append("evidence_surfaces must be a non-empty list")
 
     governance_policy = read_json(GOVERNANCE_POLICY)
     waiver_registry = read_json(WAIVER_REGISTRY)
@@ -148,6 +151,28 @@ def validate_proposal(proposal: dict[str, Any], template: dict[str, Any]) -> tup
         title_code = MILESTONE_CODE_RE.match(str(proposal["milestone_title"]))
         if title_code and title_code.group(1) != milestone_code:
             failures.append("milestone_title code must match issue_code milestone")
+
+    extension_policy_path = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "extension_review_policy.json"
+    extension_policy = read_json(extension_policy_path)
+    review_classes = {
+        str(entry.get("review_class")): entry
+        for entry in extension_policy.get("review_classes", [])
+        if isinstance(entry, dict)
+    }
+    review_class = str(proposal.get("review_class", ""))
+    selected_review_class = review_classes.get(review_class)
+    if selected_review_class is None:
+        failures.append("review_class is not allowed by extension review policy")
+    else:
+        required_surfaces = {str(path) for path in selected_review_class.get("required_evidence_surfaces", [])}
+        proposal_surfaces = {str(path) for path in proposal.get("evidence_surfaces", [])}
+        missing_surfaces = sorted(required_surfaces - proposal_surfaces)
+        if missing_surfaces:
+            failures.append("evidence_surfaces missing required review surfaces: " + ", ".join(missing_surfaces))
+    if not str(proposal.get("compatibility_classification", "")).strip():
+        failures.append("compatibility_classification is required")
+    if not str(proposal.get("rollback_or_demote_path", "")).strip():
+        failures.append("rollback_or_demote_path is required")
 
     execution_order = proposal.get("execution_order")
     if execution_order is not None:
@@ -187,6 +212,13 @@ def render_issue_body(proposal: dict[str, Any]) -> str:
     lines += ["", "## Dependencies"]
     lines += [f"- `{item}`" for item in proposal["dependencies"]] if proposal["dependencies"] else ["- None."]
     lines += ["", "## Validation posture", f"- Class: `{proposal['validation_posture']}`", f"- Budget impact: `{proposal['budget_impact']}`"]
+    lines += ["", "## Extension review"]
+    lines += [
+        f"- Review class: `{proposal['review_class']}`",
+        f"- Compatibility classification: `{proposal['compatibility_classification']}`",
+        f"- Rollback or demotion path: {proposal['rollback_or_demote_path']}",
+    ]
+    lines += ["- Evidence surfaces:"] + [f"  - `{item}`" for item in proposal["evidence_surfaces"]]
     if proposal.get("waiver_id"):
         lines.append(f"- Waiver: `{proposal['waiver_id']}`")
     if proposal.get("boundary_note"):
@@ -263,7 +295,8 @@ def main(argv: Sequence[str]) -> int:
     title = render_issue_title(proposal, template, resolved) if not failures else ""
     body = render_issue_body(proposal) if not failures else ""
 
-    preflight_results = [run_preflight(command) for command in template.get("governance_preflight_commands", [])]
+    preflight_commands = [] if args.preflight_mode == "proposal-only" else template.get("governance_preflight_commands", [])
+    preflight_results = [run_preflight(command) for command in preflight_commands]
     preflight_failures = [result["command"] for result in preflight_results if not result["ok"]]
     if preflight_failures:
         failures.append("governance preflight failed: " + ", ".join(preflight_failures))
@@ -303,6 +336,7 @@ def main(argv: Sequence[str]) -> int:
         "proposal_path": rel(args.proposal),
         "template_path": rel(args.template),
         "publication_mode": publication_mode,
+        "preflight_mode": args.preflight_mode,
         "consumed_contract_ids": template["consumed_contract_ids"],
         "issue_code": proposal.get("issue_code"),
         "title": title,

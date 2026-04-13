@@ -1,6 +1,6 @@
 {
-  "mode": "m318-d001-new-work-proposal-template-v2",
-  "contract_id": "objc3c.governance.new-work-proposal.template.v2",
+  "mode": "governance-new-work-proposal-template-v3",
+  "contract_id": "objc3c.governance.new-work-proposal.template.v3",
   "consumed_contract_ids": {
     "governance_policy": "objc3c.governance.sustainability.policy.v1",
     "waiver_registry": "objc3c.governance.sustainability.waiver.registry.v1",
@@ -19,6 +19,10 @@
     "dependencies",
     "validation_posture",
     "budget_impact",
+    "review_class",
+    "compatibility_classification",
+    "rollback_or_demote_path",
+    "evidence_surfaces",
     "label_names"
   ],
   "optional_issue_fields": [
@@ -53,6 +57,10 @@
     "python scripts/build_governance_budget_inventory_summary.py",
     "python scripts/build_governance_policy_summary.py",
     "python scripts/build_governance_maintainer_review_summary.py",
+    "python scripts/build_governance_extension_review_policy_summary.py",
+    "python scripts/build_governance_stewardship_semantics_summary.py",
+    "python scripts/check_governance_sustainability_schema_surface.py",
+    "python scripts/build_governance_artifact_contract_summary.py",
     "python scripts/check_governance_sustainability_budget_enforcement.py"
   ],
   "render_defaults": {
@@ -63,6 +71,6 @@
       "summary": "publication_summary.json"
     }
   },
-  "output_dir_default": "tmp/reports/m318/governance/new_work_proposal",
-  "next_issue": "M318-D001"
+  "output_dir_default": "tmp/reports/governance-sustainability/new-work-proposal",
+  "next_issue": "M332-D001"
 }
