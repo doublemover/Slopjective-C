@@ -33,6 +33,8 @@ Replayable boundary inventory:
 - `python scripts/build_package_ecosystem_artifact_contract_summary.py`
 - `python scripts/build_objc3c_package_lock.py`
 - `python scripts/check_objc3c_package_authoring_workflow.py`
+- `python scripts/build_objc3c_package_mirror.py`
+- `python scripts/check_objc3c_package_registry_mirror_reproducibility.py`
 
 ## Current Boundary
 
@@ -168,6 +170,21 @@ The lock generator derives packages from `stdlib/module_inventory.json` and
 `showcase/portfolio.json`, emits a deterministic lock under
 `tmp/artifacts/package-ecosystem/locks/`, and writes a summary under
 `tmp/reports/package-ecosystem/`.
+
+## Mirror And Registry Evidence
+
+The mirror/registry reproducibility workflow is checked in at:
+
+- `tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json`
+
+The replayable implementation is:
+
+- `scripts/build_objc3c_package_mirror.py`
+- `scripts/check_objc3c_package_registry_mirror_reproducibility.py`
+
+The mirror generator consumes the generated lock, writes an offline mirror index,
+local registry index, and publication metadata under
+`tmp/artifacts/package-ecosystem/`, and refuses to claim hosted registry support.
 
 ## Successor Pressure
 

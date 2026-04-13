@@ -1,0 +1,31 @@
+{
+  "contract_id": "objc3c.package_ecosystem.registry_mirror_reproducibility.v1",
+  "surface_kind": "package-ecosystem-registry-mirror-reproducibility",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "artifact_contract": "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
+  "registry_publication_semantics": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+  "package_authoring_workflow": "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
+  "mirror_schema": "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+  "generated_outputs": {
+    "lock": "tmp/artifacts/package-ecosystem/locks/objc3c-package-lock.json",
+    "mirror_index": "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+    "local_registry_index": "tmp/artifacts/package-ecosystem/registry/local-package-index.json",
+    "publication_metadata": "tmp/artifacts/package-ecosystem/registry/publication-metadata.json",
+    "mirror_summary": "tmp/reports/package-ecosystem/package-mirror-summary.json",
+    "reproducibility_summary": "tmp/reports/package-ecosystem/registry-mirror-reproducibility-summary.json"
+  },
+  "required_public_scripts": [
+    "package:objc3c:channels",
+    "inspect:objc3c:release-manifest",
+    "inspect:objc3c:update-manifest",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e"
+  ],
+  "reproducibility_rules": [
+    "mirror package ids must match the generated lock package ids",
+    "local registry package ids must match the generated lock package ids",
+    "publication metadata must state hosted registry support is deferred",
+    "mirror validation must declare no-network-during-validation",
+    "all generated paths remain under tmp/artifacts/package-ecosystem"
+  ]
+}
