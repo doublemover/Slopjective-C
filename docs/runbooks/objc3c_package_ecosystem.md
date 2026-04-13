@@ -29,6 +29,7 @@ Replayable boundary inventory:
 - `python scripts/build_package_ecosystem_boundary_inventory_summary.py`
 - `python scripts/build_package_ecosystem_dependency_lock_policy_summary.py`
 - `python scripts/build_package_ecosystem_local_workspace_mirror_summary.py`
+- `python scripts/build_package_ecosystem_registry_publication_summary.py`
 
 ## Current Boundary
 
@@ -109,6 +110,26 @@ canonical application surfaces. Lockfiles and mirrors are generated outputs:
 An offline mirror is a local artifact cache plus an index generated from a
 locked package graph. It must not fetch from the network during validation, and
 it is invalid if it contains package identities not present in the lock.
+
+## Registry And Publication Semantics
+
+The canonical registry/publication semantics are checked in at:
+
+- `tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json`
+
+Registry behavior is layered on top of the local lock and mirror model:
+
+- `local-index` is supported as a generated artifact over locked package
+  metadata.
+- `offline-mirror` is supported only when derived from the lock graph.
+- `publication-metadata` is supported as replayable release/update/package
+  channel metadata.
+- `hosted-registry` is explicitly deferred until a later milestone proves
+  network service behavior, authentication, moderation, revocation, and
+  availability semantics.
+
+Any hosted-registry claim before those proofs exist is release-blocking and must
+be demoted to generated local metadata.
 
 ## Successor Pressure
 

@@ -1,0 +1,69 @@
+{
+  "contract_id": "objc3c.package_ecosystem.registry_publication_semantics.v1",
+  "surface_kind": "package-ecosystem-registry-publication-semantics",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "boundary_inventory": "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+  "dependency_lock_policy": "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+  "local_workspace_mirror_semantics": "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+  "publication_inputs": [
+    "schemas/objc3c-release-manifest-v1.schema.json",
+    "schemas/objc3c-update-manifest-v1.schema.json",
+    "schemas/objc3c-package-channels-manifest-v1.schema.json",
+    "scripts/build_objc3c_release_manifest.py",
+    "scripts/build_objc3c_update_manifest.py",
+    "scripts/build_objc3c_package_channels.py",
+    "scripts/publish_objc3c_release_operations_metadata.py"
+  ],
+  "registry_layers": [
+    {
+      "layer_id": "local-index",
+      "support_state": "supported-generated-artifact",
+      "source_of_truth": "lockfile plus package metadata",
+      "publication_path": "tmp/artifacts/package-ecosystem/registry/local-package-index.json",
+      "claim_boundary": "local generated package discovery only"
+    },
+    {
+      "layer_id": "offline-mirror",
+      "support_state": "supported-generated-artifact",
+      "source_of_truth": "lock-derived mirror index",
+      "publication_path": "tmp/artifacts/package-ecosystem/mirrors/offline-mirror-index.json",
+      "claim_boundary": "air-gapped local package restore evidence only"
+    },
+    {
+      "layer_id": "publication-metadata",
+      "support_state": "supported-generated-artifact",
+      "source_of_truth": "release manifest, update manifest, and package-channel manifest",
+      "publication_path": "tmp/artifacts/package-ecosystem/registry/publication-metadata.json",
+      "claim_boundary": "replayable metadata for package publication planning"
+    },
+    {
+      "layer_id": "hosted-registry",
+      "support_state": "deferred-release-blocking-if-claimed",
+      "source_of_truth": "none in this milestone",
+      "publication_path": "",
+      "claim_boundary": "no hosted registry, network fetch, auth, moderation, or availability claim"
+    }
+  ],
+  "publication_rules": [
+    "registry metadata must be generated from the lock and mirror evidence",
+    "publication metadata may not introduce package identities absent from the lock graph",
+    "hosted-registry behavior is deferred and must fail closed if claimed",
+    "release and update metadata may reference package ecosystem artifacts only as generated local evidence",
+    "offline mirror publication must remain usable without network access"
+  ],
+  "required_public_scripts": [
+    "package:objc3c:channels",
+    "inspect:objc3c:release-manifest",
+    "inspect:objc3c:update-manifest",
+    "publish:objc3c:release-operations",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e"
+  ],
+  "release_blocking_conditions": [
+    "hosted registry claimed as supported",
+    "publication metadata contains an unlocked package identity",
+    "offline mirror validation requires network access",
+    "registry index is hand-authored instead of generated",
+    "release/update metadata drifts from package ecosystem evidence"
+  ]
+}
