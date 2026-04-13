@@ -464,6 +464,11 @@ DEFAULT_COMPILE_BACKEND = os.environ.get(
     "OBJC3C_RUNTIME_ACCEPTANCE_COMPILE_BACKEND",
     DIRECT_COMPILE_BACKEND,
 ).strip().lower() or DIRECT_COMPILE_BACKEND
+RETRYABLE_PROBE_EXIT_CODES = {3221226356}
+DEFAULT_PROBE_RETRIES = int(
+    os.environ.get("OBJC3C_RUNTIME_ACCEPTANCE_PROBE_RETRIES", "1")
+)
+ACCEPTANCE_PROBE_RETRY_EVENTS: list[dict[str, Any]] = []
 
 
 def round_seconds(seconds: float) -> float:
@@ -5215,13 +5220,46 @@ def link_fixture_executable(clangxx: str, obj_path: Path, exe_path: Path) -> Non
 def run_probe(
     exe_path: Path, *, env: dict[str, str] | None = None
 ) -> subprocess.CompletedProcess[str]:
-    result = run([str(exe_path)], env=env)
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"probe execution failed for {exe_path} (exit={result.returncode}):\n"
-            f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+    attempts: list[dict[str, Any]] = []
+    for attempt in range(DEFAULT_PROBE_RETRIES + 1):
+        result = run([str(exe_path)], env=env)
+        attempts.append(
+            {
+                "attempt": attempt + 1,
+                "returncode": result.returncode,
+                "stdout_present": result.stdout != "",
+                "stderr_present": result.stderr != "",
+            }
         )
-    return result
+        if result.returncode == 0:
+            if attempt > 0:
+                ACCEPTANCE_PROBE_RETRY_EVENTS.append(
+                    {
+                        "probe": repo_display_path(exe_path),
+                        "retry_count": attempt,
+                        "attempts": attempts,
+                        "model": (
+                            "retry is fail-closed and only masks transient process exits "
+                            "that are followed by a successful identical probe invocation"
+                        ),
+                    }
+                )
+            return result
+        if (
+            result.returncode not in RETRYABLE_PROBE_EXIT_CODES
+            or attempt >= DEFAULT_PROBE_RETRIES
+        ):
+            raise RuntimeError(
+                f"probe execution failed for {exe_path} (exit={result.returncode}):\n"
+                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+            )
+        if ACCEPTANCE_PROGRESS:
+            ACCEPTANCE_PROGRESS.emit(
+                "PROBE retry "
+                f"probe={repo_display_path(exe_path)} exit={result.returncode} "
+                f"attempt={attempt + 1}/{DEFAULT_PROBE_RETRIES + 1}"
+            )
+    raise RuntimeError(f"probe execution failed for {exe_path}")
 
 
 def expect(condition: bool, message: str) -> None:
@@ -20739,6 +20777,13 @@ def main(argv: list[str] | None = None) -> int:
         "default_compile_backend": DEFAULT_COMPILE_BACKEND,
         "direct_compile_backend": DIRECT_COMPILE_BACKEND,
         "wrapper_compile_backend": WRAPPER_COMPILE_BACKEND,
+        "probe_retry_policy": {
+            "contract_id": "objc3c.runtime.acceptance.probe.retry.policy.v1",
+            "default_probe_retries": DEFAULT_PROBE_RETRIES,
+            "retryable_exit_codes": sorted(RETRYABLE_PROBE_EXIT_CODES),
+            "fail_closed": True,
+        },
+        "probe_retry_events": ACCEPTANCE_PROBE_RETRY_EVENTS,
         "progress_report_path": repo_display_path(progress_path),
         "timing": ACCEPTANCE_PROGRESS.final_summary(),
         "artifact_registry": ACCEPTANCE_ARTIFACT_REGISTRY.summary(),
