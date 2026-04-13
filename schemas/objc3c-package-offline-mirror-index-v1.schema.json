@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-package-offline-mirror-index-v1",
+  "title": "objc3c Package Offline Mirror Index",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "mirror_version",
+    "source_lock",
+    "packages",
+    "network_policy",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.package_ecosystem.offline_mirror.v1"
+    },
+    "mirror_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "source_lock": {
+      "type": "string",
+      "minLength": 1
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/mirrorPackage"
+      }
+    },
+    "network_policy": {
+      "const": "no-network-during-validation"
+    },
+    "replay": {
+      "type": "object",
+      "required": [
+        "commands"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "mirrorPackage": {
+      "type": "object",
+      "required": [
+        "package_id",
+        "source",
+        "cache_path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "cache_path": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

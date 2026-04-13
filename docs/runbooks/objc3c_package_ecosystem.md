@@ -30,6 +30,7 @@ Replayable boundary inventory:
 - `python scripts/build_package_ecosystem_dependency_lock_policy_summary.py`
 - `python scripts/build_package_ecosystem_local_workspace_mirror_summary.py`
 - `python scripts/build_package_ecosystem_registry_publication_summary.py`
+- `python scripts/build_package_ecosystem_artifact_contract_summary.py`
 
 ## Current Boundary
 
@@ -130,6 +131,25 @@ Registry behavior is layered on top of the local lock and mirror model:
 
 Any hosted-registry claim before those proofs exist is release-blocking and must
 be demoted to generated local metadata.
+
+## Artifact Contract
+
+The package ecosystem artifact contract is checked in at:
+
+- `tests/tooling/fixtures/package_ecosystem/artifact_contract.json`
+
+Schema surfaces:
+
+- `schemas/objc3c-package-lock-v1.schema.json`
+- `schemas/objc3c-package-offline-mirror-index-v1.schema.json`
+
+Machine-owned generated outputs stay under:
+
+- `tmp/artifacts/package-ecosystem/`
+- `tmp/reports/package-ecosystem/`
+
+No package ecosystem artifact is claimable unless it can be regenerated from
+checked-in contracts and validated through the public workflow runner.
 
 ## Successor Pressure
 

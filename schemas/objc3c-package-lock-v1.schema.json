@@ -1,0 +1,164 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "objc3c-package-lock-v1",
+  "title": "objc3c Package Lock",
+  "type": "object",
+  "required": [
+    "contract_id",
+    "lockfile_version",
+    "workspace",
+    "packages",
+    "dependencies",
+    "provenance",
+    "digest_inputs",
+    "replay"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "contract_id": {
+      "const": "objc3c.package_ecosystem.lockfile.v1"
+    },
+    "lockfile_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "workspace": {
+      "type": "object",
+      "required": [
+        "workspace_id",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "workspace_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "packages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/package"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/dependency"
+      }
+    },
+    "provenance": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/provenance"
+      }
+    },
+    "digest_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "replay": {
+      "type": "object",
+      "required": [
+        "commands"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "commands": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "package": {
+      "type": "object",
+      "required": [
+        "package_id",
+        "source",
+        "provenance_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "package_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "dependency": {
+      "type": "object",
+      "required": [
+        "from",
+        "to",
+        "source"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source": {
+          "enum": [
+            "checked-in-local-workspace",
+            "generated-local-package-artifact",
+            "offline-mirror-artifact"
+          ]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "provenance_id",
+        "source_path",
+        "generator",
+        "replay_command"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "provenance_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "generator": {
+          "type": "string",
+          "minLength": 1
+        },
+        "replay_command": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "contract_id": "objc3c.package_ecosystem.artifact_contract.v1",
+  "surface_kind": "package-ecosystem-artifact-contract",
+  "runbook": "docs/runbooks/objc3c_package_ecosystem.md",
+  "boundary_inventory": "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
+  "dependency_lock_policy": "tests/tooling/fixtures/package_ecosystem/dependency_lock_policy.json",
+  "local_workspace_mirror_semantics": "tests/tooling/fixtures/package_ecosystem/local_workspace_mirror_semantics.json",
+  "registry_publication_semantics": "tests/tooling/fixtures/package_ecosystem/registry_publication_semantics.json",
+  "schemas": {
+    "package_lock": "schemas/objc3c-package-lock-v1.schema.json",
+    "offline_mirror_index": "schemas/objc3c-package-offline-mirror-index-v1.schema.json"
+  },
+  "generated_artifact_roots": [
+    "tmp/artifacts/package-ecosystem/locks",
+    "tmp/artifacts/package-ecosystem/mirrors",
+    "tmp/artifacts/package-ecosystem/registry"
+  ],
+  "generated_report_root": "tmp/reports/package-ecosystem",
+  "report_slots": [
+    "boundary-inventory-summary.json",
+    "dependency-lock-policy-summary.json",
+    "local-workspace-mirror-semantics-summary.json",
+    "registry-publication-semantics-summary.json",
+    "artifact-contract-summary.json"
+  ],
+  "artifact_claim_rules": [
+    "lockfiles and mirror indexes are generated artifacts, not checked-in source authority",
+    "package ecosystem artifacts must validate against checked-in schemas before publication claims",
+    "registry metadata must be generated from lock and mirror evidence",
+    "hosted registry claims remain release-blocking until a later hosted-service evidence path exists"
+  ],
+  "required_public_scripts": [
+    "package:objc3c-native:runnable-toolchain",
+    "package:objc3c:channels",
+    "inspect:objc3c:release-manifest",
+    "inspect:objc3c:update-manifest",
+    "test:objc3c:release-operations",
+    "test:objc3c:release-operations:e2e"
+  ]
+}
