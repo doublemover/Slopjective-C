@@ -142,15 +142,23 @@ docs, and scripts remain the source of truth.
 The repo-scope adoption workflow is:
 
 - `npm run test:objc3c:adoption-legibility`
+- `npm run publish:objc3c:adoption-legibility`
 
 It maps to:
 
 - `python scripts/objc3c_public_workflow_runner.py validate-adoption-legibility`
 - `python scripts/check_objc3c_adoption_legibility_integration.py`
+- `python scripts/objc3c_public_workflow_runner.py publish-adoption-legibility`
+- `python scripts/publish_objc3c_adoption_legibility_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, evaluator
 entrypoints, migration phases, comparison axes, onboarding workspaces, support
 state, and claim-audit blockers.
+
+Evaluator metadata publication emits:
+
+- `tmp/artifacts/adoption-legibility/evaluator-publication.json`
+- `tmp/reports/adoption-legibility/publication-summary.json`
 
 ## Current Boundary
 

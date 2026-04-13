@@ -135,6 +135,7 @@ RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_pa
 LONG_HORIZON_OPERATIONS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_long_horizon_operations_integration.py"
 LONG_HORIZON_OPERATIONS_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_long_horizon_operations_metadata.py"
 ADOPTION_LEGIBILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_adoption_legibility_integration.py"
+ADOPTION_LEGIBILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_adoption_legibility_metadata.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
@@ -430,6 +431,10 @@ def action_publish_long_horizon_operations(_: list[str]) -> int:
 
 def action_validate_adoption_legibility(_: list[str]) -> int:
     return run([sys.executable, str(ADOPTION_LEGIBILITY_INTEGRATION_PY)])
+
+
+def action_publish_adoption_legibility(_: list[str]) -> int:
+    return run([sys.executable, str(ADOPTION_LEGIBILITY_PUBLICATION_PY)])
 
 
 def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
@@ -1963,6 +1968,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-long-horizon-operations": ActionSpec("validate-long-horizon-operations", "validate migration, rollback, soak, aging, and support-window evidence over the live package and application workflows", "python:scripts/check_objc3c_long_horizon_operations_integration.py", ("test:objc3c:long-horizon-operations",), validation_tier="full", guarantee_owner="long-horizon compatibility claims stay backed by generated migration, rollback, soak, aging, package, application, performance, and conformance evidence"),
     "publish-long-horizon-operations": ActionSpec("publish-long-horizon-operations", "publish support-window and long-horizon operator metadata from generated evidence", "python:scripts/publish_objc3c_long_horizon_operations_metadata.py", ("publish:objc3c:long-horizon-operations",), validation_tier="release", guarantee_owner="operator-facing support-window metadata stays generated from long-horizon evidence and blocks when claim audit reports release blockers"),
     "validate-adoption-legibility": ActionSpec("validate-adoption-legibility", "validate adoption, migration, comparison, onboarding, and evaluator evidence over live docs, showcase, package, and support workflows", "python:scripts/check_objc3c_adoption_legibility_integration.py", ("test:objc3c:adoption-legibility",), validation_tier="repo", guarantee_owner="external evaluator and migration claims stay backed by generated adoption evidence and checked-in public docs"),
+    "publish-adoption-legibility": ActionSpec("publish-adoption-legibility", "publish evaluator-facing adoption and migration metadata from generated evidence", "python:scripts/publish_objc3c_adoption_legibility_metadata.py", ("publish:objc3c:adoption-legibility",), validation_tier="release", guarantee_owner="evaluator-facing adoption metadata stays generated from adoption evidence and blocks when claim audit reports release blockers"),
     "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", ("test:stdlib:advanced:e2e",), validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", ("test:stdlib:program:e2e",), validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
@@ -2227,6 +2233,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-long-horizon-operations": action_validate_long_horizon_operations,
     "publish-long-horizon-operations": action_publish_long_horizon_operations,
     "validate-adoption-legibility": action_validate_adoption_legibility,
+    "publish-adoption-legibility": action_publish_adoption_legibility,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,

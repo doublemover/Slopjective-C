@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `167`
-- Operator command count: `158`
+- Current package script count: `168`
+- Operator command count: `159`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -74,6 +74,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `package:objc3c:channels` | `build-package-channels` | `repo` | `package channels stay derived from the live runnable package and release-foundation artifacts` | `fixed-shape` | `python:scripts/build_objc3c_package_channels.py` |
 | `proof:objc3c` | `proof-objc3c` | `-` | `-` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
 | `proof:objc3c:runtime-architecture` | `proof-runtime-architecture` | `-` | `-` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_proof_packet.py` |
+| `publish:objc3c:adoption-legibility` | `publish-adoption-legibility` | `release` | `evaluator-facing adoption metadata stays generated from adoption evidence and blocks when claim audit reports release blockers` | `fixed-shape` | `python:scripts/publish_objc3c_adoption_legibility_metadata.py` |
 | `publish:objc3c:distribution-credibility` | `publish-distribution-credibility` | `repo` | `distribution trust reporting stays derived from the live release drill artifacts and checked-in credibility policies` | `fixed-shape` | `python:scripts/publish_objc3c_distribution_trust_report.py` |
 | `publish:objc3c:external-repro-corpus` | `publish-external-repro-corpus` | `repo` | `accepted and quarantined external evidence stays publishable as a machine-owned corpus summary rooted in the replay drill` | `fixed-shape` | `python:scripts/publish_objc3c_external_repro_corpus.py` |
 | `publish:objc3c:long-horizon-operations` | `publish-long-horizon-operations` | `release` | `operator-facing support-window metadata stays generated from long-horizon evidence and blocks when claim audit reports release blockers` | `fixed-shape` | `python:scripts/publish_objc3c_long_horizon_operations_metadata.py` |

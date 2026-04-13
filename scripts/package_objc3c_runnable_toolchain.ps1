@@ -224,6 +224,14 @@ $requiredRelativeFiles = @(
   "scripts/check_objc3c_execution_replay_proof.ps1",
   "scripts/build_objc3c_native_docs.py",
   "scripts/render_objc3c_public_command_surface.py",
+  "scripts/build_adoption_legibility_boundary_inventory_summary.py",
+  "scripts/build_adoption_legibility_public_claim_policy_summary.py",
+  "scripts/build_adoption_legibility_capability_comparison_summary.py",
+  "scripts/build_adoption_legibility_migration_playbook_summary.py",
+  "scripts/build_adoption_legibility_artifact_contract_summary.py",
+  "scripts/build_objc3c_adoption_legibility_evidence.py",
+  "scripts/check_objc3c_adoption_legibility_integration.py",
+  "scripts/publish_objc3c_adoption_legibility_metadata.py",
   "showcase/README.md",
   "showcase/portfolio.json",
   "showcase/tutorial_walkthrough.json",
@@ -234,6 +242,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/main.objc3",
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_application_architecture_testing.md",
+  "docs/runbooks/objc3c_adoption_legibility.md",
   "docs/runbooks/objc3c_package_ecosystem.md",
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
@@ -247,6 +256,7 @@ $requiredRelativeFiles = @(
   "docs/runbooks/objc3c_stdlib_program.md",
   "docs/tutorials/README.md",
   "docs/tutorials/getting_started.md",
+  "docs/tutorials/objc2_to_objc3_migration.md",
   "docs/tutorials/objc2_swift_cpp_comparison.md",
   "docs/tutorials/build_run_verify.md",
   "docs/tutorials/guided_walkthrough.md",
@@ -287,6 +297,7 @@ $requiredRelativeFiles = @(
   "schemas/objc3c-package-install-receipt-v1.schema.json",
   "schemas/objc3c-package-lock-v1.schema.json",
   "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
+  "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
   "schemas/objc3c-update-manifest-v1.schema.json",
   "schemas/objc3c-compatibility-report-v1.schema.json",
   "schemas/objc3c-release-manifest-v1.schema.json",
@@ -348,6 +359,11 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/package_ecosystem/artifact_contract.json",
   "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
   "tests/tooling/fixtures/package_ecosystem/registry_mirror_reproducibility_contract.json",
+  "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
+  "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+  "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
+  "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+  "tests/tooling/fixtures/adoption_legibility/artifact_contract.json",
   "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
   "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
   "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
@@ -664,6 +680,26 @@ $manifestPayload = [ordered]@{
     "test:objc3c:long-horizon-operations",
     "publish:objc3c:long-horizon-operations"
   )
+  adoption_legibility_runbook = "docs/runbooks/objc3c_adoption_legibility.md"
+  adoption_legibility_artifact_contract = "tests/tooling/fixtures/adoption_legibility/artifact_contract.json"
+  adoption_legibility_schema = "schemas/objc3c-adoption-legibility-evidence-v1.schema.json"
+  adoption_legibility_surface = [ordered]@{
+    boundary_inventory = "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json"
+    public_claim_policy = "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json"
+    capability_comparison_semantics = "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json"
+    migration_playbook_semantics = "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json"
+    evidence_generator = "scripts/build_objc3c_adoption_legibility_evidence.py"
+    integration_validation = "scripts/check_objc3c_adoption_legibility_integration.py"
+    evaluator_publication = "scripts/publish_objc3c_adoption_legibility_metadata.py"
+  }
+  adoption_legibility_public_actions = @(
+    "validate-adoption-legibility",
+    "publish-adoption-legibility"
+  )
+  adoption_legibility_public_scripts = @(
+    "test:objc3c:adoption-legibility",
+    "publish:objc3c:adoption-legibility"
+  )
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
   platform_support_tier_policy = "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"
@@ -830,6 +866,8 @@ $manifestPayload = [ordered]@{
     package_mirror = "npm run test:objc3c:package-mirror"
     package_ecosystem = "npm run test:objc3c:package-ecosystem"
     package_ecosystem_e2e = "npm run test:objc3c:package-ecosystem:e2e"
+    adoption_legibility = "npm run test:objc3c:adoption-legibility"
+    publish_adoption_legibility = "npm run publish:objc3c:adoption-legibility"
     bonus_experiences = "npm run test:bonus-experiences"
     bonus_experiences_e2e = "npm run test:bonus-experiences:e2e"
     check_stdlib_surface = "npm run check:stdlib:surface"
