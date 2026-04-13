@@ -163,6 +163,23 @@ Generated machine-owned outputs stay under:
 No long-horizon claim is supportable unless it can be regenerated from the
 checked-in policy contracts and validated through this artifact contract.
 
+## Evidence Generation
+
+The canonical evidence generator is:
+
+- `python scripts/build_objc3c_long_horizon_operations_evidence.py`
+
+It generates:
+
+- `tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json`
+- `tmp/reports/long-horizon-operations/evidence-summary.json`
+
+The generator replays the M328 policy summaries and live package,
+canonical-application, performance-governance, conformance, stress,
+external-validation, and public-conformance integration checks before writing
+the artifact. Generated evidence is temporary output; the checked-in contracts
+and scripts remain the source of truth.
+
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later
