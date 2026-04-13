@@ -15,6 +15,8 @@ Governance focus:
 - measure the live repo shape before setting or tightening budgets
 - keep budget and anti-noise claims tied to existing enforcement anchors
 - treat exceptions and drift as explicit recorded objects instead of tribal knowledge
+- ground extension and compatibility governance in package, adoption, support,
+  release, distribution, and security evidence that already exists
 
 Sustainable progress policy:
 
@@ -96,9 +98,9 @@ Current budget surfaces measured by the governance inventory summary:
 
 Explicit non-goals:
 
-- setting final waiver policy in `A001`
-- defining review or expiry mechanics in `A001`
-- claiming long-horizon regression reporting in `A001`
+- replacing the package, release, security, support, or adoption evidence paths
+- treating governance docs as a substitute for executable review evidence
+- promising hosted community infrastructure or registry moderation services
 - widening public workflow surface before the policy and schema issues land
 
 Generated evidence:

@@ -76,17 +76,17 @@
     {
       "surface_id": "milestone-scoped-checkers",
       "glob": "scripts/check_m*.py",
-      "intended_follow_on_issue": "M318-C002"
+      "intended_follow_on_issue": "M332-D001"
     },
     {
       "surface_id": "live-python-bytecode",
       "glob": "**/*.pyc",
-      "intended_follow_on_issue": "M318-C002"
+      "intended_follow_on_issue": "M332-D001"
     },
     {
       "surface_id": "live-pycache-directories",
       "glob": "**/__pycache__",
-      "intended_follow_on_issue": "M318-C002"
+      "intended_follow_on_issue": "M332-D001"
     }
   ],
   "governance_entry_surfaces": [
@@ -97,21 +97,28 @@
     "scripts/check_objc3c_dependency_boundaries.py",
     "docs/runbooks/objc3c_maintainer_workflows.md",
     "docs/runbooks/objc3c_public_command_surface.md",
+    "docs/runbooks/objc3c_package_ecosystem.md",
+    "docs/runbooks/objc3c_adoption_legibility.md",
+    "docs/runbooks/objc3c_long_horizon_operations.md",
+    "docs/runbooks/objc3c_release_operations.md",
+    "docs/runbooks/objc3c_security_hardening.md",
+    "docs/governance/extension_author_guide_v1.md",
+    "docs/governance/faq_v1.md",
     "scripts/objc3c_public_workflow_runner.py"
   ],
   "explicit_non_goals": [
-    "no-new-budget-limits-in-a001",
-    "no-waiver-policy-definition-in-a001",
-    "no-maintainer-workflow-enforcement-in-a001",
-    "no-long-horizon-reporting-claims-in-a001"
+    "no-hosted-community-infrastructure",
+    "no-registry-moderation-service",
+    "no-policy-only-substitute-for-executable-review-evidence",
+    "no-replacement-of-package-release-security-support-or-adoption-evidence"
   ],
   "successor_issues": [
-    "M318-B001",
-    "M318-B002",
-    "M318-C001",
-    "M318-C002",
-    "M318-D001",
-    "M318-D002",
-    "M318-E001"
+    "M332-B001",
+    "M332-B002",
+    "M332-C001",
+    "M332-C002",
+    "M332-D001",
+    "M332-D002",
+    "M332-E001"
   ]
 }
