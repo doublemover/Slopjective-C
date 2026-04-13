@@ -15,7 +15,7 @@ FIXTURE = (
     / "tooling"
     / "fixtures"
     / "native"
-    / "m257_synthesized_accessor_property_lowering_positive.objc3"
+    / "synthesized_accessor_property_lowering_positive.objc3"
 )
 
 
