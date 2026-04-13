@@ -71,6 +71,28 @@ Not supported in this boundary:
 - manual waiver-only compatibility status
 - soak evidence that cannot be regenerated from checked-in contracts
 
+## Deprecation And Compatibility Maintenance Policy
+
+The canonical policy contract is checked in at:
+
+- `tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json`
+
+Replay it with:
+
+- `python scripts/build_long_horizon_operations_deprecation_policy_summary.py`
+
+Compatibility maintenance is a support-window promise over generated release
+metadata, not a forever-compatible language/runtime claim. Deprecations must:
+
+- name the affected public surface, warning channel, support window, and
+  successor behavior
+- stay tied to existing release-operation warning classes from
+  `tests/tooling/fixtures/release_operations/update_channel_policy.json`
+- fail closed when a public claim uses forbidden release-operation phrases from
+  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+- remain demoted until migration replay and rollback evidence exists for the
+  affected package/application path
+
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later
