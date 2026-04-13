@@ -2281,7 +2281,8 @@ VALIDATION_PROFILE_RULES: dict[str, dict[str, object]] = {
             "tests/tooling/fixtures/native/",
         ),
         "recommended_actions": (
-            "test-runtime-acceptance",
+            "test-runtime-acceptance-fast",
+            "test-runtime-acceptance-diagnostics",
             "test-execution-replay",
             "test-execution-smoke -- -Limit 12",
         ),
@@ -2295,11 +2296,13 @@ VALIDATION_PROFILE_RULES: dict[str, dict[str, object]] = {
             "native/objc3c/runtime/",
         ),
         "recommended_actions": (
-            "test-runtime-acceptance",
+            "test-runtime-acceptance-fast",
+            "test-runtime-acceptance-block-arc",
+            "test-runtime-acceptance-concurrency",
             "test-execution-smoke",
             "test-execution-replay",
         ),
-        "exhaustive_actions": ("test-nightly",),
+        "exhaustive_actions": ("test-runtime-acceptance", "test-nightly"),
         "skipped_by_default": ("release packaging validations",),
     },
     "diagnostics": {
@@ -2310,9 +2313,9 @@ VALIDATION_PROFILE_RULES: dict[str, dict[str, object]] = {
         ),
         "recommended_actions": (
             "test-negative-expectations",
-            "test-runtime-acceptance",
+            "test-runtime-acceptance-diagnostics",
         ),
-        "exhaustive_actions": ("test-nightly",),
+        "exhaustive_actions": ("test-runtime-acceptance", "test-nightly"),
         "skipped_by_default": ("runtime-only smoke cases not touching diagnostics"),
     },
     "conformance": {
