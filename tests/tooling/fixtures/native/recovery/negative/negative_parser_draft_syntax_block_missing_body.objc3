@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P166.
+module NegativeParserDraftSyntaxBlockMissingBody;
+
+fn main() -> i32 {
+  let callback = ^(i32 value);
+  return 0;
+}

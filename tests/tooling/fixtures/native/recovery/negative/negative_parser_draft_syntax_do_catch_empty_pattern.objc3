@@ -1,0 +1,11 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeParserDraftSyntaxDoCatchEmptyPattern;
+
+fn main() -> i32 {
+  do {
+    return 1;
+  } catch () {
+    return 0;
+  }
+  return 2;
+}

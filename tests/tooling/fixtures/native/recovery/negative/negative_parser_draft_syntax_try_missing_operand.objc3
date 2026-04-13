@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeParserDraftSyntaxTryMissingOperand;
+
+fn recover() throws -> i32 {
+  let value = try;
+  return value;
+}

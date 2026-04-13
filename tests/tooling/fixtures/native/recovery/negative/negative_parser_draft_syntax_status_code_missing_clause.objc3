@@ -1,0 +1,4 @@
+// Expected diagnostic code(s): O3P280.
+module NegativeParserDraftSyntaxStatusCodeMissingClause;
+
+extern fn bridge(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError)));

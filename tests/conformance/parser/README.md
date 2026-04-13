@@ -89,3 +89,21 @@ behavior/interop syntax admission and deterministic replay accounting:
 - `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3`:
   rejects malformed macro payload syntax with `O3P341` so macro admission stays
   fail-closed and source-range stable.
+
+## Objective-C 3.0 draft syntax conformance matrix (issue #8012)
+
+The durable conformance map is
+`tests/conformance/parser/draft_syntax_surface_conformance.json`. It maps each
+parser-owned draft syntax surface to:
+
+- positive source tokens in
+  `tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3`;
+- the emitted `draft_syntax_surface_handoff_key` field that must report a
+  non-zero replay count for that surface;
+- a negative fixture with the expected diagnostic code, line, and column.
+
+The negative fixture set covers malformed or unsupported variants for block
+literals, `try`, `throw`, `do catch`, `throws`, `async`, `await`, `actor class`,
+macro marker/package/provenance payloads, property behavior payloads, and
+interop bridge/import attributes. Regenerate and verify the executable evidence
+with `python scripts/build_objc3c_parser_draft_syntax_conformance.py`.

@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeParserDraftSyntaxAwaitMissingOperand;
+
+async fn runTask() -> i32 {
+  return await;
+}

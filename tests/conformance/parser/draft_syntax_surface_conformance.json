@@ -1,0 +1,111 @@
+{
+  "contract_id": "objc3c.parser.draft-syntax-conformance.v1",
+  "issue": "#8012",
+  "positive_fixture": "tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3",
+  "manifest_count_field": "draft_syntax_surface_count",
+  "required_manifest_fields": [
+    "draft_syntax_surface_count",
+    "draft_syntax_surface_fingerprint",
+    "draft_syntax_surface_handoff_key",
+    "draft_syntax_surface_deterministic"
+  ],
+  "surfaces": [
+    {
+      "id": "block_literal",
+      "summary_field": "block_literal_sites",
+      "positive_tokens": ["let callback = ^(i32 value)", "return seed + value;"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_block_missing_body.objc3",
+      "expected_diagnostic": {"code": "O3P166", "line": 5, "column": 30}
+    },
+    {
+      "id": "try_expression",
+      "summary_field": "try_expression_sites",
+      "positive_tokens": ["let direct = try risky(0);", "let bridged = try? bridgeStatus(1, 0);"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_try_missing_operand.objc3",
+      "expected_diagnostic": {"code": "O3P103", "line": 5, "column": 18}
+    },
+    {
+      "id": "throw_statement",
+      "summary_field": "throw_statement_sites",
+      "positive_tokens": ["throw 7;"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_throw_missing_payload.objc3",
+      "expected_diagnostic": {"code": "O3P103", "line": 5, "column": 8}
+    },
+    {
+      "id": "do_catch",
+      "summary_field": "do_catch_sites",
+      "positive_tokens": ["do {", "catch (NSError* error)", "} catch {"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_do_catch_empty_pattern.objc3",
+      "expected_diagnostic": {"code": "O3P103", "line": 7, "column": 5}
+    },
+    {
+      "id": "throws_callable",
+      "summary_field": "throws_callable_sites",
+      "positive_tokens": ["fn risky(value: i32) throws -> i32", "fn recover() throws -> i32"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_duplicate_modifiers.objc3",
+      "expected_diagnostic": {"code": "O3P181", "line": 4, "column": 29}
+    },
+    {
+      "id": "async_callable",
+      "summary_field": "async_callable_sites",
+      "positive_tokens": ["async fn runTask()", "- (i32)load async", "- (i32)hop async"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_duplicate_async.objc3",
+      "expected_diagnostic": {"code": "O3P100", "line": 4, "column": 7}
+    },
+    {
+      "id": "await_expression",
+      "summary_field": "await_expression_sites",
+      "positive_tokens": ["return await produce();"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_await_missing_operand.objc3",
+      "expected_diagnostic": {"code": "O3P103", "line": 5, "column": 15}
+    },
+    {
+      "id": "actor_interface",
+      "summary_field": "actor_interface_sites",
+      "positive_tokens": ["actor class SyntaxActor", "@implementation SyntaxActor"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_actor_missing_name.objc3",
+      "expected_diagnostic": {"code": "O3P101", "line": 5, "column": 1}
+    },
+    {
+      "id": "macro_attribute",
+      "summary_field": "macro_attribute_sites",
+      "positive_tokens": ["objc_macro(named(\"Trace\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3",
+      "expected_diagnostic": {"code": "O3P341", "line": 5, "column": 51}
+    },
+    {
+      "id": "macro_package",
+      "summary_field": "macro_package_sites",
+      "positive_tokens": ["objc_macro_package(named(\"std.metaprogramming.trace\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_package_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 93}
+    },
+    {
+      "id": "macro_provenance",
+      "summary_field": "macro_provenance_sites",
+      "positive_tokens": ["objc_macro_provenance(named(\"sha256:abc123\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_provenance_payload.objc3",
+      "expected_diagnostic": {"code": "O3P341", "line": 4, "column": 146}
+    },
+    {
+      "id": "property_behavior",
+      "summary_field": "property_behavior_sites",
+      "positive_tokens": ["behavior=Observed"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+      "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
+    },
+    {
+      "id": "interop_attribute",
+      "summary_field": "interop_attribute_sites",
+      "positive_tokens": ["objc_foreign", "objc_import_module(named(\"ParserKit\"))", "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_import_module_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87},
+      "additional_negative_fixtures": [
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
+          "expected_diagnostic": {"code": "O3P280", "line": 4, "column": 69}
+        }
+      ]
+    }
+  ]
+}

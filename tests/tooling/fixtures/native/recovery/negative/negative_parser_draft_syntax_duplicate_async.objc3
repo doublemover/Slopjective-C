@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P100.
+module NegativeParserDraftSyntaxDuplicateAsync;
+
+async async fn duplicateAsync() -> i32 {
+  return 1;
+}
+

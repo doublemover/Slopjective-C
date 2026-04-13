@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P181.
+module NegativeParserDraftSyntaxDuplicateModifiers;
+
+fn duplicateThrows() throws throws -> i32 {
+  return 1;
+}

@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P355.
+module NegativeParserDraftSyntaxPropertyBehaviorMissingValue;
+
+@interface BadBehavior
+@property (strong, behavior) id value;
+@end

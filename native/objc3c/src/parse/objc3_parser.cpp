@@ -6580,6 +6580,7 @@ class Objc3Parser {
   bool ParseNamedStringAttributePayload(const Token &attribute_name,
                                         const char *attribute_spelling,
                                         std::string &named_value_out) {
+    (void)attribute_name;
     if (!Match(TokenKind::LParen)) {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P340",
@@ -9296,6 +9297,12 @@ class Objc3Parser {
               MakeDiag(token.line, token.column, "O3P100", "missing Objective-C @property attribute value"));
           return false;
         }
+      }
+      if (attribute.name == "behavior" && !attribute.has_value) {
+        diagnostics_.push_back(MakeDiag(
+            attribute.line, attribute.column, "O3P355",
+            "Objective-C @property behavior requires '=Name' payload"));
+        return false;
       }
       attributes.push_back(std::move(attribute));
 

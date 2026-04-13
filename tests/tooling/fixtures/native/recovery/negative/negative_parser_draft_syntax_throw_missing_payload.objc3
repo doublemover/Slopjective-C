@@ -1,0 +1,7 @@
+// Expected diagnostic code(s): O3P103.
+module NegativeParserDraftSyntaxThrowMissingPayload;
+
+fn risky() throws -> i32 {
+  throw;
+  return 0;
+}
