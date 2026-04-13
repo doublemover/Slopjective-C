@@ -126,7 +126,7 @@ Replay it with:
 - `python scripts/build_long_horizon_operations_aging_cadence_summary.py`
 
 A release cadence is supportable only when aging evidence is fresh enough to
-trust and broad enough to cover the public claim. M328 consumes existing
+trust and broad enough to cover the public claim. This boundary consumes existing
 performance-governance freshness budgets from
 `tests/tooling/fixtures/performance_governance/budget_model.json` and
 full-envelope soak inputs from
@@ -174,7 +174,7 @@ It generates:
 - `tmp/artifacts/long-horizon-operations/long-horizon-operations-evidence.json`
 - `tmp/reports/long-horizon-operations/evidence-summary.json`
 
-The generator replays the M328 policy summaries and live package,
+The generator replays the long-horizon policy summaries and live package,
 canonical-application, performance-governance, conformance, stress,
 external-validation, and public-conformance integration checks before writing
 the artifact. Generated evidence is temporary output; the checked-in contracts
@@ -202,6 +202,18 @@ Support-window publication emits:
 
 - `tmp/artifacts/long-horizon-operations/support-window-publication.json`
 - `tmp/reports/long-horizon-operations/publication-summary.json`
+
+## Closeout Gate
+
+The closeout gate is:
+
+- `python scripts/check_m328_long_horizon_operations_closeout_gate.py`
+
+It replays all long-horizon summaries, integration, support-window publication, public
+command rendering, documentation/repository surface checks, and source hygiene.
+The gate rejects widened compatibility claims, missing public runner actions,
+missing operator publication metadata, stale package manifest fields, and any
+claim audit release blocker.
 
 ## Successor Pressure
 

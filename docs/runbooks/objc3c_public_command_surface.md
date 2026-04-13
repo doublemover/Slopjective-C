@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `164`
-- Operator command count: `155`
+- Current package script count: `166`
+- Operator command count: `157`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -76,6 +76,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `proof:objc3c:runtime-architecture` | `proof-runtime-architecture` | `-` | `-` | `fixed-shape` | `python:scripts/check_objc3c_runtime_architecture_proof_packet.py` |
 | `publish:objc3c:distribution-credibility` | `publish-distribution-credibility` | `repo` | `distribution trust reporting stays derived from the live release drill artifacts and checked-in credibility policies` | `fixed-shape` | `python:scripts/publish_objc3c_distribution_trust_report.py` |
 | `publish:objc3c:external-repro-corpus` | `publish-external-repro-corpus` | `repo` | `accepted and quarantined external evidence stays publishable as a machine-owned corpus summary rooted in the replay drill` | `fixed-shape` | `python:scripts/publish_objc3c_external_repro_corpus.py` |
+| `publish:objc3c:long-horizon-operations` | `publish-long-horizon-operations` | `release` | `operator-facing support-window metadata stays generated from long-horizon evidence and blocks when claim audit reports release blockers` | `fixed-shape` | `python:scripts/publish_objc3c_long_horizon_operations_metadata.py` |
 | `publish:objc3c:performance-report` | `publish-performance-report` | `repo` | `performance governance publication stays traceable to the checked-in policy contracts and live dashboard summary` | `fixed-shape` | `python:scripts/publish_objc3c_performance_report.py` |
 | `publish:objc3c:public-conformance` | `publish-public-conformance-report` | `repo` | `public conformance summary and publication artifacts stay derived from the live scorecard and checked-in schema surface` | `fixed-shape` | `python:scripts/publish_objc3c_public_conformance_report.py` |
 | `publish:objc3c:release-operations` | `publish-release-operations` | `repo` | `release-operations publication stays traceable to the checked-in compatibility, warning, and fallback policy contracts` | `fixed-shape` | `python:scripts/publish_objc3c_release_operations_metadata.py` |
@@ -108,6 +109,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
 | `test:objc3c:fuzz-safety` | `test-fuzz-safety` | `repo` | `malformed parser/sema inputs stay fail-closed and deterministic through the live compiler path` | `pass-through` | `python:scripts/run_objc3c_fuzz_safety.py` |
 | `test:objc3c:interop-conformance` | `validate-interop-conformance` | `full` | `integrated mixed-module runtime packaging and interop conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_conformance.py` |
+| `test:objc3c:long-horizon-operations` | `validate-long-horizon-operations` | `full` | `long-horizon compatibility claims stay backed by generated migration, rollback, soak, aging, package, application, performance, and conformance evidence` | `fixed-shape` | `python:scripts/check_objc3c_long_horizon_operations_integration.py` |
 | `test:objc3c:lowering-runtime-stress` | `test-lowering-runtime-stress` | `repo` | `lowering-heavy compile paths and execution-smoke subsets stay runnable through the live compiler and runtime path` | `pass-through` | `python:scripts/run_objc3c_lowering_runtime_stress.py` |
 | `test:objc3c:metaprogramming-conformance` | `validate-metaprogramming-conformance` | `full` | `integrated metaprogramming conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_metaprogramming_conformance.py` |
 | `test:objc3c:mixed-module-differential` | `test-mixed-module-differential` | `repo` | `provider-consumer import/export and mixed-image surfaces stay executable on the live runtime acceptance path` | `pass-through` | `python:scripts/run_objc3c_mixed_module_differential.py` |
