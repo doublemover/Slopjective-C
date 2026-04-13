@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `179`
-- Operator command count: `170`
+- Current package script count: `180`
+- Operator command count: `171`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -81,6 +81,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `publish:objc3c:governance-sustainability` | `publish-governance-sustainability` | `release` | `governance publication stays generated from integration evidence and blocks when stewardship or extension-review evidence reports release blockers` | `fixed-shape` | `python:scripts/publish_objc3c_governance_sustainability_metadata.py` |
 | `publish:objc3c:long-horizon-operations` | `publish-long-horizon-operations` | `release` | `operator-facing support-window metadata stays generated from long-horizon evidence and blocks when claim audit reports release blockers` | `fixed-shape` | `python:scripts/publish_objc3c_long_horizon_operations_metadata.py` |
 | `publish:objc3c:performance-report` | `publish-performance-report` | `repo` | `performance governance publication stays traceable to the checked-in policy contracts and live dashboard summary` | `fixed-shape` | `python:scripts/publish_objc3c_performance_report.py` |
+| `publish:objc3c:planning-issues` | `publish-planning-issues` | `repo` | `issue publication stays rooted in checked-in planning payloads, durable GitHub number mappings, labels, milestones, and blocker references` | `pass-through` | `python:scripts/publish_objc3c_planning_issues.py` |
 | `publish:objc3c:public-conformance` | `publish-public-conformance-report` | `repo` | `public conformance summary and publication artifacts stay derived from the live scorecard and checked-in schema surface` | `fixed-shape` | `python:scripts/publish_objc3c_public_conformance_report.py` |
 | `publish:objc3c:release-operations` | `publish-release-operations` | `repo` | `release-operations publication stays traceable to the checked-in compatibility, warning, and fallback policy contracts` | `fixed-shape` | `python:scripts/publish_objc3c_release_operations_metadata.py` |
 | `publish:objc3c:release-provenance` | `publish-release-provenance` | `repo` | `release provenance publication stays traceable to the live release manifest, package manifest, and release-evidence index` | `fixed-shape` | `python:scripts/publish_objc3c_release_provenance.py` |

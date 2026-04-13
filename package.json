@@ -89,6 +89,7 @@
     "publish:objc3c:long-horizon-operations": "python scripts/objc3c_public_workflow_runner.py publish-long-horizon-operations",
     "publish:objc3c:adoption-legibility": "python scripts/objc3c_public_workflow_runner.py publish-adoption-legibility",
     "publish:objc3c:governance-sustainability": "python scripts/objc3c_public_workflow_runner.py publish-governance-sustainability",
+    "publish:objc3c:planning-issues": "python scripts/objc3c_public_workflow_runner.py publish-planning-issues",
     "publish:objc3c:distribution-credibility": "python scripts/objc3c_public_workflow_runner.py publish-distribution-credibility",
     "publish:objc3c:security-advisories": "python scripts/objc3c_public_workflow_runner.py publish-security-advisories",
     "inspect:objc3c:platform-matrix": "python scripts/objc3c_public_workflow_runner.py build-platform-support-matrix",
