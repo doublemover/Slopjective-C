@@ -34,6 +34,13 @@ std::string ExplainNonDeterministicSemanticTypeMetadataHandoff(
 Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
     const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
     std::size_t max_message_send_args);
+Objc3EffectsOwnershipSemanticModelSummary BuildEffectsOwnershipSemanticModelSummary(
+    const Objc3SemanticIntegrationSurface &surface,
+    const Objc3ErrorHandlingErrorSemanticModelSummary &error_summary,
+    const Objc3ConcurrencyAsyncEffectSuspensionSemanticModelSummary &async_summary,
+    const Objc3ConcurrencyTaskExecutorCancellationSemanticModelSummary &task_summary,
+    const Objc3ConcurrencyActorIsolationSendableSemanticModelSummary &actor_summary,
+    const Objc3InteropInteropSemanticModelSummary &interop_summary);
 Objc3ControlFlowControlFlowSemanticModelSummary BuildControlFlowControlFlowSemanticModelSummary(
     const Objc3Program &ast);
 Objc3ErrorHandlingErrorSemanticModelSummary BuildErrorHandlingErrorSemanticModelSummary(

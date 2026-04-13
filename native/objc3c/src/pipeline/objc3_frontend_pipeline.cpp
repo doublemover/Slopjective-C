@@ -7578,6 +7578,14 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
           result.error_handling_error_bridge_legality_summary,
           result.concurrency_async_diagnostics_compatibility_summary,
           result.concurrency_actor_race_hazard_escape_diagnostics_summary);
+  result.effects_ownership_semantic_model_summary =
+      BuildEffectsOwnershipSemanticModelSummary(
+          result.integration_surface,
+          result.error_handling_error_semantic_model_summary,
+          result.concurrency_async_effect_suspension_semantic_model_summary,
+          result.concurrency_task_executor_cancellation_semantic_model_summary,
+          result.concurrency_actor_isolation_sendable_semantic_model_summary,
+          result.interop_interop_semantic_model_summary);
   result.interop_interop_runtime_parity_summary =
       BuildInteropInteropRuntimeParitySummary(
           Objc3ParsedProgramAst(result.program),

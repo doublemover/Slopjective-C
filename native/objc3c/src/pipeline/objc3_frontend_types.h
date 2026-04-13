@@ -6242,6 +6242,8 @@ struct Objc3FrontendPipelineResult {
       concurrency_task_executor_cancellation_semantic_model_summary;
   Objc3OwnershipSystemExtensionSemanticModelSummary
       ownership_system_extension_semantic_model_summary;
+  Objc3EffectsOwnershipSemanticModelSummary
+      effects_ownership_semantic_model_summary;
   Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary
       metaprogramming_expansion_behavior_semantic_model_summary;
   Objc3MetaprogrammingDeriveExpansionInventorySummary

@@ -28,6 +28,13 @@ Current semantic fixtures for the E.3.3 type-system lane:
   `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`,
   and `scripts/build_objc3c_type_semantic_model_closure.py`.
+- `EFF-8014-01.json`, `EFF-8014-02.json` for issue #8014 effects and ownership
+  semantic closure across ARC, escaping blocks/byref cells, throws/unwind
+  cleanup, async/task cancellation, actor metadata, and interop boundaries. These
+  are backed by
+  `tests/tooling/fixtures/native/effects_ownership_semantic_model_positive.objc3`,
+  `tests/tooling/fixtures/native/recovery/negative/negative_effects_ownership_async_throws.objc3`,
+  and `scripts/build_objc3c_effects_ownership_semantic_model.py`.
 - `DEF-70-01.json`, `DEF-70-02.json` for `defer` LIFO scope-exit semantics.
 - `GRD-72-01.json`, `GRD-72-02.json` for `guard` early-exit/refinement
   semantics.

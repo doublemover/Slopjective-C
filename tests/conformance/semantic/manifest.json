@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0.0",
   "suite": "objc3-conformance-semantic-types-wave",
-  "description": "Semantic fixtures for type-system/control-flow/errors/concurrency/system/performance/metaprogramming/interop lanes (issues #58, #59, #61, #62, #64, #65, #66, #70, #72, #73, #75, #77, #78, #80, #82, #83, #84, #86, #87, #89, #90, #91, #93, #96, #98, #99, #101, #102, #103, #1181, #1182, #1183, #1184, #1185, #1186, #1187, #1188, #1223..#1231, #1268..#1277, #1316..#1325, #1366..#1377, #1423..#1431, #8013).",
+  "description": "Semantic fixtures for type-system/control-flow/errors/concurrency/system/performance/metaprogramming/interop lanes (issues #58, #59, #61, #62, #64, #65, #66, #70, #72, #73, #75, #77, #78, #80, #82, #83, #84, #86, #87, #89, #90, #91, #93, #96, #98, #99, #101, #102, #103, #1181, #1182, #1183, #1184, #1185, #1186, #1187, #1188, #1223..#1231, #1268..#1277, #1316..#1325, #1366..#1377, #1423..#1431, #8013, #8014).",
   "groups": [
     {
       "name": "issue_58_nullability_qualifiers",
@@ -74,6 +74,15 @@
       "files": [
         "TYP-8013-01.json",
         "TYP-8013-02.json"
+      ]
+    },
+    {
+      "name": "issue_8014_effects_ownership_semantic_model_closure",
+      "feature": "effects and ownership semantic model closure across ARC, blocks, throws, async, actors, and interop",
+      "issue": 8014,
+      "files": [
+        "EFF-8014-01.json",
+        "EFF-8014-02.json"
       ]
     },
     {

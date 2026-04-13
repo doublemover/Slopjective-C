@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3S226.
+module NegativeEffectsOwnershipAsyncThrows;
+
+async fn main() throws -> i32 {
+  return 0;
+}
