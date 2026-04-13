@@ -648,6 +648,22 @@ $manifestPayload = [ordered]@{
     "test:objc3c:package-ecosystem",
     "test:objc3c:package-ecosystem:e2e"
   )
+  long_horizon_operations_runbook = "docs/runbooks/objc3c_long_horizon_operations.md"
+  long_horizon_operations_artifact_contract = "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json"
+  long_horizon_operations_schema = "schemas/objc3c-long-horizon-operations-evidence-v1.schema.json"
+  long_horizon_operations_surface = [ordered]@{
+    evidence_generator = "scripts/build_objc3c_long_horizon_operations_evidence.py"
+    integration_validation = "scripts/check_objc3c_long_horizon_operations_integration.py"
+    support_window_publication = "scripts/publish_objc3c_long_horizon_operations_metadata.py"
+  }
+  long_horizon_operations_public_actions = @(
+    "validate-long-horizon-operations",
+    "publish-long-horizon-operations"
+  )
+  long_horizon_operations_public_scripts = @(
+    "test:objc3c:long-horizon-operations",
+    "publish:objc3c:long-horizon-operations"
+  )
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
   platform_support_tier_policy = "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json"

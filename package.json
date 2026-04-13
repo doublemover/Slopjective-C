@@ -84,6 +84,7 @@
     "package:objc3c-native:runnable-toolchain": "python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain",
     "package:objc3c:channels": "python scripts/objc3c_public_workflow_runner.py build-package-channels",
     "publish:objc3c:release-operations": "python scripts/objc3c_public_workflow_runner.py publish-release-operations",
+    "publish:objc3c:long-horizon-operations": "python scripts/objc3c_public_workflow_runner.py publish-long-horizon-operations",
     "publish:objc3c:distribution-credibility": "python scripts/objc3c_public_workflow_runner.py publish-distribution-credibility",
     "publish:objc3c:security-advisories": "python scripts/objc3c_public_workflow_runner.py publish-security-advisories",
     "inspect:objc3c:platform-matrix": "python scripts/objc3c_public_workflow_runner.py build-platform-support-matrix",

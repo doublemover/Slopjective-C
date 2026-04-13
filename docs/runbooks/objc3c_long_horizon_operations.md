@@ -185,15 +185,23 @@ and scripts remain the source of truth.
 The repo-scope long-horizon workflow is:
 
 - `npm run test:objc3c:long-horizon-operations`
+- `npm run publish:objc3c:long-horizon-operations`
 
 It maps to:
 
 - `python scripts/objc3c_public_workflow_runner.py validate-long-horizon-operations`
 - `python scripts/check_objc3c_long_horizon_operations_integration.py`
+- `python scripts/objc3c_public_workflow_runner.py publish-long-horizon-operations`
+- `python scripts/publish_objc3c_long_horizon_operations_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, claim
 audit, migration evidence, rollback channel coverage, and soak evidence family
 coverage.
+
+Support-window publication emits:
+
+- `tmp/artifacts/long-horizon-operations/support-window-publication.json`
+- `tmp/reports/long-horizon-operations/publication-summary.json`
 
 ## Successor Pressure
 
