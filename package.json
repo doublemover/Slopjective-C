@@ -116,6 +116,7 @@
     "proof:objc3c": "python scripts/objc3c_public_workflow_runner.py proof-objc3c",
     "proof:objc3c:runtime-architecture": "python scripts/objc3c_public_workflow_runner.py proof-runtime-architecture",
     "test:objc3c": "python scripts/objc3c_public_workflow_runner.py test-recovery",
+    "test:objc3c:compile-wrapper": "python scripts/objc3c_public_workflow_runner.py test-compile-wrapper-self-audit",
     "test:objc3c:execution-smoke": "python scripts/objc3c_public_workflow_runner.py test-execution-smoke",
     "test:objc3c:execution-replay-proof": "python scripts/objc3c_public_workflow_runner.py test-execution-replay",
     "test:objc3c:runtime-acceptance": "python scripts/objc3c_public_workflow_runner.py test-runtime-acceptance",

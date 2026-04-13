@@ -22,6 +22,9 @@ NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
 
 BUILD_PS1 = ROOT / "scripts" / "build_objc3c_native.ps1"
 COMPILE_PS1 = ROOT / "scripts" / "objc3c_native_compile.ps1"
+COMPILE_WRAPPER_SELF_AUDIT_PY = (
+    ROOT / "scripts" / "check_objc3c_compile_wrapper_self_audit.py"
+)
 SMOKE_PS1 = ROOT / "scripts" / "check_objc3c_native_execution_smoke.ps1"
 REPLAY_PS1 = ROOT / "scripts" / "check_objc3c_execution_replay_proof.ps1"
 RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
@@ -2089,6 +2092,10 @@ def action_test_runtime_acceptance(_: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_ACCEPTANCE_PY)])
 
 
+def action_test_compile_wrapper_self_audit(_: list[str]) -> int:
+    return run([sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)])
+
+
 def action_proof_runtime_architecture(_: list[str]) -> int:
     return run([sys.executable, str(RUNTIME_ARCHITECTURE_PROOF_PACKET_PY)])
 
@@ -2540,6 +2547,7 @@ def action_test_full(_: list[str]) -> int:
     return run_composite_validation(
         "test-full",
         [
+            ("test-compile-wrapper-self-audit", [sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "24"]),
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
@@ -2727,6 +2735,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-smoke": ActionSpec("test-smoke", "developer smoke validation entrypoint", "runner-internal", ("test:smoke",), validation_tier="smoke", guarantee_owner="full execution smoke corpus"),
     "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + direct task hygiene", ("test:ci",), validation_tier="ci", guarantee_owner="task hygiene, developer-tooling integration, bonus-experience validation, stdlib validation, performance governance reporting, runtime acceptance, canonical replay, and full execution smoke validation"),
     "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", ("test:objc3c",), validation_tier="recovery", guarantee_owner="recovery compile success and deterministic recovery diagnostics", pass_through_args=True),
+    "test-compile-wrapper-self-audit": ActionSpec("test-compile-wrapper-self-audit", "native compile wrapper self-audit", "python:scripts/check_objc3c_compile_wrapper_self_audit.py", ("test:objc3c:compile-wrapper",), validation_tier="fast", guarantee_owner="one wrapper compile proves invariant compile-output provenance, truthfulness, registration digest binding, and required artifact publication"),
     "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", ("test:objc3c:execution-smoke",), validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
     "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", ("test:objc3c:execution-replay-proof",), validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
     "test-runtime-acceptance": ActionSpec("test-runtime-acceptance", "runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py", ("test:objc3c:runtime-acceptance",), validation_tier="fast", guarantee_owner="runtime acceptance and ABI/accessor proof"),
@@ -2907,6 +2916,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "test-smoke": action_test_smoke,
     "test-ci": action_test_ci,
     "test-recovery": action_test_recovery,
+    "test-compile-wrapper-self-audit": action_test_compile_wrapper_self_audit,
     "test-execution-smoke": action_test_execution_smoke,
     "test-execution-replay": action_test_execution_replay,
     "test-runtime-acceptance": action_test_runtime_acceptance,
