@@ -101,6 +101,7 @@
     "inspect:objc3c:comparative-baselines": "python scripts/objc3c_public_workflow_runner.py benchmark-comparative-baselines",
     "inspect:objc3c:public-conformance:scorecard": "python scripts/objc3c_public_workflow_runner.py build-public-conformance-scorecard",
     "inspect:objc3c:performance-dashboard": "python scripts/objc3c_public_workflow_runner.py build-performance-dashboard",
+    "inspect:objc3c:validation-timing": "python scripts/objc3c_public_workflow_runner.py inspect-validation-timing",
     "inspect:objc3c:release-manifest": "python scripts/objc3c_public_workflow_runner.py build-release-manifest",
     "inspect:objc3c:update-manifest": "python scripts/objc3c_public_workflow_runner.py build-update-manifest",
     "inspect:objc3c:distribution-credibility": "python scripts/objc3c_public_workflow_runner.py build-distribution-credibility-dashboard",

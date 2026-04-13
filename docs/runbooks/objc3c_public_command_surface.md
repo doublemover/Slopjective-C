@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `170`
-- Operator command count: `161`
+- Current package script count: `171`
+- Operator command count: `162`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -70,6 +70,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `inspect:objc3c:runtime-performance` | `benchmark-runtime-performance` | `repo` | `runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots` | `pass-through` | `python:scripts/benchmark_objc3c_runtime_performance.py` |
 | `inspect:objc3c:security-posture` | `build-security-posture` | `repo` | `security posture stays derived from the live trust boundary, release, and runtime evidence` | `fixed-shape` | `python:scripts/build_objc3c_security_posture.py` |
 | `inspect:objc3c:update-manifest` | `build-update-manifest` | `repo` | `versioned channel metadata stays tied to the live release and packaging surfaces` | `fixed-shape` | `python:scripts/build_objc3c_update_manifest.py` |
+| `inspect:objc3c:validation-timing` | `inspect-validation-timing` | `repo` | `validation timing, warning budgets, child reports, and issue-specific profiles stay explainable from generated suite reports` | `fixed-shape` | `runner-internal + tmp timing reports` |
 | `package:objc3c-native:runnable-toolchain` | `package-runnable-toolchain` | `-` | `-` | `fixed-shape` | `pwsh:scripts/package_objc3c_runnable_toolchain.ps1` |
 | `package:objc3c:channels` | `build-package-channels` | `repo` | `package channels stay derived from the live runnable package and release-foundation artifacts` | `fixed-shape` | `python:scripts/build_objc3c_package_channels.py` |
 | `proof:objc3c` | `proof-objc3c` | `-` | `-` | `fixed-shape` | `pwsh:scripts/run_objc3c_native_compile_proof.ps1` |
@@ -109,7 +110,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `test:objc3c:external-validation:integration` | `validate-external-validation-integration` | `repo` | `integrated external-validation reports stay coherent across source-surface, replay, and publication outputs` | `fixed-shape` | `python:scripts/check_objc3c_external_validation_integration.py` |
 | `test:objc3c:external-validation:replay` | `test-external-validation-replay` | `repo` | `accepted external evidence keeps replaying through the live parser and execution proof surfaces` | `fixed-shape` | `python:scripts/run_objc3c_external_validation_replay.py` |
 | `test:objc3c:fixture-matrix` | `test-fixture-matrix` | `nightly` | `broad positive dispatch and artifact sanity` | `pass-through` | `pwsh:scripts/run_objc3c_native_fixture_matrix.ps1` |
-| `test:objc3c:full` | `test-full` | `full` | `smoke, runtime acceptance, and replay without full recovery fan-out` | `fixed-shape` | `runner-internal + direct PowerShell suites` |
+| `test:objc3c:full` | `test-full` | `full` | `runtime acceptance, canonical replay, and a deterministic 24-fixture smoke slice; use test-smoke or test-nightly for exhaustive smoke` | `fixed-shape` | `runner-internal + runtime acceptance + replay + smoke -Limit 24` |
 | `test:objc3c:fuzz-safety` | `test-fuzz-safety` | `repo` | `malformed parser/sema inputs stay fail-closed and deterministic through the live compiler path` | `pass-through` | `python:scripts/run_objc3c_fuzz_safety.py` |
 | `test:objc3c:governance-sustainability` | `validate-governance-sustainability` | `repo` | `governance and extension-review claims stay executable across checked-in contracts, public workflow entrypoints, and generated evidence` | `fixed-shape` | `python:scripts/check_objc3c_governance_sustainability_integration.py` |
 | `test:objc3c:interop-conformance` | `validate-interop-conformance` | `full` | `integrated mixed-module runtime packaging and interop conformance over the live runtime architecture workflow` | `fixed-shape` | `python:scripts/check_objc3c_runnable_interop_conformance.py` |
