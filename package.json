@@ -22,6 +22,7 @@
     "test:objc3c:package-mirror": "python scripts/objc3c_public_workflow_runner.py validate-package-mirror",
     "test:objc3c:package-ecosystem": "python scripts/objc3c_public_workflow_runner.py validate-package-ecosystem",
     "test:objc3c:package-ecosystem:e2e": "python scripts/objc3c_public_workflow_runner.py validate-runnable-package-ecosystem",
+    "test:objc3c:long-horizon-operations": "python scripts/objc3c_public_workflow_runner.py validate-long-horizon-operations",
     "test:objc3c:developer-tooling": "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
     "test:objc3c:runnable-developer-tooling": "python scripts/objc3c_public_workflow_runner.py validate-runnable-developer-tooling",
     "test:objc3c:performance": "python scripts/objc3c_public_workflow_runner.py validate-performance-foundation",

@@ -180,6 +180,21 @@ external-validation, and public-conformance integration checks before writing
 the artifact. Generated evidence is temporary output; the checked-in contracts
 and scripts remain the source of truth.
 
+## Public Workflow Integration
+
+The repo-scope long-horizon workflow is:
+
+- `npm run test:objc3c:long-horizon-operations`
+
+It maps to:
+
+- `python scripts/objc3c_public_workflow_runner.py validate-long-horizon-operations`
+- `python scripts/check_objc3c_long_horizon_operations_integration.py`
+
+The public workflow validates the generated evidence artifact shape, claim
+audit, migration evidence, rollback channel coverage, and soak evidence family
+coverage.
+
 ## Successor Pressure
 
 This milestone feeds production-readiness and governance closeout. Later

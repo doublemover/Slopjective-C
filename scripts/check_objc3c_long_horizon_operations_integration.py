@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+"""Validate the integrated long-horizon operations workflow."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+EVIDENCE_BUILDER = ROOT / "scripts" / "build_objc3c_long_horizon_operations_evidence.py"
+EVIDENCE_ARTIFACT = ROOT / "tmp" / "artifacts" / "long-horizon-operations" / "long-horizon-operations-evidence.json"
+EVIDENCE_SUMMARY = ROOT / "tmp" / "reports" / "long-horizon-operations" / "evidence-summary.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "integration-summary.json"
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def expect(condition: bool, message: str, failures: list[str]) -> None:
+    if not condition:
+        failures.append(message)
+
+
+def main() -> int:
+    result = subprocess.run(
+        [sys.executable, str(EVIDENCE_BUILDER)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+
+    failures: list[str] = []
+    expect(result.returncode == 0, "long-horizon evidence builder failed", failures)
+    expect(EVIDENCE_ARTIFACT.is_file(), f"missing evidence artifact {repo_rel(EVIDENCE_ARTIFACT)}", failures)
+    expect(EVIDENCE_SUMMARY.is_file(), f"missing evidence summary {repo_rel(EVIDENCE_SUMMARY)}", failures)
+
+    artifact = load_json(EVIDENCE_ARTIFACT) if EVIDENCE_ARTIFACT.is_file() else {}
+    evidence_summary = load_json(EVIDENCE_SUMMARY) if EVIDENCE_SUMMARY.is_file() else {}
+    expect(artifact.get("contract_id") == "objc3c.long_horizon_operations.evidence.v1", "evidence artifact contract_id drifted", failures)
+    expect(artifact.get("schema_version") == 1, "evidence artifact schema_version drifted", failures)
+    expect(evidence_summary.get("status") == "PASS", "evidence summary did not report PASS", failures)
+
+    for section in ("support_window", "migration_replay", "rollback", "soak", "aging_regression", "claim_audit"):
+        expect(isinstance(artifact.get(section), dict), f"evidence artifact missing section {section}", failures)
+
+    claim_audit = artifact.get("claim_audit", {}) if isinstance(artifact.get("claim_audit"), dict) else {}
+    expect("same-major" in str(claim_audit.get("support_state", "")), "support_state is not same-major scoped", failures)
+    expect(claim_audit.get("release_blockers") == [], "claim audit reported release blockers", failures)
+    expect(len(artifact.get("migration_replay", {}).get("evidence_paths", [])) >= 4, "migration replay evidence is too narrow", failures)
+    expect(len(artifact.get("soak", {}).get("evidence_paths", [])) >= 4, "soak evidence is too narrow", failures)
+    expect(len(artifact.get("rollback", {}).get("channels", [])) >= 3, "rollback channels are too narrow", failures)
+
+    payload = {
+        "contract_id": "objc3c.long_horizon_operations.integration.summary.v1",
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "PASS" if not failures else "FAIL",
+        "runner_path": "scripts/check_objc3c_long_horizon_operations_integration.py",
+        "evidence_builder": repo_rel(EVIDENCE_BUILDER),
+        "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
+        "evidence_summary": repo_rel(EVIDENCE_SUMMARY),
+        "support_state": claim_audit.get("support_state"),
+        "migration_evidence_path_count": len(artifact.get("migration_replay", {}).get("evidence_paths", [])) if isinstance(artifact.get("migration_replay"), dict) else 0,
+        "soak_evidence_path_count": len(artifact.get("soak", {}).get("evidence_paths", [])) if isinstance(artifact.get("soak"), dict) else 0,
+        "rollback_channel_count": len(artifact.get("rollback", {}).get("channels", [])) if isinstance(artifact.get("rollback"), dict) else 0,
+        "failures": failures,
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print("objc3c-long-horizon-operations-integration: PASS" if not failures else "objc3c-long-horizon-operations-integration: FAIL")
+    return 0 if not failures else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

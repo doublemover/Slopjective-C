@@ -132,6 +132,7 @@ PACKAGE_AUTHORING_WORKFLOW_PY = ROOT / "scripts" / "check_objc3c_package_authori
 PACKAGE_MIRROR_REPRODUCIBILITY_PY = ROOT / "scripts" / "check_objc3c_package_registry_mirror_reproducibility.py"
 PACKAGE_ECOSYSTEM_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_package_ecosystem_integration.py"
 RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_package_ecosystem_end_to_end.py"
+LONG_HORIZON_OPERATIONS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_long_horizon_operations_integration.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
@@ -415,6 +416,10 @@ def action_validate_package_ecosystem(_: list[str]) -> int:
 
 def action_validate_runnable_package_ecosystem(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_PACKAGE_ECOSYSTEM_E2E_PY)])
+
+
+def action_validate_long_horizon_operations(_: list[str]) -> int:
+    return run([sys.executable, str(LONG_HORIZON_OPERATIONS_INTEGRATION_PY)])
 
 
 def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
@@ -1945,6 +1950,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-package-mirror": ActionSpec("validate-package-mirror", "validate offline mirror and local registry metadata reproducibility from the generated package lock", "python:scripts/check_objc3c_package_registry_mirror_reproducibility.py", ("test:objc3c:package-mirror",), validation_tier="repo", guarantee_owner="offline mirror and local registry metadata stay lock-derived, no-network, and hosted-registry-deferred"),
     "validate-package-ecosystem": ActionSpec("validate-package-ecosystem", "validate the integrated package ecosystem workflow against stdlib program and canonical application surfaces", "python:scripts/check_objc3c_package_ecosystem_integration.py", ("test:objc3c:package-ecosystem",), validation_tier="repo", guarantee_owner="package ecosystem claims stay grounded in deterministic locks, stdlib programs, and canonical application workspaces"),
     "validate-runnable-package-ecosystem": ActionSpec("validate-runnable-package-ecosystem", "validate package authoring and offline mirror workflows from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py", ("test:objc3c:package-ecosystem:e2e",), validation_tier="full", guarantee_owner="packaged dependency and offline mirror workflows stay reproducible from the staged runnable toolchain bundle"),
+    "validate-long-horizon-operations": ActionSpec("validate-long-horizon-operations", "validate migration, rollback, soak, aging, and support-window evidence over the live package and application workflows", "python:scripts/check_objc3c_long_horizon_operations_integration.py", ("test:objc3c:long-horizon-operations",), validation_tier="full", guarantee_owner="long-horizon compatibility claims stay backed by generated migration, rollback, soak, aging, package, application, performance, and conformance evidence"),
     "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", ("test:stdlib:advanced:e2e",), validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", ("test:stdlib:program:e2e",), validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
@@ -2206,6 +2212,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-package-mirror": action_validate_package_mirror,
     "validate-package-ecosystem": action_validate_package_ecosystem,
     "validate-runnable-package-ecosystem": action_validate_runnable_package_ecosystem,
+    "validate-long-horizon-operations": action_validate_long_horizon_operations,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,
