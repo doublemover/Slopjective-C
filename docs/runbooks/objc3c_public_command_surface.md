@@ -3,8 +3,8 @@
 This runbook is generated from the canonical public command contract.
 It is an operator-facing appendix, not the primary onboarding or project-explanation surface.
 
-- Current package script count: `180`
-- Operator command count: `171`
+- Current package script count: `181`
+- Operator command count: `172`
 - Maintainer command count: `9`
 - Runner path: `scripts/objc3c_public_workflow_runner.py`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
@@ -37,6 +37,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 | `check:objc3c:packaging-channels:surface` | `check-packaging-channels-surface` | `repo` | `packaging-channel publication stays rooted in checked-in channel, platform, and installer policy contracts` | `fixed-shape` | `python:scripts/check_packaging_channels_source_surface.py` |
 | `check:objc3c:performance-governance:schemas` | `check-performance-governance-schema-surface` | `repo` | `performance dashboard and public report artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_performance_governance_schema_surface.py` |
 | `check:objc3c:performance-governance:surface` | `check-performance-governance-surface` | `repo` | `performance governance only publishes from the checked-in benchmark, policy, and reporting sources` | `fixed-shape` | `python:scripts/check_performance_governance_source_surface.py` |
+| `check:objc3c:planning-publication` | `check-planning-publication-drift` | `repo` | `planning payloads, markdown reports, durable GitHub mappings, and dependency references stay synchronized with assigned GitHub numbers` | `pass-through` | `python:scripts/audit_objc3c_planning_publication.py --check` |
 | `check:objc3c:public-conformance:schemas` | `check-public-conformance-schema-surface` | `repo` | `public conformance scorecard and summary outputs stay tied to checked-in schema contracts` | `fixed-shape` | `python:scripts/check_public_conformance_schema_surface.py` |
 | `check:objc3c:public-conformance:surface` | `check-public-conformance-reporting-surface` | `repo` | `public conformance reporting stays rooted in checked-in source, policy, and upstream evidence boundaries` | `fixed-shape` | `python:scripts/check_public_conformance_reporting_source_surface.py` |
 | `check:objc3c:release-foundation:schemas` | `check-release-foundation-schema-surface` | `repo` | `release manifest, sbom, and attestation artifacts stay on checked-in schema contracts` | `fixed-shape` | `python:scripts/check_release_foundation_schema_surface.py` |

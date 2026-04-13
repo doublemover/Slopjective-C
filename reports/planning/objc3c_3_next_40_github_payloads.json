@@ -3018,7 +3018,7 @@
   ],
   "published": {
     "repository": "doublemover/Slopjective-C",
-    "updatedAtUtc": "2026-04-13T17:24:49.821Z",
+    "updatedAtUtc": "2026-04-13T23:27:15Z",
     "milestoneCount": 40,
     "issueCount": 100,
     "dependencyCount": 98,
@@ -3029,280 +3029,280 @@
         "id": 15521363,
         "title": "OC3-T01 Claimable Runtime Surface Audit",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/414",
-        "reused": false
+        "reused": true
       },
       "OC3-T02": {
         "number": 415,
         "id": 15521364,
         "title": "OC3-T02 Parser And AST Completeness For Draft Syntax",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/415",
-        "reused": false
+        "reused": true
       },
       "OC3-T03": {
         "number": 416,
         "id": 15521365,
         "title": "OC3-T03 Typed Semantic Model Closure",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/416",
-        "reused": false
+        "reused": true
       },
       "OC3-T04": {
         "number": 417,
         "id": 15521366,
         "title": "OC3-T04 Lowering And IR Emission Completeness",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/417",
-        "reused": false
+        "reused": true
       },
       "OC3-T05": {
         "number": 418,
         "id": 15521367,
         "title": "OC3-T05 Full Class Metaclass Runtime Realization",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/418",
-        "reused": false
+        "reused": true
       },
       "OC3-T06": {
         "number": 419,
         "id": 15521369,
         "title": "OC3-T06 Protocol And Category Runtime Semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/419",
-        "reused": false
+        "reused": true
       },
       "OC3-T07": {
         "number": 420,
         "id": 15521370,
         "title": "OC3-T07 Property Ivar Reflection Closure",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/420",
-        "reused": false
+        "reused": true
       },
       "OC3-T08": {
         "number": 421,
         "id": 15521371,
         "title": "OC3-T08 Message Dispatch And Method Cache Completeness",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/421",
-        "reused": false
+        "reused": true
       },
       "OC3-T09": {
         "number": 422,
         "id": 15521372,
         "title": "OC3-T09 Escaping Blocks And Byref Runtime Automation",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/422",
-        "reused": false
+        "reused": true
       },
       "OC3-T10": {
         "number": 423,
         "id": 15521373,
         "title": "OC3-T10 ARC Automation Beyond Helper-Backed Slice",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/423",
-        "reused": false
+        "reused": true
       },
       "OC3-T11": {
         "number": 424,
         "id": 15521374,
         "title": "OC3-T11 Throws Error Propagation And Cleanup Runtime",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/424",
-        "reused": false
+        "reused": true
       },
       "OC3-T12": {
         "number": 425,
         "id": 15521375,
         "title": "OC3-T12 Async Await And Continuation Runtime",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/425",
-        "reused": false
+        "reused": true
       },
       "OC3-T13": {
         "number": 426,
         "id": 15521377,
         "title": "OC3-T13 Task Runtime And Structured Concurrency",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/426",
-        "reused": false
+        "reused": true
       },
       "OC3-T14": {
         "number": 427,
         "id": 15521378,
         "title": "OC3-T14 Actor Runtime And Isolation Enforcement",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/427",
-        "reused": false
+        "reused": true
       },
       "OC3-T15": {
         "number": 428,
         "id": 15521379,
         "title": "OC3-T15 Metaprogramming Macro Host And Property Behaviors",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/428",
-        "reused": false
+        "reused": true
       },
       "OC3-T16": {
         "number": 429,
         "id": 15521380,
         "title": "OC3-T16 Broader C Cpp Swift Interop And Package Loader",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/429",
-        "reused": false
+        "reused": true
       },
       "OC3-T17": {
         "number": 430,
         "id": 15521381,
         "title": "OC3-T17 Standard Library Runtime Backing",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/430",
-        "reused": false
+        "reused": true
       },
       "OC3-T18": {
         "number": 431,
         "id": 15521383,
         "title": "OC3-T18 Conformance Corpus From Breadth To Claimability",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/431",
-        "reused": false
+        "reused": true
       },
       "OC3-T19": {
         "number": 432,
         "id": 15521384,
         "title": "OC3-T19 Production Performance Stress And Runtime Hardening",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/432",
-        "reused": false
+        "reused": true
       },
       "OC3-T20": {
         "number": 433,
         "id": 15521385,
         "title": "OC3-T20 Release Grade Public ABI Packaging Security And Governance",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/433",
-        "reused": false
+        "reused": true
       },
       "OC3-N21": {
         "number": 434,
         "id": 15521386,
         "title": "OC3-N21 Deterministic Bootstrap And Build Reproducibility",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/434",
-        "reused": false
+        "reused": true
       },
       "OC3-N22": {
         "number": 435,
         "id": 15521387,
         "title": "OC3-N22 Developer Tooling LSP Navigation And Workspace Semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/435",
-        "reused": false
+        "reused": true
       },
       "OC3-N23": {
         "number": 436,
         "id": 15521388,
         "title": "OC3-N23 Formatter Refactor And Source Rewrite Tools",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/436",
-        "reused": false
+        "reused": true
       },
       "OC3-N24": {
         "number": 437,
         "id": 15521389,
         "title": "OC3-N24 Debugger Source Maps And Runtime Inspection",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/437",
-        "reused": false
+        "reused": true
       },
       "OC3-N25": {
         "number": 438,
         "id": 15521390,
         "title": "OC3-N25 Diagnostic Taxonomy And Fix-It Quality",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/438",
-        "reused": false
+        "reused": true
       },
       "OC3-N26": {
         "number": 439,
         "id": 15521392,
         "title": "OC3-N26 ObjC2 Swift Cpp Migration Tooling",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/439",
-        "reused": false
+        "reused": true
       },
       "OC3-N27": {
         "number": 440,
         "id": 15521393,
         "title": "OC3-N27 Package Manager Registry And Offline Mirror",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/440",
-        "reused": false
+        "reused": true
       },
       "OC3-N28": {
         "number": 441,
         "id": 15521394,
         "title": "OC3-N28 Incremental Compilation Module Cache And Invalidations",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/441",
-        "reused": false
+        "reused": true
       },
       "OC3-N29": {
         "number": 442,
         "id": 15521395,
         "title": "OC3-N29 Cross Platform Toolchain Matrix",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/442",
-        "reused": false
+        "reused": true
       },
       "OC3-N30": {
         "number": 443,
         "id": 15521396,
         "title": "OC3-N30 Installer Update And User-Facing Release UX",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/443",
-        "reused": false
+        "reused": true
       },
       "OC3-N31": {
         "number": 444,
         "id": 15521397,
         "title": "OC3-N31 Observability Compile Tracing And Runtime Telemetry",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/444",
-        "reused": false
+        "reused": true
       },
       "OC3-N32": {
         "number": 445,
         "id": 15521398,
         "title": "OC3-N32 Fuzzing Crash Minimization And Differential Testing",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/445",
-        "reused": false
+        "reused": true
       },
       "OC3-N33": {
         "number": 446,
         "id": 15521399,
         "title": "OC3-N33 Codegen Optimization And Direct Dispatch Policy",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/446",
-        "reused": false
+        "reused": true
       },
       "OC3-N34": {
         "number": 447,
         "id": 15521400,
         "title": "OC3-N34 Memory Safety UB And Runtime Sanitizer Audits",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/447",
-        "reused": false
+        "reused": true
       },
       "OC3-N35": {
         "number": 448,
         "id": 15521401,
         "title": "OC3-N35 Docs Site And Claim Synchronization",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/448",
-        "reused": false
+        "reused": true
       },
       "OC3-N36": {
         "number": 449,
         "id": 15521403,
         "title": "OC3-N36 Showcase And Canonical Application Expansion",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/449",
-        "reused": false
+        "reused": true
       },
       "OC3-N37": {
         "number": 450,
         "id": 15521404,
         "title": "OC3-N37 API ABI Compatibility Governance",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/450",
-        "reused": false
+        "reused": true
       },
       "OC3-N38": {
         "number": 451,
         "id": 15521405,
         "title": "OC3-N38 External Validation Partners And Repro Corpus",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/451",
-        "reused": false
+        "reused": true
       },
       "OC3-N39": {
         "number": 452,
         "id": 15521406,
         "title": "OC3-N39 Security Threat Model And Macro Supply Chain",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/452",
-        "reused": false
+        "reused": true
       },
       "OC3-N40": {
         "number": 453,
         "id": 15521407,
         "title": "OC3-N40 Maintainer Operations And Issue Publishing Automation",
         "html_url": "https://github.com/doublemover/Slopjective-C/milestone/453",
-        "reused": false
+        "reused": true
       }
     },
     "issues": {
@@ -3313,7 +3313,7 @@
         "title": "[OC3-T01-001] Implement support classification contract and generator",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8007",
         "milestone_number": 414,
-        "reused": false
+        "reused": true
       },
       "OC3-T01-002": {
         "number": 8008,
@@ -3322,7 +3322,7 @@
         "title": "[OC3-T01-002] Enforce public claim drift gates across docs and releases",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8008",
         "milestone_number": 414,
-        "reused": false
+        "reused": true
       },
       "OC3-T01-003": {
         "number": 8009,
@@ -3331,7 +3331,7 @@
         "title": "[OC3-T01-003] Wire claimability dashboard into release blockers",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8009",
         "milestone_number": 414,
-        "reused": false
+        "reused": true
       },
       "OC3-T02-001": {
         "number": 8010,
@@ -3340,7 +3340,7 @@
         "title": "[OC3-T02-001] Parse Objective-C 3.0 containers, protocols, categories, properties, and ivars",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8010",
         "milestone_number": 415,
-        "reused": false
+        "reused": true
       },
       "OC3-T02-002": {
         "number": 8011,
@@ -3349,7 +3349,7 @@
         "title": "[OC3-T02-002] Parse blocks, throws, async, actor, macro, property-behavior, and interop syntax",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8011",
         "milestone_number": 415,
-        "reused": false
+        "reused": true
       },
       "OC3-T02-003": {
         "number": 8012,
@@ -3358,7 +3358,7 @@
         "title": "[OC3-T02-003] Add parser conformance fixtures and negative diagnostics for every draft syntax surface",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8012",
         "milestone_number": 415,
-        "reused": false
+        "reused": true
       },
       "OC3-T03-001": {
         "number": 8013,
@@ -3367,7 +3367,7 @@
         "title": "[OC3-T03-001] Implement typed object, nullability, protocol, and generic semantic model",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8013",
         "milestone_number": 416,
-        "reused": false
+        "reused": true
       },
       "OC3-T03-002": {
         "number": 8014,
@@ -3376,7 +3376,7 @@
         "title": "[OC3-T03-002] Implement effects and ownership semantic analysis for ARC, throws, async, blocks, and actors",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8014",
         "milestone_number": 416,
-        "reused": false
+        "reused": true
       },
       "OC3-T03-003": {
         "number": 8015,
@@ -3385,7 +3385,7 @@
         "title": "[OC3-T03-003] Preserve cross-module semantic contracts and diagnostics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8015",
         "milestone_number": 416,
-        "reused": false
+        "reused": true
       },
       "OC3-T04-001": {
         "number": 8016,
@@ -3394,7 +3394,7 @@
         "title": "[OC3-T04-001] Lower object-model metadata, properties, methods, and ivars to IR",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8016",
         "milestone_number": 417,
-        "reused": false
+        "reused": true
       },
       "OC3-T04-002": {
         "number": 8017,
@@ -3403,7 +3403,7 @@
         "title": "[OC3-T04-002] Lower blocks, ARC, errors, async, task, and actor constructs to runtime-backed IR",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8017",
         "milestone_number": 417,
-        "reused": false
+        "reused": true
       },
       "OC3-T04-003": {
         "number": 8018,
@@ -3412,7 +3412,7 @@
         "title": "[OC3-T04-003] Bind manifests, emitted objects, and IR evidence into one truth gate",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8018",
         "milestone_number": 417,
-        "reused": false
+        "reused": true
       },
       "OC3-T05-001": {
         "number": 8019,
@@ -3421,7 +3421,7 @@
         "title": "[OC3-T05-001] Implement live class/metaclass graph and root-class realization",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8019",
         "milestone_number": 418,
-        "reused": false
+        "reused": true
       },
       "OC3-T05-002": {
         "number": 8020,
@@ -3430,7 +3430,7 @@
         "title": "[OC3-T05-002] Implement instance allocation, initialization, storage layout, and object identity",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8020",
         "milestone_number": 418,
-        "reused": false
+        "reused": true
       },
       "OC3-T05-003": {
         "number": 8021,
@@ -3439,7 +3439,7 @@
         "title": "[OC3-T05-003] Implement deterministic multi-image registration, reset, and replay",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8021",
         "milestone_number": 418,
-        "reused": false
+        "reused": true
       },
       "OC3-T06-001": {
         "number": 8022,
@@ -3448,7 +3448,7 @@
         "title": "[OC3-T06-001] Implement protocol inheritance and conformance query semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8022",
         "milestone_number": 419,
-        "reused": false
+        "reused": true
       },
       "OC3-T06-002": {
         "number": 8023,
@@ -3457,7 +3457,7 @@
         "title": "[OC3-T06-002] Implement category attachment and merged dispatch tables",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8023",
         "milestone_number": 419,
-        "reused": false
+        "reused": true
       },
       "OC3-T06-003": {
         "number": 8024,
@@ -3466,7 +3466,7 @@
         "title": "[OC3-T06-003] Implement protocol/category conflict, visibility, and availability diagnostics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8024",
         "milestone_number": 419,
-        "reused": false
+        "reused": true
       },
       "OC3-T07-001": {
         "number": 8025,
@@ -3475,7 +3475,7 @@
         "title": "[OC3-T07-001] Implement ivar offsets, inherited storage layout, and runtime ivar reflection",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8025",
         "milestone_number": 420,
-        "reused": false
+        "reused": true
       },
       "OC3-T07-002": {
         "number": 8026,
@@ -3484,7 +3484,7 @@
         "title": "[OC3-T07-002] Implement property metadata reflection and attribute query APIs",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8026",
         "milestone_number": 420,
-        "reused": false
+        "reused": true
       },
       "OC3-T07-003": {
         "number": 8027,
@@ -3493,7 +3493,7 @@
         "title": "[OC3-T07-003] Implement synthesized property accessor execution backed by runtime storage",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8027",
         "milestone_number": 420,
-        "reused": false
+        "reused": true
       },
       "OC3-T08-001": {
         "number": 8028,
@@ -3502,7 +3502,7 @@
         "title": "[OC3-T08-001] Implement full message lookup across instance, class, super, category, and protocol surfaces",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8028",
         "milestone_number": 421,
-        "reused": false
+        "reused": true
       },
       "OC3-T08-002": {
         "number": 8029,
@@ -3511,7 +3511,7 @@
         "title": "[OC3-T08-002] Version typed dispatch ABI beyond i32 return/value assumptions",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8029",
         "milestone_number": 421,
-        "reused": false
+        "reused": true
       },
       "OC3-T08-003": {
         "number": 8030,
@@ -3520,7 +3520,7 @@
         "title": "[OC3-T08-003] Implement method cache invalidation and remove fallback-only dispatch paths",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8030",
         "milestone_number": 421,
-        "reused": false
+        "reused": true
       },
       "OC3-T09-001": {
         "number": 8031,
@@ -3529,7 +3529,7 @@
         "title": "[OC3-T09-001] Implement block descriptors and runtime invoke thunks",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8031",
         "milestone_number": 422,
-        "reused": false
+        "reused": true
       },
       "OC3-T09-002": {
         "number": 8032,
@@ -3538,7 +3538,7 @@
         "title": "[OC3-T09-002] Implement byref forwarding cells and heap promotion",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8032",
         "milestone_number": 422,
-        "reused": false
+        "reused": true
       },
       "OC3-T09-003": {
         "number": 8033,
@@ -3547,7 +3547,7 @@
         "title": "[OC3-T09-003] Implement escaping block copy/dispose and captured-object ownership",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8033",
         "milestone_number": 422,
-        "reused": false
+        "reused": true
       },
       "OC3-T10-001": {
         "number": 8034,
@@ -3556,7 +3556,7 @@
         "title": "[OC3-T10-001] Implement ARC insertion and Objective-C method-family inference",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8034",
         "milestone_number": 423,
-        "reused": false
+        "reused": true
       },
       "OC3-T10-002": {
         "number": 8035,
@@ -3565,7 +3565,7 @@
         "title": "[OC3-T10-002] Implement weak references, autorelease pools, and deterministic destruction order",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8035",
         "milestone_number": 423,
-        "reused": false
+        "reused": true
       },
       "OC3-T10-003": {
         "number": 8036,
@@ -3574,7 +3574,7 @@
         "title": "[OC3-T10-003] Integrate ARC cleanup with blocks, properties, errors, async, and interop",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8036",
         "milestone_number": 423,
-        "reused": false
+        "reused": true
       },
       "OC3-T11-001": {
         "number": 8037,
@@ -3583,7 +3583,7 @@
         "title": "[OC3-T11-001] Implement throws, try, catch, and rethrow semantic checks",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8037",
         "milestone_number": 424,
-        "reused": false
+        "reused": true
       },
       "OC3-T11-002": {
         "number": 8038,
@@ -3592,7 +3592,7 @@
         "title": "[OC3-T11-002] Lower cleanup, unwind, and error ABI paths",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8038",
         "milestone_number": 424,
-        "reused": false
+        "reused": true
       },
       "OC3-T11-003": {
         "number": 8039,
@@ -3601,7 +3601,7 @@
         "title": "[OC3-T11-003] Implement NSError, status-code, and foreign exception bridges",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8039",
         "milestone_number": 424,
-        "reused": false
+        "reused": true
       },
       "OC3-T12-001": {
         "number": 8040,
@@ -3610,7 +3610,7 @@
         "title": "[OC3-T12-001] Implement async function and await lowering",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8040",
         "milestone_number": 425,
-        "reused": false
+        "reused": true
       },
       "OC3-T12-002": {
         "number": 8041,
@@ -3619,7 +3619,7 @@
         "title": "[OC3-T12-002] Implement continuation runtime ABI and suspension/resume semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8041",
         "milestone_number": 425,
-        "reused": false
+        "reused": true
       },
       "OC3-T12-003": {
         "number": 8042,
@@ -3628,7 +3628,7 @@
         "title": "[OC3-T12-003] Integrate async cancellation, errors, executors, imports, and runtime traces",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8042",
         "milestone_number": 425,
-        "reused": false
+        "reused": true
       },
       "OC3-T13-001": {
         "number": 8043,
@@ -3637,7 +3637,7 @@
         "title": "[OC3-T13-001] Implement task spawn, wait, groups, and cancellation semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8043",
         "milestone_number": 426,
-        "reused": false
+        "reused": true
       },
       "OC3-T13-002": {
         "number": 8044,
@@ -3646,7 +3646,7 @@
         "title": "[OC3-T13-002] Implement deterministic executor scheduler runtime",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8044",
         "milestone_number": 426,
-        "reused": false
+        "reused": true
       },
       "OC3-T13-003": {
         "number": 8045,
@@ -3655,7 +3655,7 @@
         "title": "[OC3-T13-003] Replace stdlib concurrency token helpers with runtime-backed tasks",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8045",
         "milestone_number": 426,
-        "reused": false
+        "reused": true
       },
       "OC3-T14-001": {
         "number": 8046,
@@ -3664,7 +3664,7 @@
         "title": "[OC3-T14-001] Implement actor identity, mailbox, and executor binding",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8046",
         "milestone_number": 427,
-        "reused": false
+        "reused": true
       },
       "OC3-T14-002": {
         "number": 8047,
@@ -3673,7 +3673,7 @@
         "title": "[OC3-T14-002] Enforce actor isolation, sendability, and reentrancy semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8047",
         "milestone_number": 427,
-        "reused": false
+        "reused": true
       },
       "OC3-T14-003": {
         "number": 8048,
@@ -3682,7 +3682,7 @@
         "title": "[OC3-T14-003] Integrate actors with storage, tasks, errors, blocks, and imported APIs",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8048",
         "milestone_number": 427,
-        "reused": false
+        "reused": true
       },
       "OC3-T15-001": {
         "number": 8049,
@@ -3691,7 +3691,7 @@
         "title": "[OC3-T15-001] Implement macro host execution, provenance, hygiene, and sandboxing",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8049",
         "milestone_number": 428,
-        "reused": false
+        "reused": true
       },
       "OC3-T15-002": {
         "number": 8050,
@@ -3700,7 +3700,7 @@
         "title": "[OC3-T15-002] Implement property behavior expansion and runtime hooks",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8050",
         "milestone_number": 428,
-        "reused": false
+        "reused": true
       },
       "OC3-T15-003": {
         "number": 8051,
@@ -3709,7 +3709,7 @@
         "title": "[OC3-T15-003] Implement macro cache, invalidation, and expansion diagnostics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8051",
         "milestone_number": 428,
-        "reused": false
+        "reused": true
       },
       "OC3-T16-001": {
         "number": 8052,
@@ -3718,7 +3718,7 @@
         "title": "[OC3-T16-001] Implement C and Objective-C header import/export semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8052",
         "milestone_number": 429,
-        "reused": false
+        "reused": true
       },
       "OC3-T16-002": {
         "number": 8053,
@@ -3727,7 +3727,7 @@
         "title": "[OC3-T16-002] Implement ObjC++ and Swift metadata bridge surfaces",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8053",
         "milestone_number": 429,
-        "reused": false
+        "reused": true
       },
       "OC3-T16-003": {
         "number": 8054,
@@ -3736,7 +3736,7 @@
         "title": "[OC3-T16-003] Implement mixed-image package loader ABI and interop execution tests",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8054",
         "milestone_number": 429,
-        "reused": false
+        "reused": true
       },
       "OC3-T17-001": {
         "number": 8055,
@@ -3745,7 +3745,7 @@
         "title": "[OC3-T17-001] Replace stdlib placeholders with runtime-backed core APIs",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8055",
         "milestone_number": 430,
-        "reused": false
+        "reused": true
       },
       "OC3-T17-002": {
         "number": 8056,
@@ -3754,7 +3754,7 @@
         "title": "[OC3-T17-002] Define stdlib v1 ABI and semantic compatibility gates",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8056",
         "milestone_number": 430,
-        "reused": false
+        "reused": true
       },
       "OC3-T17-003": {
         "number": 8057,
@@ -3763,7 +3763,7 @@
         "title": "[OC3-T17-003] Wire stdlib into runnable packages, docs, and conformance tests",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8057",
         "milestone_number": 430,
-        "reused": false
+        "reused": true
       },
       "OC3-T18-001": {
         "number": 8058,
@@ -3772,7 +3772,7 @@
         "title": "[OC3-T18-001] Promote modeled conformance into executable tests",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8058",
         "milestone_number": 431,
-        "reused": false
+        "reused": true
       },
       "OC3-T18-002": {
         "number": 8059,
@@ -3781,7 +3781,7 @@
         "title": "[OC3-T18-002] Enforce traceability from support claims to runnable evidence",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8059",
         "milestone_number": 431,
-        "reused": false
+        "reused": true
       },
       "OC3-T18-003": {
         "number": 8060,
@@ -3790,7 +3790,7 @@
         "title": "[OC3-T18-003] Add longitudinal regression suites for every supported surface",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8060",
         "milestone_number": 431,
-        "reused": false
+        "reused": true
       },
       "OC3-T19-001": {
         "number": 8061,
@@ -3799,7 +3799,7 @@
         "title": "[OC3-T19-001] Benchmark runtime features and compile throughput",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8061",
         "milestone_number": 432,
-        "reused": false
+        "reused": true
       },
       "OC3-T19-002": {
         "number": 8062,
@@ -3808,7 +3808,7 @@
         "title": "[OC3-T19-002] Expand stress, fuzz, minimization, and crash triage coverage",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8062",
         "milestone_number": 432,
-        "reused": false
+        "reused": true
       },
       "OC3-T19-003": {
         "number": 8063,
@@ -3817,7 +3817,7 @@
         "title": "[OC3-T19-003] Gate performance and stability regressions in release governance",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8063",
         "milestone_number": 432,
-        "reused": false
+        "reused": true
       },
       "OC3-T20-001": {
         "number": 8064,
@@ -3826,7 +3826,7 @@
         "title": "[OC3-T20-001] Version public runtime ABI and graduate private helpers",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8064",
         "milestone_number": 433,
-        "reused": false
+        "reused": true
       },
       "OC3-T20-002": {
         "number": 8065,
@@ -3835,7 +3835,7 @@
         "title": "[OC3-T20-002] Attest packages, SBOMs, update metadata, and runtime artifacts",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8065",
         "milestone_number": 433,
-        "reused": false
+        "reused": true
       },
       "OC3-T20-003": {
         "number": 8066,
@@ -3844,7 +3844,7 @@
         "title": "[OC3-T20-003] Run security, governance, deprecation, and compatibility release gates",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8066",
         "milestone_number": 433,
-        "reused": false
+        "reused": true
       },
       "OC3-N21-001": {
         "number": 8067,
@@ -3853,7 +3853,7 @@
         "title": "[OC3-N21-001] Make bootstrap outputs deterministic and reproducible",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8067",
         "milestone_number": 434,
-        "reused": false
+        "reused": true
       },
       "OC3-N21-002": {
         "number": 8068,
@@ -3862,7 +3862,7 @@
         "title": "[OC3-N21-002] Add clean-room bootstrap rebuild gates",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8068",
         "milestone_number": 434,
-        "reused": false
+        "reused": true
       },
       "OC3-N22-001": {
         "number": 8069,
@@ -3871,7 +3871,7 @@
         "title": "[OC3-N22-001] Implement LSP navigation for Objective-C 3.0 declarations and symbols",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8069",
         "milestone_number": 435,
-        "reused": false
+        "reused": true
       },
       "OC3-N22-002": {
         "number": 8070,
@@ -3880,7 +3880,7 @@
         "title": "[OC3-N22-002] Implement workspace indexing and cross-package semantic navigation",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8070",
         "milestone_number": 435,
-        "reused": false
+        "reused": true
       },
       "OC3-N23-001": {
         "number": 8071,
@@ -3889,7 +3889,7 @@
         "title": "[OC3-N23-001] Implement formatter coverage for Objective-C 3.0 syntax",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8071",
         "milestone_number": 436,
-        "reused": false
+        "reused": true
       },
       "OC3-N23-002": {
         "number": 8072,
@@ -3898,7 +3898,7 @@
         "title": "[OC3-N23-002] Implement safe refactor and source rewrite tooling",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8072",
         "milestone_number": 436,
-        "reused": false
+        "reused": true
       },
       "OC3-N24-001": {
         "number": 8073,
@@ -3907,7 +3907,7 @@
         "title": "[OC3-N24-001] Emit debugger source maps and async/runtime frame metadata",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8073",
         "milestone_number": 437,
-        "reused": false
+        "reused": true
       },
       "OC3-N24-002": {
         "number": 8074,
@@ -3916,7 +3916,7 @@
         "title": "[OC3-N24-002] Implement runtime inspector commands for object-model and concurrency state",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8074",
         "milestone_number": 437,
-        "reused": false
+        "reused": true
       },
       "OC3-N25-001": {
         "number": 8075,
@@ -3925,7 +3925,7 @@
         "title": "[OC3-N25-001] Implement diagnostic code taxonomy and structured output",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8075",
         "milestone_number": 438,
-        "reused": false
+        "reused": true
       },
       "OC3-N25-002": {
         "number": 8076,
@@ -3934,7 +3934,7 @@
         "title": "[OC3-N25-002] Raise fix-it coverage and correctness gates",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8076",
         "milestone_number": 438,
-        "reused": false
+        "reused": true
       },
       "OC3-N26-001": {
         "number": 8077,
@@ -3943,7 +3943,7 @@
         "title": "[OC3-N26-001] Implement ObjC2/Swift/C++ migration analyzer",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8077",
         "milestone_number": 439,
-        "reused": false
+        "reused": true
       },
       "OC3-N26-002": {
         "number": 8078,
@@ -3952,7 +3952,7 @@
         "title": "[OC3-N26-002] Implement migration rewrite and report workflow",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8078",
         "milestone_number": 439,
-        "reused": false
+        "reused": true
       },
       "OC3-N27-001": {
         "number": 8079,
@@ -3961,7 +3961,7 @@
         "title": "[OC3-N27-001] Implement package resolver, lockfile, and registry metadata semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8079",
         "milestone_number": 440,
-        "reused": false
+        "reused": true
       },
       "OC3-N27-002": {
         "number": 8080,
@@ -3970,7 +3970,7 @@
         "title": "[OC3-N27-002] Implement offline mirror install and verification workflow",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8080",
         "milestone_number": 440,
-        "reused": false
+        "reused": true
       },
       "OC3-N28-001": {
         "number": 8081,
@@ -3979,7 +3979,7 @@
         "title": "[OC3-N28-001] Implement module-interface cache and invalidation semantics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8081",
         "milestone_number": 441,
-        "reused": false
+        "reused": true
       },
       "OC3-N28-002": {
         "number": 8082,
@@ -3988,7 +3988,7 @@
         "title": "[OC3-N28-002] Prove incremental runtime metadata consistency",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8082",
         "milestone_number": 441,
-        "reused": false
+        "reused": true
       },
       "OC3-N29-001": {
         "number": 8083,
@@ -3997,7 +3997,7 @@
         "title": "[OC3-N29-001] Expand CI platform matrix for compiler, runtime, stdlib, and packaging",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8083",
         "milestone_number": 442,
-        "reused": false
+        "reused": true
       },
       "OC3-N29-002": {
         "number": 8084,
@@ -4006,7 +4006,7 @@
         "title": "[OC3-N29-002] Add per-platform packaged runtime acceptance tests",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8084",
         "milestone_number": 442,
-        "reused": false
+        "reused": true
       },
       "OC3-N30-001": {
         "number": 8085,
@@ -4015,7 +4015,7 @@
         "title": "[OC3-N30-001] Implement signed installer and update-channel validation",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8085",
         "milestone_number": 443,
-        "reused": false
+        "reused": true
       },
       "OC3-N30-002": {
         "number": 8086,
@@ -4024,7 +4024,7 @@
         "title": "[OC3-N30-002] Implement rollback and user-facing release diagnostics",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8086",
         "milestone_number": 443,
-        "reused": false
+        "reused": true
       },
       "OC3-N31-001": {
         "number": 8087,
@@ -4033,7 +4033,7 @@
         "title": "[OC3-N31-001] Implement compiler trace spans and build observability output",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8087",
         "milestone_number": 444,
-        "reused": false
+        "reused": true
       },
       "OC3-N31-002": {
         "number": 8088,
@@ -4042,7 +4042,7 @@
         "title": "[OC3-N31-002] Implement opt-in runtime telemetry hooks and privacy gates",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8088",
         "milestone_number": 444,
-        "reused": false
+        "reused": true
       },
       "OC3-N32-001": {
         "number": 8089,
@@ -4051,7 +4051,7 @@
         "title": "[OC3-N32-001] Implement grammar, semantic, and runtime fuzz generators",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8089",
         "milestone_number": 445,
-        "reused": false
+        "reused": true
       },
       "OC3-N32-002": {
         "number": 8090,
@@ -4060,7 +4060,7 @@
         "title": "[OC3-N32-002] Implement crash minimization and differential corpus promotion",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8090",
         "milestone_number": 445,
-        "reused": false
+        "reused": true
       },
       "OC3-N33-001": {
         "number": 8091,
@@ -4069,7 +4069,7 @@
         "title": "[OC3-N33-001] Implement codegen optimization passes guarded by semantic tests",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8091",
         "milestone_number": 446,
-        "reused": false
+        "reused": true
       },
       "OC3-N33-002": {
         "number": 8092,
@@ -4078,7 +4078,7 @@
         "title": "[OC3-N33-002] Define and enforce direct-dispatch policy",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8092",
         "milestone_number": 446,
-        "reused": false
+        "reused": true
       },
       "OC3-N34-001": {
         "number": 8093,
@@ -4087,7 +4087,7 @@
         "title": "[OC3-N34-001] Add sanitizer-backed runtime and compiler test jobs",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8093",
         "milestone_number": 447,
-        "reused": false
+        "reused": true
       },
       "OC3-N34-002": {
         "number": 8094,
@@ -4096,7 +4096,7 @@
         "title": "[OC3-N34-002] Fix memory-safety and undefined-behavior findings behind blockers",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8094",
         "milestone_number": 447,
-        "reused": false
+        "reused": true
       },
       "OC3-N35-001": {
         "number": 8095,
@@ -4105,7 +4105,7 @@
         "title": "[OC3-N35-001] Generate docs pages from support and conformance manifests",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8095",
         "milestone_number": 448,
-        "reused": false
+        "reused": true
       },
       "OC3-N35-002": {
         "number": 8096,
@@ -4114,7 +4114,7 @@
         "title": "[OC3-N35-002] Gate public docs against implementation support levels",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8096",
         "milestone_number": 448,
-        "reused": false
+        "reused": true
       },
       "OC3-N36-001": {
         "number": 8097,
@@ -4123,7 +4123,7 @@
         "title": "[OC3-N36-001] Expand canonical applications for object model, interop, and concurrency",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8097",
         "milestone_number": 449,
-        "reused": false
+        "reused": true
       },
       "OC3-N36-002": {
         "number": 8098,
@@ -4132,7 +4132,7 @@
         "title": "[OC3-N36-002] Add showcase smoke tests and reproducible demo packages",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8098",
         "milestone_number": 449,
-        "reused": false
+        "reused": true
       },
       "OC3-N37-001": {
         "number": 8099,
@@ -4141,7 +4141,7 @@
         "title": "[OC3-N37-001] Implement ABI/API diff blockers",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8099",
         "milestone_number": 450,
-        "reused": false
+        "reused": true
       },
       "OC3-N37-002": {
         "number": 8100,
@@ -4150,7 +4150,7 @@
         "title": "[OC3-N37-002] Implement compatibility and deprecation-window governance",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8100",
         "milestone_number": 450,
-        "reused": false
+        "reused": true
       },
       "OC3-N38-001": {
         "number": 8101,
@@ -4159,7 +4159,7 @@
         "title": "[OC3-N38-001] Build external reproducibility corpus",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8101",
         "milestone_number": 451,
-        "reused": false
+        "reused": true
       },
       "OC3-N38-002": {
         "number": 8102,
@@ -4168,7 +4168,7 @@
         "title": "[OC3-N38-002] Gate support claims on external validation evidence",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8102",
         "milestone_number": 451,
-        "reused": false
+        "reused": true
       },
       "OC3-N39-001": {
         "number": 8103,
@@ -4177,7 +4177,7 @@
         "title": "[OC3-N39-001] Implement language/runtime threat model and mitigation backlog",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8103",
         "milestone_number": 452,
-        "reused": false
+        "reused": true
       },
       "OC3-N39-002": {
         "number": 8104,
@@ -4186,7 +4186,7 @@
         "title": "[OC3-N39-002] Implement macro supply-chain sandbox, signing, and revocation",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8104",
         "milestone_number": 452,
-        "reused": false
+        "reused": true
       },
       "OC3-N40-001": {
         "number": 8105,
@@ -4195,7 +4195,7 @@
         "title": "[OC3-N40-001] Implement GitHub issue publisher with labels, milestones, and blockers",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8105",
         "milestone_number": 453,
-        "reused": false
+        "reused": true
       },
       "OC3-N40-002": {
         "number": 8106,
@@ -4204,7 +4204,7 @@
         "title": "[OC3-N40-002] Implement published issue drift audit and reference updater",
         "html_url": "https://github.com/doublemover/Slopjective-C/issues/8106",
         "milestone_number": 453,
-        "reused": false
+        "reused": true
       }
     },
     "dependencies": [
@@ -4214,7 +4214,11 @@
         "blocker": "OC3-T01-001",
         "blocker_number": 8007,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8008,
+        "blocker_issue_number": 8007,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T01-003",
@@ -4222,7 +4226,11 @@
         "blocker": "OC3-T01-002",
         "blocker_number": 8008,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8009,
+        "blocker_issue_number": 8008,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T02-002",
@@ -4230,7 +4238,11 @@
         "blocker": "OC3-T02-001",
         "blocker_number": 8010,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8011,
+        "blocker_issue_number": 8010,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T02-003",
@@ -4238,7 +4250,11 @@
         "blocker": "OC3-T02-002",
         "blocker_number": 8011,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8012,
+        "blocker_issue_number": 8011,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T03-002",
@@ -4246,7 +4262,11 @@
         "blocker": "OC3-T03-001",
         "blocker_number": 8013,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8014,
+        "blocker_issue_number": 8013,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T03-003",
@@ -4254,7 +4274,11 @@
         "blocker": "OC3-T03-002",
         "blocker_number": 8014,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8015,
+        "blocker_issue_number": 8014,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T04-002",
@@ -4262,7 +4286,11 @@
         "blocker": "OC3-T04-001",
         "blocker_number": 8016,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8017,
+        "blocker_issue_number": 8016,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T04-003",
@@ -4270,7 +4298,11 @@
         "blocker": "OC3-T04-002",
         "blocker_number": 8017,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8018,
+        "blocker_issue_number": 8017,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T05-002",
@@ -4278,7 +4310,11 @@
         "blocker": "OC3-T05-001",
         "blocker_number": 8019,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8020,
+        "blocker_issue_number": 8019,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T05-003",
@@ -4286,7 +4322,11 @@
         "blocker": "OC3-T05-002",
         "blocker_number": 8020,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8021,
+        "blocker_issue_number": 8020,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T06-002",
@@ -4294,7 +4334,11 @@
         "blocker": "OC3-T06-001",
         "blocker_number": 8022,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8023,
+        "blocker_issue_number": 8022,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T06-003",
@@ -4302,7 +4346,11 @@
         "blocker": "OC3-T06-002",
         "blocker_number": 8023,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8024,
+        "blocker_issue_number": 8023,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T07-002",
@@ -4310,7 +4358,11 @@
         "blocker": "OC3-T07-001",
         "blocker_number": 8025,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8026,
+        "blocker_issue_number": 8025,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T07-003",
@@ -4318,7 +4370,11 @@
         "blocker": "OC3-T07-002",
         "blocker_number": 8026,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8027,
+        "blocker_issue_number": 8026,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T08-002",
@@ -4326,7 +4382,11 @@
         "blocker": "OC3-T08-001",
         "blocker_number": 8028,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8029,
+        "blocker_issue_number": 8028,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T08-003",
@@ -4334,7 +4394,11 @@
         "blocker": "OC3-T08-002",
         "blocker_number": 8029,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8030,
+        "blocker_issue_number": 8029,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T09-002",
@@ -4342,7 +4406,11 @@
         "blocker": "OC3-T09-001",
         "blocker_number": 8031,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8032,
+        "blocker_issue_number": 8031,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T09-003",
@@ -4350,7 +4418,11 @@
         "blocker": "OC3-T09-002",
         "blocker_number": 8032,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8033,
+        "blocker_issue_number": 8032,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T10-002",
@@ -4358,7 +4430,11 @@
         "blocker": "OC3-T10-001",
         "blocker_number": 8034,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8035,
+        "blocker_issue_number": 8034,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T10-003",
@@ -4366,7 +4442,11 @@
         "blocker": "OC3-T10-002",
         "blocker_number": 8035,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8036,
+        "blocker_issue_number": 8035,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T11-002",
@@ -4374,7 +4454,11 @@
         "blocker": "OC3-T11-001",
         "blocker_number": 8037,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8038,
+        "blocker_issue_number": 8037,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T11-003",
@@ -4382,7 +4466,11 @@
         "blocker": "OC3-T11-002",
         "blocker_number": 8038,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8039,
+        "blocker_issue_number": 8038,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T12-002",
@@ -4390,7 +4478,11 @@
         "blocker": "OC3-T12-001",
         "blocker_number": 8040,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8041,
+        "blocker_issue_number": 8040,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T12-003",
@@ -4398,7 +4490,11 @@
         "blocker": "OC3-T12-002",
         "blocker_number": 8041,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8042,
+        "blocker_issue_number": 8041,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T13-002",
@@ -4406,7 +4502,11 @@
         "blocker": "OC3-T13-001",
         "blocker_number": 8043,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8044,
+        "blocker_issue_number": 8043,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T13-003",
@@ -4414,7 +4514,11 @@
         "blocker": "OC3-T13-002",
         "blocker_number": 8044,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8045,
+        "blocker_issue_number": 8044,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T14-002",
@@ -4422,7 +4526,11 @@
         "blocker": "OC3-T14-001",
         "blocker_number": 8046,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8047,
+        "blocker_issue_number": 8046,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T14-003",
@@ -4430,7 +4538,11 @@
         "blocker": "OC3-T14-002",
         "blocker_number": 8047,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8048,
+        "blocker_issue_number": 8047,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T15-002",
@@ -4438,7 +4550,11 @@
         "blocker": "OC3-T15-001",
         "blocker_number": 8049,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8050,
+        "blocker_issue_number": 8049,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T15-003",
@@ -4446,7 +4562,11 @@
         "blocker": "OC3-T15-002",
         "blocker_number": 8050,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8051,
+        "blocker_issue_number": 8050,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T16-002",
@@ -4454,7 +4574,11 @@
         "blocker": "OC3-T16-001",
         "blocker_number": 8052,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8053,
+        "blocker_issue_number": 8052,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T16-003",
@@ -4462,7 +4586,11 @@
         "blocker": "OC3-T16-002",
         "blocker_number": 8053,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8054,
+        "blocker_issue_number": 8053,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T17-002",
@@ -4470,7 +4598,11 @@
         "blocker": "OC3-T17-001",
         "blocker_number": 8055,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8056,
+        "blocker_issue_number": 8055,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T17-003",
@@ -4478,7 +4610,11 @@
         "blocker": "OC3-T17-002",
         "blocker_number": 8056,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8057,
+        "blocker_issue_number": 8056,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T18-002",
@@ -4486,7 +4622,11 @@
         "blocker": "OC3-T18-001",
         "blocker_number": 8058,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8059,
+        "blocker_issue_number": 8058,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T18-003",
@@ -4494,7 +4634,11 @@
         "blocker": "OC3-T18-002",
         "blocker_number": 8059,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8060,
+        "blocker_issue_number": 8059,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T19-002",
@@ -4502,7 +4646,11 @@
         "blocker": "OC3-T19-001",
         "blocker_number": 8061,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8062,
+        "blocker_issue_number": 8061,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T19-003",
@@ -4510,7 +4658,11 @@
         "blocker": "OC3-T19-002",
         "blocker_number": 8062,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8063,
+        "blocker_issue_number": 8062,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T20-002",
@@ -4518,7 +4670,11 @@
         "blocker": "OC3-T20-001",
         "blocker_number": 8064,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8065,
+        "blocker_issue_number": 8064,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T20-003",
@@ -4526,7 +4682,11 @@
         "blocker": "OC3-T20-002",
         "blocker_number": 8065,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8066,
+        "blocker_issue_number": 8065,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N21-002",
@@ -4534,7 +4694,11 @@
         "blocker": "OC3-N21-001",
         "blocker_number": 8067,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8068,
+        "blocker_issue_number": 8067,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N22-002",
@@ -4542,7 +4706,11 @@
         "blocker": "OC3-N22-001",
         "blocker_number": 8069,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8070,
+        "blocker_issue_number": 8069,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N23-002",
@@ -4550,7 +4718,11 @@
         "blocker": "OC3-N23-001",
         "blocker_number": 8071,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8072,
+        "blocker_issue_number": 8071,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N24-002",
@@ -4558,7 +4730,11 @@
         "blocker": "OC3-N24-001",
         "blocker_number": 8073,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8074,
+        "blocker_issue_number": 8073,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N25-002",
@@ -4566,7 +4742,11 @@
         "blocker": "OC3-N25-001",
         "blocker_number": 8075,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8076,
+        "blocker_issue_number": 8075,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N26-002",
@@ -4574,7 +4754,11 @@
         "blocker": "OC3-N26-001",
         "blocker_number": 8077,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8078,
+        "blocker_issue_number": 8077,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N27-002",
@@ -4582,7 +4766,11 @@
         "blocker": "OC3-N27-001",
         "blocker_number": 8079,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8080,
+        "blocker_issue_number": 8079,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N28-002",
@@ -4590,7 +4778,11 @@
         "blocker": "OC3-N28-001",
         "blocker_number": 8081,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8082,
+        "blocker_issue_number": 8081,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N29-002",
@@ -4598,7 +4790,11 @@
         "blocker": "OC3-N29-001",
         "blocker_number": 8083,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8084,
+        "blocker_issue_number": 8083,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N30-002",
@@ -4606,7 +4802,11 @@
         "blocker": "OC3-N30-001",
         "blocker_number": 8085,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8086,
+        "blocker_issue_number": 8085,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N31-002",
@@ -4614,7 +4814,11 @@
         "blocker": "OC3-N31-001",
         "blocker_number": 8087,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8088,
+        "blocker_issue_number": 8087,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N32-002",
@@ -4622,7 +4826,11 @@
         "blocker": "OC3-N32-001",
         "blocker_number": 8089,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8090,
+        "blocker_issue_number": 8089,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N33-002",
@@ -4630,7 +4838,11 @@
         "blocker": "OC3-N33-001",
         "blocker_number": 8091,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8092,
+        "blocker_issue_number": 8091,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N34-002",
@@ -4638,7 +4850,11 @@
         "blocker": "OC3-N34-001",
         "blocker_number": 8093,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8094,
+        "blocker_issue_number": 8093,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N35-002",
@@ -4646,7 +4862,11 @@
         "blocker": "OC3-N35-001",
         "blocker_number": 8095,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8096,
+        "blocker_issue_number": 8095,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N36-002",
@@ -4654,7 +4874,11 @@
         "blocker": "OC3-N36-001",
         "blocker_number": 8097,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8098,
+        "blocker_issue_number": 8097,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N37-002",
@@ -4662,7 +4886,11 @@
         "blocker": "OC3-N37-001",
         "blocker_number": 8099,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8100,
+        "blocker_issue_number": 8099,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N38-002",
@@ -4670,7 +4898,11 @@
         "blocker": "OC3-N38-001",
         "blocker_number": 8101,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8102,
+        "blocker_issue_number": 8101,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N39-002",
@@ -4678,7 +4910,11 @@
         "blocker": "OC3-N39-001",
         "blocker_number": 8103,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8104,
+        "blocker_issue_number": 8103,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N40-002",
@@ -4686,7 +4922,11 @@
         "blocker": "OC3-N40-001",
         "blocker_number": 8105,
         "reason": "same-milestone sequencing",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8106,
+        "blocker_issue_number": 8105,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T03-001",
@@ -4694,7 +4934,11 @@
         "blocker": "OC3-T02-001",
         "blocker_number": 8010,
         "reason": "semantics needs parsed declarations",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8013,
+        "blocker_issue_number": 8010,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T04-001",
@@ -4702,7 +4946,11 @@
         "blocker": "OC3-T03-001",
         "blocker_number": 8013,
         "reason": "lowering needs semantic model",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8016,
+        "blocker_issue_number": 8013,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T05-001",
@@ -4710,7 +4958,11 @@
         "blocker": "OC3-T04-001",
         "blocker_number": 8016,
         "reason": "runtime realization needs emitted metadata",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8019,
+        "blocker_issue_number": 8016,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T06-001",
@@ -4718,7 +4970,11 @@
         "blocker": "OC3-T05-001",
         "blocker_number": 8019,
         "reason": "protocol/category runtime needs class graph",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8022,
+        "blocker_issue_number": 8019,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T07-001",
@@ -4726,7 +4982,11 @@
         "blocker": "OC3-T05-002",
         "blocker_number": 8020,
         "reason": "storage/reflection needs realized instance layout",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8025,
+        "blocker_issue_number": 8020,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T08-001",
@@ -4734,7 +4994,11 @@
         "blocker": "OC3-T05-001",
         "blocker_number": 8019,
         "reason": "dispatch needs class/metaclass runtime",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8028,
+        "blocker_issue_number": 8019,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T09-001",
@@ -4742,7 +5006,11 @@
         "blocker": "OC3-T04-002",
         "blocker_number": 8017,
         "reason": "blocks need lowering path",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8031,
+        "blocker_issue_number": 8017,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T10-001",
@@ -4750,7 +5018,11 @@
         "blocker": "OC3-T09-003",
         "blocker_number": 8033,
         "reason": "ARC integration needs escaping ownership model",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8034,
+        "blocker_issue_number": 8033,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T11-001",
@@ -4758,7 +5030,11 @@
         "blocker": "OC3-T04-002",
         "blocker_number": 8017,
         "reason": "error lowering needs runtime-backed IR path",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8037,
+        "blocker_issue_number": 8017,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T12-001",
@@ -4766,7 +5042,11 @@
         "blocker": "OC3-T04-002",
         "blocker_number": 8017,
         "reason": "async lowering needs runtime-backed IR path",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8040,
+        "blocker_issue_number": 8017,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T13-001",
@@ -4774,7 +5054,11 @@
         "blocker": "OC3-T12-002",
         "blocker_number": 8041,
         "reason": "tasks need continuation runtime",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8043,
+        "blocker_issue_number": 8041,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T14-001",
@@ -4782,7 +5066,11 @@
         "blocker": "OC3-T13-002",
         "blocker_number": 8044,
         "reason": "actors need scheduler/executor runtime",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8046,
+        "blocker_issue_number": 8044,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T15-001",
@@ -4790,7 +5078,11 @@
         "blocker": "OC3-T03-002",
         "blocker_number": 8014,
         "reason": "macro/property behavior checks need effects model",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8049,
+        "blocker_issue_number": 8014,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T16-001",
@@ -4798,7 +5090,11 @@
         "blocker": "OC3-T04-003",
         "blocker_number": 8018,
         "reason": "interop needs emitted object/manifest truth gate",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8052,
+        "blocker_issue_number": 8018,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T17-001",
@@ -4806,7 +5102,11 @@
         "blocker": "OC3-T05-001",
         "blocker_number": 8019,
         "reason": "stdlib runtime APIs need object runtime",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8055,
+        "blocker_issue_number": 8019,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T18-001",
@@ -4814,7 +5114,11 @@
         "blocker": "OC3-T01-002",
         "blocker_number": 8008,
         "reason": "conformance claimability needs claim gates",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8058,
+        "blocker_issue_number": 8008,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T19-001",
@@ -4822,7 +5126,11 @@
         "blocker": "OC3-T18-001",
         "blocker_number": 8058,
         "reason": "production performance needs executable conformance base",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8061,
+        "blocker_issue_number": 8058,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-T20-001",
@@ -4830,7 +5138,11 @@
         "blocker": "OC3-T18-002",
         "blocker_number": 8059,
         "reason": "release ABI claims need traceability",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8064,
+        "blocker_issue_number": 8059,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N21-001",
@@ -4838,7 +5150,11 @@
         "blocker": "OC3-T20-001",
         "blocker_number": 8064,
         "reason": "bootstrap reproducibility follows release artifact rules",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8067,
+        "blocker_issue_number": 8064,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N22-001",
@@ -4846,7 +5162,11 @@
         "blocker": "OC3-T03-003",
         "blocker_number": 8015,
         "reason": "LSP needs cross-module semantic contracts",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8069,
+        "blocker_issue_number": 8015,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N23-001",
@@ -4854,7 +5174,11 @@
         "blocker": "OC3-T02-003",
         "blocker_number": 8012,
         "reason": "formatter/rewrite needs parser fixture coverage",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8071,
+        "blocker_issue_number": 8012,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N24-001",
@@ -4862,7 +5186,11 @@
         "blocker": "OC3-T12-002",
         "blocker_number": 8041,
         "reason": "debug async frames need continuation metadata",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8073,
+        "blocker_issue_number": 8041,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N25-001",
@@ -4870,7 +5198,11 @@
         "blocker": "OC3-T03-003",
         "blocker_number": 8015,
         "reason": "diagnostic taxonomy needs semantic diagnostic contracts",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8075,
+        "blocker_issue_number": 8015,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N26-001",
@@ -4878,7 +5210,11 @@
         "blocker": "OC3-T16-001",
         "blocker_number": 8052,
         "reason": "migration analysis depends on interop import/export semantics",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8077,
+        "blocker_issue_number": 8052,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N27-001",
@@ -4886,7 +5222,11 @@
         "blocker": "OC3-T16-003",
         "blocker_number": 8054,
         "reason": "package manager depends on mixed-image loader ABI",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8079,
+        "blocker_issue_number": 8054,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N28-001",
@@ -4894,7 +5234,11 @@
         "blocker": "OC3-T03-003",
         "blocker_number": 8015,
         "reason": "incremental cache depends on serialized semantic contracts",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8081,
+        "blocker_issue_number": 8015,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N29-001",
@@ -4902,7 +5246,11 @@
         "blocker": "OC3-N21-001",
         "blocker_number": 8067,
         "reason": "platform matrix depends on reproducible bootstrap",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8083,
+        "blocker_issue_number": 8067,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N30-001",
@@ -4910,7 +5258,11 @@
         "blocker": "OC3-T20-002",
         "blocker_number": 8065,
         "reason": "installer updates depend on attested artifacts",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8085,
+        "blocker_issue_number": 8065,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N31-001",
@@ -4918,7 +5270,11 @@
         "blocker": "OC3-T19-001",
         "blocker_number": 8061,
         "reason": "observability depends on benchmark/stress surface",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8087,
+        "blocker_issue_number": 8061,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N32-001",
@@ -4926,7 +5282,11 @@
         "blocker": "OC3-T18-001",
         "blocker_number": 8058,
         "reason": "fuzz promotion depends on executable conformance base",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8089,
+        "blocker_issue_number": 8058,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N33-001",
@@ -4934,7 +5294,11 @@
         "blocker": "OC3-T08-002",
         "blocker_number": 8029,
         "reason": "optimization depends on typed dispatch ABI",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8091,
+        "blocker_issue_number": 8029,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N34-001",
@@ -4942,7 +5306,11 @@
         "blocker": "OC3-T10-002",
         "blocker_number": 8035,
         "reason": "sanitizers need ownership/destruction semantics",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8093,
+        "blocker_issue_number": 8035,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N35-001",
@@ -4950,7 +5318,11 @@
         "blocker": "OC3-T01-002",
         "blocker_number": 8008,
         "reason": "docs sync depends on claim drift gates",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8095,
+        "blocker_issue_number": 8008,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N36-001",
@@ -4958,7 +5330,11 @@
         "blocker": "OC3-T17-003",
         "blocker_number": 8057,
         "reason": "showcases depend on runnable stdlib packages",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8097,
+        "blocker_issue_number": 8057,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N37-001",
@@ -4966,7 +5342,11 @@
         "blocker": "OC3-T20-001",
         "blocker_number": 8064,
         "reason": "ABI governance depends on versioned public runtime ABI",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8099,
+        "blocker_issue_number": 8064,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N38-001",
@@ -4974,7 +5354,11 @@
         "blocker": "OC3-T18-002",
         "blocker_number": 8059,
         "reason": "external validation depends on traceable evidence",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8101,
+        "blocker_issue_number": 8059,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N39-001",
@@ -4982,7 +5366,11 @@
         "blocker": "OC3-T15-001",
         "blocker_number": 8049,
         "reason": "macro supply-chain depends on macro host model",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8103,
+        "blocker_issue_number": 8049,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       },
       {
         "blocked": "OC3-N40-001",
@@ -4990,7 +5378,11 @@
         "blocker": "OC3-T01-001",
         "blocker_number": 8007,
         "reason": "publisher automation depends on stable support/draft IDs",
-        "status": "created"
+        "status": "created",
+        "blocked_issue_number": 8105,
+        "blocker_issue_number": 8007,
+        "resolved": true,
+        "native_relationship": "body-reference-and-label"
       }
     ]
   }

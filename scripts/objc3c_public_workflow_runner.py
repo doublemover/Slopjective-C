@@ -143,6 +143,7 @@ ADOPTION_LEGIBILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_adoption
 GOVERNANCE_SUSTAINABILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
 GOVERNANCE_SUSTAINABILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_governance_sustainability_metadata.py"
 PLANNING_ISSUE_PUBLISHER_PY = ROOT / "scripts" / "publish_objc3c_planning_issues.py"
+PLANNING_PUBLICATION_AUDIT_PY = ROOT / "scripts" / "audit_objc3c_planning_publication.py"
 LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.py"
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
@@ -454,6 +455,10 @@ def action_publish_governance_sustainability(_: list[str]) -> int:
 
 def action_publish_planning_issues(rest: list[str]) -> int:
     return run([sys.executable, str(PLANNING_ISSUE_PUBLISHER_PY), *rest])
+
+
+def action_check_planning_publication_drift(rest: list[str]) -> int:
+    return run([sys.executable, str(PLANNING_PUBLICATION_AUDIT_PY), "--check", *rest])
 
 
 def action_validate_runnable_stdlib_advanced(_: list[str]) -> int:
@@ -2719,6 +2724,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-governance-sustainability": ActionSpec("validate-governance-sustainability", "validate governance budget policy extension review stewardship and artifact evidence on the live public workflow", "python:scripts/check_objc3c_governance_sustainability_integration.py", ("test:objc3c:governance-sustainability",), validation_tier="repo", guarantee_owner="governance and extension-review claims stay executable across checked-in contracts, public workflow entrypoints, and generated evidence"),
     "publish-governance-sustainability": ActionSpec("publish-governance-sustainability", "publish governance stewardship and extension-review metadata from generated evidence", "python:scripts/publish_objc3c_governance_sustainability_metadata.py", ("publish:objc3c:governance-sustainability",), validation_tier="release", guarantee_owner="governance publication stays generated from integration evidence and blocks when stewardship or extension-review evidence reports release blockers"),
     "publish-planning-issues": ActionSpec("publish-planning-issues", "publish checked-in Objective-C 3 planning issues to GitHub while preserving GitHub-assigned numbers", "python:scripts/publish_objc3c_planning_issues.py", ("publish:objc3c:planning-issues",), validation_tier="repo", guarantee_owner="issue publication stays rooted in checked-in planning payloads, durable GitHub number mappings, labels, milestones, and blocker references", pass_through_args=True),
+    "check-planning-publication-drift": ActionSpec("check-planning-publication-drift", "audit checked-in Objective-C 3 planning publication references for GitHub mapping drift", "python:scripts/audit_objc3c_planning_publication.py --check", ("check:objc3c:planning-publication",), validation_tier="repo", guarantee_owner="planning payloads, markdown reports, durable GitHub mappings, and dependency references stay synchronized with assigned GitHub numbers", pass_through_args=True),
     "validate-runnable-stdlib-advanced": ActionSpec("validate-runnable-stdlib-advanced", "validate runnable advanced stdlib helper packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_advanced_end_to_end.py", ("test:stdlib:advanced:e2e",), validation_tier="full", guarantee_owner="packaged advanced stdlib helper contracts, profile gates, and subset smoke compilation stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", ("test:stdlib:e2e",), validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", ("test:stdlib:program:e2e",), validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
@@ -2996,6 +3002,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "validate-governance-sustainability": action_validate_governance_sustainability,
     "publish-governance-sustainability": action_publish_governance_sustainability,
     "publish-planning-issues": action_publish_planning_issues,
+    "check-planning-publication-drift": action_check_planning_publication_drift,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
     "test-fast": action_test_fast,

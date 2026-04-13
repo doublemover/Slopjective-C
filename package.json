@@ -174,6 +174,7 @@
     "check:objc3c:distribution-credibility:schemas": "python scripts/objc3c_public_workflow_runner.py check-distribution-credibility-schema-surface",
     "check:objc3c:security-hardening:surface": "python scripts/objc3c_public_workflow_runner.py check-security-hardening-surface",
     "check:objc3c:security-hardening:schemas": "python scripts/objc3c_public_workflow_runner.py check-security-hardening-schema-surface",
+    "check:objc3c:planning-publication": "python scripts/objc3c_public_workflow_runner.py check-planning-publication-drift",
     "publish:objc3c:external-repro-corpus": "python scripts/objc3c_public_workflow_runner.py publish-external-repro-corpus",
     "publish:objc3c:public-conformance": "python scripts/objc3c_public_workflow_runner.py publish-public-conformance-report",
     "publish:objc3c:performance-report": "python scripts/objc3c_public_workflow_runner.py publish-performance-report",
