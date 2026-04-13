@@ -99,11 +99,16 @@ replayable outputs only and must never become implementation inputs.
 Replayable governance enforcement:
 
 - `python scripts/check_objc3c_governance_sustainability_integration.py`
+- `python scripts/build_objc3c_governance_sustainability_evidence.py`
+- `python scripts/publish_objc3c_governance_sustainability_metadata.py`
 - `python scripts/check_governance_sustainability_budget_enforcement.py`
 - `python scripts/ci/run_task_hygiene_gate.py`
 - public package command: `npm run test:objc3c:governance-sustainability`
+- public package command: `npm run publish:objc3c:governance-sustainability`
 - canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
 - canonical integration summary: `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
+- canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
+- canonical publication summary: `tmp/reports/governance-sustainability/publication-summary.json`
 
 Long-horizon anti-regression reporting:
 
@@ -152,3 +157,5 @@ Generated evidence:
 - `tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json`
 - `tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json`
 - `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
+- `tmp/reports/governance-sustainability/evidence-summary.json`
+- `tmp/reports/governance-sustainability/publication-summary.json`

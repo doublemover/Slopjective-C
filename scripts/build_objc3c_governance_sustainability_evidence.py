@@ -1,0 +1,167 @@
+#!/usr/bin/env python3
+"""Build the machine-owned governance sustainability evidence artifact."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+ARTIFACT_CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "artifact_contract.json"
+INTEGRATION_CHECK = ROOT / "scripts" / "check_objc3c_governance_sustainability_integration.py"
+EVIDENCE_ARTIFACT = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "governance-sustainability-evidence.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "evidence-summary.json"
+SELF_GENERATED_REPORTS = {
+    "tmp/reports/governance-sustainability/evidence-summary.json",
+    "tmp/reports/governance-sustainability/publication-summary.json",
+}
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def ensure_integration() -> None:
+    result = subprocess.run(
+        [sys.executable, str(INTEGRATION_CHECK)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        raise RuntimeError("governance sustainability integration failed during evidence generation")
+
+
+def load_optional_summary(relative_path: str) -> dict[str, Any]:
+    path = ROOT / relative_path
+    return load_json(path) if path.is_file() else {}
+
+
+def main() -> int:
+    ensure_integration()
+    contract = load_json(ARTIFACT_CONTRACT_PATH)
+    generated_reports = [str(path) for path in contract.get("generated_reports", [])]
+    report_payloads = {path: load_optional_summary(path) for path in generated_reports}
+
+    budget_inventory = report_payloads.get("tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json", {})
+    policy = report_payloads.get("tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json", {})
+    maintainer_review = report_payloads.get("tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json", {})
+    extension_policy = report_payloads.get("tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json", {})
+    extension_workflow = report_payloads.get("tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json", {})
+    stewardship = report_payloads.get("tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json", {})
+    budget_enforcement = report_payloads.get("tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json", {})
+    anti_regression = report_payloads.get("tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json", {})
+    integration = report_payloads.get("tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json", {})
+
+    failures: list[str] = []
+    for path, payload in report_payloads.items():
+        if path in SELF_GENERATED_REPORTS and not payload:
+            continue
+        if not payload:
+            failures.append(f"missing generated report {path}")
+        elif payload.get("status") not in (None, "PASS") or payload.get("ok") is False:
+            failures.append(f"generated report not passing: {path}")
+    if budget_enforcement.get("status") != "PASS":
+        failures.append("budget enforcement is not PASS")
+    if integration.get("status") != "PASS":
+        failures.append("integration summary is not PASS")
+
+    measured = budget_inventory.get("measured", {}) if isinstance(budget_inventory.get("measured"), dict) else {}
+    claim_audit = {
+        "support_state": "stable-governance-process",
+        "release_blockers": failures,
+        "demoted_or_out_of_scope_claims": [
+            "hosted community infrastructure",
+            "hosted registry moderation",
+            "prose-only governance approval",
+        ],
+        "measured_budget_state": {
+            "package_script_count": measured.get("package_script_count"),
+            "package_script_budget": measured.get("package_script_budget"),
+            "public_workflow_action_count": measured.get("public_workflow_action_count"),
+            "live_check_script_count": measured.get("live_check_script_count"),
+        },
+    }
+
+    evidence = {
+        "contract_id": "objc3c.governance.sustainability.evidence.v1",
+        "schema_version": 1,
+        "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+        "status": "PASS" if not failures else "FAIL",
+        "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
+        "source_contracts": contract.get("source_contracts", []),
+        "generated_reports": generated_reports,
+        "publication_artifacts": contract.get("publication_artifacts", []),
+        "budget": {
+            "inventory_summary": budget_inventory,
+            "enforcement_summary": budget_enforcement,
+            "anti_regression_summary": anti_regression,
+        },
+        "extension_review": {
+            "policy_summary": extension_policy,
+            "workflow_summary": extension_workflow,
+        },
+        "stewardship": {
+            "semantics_summary": stewardship,
+            "maintainer_review_summary": maintainer_review,
+            "policy_summary": policy,
+        },
+        "public_workflow": {
+            "integration_summary": integration,
+            "public_actions": [
+                "validate-governance-sustainability",
+                "publish-governance-sustainability",
+            ],
+            "public_scripts": [
+                "test:objc3c:governance-sustainability",
+                "publish:objc3c:governance-sustainability",
+            ],
+        },
+        "claim_audit": claim_audit,
+        "failures": failures,
+    }
+
+    EVIDENCE_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
+    EVIDENCE_ARTIFACT.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+
+    summary = {
+        "contract_id": "objc3c.governance.sustainability.evidence.summary.v1",
+        "status": evidence["status"],
+        "runner_path": "scripts/build_objc3c_governance_sustainability_evidence.py",
+        "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
+        "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
+        "source_contract_count": len(evidence["source_contracts"]),
+        "generated_report_count": len(generated_reports),
+        "publication_artifact_count": len(evidence["publication_artifacts"]),
+        "release_blocker_count": len(failures),
+        "failures": failures,
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print(f"evidence_artifact: {repo_rel(EVIDENCE_ARTIFACT)}")
+    print("objc3c-governance-sustainability-evidence: PASS" if not failures else "objc3c-governance-sustainability-evidence: FAIL")
+    return 0 if not failures else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""Publish governance stewardship and extension-review metadata."""
+
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+
+ROOT = Path(__file__).resolve().parents[1]
+EVIDENCE_BUILDER = ROOT / "scripts" / "build_objc3c_governance_sustainability_evidence.py"
+EVIDENCE_ARTIFACT = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "governance-sustainability-evidence.json"
+STEWARDSHIP_PUBLICATION = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "stewardship-publication.json"
+EXTENSION_PUBLICATION = ROOT / "tmp" / "artifacts" / "governance-sustainability" / "extension-review-publication.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "publication-summary.json"
+
+EXPECTED_PUBLIC_ACTIONS = [
+    "validate-governance-sustainability",
+    "publish-governance-sustainability",
+]
+EXPECTED_PUBLIC_SCRIPTS = [
+    "test:objc3c:governance-sustainability",
+    "publish:objc3c:governance-sustainability",
+]
+
+
+def repo_rel(path: Path) -> str:
+    return path.relative_to(ROOT).as_posix()
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
+    return payload
+
+
+def ensure_evidence() -> None:
+    result = subprocess.run(
+        [sys.executable, str(EVIDENCE_BUILDER)],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+        encoding="utf-8",
+        errors="replace",
+        check=False,
+    )
+    if result.stdout:
+        sys.stdout.write(result.stdout)
+    if result.stderr:
+        sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        raise RuntimeError("governance sustainability evidence generation failed during publication")
+
+
+def main() -> int:
+    ensure_evidence()
+    evidence = load_json(EVIDENCE_ARTIFACT)
+    claim_audit = evidence.get("claim_audit", {}) if isinstance(evidence.get("claim_audit"), dict) else {}
+    release_blockers = claim_audit.get("release_blockers", [])
+    if release_blockers:
+        raise RuntimeError(f"cannot publish governance metadata with release blockers: {release_blockers}")
+
+    published_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    stewardship = evidence.get("stewardship", {}) if isinstance(evidence.get("stewardship"), dict) else {}
+    extension_review = evidence.get("extension_review", {}) if isinstance(evidence.get("extension_review"), dict) else {}
+    public_workflow = evidence.get("public_workflow", {}) if isinstance(evidence.get("public_workflow"), dict) else {}
+
+    stewardship_publication = {
+        "contract_id": "objc3c.governance.sustainability.stewardship_publication.v1",
+        "published_at_utc": published_at,
+        "source_evidence": repo_rel(EVIDENCE_ARTIFACT),
+        "operator_runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+        "maintainer_runbook": "docs/runbooks/objc3c_maintainer_workflows.md",
+        "contributor_surface": "CONTRIBUTING.md",
+        "public_actions": EXPECTED_PUBLIC_ACTIONS,
+        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "stewardship": stewardship,
+        "budget": evidence.get("budget", {}),
+        "claim_audit": claim_audit,
+    }
+    extension_publication = {
+        "contract_id": "objc3c.governance.sustainability.extension_review_publication.v1",
+        "published_at_utc": published_at,
+        "source_evidence": repo_rel(EVIDENCE_ARTIFACT),
+        "operator_runbook": "docs/runbooks/objc3c_governance_sustainability.md",
+        "author_guide": "docs/governance/extension_author_guide_v1.md",
+        "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+        "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
+        "public_scripts": public_workflow.get("public_scripts", EXPECTED_PUBLIC_SCRIPTS),
+        "extension_review": extension_review,
+        "claim_audit": claim_audit,
+    }
+
+    STEWARDSHIP_PUBLICATION.parent.mkdir(parents=True, exist_ok=True)
+    STEWARDSHIP_PUBLICATION.write_text(json.dumps(stewardship_publication, indent=2) + "\n", encoding="utf-8")
+    EXTENSION_PUBLICATION.write_text(json.dumps(extension_publication, indent=2) + "\n", encoding="utf-8")
+
+    summary = {
+        "contract_id": "objc3c.governance.sustainability.publication.summary.v1",
+        "status": "PASS",
+        "runner_path": "scripts/publish_objc3c_governance_sustainability_metadata.py",
+        "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
+        "stewardship_publication": repo_rel(STEWARDSHIP_PUBLICATION),
+        "extension_review_publication": repo_rel(EXTENSION_PUBLICATION),
+        "public_actions": EXPECTED_PUBLIC_ACTIONS,
+        "public_scripts": EXPECTED_PUBLIC_SCRIPTS,
+        "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
+    }
+    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
+    print(f"stewardship_publication: {repo_rel(STEWARDSHIP_PUBLICATION)}")
+    print(f"extension_review_publication: {repo_rel(EXTENSION_PUBLICATION)}")
+    print("objc3c-governance-sustainability-publication: PASS")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

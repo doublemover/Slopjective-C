@@ -232,6 +232,19 @@ $requiredRelativeFiles = @(
   "scripts/build_objc3c_adoption_legibility_evidence.py",
   "scripts/check_objc3c_adoption_legibility_integration.py",
   "scripts/publish_objc3c_adoption_legibility_metadata.py",
+  "scripts/build_governance_budget_inventory_summary.py",
+  "scripts/build_governance_policy_summary.py",
+  "scripts/build_governance_maintainer_review_summary.py",
+  "scripts/build_governance_extension_review_policy_summary.py",
+  "scripts/build_governance_extension_review_workflow_summary.py",
+  "scripts/build_governance_stewardship_semantics_summary.py",
+  "scripts/check_governance_sustainability_schema_surface.py",
+  "scripts/check_governance_sustainability_budget_enforcement.py",
+  "scripts/build_governance_anti_regression_summary.py",
+  "scripts/build_governance_artifact_contract_summary.py",
+  "scripts/check_objc3c_governance_sustainability_integration.py",
+  "scripts/build_objc3c_governance_sustainability_evidence.py",
+  "scripts/publish_objc3c_governance_sustainability_metadata.py",
   "showcase/README.md",
   "showcase/portfolio.json",
   "showcase/tutorial_walkthrough.json",
@@ -243,6 +256,7 @@ $requiredRelativeFiles = @(
   "showcase/patchKit/workspace.json",
   "docs/runbooks/objc3c_application_architecture_testing.md",
   "docs/runbooks/objc3c_adoption_legibility.md",
+  "docs/runbooks/objc3c_governance_sustainability.md",
   "docs/runbooks/objc3c_package_ecosystem.md",
   "docs/runbooks/objc3c_conformance_corpus.md",
   "docs/runbooks/objc3c_compiler_throughput.md",
@@ -298,6 +312,7 @@ $requiredRelativeFiles = @(
   "schemas/objc3c-package-lock-v1.schema.json",
   "schemas/objc3c-package-offline-mirror-index-v1.schema.json",
   "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
+  "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
   "schemas/objc3c-update-manifest-v1.schema.json",
   "schemas/objc3c-compatibility-report-v1.schema.json",
   "schemas/objc3c-release-manifest-v1.schema.json",
@@ -364,6 +379,17 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
   "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
   "tests/tooling/fixtures/adoption_legibility/artifact_contract.json",
+  "tests/tooling/fixtures/governance_sustainability/anti_regression_reporting_contract.json",
+  "tests/tooling/fixtures/governance_sustainability/artifact_contract.json",
+  "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+  "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+  "tests/tooling/fixtures/governance_sustainability/maintainer_review_regression_contract.json",
+  "tests/tooling/fixtures/governance_sustainability/new_work_proposal_sample.json",
+  "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
+  "tests/tooling/fixtures/governance_sustainability/schema_surface.json",
+  "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
+  "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+  "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
   "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
   "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
   "tests/tooling/fixtures/platform_hardening/unsupported_host_fallback_policy.json",
@@ -699,6 +725,25 @@ $manifestPayload = [ordered]@{
   adoption_legibility_public_scripts = @(
     "test:objc3c:adoption-legibility",
     "publish:objc3c:adoption-legibility"
+  )
+  governance_sustainability_runbook = "docs/runbooks/objc3c_governance_sustainability.md"
+  governance_sustainability_artifact_contract = "tests/tooling/fixtures/governance_sustainability/artifact_contract.json"
+  governance_sustainability_schema = "schemas/objc3c-governance-sustainability-evidence-v1.schema.json"
+  governance_sustainability_surface = [ordered]@{
+    budget_inventory = "tests/tooling/fixtures/governance_sustainability/budget_inventory.json"
+    extension_review_policy = "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json"
+    stewardship_semantics = "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json"
+    evidence_generator = "scripts/build_objc3c_governance_sustainability_evidence.py"
+    integration_validation = "scripts/check_objc3c_governance_sustainability_integration.py"
+    governance_publication = "scripts/publish_objc3c_governance_sustainability_metadata.py"
+  }
+  governance_sustainability_public_actions = @(
+    "validate-governance-sustainability",
+    "publish-governance-sustainability"
+  )
+  governance_sustainability_public_scripts = @(
+    "test:objc3c:governance-sustainability",
+    "publish:objc3c:governance-sustainability"
   )
   platform_hardening_runbook = "docs/runbooks/objc3c_platform_hardening.md"
   platform_hardening_boundary_inventory = "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
