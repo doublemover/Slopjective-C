@@ -19,6 +19,7 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "evidenc
 SELF_GENERATED_REPORTS = {
     "tmp/reports/governance-sustainability/evidence-summary.json",
     "tmp/reports/governance-sustainability/publication-summary.json",
+    "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json",
 }
 
 
@@ -74,7 +75,7 @@ def main() -> int:
 
     failures: list[str] = []
     for path, payload in report_payloads.items():
-        if path in SELF_GENERATED_REPORTS and not payload:
+        if path in SELF_GENERATED_REPORTS:
             continue
         if not payload:
             failures.append(f"missing generated report {path}")

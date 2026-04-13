@@ -2,60 +2,124 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "closeout-gate"
-SUMMARY_PATH = OUT_DIR / "governance_hardening_closeout_gate.json"
+SUMMARY_PATH = OUT_DIR / "governance_sustainability_closeout_gate.json"
 RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_governance_sustainability.md"
 PROPOSAL_OUTPUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "new-work-proposal-closeout"
 
 COMMANDS = [
     {
         "name": "governance-budget-inventory",
-        "command": ["python", "scripts/build_governance_budget_inventory_summary.py"],
+        "command": [sys.executable, "scripts/build_governance_budget_inventory_summary.py"],
         "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-inventory/governance_budget_inventory_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-policy",
-        "command": ["python", "scripts/build_governance_policy_summary.py"],
+        "command": [sys.executable, "scripts/build_governance_policy_summary.py"],
         "summary_path": ROOT / "tmp/reports/governance-sustainability/sustainable-progress-policy/governance_policy_summary.json",
         "summary_ok_field": "ok",
     },
     {
         "name": "governance-maintainer-review",
-        "command": ["python", "scripts/build_governance_maintainer_review_summary.py"],
+        "command": [sys.executable, "scripts/build_governance_maintainer_review_summary.py"],
         "summary_path": ROOT / "tmp/reports/governance-sustainability/maintainer-review-regression/governance_maintainer_review_summary.json",
         "summary_ok_field": "ok",
     },
     {
+        "name": "governance-extension-policy",
+        "command": [sys.executable, "scripts/build_governance_extension_review_policy_summary.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/extension-review-policy/governance_extension_review_policy_summary.json",
+        "summary_ok_field": "status",
+        "summary_ok_value": "PASS",
+    },
+    {
+        "name": "governance-extension-workflow",
+        "command": [sys.executable, "scripts/build_governance_extension_review_workflow_summary.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/extension-review-workflow/governance_extension_review_workflow_summary.json",
+        "summary_ok_field": "status",
+        "summary_ok_value": "PASS",
+    },
+    {
+        "name": "governance-stewardship-semantics",
+        "command": [sys.executable, "scripts/build_governance_stewardship_semantics_summary.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/stewardship-semantics/governance_stewardship_semantics_summary.json",
+        "summary_ok_field": "status",
+        "summary_ok_value": "PASS",
+    },
+    {
         "name": "governance-schema-surface",
-        "command": ["python", "scripts/check_governance_sustainability_schema_surface.py"],
+        "command": [sys.executable, "scripts/check_governance_sustainability_schema_surface.py"],
         "summary_path": ROOT / "tmp/reports/governance-sustainability/schema-surface/governance_schema_surface_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
+        "name": "governance-artifact-contract",
+        "command": [sys.executable, "scripts/build_governance_artifact_contract_summary.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/artifact-contract/governance_artifact_contract_summary.json",
+        "summary_ok_field": "status",
+        "summary_ok_value": "PASS",
+    },
+    {
         "name": "governance-budget-enforcement",
-        "command": ["python", "scripts/check_governance_sustainability_budget_enforcement.py"],
+        "command": [sys.executable, "scripts/check_governance_sustainability_budget_enforcement.py"],
         "summary_path": ROOT / "tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
-        "name": "governance-anti-regression",
-        "command": ["python", "scripts/build_governance_anti_regression_summary.py"],
-        "summary_path": ROOT / "tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json",
+        "name": "public-command-contract",
+        "command": [sys.executable, "scripts/build_objc3c_public_command_contract.py", "--check"],
+        "summary_path": None,
+    },
+    {
+        "name": "public-command-surface",
+        "command": [sys.executable, "scripts/render_objc3c_public_command_surface.py", "--check"],
+        "summary_path": None,
+    },
+    {
+        "name": "public-command-budget",
+        "command": [sys.executable, "scripts/check_objc3c_public_command_budget.py"],
+        "summary_path": None,
+    },
+    {
+        "name": "task-hygiene-gate",
+        "command": [sys.executable, "scripts/ci/run_task_hygiene_gate.py"],
+        "summary_path": None,
+    },
+    {
+        "name": "governance-integration",
+        "command": [sys.executable, "scripts/check_objc3c_governance_sustainability_integration.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json",
+        "summary_ok_field": "status",
+        "summary_ok_value": "PASS",
+    },
+    {
+        "name": "governance-evidence",
+        "command": [sys.executable, "scripts/build_objc3c_governance_sustainability_evidence.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/evidence-summary.json",
+        "summary_ok_field": "status",
+        "summary_ok_value": "PASS",
+    },
+    {
+        "name": "governance-publication",
+        "command": [sys.executable, "scripts/publish_objc3c_governance_sustainability_metadata.py"],
+        "summary_path": ROOT / "tmp/reports/governance-sustainability/publication-summary.json",
         "summary_ok_field": "status",
         "summary_ok_value": "PASS",
     },
     {
         "name": "new-work-proposal-render",
         "command": [
-            "python",
+            sys.executable,
             "scripts/publish_new_work_proposal.py",
             "--proposal",
             "tests/tooling/fixtures/governance_sustainability/new_work_proposal_sample.json",
@@ -66,18 +130,13 @@ COMMANDS = [
         "summary_ok_field": "ok",
     },
     {
-        "name": "task-hygiene-gate",
-        "command": ["python", "scripts/ci/run_task_hygiene_gate.py"],
-        "summary_path": None,
-    },
-    {
         "name": "documentation-surface",
-        "command": ["python", "scripts/check_documentation_surface.py"],
+        "command": [sys.executable, "scripts/check_documentation_surface.py"],
         "summary_path": None,
     },
     {
         "name": "repo-superclean-surface",
-        "command": ["python", "scripts/check_repo_superclean_surface.py"],
+        "command": [sys.executable, "scripts/check_repo_superclean_surface.py"],
         "summary_path": None,
     },
 ]
@@ -88,7 +147,9 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    return subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False, env=env)
 
 
 def summary_ok(payload: dict[str, Any], field: str, expected: Any | None = None) -> bool:
@@ -130,12 +191,16 @@ def main() -> int:
         ok = ok and entry_ok
 
     summary = {
+        "contract_id": "objc3c.governance.sustainability.closeout_gate.v1",
+        "status": "PASS" if ok else "FAIL",
         "issue": "governance-closeout-gate",
         "runbook_mentions_closeout_gate": "check_governance_sustainability_closeout_gate.py" in runbook_text,
+        "runbook_mentions_closeout_summary": "tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json" in runbook_text,
         "command_count": len(COMMANDS),
         "commands": command_results,
     }
-    summary["ok"] = ok and summary["runbook_mentions_closeout_gate"]
+    summary["ok"] = ok and summary["runbook_mentions_closeout_gate"] and summary["runbook_mentions_closeout_summary"]
+    summary["status"] = "PASS" if summary["ok"] else "FAIL"
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")

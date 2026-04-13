@@ -119,7 +119,7 @@ Long-horizon anti-regression reporting:
 Closeout gate:
 
 - `python scripts/check_governance_sustainability_closeout_gate.py`
-- canonical closeout summary: `tmp/reports/governance-sustainability/closeout-gate/governance_hardening_closeout_gate.json`
+- canonical closeout summary: `tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json`
 
 Current governance entry surfaces:
 

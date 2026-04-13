@@ -33,23 +33,23 @@ Use this page in three passes:
 
 ## Quick Routes <a id="toc-quick-routes"></a>
 
-| If you want to...                                        | Start here                                                                                      |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| understand what already works                            | [At a Glance](#toc-status-scope-note)                                                           |
-| see the runnable subset                                  | [What Is Implemented and Runnable](#intro)                                                      |
-| understand what is still missing                         | [What Remains](#status-remaining)                                                               |
-| follow the reader-facing learning path                   | [docs/tutorials/README.md](../docs/tutorials/README.md)                                         |
-| start with the runnable getting-started tutorial         | [docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md)                       |
-| pick a capability-backed showcase example first          | [showcase/README.md](../showcase/README.md)                                                     |
-| see the tutorial build run and verify flow               | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)                     |
-| follow the guided showcase walkthrough                   | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)                 |
-| follow the ObjC2-to-ObjC3 migration guide                | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)     |
+| If you want to... | Start here |
+| --- | --- |
+| understand what already works | [At a Glance](#toc-status-scope-note) |
+| see the runnable subset | [What Is Implemented and Runnable](#intro) |
+| understand what is still missing | [What Remains](#status-remaining) |
+| follow the reader-facing learning path | [docs/tutorials/README.md](../docs/tutorials/README.md) |
+| start with the runnable getting-started tutorial | [docs/tutorials/getting_started.md](../docs/tutorials/getting_started.md) |
+| pick a capability-backed showcase example first | [showcase/README.md](../showcase/README.md) |
+| see the tutorial build run and verify flow | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md) |
+| follow the guided showcase walkthrough | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md) |
+| follow the ObjC2-to-ObjC3 migration guide | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md) |
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
-| evaluate adoption, migration, and support claims         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
-| find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |
-| build and validate the implementation                    | [README.md](../README.md)                                                                       |
-| inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
-| follow old spec links                                    | [legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)             |
+| evaluate adoption, migration, and support claims | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md) |
+| find the right draft section | [Specification Map](#toc-front-matter) |
+| build and validate the implementation | [README.md](../README.md) |
+| inspect the native implementation boundary | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/` |
+| follow old spec links | [legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files) |
 
 ## Reader Promises <a id="toc-reader-promises"></a>
 
