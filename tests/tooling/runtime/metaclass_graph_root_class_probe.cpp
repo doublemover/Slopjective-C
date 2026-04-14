@@ -1,11 +1,16 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintMethodCacheEntryMetaclassMinimal;
+using objc3c::runtime::probe::PrintMethodCacheStateMetaclass;
+using objc3c::runtime::probe::PrintRegistrationStateBasic;
 
 using objc3c::runtime::probe::StabilizeMethodCacheEntry;
 using objc3c::runtime::probe::StabilizeMethodCacheState;
@@ -16,74 +21,6 @@ using objc3c::runtime::probe::StabilizeRegistrationState;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void PrintRegistrationState(
-    const objc3_runtime_registration_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"registered_image_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_image_count));
-  std::printf("\"registered_descriptor_total\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_descriptor_total));
-  std::printf("\"last_registration_status\":%d,",
-              snapshot.last_registration_status);
-  std::printf("\"last_registered_module_name\":");
-  PrintJsonStringOrNull(snapshot.last_registered_module_name);
-  std::printf(",\"last_registered_translation_unit_identity_key\":");
-  PrintJsonStringOrNull(snapshot.last_registered_translation_unit_identity_key);
-  std::printf("}");
-}
-
-void PrintMethodCacheState(
-    const objc3_runtime_method_cache_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"cache_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_entry_count));
-  std::printf("\"cache_hit_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_hit_count));
-  std::printf("\"cache_miss_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_miss_count));
-  std::printf("\"slow_path_lookup_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
-  std::printf("\"live_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.live_dispatch_count));
-  std::printf("\"fallback_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
-  std::printf("\"last_normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_normalized_receiver_identity));
-  std::printf("\"last_dispatch_used_cache\":%d,",
-              snapshot.last_dispatch_used_cache);
-  std::printf("\"last_dispatch_resolved_live_method\":%d,",
-              snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
-  std::printf("\"last_selector\":");
-  PrintJsonStringOrNull(snapshot.last_selector);
-  std::printf(",\"last_resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_class_name);
-  std::printf(",\"last_resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_owner_identity);
-  std::printf("}");
-}
-
-void PrintMethodCacheEntry(
-    const objc3_runtime_method_cache_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"resolved\":%d,", snapshot.resolved);
-  std::printf("\"dispatch_family_is_class\":%d,",
-              snapshot.dispatch_family_is_class);
-  std::printf("\"normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.normalized_receiver_identity));
-  std::printf("\"selector\":");
-  PrintJsonStringOrNull(snapshot.selector);
-  std::printf(",\"resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.resolved_class_name);
-  std::printf(",\"resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.resolved_owner_identity);
-  std::printf("}");
-}
 
 void PrintRealizedGraphState(
     const objc3_runtime_realized_class_graph_state_snapshot &snapshot) {
@@ -300,7 +237,7 @@ int main() {
   std::printf("\"widget_own_instance_value\":%d,",
               widget_own_instance_value);
   std::printf("\"registration_state\":");
-  PrintRegistrationState(registration_state);
+  PrintRegistrationStateBasic(registration_state);
   std::printf(",\"graph_state\":");
   PrintRealizedGraphState(graph_state);
   std::printf(",\"root_entry\":");
@@ -308,23 +245,23 @@ int main() {
   std::printf(",\"widget_entry\":");
   PrintRealizedEntry(widget_entry);
   std::printf(",\"root_class_state\":");
-  PrintMethodCacheState(root_class_state);
+  PrintMethodCacheStateMetaclass(root_class_state);
   std::printf(",\"widget_class_state\":");
-  PrintMethodCacheState(widget_class_state);
+  PrintMethodCacheStateMetaclass(widget_class_state);
   std::printf(",\"widget_known_class_state\":");
-  PrintMethodCacheState(widget_known_class_state);
+  PrintMethodCacheStateMetaclass(widget_known_class_state);
   std::printf(",\"widget_inherited_state\":");
-  PrintMethodCacheState(widget_inherited_state);
+  PrintMethodCacheStateMetaclass(widget_inherited_state);
   std::printf(",\"widget_own_state\":");
-  PrintMethodCacheState(widget_own_state);
+  PrintMethodCacheStateMetaclass(widget_own_state);
   std::printf(",\"root_shared_entry\":");
-  PrintMethodCacheEntry(root_shared_entry);
+  PrintMethodCacheEntryMetaclassMinimal(root_shared_entry);
   std::printf(",\"widget_shared_entry\":");
-  PrintMethodCacheEntry(widget_shared_entry);
+  PrintMethodCacheEntryMetaclassMinimal(widget_shared_entry);
   std::printf(",\"widget_inherited_entry\":");
-  PrintMethodCacheEntry(widget_inherited_entry);
+  PrintMethodCacheEntryMetaclassMinimal(widget_inherited_entry);
   std::printf(",\"widget_own_entry\":");
-  PrintMethodCacheEntry(widget_own_entry);
+  PrintMethodCacheEntryMetaclassMinimal(widget_own_entry);
   std::printf("}\n");
   return 0;
 }

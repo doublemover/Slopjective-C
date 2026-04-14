@@ -1,11 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintMethodCacheEntryWithProbeCounts;
+using objc3c::runtime::probe::PrintMethodCacheStateFull;
+using objc3c::runtime::probe::PrintRegistrationStateFull;
+using objc3c::runtime::probe::PrintSelectorTableStateFull;
 
 using objc3c::runtime::probe::StabilizeMethodCacheEntry;
 using objc3c::runtime::probe::StabilizeMethodCacheState;
@@ -55,128 +61,6 @@ int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
   return static_cast<int>(value);
 }
 
-
-void PrintRegistrationState(
-    const objc3_runtime_registration_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"registered_image_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_image_count));
-  std::printf("\"registered_descriptor_total\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_descriptor_total));
-  std::printf("\"next_expected_registration_order_ordinal\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.next_expected_registration_order_ordinal));
-  std::printf("\"last_successful_registration_order_ordinal\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_successful_registration_order_ordinal));
-  std::printf("\"last_registration_status\":%d,",
-              snapshot.last_registration_status);
-  std::printf("\"last_registered_module_name\":");
-  PrintJsonStringOrNull(snapshot.last_registered_module_name);
-  std::printf(",\"last_registered_translation_unit_identity_key\":");
-  PrintJsonStringOrNull(snapshot.last_registered_translation_unit_identity_key);
-  std::printf(",\"last_rejected_module_name\":");
-  PrintJsonStringOrNull(snapshot.last_rejected_module_name);
-  std::printf(",\"last_rejected_translation_unit_identity_key\":");
-  PrintJsonStringOrNull(snapshot.last_rejected_translation_unit_identity_key);
-  std::printf(",\"last_rejected_registration_order_ordinal\":%llu",
-              static_cast<unsigned long long>(
-                  snapshot.last_rejected_registration_order_ordinal));
-  std::printf("}");
-}
-
-void PrintSelectorTableState(
-    const objc3_runtime_selector_lookup_table_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"selector_table_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_table_entry_count));
-  std::printf("\"metadata_backed_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metadata_backed_selector_count));
-  std::printf("\"dynamic_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.dynamic_selector_count));
-  std::printf("\"metadata_provider_edge_count\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.metadata_provider_edge_count));
-  std::printf("\"last_materialized_selector\":");
-  PrintJsonStringOrNull(snapshot.last_materialized_selector);
-  std::printf(",\"last_materialized_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_materialized_stable_id));
-  std::printf("\"last_materialized_registration_order_ordinal\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_materialized_registration_order_ordinal));
-  std::printf("\"last_materialized_selector_pool_index\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_materialized_selector_pool_index));
-  std::printf("\"last_materialized_from_metadata\":%d",
-              snapshot.last_materialized_from_metadata);
-  std::printf("}");
-}
-
-void PrintMethodCacheState(
-    const objc3_runtime_method_cache_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"cache_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_entry_count));
-  std::printf("\"cache_hit_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_hit_count));
-  std::printf("\"cache_miss_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_miss_count));
-  std::printf("\"slow_path_lookup_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
-  std::printf("\"live_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.live_dispatch_count));
-  std::printf("\"fallback_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
-  std::printf("\"last_selector_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_selector_stable_id));
-  std::printf("\"last_normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_normalized_receiver_identity));
-  std::printf("\"last_category_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_category_probe_count));
-  std::printf("\"last_protocol_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_protocol_probe_count));
-  std::printf("\"last_dispatch_used_cache\":%d,",
-              snapshot.last_dispatch_used_cache);
-  std::printf("\"last_dispatch_resolved_live_method\":%d,",
-              snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
-  std::printf("\"last_selector\":");
-  PrintJsonStringOrNull(snapshot.last_selector);
-  std::printf(",\"last_resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_class_name);
-  std::printf(",\"last_resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_owner_identity);
-  std::printf("}");
-}
-
-void PrintMethodCacheEntry(
-    const objc3_runtime_method_cache_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"resolved\":%d,", snapshot.resolved);
-  std::printf("\"dispatch_family_is_class\":%d,",
-              snapshot.dispatch_family_is_class);
-  std::printf("\"normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.normalized_receiver_identity));
-  std::printf("\"selector_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_stable_id));
-  std::printf("\"parameter_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.parameter_count));
-  std::printf("\"category_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.category_probe_count));
-  std::printf("\"protocol_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.protocol_probe_count));
-  std::printf("\"selector\":");
-  PrintJsonStringOrNull(snapshot.selector);
-  std::printf(",\"resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.resolved_class_name);
-  std::printf(",\"resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.resolved_owner_identity);
-  std::printf("}");
-}
 
 }  // namespace
 
@@ -322,29 +206,29 @@ int main() {
   std::printf("\"protocol_fallback_expected\":%d,",
               protocol_fallback_expected);
   std::printf("\"registration_state\":");
-  PrintRegistrationState(registration_state);
+  PrintRegistrationStateFull(registration_state);
   std::printf(",\"selector_table_state\":");
-  PrintSelectorTableState(selector_table_state);
+  PrintSelectorTableStateFull(selector_table_state);
   std::printf(",\"inherited_state\":");
-  PrintMethodCacheState(inherited_state);
+  PrintMethodCacheStateFull(inherited_state);
   std::printf(",\"category_state\":");
-  PrintMethodCacheState(category_state);
+  PrintMethodCacheStateFull(category_state);
   std::printf(",\"class_state\":");
-  PrintMethodCacheState(class_state);
+  PrintMethodCacheStateFull(class_state);
   std::printf(",\"known_class_state\":");
-  PrintMethodCacheState(known_class_state);
+  PrintMethodCacheStateFull(known_class_state);
   std::printf(",\"protocol_fallback_state\":");
-  PrintMethodCacheState(protocol_fallback_state);
+  PrintMethodCacheStateFull(protocol_fallback_state);
   std::printf(",\"protocol_fallback_cached_state\":");
-  PrintMethodCacheState(protocol_fallback_cached_state);
+  PrintMethodCacheStateFull(protocol_fallback_cached_state);
   std::printf(",\"inherited_entry\":");
-  PrintMethodCacheEntry(inherited_entry);
+  PrintMethodCacheEntryWithProbeCounts(inherited_entry);
   std::printf(",\"category_entry\":");
-  PrintMethodCacheEntry(category_entry);
+  PrintMethodCacheEntryWithProbeCounts(category_entry);
   std::printf(",\"known_class_entry\":");
-  PrintMethodCacheEntry(known_class_entry);
+  PrintMethodCacheEntryWithProbeCounts(known_class_entry);
   std::printf(",\"protocol_fallback_entry\":");
-  PrintMethodCacheEntry(protocol_fallback_entry);
+  PrintMethodCacheEntryWithProbeCounts(protocol_fallback_entry);
   std::printf("}\n");
   return 0;
 }

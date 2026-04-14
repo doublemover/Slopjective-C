@@ -1,11 +1,14 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintRegistrationStateCountsOnly;
 
 using objc3c::runtime::probe::StabilizeNullableCString;
 using objc3c::runtime::probe::StabilizeRealizedClassGraph;
@@ -22,18 +25,6 @@ void PrintGraph(const objc3_runtime_realized_class_graph_state_snapshot &snapsho
   std::printf("}");
 }
 
-void PrintRegistrationState(
-    const objc3_runtime_registration_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"registered_image_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_image_count));
-  std::printf(
-      "\"registered_descriptor_total\":%llu,",
-      static_cast<unsigned long long>(snapshot.registered_descriptor_total));
-  std::printf("\"last_registration_status\":%d",
-              snapshot.last_registration_status);
-  std::printf("}");
-}
 
 }  // namespace
 
@@ -108,7 +99,7 @@ int main() {
   std::printf("\"weak_after_clear\":%d,", weak_after_clear);
   std::printf("\"parent_release_result\":%d,", parent_release_result);
   std::printf("\"registration_state\":");
-  PrintRegistrationState(registration_state);
+  PrintRegistrationStateCountsOnly(registration_state);
   std::printf(",\"graph_after_alloc\":");
   PrintGraph(graph_after_alloc);
   std::printf(",\"graph_after_helper_release\":");

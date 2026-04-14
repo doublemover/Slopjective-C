@@ -1,11 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintMethodCacheEntryBasic;
+using objc3c::runtime::probe::PrintMethodCacheStateMethodBinding;
+using objc3c::runtime::probe::PrintRegistrationStateBasic;
+using objc3c::runtime::probe::PrintSelectorTableStateBasic;
 
 using objc3c::runtime::probe::StabilizeMethodCacheEntry;
 using objc3c::runtime::probe::StabilizeMethodCacheState;
@@ -15,91 +21,6 @@ using objc3c::runtime::probe::StabilizeSelectorTableState;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void PrintRegistrationState(
-    const objc3_runtime_registration_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"registered_image_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_image_count));
-  std::printf("\"registered_descriptor_total\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_descriptor_total));
-  std::printf("\"last_registration_status\":%d,", snapshot.last_registration_status);
-  std::printf("\"last_registered_module_name\":");
-  PrintJsonStringOrNull(snapshot.last_registered_module_name);
-  std::printf(",\"last_registered_translation_unit_identity_key\":");
-  PrintJsonStringOrNull(snapshot.last_registered_translation_unit_identity_key);
-  std::printf("}");
-}
-
-void PrintSelectorTableState(
-    const objc3_runtime_selector_lookup_table_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"selector_table_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_table_entry_count));
-  std::printf("\"metadata_backed_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metadata_backed_selector_count));
-  std::printf("\"dynamic_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.dynamic_selector_count));
-  std::printf("\"last_materialized_selector\":");
-  PrintJsonStringOrNull(snapshot.last_materialized_selector);
-  std::printf("}");
-}
-
-void PrintMethodCacheState(
-    const objc3_runtime_method_cache_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"cache_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_entry_count));
-  std::printf("\"cache_hit_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_hit_count));
-  std::printf("\"cache_miss_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_miss_count));
-  std::printf("\"slow_path_lookup_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
-  std::printf("\"live_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.live_dispatch_count));
-  std::printf("\"fallback_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
-  std::printf("\"last_selector\":");
-  PrintJsonStringOrNull(snapshot.last_selector);
-  std::printf(",\"last_normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_normalized_receiver_identity));
-  std::printf("\"last_dispatch_used_cache\":%d,",
-              snapshot.last_dispatch_used_cache);
-  std::printf("\"last_dispatch_resolved_live_method\":%d,",
-              snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
-  std::printf("\"last_resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_class_name);
-  std::printf(",\"last_resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_owner_identity);
-  std::printf("}");
-}
-
-void PrintMethodCacheEntry(
-    const objc3_runtime_method_cache_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"resolved\":%d,", snapshot.resolved);
-  std::printf("\"dispatch_family_is_class\":%d,",
-              snapshot.dispatch_family_is_class);
-  std::printf("\"normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.normalized_receiver_identity));
-  std::printf("\"selector_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_stable_id));
-  std::printf("\"parameter_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.parameter_count));
-  std::printf("\"selector\":");
-  PrintJsonStringOrNull(snapshot.selector);
-  std::printf(",\"resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.resolved_class_name);
-  std::printf(",\"resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.resolved_owner_identity);
-  std::printf("}");
-}
 
 }  // namespace
 
@@ -207,25 +128,25 @@ int main() {
   std::printf("\"known_class_value\":%d,", known_class_value);
   std::printf("\"category_value\":%d,", category_value);
   std::printf("\"registration_state\":");
-  PrintRegistrationState(registration_state);
+  PrintRegistrationStateBasic(registration_state);
   std::printf(",\"selector_table_state\":");
-  PrintSelectorTableState(selector_table_state);
+  PrintSelectorTableStateBasic(selector_table_state);
   std::printf(",\"instance_first_state\":");
-  PrintMethodCacheState(instance_first_state);
+  PrintMethodCacheStateMethodBinding(instance_first_state);
   std::printf(",\"instance_second_state\":");
-  PrintMethodCacheState(instance_second_state);
+  PrintMethodCacheStateMethodBinding(instance_second_state);
   std::printf(",\"class_state\":");
-  PrintMethodCacheState(class_state);
+  PrintMethodCacheStateMethodBinding(class_state);
   std::printf(",\"known_class_state\":");
-  PrintMethodCacheState(known_class_state);
+  PrintMethodCacheStateMethodBinding(known_class_state);
   std::printf(",\"category_state\":");
-  PrintMethodCacheState(category_state);
+  PrintMethodCacheStateMethodBinding(category_state);
   std::printf(",\"instance_entry\":");
-  PrintMethodCacheEntry(instance_entry);
+  PrintMethodCacheEntryBasic(instance_entry);
   std::printf(",\"class_entry\":");
-  PrintMethodCacheEntry(class_entry);
+  PrintMethodCacheEntryBasic(class_entry);
   std::printf(",\"category_entry\":");
-  PrintMethodCacheEntry(category_entry);
+  PrintMethodCacheEntryBasic(category_entry);
   std::printf("}");
   return 0;
 }

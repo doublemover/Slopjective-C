@@ -1,12 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintRegistrationStateSelectorLookup;
+using objc3c::runtime::probe::PrintSelectorEntryFull;
+using objc3c::runtime::probe::PrintSelectorTableStateFull;
 
 using objc3c::runtime::probe::StabilizeImageWalkState;
 using objc3c::runtime::probe::StabilizeNullableCString;
@@ -17,84 +22,6 @@ using objc3c::runtime::probe::StabilizeSelectorTableState;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void PrintSelectorTableState(
-    const objc3_runtime_selector_lookup_table_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"selector_table_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_table_entry_count));
-  std::printf("\"metadata_backed_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metadata_backed_selector_count));
-  std::printf("\"dynamic_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.dynamic_selector_count));
-  std::printf("\"metadata_provider_edge_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metadata_provider_edge_count));
-  std::printf("\"last_materialized_selector\":");
-  PrintJsonStringOrNull(snapshot.last_materialized_selector);
-  std::printf(",\"last_materialized_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_materialized_stable_id));
-  std::printf(
-      "\"last_materialized_registration_order_ordinal\":%llu,",
-      static_cast<unsigned long long>(
-          snapshot.last_materialized_registration_order_ordinal));
-  std::printf("\"last_materialized_selector_pool_index\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_materialized_selector_pool_index));
-  std::printf("\"last_materialized_from_metadata\":%d",
-              snapshot.last_materialized_from_metadata);
-  std::printf("}");
-}
-
-void PrintSelectorEntry(
-    const objc3_runtime_selector_lookup_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"metadata_backed\":%d,", snapshot.metadata_backed);
-  std::printf("\"stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.stable_id));
-  std::printf("\"metadata_provider_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metadata_provider_count));
-  std::printf("\"first_registration_order_ordinal\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.first_registration_order_ordinal));
-  std::printf("\"last_registration_order_ordinal\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_registration_order_ordinal));
-  std::printf("\"first_selector_pool_index\":%llu,",
-              static_cast<unsigned long long>(snapshot.first_selector_pool_index));
-  std::printf("\"last_selector_pool_index\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_selector_pool_index));
-  std::printf("\"canonical_selector\":");
-  PrintJsonStringOrNull(snapshot.canonical_selector);
-  std::printf("}");
-}
-
-void PrintRegistrationState(
-    const objc3_runtime_registration_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"registered_image_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_image_count));
-  std::printf("\"registered_descriptor_total\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_descriptor_total));
-  std::printf(
-      "\"next_expected_registration_order_ordinal\":%llu,",
-      static_cast<unsigned long long>(
-          snapshot.next_expected_registration_order_ordinal));
-  std::printf(
-      "\"last_successful_registration_order_ordinal\":%llu,",
-      static_cast<unsigned long long>(
-          snapshot.last_successful_registration_order_ordinal));
-  std::printf("\"last_registration_status\":%d,",
-              snapshot.last_registration_status);
-  std::printf("\"last_registered_module_name\":");
-  PrintJsonStringOrNull(snapshot.last_registered_module_name);
-  std::printf(",\"last_registered_translation_unit_identity_key\":");
-  PrintJsonStringOrNull(snapshot.last_registered_translation_unit_identity_key);
-  std::printf(",\"last_rejected_registration_order_ordinal\":%llu",
-              static_cast<unsigned long long>(
-                  snapshot.last_rejected_registration_order_ordinal));
-  std::printf("}");
-}
 
 void PrintImageWalkState(
     const objc3_runtime_image_walk_state_snapshot &snapshot) {
@@ -472,61 +399,61 @@ int main() {
               static_cast<unsigned long long>(replayed_dynamic_handle_stable_id));
 
   std::printf("\"startup_registration\":");
-  PrintRegistrationState(startup_registration);
+  PrintRegistrationStateSelectorLookup(startup_registration);
   std::printf(",\"startup_image_walk\":");
   PrintImageWalkState(startup_image_walk);
   std::printf(",\"startup_table\":");
-  PrintSelectorTableState(startup_table);
+  PrintSelectorTableStateFull(startup_table);
   std::printf(",\"startup_token\":");
-  PrintSelectorEntry(startup_token);
+  PrintSelectorEntryFull(startup_token);
   std::printf(",\"startup_current\":");
-  PrintSelectorEntry(startup_current);
+  PrintSelectorEntryFull(startup_current);
   std::printf(",\"startup_set_current\":");
-  PrintSelectorEntry(startup_set_current);
+  PrintSelectorEntryFull(startup_set_current);
   std::printf(",\"startup_shared\":");
-  PrintSelectorEntry(startup_shared);
+  PrintSelectorEntryFull(startup_shared);
   std::printf(",\"startup_manual_only_before\":");
-  PrintSelectorEntry(startup_manual_only_before);
+  PrintSelectorEntryFull(startup_manual_only_before);
 
   std::printf(",\"after_manual_registration\":");
-  PrintRegistrationState(after_manual_registration);
+  PrintRegistrationStateSelectorLookup(after_manual_registration);
   std::printf(",\"after_manual_image_walk\":");
   PrintImageWalkState(after_manual_image_walk);
   std::printf(",\"after_manual_table\":");
-  PrintSelectorTableState(after_manual_table);
+  PrintSelectorTableStateFull(after_manual_table);
   std::printf(",\"after_manual_token\":");
-  PrintSelectorEntry(after_manual_token);
+  PrintSelectorEntryFull(after_manual_token);
   std::printf(",\"after_manual_debug_name\":");
-  PrintSelectorEntry(after_manual_debug_name);
+  PrintSelectorEntryFull(after_manual_debug_name);
 
   std::printf(",\"after_dynamic_table\":");
-  PrintSelectorTableState(after_dynamic_table);
+  PrintSelectorTableStateFull(after_dynamic_table);
   std::printf(",\"after_dynamic_manual_only\":");
-  PrintSelectorEntry(after_dynamic_manual_only);
+  PrintSelectorEntryFull(after_dynamic_manual_only);
 
   std::printf(",\"after_reset_registration\":");
-  PrintRegistrationState(after_reset_registration);
+  PrintRegistrationStateSelectorLookup(after_reset_registration);
   std::printf(",\"after_reset_table\":");
-  PrintSelectorTableState(after_reset_table);
+  PrintSelectorTableStateFull(after_reset_table);
 
   std::printf(",\"after_replay_registration\":");
-  PrintRegistrationState(after_replay_registration);
+  PrintRegistrationStateSelectorLookup(after_replay_registration);
   std::printf(",\"after_replay_image_walk\":");
   PrintImageWalkState(after_replay_image_walk);
   std::printf(",\"after_replay_reset_replay\":");
   PrintResetReplayState(after_replay_reset_replay);
   std::printf(",\"after_replay_table\":");
-  PrintSelectorTableState(after_replay_table);
+  PrintSelectorTableStateFull(after_replay_table);
   std::printf(",\"after_replay_token\":");
-  PrintSelectorEntry(after_replay_token);
+  PrintSelectorEntryFull(after_replay_token);
   std::printf(",\"after_replay_debug_name\":");
-  PrintSelectorEntry(after_replay_debug_name);
+  PrintSelectorEntryFull(after_replay_debug_name);
   std::printf(",\"after_replay_manual_only_before\":");
-  PrintSelectorEntry(after_replay_manual_only_before);
+  PrintSelectorEntryFull(after_replay_manual_only_before);
   std::printf(",\"after_replay_dynamic_table\":");
-  PrintSelectorTableState(after_replay_dynamic_table);
+  PrintSelectorTableStateFull(after_replay_dynamic_table);
   std::printf(",\"after_replay_dynamic_manual_only\":");
-  PrintSelectorEntry(after_replay_dynamic_manual_only);
+  PrintSelectorEntryFull(after_replay_dynamic_manual_only);
   std::printf("}\n");
   return 0;
 }

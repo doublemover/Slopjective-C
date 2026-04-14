@@ -1,11 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintMethodCacheEntryRuntimeCanonical;
+using objc3c::runtime::probe::PrintMethodCacheStateFull;
+using objc3c::runtime::probe::PrintSelectorEntryBasic;
+using objc3c::runtime::probe::PrintSelectorTableStateRuntimeCanonical;
 
 using objc3c::runtime::probe::StabilizeConformanceQuery;
 using objc3c::runtime::probe::StabilizeGraphState;
@@ -147,97 +153,6 @@ void PrintConformanceQuery(
   std::printf("}");
 }
 
-void PrintMethodCacheState(
-    const objc3_runtime_method_cache_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"cache_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_entry_count));
-  std::printf("\"cache_hit_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_hit_count));
-  std::printf("\"cache_miss_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.cache_miss_count));
-  std::printf("\"slow_path_lookup_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.slow_path_lookup_count));
-  std::printf("\"live_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.live_dispatch_count));
-  std::printf("\"fallback_dispatch_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
-  std::printf("\"last_selector_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_selector_stable_id));
-  std::printf("\"last_normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.last_normalized_receiver_identity));
-  std::printf("\"last_category_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_category_probe_count));
-  std::printf("\"last_protocol_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.last_protocol_probe_count));
-  std::printf("\"last_dispatch_used_cache\":%d,",
-              snapshot.last_dispatch_used_cache);
-  std::printf("\"last_dispatch_resolved_live_method\":%d,",
-              snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
-  std::printf("\"last_selector\":");
-  PrintJsonStringOrNull(snapshot.last_selector);
-  std::printf(",\"last_resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_class_name);
-  std::printf(",\"last_resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_resolved_owner_identity);
-  std::printf("}");
-}
-
-void PrintMethodCacheEntry(
-    const objc3_runtime_method_cache_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"resolved\":%d,", snapshot.resolved);
-  std::printf("\"dispatch_family_is_class\":%d,",
-              snapshot.dispatch_family_is_class);
-  std::printf("\"normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.normalized_receiver_identity));
-  std::printf("\"selector_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_stable_id));
-  std::printf("\"category_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.category_probe_count));
-  std::printf("\"protocol_probe_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.protocol_probe_count));
-  std::printf("\"selector\":");
-  PrintJsonStringOrNull(snapshot.selector);
-  std::printf(",\"resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.resolved_class_name);
-  std::printf(",\"resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.resolved_owner_identity);
-  std::printf("}");
-}
-
-void PrintSelectorTableState(
-    const objc3_runtime_selector_lookup_table_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"selector_table_entry_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_table_entry_count));
-  std::printf("\"metadata_backed_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metadata_backed_selector_count));
-  std::printf("\"dynamic_selector_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.dynamic_selector_count));
-  std::printf("\"last_materialized_selector\":");
-  PrintJsonStringOrNull(snapshot.last_materialized_selector);
-  std::printf(",\"last_materialized_from_metadata\":%d",
-              snapshot.last_materialized_from_metadata);
-  std::printf("}");
-}
-
-void PrintSelectorEntry(
-    const objc3_runtime_selector_lookup_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"metadata_backed\":%d,", snapshot.metadata_backed);
-  std::printf("\"stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.stable_id));
-  std::printf("\"canonical_selector\":");
-  PrintJsonStringOrNull(snapshot.canonical_selector);
-  std::printf("}");
-}
 
 }  // namespace
 
@@ -504,41 +419,41 @@ int main() {
   std::printf(",\"tracer_query\":");
   PrintConformanceQuery(tracer_query);
   std::printf(",\"method_state\":");
-  PrintMethodCacheState(method_state);
+  PrintMethodCacheStateFull(method_state);
   std::printf(",\"inherited_state\":");
-  PrintMethodCacheState(inherited_state);
+  PrintMethodCacheStateFull(inherited_state);
   std::printf(",\"traced_state\":");
-  PrintMethodCacheState(traced_state);
+  PrintMethodCacheStateFull(traced_state);
   std::printf(",\"class_state\":");
-  PrintMethodCacheState(class_state);
+  PrintMethodCacheStateFull(class_state);
   std::printf(",\"ignored_state\":");
-  PrintMethodCacheState(ignored_state);
+  PrintMethodCacheStateFull(ignored_state);
   std::printf(",\"ignored_cached_state\":");
-  PrintMethodCacheState(ignored_cached_state);
+  PrintMethodCacheStateFull(ignored_cached_state);
   std::printf(",\"alloc_entry\":");
-  PrintMethodCacheEntry(alloc_entry);
+  PrintMethodCacheEntryRuntimeCanonical(alloc_entry);
   std::printf(",\"init_entry\":");
-  PrintMethodCacheEntry(init_entry);
+  PrintMethodCacheEntryRuntimeCanonical(init_entry);
   std::printf(",\"new_entry\":");
-  PrintMethodCacheEntry(new_entry);
+  PrintMethodCacheEntryRuntimeCanonical(new_entry);
   std::printf(",\"traced_entry\":");
-  PrintMethodCacheEntry(traced_entry);
+  PrintMethodCacheEntryRuntimeCanonical(traced_entry);
   std::printf(",\"inherited_entry\":");
-  PrintMethodCacheEntry(inherited_entry);
+  PrintMethodCacheEntryRuntimeCanonical(inherited_entry);
   std::printf(",\"class_entry\":");
-  PrintMethodCacheEntry(class_entry);
+  PrintMethodCacheEntryRuntimeCanonical(class_entry);
   std::printf(",\"ignored_entry\":");
-  PrintMethodCacheEntry(ignored_entry);
+  PrintMethodCacheEntryRuntimeCanonical(ignored_entry);
   std::printf(",\"selector_table_state\":");
-  PrintSelectorTableState(selector_table_state);
+  PrintSelectorTableStateRuntimeCanonical(selector_table_state);
   std::printf(",\"traced_selector_entry\":");
-  PrintSelectorEntry(traced_selector_entry);
+  PrintSelectorEntryBasic(traced_selector_entry);
   std::printf(",\"inherited_selector_entry\":");
-  PrintSelectorEntry(inherited_selector_entry);
+  PrintSelectorEntryBasic(inherited_selector_entry);
   std::printf(",\"class_selector_entry\":");
-  PrintSelectorEntry(class_selector_entry);
+  PrintSelectorEntryBasic(class_selector_entry);
   std::printf(",\"ignored_selector_entry\":");
-  PrintSelectorEntry(ignored_selector_entry);
+  PrintSelectorEntryBasic(ignored_selector_entry);
   std::printf("}\n");
   return 0;
 }

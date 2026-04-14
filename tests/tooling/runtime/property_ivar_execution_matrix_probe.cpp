@@ -1,11 +1,14 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/runtime_snapshot_json.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintMethodCacheEntryBasic;
 
 using objc3c::runtime::probe::StabilizeDispatchState;
 using objc3c::runtime::probe::StabilizeMethodCacheEntry;
@@ -109,28 +112,6 @@ void PrintRealizedClassEntry(
   std::printf("}");
 }
 
-void PrintMethodCacheEntry(
-    const objc3_runtime_method_cache_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"resolved\":%d,", snapshot.resolved);
-  std::printf("\"dispatch_family_is_class\":%d,",
-              snapshot.dispatch_family_is_class);
-  std::printf("\"normalized_receiver_identity\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.normalized_receiver_identity));
-  std::printf("\"selector_stable_id\":%llu,",
-              static_cast<unsigned long long>(snapshot.selector_stable_id));
-  std::printf("\"parameter_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.parameter_count));
-  std::printf("\"selector\":");
-  PrintJsonStringOrNull(snapshot.selector);
-  std::printf(",\"resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.resolved_class_name);
-  std::printf(",\"resolved_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.resolved_owner_identity);
-  std::printf("}");
-}
 
 void PrintDispatchState(
     const objc3_runtime_dispatch_state_snapshot &snapshot) {
@@ -482,13 +463,13 @@ int main() {
   std::printf(",\"token_property\":");
   PrintPropertyEntry(token_entry);
   std::printf(",\"count_method\":");
-  PrintMethodCacheEntry(count_method);
+  PrintMethodCacheEntryBasic(count_method);
   std::printf(",\"enabled_method\":");
-  PrintMethodCacheEntry(enabled_method);
+  PrintMethodCacheEntryBasic(enabled_method);
   std::printf(",\"value_method\":");
-  PrintMethodCacheEntry(value_method);
+  PrintMethodCacheEntryBasic(value_method);
   std::printf(",\"token_method\":");
-  PrintMethodCacheEntry(token_method);
+  PrintMethodCacheEntryBasic(token_method);
   std::printf(",\"set_count_dispatch\":");
   PrintDispatchState(set_count_dispatch);
   std::printf(",\"count_dispatch\":");
