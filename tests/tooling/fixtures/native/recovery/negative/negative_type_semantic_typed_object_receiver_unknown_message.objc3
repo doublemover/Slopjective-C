@@ -2,6 +2,7 @@
 module NegativeTypeSemanticTypedObjectReceiverUnknownMessage;
 
 @interface Widget
+@property (readonly) id token;
 - (id) title;
 @end
 
@@ -12,6 +13,7 @@ module NegativeTypeSemanticTypedObjectReceiverUnknownMessage;
 @end
 
 fn consume(widget: Widget *?) -> i32 {
+  let token = [widget? token];
   let ok = [widget? title];
   let missing = [widget? missingTitle];
   return 0;

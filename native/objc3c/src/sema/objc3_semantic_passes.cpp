@@ -1880,6 +1880,11 @@ struct Objc3ResolvedMessageSendMethod {
   bool cycle_detected = false;
 };
 
+struct Objc3ResolvedMessageSendPropertyAccessor {
+  const Objc3PropertyInfo *property = nullptr;
+  bool is_setter = false;
+};
+
 static void CollectConcurrencyTaskCallableLegalityExprSites(
     const Expr *expr, Objc3ConcurrencyTaskCallableLegalityProfile &profile) {
   if (expr == nullptr) {
@@ -4014,6 +4019,12 @@ static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
     const std::string &owner_name,
     const std::string &selector,
     bool is_class_method);
+static Objc3ResolvedMessageSendPropertyAccessor
+ResolveConcreteOwnerPropertyAccessor(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_property);
 static Expr::DispatchSurfaceKind ResolveNormalizedMessageSendDispatchSurfaceKind(
     const Expr &expr,
     const Objc3MessageSendResolutionContext &context);
@@ -7973,6 +7984,51 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                    selector, false);
     if (typed_receiver_resolution.status ==
         Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector) {
+      const Objc3ResolvedMessageSendPropertyAccessor property_resolution =
+          ResolveConcreteOwnerPropertyAccessor(*message_send_context.surface,
+                                               receiver_type.object_pointer_type_name,
+                                               selector, false);
+      if (property_resolution.property != nullptr) {
+        const std::size_t expected_arity =
+            property_resolution.is_setter ? 1u : 0u;
+        if (expr->args.size() != expected_arity) {
+          diagnostics.push_back(MakeDiag(
+              expr->line, expr->column, "O3S216",
+              "selector resolution failed: property accessor selector '" +
+                  selector + "' resolves to arity " +
+                  std::to_string(expected_arity) + " for typed receiver '" +
+                  receiver_type.object_pointer_type_name + "'"));
+          return MakeScalarSemanticType(ValueType::Unknown);
+        }
+        if (property_resolution.is_setter) {
+          const SemanticTypeInfo arg_type = ValidateExpr(
+              expr->args[0].get(), scopes, globals, functions, diagnostics,
+              max_message_send_args, message_send_context);
+          const SemanticTypeInfo expected =
+              MakeSemanticTypeFromPropertyInfo(*property_resolution.property);
+          const bool bool_coercion =
+              !expected.is_vector && expected.type == ValueType::Bool &&
+              !arg_type.is_vector && arg_type.type == ValueType::I32;
+          const bool i32_alias_coercion =
+              AreScalarI32AliasCompatible(expected, arg_type);
+          const bool objc_reference_coercion =
+              AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+          if (!IsUnknownSemanticType(arg_type) &&
+              !IsUnknownSemanticType(expected) &&
+              !IsSameSemanticType(arg_type, expected) && !bool_coercion &&
+              !i32_alias_coercion && !objc_reference_coercion) {
+            diagnostics.push_back(MakeDiag(
+                expr->args[0]->line, expr->args[0]->column, "O3S206",
+                "type mismatch: property accessor selector '" + selector +
+                    "' on typed receiver '" +
+                    receiver_type.object_pointer_type_name + "' expects '" +
+                    SemanticTypeName(expected) + "', got '" +
+                    SemanticTypeName(arg_type) + "'"));
+          }
+          return MakeScalarSemanticType(ValueType::Void);
+        }
+        return MakeSemanticTypeFromPropertyInfo(*property_resolution.property);
+      }
       const unsigned diag_line =
           expr->receiver != nullptr ? expr->receiver->line : expr->line;
       const unsigned diag_column =
@@ -16783,6 +16839,76 @@ static const Objc3PropertyInfo *ResolveDeclaredConformanceProperty(
   bool cycle_detected = false;
   return FindSurfacePropertyInSuperChain(surface, owner_name, property_name,
                                          missing_base, cycle_detected);
+}
+
+static Objc3ResolvedMessageSendPropertyAccessor
+ResolveConcreteOwnerPropertyAccessor(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_property) {
+  Objc3ResolvedMessageSendPropertyAccessor resolution;
+  auto consider = [&](const Objc3PropertyInfo *property) {
+    if (property == nullptr || property->is_class != is_class_property) {
+      return false;
+    }
+    if (property->effective_getter_selector == selector) {
+      resolution.property = property;
+      resolution.is_setter = false;
+      return true;
+    }
+    if (property->effective_setter_available &&
+        property->effective_setter_selector == selector) {
+      resolution.property = property;
+      resolution.is_setter = true;
+      return true;
+    }
+    return false;
+  };
+
+  const auto interface_it = surface.interfaces.find(owner_name);
+  if (interface_it != surface.interfaces.end()) {
+    for (const auto &entry : interface_it->second.properties) {
+      if (consider(&entry.second)) {
+        return resolution;
+      }
+    }
+  }
+  const auto implementation_it = surface.implementations.find(owner_name);
+  if (implementation_it != surface.implementations.end()) {
+    for (const auto &entry : implementation_it->second.properties) {
+      if (consider(&entry.second)) {
+        return resolution;
+      }
+    }
+  }
+  const auto merge_it = surface.category_merge_surfaces.find(owner_name);
+  if (merge_it != surface.category_merge_surfaces.end()) {
+    for (const auto &entry : merge_it->second.merged_properties) {
+      if (consider(&entry.second)) {
+        return resolution;
+      }
+    }
+  }
+  const auto owner_it = surface.interfaces.find(owner_name);
+  if (owner_it == surface.interfaces.end()) {
+    return resolution;
+  }
+  std::string next_super = owner_it->second.super_name;
+  std::unordered_set<std::string> visited;
+  while (!next_super.empty() && visited.insert(next_super).second) {
+    const auto super_it = surface.interfaces.find(next_super);
+    if (super_it == surface.interfaces.end()) {
+      return resolution;
+    }
+    for (const auto &entry : super_it->second.properties) {
+      if (consider(&entry.second)) {
+        return resolution;
+      }
+    }
+    next_super = super_it->second.super_name;
+  }
+  return resolution;
 }
 
 static const Objc3PropertyInfo *ResolveCategoryConformanceProperty(

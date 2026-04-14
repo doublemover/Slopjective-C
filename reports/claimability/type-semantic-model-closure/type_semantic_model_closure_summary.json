@@ -356,6 +356,7 @@
       "IsCompatibleCanonicalSemanticType": true,
       "IsUnsafeNullableToNonnullFlow": true,
       "MakeSemanticTypeFromPropertyInfo": true,
+      "ResolveConcreteOwnerPropertyAccessor": true,
       "ResolveProtocolQualifiedMessageRequirement": true,
       "SupportsPointerParamTypeDeclarator": true,
       "ValidateProtocolCompositionIdentifierBindings": true,
@@ -463,9 +464,9 @@
       {
         "code": "O3S216",
         "column": 18,
-        "line": 16,
+        "line": 18,
         "message": "selector resolution failed: typed receiver 'Widget' does not provide selector 'missingTitle'",
-        "raw": "error:16:18: selector resolution failed: typed receiver 'Widget' does not provide selector 'missingTitle' [O3S216]",
+        "raw": "error:18:18: selector resolution failed: typed receiver 'Widget' does not provide selector 'missingTitle' [O3S216]",
         "severity": "error"
       }
     ],
