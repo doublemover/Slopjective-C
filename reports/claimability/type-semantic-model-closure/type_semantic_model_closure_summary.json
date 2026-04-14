@@ -1,7 +1,10 @@
 {
   "checks": {
     "all_summary_fields_emitted": true,
+    "canonical_function_metadata_publishes_replay_keys": true,
+    "canonical_interface_property_metadata_publishes_replay_keys": true,
     "deterministic": true,
+    "manifest_has_canonical_type_metadata": true,
     "manifest_has_type_semantic_model": true,
     "minimum_positive_counts_observed": true,
     "negative_conformance_expects_o3s206_location": true,
@@ -281,7 +284,10 @@
       "invalid_protocol_composition_semantic_sites": true,
       "nullability_suffix_semantic_sites": true,
       "object_pointer_semantic_sites": true,
-      "protocol_composition_semantic_sites": true
+      "param_canonical_types": true,
+      "protocol_composition_semantic_sites": true,
+      "return_canonical_type": true,
+      "semantic_canonical_type_metadata": true
     },
     "ir_emitter_runtime_surface_present": {
       "Emit": true,

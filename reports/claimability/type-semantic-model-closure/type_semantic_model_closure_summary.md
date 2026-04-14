@@ -15,6 +15,9 @@
 - `positive_manifest_emitted`: `PASS`
 - `positive_llvm_ir_emitted`: `PASS`
 - `manifest_has_type_semantic_model`: `PASS`
+- `manifest_has_canonical_type_metadata`: `PASS`
+- `canonical_function_metadata_publishes_replay_keys`: `PASS`
+- `canonical_interface_property_metadata_publishes_replay_keys`: `PASS`
 - `all_summary_fields_emitted`: `PASS`
 - `ready_for_lowering_and_runtime`: `PASS`
 - `deterministic`: `PASS`

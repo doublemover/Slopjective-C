@@ -266,15 +266,32 @@ def diagnostic_matches(diagnostics: list[dict[str, Any]], code: str, line: int, 
 
 
 def compile_positive_summary(run: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, bool]]:
-    model = nested_semantic_model(run.get("manifest"))
+    manifest = run.get("manifest")
+    model = nested_semantic_model(manifest)
     if not model:
         return None, {"manifest_has_type_semantic_model": False}
+    canonical_metadata = manifest.get("semantic_canonical_type_metadata") if isinstance(manifest, dict) else None
+    canonical_functions = canonical_metadata.get("functions", []) if isinstance(canonical_metadata, dict) else []
+    canonical_interfaces = canonical_metadata.get("interfaces", []) if isinstance(canonical_metadata, dict) else []
+    choose_function = next((entry for entry in canonical_functions if entry.get("name") == "choose"), None)
+    semantic_box = next((entry for entry in canonical_interfaces if entry.get("name") == "SemanticBox"), None)
     replay_key = str(model.get("replay_key", ""))
     checks = {
         "positive_fixture_compiles": run["exit_code"] == 0,
         "positive_manifest_emitted": run["manifest_path"] is not None,
         "positive_llvm_ir_emitted": run["llvm_ir_path"] is not None,
         "manifest_has_type_semantic_model": True,
+        "manifest_has_canonical_type_metadata": isinstance(canonical_metadata, dict),
+        "canonical_function_metadata_publishes_replay_keys": isinstance(choose_function, dict)
+        and bool((choose_function.get("return_canonical_type") or {}).get("replay_key"))
+        and len(choose_function.get("param_canonical_types", [])) == 3
+        and all(bool((param or {}).get("replay_key")) for param in choose_function.get("param_canonical_types", [])),
+        "canonical_interface_property_metadata_publishes_replay_keys": isinstance(semantic_box, dict)
+        and any(
+            property_entry.get("name") == "title"
+            and bool((property_entry.get("canonical_type") or {}).get("replay_key"))
+            for property_entry in semantic_box.get("properties", [])
+        ),
         "all_summary_fields_emitted": all(field in model for field in SUMMARY_FIELDS),
         "ready_for_lowering_and_runtime": bool(model.get("ready_for_lowering_and_runtime")),
         "deterministic": bool(model.get("deterministic")),
@@ -315,7 +332,7 @@ def build_summary() -> dict[str, Any]:
     static_presence = {
         "sema_contract_fields": contains_all(sema_contract_text, STATIC_FIELD_TOKENS),
         "semantic_pass_sources_and_replay_key": contains_all(semantic_passes_text, STATIC_FIELD_TOKENS + SEMANTIC_PASS_TOKENS + REPLAY_KEY_SEGMENTS),
-        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS),
+        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types"]),
         "lowering_contract_runtime_surface_present": contains_all(lowering_text, ["Lowering", "runtime"]),
         "ir_emitter_runtime_surface_present": contains_all(ir_text, ["Objc3", "Emit"]),
     }

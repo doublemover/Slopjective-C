@@ -24870,6 +24870,144 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               ? "true"
               : "false")
       << "},\n";
+  auto write_canonical_type_json =
+      [&](const Objc3SemanticCanonicalType &type) {
+        manifest << "{\"value_type\":\""
+                 << EscapeJsonString(objc3c::support::ValueTypeName(
+                        type.value_type))
+                 << "\",\"kind\":" << static_cast<unsigned>(type.kind)
+                 << ",\"nullability\":"
+                 << static_cast<unsigned>(type.nullability)
+                 << ",\"ownership\":"
+                 << static_cast<unsigned>(type.ownership)
+                 << ",\"canonical_spelling\":\""
+                 << EscapeJsonString(type.canonical_spelling)
+                 << "\",\"replay_key\":\""
+                 << EscapeJsonString(type.replay_key)
+                 << "\",\"deterministic\":"
+                 << (type.deterministic ? "true" : "false") << "}";
+      };
+  auto write_canonical_type_array =
+      [&](const std::vector<Objc3SemanticCanonicalType> &types) {
+        manifest << "[";
+        for (std::size_t type_index = 0; type_index < types.size();
+             ++type_index) {
+          if (type_index != 0u) {
+            manifest << ",";
+          }
+          write_canonical_type_json(types[type_index]);
+        }
+        manifest << "]";
+      };
+  auto write_method_canonical_metadata =
+      [&](const Objc3SemanticMethodTypeMetadata &method_metadata) {
+        manifest << "{\"selector\":\""
+                 << EscapeJsonString(method_metadata.selector_normalized)
+                 << "\",\"is_class_method\":"
+                 << (method_metadata.is_class_method ? "true" : "false")
+                 << ",\"return_canonical_type\":";
+        write_canonical_type_json(method_metadata.return_canonical_type);
+        manifest << ",\"param_canonical_types\":";
+        write_canonical_type_array(method_metadata.param_canonical_types);
+        manifest << "}";
+      };
+  manifest << "  \"semantic_canonical_type_metadata\":{\n";
+  manifest << "    \"functions\":[";
+  for (std::size_t fn_index = 0;
+       fn_index < type_metadata_handoff.functions_lexicographic.size();
+       ++fn_index) {
+    const auto &function_metadata =
+        type_metadata_handoff.functions_lexicographic[fn_index];
+    if (fn_index != 0u) {
+      manifest << ",";
+    }
+    manifest << "{\"name\":\"" << EscapeJsonString(function_metadata.name)
+             << "\",\"return_canonical_type\":";
+    write_canonical_type_json(function_metadata.return_canonical_type);
+    manifest << ",\"param_canonical_types\":";
+    write_canonical_type_array(function_metadata.param_canonical_types);
+    manifest << "}";
+  }
+  manifest << "],\n";
+  manifest << "    \"interfaces\":[";
+  for (std::size_t interface_index = 0;
+       interface_index < type_metadata_handoff.interfaces_lexicographic.size();
+       ++interface_index) {
+    const auto &interface_metadata =
+        type_metadata_handoff.interfaces_lexicographic[interface_index];
+    if (interface_index != 0u) {
+      manifest << ",";
+    }
+    manifest << "{\"name\":\"" << EscapeJsonString(interface_metadata.name)
+             << "\",\"properties\":[";
+    for (std::size_t property_index = 0;
+         property_index < interface_metadata.properties_lexicographic.size();
+         ++property_index) {
+      const auto &property_metadata =
+          interface_metadata.properties_lexicographic[property_index];
+      if (property_index != 0u) {
+        manifest << ",";
+      }
+      manifest << "{\"name\":\"" << EscapeJsonString(property_metadata.name)
+               << "\",\"canonical_type\":";
+      write_canonical_type_json(property_metadata.canonical_type);
+      manifest << "}";
+    }
+    manifest << "],\"methods\":[";
+    for (std::size_t method_index = 0;
+         method_index < interface_metadata.methods_lexicographic.size();
+         ++method_index) {
+      if (method_index != 0u) {
+        manifest << ",";
+      }
+      write_method_canonical_metadata(
+          interface_metadata.methods_lexicographic[method_index]);
+    }
+    manifest << "]}";
+  }
+  manifest << "],\n";
+  manifest << "    \"implementations\":[";
+  for (std::size_t implementation_index = 0;
+       implementation_index <
+       type_metadata_handoff.implementations_lexicographic.size();
+       ++implementation_index) {
+    const auto &implementation_metadata =
+        type_metadata_handoff
+            .implementations_lexicographic[implementation_index];
+    if (implementation_index != 0u) {
+      manifest << ",";
+    }
+    manifest << "{\"name\":\""
+             << EscapeJsonString(implementation_metadata.name)
+             << "\",\"properties\":[";
+    for (std::size_t property_index = 0;
+         property_index <
+         implementation_metadata.properties_lexicographic.size();
+         ++property_index) {
+      const auto &property_metadata =
+          implementation_metadata.properties_lexicographic[property_index];
+      if (property_index != 0u) {
+        manifest << ",";
+      }
+      manifest << "{\"name\":\"" << EscapeJsonString(property_metadata.name)
+               << "\",\"canonical_type\":";
+      write_canonical_type_json(property_metadata.canonical_type);
+      manifest << "}";
+    }
+    manifest << "],\"methods\":[";
+    for (std::size_t method_index = 0;
+         method_index < implementation_metadata.methods_lexicographic.size();
+         ++method_index) {
+      if (method_index != 0u) {
+        manifest << ",";
+      }
+      write_method_canonical_metadata(
+          implementation_metadata.methods_lexicographic[method_index]);
+    }
+    manifest << "]}";
+  }
+  manifest << "]\n";
+  manifest << "  },\n";
   manifest << "  \"globals\": [\n";
   for (std::size_t i = 0; i < program.globals.size(); ++i) {
     manifest << "    {\"name\":\"" << program.globals[i].name << "\",\"value\":" << resolved_global_values[i]
