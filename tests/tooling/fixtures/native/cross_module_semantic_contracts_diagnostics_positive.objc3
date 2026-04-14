@@ -17,7 +17,7 @@ module crossModuleSemanticContractsDiagnosticsPositive;
 
 extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("SemanticBridgeKit")), objc_header_name(named("SemanticBridge.h")), objc_cxx_name(named("SemanticBridgeShim"))));
 
-fn choose(flag: bool, when_true: id<SemanticValue>*?, when_false: id<SemanticValue>*!) -> id<SemanticValue>*? {
+fn choose(flag: bool, when_true: id<SemanticValue>*?, when_false: id<SemanticValue>*?) -> id<SemanticValue>*? {
   if (flag) {
     return when_true;
   }

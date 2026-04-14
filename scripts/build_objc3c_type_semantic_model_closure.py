@@ -22,6 +22,7 @@ CONTRACT_ID = "objc3c.semantic.type-semantic-model-closure.v1"
 ISSUE = "#8013"
 COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_model_closure_positive.objc3"
+NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_nested_generic_positive.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_duplicate_protocol_composition.objc3"
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
 PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_method_nullability_conflict.objc3"
@@ -35,6 +36,7 @@ NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling
 SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json"
 SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
 CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-01.json"
+CONFORMANCE_NESTED_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-12.json"
 CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-02.json"
 CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
 CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
@@ -334,8 +336,36 @@ def compile_positive_summary(run: dict[str, Any]) -> tuple[dict[str, Any] | None
     return model, checks
 
 
+def compile_nested_generic_positive_summary(run: dict[str, Any]) -> dict[str, bool]:
+    manifest = run.get("manifest")
+    model = nested_semantic_model(manifest)
+    canonical_metadata = manifest.get("semantic_canonical_type_metadata") if isinstance(manifest, dict) else None
+    canonical_functions = canonical_metadata.get("functions", []) if isinstance(canonical_metadata, dict) else []
+    consume_nested = next((entry for entry in canonical_functions if entry.get("name") == "consumeNestedGeneric"), None)
+    param_types = consume_nested.get("param_canonical_types", []) if isinstance(consume_nested, dict) else []
+    nested_param = param_types[0] if param_types else {}
+    replay_key = str((nested_param or {}).get("replay_key", ""))
+    canonical_spelling = str((nested_param or {}).get("canonical_spelling", ""))
+    generic_args = (nested_param or {}).get("generic_arguments_source_order", [])
+    return {
+        "nested_generic_positive_fixture_compiles": run["exit_code"] == 0,
+        "nested_generic_positive_manifest_emitted": run["manifest_path"] is not None,
+        "nested_generic_positive_llvm_ir_emitted": run["llvm_ir_path"] is not None,
+        "nested_generic_positive_manifest_ready": bool(model and model.get("ready_for_lowering_and_runtime")),
+        "nested_generic_positive_contract_violations_zero": bool(
+            model and all(int(model.get(field, -1)) == 0 for field in ZERO_FIELDS)
+        ),
+        "nested_generic_positive_param_metadata_publishes_owner": (nested_param or {}).get("object_pointer_type_name") == "SemanticEnvelope",
+        "nested_generic_positive_param_metadata_preserves_nested_argument": generic_args == ["SemanticVault<SemanticBox*>*"],
+        "nested_generic_positive_param_metadata_publishes_replay_key": "object-name=SemanticEnvelope" in replay_key
+        and "generics=SemanticVault<SemanticBox*>*" in replay_key,
+        "nested_generic_positive_param_metadata_publishes_canonical_spelling": canonical_spelling == "SemanticEnvelope<SemanticVault<SemanticBox*>*>*",
+    }
+
+
 def build_summary() -> dict[str, Any]:
     positive_run = run_compiler(POSITIVE_FIXTURE, TMP_ROOT / "positive")
+    nested_generic_positive_run = run_compiler(NESTED_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-nested-generic")
     negative_run = run_compiler(NEGATIVE_FIXTURE, TMP_ROOT / "negative-duplicate-protocol")
     nullability_negative_run = run_compiler(NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nullability-flow")
     protocol_method_nullability_negative_run = run_compiler(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-method-nullability")
@@ -347,6 +377,7 @@ def build_summary() -> dict[str, Any]:
     generic_substitution_unknown_message_negative_run = run_compiler(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-substitution-unknown-message")
     nested_generic_constraint_violation_negative_run = run_compiler(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nested-generic-constraint-violation")
     model, positive_checks = compile_positive_summary(positive_run)
+    nested_generic_positive_checks = compile_nested_generic_positive_summary(nested_generic_positive_run)
 
     sema_contract_text = read(SEMA_CONTRACT)
     semantic_passes_text = read(SEMANTIC_PASSES)
@@ -357,6 +388,7 @@ def build_summary() -> dict[str, Any]:
     readme_text = read(SEMANTIC_README)
     stress_manifest_text = read(STRESS_MANIFEST)
     conformance_positive = load_json(CONFORMANCE_POSITIVE)
+    conformance_nested_generic_positive = load_json(CONFORMANCE_NESTED_GENERIC_POSITIVE)
     conformance_negative = load_json(CONFORMANCE_NEGATIVE)
     conformance_nullability_negative = load_json(CONFORMANCE_NULLABILITY_NEGATIVE)
     conformance_protocol_method_nullability_negative = load_json(CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE)
@@ -378,6 +410,7 @@ def build_summary() -> dict[str, Any]:
 
     source_truth_paths = [
         POSITIVE_FIXTURE,
+        NESTED_GENERIC_POSITIVE_FIXTURE,
         NEGATIVE_FIXTURE,
         NULLABILITY_NEGATIVE_FIXTURE,
         PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE,
@@ -389,6 +422,7 @@ def build_summary() -> dict[str, Any]:
         GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
         NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
         CONFORMANCE_POSITIVE,
+        CONFORMANCE_NESTED_GENERIC_POSITIVE,
         CONFORMANCE_NEGATIVE,
         CONFORMANCE_NULLABILITY_NEGATIVE,
         CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
@@ -455,8 +489,10 @@ def build_summary() -> dict[str, Any]:
         "semantic_manifest_indexes_typ_8013_09": "TYP-8013-09.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_10": "TYP-8013-10.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_11": "TYP-8013-11.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_12": "TYP-8013-12.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
+        "semantic_readme_mentions_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
@@ -468,6 +504,7 @@ def build_summary() -> dict[str, Any]:
         "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
+        "nested_generic_positive_conformance_references_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in conformance_nested_generic_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
         "protocol_method_nullability_negative_conformance_references_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_method_nullability_negative.get("references", []),
@@ -489,11 +526,13 @@ def build_summary() -> dict[str, Any]:
         "generic_substitution_unknown_message_negative_conformance_expects_o3s216_location": conformance_generic_substitution_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 23, "column": 18}],
         "nested_generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_nested_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 33, "column": 12}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
+        "stress_manifest_compiles_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": no_tmp_source_truth,
     }
 
     checks = {
         **positive_checks,
+        **nested_generic_positive_checks,
         **negative_checks,
         **conformance_checks,
         "static_sema_contract_fields_present": all(static_presence["sema_contract_fields"].values()),
@@ -511,6 +550,7 @@ def build_summary() -> dict[str, Any]:
         "static_presence": static_presence,
         "source_truth_paths": [rel(path) for path in source_truth_paths],
         "positive_fixture": rel(POSITIVE_FIXTURE),
+        "nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
         "nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE),
@@ -522,6 +562,7 @@ def build_summary() -> dict[str, Any]:
         "generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
         "nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
         "positive_compile": {key: value for key, value in positive_run.items() if key != "manifest"},
+        "nested_generic_positive_compile": {key: value for key, value in nested_generic_positive_run.items() if key != "manifest"},
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
         "nullability_negative_compile": {key: value for key, value in nullability_negative_run.items() if key != "manifest"},
         "protocol_method_nullability_negative_compile": {key: value for key, value in protocol_method_nullability_negative_run.items() if key != "manifest"},
@@ -555,6 +596,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Status: `{summary['status']}`",
         f"- Issue: `{summary['issue']}`",
         f"- Positive fixture: `{summary['positive_fixture']}`",
+        f"- Nested generic positive fixture: `{summary['nested_generic_positive_fixture']}`",
         f"- Negative fixture: `{summary['negative_fixture']}`",
         f"- Nullability negative fixture: `{summary['nullability_negative_fixture']}`",
         f"- Protocol method nullability negative fixture: `{summary['protocol_method_nullability_negative_fixture']}`",

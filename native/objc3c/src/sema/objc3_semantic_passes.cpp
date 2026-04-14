@@ -4775,9 +4775,21 @@ static bool HasInvalidParamTypeSuffix(const FuncParam &param) {
          HasInvalidOwnershipQualifierParamTypeSuffix(param);
 }
 
-static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(const FuncParam &param) {
+static bool IsGenericInterfaceSpecializationSuffix(
+    bool object_pointer_type_spelling,
+    const std::string &object_pointer_type_name,
+    const std::unordered_set<std::string> *generic_interface_names);
+
+static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(
+    const FuncParam &param,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   ProtocolCompositionInfo info;
   if (!param.has_generic_suffix) {
+    return info;
+  }
+  if (IsGenericInterfaceSpecializationSuffix(
+          param.object_pointer_type_spelling, param.object_pointer_type_name,
+          generic_interface_names)) {
     return info;
   }
 
@@ -4788,9 +4800,16 @@ static ProtocolCompositionInfo BuildProtocolCompositionInfoFromParam(const FuncP
   return info;
 }
 
-static ProtocolCompositionInfo BuildProtocolCompositionInfoFromFunctionReturn(const FunctionDecl &fn) {
+static ProtocolCompositionInfo BuildProtocolCompositionInfoFromFunctionReturn(
+    const FunctionDecl &fn,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   ProtocolCompositionInfo info;
   if (!fn.has_return_generic_suffix) {
+    return info;
+  }
+  if (IsGenericInterfaceSpecializationSuffix(
+          fn.return_object_pointer_type_spelling,
+          fn.return_object_pointer_type_name, generic_interface_names)) {
     return info;
   }
 
@@ -4801,9 +4820,16 @@ static ProtocolCompositionInfo BuildProtocolCompositionInfoFromFunctionReturn(co
   return info;
 }
 
-static ProtocolCompositionInfo BuildProtocolCompositionInfoFromMethodReturn(const Objc3MethodDecl &method) {
+static ProtocolCompositionInfo BuildProtocolCompositionInfoFromMethodReturn(
+    const Objc3MethodDecl &method,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   ProtocolCompositionInfo info;
   if (!method.has_return_generic_suffix) {
+    return info;
+  }
+  if (IsGenericInterfaceSpecializationSuffix(
+          method.return_object_pointer_type_spelling,
+          method.return_object_pointer_type_name, generic_interface_names)) {
     return info;
   }
 
@@ -6306,7 +6332,8 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
 // BuildMethodInfo(const Objc3MethodDecl &method)
 static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
                                        const MethodSelectorNormalizationContractInfo &selector_contract,
-                                       bool arc_mode_enabled) {
+                                       bool arc_mode_enabled,
+                                       const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   Objc3MethodInfo info;
   info.selector_normalized = selector_contract.normalized_selector;
   info.selector_piece_count = selector_contract.selector_piece_count;
@@ -6351,7 +6378,8 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.param_protocol_composition_lexicographic.reserve(method.params.size());
   info.param_has_invalid_protocol_composition.reserve(method.params.size());
   for (const auto &param : method.params) {
-    const ProtocolCompositionInfo protocol_composition = BuildProtocolCompositionInfoFromParam(param);
+    const ProtocolCompositionInfo protocol_composition =
+        BuildProtocolCompositionInfoFromParam(param, generic_interface_names);
     info.param_types.push_back(param.type);
     info.param_canonical_types.push_back(BuildCanonicalSemanticTypeFromParam(param));
     info.param_is_vector.push_back(param.vector_spelling);
@@ -6407,7 +6435,8 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
       info.param_ownership_arc_fixit_hint[param_index].clear();
     }
   }
-  const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromMethodReturn(method);
+  const ProtocolCompositionInfo return_protocol_composition =
+      BuildProtocolCompositionInfoFromMethodReturn(method, generic_interface_names);
   info.return_has_generic_suffix = method.has_return_generic_suffix;
   info.return_has_pointer_declarator = method.has_return_pointer_declarator;
   info.return_has_nullability_suffix = !method.return_nullability_suffix_tokens.empty();
@@ -22485,7 +22514,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       info.param_protocol_composition_lexicographic.reserve(fn.params.size());
       info.param_has_invalid_protocol_composition.reserve(fn.params.size());
       for (const auto &param : fn.params) {
-        const ProtocolCompositionInfo protocol_composition = BuildProtocolCompositionInfoFromParam(param);
+        const ProtocolCompositionInfo protocol_composition =
+            BuildProtocolCompositionInfoFromParam(param,
+                                                 &generic_interface_names);
         info.param_types.push_back(param.type);
         info.param_canonical_types.push_back(BuildCanonicalSemanticTypeFromParam(param));
         info.param_is_vector.push_back(param.vector_spelling);
@@ -22544,7 +22575,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
           info.param_ownership_arc_fixit_hint[param_index].clear();
         }
       }
-      const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromFunctionReturn(fn);
+      const ProtocolCompositionInfo return_protocol_composition =
+          BuildProtocolCompositionInfoFromFunctionReturn(fn,
+                                                        &generic_interface_names);
       info.return_has_generic_suffix = fn.has_return_generic_suffix;
       info.return_has_pointer_declarator = fn.has_return_pointer_declarator;
       info.return_has_nullability_suffix = !fn.return_nullability_suffix_tokens.empty();
@@ -22748,7 +22781,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       compatible = existing.return_vector_base_spelling == fn.return_vector_base_spelling &&
                    existing.return_vector_lane_count == fn.return_vector_lane_count;
     }
-    const ProtocolCompositionInfo return_protocol_composition = BuildProtocolCompositionInfoFromFunctionReturn(fn);
+    const ProtocolCompositionInfo return_protocol_composition =
+        BuildProtocolCompositionInfoFromFunctionReturn(fn,
+                                                      &generic_interface_names);
     if (compatible && !AreEquivalentProtocolCompositions(existing.return_has_protocol_composition,
                                                          existing.return_protocol_composition_lexicographic,
                                                          return_protocol_composition.has_protocol_composition,
@@ -22757,7 +22792,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     }
     if (compatible) {
       for (std::size_t i = 0; i < fn.params.size(); ++i) {
-        const ProtocolCompositionInfo param_protocol_composition = BuildProtocolCompositionInfoFromParam(fn.params[i]);
+        const ProtocolCompositionInfo param_protocol_composition =
+            BuildProtocolCompositionInfoFromParam(fn.params[i],
+                                                 &generic_interface_names);
         if (i >= existing.param_types.size() || i >= existing.param_is_vector.size() ||
             i >= existing.param_vector_base_spelling.size() || i >= existing.param_vector_lane_count.size() ||
             i >= existing.param_has_ownership_qualifier.size() ||
@@ -22872,7 +22909,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
           existing.param_has_invalid_type_suffix[i] || HasInvalidParamTypeSuffix(fn.params[i]);
     }
     for (std::size_t i = 0; i < fn.params.size() && i < existing.param_has_invalid_protocol_composition.size(); ++i) {
-      const ProtocolCompositionInfo param_protocol_composition = BuildProtocolCompositionInfoFromParam(fn.params[i]);
+      const ProtocolCompositionInfo param_protocol_composition =
+          BuildProtocolCompositionInfoFromParam(fn.params[i],
+                                               &generic_interface_names);
       existing.param_has_invalid_protocol_composition[i] =
           existing.param_has_invalid_protocol_composition[i] || param_protocol_composition.has_invalid_protocol_composition;
     }
@@ -23200,7 +23239,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       const auto method_insert =
           interface_info.methods.emplace(
               selector, BuildMethodInfo(method_decl, selector_contract,
-                                        arc_mode_enabled));
+                                        arc_mode_enabled,
+                                        &generic_interface_names));
       if (!method_insert.second) {
         diagnostics.push_back(MakeDiag(method_decl.line, method_decl.column, "O3S200",
                                        "duplicate " + container_label +
@@ -23419,7 +23459,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       }
 
       Objc3MethodInfo method_info =
-          BuildMethodInfo(method_decl, selector_contract, arc_mode_enabled);
+          BuildMethodInfo(method_decl, selector_contract, arc_mode_enabled,
+                          &generic_interface_names);
       const auto method_insert =
           implementation_info.methods.emplace(selector, std::move(method_info));
       if (!method_insert.second) {

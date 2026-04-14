@@ -22,12 +22,15 @@ Current semantic fixtures for the E.3.3 type-system lane:
   behavior.
 - `KPATH-66-01.json`, `KPATH-66-02.json` for key path support and
   unsupported-mode diagnostics.
-- `TYP-8013-01.json` through `TYP-8013-11.json` for issue #8013 typed object,
+- `TYP-8013-01.json` through `TYP-8013-12.json` for issue #8013 typed object,
   nullability, canonical protocol conformance, protocol-composition,
   protocol-qualified message dispatch, typed object-pointer receiver dispatch,
-  generic parameter binding/substitution/constraint diagnostics, nested generic specialization diagnostics, generic-suffix, optional-flow, and key-path semantic model closure. These are
+  generic parameter binding/substitution/constraint diagnostics, nested generic
+  specialization diagnostics and runtime-exported nested specialization
+  metadata, generic-suffix, optional-flow, and key-path semantic model closure. These are
   backed by
   `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`,
+  `tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3`,
