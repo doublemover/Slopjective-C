@@ -1,5 +1,6 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_json.h"
 #include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
@@ -7,12 +8,14 @@
 
 namespace {
 
+using objc3c::runtime::probe::PrintPropertyEntryStorageOwnership;
+using objc3c::runtime::probe::PrintRealizedClassEntryPropertySummary;
+
 using objc3c::runtime::probe::StabilizeNullableCString;
 using objc3c::runtime::probe::StabilizePropertyEntry;
 using objc3c::runtime::probe::StabilizeRealizedClassEntry;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
-
 
 struct StablePropertyEntry {
   objc3_runtime_property_entry_snapshot snapshot{};
@@ -49,73 +52,12 @@ struct StableRealizedClassEntry {
   std::string attached_category_name;
 };
 
-
-void PrintPropertyEntry(const objc3_runtime_property_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"setter_available\":%d,", snapshot.setter_available);
-  std::printf("\"has_runtime_getter\":%d,", snapshot.has_runtime_getter);
-  std::printf("\"has_runtime_setter\":%d,", snapshot.has_runtime_setter);
-  std::printf("\"base_identity\":%llu,",
-              static_cast<unsigned long long>(snapshot.base_identity));
-  std::printf("\"slot_index\":%llu,",
-              static_cast<unsigned long long>(snapshot.slot_index));
-  std::printf("\"offset_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.offset_bytes));
-  std::printf("\"size_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.size_bytes));
-  std::printf("\"alignment_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.alignment_bytes));
-  std::printf("\"instance_size_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.instance_size_bytes));
-  std::printf("\"queried_class_name\":");
-  PrintJsonStringOrNull(snapshot.queried_class_name);
-  std::printf(",\"resolved_class_name\":");
-  PrintJsonStringOrNull(snapshot.resolved_class_name);
-  std::printf(",\"property_name\":");
-  PrintJsonStringOrNull(snapshot.property_name);
-  std::printf(",\"effective_getter_selector\":");
-  PrintJsonStringOrNull(snapshot.effective_getter_selector);
-  std::printf(",\"effective_setter_selector\":");
-  PrintJsonStringOrNull(snapshot.effective_setter_selector);
-  std::printf(",\"property_attribute_profile\":");
-  PrintJsonStringOrNull(snapshot.property_attribute_profile);
-  std::printf(",\"ownership_lifetime_profile\":");
-  PrintJsonStringOrNull(snapshot.ownership_lifetime_profile);
-  std::printf(",\"ownership_runtime_hook_profile\":");
-  PrintJsonStringOrNull(snapshot.ownership_runtime_hook_profile);
-  std::printf(",\"accessor_ownership_profile\":");
-  PrintJsonStringOrNull(snapshot.accessor_ownership_profile);
-  std::printf(",\"getter_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.getter_owner_identity);
-  std::printf(",\"setter_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.setter_owner_identity);
-  std::printf("}");
-}
-
-void PrintRealizedClassEntry(
-    const objc3_runtime_realized_class_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"base_identity\":%llu,",
-              static_cast<unsigned long long>(snapshot.base_identity));
-  std::printf("\"runtime_property_accessor_count\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.runtime_property_accessor_count));
-  std::printf("\"runtime_instance_size_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.runtime_instance_size_bytes));
-  std::printf("\"class_name\":");
-  PrintJsonStringOrNull(snapshot.class_name);
-  std::printf(",\"class_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.class_owner_identity);
-  std::printf("}");
-}
-
 void PrintStorageAccessorImplementation(
     const objc3_runtime_storage_accessor_implementation_snapshot &snapshot) {
   std::printf("{");
-  std::printf("\"property_registry_ready\":%llu,",
-              static_cast<unsigned long long>(snapshot.property_registry_ready));
+  std::printf(
+      "\"property_registry_ready\":%llu,",
+      static_cast<unsigned long long>(snapshot.property_registry_ready));
   std::printf("\"runtime_accessor_dispatch_ready\":%llu,",
               static_cast<unsigned long long>(
                   snapshot.runtime_accessor_dispatch_ready));
@@ -159,7 +101,7 @@ void LoadProperty(const char *class_name, const char *property_name,
   StabilizePropertyEntry(entry);
 }
 
-}  // namespace
+} // namespace
 
 int main() {
   StableRealizedClassEntry box_entry;
@@ -170,8 +112,8 @@ int main() {
   StablePropertyEntry guarded_value;
   objc3_runtime_storage_accessor_implementation_snapshot implementation{};
 
-  (void)objc3_runtime_copy_realized_class_entry_for_testing("Box",
-                                                            &box_entry.snapshot);
+  (void)objc3_runtime_copy_realized_class_entry_for_testing(
+      "Box", &box_entry.snapshot);
   StabilizeRealizedClassEntry(box_entry);
   LoadProperty("Box", "currentValue", current_value);
   LoadProperty("Box", "copiedValue", copied_value);
@@ -183,19 +125,19 @@ int main() {
 
   std::printf("{");
   std::printf("\"box_entry\":");
-  PrintRealizedClassEntry(box_entry.snapshot);
+  PrintRealizedClassEntryPropertySummary(box_entry.snapshot);
   std::printf(",\"implementation_surface\":");
   PrintStorageAccessorImplementation(implementation);
   std::printf(",\"current_value_property\":");
-  PrintPropertyEntry(current_value.snapshot);
+  PrintPropertyEntryStorageOwnership(current_value.snapshot);
   std::printf(",\"copied_value_property\":");
-  PrintPropertyEntry(copied_value.snapshot);
+  PrintPropertyEntryStorageOwnership(copied_value.snapshot);
   std::printf(",\"weak_value_property\":");
-  PrintPropertyEntry(weak_value.snapshot);
+  PrintPropertyEntryStorageOwnership(weak_value.snapshot);
   std::printf(",\"borrowed_value_property\":");
-  PrintPropertyEntry(borrowed_value.snapshot);
+  PrintPropertyEntryStorageOwnership(borrowed_value.snapshot);
   std::printf(",\"guarded_value_property\":");
-  PrintPropertyEntry(guarded_value.snapshot);
+  PrintPropertyEntryStorageOwnership(guarded_value.snapshot);
   std::printf("}");
   return 0;
 }

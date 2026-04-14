@@ -1,13 +1,14 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
-#include "support/runtime_snapshot_stabilizers.h"
 #include "support/runtime_snapshot_json.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::PrintAllocationGraph;
 using objc3c::runtime::probe::PrintRegistrationStateCountsOnly;
 
 using objc3c::runtime::probe::StabilizeNullableCString;
@@ -15,18 +16,7 @@ using objc3c::runtime::probe::StabilizeRealizedClassGraph;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void PrintGraph(const objc3_runtime_realized_class_graph_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"live_instance_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.live_instance_count));
-  std::printf("\"last_allocated_class_name\":");
-  PrintJsonStringOrNull(snapshot.last_allocated_class_name);
-  std::printf("}");
-}
-
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_reset_for_testing();
@@ -34,9 +24,11 @@ int main() {
 
   objc3_runtime_registration_state_snapshot registration_state{};
   objc3_runtime_realized_class_graph_state_snapshot graph_after_alloc{};
-  objc3_runtime_realized_class_graph_state_snapshot graph_after_helper_release{};
+  objc3_runtime_realized_class_graph_state_snapshot
+      graph_after_helper_release{};
   objc3_runtime_realized_class_graph_state_snapshot graph_after_clear{};
-  objc3_runtime_realized_class_graph_state_snapshot graph_after_parent_release{};
+  objc3_runtime_realized_class_graph_state_snapshot
+      graph_after_parent_release{};
 
   std::string alloc_class_storage;
   std::string helper_release_class_storage;
@@ -47,7 +39,8 @@ int main() {
 
   const int parent = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
   const int child = objc3_runtime_dispatch_i32(1024, "alloc", 0, 0, 0, 0);
-  (void)objc3_runtime_copy_realized_class_graph_state_for_testing(&graph_after_alloc);
+  (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
+      &graph_after_alloc);
   StabilizeRealizedClassGraph(graph_after_alloc, alloc_class_storage);
 
   const int strong_set_result =
@@ -73,7 +66,8 @@ int main() {
       objc3_runtime_dispatch_i32(parent, "currentValue", 0, 0, 0, 0);
   const int weak_after_clear =
       objc3_runtime_dispatch_i32(parent, "weakValue", 0, 0, 0, 0);
-  (void)objc3_runtime_copy_realized_class_graph_state_for_testing(&graph_after_clear);
+  (void)objc3_runtime_copy_realized_class_graph_state_for_testing(
+      &graph_after_clear);
   StabilizeRealizedClassGraph(graph_after_clear, clear_class_storage);
 
   const int parent_release_result = objc3_runtime_release_i32(parent);
@@ -101,13 +95,13 @@ int main() {
   std::printf("\"registration_state\":");
   PrintRegistrationStateCountsOnly(registration_state);
   std::printf(",\"graph_after_alloc\":");
-  PrintGraph(graph_after_alloc);
+  PrintAllocationGraph(graph_after_alloc);
   std::printf(",\"graph_after_helper_release\":");
-  PrintGraph(graph_after_helper_release);
+  PrintAllocationGraph(graph_after_helper_release);
   std::printf(",\"graph_after_clear\":");
-  PrintGraph(graph_after_clear);
+  PrintAllocationGraph(graph_after_clear);
   std::printf(",\"graph_after_parent_release\":");
-  PrintGraph(graph_after_parent_release);
+  PrintAllocationGraph(graph_after_parent_release);
   std::printf("}");
   return 0;
 }

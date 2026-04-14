@@ -1,15 +1,18 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
-#include "support/runtime_snapshot_stabilizers.h"
 #include "support/runtime_snapshot_json.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::PrintConformanceQueryProtocolCategory;
+using objc3c::runtime::probe::PrintGraphStateProtocolCategory;
 using objc3c::runtime::probe::PrintMethodCacheEntryRuntimeCanonical;
 using objc3c::runtime::probe::PrintMethodCacheStateFull;
+using objc3c::runtime::probe::PrintRealizedEntryProtocolCategory;
 using objc3c::runtime::probe::PrintSelectorEntryBasic;
 using objc3c::runtime::probe::PrintSelectorTableStateRuntimeCanonical;
 
@@ -25,7 +28,6 @@ using objc3c::runtime::probe::StabilizeSelectorTableState;
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
 constexpr long long kDispatchModulus = 2147483629LL;
-
 
 long long ComputeSelectorScore(const char *selector) {
   if (selector == nullptr) {
@@ -64,97 +66,7 @@ int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
   return static_cast<int>(value);
 }
 
-void PrintGraphState(
-    const objc3_runtime_realized_class_graph_state_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"realized_class_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.realized_class_count));
-  std::printf("\"root_class_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.root_class_count));
-  std::printf("\"metaclass_edge_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.metaclass_edge_count));
-  std::printf("\"receiver_class_binding_count\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.receiver_class_binding_count));
-  std::printf("\"attached_category_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.attached_category_count));
-  std::printf("\"protocol_conformance_edge_count\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.protocol_conformance_edge_count));
-  std::printf("\"last_realized_class_name\":");
-  PrintJsonStringOrNull(snapshot.last_realized_class_name);
-  std::printf(",\"last_realized_class_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_realized_class_owner_identity);
-  std::printf(",\"last_realized_metaclass_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_realized_metaclass_owner_identity);
-  std::printf(",\"last_attached_category_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_attached_category_owner_identity);
-  std::printf(",\"last_attached_category_name\":");
-  PrintJsonStringOrNull(snapshot.last_attached_category_name);
-  std::printf("}");
-}
-
-void PrintRealizedEntry(
-    const objc3_runtime_realized_class_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"base_identity\":%llu,",
-              static_cast<unsigned long long>(snapshot.base_identity));
-  std::printf("\"registration_order_ordinal\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.registration_order_ordinal));
-  std::printf("\"is_root_class\":%d,", snapshot.is_root_class);
-  std::printf("\"implementation_backed\":%d,", snapshot.implementation_backed);
-  std::printf("\"attached_category_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.attached_category_count));
-  std::printf("\"direct_protocol_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.direct_protocol_count));
-  std::printf("\"attached_protocol_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.attached_protocol_count));
-  std::printf("\"module_name\":");
-  PrintJsonStringOrNull(snapshot.module_name);
-  std::printf(",\"translation_unit_identity_key\":");
-  PrintJsonStringOrNull(snapshot.translation_unit_identity_key);
-  std::printf(",\"class_name\":");
-  PrintJsonStringOrNull(snapshot.class_name);
-  std::printf(",\"class_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.class_owner_identity);
-  std::printf(",\"metaclass_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.metaclass_owner_identity);
-  std::printf(",\"super_class_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.super_class_owner_identity);
-  std::printf(",\"super_metaclass_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.super_metaclass_owner_identity);
-  std::printf(",\"last_attached_category_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_attached_category_owner_identity);
-  std::printf(",\"last_attached_category_name\":");
-  PrintJsonStringOrNull(snapshot.last_attached_category_name);
-  std::printf("}");
-}
-
-void PrintConformanceQuery(
-    const objc3_runtime_protocol_conformance_query_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"class_found\":%d,", snapshot.class_found);
-  std::printf("\"protocol_found\":%d,", snapshot.protocol_found);
-  std::printf("\"conforms\":%d,", snapshot.conforms);
-  std::printf("\"visited_protocol_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.visited_protocol_count));
-  std::printf("\"attached_category_count\":%llu,",
-              static_cast<unsigned long long>(snapshot.attached_category_count));
-  std::printf("\"class_name\":");
-  PrintJsonStringOrNull(snapshot.class_name);
-  std::printf(",\"protocol_name\":");
-  PrintJsonStringOrNull(snapshot.protocol_name);
-  std::printf(",\"matched_protocol_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.matched_protocol_owner_identity);
-  std::printf(",\"matched_attachment_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.matched_attachment_owner_identity);
-  std::printf("}");
-}
-
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_realized_class_graph_state_snapshot graph_state{};
@@ -181,14 +93,17 @@ int main() {
   objc3_runtime_selector_lookup_entry_snapshot ignored_selector_entry{};
 
   (void)objc3_runtime_copy_realized_class_graph_state_for_testing(&graph_state);
-  (void)objc3_runtime_copy_realized_class_entry_for_testing("Widget", &widget_entry);
+  (void)objc3_runtime_copy_realized_class_entry_for_testing("Widget",
+                                                            &widget_entry);
 
   const int widget_instance_receiver =
-      widget_entry.found != 0 ? static_cast<int>(widget_entry.base_identity + 1U)
-                              : 0;
+      widget_entry.found != 0
+          ? static_cast<int>(widget_entry.base_identity + 1U)
+          : 0;
   const int widget_class_receiver =
-      widget_entry.found != 0 ? static_cast<int>(widget_entry.base_identity + 2U)
-                              : 0;
+      widget_entry.found != 0
+          ? static_cast<int>(widget_entry.base_identity + 2U)
+          : 0;
   const objc3_runtime_selector_handle *alloc_selector =
       objc3_runtime_lookup_selector("alloc");
   const objc3_runtime_selector_handle *init_selector =
@@ -214,15 +129,16 @@ int main() {
   const int traced_value =
       objc3_runtime_dispatch_i32(init_value, "tracedValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(&traced_state);
-  const int class_value =
-      objc3_runtime_dispatch_i32(widget_class_receiver, "classValue", 0, 0, 0, 0);
+  const int class_value = objc3_runtime_dispatch_i32(widget_class_receiver,
+                                                     "classValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(&class_state);
   const int ignored_value =
       objc3_runtime_dispatch_i32(init_value, "ignoredValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(&ignored_state);
   const int ignored_cached_value =
       objc3_runtime_dispatch_i32(init_value, "ignoredValue", 0, 0, 0, 0);
-  (void)objc3_runtime_copy_method_cache_state_for_testing(&ignored_cached_state);
+  (void)objc3_runtime_copy_method_cache_state_for_testing(
+      &ignored_cached_state);
   const int ignored_expected =
       ComputeFallbackDispatch(init_value, "ignoredValue", 0, 0, 0, 0);
 
@@ -231,24 +147,20 @@ int main() {
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
       "Widget", "Tracer", &tracer_query);
   (void)objc3_runtime_copy_method_cache_state_for_testing(&method_state);
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(widget_class_receiver,
-                                                          "alloc", &alloc_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(
+      widget_class_receiver, "alloc", &alloc_entry);
   (void)objc3_runtime_copy_method_cache_entry_for_testing(init_value, "init",
                                                           &init_entry);
   (void)objc3_runtime_copy_method_cache_entry_for_testing(widget_class_receiver,
                                                           "new", &new_entry);
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(init_value,
-                                                          "tracedValue",
-                                                          &traced_entry);
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(init_value,
-                                                          "inheritedValue",
-                                                          &inherited_entry);
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(widget_class_receiver,
-                                                          "classValue",
-                                                          &class_entry);
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(init_value,
-                                                          "ignoredValue",
-                                                          &ignored_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(
+      init_value, "tracedValue", &traced_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(
+      init_value, "inheritedValue", &inherited_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(
+      widget_class_receiver, "classValue", &class_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(
+      init_value, "ignoredValue", &ignored_entry);
   (void)objc3_runtime_copy_selector_lookup_table_state_for_testing(
       &selector_table_state);
   (void)objc3_runtime_copy_selector_lookup_entry_for_testing(
@@ -327,24 +239,22 @@ int main() {
   std::string class_selector_canonical_storage;
   std::string ignored_selector_canonical_storage;
 
-  StabilizeGraphState(graph_state, graph_class_storage, graph_class_owner_storage,
-                      graph_metaclass_owner_storage,
-                      graph_category_owner_storage, graph_category_name_storage);
-  StabilizeRealizedEntry(widget_entry, widget_module_storage, widget_identity_storage,
-                         widget_class_storage, widget_class_owner_storage,
-                         widget_metaclass_owner_storage,
-                         widget_super_class_owner_storage,
-                         widget_super_metaclass_owner_storage,
-                         widget_category_owner_storage,
-                         widget_category_name_storage);
-  StabilizeConformanceQuery(worker_query, worker_class_storage,
-                            worker_protocol_storage,
-                            worker_protocol_owner_storage,
-                            worker_attachment_owner_storage);
-  StabilizeConformanceQuery(tracer_query, tracer_class_storage,
-                            tracer_protocol_storage,
-                            tracer_protocol_owner_storage,
-                            tracer_attachment_owner_storage);
+  StabilizeGraphState(graph_state, graph_class_storage,
+                      graph_class_owner_storage, graph_metaclass_owner_storage,
+                      graph_category_owner_storage,
+                      graph_category_name_storage);
+  StabilizeRealizedEntry(
+      widget_entry, widget_module_storage, widget_identity_storage,
+      widget_class_storage, widget_class_owner_storage,
+      widget_metaclass_owner_storage, widget_super_class_owner_storage,
+      widget_super_metaclass_owner_storage, widget_category_owner_storage,
+      widget_category_name_storage);
+  StabilizeConformanceQuery(
+      worker_query, worker_class_storage, worker_protocol_storage,
+      worker_protocol_owner_storage, worker_attachment_owner_storage);
+  StabilizeConformanceQuery(
+      tracer_query, tracer_class_storage, tracer_protocol_storage,
+      tracer_protocol_owner_storage, tracer_attachment_owner_storage);
   StabilizeMethodCacheState(method_state, method_selector_storage,
                             method_class_storage, method_owner_storage);
   StabilizeMethodCacheState(inherited_state, inherited_state_selector_storage,
@@ -359,16 +269,15 @@ int main() {
   StabilizeMethodCacheState(ignored_state, ignored_state_selector_storage,
                             ignored_state_class_storage,
                             ignored_state_owner_storage);
-  StabilizeMethodCacheState(ignored_cached_state,
-                            ignored_cached_state_selector_storage,
-                            ignored_cached_state_class_storage,
-                            ignored_cached_state_owner_storage);
+  StabilizeMethodCacheState(
+      ignored_cached_state, ignored_cached_state_selector_storage,
+      ignored_cached_state_class_storage, ignored_cached_state_owner_storage);
   StabilizeMethodCacheEntry(alloc_entry, alloc_selector_storage,
                             alloc_class_storage, alloc_owner_storage);
   StabilizeMethodCacheEntry(init_entry, init_selector_storage,
                             init_class_storage, init_owner_storage);
-  StabilizeMethodCacheEntry(new_entry, new_selector_storage,
-                            new_class_storage, new_owner_storage);
+  StabilizeMethodCacheEntry(new_entry, new_selector_storage, new_class_storage,
+                            new_owner_storage);
   StabilizeMethodCacheEntry(traced_entry, traced_selector_storage,
                             traced_class_storage, traced_owner_storage);
   StabilizeMethodCacheEntry(inherited_entry, inherited_selector_storage,
@@ -377,11 +286,14 @@ int main() {
                             class_class_storage, class_owner_storage);
   StabilizeMethodCacheEntry(ignored_entry, ignored_selector_storage,
                             ignored_class_storage, ignored_owner_storage);
-  StabilizeSelectorTableState(selector_table_state, selector_table_last_storage);
-  StabilizeSelectorEntry(traced_selector_entry, traced_selector_canonical_storage);
+  StabilizeSelectorTableState(selector_table_state,
+                              selector_table_last_storage);
+  StabilizeSelectorEntry(traced_selector_entry,
+                         traced_selector_canonical_storage);
   StabilizeSelectorEntry(inherited_selector_entry,
                          inherited_selector_canonical_storage);
-  StabilizeSelectorEntry(class_selector_entry, class_selector_canonical_storage);
+  StabilizeSelectorEntry(class_selector_entry,
+                         class_selector_canonical_storage);
   StabilizeSelectorEntry(ignored_selector_entry,
                          ignored_selector_canonical_storage);
 
@@ -399,25 +311,32 @@ int main() {
   std::printf("\"widget_class_receiver\":%d,", widget_class_receiver);
   std::printf("\"selector_handles\":{");
   std::printf("\"alloc\":%llu,",
-              static_cast<unsigned long long>(alloc_selector != nullptr ? alloc_selector->stable_id : 0));
+              static_cast<unsigned long long>(
+                  alloc_selector != nullptr ? alloc_selector->stable_id : 0));
   std::printf("\"init\":%llu,",
-              static_cast<unsigned long long>(init_selector != nullptr ? init_selector->stable_id : 0));
+              static_cast<unsigned long long>(
+                  init_selector != nullptr ? init_selector->stable_id : 0));
   std::printf("\"new\":%llu,",
-              static_cast<unsigned long long>(new_selector != nullptr ? new_selector->stable_id : 0));
+              static_cast<unsigned long long>(
+                  new_selector != nullptr ? new_selector->stable_id : 0));
   std::printf("\"tracedValue\":%llu,",
-              static_cast<unsigned long long>(traced_selector != nullptr ? traced_selector->stable_id : 0));
-  std::printf("\"inheritedValue\":%llu,",
-              static_cast<unsigned long long>(inherited_selector != nullptr ? inherited_selector->stable_id : 0));
+              static_cast<unsigned long long>(
+                  traced_selector != nullptr ? traced_selector->stable_id : 0));
+  std::printf(
+      "\"inheritedValue\":%llu,",
+      static_cast<unsigned long long>(
+          inherited_selector != nullptr ? inherited_selector->stable_id : 0));
   std::printf("\"classValue\":%llu},",
-              static_cast<unsigned long long>(class_selector != nullptr ? class_selector->stable_id : 0));
+              static_cast<unsigned long long>(
+                  class_selector != nullptr ? class_selector->stable_id : 0));
   std::printf("\"graph_state\":");
-  PrintGraphState(graph_state);
+  PrintGraphStateProtocolCategory(graph_state);
   std::printf(",\"widget_entry\":");
-  PrintRealizedEntry(widget_entry);
+  PrintRealizedEntryProtocolCategory(widget_entry);
   std::printf(",\"worker_query\":");
-  PrintConformanceQuery(worker_query);
+  PrintConformanceQueryProtocolCategory(worker_query);
   std::printf(",\"tracer_query\":");
-  PrintConformanceQuery(tracer_query);
+  PrintConformanceQueryProtocolCategory(tracer_query);
   std::printf(",\"method_state\":");
   PrintMethodCacheStateFull(method_state);
   std::printf(",\"inherited_state\":");

@@ -1,11 +1,16 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_json.h"
 #include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintConformanceQueryCanonicalSummary;
+using objc3c::runtime::probe::PrintPropertyEntryCanonicalSummary;
+using objc3c::runtime::probe::PrintRealizedClassEntryCanonicalSummary;
 
 using objc3c::runtime::probe::StabilizeConformanceQuery;
 using objc3c::runtime::probe::StabilizeNullableCString;
@@ -14,73 +19,7 @@ using objc3c::runtime::probe::StabilizeRealizedClassEntry;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void PrintRealizedClassEntry(
-    const objc3_runtime_realized_class_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"base_identity\":%llu,",
-              static_cast<unsigned long long>(snapshot.base_identity));
-  std::printf("\"runtime_property_accessor_count\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.runtime_property_accessor_count));
-  std::printf("\"runtime_instance_size_bytes\":%llu,",
-              static_cast<unsigned long long>(
-                  snapshot.runtime_instance_size_bytes));
-  std::printf("\"class_name\":");
-  PrintJsonStringOrNull(snapshot.class_name);
-  std::printf(",\"class_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.class_owner_identity);
-  std::printf(",\"last_attached_category_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.last_attached_category_owner_identity);
-  std::printf("}");
-}
-
-void PrintConformanceQuery(
-    const objc3_runtime_protocol_conformance_query_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"conforms\":%d,", snapshot.conforms);
-  std::printf("\"class_name\":");
-  PrintJsonStringOrNull(snapshot.class_name);
-  std::printf(",\"protocol_name\":");
-  PrintJsonStringOrNull(snapshot.protocol_name);
-  std::printf(",\"matched_protocol_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.matched_protocol_owner_identity);
-  std::printf(",\"matched_attachment_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.matched_attachment_owner_identity);
-  std::printf("}");
-}
-
-void PrintPropertyEntry(const objc3_runtime_property_entry_snapshot &snapshot) {
-  std::printf("{");
-  std::printf("\"found\":%d,", snapshot.found);
-  std::printf("\"setter_available\":%d,", snapshot.setter_available);
-  std::printf("\"has_runtime_getter\":%d,", snapshot.has_runtime_getter);
-  std::printf("\"has_runtime_setter\":%d,", snapshot.has_runtime_setter);
-  std::printf("\"slot_index\":%llu,",
-              static_cast<unsigned long long>(snapshot.slot_index));
-  std::printf("\"offset_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.offset_bytes));
-  std::printf("\"size_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.size_bytes));
-  std::printf("\"alignment_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.alignment_bytes));
-  std::printf("\"instance_size_bytes\":%llu,",
-              static_cast<unsigned long long>(snapshot.instance_size_bytes));
-  std::printf("\"property_name\":");
-  PrintJsonStringOrNull(snapshot.property_name);
-  std::printf(",\"effective_getter_selector\":");
-  PrintJsonStringOrNull(snapshot.effective_getter_selector);
-  std::printf(",\"effective_setter_selector\":");
-  PrintJsonStringOrNull(snapshot.effective_setter_selector);
-  std::printf(",\"getter_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.getter_owner_identity);
-  std::printf(",\"setter_owner_identity\":");
-  PrintJsonStringOrNull(snapshot.setter_owner_identity);
-  std::printf("}");
-}
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_realized_class_entry_snapshot widget_entry{};
@@ -113,9 +52,8 @@ int main() {
       objc3_runtime_dispatch_i32(init_value, "tracedValue", 0, 0, 0, 0);
   const int inherited_value =
       objc3_runtime_dispatch_i32(init_value, "inheritedValue", 0, 0, 0, 0);
-  const int class_value =
-      objc3_runtime_dispatch_i32(widget_class_receiver, "classValue", 0, 0, 0,
-                                 0);
+  const int class_value = objc3_runtime_dispatch_i32(widget_class_receiver,
+                                                     "classValue", 0, 0, 0, 0);
   const int shared_value =
       objc3_runtime_dispatch_i32(widget_class_receiver, "shared", 0, 0, 0, 0);
   (void)objc3_runtime_dispatch_i32(init_value, "setCount:", 37, 0, 0, 0);
@@ -124,8 +62,7 @@ int main() {
   (void)objc3_runtime_dispatch_i32(init_value, "setEnabled:", 1, 0, 0, 0);
   const int enabled_value =
       objc3_runtime_dispatch_i32(init_value, "enabled", 0, 0, 0, 0);
-  (void)objc3_runtime_dispatch_i32(init_value, "setCurrentValue:", 55, 0, 0,
-                                   0);
+  (void)objc3_runtime_dispatch_i32(init_value, "setCurrentValue:", 55, 0, 0, 0);
   const int current_value =
       objc3_runtime_dispatch_i32(init_value, "currentValue", 0, 0, 0, 0);
   const int token_value =
@@ -146,14 +83,12 @@ int main() {
   std::string tracer_protocol_storage;
   std::string tracer_protocol_owner_storage;
   std::string tracer_attachment_owner_storage;
-  StabilizeConformanceQuery(worker_query, worker_class_storage,
-                            worker_protocol_storage,
-                            worker_protocol_owner_storage,
-                            worker_attachment_owner_storage);
-  StabilizeConformanceQuery(tracer_query, tracer_class_storage,
-                            tracer_protocol_storage,
-                            tracer_protocol_owner_storage,
-                            tracer_attachment_owner_storage);
+  StabilizeConformanceQuery(
+      worker_query, worker_class_storage, worker_protocol_storage,
+      worker_protocol_owner_storage, worker_attachment_owner_storage);
+  StabilizeConformanceQuery(
+      tracer_query, tracer_class_storage, tracer_protocol_storage,
+      tracer_protocol_owner_storage, tracer_attachment_owner_storage);
 
   objc3_runtime_property_entry_snapshot count_property{};
   objc3_runtime_property_entry_snapshot value_property{};
@@ -187,7 +122,7 @@ int main() {
 
   std::printf("{");
   std::printf("\"widget_entry\":");
-  PrintRealizedClassEntry(widget_entry);
+  PrintRealizedClassEntryCanonicalSummary(widget_entry);
   std::printf(",\"init_value\":%d", init_value);
   std::printf(",\"traced_value\":%d", traced_value);
   std::printf(",\"inherited_value\":%d", inherited_value);
@@ -198,15 +133,15 @@ int main() {
   std::printf(",\"current_value\":%d", current_value);
   std::printf(",\"token_value\":%d", token_value);
   std::printf(",\"worker_query\":");
-  PrintConformanceQuery(worker_query);
+  PrintConformanceQueryCanonicalSummary(worker_query);
   std::printf(",\"tracer_query\":");
-  PrintConformanceQuery(tracer_query);
+  PrintConformanceQueryCanonicalSummary(tracer_query);
   std::printf(",\"count_property\":");
-  PrintPropertyEntry(count_property);
+  PrintPropertyEntryCanonicalSummary(count_property);
   std::printf(",\"value_property\":");
-  PrintPropertyEntry(value_property);
+  PrintPropertyEntryCanonicalSummary(value_property);
   std::printf(",\"token_property\":");
-  PrintPropertyEntry(token_property);
+  PrintPropertyEntryCanonicalSummary(token_property);
   std::printf("}\n");
   return 0;
 }
