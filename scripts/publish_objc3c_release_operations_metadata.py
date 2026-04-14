@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
@@ -91,7 +90,7 @@ def main() -> int:
             raise RuntimeError(f"compatibility report missing required field {field_name}")
 
     COMPATIBILITY_REPORT.parent.mkdir(parents=True, exist_ok=True)
-    COMPATIBILITY_REPORT.write_text(json.dumps(compatibility_report, indent=2) + "\n", encoding="utf-8")
+    write_json_file(COMPATIBILITY_REPORT, compatibility_report)
 
     channel_catalog = {
         "contract_id": "objc3c.release.operations.channel-catalog.v1",
@@ -103,7 +102,7 @@ def main() -> int:
         "support_tiers": update_manifest["support_tiers"],
         "channels": update_manifest["channels"],
     }
-    CHANNEL_CATALOG.write_text(json.dumps(channel_catalog, indent=2) + "\n", encoding="utf-8")
+    write_json_file(CHANNEL_CATALOG, channel_catalog)
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -116,7 +115,7 @@ def main() -> int:
         "claim_class_count": len(claim_policy["claim_classes"]),
         "platform_support_matrix": update_manifest["platform_support_matrix"],
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-release-operations-publication: PASS")
     return 0

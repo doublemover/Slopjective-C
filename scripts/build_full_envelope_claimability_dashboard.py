@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel, resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -187,8 +188,8 @@ def main() -> int:
 
     OUT_REPORT_DIR.mkdir(parents=True, exist_ok=True)
     OUT_ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
-    DASHBOARD_JSON.write_text(json.dumps(dashboard_payload, indent=2) + "\n", encoding="utf-8")
-    PUBLIC_JSON.write_text(json.dumps(public_payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(DASHBOARD_JSON, dashboard_payload)
+    write_json_file(PUBLIC_JSON, public_payload)
     REPORT_MD.write_text(report_text, encoding="utf-8")
 
     summary = {

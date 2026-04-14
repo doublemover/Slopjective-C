@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -168,7 +168,7 @@ def main() -> int:
         "evidence_paths": evidence_paths,
     }
     PUBLIC_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
-    PUBLIC_SUMMARY.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(PUBLIC_SUMMARY, payload)
     print(f"summary_path: {repo_rel(PUBLIC_SUMMARY)}")
     print(f"published_scorecard: {repo_rel(PUBLISHED_SCORECARD)}")
     print(f"published_badge: {repo_rel(PUBLISHED_BADGE)}")

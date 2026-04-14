@@ -4,12 +4,11 @@
 from __future__ import annotations
 
 import argparse
-import json
 import subprocess
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import display_path
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -265,7 +264,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
         "follow_on_surface": "objc3c.releaseclaims.compatibilityupgrade.boundary.v1",
         "ready": True,
     }
-    json_out.write_text(json.dumps(matrix, indent=2) + "\n", encoding="utf-8")
+    write_json_file(json_out, matrix)
 
     md = f"""# Release/Runtime Claim Matrix
 

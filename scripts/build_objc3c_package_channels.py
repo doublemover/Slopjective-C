@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import shutil
@@ -14,7 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.subprocesses import run_completed
-from objc3c_tooling.json_io import load_json_object as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_object as load_json, write_text_file as write_text, write_json_file
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -262,7 +261,7 @@ def main() -> int:
         if field_name not in manifest_payload:
             raise RuntimeError(f"package-channels manifest missing required field {field_name}")
     manifest_path = build_root / "objc3c-package-channels-manifest.json"
-    write_text(manifest_path, json.dumps(manifest_payload, indent=2) + "\n")
+    write_json_file(manifest_path, manifest_payload)
 
     payload = {
         "contract_id": "objc3c.packaging.channels.summary.report.v1",
@@ -282,7 +281,7 @@ def main() -> int:
         "implemented_channels": manifest_payload["implemented_channels"],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(REPORT_PATH, payload)
     print(f"summary_path: {repo_rel(REPORT_PATH)}")
     print(f"portable_archive: {repo_rel(portable_archive)}")
     print("objc3c-package-channels: PASS")

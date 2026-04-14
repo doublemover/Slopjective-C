@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from objc3c_tooling.json_io import write_json_file
 import json
 import re
 import subprocess
@@ -95,7 +96,7 @@ def main() -> int:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    JSON_OUT.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
+    write_json_file(JSON_OUT, summary)
     md = f"""# Product Decontamination Report
 
 - Policy: `{policy['contract_id']}`

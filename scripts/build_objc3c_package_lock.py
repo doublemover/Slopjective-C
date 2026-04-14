@@ -4,12 +4,11 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -130,7 +129,7 @@ def main() -> int:
     }
 
     LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
-    LOCK_PATH.write_text(json.dumps(lock, indent=2) + "\n", encoding="utf-8")
+    write_json_file(LOCK_PATH, lock)
     summary = {
         "contract_id": "objc3c.package_ecosystem.package_lock.summary.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -146,7 +145,7 @@ def main() -> int:
         "stdlib_module_inventory_contract_id": module_inventory.get("contract_id"),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"lock_path: {repo_rel(LOCK_PATH)}")
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-package-lock: PASS")

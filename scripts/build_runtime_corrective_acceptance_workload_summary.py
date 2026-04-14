@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.subprocesses import run_completed as run_command
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,7 +86,7 @@ def main() -> int:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(JSON_OUT, summary)
     MD_OUT.write_text(
         "# Runtime Corrective Acceptance Workload Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"

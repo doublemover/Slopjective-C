@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -304,7 +305,7 @@ def main() -> int:
         "next_issue": "validation-policy-summary",
     }
 
-    JSON_OUT.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    write_json_file(JSON_OUT, report)
 
     lines = [
         "# validation-surface-inventory Validation Surface Inventory",

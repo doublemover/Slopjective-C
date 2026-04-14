@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -122,7 +121,7 @@ def main() -> int:
         "advisories": advisories,
     }
     ADVISORY_INDEX_PATH.parent.mkdir(parents=True, exist_ok=True)
-    ADVISORY_INDEX_PATH.write_text(json.dumps(advisory_index, indent=2) + "\n", encoding="utf-8")
+    write_json_file(ADVISORY_INDEX_PATH, advisory_index)
 
     markdown_lines = [
         "# Objective-C 3 Security Advisory Report",
@@ -175,7 +174,7 @@ def main() -> int:
         "runtime_hardening_memory_safety_boundary": runtime_hardening_summary.get("memory_safety_boundary"),
     }
     PUBLICATION_SUMMARY.parent.mkdir(parents=True, exist_ok=True)
-    PUBLICATION_SUMMARY.write_text(json.dumps(publication_payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(PUBLICATION_SUMMARY, publication_payload)
     print(f"summary_path: {repo_rel(PUBLICATION_SUMMARY)}")
     print(f"published_advisory_index: {repo_rel(ADVISORY_INDEX_PATH)}")
     print(f"published_advisory_report: {repo_rel(ADVISORY_REPORT_PATH)}")

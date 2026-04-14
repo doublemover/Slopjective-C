@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -61,8 +60,8 @@ def main() -> None:
         'next_issues': ['validation-ci-topology', 'validation-ci-topology-integration'],
     }
 
-    write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
-    write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(OUTPUT_JSON_PATH, payload)
+    write_json_file(REPORT_JSON_PATH, payload)
 
     lines = [
         '# Validation Acceptance Suite Matrix',

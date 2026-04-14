@@ -5,7 +5,7 @@ import re
 import shutil
 import subprocess
 from pathlib import Path
-from objc3c_tooling.json_io import write_text_file as write_text
+from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -148,8 +148,8 @@ def main() -> None:
         'status': 'PASS' if not invalid_npm_refs and not forbidden_hits and not required_missing else 'FAIL',
     }
 
-    write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
-    write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(PLAN_JSON_PATH, payload)
+    write_json_file(REPORT_JSON_PATH, payload)
 
     lines = [
         '# workflow-prototype-retirement Prototype Retirement Report',

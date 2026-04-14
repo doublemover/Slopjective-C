@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,8 +89,8 @@ def main() -> int:
     }
 
     STEWARDSHIP_PUBLICATION.parent.mkdir(parents=True, exist_ok=True)
-    STEWARDSHIP_PUBLICATION.write_text(json.dumps(stewardship_publication, indent=2) + "\n", encoding="utf-8")
-    EXTENSION_PUBLICATION.write_text(json.dumps(extension_publication, indent=2) + "\n", encoding="utf-8")
+    write_json_file(STEWARDSHIP_PUBLICATION, stewardship_publication)
+    write_json_file(EXTENSION_PUBLICATION, extension_publication)
 
     summary = {
         "contract_id": "objc3c.governance.sustainability.publication.summary.v1",
@@ -105,7 +104,7 @@ def main() -> int:
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"stewardship_publication: {repo_rel(STEWARDSHIP_PUBLICATION)}")
     print(f"extension_review_publication: {repo_rel(EXTENSION_PUBLICATION)}")

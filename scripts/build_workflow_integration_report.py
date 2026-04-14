@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import write_text_file as write_text
+from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
 from objc3c_tooling.public_runner import load_public_workflow_runner
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,8 +98,8 @@ def main() -> None:
         'doc_assertions': doc_assertions,
         'next_issue': 'workflow-prototype-retirement',
     }
-    write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
-    write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(PLAN_JSON_PATH, payload)
+    write_json_file(REPORT_JSON_PATH, payload)
 
     lines = [
         '# workflow-integration Workflow Integration Report',

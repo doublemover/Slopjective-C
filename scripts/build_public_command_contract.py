@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 from objc3c_tooling.public_runner import load_public_workflow_runner
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -63,8 +62,8 @@ def main() -> None:
         'package_scripts': package_script_payloads,
         'next_issue': 'workflow-api-implementation',
     }
-    write_text(PLAN_JSON_PATH, json.dumps(contract, indent=2) + '\n')
-    write_text(REPORT_JSON_PATH, json.dumps(contract, indent=2) + '\n')
+    write_json_file(PLAN_JSON_PATH, contract)
+    write_json_file(REPORT_JSON_PATH, contract)
 
     lines = [
         '# workflow-public-command-contract Public Command Contract',

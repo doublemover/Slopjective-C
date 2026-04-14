@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
@@ -12,7 +11,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.subprocesses import run_completed
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "source_surface.json"
@@ -98,7 +97,7 @@ def main() -> int:
             raise RuntimeError(f"update manifest missing required field {field_name}")
 
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
-    MANIFEST_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(MANIFEST_PATH, payload)
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -112,7 +111,7 @@ def main() -> int:
         "package_channels_manifest": package_channels_summary["manifest_path"],
         "release_manifest": repo_rel(RELEASE_MANIFEST),
     }
-    REPORT_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(REPORT_PATH, summary)
     print(f"summary_path: {repo_rel(REPORT_PATH)}")
     print("objc3c-update-manifest: PASS")
     return 0

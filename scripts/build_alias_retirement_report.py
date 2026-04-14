@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 from objc3c_tooling.public_runner import load_public_workflow_runner
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -54,8 +53,8 @@ def main() -> None:
         'lint_command': scripts['lint'],
         'next_issue': 'workflow-runner-unification',
     }
-    write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
-    write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(OUTPUT_JSON_PATH, payload)
+    write_json_file(PLAN_JSON_PATH, payload)
 
     lines = [
         '# workflow-alias-retirement Alias Retirement Report',

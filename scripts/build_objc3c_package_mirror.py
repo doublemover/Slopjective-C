@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -98,7 +97,7 @@ def main() -> int:
 
     for path, payload in ((MIRROR_PATH, mirror), (REGISTRY_PATH, registry), (PUBLICATION_PATH, publication)):
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        write_json_file(path, payload)
 
     summary = {
         "contract_id": "objc3c.package_ecosystem.package_mirror.summary.v1",
@@ -114,7 +113,7 @@ def main() -> int:
         "hosted_registry_support": publication["hosted_registry_support"],
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"mirror_path: {repo_rel(MIRROR_PATH)}")
     print(f"registry_path: {repo_rel(REGISTRY_PATH)}")
     print(f"publication_path: {repo_rel(PUBLICATION_PATH)}")

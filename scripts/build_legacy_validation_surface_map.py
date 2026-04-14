@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import json
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -124,8 +123,8 @@ def main() -> None:
         'next_issues': ['validation-acceptance-artifact-index', 'validation-legacy-bridge-matrix'],
     }
 
-    write_text(NAMESPACE_JSON_PATH, json.dumps(payload, indent=2) + '\n')
-    write_text(SUMMARY_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(NAMESPACE_JSON_PATH, payload)
+    write_json_file(SUMMARY_JSON_PATH, payload)
 
     lines = [
         '# Legacy Validation Surface Map',

@@ -4,13 +4,12 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / 'tmp' / 'artifacts' / 'release-foundation' / 'manifest' / 'objc3c-release-manifest.json'
@@ -58,7 +57,7 @@ def main() -> int:
         'component_groups': component_groups,
     }
     SBOM_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SBOM_PATH.write_text(json.dumps(sbom, indent=2) + '\n', encoding='utf-8')
+    write_json_file(SBOM_PATH, sbom)
 
     release_manifest_sha256 = sha256_file(MANIFEST_PATH)
     sbom_sha256 = sha256_file(SBOM_PATH)
@@ -87,7 +86,7 @@ def main() -> int:
         },
     }
     ATTESTATION_PATH.parent.mkdir(parents=True, exist_ok=True)
-    ATTESTATION_PATH.write_text(json.dumps(attestation, indent=2) + '\n', encoding='utf-8')
+    write_json_file(ATTESTATION_PATH, attestation)
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -101,7 +100,7 @@ def main() -> int:
         'attestation_sha256': sha256_file(ATTESTATION_PATH),
         'component_group_count': len(component_groups),
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"published_manifest: {repo_rel(MANIFEST_PATH)}")
     print(f"published_sbom: {repo_rel(SBOM_PATH)}")

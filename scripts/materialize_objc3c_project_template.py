@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
+
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import display_path
 from objc3c_tooling.subprocesses import run_timed
 from objc3c_tooling.public_workflow_output import extract_line_value
@@ -218,7 +220,7 @@ def main() -> int:
             "benchmark-runtime-inspector",
         ],
     }
-    harness_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(harness_path, payload)
     print(f"template_path: {display_path(template_manifest)}")
     print(f"harness_path: {display_path(harness_path)}")
     if failures:

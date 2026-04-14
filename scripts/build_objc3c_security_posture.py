@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -183,7 +182,7 @@ def main() -> int:
         }
     }
     POSTURE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    POSTURE_PATH.write_text(json.dumps(posture_payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(POSTURE_PATH, posture_payload)
 
     summary_payload = {
         "contract_id": "objc3c.security.hardening.posture.summary.v1",
@@ -196,7 +195,7 @@ def main() -> int:
         "evidence_paths": evidence_paths,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary_payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary_payload)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"published_posture: {repo_rel(POSTURE_PATH)}")
     print("objc3c-security-posture: OK")

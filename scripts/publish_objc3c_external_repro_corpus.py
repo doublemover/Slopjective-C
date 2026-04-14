@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.json_io import load_json_object, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -86,7 +85,7 @@ def main() -> int:
         "blocked_fixture_ids": blocked_entries,
         "replay_summary_path": repo_rel(ROOT / str(artifact_surface["intake_replay_summary"])),
     }
-    corpus_path.write_text(json.dumps(corpus_payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(corpus_path, corpus_payload)
 
     payload = {
         "contract_id": SUMMARY_CONTRACT_ID,
@@ -100,7 +99,7 @@ def main() -> int:
         "blocked_fixture_count": len(blocked_entries),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, payload)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-external-repro-publication: PASS")
     return 0

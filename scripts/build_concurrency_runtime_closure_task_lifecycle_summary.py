@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
+from objc3c_tooling.json_io import write_json_file
 import json
 from pathlib import Path
 from typing import Any
@@ -119,7 +120,7 @@ def main() -> int:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    JSON_OUT.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(JSON_OUT, summary)
     MD_OUT.write_text(
         "# Concurrency Runtime Closure Task/Continuation Lifecycle Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"

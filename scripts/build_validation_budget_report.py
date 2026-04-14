@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-budget-report'
@@ -83,7 +82,7 @@ def main() -> None:
         },
         'next_issues': ['validation-closeout-gate'],
     }
-    write_text(OUTPUT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(OUTPUT_JSON_PATH, payload)
 
     lines = [
         '# Validation Budget Report',

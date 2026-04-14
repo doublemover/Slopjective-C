@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -33,7 +32,7 @@ def main() -> None:
         'unreferenced_check_surfaces': inventory['unreferenced_check_surfaces'],
         'next_issues': ['validation-harness-catalog', 'validation-legacy-surface-map', 'validation-acceptance-artifact-index'],
     }
-    write_text(SUMMARY_JSON_PATH, json.dumps(summary, indent=2) + '\n')
+    write_json_file(SUMMARY_JSON_PATH, summary)
 
     lines = [
         '# validation-policy-summary Validation Consolidation Policy Summary',

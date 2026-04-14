@@ -7,7 +7,7 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'validation_consolidation'
@@ -168,8 +168,8 @@ def main() -> None:
         },
     }
 
-    write_text(CATALOG_JSON_PATH, json.dumps(catalog, indent=2) + '\n')
-    write_text(SUMMARY_JSON_PATH, json.dumps(catalog, indent=2) + '\n')
+    write_json_file(CATALOG_JSON_PATH, catalog)
+    write_json_file(SUMMARY_JSON_PATH, catalog)
 
     lines = [
         '# Validation Harness Catalog',

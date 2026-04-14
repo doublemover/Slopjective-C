@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
-from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -42,7 +41,7 @@ def main() -> None:
         'retained_orphan_public_scripts': inventory['orphan_public_scripts'],
         'next_issues': ['workflow-alias-retirement', 'workflow-runner-unification', 'workflow-public-command-contract'],
     }
-    write_text(POLICY_JSON_PATH, json.dumps(policy, indent=2) + '\n')
+    write_json_file(POLICY_JSON_PATH, policy)
 
     summary = {
         'issue': 'workflow-simplification-policy',
@@ -54,7 +53,7 @@ def main() -> None:
         'retained_orphan_public_scripts': policy['retained_orphan_public_scripts'],
         'next_issues': policy['next_issues'],
     }
-    write_text(REPORT_JSON_PATH, json.dumps(summary, indent=2) + '\n')
+    write_json_file(REPORT_JSON_PATH, summary)
 
     lines = [
         '# Workflow Simplification Policy',

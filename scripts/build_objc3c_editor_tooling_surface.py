@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -11,7 +10,7 @@ from typing import Any
 
 from format_objc3c_source import build_format_summary_for_source
 from objc3c_tooling.paths import display_path as repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -297,11 +296,11 @@ def main() -> int:
         "debug": debug,
     }
 
-    diagnostics_report_path.write_text(json.dumps(editor_surface, indent=2) + "\n", encoding="utf-8")
-    capabilities_path.write_text(json.dumps(language_server, indent=2) + "\n", encoding="utf-8")
-    navigation_path.write_text(json.dumps(navigation, indent=2) + "\n", encoding="utf-8")
-    formatter_path.write_text(json.dumps(formatter, indent=2) + "\n", encoding="utf-8")
-    debug_path.write_text(json.dumps(debug, indent=2) + "\n", encoding="utf-8")
+    write_json_file(diagnostics_report_path, editor_surface)
+    write_json_file(capabilities_path, language_server)
+    write_json_file(navigation_path, navigation)
+    write_json_file(formatter_path, formatter)
+    write_json_file(debug_path, debug)
 
     print(f"summary_path: {repo_rel(summary_path)}")
     print(f"dump_path: {repo_rel(diagnostics_report_path)}")

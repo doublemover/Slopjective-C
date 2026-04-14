@@ -3,11 +3,10 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -62,7 +61,7 @@ def main() -> int:
         "non_goals": contract["non_goals"],
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, payload)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("application-architecture-testing-semantics: PASS" if payload["status"] == "PASS" else "application-architecture-testing-semantics: FAIL")
     return 0 if payload["status"] == "PASS" else 1

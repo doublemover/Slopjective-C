@@ -4,7 +4,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
-from objc3c_tooling.json_io import write_text_file as write_text
+from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -45,8 +45,8 @@ def main() -> None:
         'lint_script_action': describe_lint['action'],
         'next_issue': 'workflow-command-budget',
     }
-    write_text(PLAN_JSON_PATH, json.dumps(payload, indent=2) + '\n')
-    write_text(REPORT_JSON_PATH, json.dumps(payload, indent=2) + '\n')
+    write_json_file(PLAN_JSON_PATH, payload)
+    write_json_file(REPORT_JSON_PATH, payload)
 
     lines = [
         '# workflow-api-implementation Workflow API Implementation Report',

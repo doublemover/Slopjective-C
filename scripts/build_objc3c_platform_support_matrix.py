@@ -9,6 +9,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -109,7 +110,7 @@ def main() -> int:
     }
 
     ARTIFACT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    ARTIFACT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(ARTIFACT_PATH, payload)
 
     summary = {
         "contract_id": "objc3c.platform.hardening.support.matrix.summary.v1",
@@ -121,7 +122,7 @@ def main() -> int:
         "tier_count": len(payload["tiers"]),
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"artifact_path: {repo_rel(ARTIFACT_PATH)}")
     print("objc3c-platform-support-matrix: PASS")

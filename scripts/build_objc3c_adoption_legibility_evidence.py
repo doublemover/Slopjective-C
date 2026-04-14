@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_timed
 
 
@@ -200,7 +199,7 @@ def main() -> int:
         },
     }
     ARTIFACT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    ARTIFACT_PATH.write_text(json.dumps(artifact, indent=2) + "\n", encoding="utf-8")
+    write_json_file(ARTIFACT_PATH, artifact)
 
     publication = dict(artifact)
     publication["publication_view"] = {
@@ -213,7 +212,7 @@ def main() -> int:
         "report_root": artifact_contract.get("report_root"),
     }
     PUBLICATION_PATH.parent.mkdir(parents=True, exist_ok=True)
-    PUBLICATION_PATH.write_text(json.dumps(publication, indent=2) + "\n", encoding="utf-8")
+    write_json_file(PUBLICATION_PATH, publication)
 
     summary = {
         "contract_id": "objc3c.adoption_legibility.evidence.summary.v1",
@@ -235,7 +234,7 @@ def main() -> int:
         "failures": release_blockers,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"artifact_path: {repo_rel(ARTIFACT_PATH)}")
     print(f"publication_path: {repo_rel(PUBLICATION_PATH)}")

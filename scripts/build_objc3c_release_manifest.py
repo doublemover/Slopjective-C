@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 import os
 import shutil
 import subprocess
@@ -14,7 +13,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.subprocesses import run_completed
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -200,7 +199,7 @@ def main() -> int:
     }
 
     MANIFEST_PATH.parent.mkdir(parents=True, exist_ok=True)
-    MANIFEST_PATH.write_text(json.dumps(payload, indent=2) + '\n', encoding='utf-8')
+    write_json_file(MANIFEST_PATH, payload)
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -214,7 +213,7 @@ def main() -> int:
         'release_payload_file_count': len(first['entries']),
         'release_payload_digest_sha256': payload['release_payload_digest_sha256'],
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print('objc3c-release-manifest: PASS')
     return 0

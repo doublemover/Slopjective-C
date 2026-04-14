@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -60,7 +61,7 @@ def main() -> int:
     }
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    JSON_OUT.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(JSON_OUT, payload)
     MD_OUT.write_text(
         "# Platform Matrix Artifact Contract Summary\n\n"
         f"- Contract: `{payload['source_contract_id']}`\n"

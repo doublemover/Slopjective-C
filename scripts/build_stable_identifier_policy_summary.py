@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from objc3c_tooling.json_io import write_text_file as write_text
+from objc3c_tooling.json_io import write_text_file as write_text, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'source_hygiene'
@@ -47,8 +47,8 @@ def main() -> None:
     }
     summary['ok'] = all(summary['checks'].values())
 
-    write_text(PLAN_JSON_PATH, json.dumps(summary, indent=2) + '\n')
-    write_text(REPORT_JSON_PATH, json.dumps(summary, indent=2) + '\n')
+    write_json_file(PLAN_JSON_PATH, summary)
+    write_json_file(REPORT_JSON_PATH, summary)
 
     lines = [
         '# Stable Identifier Policy Summary',

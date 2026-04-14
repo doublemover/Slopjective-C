@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.paths import repo_rel
 
 
@@ -98,7 +99,7 @@ def main() -> int:
     summary["ok"] = not failures
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(json.dumps(summary, indent=2))
     return 0 if summary["ok"] else 1
 

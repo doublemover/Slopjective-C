@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,7 +134,7 @@ def main() -> int:
     }
 
     EVIDENCE_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-    EVIDENCE_ARTIFACT.write_text(json.dumps(evidence, indent=2) + "\n", encoding="utf-8")
+    write_json_file(EVIDENCE_ARTIFACT, evidence)
 
     summary = {
         "contract_id": "objc3c.governance.sustainability.evidence.summary.v1",
@@ -150,7 +149,7 @@ def main() -> int:
         "failures": failures,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"evidence_artifact: {repo_rel(EVIDENCE_ARTIFACT)}")
     print("objc3c-governance-sustainability-evidence: PASS" if not failures else "objc3c-governance-sustainability-evidence: FAIL")

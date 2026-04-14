@@ -3,14 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -76,7 +75,7 @@ def main() -> int:
     }
 
     PUBLICATION_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-    PUBLICATION_ARTIFACT.write_text(json.dumps(publication, indent=2) + "\n", encoding="utf-8")
+    write_json_file(PUBLICATION_ARTIFACT, publication)
 
     summary = {
         "contract_id": "objc3c.long_horizon_operations.publication.summary.v1",
@@ -92,7 +91,7 @@ def main() -> int:
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print(f"publication_artifact: {repo_rel(PUBLICATION_ARTIFACT)}")
     print("objc3c-long-horizon-operations-publication: PASS")
