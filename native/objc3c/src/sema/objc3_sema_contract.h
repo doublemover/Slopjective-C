@@ -2883,6 +2883,7 @@ struct Objc3SemanticCanonicalType {
   unsigned vector_lane_count = 1;
   bool has_pointer_declarator = false;
   unsigned pointer_declarator_depth = 0;
+  std::string object_pointer_type_name;
   bool has_protocol_composition = false;
   std::vector<std::string> protocol_composition_lexicographic;
   bool has_generic_suffix = false;

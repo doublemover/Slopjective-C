@@ -4863,6 +4863,7 @@ static std::string CanonicalTypeReplayKey(
       << ";lanes=" << type.vector_lane_count
       << ";pointer=" << (type.has_pointer_declarator ? 1 : 0)
       << ";pointer-depth=" << type.pointer_declarator_depth
+      << ";object-name=" << type.object_pointer_type_name
       << ";protocols="
       << JoinStringVector(type.protocol_composition_lexicographic, "+")
       << ";generics=" << JoinStringVector(type.generic_arguments_lexicographic, "+")
@@ -4874,7 +4875,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
     ValueType value_type, bool is_vector, const std::string &vector_base_spelling,
     unsigned vector_lane_count, bool id_spelling, bool class_spelling,
     bool sel_spelling, bool instancetype_spelling,
-    bool object_pointer_type_spelling, bool has_generic_suffix,
+    bool object_pointer_type_spelling,
+    const std::string &object_pointer_type_name, bool has_generic_suffix,
     const std::string &generic_suffix_text, bool has_pointer_declarator,
     unsigned pointer_declarator_depth,
     const std::vector<Objc3SemaTokenMetadata> &nullability_tokens,
@@ -4893,6 +4895,9 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
   type.vector_lane_count = vector_lane_count;
   type.has_pointer_declarator = has_pointer_declarator;
   type.pointer_declarator_depth = pointer_declarator_depth;
+  if (object_pointer_type_spelling) {
+    type.object_pointer_type_name = object_pointer_type_name;
+  }
   type.nullability = CanonicalNullabilityFromTokens(nullability_tokens);
   if (property_null_resettable) {
     type.nullability = Objc3SemanticCanonicalNullability::NullResettable;
@@ -4916,7 +4921,10 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
   type.has_invalid_type_suffix = has_invalid_type_suffix;
   type.deterministic = IsSortedUniqueStrings(type.protocol_composition_lexicographic) &&
                        IsSortedUniqueStrings(type.generic_arguments_lexicographic);
-  type.canonical_spelling = objc3c::support::ValueTypeName(value_type);
+  type.canonical_spelling =
+      object_pointer_type_spelling && !object_pointer_type_name.empty()
+          ? object_pointer_type_name
+          : objc3c::support::ValueTypeName(value_type);
   if (type.has_protocol_composition) {
     type.canonical_spelling += "<" +
                                JoinStringVector(
@@ -4936,8 +4944,9 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
       param.type, param.vector_spelling, param.vector_base_spelling,
       param.vector_lane_count, param.id_spelling, param.class_spelling,
       param.sel_spelling, param.instancetype_spelling,
-      param.object_pointer_type_spelling, param.has_generic_suffix,
-      param.generic_suffix_text, param.has_pointer_declarator,
+      param.object_pointer_type_spelling, param.object_pointer_type_name,
+      param.has_generic_suffix, param.generic_suffix_text,
+      param.has_pointer_declarator,
       param.pointer_declarator_depth, param.nullability_suffix_tokens,
       param.has_ownership_qualifier, param.ownership_is_weak_reference,
       param.ownership_is_unowned_reference, false, false, false, false, false,
@@ -4950,8 +4959,9 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
       fn.return_type, fn.return_vector_spelling, fn.return_vector_base_spelling,
       fn.return_vector_lane_count, fn.return_id_spelling, fn.return_class_spelling,
       fn.return_sel_spelling, fn.return_instancetype_spelling,
-      fn.return_object_pointer_type_spelling, fn.has_return_generic_suffix,
-      fn.return_generic_suffix_text, fn.has_return_pointer_declarator,
+      fn.return_object_pointer_type_spelling, fn.return_object_pointer_type_name,
+      fn.has_return_generic_suffix, fn.return_generic_suffix_text,
+      fn.has_return_pointer_declarator,
       fn.return_pointer_declarator_depth, fn.return_nullability_suffix_tokens,
       fn.has_return_ownership_qualifier, fn.return_ownership_is_weak_reference,
       fn.return_ownership_is_unowned_reference, false, false, false, false,
@@ -4970,7 +4980,8 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
       method.return_id_spelling, method.return_class_spelling,
       method.return_sel_spelling, method.return_instancetype_spelling,
       method.return_object_pointer_type_spelling,
-      method.has_return_generic_suffix, method.return_generic_suffix_text,
+      method.return_object_pointer_type_name, method.has_return_generic_suffix,
+      method.return_generic_suffix_text,
       method.has_return_pointer_declarator,
       method.return_pointer_declarator_depth,
       method.return_nullability_suffix_tokens,
@@ -4990,8 +5001,9 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
       property.type, property.vector_spelling, property.vector_base_spelling,
       property.vector_lane_count, property.id_spelling, property.class_spelling,
       property.sel_spelling, property.instancetype_spelling,
-      property.object_pointer_type_spelling, property.has_generic_suffix,
-      property.generic_suffix_text, property.has_pointer_declarator,
+      property.object_pointer_type_spelling, property.object_pointer_type_name,
+      property.has_generic_suffix, property.generic_suffix_text,
+      property.has_pointer_declarator,
       property.pointer_declarator_depth, property.nullability_suffix_tokens,
       property.has_ownership_qualifier, property.ownership_is_weak_reference,
       property.ownership_is_unowned_reference, property.is_unsafe_unretained,
@@ -6136,6 +6148,7 @@ static bool IsCompatibleCanonicalSemanticType(
          lhs.vector_lane_count == rhs.vector_lane_count &&
          lhs.has_pointer_declarator == rhs.has_pointer_declarator &&
          lhs.pointer_declarator_depth == rhs.pointer_declarator_depth &&
+         lhs.object_pointer_type_name == rhs.object_pointer_type_name &&
          lhs.has_protocol_composition == rhs.has_protocol_composition &&
          lhs.protocol_composition_lexicographic ==
              rhs.protocol_composition_lexicographic &&

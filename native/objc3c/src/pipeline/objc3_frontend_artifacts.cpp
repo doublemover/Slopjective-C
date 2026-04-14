@@ -24882,6 +24882,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                  << static_cast<unsigned>(type.ownership)
                  << ",\"canonical_spelling\":\""
                  << EscapeJsonString(type.canonical_spelling)
+                 << "\",\"object_pointer_type_name\":\""
+                 << EscapeJsonString(type.object_pointer_type_name)
                  << "\",\"replay_key\":\""
                  << EscapeJsonString(type.replay_key)
                  << "\",\"deterministic\":"

@@ -22,6 +22,10 @@ fn choose(flag: bool, when_true: id<SemanticValue>*?, when_false: id<SemanticVal
   return when_false;
 }
 
+fn consumeBox(box: SemanticBox *?) -> id? {
+  return [box? title];
+}
+
 fn main(maybeValue: id?, fallback: id, box: id<SemanticValue>*?) -> i32 {
   if let chosen = maybeValue {
     let local = chosen;

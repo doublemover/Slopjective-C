@@ -284,6 +284,7 @@ def compile_positive_summary(run: dict[str, Any]) -> tuple[dict[str, Any] | None
     canonical_functions = canonical_metadata.get("functions", []) if isinstance(canonical_metadata, dict) else []
     canonical_interfaces = canonical_metadata.get("interfaces", []) if isinstance(canonical_metadata, dict) else []
     choose_function = next((entry for entry in canonical_functions if entry.get("name") == "choose"), None)
+    consume_box_function = next((entry for entry in canonical_functions if entry.get("name") == "consumeBox"), None)
     semantic_box = next((entry for entry in canonical_interfaces if entry.get("name") == "SemanticBox"), None)
     replay_key = str(model.get("replay_key", ""))
     checks = {
@@ -296,6 +297,12 @@ def compile_positive_summary(run: dict[str, Any]) -> tuple[dict[str, Any] | None
         and bool((choose_function.get("return_canonical_type") or {}).get("replay_key"))
         and len(choose_function.get("param_canonical_types", [])) == 3
         and all(bool((param or {}).get("replay_key")) for param in choose_function.get("param_canonical_types", [])),
+        "canonical_named_object_pointer_metadata_publishes_owner": isinstance(consume_box_function, dict)
+        and any(
+            (param or {}).get("object_pointer_type_name") == "SemanticBox"
+            and "object-name=SemanticBox" in str((param or {}).get("replay_key", ""))
+            for param in consume_box_function.get("param_canonical_types", [])
+        ),
         "canonical_interface_property_metadata_publishes_replay_keys": isinstance(semantic_box, dict)
         and any(
             property_entry.get("name") == "title"
@@ -346,7 +353,7 @@ def build_summary() -> dict[str, Any]:
     static_presence = {
         "sema_contract_fields": contains_all(sema_contract_text, STATIC_FIELD_TOKENS),
         "semantic_pass_sources_and_replay_key": contains_all(semantic_passes_text, STATIC_FIELD_TOKENS + SEMANTIC_PASS_TOKENS + REPLAY_KEY_SEGMENTS),
-        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types"]),
+        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types", "object_pointer_type_name"]),
         "lowering_contract_runtime_surface_present": contains_all(lowering_text, ["Lowering", "runtime"]),
         "ir_emitter_runtime_surface_present": contains_all(ir_text, ["Objc3", "Emit"]),
     }
