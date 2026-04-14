@@ -24,6 +24,7 @@ REQUIRED_CASES = {
     "metaclass-graph-root-class",
     "dispatch-fast-path",
     "property-layout",
+    "instance-allocation-layout-runtime",
     "storage-ownership-reflection",
 }
 
@@ -52,6 +53,7 @@ REQUIRED_SURFACE_CASES = {
         "canonical-dispatch",
         "metaclass-graph-root-class",
         "dispatch-fast-path",
+        "instance-allocation-layout-runtime",
         "storage-ownership-reflection",
     },
     "runtime_realization_lookup_reflection_implementation_surface": {

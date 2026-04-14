@@ -1,0 +1,17 @@
+module instanceAllocationDistinctStorage;
+
+@interface Widget
+@property (assign) i32 count;
+@end
+
+@implementation Widget
+@property (assign) i32 count;
+@end
+
+fn main() -> i32 {
+  let first = [[Widget alloc] init];
+  let second = [[Widget alloc] init];
+  [first setCount: 37];
+  [second setCount: 9];
+  return [first count] + [second count];
+}

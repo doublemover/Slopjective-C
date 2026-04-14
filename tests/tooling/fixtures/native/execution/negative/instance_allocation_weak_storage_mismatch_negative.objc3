@@ -1,0 +1,14 @@
+module instanceAllocationWeakStorageMismatchNegative;
+
+@interface Box
+@property (assign) __weak id value;
+@end
+
+@implementation Box
+@property (assign) __weak id value;
+@end
+
+fn main() -> i32 {
+  let box = [[Box alloc] init];
+  return [box value];
+}
