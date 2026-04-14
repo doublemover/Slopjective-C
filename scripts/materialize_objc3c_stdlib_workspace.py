@@ -8,6 +8,8 @@ import json
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_any as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,9 +17,6 @@ WORKSPACE_PATH = ROOT / "stdlib" / "workspace.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "tmp" / "artifacts" / "stdlib" / "workspace"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.materialized.workspace.v1"
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def parse_args() -> argparse.Namespace:
@@ -31,9 +30,6 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
-
-def load_json(path: Path) -> dict[str, object]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def resolve_out_dir(raw_out_dir: str) -> Path:

@@ -10,6 +10,8 @@ import sys
 import time
 from pathlib import Path
 from typing import Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import canonical_json
 
 ROOT = Path(__file__).resolve().parents[1]
 BUILD_SCRIPT = ROOT / "scripts" / "build_objc3c_native.ps1"
@@ -30,16 +32,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def display_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
-
-
-def canonical_json(payload: object) -> str:
-    return json.dumps(payload, indent=2) + "\n"
 
 
 def main(argv: Sequence[str]) -> int:

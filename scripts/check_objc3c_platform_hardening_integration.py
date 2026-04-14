@@ -8,6 +8,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
@@ -28,9 +30,6 @@ CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publicati
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "platform-hardening" / "integration-summary.json"
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
-
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:
     completed = subprocess.run(
@@ -45,12 +44,6 @@ def run_step(name: str, command: list[str]) -> dict[str, object]:
 def summary_passes(payload: dict[str, Any]) -> bool:
     return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{repo_rel(path)} did not contain a JSON object")
-    return payload
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:

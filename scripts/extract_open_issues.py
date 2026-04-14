@@ -10,6 +10,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
+from objc3c_tooling.json_io import render_json
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SPEC_DIR = ROOT / "spec"
@@ -194,9 +195,6 @@ def extract_open_issues(spec_dir: Path) -> tuple[list[dict[str, object]], list[P
 
     return records, parse_issues
 
-
-def render_json(records: list[dict[str, object]]) -> str:
-    return json.dumps(records, indent=2) + "\n"
 
 
 def render_markdown(records: list[dict[str, object]]) -> str:

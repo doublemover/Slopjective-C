@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,9 +23,6 @@ PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "publica
 RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
 
 def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(list(command), cwd=ROOT, check=False, text=True, capture_output=True)
@@ -33,12 +32,6 @@ def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
         sys.stderr.write(result.stderr)
     return result
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
-    return payload
 
 
 def ensure_posture() -> tuple[dict[str, Any], dict[str, Any]]:

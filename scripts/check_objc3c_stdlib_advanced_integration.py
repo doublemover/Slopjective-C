@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_any as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,9 +22,6 @@ SMOKE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "workspace-smoke-summ
 REPORT_PATH = ROOT / "tmp" / "reports" / "stdlib" / "advanced-integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.advanced.integration.summary.v1"
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def run_capture(command: list[str]) -> subprocess.CompletedProcess[str]:
@@ -39,9 +38,6 @@ def run_capture(command: list[str]) -> subprocess.CompletedProcess[str]:
         sys.stderr.write(result.stderr)
     return result
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def expect(condition: bool, message: str) -> None:

@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -18,13 +19,6 @@ REPORT_JSON_PATH = REPORT_DIR / 'public_command_contract.json'
 REPORT_MD_PATH = REPORT_DIR / 'public_command_contract.md'
 
 
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding='utf-8'))
-
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding='utf-8', newline='\n')
 
 
 def load_runner() -> Any:

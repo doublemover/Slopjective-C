@@ -12,6 +12,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -25,9 +27,6 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-foundation" / "release-manife
 EVIDENCE_INDEX_PATH = ROOT / "tmp" / "reports" / "release_evidence" / "evidence-index.json"
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace('\\', '/')
-
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -40,12 +39,6 @@ def sha256_file(path: Path) -> str:
 def sha256_text(text: str) -> str:
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{repo_rel(path)} did not contain a JSON object")
-    return payload
 
 
 def run(command: list[str]) -> None:

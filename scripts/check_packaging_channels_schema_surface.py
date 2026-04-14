@@ -6,6 +6,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "metadata_surface.json"
@@ -13,15 +15,6 @@ SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" 
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "schema-surface-summary.json"
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{repo_rel(path)} did not contain a JSON object")
-    return payload
 
 
 def main() -> int:

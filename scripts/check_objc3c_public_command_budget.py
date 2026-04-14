@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
+from objc3c_tooling.json_io import write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
@@ -24,10 +25,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument('--markdown-out', type=Path)
     return parser.parse_args(argv)
 
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding='utf-8', newline='\n')
 
 
 def main(argv: Sequence[str]) -> int:

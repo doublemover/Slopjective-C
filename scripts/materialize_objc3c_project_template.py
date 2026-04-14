@@ -10,6 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
+from objc3c_tooling.paths import display_path
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,13 +27,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument("--example", default="auroraBoard")
     return parser.parse_args(argv)
 
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def read_json(path: Path) -> object:

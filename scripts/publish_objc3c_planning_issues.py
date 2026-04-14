@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.json_io import write_json_file as write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PAYLOAD = ROOT / "reports" / "planning" / "objc3c_3_next_40_github_payloads.json"
@@ -68,10 +69,6 @@ def load_json(path: Path) -> Any:
     except json.JSONDecodeError as exc:
         raise PublicationError(f"invalid JSON in {path}: {exc}") from exc
 
-
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def require_dict(value: Any, name: str) -> dict[str, Any]:

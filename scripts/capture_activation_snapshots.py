@@ -10,6 +10,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path, resolve_repo_path
+from objc3c_tooling.json_io import render_json, write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS_DIR = Path(__file__).resolve().parent
@@ -34,18 +36,6 @@ class SnapshotError(RuntimeError):
     """Raised when snapshot inputs cannot be normalized deterministically."""
 
 
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
-
-
-def resolve_repo_path(path: Path) -> Path:
-    if path.is_absolute():
-        return path
-    return ROOT / path
 
 
 def parse_generated_at_utc(raw: str) -> str:
@@ -268,13 +258,6 @@ def collect_open_issues(client: GhClient) -> list[dict[str, Any]]:
     ]
 
 
-def render_json(payload: dict[str, Any]) -> str:
-    return json.dumps(payload, indent=2) + "\n"
-
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding="utf-8", newline="\n")
 
 
 def build_parser() -> argparse.ArgumentParser:

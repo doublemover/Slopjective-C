@@ -5,6 +5,9 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import canonical_json as render_canonical_json
+from objc3c_tooling.json_io import load_json_any as load_json
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_CONTRACT_ID = "objc3c-runtime-linker-retention-and-dead-strip-resistance/linker_metadata-retention-dead-strip-v1"
@@ -29,20 +32,11 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 
 
 def canonical_json(value: Any) -> str:
-    return json.dumps(value, indent=2, sort_keys=True) + "\n"
+    return render_canonical_json(value, sort_keys=True)
 
 
 
-def display_path(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(ROOT).as_posix()
-    except ValueError:
-        return path.resolve().as_posix()
 
-
-
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 

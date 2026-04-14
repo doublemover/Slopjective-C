@@ -8,6 +8,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts/check_objc3c_runnable_block_arc_end_to_end.py"
@@ -22,13 +24,10 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
-
 
 def load_json(path: Path) -> dict[str, Any]:
     expect(path.is_file(), f"expected JSON artifact was not published: {repo_rel(path)}")
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = load_json_object(path)
     expect(isinstance(payload, dict), f"JSON artifact at {repo_rel(path)} did not contain an object")
     return payload
 

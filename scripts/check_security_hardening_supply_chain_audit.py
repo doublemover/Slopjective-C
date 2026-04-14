@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,9 +25,6 @@ STEP_COMMANDS = {
     "publish_objc3c_distribution_trust_report": [sys.executable, "scripts/publish_objc3c_distribution_trust_report.py"]
 }
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def read_json(path: Path) -> dict[str, Any]:

@@ -7,6 +7,7 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -20,9 +21,6 @@ OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "extension-re
 SUMMARY_PATH = OUT_DIR / "governance_extension_review_workflow_summary.json"
 RENDER_DIR = OUT_DIR / "sample-render"
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def read_json(path: Path) -> dict[str, Any]:

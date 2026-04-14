@@ -4,6 +4,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import load_json_any as load_json, write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-budget-report'
@@ -22,13 +23,6 @@ BUDGETS = {
 }
 
 
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding='utf-8'))
-
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding='utf-8', newline='\n')
 
 
 def main() -> None:

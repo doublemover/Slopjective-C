@@ -10,6 +10,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import normalize_rel_path, repo_rel
+from objc3c_tooling.json_io import load_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,12 +27,6 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def normalize_rel_path(raw_path: str) -> str:
-    return raw_path.replace("\\", "/")
 
 
 def run_capture(command: Sequence[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -50,7 +46,7 @@ def run_capture(command: Sequence[str], *, cwd: Path) -> subprocess.CompletedPro
 
 def load_json(path: Path) -> dict[str, Any]:
     expect(path.is_file(), f"expected JSON artifact was not published: {path}")
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = load_json_object(path)
     expect(isinstance(payload, dict), f"JSON artifact at {path} did not contain an object")
     return payload
 

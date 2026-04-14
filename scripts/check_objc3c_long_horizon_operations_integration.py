@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,15 +20,6 @@ EVIDENCE_SUMMARY = ROOT / "tmp" / "reports" / "long-horizon-operations" / "evide
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "integration-summary.json"
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
-    return payload
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:

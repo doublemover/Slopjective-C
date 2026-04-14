@@ -5,6 +5,7 @@ import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel, resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/full_envelope_claimability/support_matrix_claim_taxonomy.json"
@@ -25,13 +26,6 @@ def read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
-
-
-def resolve_repo_path(raw_path: str) -> Path:
-    path = Path(raw_path)
-    return path if path.is_absolute() else ROOT / path
 
 
 def main() -> int:

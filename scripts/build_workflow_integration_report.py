@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -20,10 +21,6 @@ PLAN_MD_PATH = PLAN_DIR / 'workflow_integration.md'
 REPORT_JSON_PATH = REPORT_DIR / 'workflow_integration_report.json'
 REPORT_MD_PATH = REPORT_DIR / 'workflow_integration_report.md'
 
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding='utf-8', newline='\n')
 
 
 def load_runner() -> Any:

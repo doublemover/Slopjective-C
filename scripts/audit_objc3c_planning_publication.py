@@ -8,6 +8,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.json_io import load_json_any as load_json, write_json_file as write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -25,13 +26,6 @@ class DriftAuditError(RuntimeError):
     """Raised when audit inputs are malformed."""
 
 
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
 def repo_path(path: Path) -> Path:

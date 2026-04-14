@@ -14,6 +14,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.json_io import write_text_file
+from objc3c_tooling.paths import display_path, resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_AUDIT_ROOT = ROOT
@@ -73,23 +75,10 @@ def normalize_newlines(value: str) -> str:
     return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
-
-
-def resolve_repo_path(raw_path: Path) -> Path:
-    if raw_path.is_absolute():
-        return raw_path
-    return ROOT / raw_path
 
 
 def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(normalize_newlines(content), encoding="utf-8", newline="\n")
+    write_text_file(path, normalize_newlines(content))
 
 
 def bool_text(value: bool) -> str:

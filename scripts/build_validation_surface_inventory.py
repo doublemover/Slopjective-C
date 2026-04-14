@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "tmp" / "reports" / "m313" / "validation-surface-inventory"
@@ -97,9 +98,6 @@ STATIC_GUARD_OVERRIDES: dict[str, tuple[str, str]] = {
     ),
 }
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def run_json(command: list[str]) -> Any:

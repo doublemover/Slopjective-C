@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Any
 
 import check_objc3c_runtime_acceptance as runtime_acceptance
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -68,14 +70,11 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
-
 
 def load_json(path: Path) -> dict[str, Any] | None:
     if not path.is_file():
         return None
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = load_json_object(path)
     expect(isinstance(payload, dict), f"JSON artifact at {repo_rel(path)} did not contain an object")
     return payload
 

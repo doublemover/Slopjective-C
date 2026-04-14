@@ -13,7 +13,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
+from objc3c_tooling.paths import repo_rel
 from check_objc3c_runtime_acceptance import (
+
     COMPILE_PROVENANCE_CONTRACT_ID,
     COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID,
     RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
@@ -638,9 +640,6 @@ SUITES: tuple[SuiteEntry, ...] = (
 
 SUITE_MAP = {entry.suite_id: entry for entry in SUITES}
 
-
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
 
 
 def emit_json(payload: object) -> int:

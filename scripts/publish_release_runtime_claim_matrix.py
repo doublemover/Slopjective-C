@@ -8,6 +8,8 @@ import json
 import subprocess
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "tmp" / "reports" / "release_claims" / "publication_matrix"
@@ -19,13 +21,6 @@ HELLO_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc
 METADATA_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "runtime_metadata_source_records_class_protocol_property_ivar.objc3"
 RELEASE_CLAIMS_ROOT = ROOT / "tmp" / "reports" / "release_claims"
 
-
-def display_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
 
 
 def run(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -39,12 +34,6 @@ def run(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
         check=False,
     )
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise TypeError(f"expected object JSON in {display_path(path)}")
-    return payload
 
 
 def find_summary_by_name(filename: str) -> Path:

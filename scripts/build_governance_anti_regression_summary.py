@@ -7,6 +7,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE_PATH = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "anti_regression_reporting_contract.json"
@@ -24,9 +25,6 @@ def load_optional_json(path: Path) -> dict[str, Any] | None:
         return None
     return read_json(path)
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def metric_value(metric_id: str, inventory: dict[str, Any], enforcement: dict[str, Any]) -> int:

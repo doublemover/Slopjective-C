@@ -12,6 +12,7 @@ from datetime import datetime
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ROOT = ROOT / "spec" / "planning"
@@ -208,13 +209,6 @@ def parse_due_date_utc(
         )
     )
 
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def resolve_root_path(raw_root: Path) -> Path:

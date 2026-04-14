@@ -12,6 +12,8 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import canonical_json
 
 ROOT = Path(__file__).resolve().parents[1]
 MODE = "objc3c-end-to-end-determinism-v1"
@@ -27,16 +29,6 @@ def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def canonical_json(payload: object) -> str:
-    return json.dumps(payload, indent=2) + "\n"
-
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def parse_key_value(values: Sequence[str], *, context: str) -> dict[str, str]:

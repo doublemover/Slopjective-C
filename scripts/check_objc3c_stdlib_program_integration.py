@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_any as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,9 +28,6 @@ STDLIB_FOUNDATION_REPORT_PATH = ROOT / "tmp" / "reports" / "stdlib" / "integrati
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.program.integration.summary.v1"
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
 
 def run_capture(command: list[str]) -> subprocess.CompletedProcess[str]:
     result = subprocess.run(
@@ -44,9 +43,6 @@ def run_capture(command: list[str]) -> subprocess.CompletedProcess[str]:
         sys.stderr.write(result.stderr)
     return result
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def expect(condition: bool, message: str) -> None:

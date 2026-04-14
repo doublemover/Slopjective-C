@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,9 +17,6 @@ RUNBOOK_PATH = ROOT / "docs" / "runbooks" / "objc3c_governance_sustainability.md
 OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "artifact-contract"
 SUMMARY_PATH = OUT_DIR / "governance_artifact_contract_summary.json"
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def read_json(path: Path) -> dict[str, Any]:

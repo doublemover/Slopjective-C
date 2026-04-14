@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Callable, Sequence
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -231,12 +232,6 @@ def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
         sys.stderr.write(result.stderr)
     return result
 
-
-def load_json(path: Path) -> dict[str, object]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"expected JSON object at {path}")
-    return payload
 
 
 def extract_output_line(stdout: str, prefix: str) -> str:

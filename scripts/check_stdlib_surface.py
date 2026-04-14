@@ -7,6 +7,8 @@ import json
 import re
 import sys
 from pathlib import Path
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_any as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,12 +35,6 @@ def fail(message: str) -> int:
     return 1
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def load_json(path: Path) -> dict[str, object]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def parse_spec_canonical_modules(spec_text: str) -> list[dict[str, str]]:

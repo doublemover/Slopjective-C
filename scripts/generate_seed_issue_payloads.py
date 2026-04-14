@@ -10,6 +10,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_GRAPH_PATH = ROOT / "tmp" / "reports" / "v013_seed_dependency_graph.json"
@@ -96,13 +97,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-
-def display_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
 
 
 def expect_dict(value: Any, context: str) -> dict[str, Any]:

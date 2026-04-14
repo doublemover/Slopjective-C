@@ -5,6 +5,7 @@ import re
 import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
+from objc3c_tooling.json_io import write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'source_hygiene'
@@ -36,10 +37,6 @@ GENERATED_TRUTH_FILES = {
 }
 ARCHIVE_PREFIXES = ('docs/reference/',)
 
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding='utf-8', newline='\n')
 
 
 def git_ls_files() -> list[str]:

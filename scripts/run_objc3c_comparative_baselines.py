@@ -15,6 +15,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file as write_json
+from objc3c_tooling.paths import display_path, repo_rel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,22 +34,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"expected JSON object at {path}")
-    return payload
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def display_path(path: Path) -> str:
-    try:
-        return repo_rel(path.resolve())
-    except ValueError:
-        return path.resolve().as_posix()
 
 
 def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -125,10 +112,6 @@ def expand_command(
     expanded.extend(argument.format(source=source, output_exe=output_exe) for argument in args)
     return expanded
 
-
-def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def record_unavailable_packet(

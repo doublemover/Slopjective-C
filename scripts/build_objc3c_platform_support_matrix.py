@@ -9,6 +9,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 BOUNDARY_CONTRACT = ROOT / "tests/tooling/fixtures/platform_hardening/boundary_inventory.json"
@@ -17,9 +18,6 @@ SUPPORTED_PLATFORMS = ROOT / "tests/tooling/fixtures/packaging_channels/supporte
 ARTIFACT_PATH = ROOT / "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json"
 SUMMARY_PATH = ROOT / "tmp/reports/platform-hardening/platform-support-matrix-summary.json"
 
-
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
 
 
 def read_json(path: Path) -> dict[str, Any]:

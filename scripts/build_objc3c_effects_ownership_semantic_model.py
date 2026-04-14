@@ -7,6 +7,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.json_io import load_json_any as load_json
+
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "reports" / "claimability" / "effects-ownership-semantic-model"
 JSON_OUT = REPORT_DIR / "effects_ownership_semantic_model_summary.json"
@@ -190,9 +192,6 @@ def rel(path: Path) -> str:
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig")
 
-
-def load_json(path: Path) -> Any:
-    return json.loads(read(path))
 
 
 def contains_all(text: str, tokens: list[str]) -> dict[str, bool]:

@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,9 +21,6 @@ SUMMARY_CONTRACT_ID = "objc3c.external_validation.publication.summary.v1"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "external-validation" / "publication-summary.json"
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
 
 def expect(condition: bool, message: str) -> None:
     if not condition:
@@ -29,7 +28,7 @@ def expect(condition: bool, message: str) -> None:
 
 
 def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    payload = load_json_object(path)
     expect(isinstance(payload, dict), f"JSON object expected at {repo_rel(path)}")
     return payload
 

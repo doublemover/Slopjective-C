@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
@@ -153,13 +154,6 @@ def canonical_json_text(payload: dict[str, object]) -> str:
 def normalize_text(value: str) -> str:
     return value.replace("\r\n", "\n")
 
-
-def display_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
 
 
 def parse_generated_at_utc(value: str | None) -> str:

@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.json_io import load_json_any as load_json
+
 ROOT = Path(__file__).resolve().parents[1]
 CONFORMANCE_MANIFEST = ROOT / "tests" / "conformance" / "parser" / "draft_syntax_surface_conformance.json"
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "dispatch" / "parser_draft_syntax_surfaces.objc3"
@@ -61,9 +63,6 @@ def rel(path: Path) -> str:
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8-sig")
 
-
-def load_json(path: Path) -> Any:
-    return json.loads(read(path))
 
 
 def run_compiler(source: Path, out_dir: Path) -> dict[str, Any]:

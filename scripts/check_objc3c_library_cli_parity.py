@@ -12,6 +12,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import canonical_json, write_json_file as write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 TMP_ROOT = ROOT / "tmp"
@@ -75,13 +77,6 @@ class LLVMCapabilitySummary:
     parity_ready: bool
     blockers: tuple[str, ...]
 
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def sha256_hex(path: Path) -> str:
@@ -248,9 +243,6 @@ def ensure_under_tmp(path: Path, *, label: str) -> None:
             f"{label} must be under {display_path(TMP_ROOT)}: {display_path(path)}"
         ) from exc
 
-
-def canonical_json(payload: object) -> str:
-    return json.dumps(payload, indent=2) + "\n"
 
 
 def sha256_text(text: str) -> str:
@@ -476,10 +468,6 @@ def build_dimension_results(
         )
     return results
 
-
-def write_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(canonical_json(payload), encoding="utf-8")
 
 
 def read_json(path: Path, *, label: str) -> dict[str, Any]:

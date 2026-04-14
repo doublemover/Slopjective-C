@@ -10,6 +10,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,9 +19,6 @@ PWSH = shutil.which("pwsh") or "pwsh"
 PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
 REPORT_PATH = ROOT / "tmp" / "reports" / "package-ecosystem" / "runnable-package-ecosystem-summary.json"
 
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def run_capture(command: Sequence[str], *, cwd: Path) -> subprocess.CompletedProcess[str]:
@@ -36,12 +35,6 @@ def run_capture(command: Sequence[str], *, cwd: Path) -> subprocess.CompletedPro
         sys.stderr.write(result.stderr)
     return result
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"JSON object expected at {path}")
-    return payload
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:

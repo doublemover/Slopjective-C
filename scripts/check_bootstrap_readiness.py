@@ -8,6 +8,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path, resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,18 +21,6 @@ def normalize_newlines(value: str) -> str:
     return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
-
-
-def resolve_repo_path(raw_path: Path) -> Path:
-    if raw_path.is_absolute():
-        return raw_path
-    return ROOT / raw_path
 
 
 def load_json(path: Path) -> Any:

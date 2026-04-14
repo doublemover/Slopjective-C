@@ -15,6 +15,8 @@ import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path, repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file as write_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,23 +35,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"expected JSON object at {display_path(path)}")
-    return payload
-
-
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
 
 
 def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -123,10 +109,6 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
     if not condition:
         failures.append(message)
 
-
-def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def summarize_durations(durations: list[float], normalization_mode: str) -> dict[str, Any]:

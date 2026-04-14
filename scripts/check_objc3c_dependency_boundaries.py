@@ -7,6 +7,7 @@ import argparse
 import re
 import sys
 from pathlib import Path
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC_ROOT = ROOT / "native" / "objc3c" / "src"
@@ -60,12 +61,6 @@ ALLOWED_DEPENDENCIES: dict[str, set[str]] = {
 
 EXEMPT_TOP_LEVEL_FILES = {"main.cpp", "ARCHITECTURE.md"}
 
-
-def display_path(path: Path) -> str:
-    try:
-        return path.relative_to(ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
 
 
 def fail(message: str) -> None:

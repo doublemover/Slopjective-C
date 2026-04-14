@@ -6,6 +6,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path as repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_POLICY = (
@@ -41,13 +42,6 @@ SUMMARY_CONTRACT_ID = "objc3c.claimability.dashboard.release_blocker.contract.su
 class ContractError(RuntimeError):
     pass
 
-
-def repo_rel(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
 
 
 def read_json(path: Path) -> dict[str, Any]:

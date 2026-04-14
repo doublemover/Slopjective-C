@@ -11,6 +11,8 @@ from pathlib import Path
 from typing import Any, Callable, Sequence
 
 import check_objc3c_runtime_acceptance as runtime_acceptance
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,15 +23,6 @@ SUMMARY_CONTRACT_ID = "objc3c.stress.mixed-module-differential.summary.v1"
 CaseRunner = Callable[[Path, str | None], runtime_acceptance.CaseResult]
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"expected JSON object at {repo_rel(path)}")
-    return payload
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:

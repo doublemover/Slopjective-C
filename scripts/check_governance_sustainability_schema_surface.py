@@ -8,6 +8,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "schema_surface.json"
@@ -15,20 +17,11 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "governance-sustainability" / "schema-
 SUMMARY_CONTRACT_ID = "objc3c.governance.sustainability.schema.surface.summary.v1"
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
 
 def fail(message: str) -> int:
     print(f"governance-sustainability-schema-surface: FAIL\n- {message}", file=sys.stderr)
     return 1
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"JSON object expected at {repo_rel(path)}")
-    return payload
 
 
 def require_path(relative_path: str, *, kind: str) -> Path:

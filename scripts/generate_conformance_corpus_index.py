@@ -9,6 +9,8 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_any as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,12 +21,6 @@ INDEX_CONTRACT_ID = "objc3c.conformance.corpus.index.v1"
 FAMILY_ROW_RE = re.compile(r"^\|\s*`(?P<family>[^`]+)`\s*\|\s*`(?P<lane>[^`]+)`\s*\|\s*`(?P<buckets>[^`]+)`\s*\|$")
 
 
-def repo_rel(path: Path) -> str:
-    return path.relative_to(ROOT).as_posix()
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def parse_family_rows(coverage_map_path: Path) -> list[dict[str, Any]]:

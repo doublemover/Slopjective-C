@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -14,12 +15,6 @@ CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/language_server
 OUT_DIR = ROOT / "tmp/reports/developer-tooling/language-server-navigation"
 JSON_OUT = OUT_DIR / "language_server_navigation_summary.json"
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"JSON object expected at {path}")
-    return payload
 
 
 def extract_line_value(stdout: str, prefix: str) -> str:

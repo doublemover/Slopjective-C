@@ -13,6 +13,8 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.json_io import load_json_object as load_json, write_text_file as write_text
+from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -34,15 +36,6 @@ RELEASE_FOUNDATION_SBOM = ROOT / "tmp" / "artifacts" / "release-foundation" / "s
 RELEASE_FOUNDATION_ATTESTATION = ROOT / "tmp" / "artifacts" / "release-foundation" / "attestation" / "objc3c-release-attestation.json"
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{repo_rel(path)} did not contain a JSON object")
-    return payload
 
 
 def run(command: list[str]) -> None:
@@ -59,10 +52,6 @@ def zip_directory(source_dir: Path, destination_zip: Path) -> None:
         for file_path in sorted(path for path in source_dir.rglob("*") if path.is_file()):
             archive.write(file_path, arcname=str(file_path.relative_to(source_dir)).replace("\\", "/"))
 
-
-def write_text(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text.replace("\r\n", "\n"), encoding="utf-8")
 
 
 def powershell_single_quote(text: str) -> str:

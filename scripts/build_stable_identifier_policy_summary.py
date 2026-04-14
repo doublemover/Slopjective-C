@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from objc3c_tooling.json_io import write_text_file as write_text
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'source_hygiene'
@@ -13,10 +14,6 @@ PLAN_MD_PATH = PLAN_DIR / 'stable_identifier_policy_summary.md'
 REPORT_JSON_PATH = REPORT_DIR / 'stable_identifier_policy_summary.json'
 REPORT_MD_PATH = REPORT_DIR / 'stable_identifier_policy_summary.md'
 
-
-def write_text(path: Path, content: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(content, encoding='utf-8', newline='\n')
 
 
 def main() -> None:

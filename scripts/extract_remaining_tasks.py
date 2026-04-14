@@ -9,6 +9,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import render_json
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
@@ -126,13 +128,6 @@ def resolve_input_path(raw_input: Path) -> Path:
         return raw_input
     return ROOT / raw_input
 
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def load_catalog_rows(path: Path, *, allow_missing_status: bool) -> list[TaskRow]:
@@ -740,9 +735,6 @@ def render_markdown(payload: dict[str, object]) -> str:
 
     return "\n".join(lines).rstrip() + "\n"
 
-
-def render_json(payload: dict[str, object]) -> str:
-    return json.dumps(payload, indent=2) + "\n"
 
 
 def write_stdout(value: str) -> None:

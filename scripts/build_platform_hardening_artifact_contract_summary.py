@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import resolve_repo_path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json"
@@ -26,10 +27,6 @@ def read_json(path: Path) -> dict[str, Any]:
     expect(isinstance(payload, dict), f"JSON object expected at {path}")
     return payload
 
-
-def resolve_repo_path(raw_path: str) -> Path:
-    path = Path(raw_path)
-    return path if path.is_absolute() else ROOT / path
 
 
 def main() -> int:

@@ -9,6 +9,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 MANIFEST_PATH = ROOT / 'tmp' / 'artifacts' / 'release-foundation' / 'manifest' / 'objc3c-release-manifest.json'
@@ -18,19 +20,10 @@ SUMMARY_PATH = ROOT / 'tmp' / 'reports' / 'release-foundation' / 'publication-su
 PROVENANCE_POLICY = ROOT / 'tests' / 'tooling' / 'fixtures' / 'release_foundation' / 'provenance_policy.json'
 
 
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace('\\', '/')
-
 
 def sha256_file(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = json.loads(path.read_text(encoding='utf-8'))
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{repo_rel(path)} did not contain a JSON object")
-    return payload
 
 
 def main() -> int:

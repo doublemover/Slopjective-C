@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG_JSON = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
@@ -87,13 +88,6 @@ def normalize_inline_text(value: str) -> str:
     parts = [part.strip() for part in normalized.split("\n") if part.strip()]
     return " ".join(parts).strip()
 
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def parse_issue_number(raw: Any, index: int) -> int:

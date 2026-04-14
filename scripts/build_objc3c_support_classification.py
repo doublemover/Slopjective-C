@@ -8,6 +8,8 @@ import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path as repo_rel, resolve_repo_path
+from objc3c_tooling.json_io import load_json_object
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONTRACT = (
@@ -62,22 +64,11 @@ class ContractError(RuntimeError):
     pass
 
 
-def repo_rel(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
-
-
-def resolve_repo_path(raw_path: str) -> Path:
-    path = Path(raw_path)
-    return path if path.is_absolute() else ROOT / path
 
 
 def load_json(path: Path) -> dict[str, Any]:
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = load_json_object(path)
     except json.JSONDecodeError as exc:
         raise ContractError(f"invalid JSON at {repo_rel(path)}: {exc}") from exc
     if not isinstance(payload, dict):

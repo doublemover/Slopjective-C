@@ -11,6 +11,8 @@ import sys
 import time
 from pathlib import Path
 from typing import Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import canonical_json, load_json_any as load_json, write_json_file as write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 MODE = "objc3c-llvm-capabilities-v2"
@@ -18,20 +20,7 @@ PROGRAM_SURFACE_PATH = ROOT / "stdlib" / "program_surface.json"
 SHOWCASE_PORTFOLIO_PATH = ROOT / "showcase" / "portfolio.json"
 
 
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
-
-def canonical_json(payload: object) -> str:
-    return json.dumps(payload, indent=2) + "\n"
-
-
-def load_json(path: Path) -> dict[str, object]:
-    return json.loads(path.read_text(encoding="utf-8"))
 
 
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
@@ -262,10 +251,6 @@ def build_capability_demo_compatibility_surface(
         "ok": not failures,
     }
 
-
-def write_json(path: Path, payload: object) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(canonical_json(payload), encoding="utf-8")
 
 
 def run(argv: Sequence[str]) -> int:

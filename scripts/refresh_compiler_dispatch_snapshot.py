@@ -10,6 +10,8 @@ from pathlib import Path
 from types import ModuleType
 from typing import Sequence
 
+from objc3c_tooling.json_io import write_text_file
+
 def load_dispatch_plan_module() -> ModuleType:
     try:
         import generate_compiler_dispatch_plan as dispatch_module
@@ -73,8 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def write_text(path: Path, content: str) -> None:
     try:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(content, encoding="utf-8")
+        write_text_file(path, content)
     except OSError as exc:
         raise ValueError(f"unable to write output file {dispatch_plan.display_path(path)}: {exc}") from exc
 

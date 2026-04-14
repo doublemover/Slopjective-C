@@ -10,6 +10,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.json_io import write_json_file as write_json
 
 ROOT = Path(__file__).resolve().parents[1]
 GOVERNANCE_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "governance_sustainability" / "sustainable_progress_policy.json"
@@ -22,10 +23,6 @@ MILESTONE_CODE_RE = re.compile(r"^(M\d{3})")
 def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
-
-def write_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
 
 
 def rel(path: Path) -> str:

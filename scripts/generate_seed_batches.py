@@ -10,6 +10,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import display_path
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_MATRIX_PATH = ROOT / "tmp" / "reports" / "v013_future_work_seed_matrix.md"
@@ -191,13 +192,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-
-def display_path(path: Path) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(ROOT).as_posix()
-    except ValueError:
-        return resolved.as_posix()
 
 
 def sanitize_cell(value: str) -> str:

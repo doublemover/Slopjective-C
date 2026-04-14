@@ -8,6 +8,8 @@ import json
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import load_json_object
 
 ROOT = Path(__file__).resolve().parents[1]
 CHECKER_MODE = "open-blocker-audit-contract-v1"
@@ -42,17 +44,10 @@ FINAL_STATUS_TO_EXIT = {
 }
 
 
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
-
 
 def load_json(path: Path, *, label: str) -> dict[str, Any]:
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = load_json_object(path)
     except FileNotFoundError:
         raise ValueError(f"{label} file does not exist: {display_path(path)}") from None
     except json.JSONDecodeError as exc:

@@ -8,6 +8,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from objc3c_tooling.paths import display_path as repo_rel
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,13 +22,6 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("source")
     return parser.parse_args()
 
-
-def repo_rel(path: Path) -> str:
-    path = path.resolve()
-    try:
-        return path.relative_to(ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
 
 
 def resolve_source(source_text: str) -> tuple[Path, str]:

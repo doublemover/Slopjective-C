@@ -8,6 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json"
@@ -15,9 +16,6 @@ MATRIX_GENERATOR = ROOT / "scripts" / "build_objc3c_platform_support_matrix.py"
 MATRIX_PATH = ROOT / "tmp" / "artifacts" / "platform-hardening" / "objc3c-platform-support-matrix.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "platform-hardening" / "build-package-validation-summary.json"
 
-
-def repo_rel(path: Path) -> str:
-    return str(path.relative_to(ROOT)).replace("\\", "/")
 
 
 def read_json(path: Path) -> dict[str, Any]:

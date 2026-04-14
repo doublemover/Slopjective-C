@@ -8,6 +8,7 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path as repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SUPPORT_SUMMARY = (
@@ -122,16 +123,6 @@ FORBIDDEN_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
 class ClaimDriftError(RuntimeError):
     pass
 
-
-def repo_rel(path: Path, root: Path = ROOT) -> str:
-    resolved = path.resolve()
-    try:
-        return resolved.relative_to(root.resolve()).as_posix()
-    except ValueError:
-        try:
-            return resolved.relative_to(ROOT.resolve()).as_posix()
-        except ValueError:
-            return resolved.as_posix()
 
 
 def resolve_path(root: Path, raw_path: str) -> Path:

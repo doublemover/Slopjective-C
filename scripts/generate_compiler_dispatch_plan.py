@@ -10,6 +10,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.json_io import render_json
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ISSUES_JSON = ROOT / "tmp" / "gh_open_issues_pages.json"
@@ -39,13 +41,6 @@ def normalize_path(path: Path) -> Path:
         return path
     return ROOT / path
 
-
-def display_path(path: Path) -> str:
-    absolute = path.resolve()
-    try:
-        return absolute.relative_to(ROOT).as_posix()
-    except ValueError:
-        return absolute.as_posix()
 
 
 def normalize_space(value: str) -> str:
@@ -267,9 +262,6 @@ def render_markdown(payload: dict[str, Any]) -> str:
         lines.append("")
     return "\n".join(lines).rstrip() + "\n"
 
-
-def render_json(payload: dict[str, Any]) -> str:
-    return json.dumps(payload, indent=2) + "\n"
 
 
 def build_parser() -> argparse.ArgumentParser:

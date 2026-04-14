@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.json_io import load_json_any as load_json
 
 sys.dont_write_bytecode = True
 
@@ -25,9 +26,6 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser.add_argument('--check', action='store_true')
     return parser.parse_args(argv)
 
-
-def load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding='utf-8'))
 
 
 def load_runner() -> Any:
