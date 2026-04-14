@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-09",
+  "title": "Reject generic class specializations whose arguments violate protocol constraints",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S206.\nmodule NegativeTypeSemanticGenericConstraintViolation;\n\n@protocol Persistable\n@end\n\n@interface PersistedBox <Persistable>\n@end\n\n@implementation PersistedBox\n@end\n\n@interface PlainBox\n@end\n\n@implementation PlainBox\n@end\n\n@interface SemanticVault<__covariant T : id<Persistable> >\n- (T)peek;\n@end\n\n@implementation SemanticVault\n- (T)peek {\n  return nil;\n}\n@end\n\nfn consume(ok: SemanticVault<PersistedBox *> *?, bad: SemanticVault<PlainBox *> *?) -> i32 {\n  let value = [ok? peek];\n  let invalid = [bad? peek];\n  return 0;\n}\n\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S206",
+        "line": 29,
+        "column": 50
+      }
+    ]
+  }
+}

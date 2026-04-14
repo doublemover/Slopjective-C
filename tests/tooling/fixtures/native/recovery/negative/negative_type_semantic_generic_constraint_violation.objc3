@@ -1,0 +1,33 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericConstraintViolation;
+
+@protocol Persistable
+@end
+
+@interface PersistedBox <Persistable>
+@end
+
+@implementation PersistedBox
+@end
+
+@interface PlainBox
+@end
+
+@implementation PlainBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable> >
+- (T)peek;
+@end
+
+@implementation SemanticVault
+- (T)peek {
+  return nil;
+}
+@end
+
+fn consume(ok: SemanticVault<PersistedBox *> *?, bad: SemanticVault<PlainBox *> *?) -> i32 {
+  let value = [ok? peek];
+  let invalid = [bad? peek];
+  return 0;
+}

@@ -1,0 +1,25 @@
+// Expected diagnostic code(s): O3S216.
+module NegativeTypeSemanticGenericSubstitutionUnknownMessage;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@property (readonly) id title;
+@end
+
+@implementation SemanticBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable> >
+- (T)peek;
+@end
+
+@implementation SemanticVault
+@end
+
+fn consume(vault: SemanticVault<SemanticBox *> *?) -> i32 {
+  let record = [vault? peek];
+  let missing = [record? missingTitle];
+  return 0;
+}

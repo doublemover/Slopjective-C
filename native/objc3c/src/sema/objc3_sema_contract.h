@@ -2887,6 +2887,7 @@ struct Objc3SemanticCanonicalType {
   bool has_protocol_composition = false;
   std::vector<std::string> protocol_composition_lexicographic;
   bool has_generic_suffix = false;
+  std::vector<std::string> generic_arguments_source_order;
   std::vector<std::string> generic_arguments_lexicographic;
   bool has_invalid_type_suffix = false;
   bool deterministic = true;
@@ -3244,6 +3245,7 @@ struct Objc3PropertyInfo {
 
 struct Objc3InterfaceInfo {
   std::string super_name;
+  std::vector<std::string> generic_parameter_names_source_order;
   bool objc_direct_members_declared = false;
   bool objc_final_declared = false;
   bool objc_sealed_declared = false;

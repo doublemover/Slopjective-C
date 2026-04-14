@@ -24884,7 +24884,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                  << EscapeJsonString(type.canonical_spelling)
                  << "\",\"object_pointer_type_name\":\""
                  << EscapeJsonString(type.object_pointer_type_name)
-                 << "\",\"replay_key\":\""
+                 << "\",\"generic_arguments_source_order\":"
+                 << BuildStringArrayJson(type.generic_arguments_source_order)
+                 << ",\"generic_arguments_lexicographic\":"
+                 << BuildStringArrayJson(type.generic_arguments_lexicographic)
+                 << ",\"replay_key\":\""
                  << EscapeJsonString(type.replay_key)
                  << "\",\"deterministic\":"
                  << (type.deterministic ? "true" : "false") << "}";

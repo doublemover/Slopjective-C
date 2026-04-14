@@ -11,6 +11,8 @@
 - Unknown protocol composition negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3`
 - Protocol-qualified unknown message negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3`
 - Typed object receiver unknown message negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3`
+- Generic constraint violation negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3`
+- Generic substitution unknown message negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3`
 
 ## Checks
 - `positive_fixture_compiles`: `PASS`
@@ -49,6 +51,12 @@
 - `typed_object_receiver_unknown_message_negative_fixture_fails_closed`: `PASS`
 - `typed_object_receiver_unknown_message_negative_diagnostics_json_emitted`: `PASS`
 - `typed_object_receiver_unknown_message_diagnostic_observed`: `PASS`
+- `generic_constraint_violation_negative_fixture_fails_closed`: `PASS`
+- `generic_constraint_violation_negative_diagnostics_json_emitted`: `PASS`
+- `generic_constraint_violation_diagnostic_observed`: `PASS`
+- `generic_substitution_unknown_message_negative_fixture_fails_closed`: `PASS`
+- `generic_substitution_unknown_message_negative_diagnostics_json_emitted`: `PASS`
+- `generic_substitution_unknown_message_diagnostic_observed`: `PASS`
 - `semantic_manifest_indexes_typ_8013_01`: `PASS`
 - `semantic_manifest_indexes_typ_8013_02`: `PASS`
 - `semantic_manifest_indexes_typ_8013_03`: `PASS`
@@ -57,6 +65,8 @@
 - `semantic_manifest_indexes_typ_8013_06`: `PASS`
 - `semantic_manifest_indexes_typ_8013_07`: `PASS`
 - `semantic_manifest_indexes_typ_8013_08`: `PASS`
+- `semantic_manifest_indexes_typ_8013_09`: `PASS`
+- `semantic_manifest_indexes_typ_8013_10`: `PASS`
 - `semantic_readme_mentions_issue_8013`: `PASS`
 - `semantic_readme_mentions_positive_fixture`: `PASS`
 - `semantic_readme_mentions_negative_fixture`: `PASS`
@@ -66,6 +76,8 @@
 - `semantic_readme_mentions_unknown_protocol_composition_negative_fixture`: `PASS`
 - `semantic_readme_mentions_protocol_qualified_unknown_message_negative_fixture`: `PASS`
 - `semantic_readme_mentions_typed_object_receiver_unknown_message_negative_fixture`: `PASS`
+- `semantic_readme_mentions_generic_constraint_violation_negative_fixture`: `PASS`
+- `semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture`: `PASS`
 - `positive_conformance_references_fixture`: `PASS`
 - `negative_conformance_references_fixture`: `PASS`
 - `nullability_negative_conformance_references_fixture`: `PASS`
@@ -74,6 +86,8 @@
 - `unknown_protocol_composition_negative_conformance_references_fixture`: `PASS`
 - `protocol_qualified_unknown_message_negative_conformance_references_fixture`: `PASS`
 - `typed_object_receiver_unknown_message_negative_conformance_references_fixture`: `PASS`
+- `generic_constraint_violation_negative_conformance_references_fixture`: `PASS`
+- `generic_substitution_unknown_message_negative_conformance_references_fixture`: `PASS`
 - `negative_conformance_expects_o3s206_location`: `PASS`
 - `nullability_negative_conformance_expects_o3s227_location`: `PASS`
 - `protocol_method_nullability_negative_conformance_expects_o3s218_location`: `PASS`
@@ -81,6 +95,8 @@
 - `unknown_protocol_composition_negative_conformance_expects_o3s206_location`: `PASS`
 - `protocol_qualified_unknown_message_negative_conformance_expects_o3s216_location`: `PASS`
 - `typed_object_receiver_unknown_message_negative_conformance_expects_o3s216_location`: `PASS`
+- `generic_constraint_violation_negative_conformance_expects_o3s206_location`: `PASS`
+- `generic_substitution_unknown_message_negative_conformance_expects_o3s216_location`: `PASS`
 - `stress_manifest_compiles_positive_fixture`: `PASS`
 - `no_tmp_source_truth`: `PASS`
 - `static_sema_contract_fields_present`: `PASS`

@@ -1846,6 +1846,20 @@ struct Objc3ProtocolDecl {
   unsigned column = 1;
 };
 
+struct Objc3GenericParamDecl {
+  std::string name;
+  std::string variance_spelling;
+  bool has_constraint = false;
+  std::string constraint_type_name;
+  bool has_constraint_generic_suffix = false;
+  bool constraint_generic_suffix_terminated = true;
+  std::string constraint_generic_suffix_text;
+  unsigned line = 1;
+  unsigned column = 1;
+  unsigned constraint_line = 1;
+  unsigned constraint_column = 1;
+};
+
 struct Objc3InterfaceDecl {
   std::string name;
   std::string super_name;
@@ -1856,6 +1870,7 @@ struct Objc3InterfaceDecl {
   std::vector<std::string> scope_path_lexicographic;
   std::vector<std::string> adopted_protocols;
   std::vector<std::string> adopted_protocols_lexicographic;
+  std::vector<Objc3GenericParamDecl> generic_params;
   std::string semantic_link_symbol;
   std::string semantic_link_super_symbol;
   std::string semantic_link_category_symbol;

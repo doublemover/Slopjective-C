@@ -4267,6 +4267,45 @@ static ProtocolCompositionParseResult ParseProtocolCompositionSuffixText(const s
   return result;
 }
 
+static std::vector<std::string> ParseGenericArgumentSuffixTextSourceOrder(
+    const std::string &suffix_text) {
+  std::vector<std::string> arguments;
+  if (suffix_text.size() < 2u || suffix_text.front() != '<' ||
+      suffix_text.back() != '>') {
+    return arguments;
+  }
+  const std::string inner = suffix_text.substr(1, suffix_text.size() - 2u);
+  int depth = 0;
+  std::size_t start = 0;
+  for (std::size_t index = 0; index <= inner.size(); ++index) {
+    const bool at_end = index == inner.size();
+    const char c = at_end ? ',' : inner[index];
+    if (!at_end) {
+      if (c == '<') {
+        ++depth;
+      } else if (c == '>' && depth > 0) {
+        --depth;
+      }
+    }
+    if ((at_end || c == ',') && depth == 0) {
+      const std::string token =
+          TrimAsciiWhitespace(inner.substr(start, index - start));
+      if (!token.empty()) {
+        arguments.push_back(token);
+      }
+      start = index + 1u;
+    }
+  }
+  return arguments;
+}
+
+static std::vector<std::string> BuildGenericArgumentsLexicographic(
+    const std::vector<std::string> &arguments_source_order) {
+  std::vector<std::string> values = arguments_source_order;
+  std::sort(values.begin(), values.end());
+  return values;
+}
+
 static bool AreEquivalentProtocolCompositions(bool lhs_has_composition,
                                               const std::vector<std::string> &lhs_names,
                                               bool rhs_has_composition,
@@ -4866,7 +4905,10 @@ static std::string CanonicalTypeReplayKey(
       << ";object-name=" << type.object_pointer_type_name
       << ";protocols="
       << JoinStringVector(type.protocol_composition_lexicographic, "+")
-      << ";generics=" << JoinStringVector(type.generic_arguments_lexicographic, "+")
+      << ";generics="
+      << JoinStringVector(type.generic_arguments_source_order, "+")
+      << ";generics-lex="
+      << JoinStringVector(type.generic_arguments_lexicographic, "+")
       << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
   return out.str();
 }
@@ -4912,23 +4954,29 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
       strong);
   type.has_generic_suffix = has_generic_suffix;
   if (has_generic_suffix) {
+    type.generic_arguments_source_order =
+        ParseGenericArgumentSuffixTextSourceOrder(generic_suffix_text);
+    type.generic_arguments_lexicographic =
+        BuildGenericArgumentsLexicographic(type.generic_arguments_source_order);
     const ProtocolCompositionParseResult parsed =
         ParseProtocolCompositionSuffixText(generic_suffix_text);
-    type.has_protocol_composition = true;
-    type.protocol_composition_lexicographic = parsed.names_lexicographic;
-    type.generic_arguments_lexicographic = parsed.names_lexicographic;
+    if (parsed.IsValid()) {
+      type.has_protocol_composition = true;
+      type.protocol_composition_lexicographic = parsed.names_lexicographic;
+    }
   }
   type.has_invalid_type_suffix = has_invalid_type_suffix;
   type.deterministic = IsSortedUniqueStrings(type.protocol_composition_lexicographic) &&
-                       IsSortedUniqueStrings(type.generic_arguments_lexicographic);
+                       std::is_sorted(type.generic_arguments_lexicographic.begin(),
+                                      type.generic_arguments_lexicographic.end());
   type.canonical_spelling =
       object_pointer_type_spelling && !object_pointer_type_name.empty()
           ? object_pointer_type_name
           : objc3c::support::ValueTypeName(value_type);
-  if (type.has_protocol_composition) {
+  if (type.has_generic_suffix) {
     type.canonical_spelling += "<" +
                                JoinStringVector(
-                                   type.protocol_composition_lexicographic, ",") +
+                                   type.generic_arguments_source_order, ",") +
                                ">";
   }
   if (type.has_pointer_declarator) {
@@ -5016,8 +5064,13 @@ static void ValidateProtocolCompositionSuffix(const std::string &suffix_text,
                                               unsigned line,
                                               unsigned column,
                                               const std::string &context,
+                                              bool allow_generic_argument_suffix,
                                               std::vector<std::string> &diagnostics) {
   const ProtocolCompositionParseResult parsed = ParseProtocolCompositionSuffixText(suffix_text);
+  if (allow_generic_argument_suffix && !parsed.IsValid() &&
+      !ParseGenericArgumentSuffixTextSourceOrder(suffix_text).empty()) {
+    return;
+  }
   const std::string printable_suffix = suffix_text.empty() ? "<...>" : suffix_text;
   if (parsed.malformed_composition) {
     diagnostics.push_back(MakeDiag(line, column, "O3S206",
@@ -5044,7 +5097,17 @@ static void ValidateProtocolCompositionSuffix(const std::string &suffix_text,
   }
 }
 
-static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<std::string> &diagnostics) {
+static bool IsGenericInterfaceSpecializationSuffix(
+    bool object_pointer_type_spelling, const std::string &object_pointer_type_name,
+    const std::unordered_set<std::string> *generic_interface_names) {
+  return object_pointer_type_spelling && generic_interface_names != nullptr &&
+         generic_interface_names->find(object_pointer_type_name) !=
+             generic_interface_names->end();
+}
+
+static void ValidateParameterTypeSuffixes(
+    const FunctionDecl &fn, std::vector<std::string> &diagnostics,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   for (const auto &param : fn.params) {
     if (param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param)) {
       std::string suffix = param.generic_suffix_text;
@@ -5060,6 +5123,10 @@ static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<st
                                        param.generic_line,
                                        param.generic_column,
                                        "parameter '" + param.name + "' in function '" + fn.name + "'",
+                                       IsGenericInterfaceSpecializationSuffix(
+                                           param.object_pointer_type_spelling,
+                                           param.object_pointer_type_name,
+                                           generic_interface_names),
                                        diagnostics);
     }
     if (!SupportsPointerParamTypeDeclarator(param)) {
@@ -5089,7 +5156,9 @@ static void ValidateParameterTypeSuffixes(const FunctionDecl &fn, std::vector<st
   }
 }
 
-static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::string> &diagnostics) {
+static void ValidateReturnTypeSuffixes(
+    const FunctionDecl &fn, std::vector<std::string> &diagnostics,
+    const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   if (fn.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(fn)) {
     std::string suffix = fn.return_generic_suffix_text;
     if (suffix.empty()) {
@@ -5104,6 +5173,10 @@ static void ValidateReturnTypeSuffixes(const FunctionDecl &fn, std::vector<std::
                                      fn.return_generic_line,
                                      fn.return_generic_column,
                                      "return annotation in function '" + fn.name + "'",
+                                     IsGenericInterfaceSpecializationSuffix(
+                                         fn.return_object_pointer_type_spelling,
+                                         fn.return_object_pointer_type_name,
+                                         generic_interface_names),
                                      diagnostics);
   }
   if (!SupportsPointerReturnTypeDeclarator(fn)) {
@@ -5303,7 +5376,8 @@ static void ValidateMethodSelectorNormalizationContract(
 static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
                                                 const std::string &owner_name,
                                                 const std::string &owner_kind,
-                                                std::vector<std::string> &diagnostics) {
+                                                std::vector<std::string> &diagnostics,
+                                                const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   const std::string selector = MethodSelectorName(method);
   for (const auto &param : method.params) {
     if (param.has_generic_suffix && !SupportsGenericParamTypeSuffix(param)) {
@@ -5321,6 +5395,9 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
           param.generic_line,
           param.generic_column,
           "selector '" + selector + "' parameter '" + param.name + "' in " + owner_kind + " '" + owner_name + "'",
+          IsGenericInterfaceSpecializationSuffix(
+              param.object_pointer_type_spelling,
+              param.object_pointer_type_name, generic_interface_names),
           diagnostics);
     }
     if (!SupportsPointerParamTypeDeclarator(param)) {
@@ -5353,7 +5430,8 @@ static void ValidateMethodParameterTypeSuffixes(const Objc3MethodDecl &method,
 static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                              const std::string &owner_name,
                                              const std::string &owner_kind,
-                                             std::vector<std::string> &diagnostics) {
+                                             std::vector<std::string> &diagnostics,
+                                             const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   const std::string selector = MethodSelectorName(method);
   if (method.has_return_generic_suffix && !SupportsGenericReturnTypeSuffix(method)) {
     std::string suffix = method.return_generic_suffix_text;
@@ -5370,6 +5448,10 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
                                      method.return_generic_column,
                                      "selector '" + selector + "' in " + owner_kind + " '" + owner_name +
                                          "' return annotation",
+                                     IsGenericInterfaceSpecializationSuffix(
+                                         method.return_object_pointer_type_spelling,
+                                         method.return_object_pointer_type_name,
+                                         generic_interface_names),
                                      diagnostics);
   }
   if (!SupportsPointerReturnTypeDeclarator(method)) {
@@ -5401,7 +5483,8 @@ static void ValidateMethodReturnTypeSuffixes(const Objc3MethodDecl &method,
 static void ValidatePropertyTypeSuffixes(const Objc3PropertyDecl &property,
                                          const std::string &owner_name,
                                          const std::string &owner_kind,
-                                         std::vector<std::string> &diagnostics) {
+                                         std::vector<std::string> &diagnostics,
+                                         const std::unordered_set<std::string> *generic_interface_names = nullptr) {
   if (property.has_generic_suffix && !SupportsGenericPropertyTypeSuffix(property)) {
     std::string suffix = property.generic_suffix_text;
     if (suffix.empty()) {
@@ -5419,6 +5502,10 @@ static void ValidatePropertyTypeSuffixes(const Objc3PropertyDecl &property,
                                      property.generic_column,
                                      "property '" + property.name + "' in " + owner_kind + " '" + owner_name +
                                          "' type annotation",
+                                     IsGenericInterfaceSpecializationSuffix(
+                                         property.object_pointer_type_spelling,
+                                         property.object_pointer_type_name,
+                                         generic_interface_names),
                                      diagnostics);
   }
   if (!SupportsPointerPropertyTypeDeclarator(property)) {
@@ -6153,6 +6240,8 @@ static bool IsCompatibleCanonicalSemanticType(
          lhs.protocol_composition_lexicographic ==
              rhs.protocol_composition_lexicographic &&
          lhs.has_generic_suffix == rhs.has_generic_suffix &&
+         lhs.generic_arguments_source_order ==
+             rhs.generic_arguments_source_order &&
          lhs.generic_arguments_lexicographic ==
              rhs.generic_arguments_lexicographic &&
          lhs.has_invalid_type_suffix == rhs.has_invalid_type_suffix &&
@@ -6491,6 +6580,19 @@ struct Objc3ProtocolSemanticDefinition {
       optional_methods_by_key;
 };
 
+struct Objc3InterfaceGenericParameterDefinition {
+  std::string name;
+  std::string variance_spelling;
+  std::vector<std::string> constraint_protocols_lexicographic;
+  unsigned line = 1;
+  unsigned column = 1;
+};
+
+struct Objc3InterfaceGenericDefinition {
+  std::string name;
+  std::vector<Objc3InterfaceGenericParameterDefinition> parameters;
+};
+
 enum class Objc3ProtocolRequirementClosureStatus {
   Ready,
   MissingProtocol,
@@ -6724,6 +6826,369 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
     }
   }
   return definitions;
+}
+
+static bool ProtocolSatisfiesConstraint(
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    const std::string &candidate_protocol,
+    const std::string &required_protocol,
+    std::unordered_set<std::string> &active_protocols) {
+  if (candidate_protocol == required_protocol) {
+    return true;
+  }
+  if (!active_protocols.insert(candidate_protocol).second) {
+    return false;
+  }
+  const auto definition_it = protocol_definitions.find(candidate_protocol);
+  if (definition_it == protocol_definitions.end()) {
+    active_protocols.erase(candidate_protocol);
+    return false;
+  }
+  for (const auto &inherited :
+       definition_it->second.inherited_protocols_lexicographic) {
+    if (ProtocolSatisfiesConstraint(protocol_definitions, inherited,
+                                    required_protocol, active_protocols)) {
+      active_protocols.erase(candidate_protocol);
+      return true;
+    }
+  }
+  active_protocols.erase(candidate_protocol);
+  return false;
+}
+
+static std::unordered_map<std::string, Objc3InterfaceGenericDefinition>
+BuildInterfaceGenericDefinitions(
+    const Objc3Program &ast,
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    std::vector<std::string> &diagnostics) {
+  std::unordered_map<std::string, Objc3InterfaceGenericDefinition> definitions;
+  for (const auto &interface_decl : ast.interfaces) {
+    if (interface_decl.has_category || interface_decl.generic_params.empty()) {
+      continue;
+    }
+    Objc3InterfaceGenericDefinition definition;
+    definition.name = interface_decl.name;
+    std::unordered_set<std::string> seen_names;
+    for (const auto &param_decl : interface_decl.generic_params) {
+      if (!seen_names.insert(param_decl.name).second) {
+        diagnostics.push_back(MakeDiag(
+            param_decl.line, param_decl.column, "O3S200",
+            "duplicate generic parameter '" + param_decl.name +
+                "' in interface '" + interface_decl.name + "'"));
+        continue;
+      }
+      Objc3InterfaceGenericParameterDefinition param;
+      param.name = param_decl.name;
+      param.variance_spelling = param_decl.variance_spelling;
+      param.line = param_decl.line;
+      param.column = param_decl.column;
+      if (param_decl.has_constraint) {
+        if (param_decl.constraint_type_name != "id" ||
+            !param_decl.has_constraint_generic_suffix) {
+          diagnostics.push_back(MakeDiag(
+              param_decl.constraint_line, param_decl.constraint_column,
+              "O3S206",
+              "type mismatch: generic parameter '" + param_decl.name +
+                  "' in interface '" + interface_decl.name +
+                  "' requires an id<Protocol> constraint"));
+        } else {
+          const ProtocolCompositionParseResult parsed =
+              ParseProtocolCompositionSuffixText(
+                  param_decl.constraint_generic_suffix_text);
+          if (!parsed.IsValid()) {
+            diagnostics.push_back(MakeDiag(
+                param_decl.constraint_line, param_decl.constraint_column,
+                "O3S206",
+                "type mismatch: generic parameter '" + param_decl.name +
+                    "' in interface '" + interface_decl.name +
+                    "' has an invalid protocol constraint"));
+          } else {
+            param.constraint_protocols_lexicographic =
+                parsed.names_lexicographic;
+            for (const auto &protocol_name :
+                 param.constraint_protocols_lexicographic) {
+              if (protocol_definitions.find(protocol_name) ==
+                  protocol_definitions.end()) {
+                diagnostics.push_back(MakeDiag(
+                    param_decl.constraint_line, param_decl.constraint_column,
+                    "O3S206",
+                    "type mismatch: generic parameter '" + param_decl.name +
+                        "' in interface '" + interface_decl.name +
+                        "' references unknown constraint protocol '" +
+                        protocol_name + "'"));
+              }
+            }
+          }
+        }
+      }
+      definition.parameters.push_back(std::move(param));
+    }
+    definitions[definition.name] = std::move(definition);
+  }
+  return definitions;
+}
+
+static std::string GenericArgumentObjectTypeName(const std::string &argument) {
+  const std::string trimmed = TrimAsciiWhitespace(argument);
+  if (trimmed.empty()) {
+    return "";
+  }
+  if (trimmed.rfind("id<", 0) == 0u || trimmed == "id") {
+    return "";
+  }
+  std::size_t end = 0;
+  while (end < trimmed.size()) {
+    const unsigned char c = static_cast<unsigned char>(trimmed[end]);
+    if (!(std::isalnum(c) != 0 || c == '_' || c == ':')) {
+      break;
+    }
+    ++end;
+  }
+  return trimmed.substr(0, end);
+}
+
+static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
+    const std::string &argument_text) {
+  const std::string argument = TrimAsciiWhitespace(argument_text);
+  if (argument.rfind("id<", 0) == 0u && argument.size() > 2u) {
+    SemanticTypeInfo info = MakeScalarSemanticType(ValueType::ObjCId);
+    info.canonical_type = BuildCanonicalSemanticType(
+        ValueType::ObjCId, false, "", 1u, true, false, false, false, false,
+        "", true, argument.substr(2), false, 0u, {}, false, false, false,
+        false, false, false, false, false, false, false, false, false);
+    info.ownership_kind = SemanticOwnershipKind::Retained;
+    return info;
+  }
+
+  const std::string object_name = GenericArgumentObjectTypeName(argument);
+  if (!object_name.empty()) {
+    unsigned pointer_depth = 0;
+    for (const char c : argument) {
+      if (c == '*') {
+        ++pointer_depth;
+      }
+    }
+    if (pointer_depth == 0u) {
+      pointer_depth = 1u;
+    }
+    SemanticTypeInfo info = MakeScalarSemanticType(ValueType::ObjCObjectPtr);
+    info.canonical_type = BuildCanonicalSemanticType(
+        ValueType::ObjCObjectPtr, false, "", 1u, false, false, false, false,
+        true, object_name, false, "", true, pointer_depth, {}, false, false,
+        false, false, false, false, false, false, false, false, false,
+        false);
+    info.object_pointer_type_name = object_name;
+    info.ownership_kind = SemanticOwnershipKind::Retained;
+    return info;
+  }
+
+  return MakeScalarSemanticType(ValueType::Unknown);
+}
+
+static SemanticTypeInfo SubstituteGenericReceiverType(
+    const SemanticTypeInfo &type,
+    const Objc3SemanticCanonicalType &receiver_type,
+    const Objc3SemanticIntegrationSurface &surface) {
+  if (type.canonical_type.object_pointer_type_name.empty() ||
+      receiver_type.object_pointer_type_name.empty() ||
+      receiver_type.generic_arguments_source_order.empty()) {
+    return type;
+  }
+  const auto interface_it =
+      surface.interfaces.find(receiver_type.object_pointer_type_name);
+  if (interface_it == surface.interfaces.end()) {
+    return type;
+  }
+  const auto &parameter_names =
+      interface_it->second.generic_parameter_names_source_order;
+  const auto parameter_it =
+      std::find(parameter_names.begin(), parameter_names.end(),
+                type.canonical_type.object_pointer_type_name);
+  if (parameter_it == parameter_names.end()) {
+    return type;
+  }
+  const std::size_t index =
+      static_cast<std::size_t>(parameter_it - parameter_names.begin());
+  if (index >= receiver_type.generic_arguments_source_order.size()) {
+    return type;
+  }
+  const SemanticTypeInfo substituted = MakeSemanticTypeFromGenericArgumentText(
+      receiver_type.generic_arguments_source_order[index]);
+  return IsUnknownSemanticType(substituted) ? type : substituted;
+}
+
+static bool GenericArgumentSatisfiesProtocolConstraint(
+    const Objc3Program &ast,
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    const std::string &argument,
+    const std::string &required_protocol) {
+  const std::string trimmed = TrimAsciiWhitespace(argument);
+  if (trimmed.rfind("id<", 0) == 0u) {
+    const ProtocolCompositionParseResult parsed =
+        ParseProtocolCompositionSuffixText(trimmed.substr(2));
+    return std::find(parsed.names_lexicographic.begin(),
+                     parsed.names_lexicographic.end(),
+                     required_protocol) != parsed.names_lexicographic.end();
+  }
+  const std::string object_name = GenericArgumentObjectTypeName(trimmed);
+  if (object_name.empty()) {
+    return false;
+  }
+  for (const auto &interface_decl : ast.interfaces) {
+    if (interface_decl.has_category || interface_decl.name != object_name) {
+      continue;
+    }
+    for (const auto &adopted_protocol : interface_decl.adopted_protocols) {
+      std::unordered_set<std::string> active_protocols;
+      if (ProtocolSatisfiesConstraint(protocol_definitions, adopted_protocol,
+                                      required_protocol, active_protocols)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+static void ValidateGenericSpecializationType(
+    const Objc3Program &ast,
+    const std::unordered_map<std::string, Objc3InterfaceGenericDefinition>
+        &generic_definitions,
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    const std::string &object_pointer_type_name, bool has_generic_suffix,
+    const std::string &generic_suffix_text, unsigned line, unsigned column,
+    const std::string &context, std::vector<std::string> &diagnostics) {
+  const auto definition_it = generic_definitions.find(object_pointer_type_name);
+  if (definition_it == generic_definitions.end()) {
+    return;
+  }
+  const Objc3InterfaceGenericDefinition &definition = definition_it->second;
+  if (!has_generic_suffix) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: generic interface '" + object_pointer_type_name +
+            "' used by " + context + " requires " +
+            std::to_string(definition.parameters.size()) +
+            " generic argument(s)"));
+    return;
+  }
+  const std::vector<std::string> arguments =
+      ParseGenericArgumentSuffixTextSourceOrder(generic_suffix_text);
+  if (arguments.size() != definition.parameters.size()) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: generic interface '" + object_pointer_type_name +
+            "' used by " + context + " expects " +
+            std::to_string(definition.parameters.size()) +
+            " generic argument(s), got " + std::to_string(arguments.size())));
+    return;
+  }
+  for (std::size_t index = 0; index < arguments.size(); ++index) {
+    const auto &param = definition.parameters[index];
+    for (const auto &required_protocol :
+         param.constraint_protocols_lexicographic) {
+      if (!GenericArgumentSatisfiesProtocolConstraint(
+              ast, protocol_definitions, arguments[index],
+              required_protocol)) {
+        diagnostics.push_back(MakeDiag(
+            line, column, "O3S206",
+            "type mismatch: generic argument '" + arguments[index] +
+                "' for parameter '" + param.name + "' of interface '" +
+                object_pointer_type_name +
+                "' does not satisfy protocol constraint '" +
+                required_protocol + "'"));
+      }
+    }
+  }
+}
+
+static void ValidateInterfaceGenericSpecializations(
+    const Objc3Program &ast,
+    const std::unordered_map<std::string, Objc3InterfaceGenericDefinition>
+        &generic_definitions,
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    std::vector<std::string> &diagnostics) {
+  auto validate_param = [&](const FuncParam &param,
+                            const std::string &context) {
+    if (!param.object_pointer_type_spelling) {
+      return;
+    }
+    ValidateGenericSpecializationType(
+        ast, generic_definitions, protocol_definitions,
+        param.object_pointer_type_name, param.has_generic_suffix,
+        param.generic_suffix_text, param.line, param.column, context,
+        diagnostics);
+  };
+  auto validate_method = [&](const Objc3MethodDecl &method,
+                             const std::string &context) {
+    if (method.return_object_pointer_type_spelling) {
+      ValidateGenericSpecializationType(
+          ast, generic_definitions, protocol_definitions,
+          method.return_object_pointer_type_name,
+          method.has_return_generic_suffix,
+          method.return_generic_suffix_text, method.line,
+          method.column, context + " return type", diagnostics);
+    }
+    for (const auto &param : method.params) {
+      validate_param(param, context + " parameter '" + param.name + "'");
+    }
+  };
+  auto validate_property = [&](const Objc3PropertyDecl &property,
+                               const std::string &context) {
+    if (!property.object_pointer_type_spelling) {
+      return;
+    }
+    ValidateGenericSpecializationType(
+        ast, generic_definitions, protocol_definitions,
+        property.object_pointer_type_name, property.has_generic_suffix,
+        property.generic_suffix_text, property.line, property.column, context,
+        diagnostics);
+  };
+
+  for (const auto &fn : ast.functions) {
+    if (fn.return_object_pointer_type_spelling) {
+      ValidateGenericSpecializationType(
+          ast, generic_definitions, protocol_definitions,
+          fn.return_object_pointer_type_name, fn.has_return_generic_suffix,
+          fn.return_generic_suffix_text, fn.line, fn.column,
+          "function '" + fn.name + "' return type", diagnostics);
+    }
+    for (const auto &param : fn.params) {
+      validate_param(param, "function '" + fn.name + "' parameter '" +
+                                param.name + "'");
+    }
+  }
+  for (const auto &interface_decl : ast.interfaces) {
+    const std::string container_name = FormatObjcContainerName(
+        interface_decl.name, interface_decl.has_category,
+        interface_decl.category_name);
+    for (const auto &property : interface_decl.properties) {
+      validate_property(property, "interface '" + container_name +
+                                      "' property '" + property.name + "'");
+    }
+    for (const auto &method : interface_decl.methods) {
+      validate_method(method, "interface '" + container_name + "' selector '" +
+                                  method.selector + "'");
+    }
+  }
+  for (const auto &implementation_decl : ast.implementations) {
+    const std::string container_name = FormatObjcContainerName(
+        implementation_decl.name, implementation_decl.has_category,
+        implementation_decl.category_name);
+    for (const auto &property : implementation_decl.properties) {
+      validate_property(property, "implementation '" + container_name +
+                                      "' property '" + property.name + "'");
+    }
+    for (const auto &method : implementation_decl.methods) {
+      validate_method(method, "implementation '" + container_name +
+                                  "' selector '" +
+                                  method.selector + "'");
+    }
+  }
 }
 
 static void ValidateProtocolCompositionIdentifierBindings(
@@ -8017,8 +8482,9 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
           const SemanticTypeInfo arg_type = ValidateExpr(
               expr->args[0].get(), scopes, globals, functions, diagnostics,
               max_message_send_args, message_send_context);
-          const SemanticTypeInfo expected =
-              MakeSemanticTypeFromPropertyInfo(*property_resolution.property);
+          const SemanticTypeInfo expected = SubstituteGenericReceiverType(
+              MakeSemanticTypeFromPropertyInfo(*property_resolution.property),
+              receiver_type.canonical_type, *message_send_context.surface);
           const bool bool_coercion =
               !expected.is_vector && expected.type == ValueType::Bool &&
               !arg_type.is_vector && arg_type.type == ValueType::I32;
@@ -8040,7 +8506,9 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
           }
           return MakeScalarSemanticType(ValueType::Void);
         }
-        return MakeSemanticTypeFromPropertyInfo(*property_resolution.property);
+        return SubstituteGenericReceiverType(
+            MakeSemanticTypeFromPropertyInfo(*property_resolution.property),
+            receiver_type.canonical_type, *message_send_context.surface);
       }
       const unsigned diag_line =
           expr->receiver != nullptr ? expr->receiver->line : expr->line;
@@ -8089,8 +8557,9 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
         const SemanticTypeInfo arg_type = ValidateExpr(
             expr->args[i].get(), scopes, globals, functions, diagnostics,
             max_message_send_args, message_send_context);
-        const SemanticTypeInfo expected =
-            MakeSemanticTypeFromMethodInfoParam(method, i);
+        const SemanticTypeInfo expected = SubstituteGenericReceiverType(
+            MakeSemanticTypeFromMethodInfoParam(method, i),
+            receiver_type.canonical_type, *message_send_context.surface);
         const bool bool_coercion =
             !expected.is_vector && expected.type == ValueType::Bool &&
             !arg_type.is_vector && arg_type.type == ValueType::I32;
@@ -8112,7 +8581,9 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                   "'"));
         }
       }
-      return MakeSemanticTypeFromMethodInfoReturn(method);
+      return SubstituteGenericReceiverType(
+          MakeSemanticTypeFromMethodInfoReturn(method),
+          receiver_type.canonical_type, *message_send_context.surface);
     }
   }
   const Objc3ResolvedMessageSendMethod resolution =
@@ -21844,6 +22315,18 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions =
           BuildProtocolSemanticDefinitions(ast, arc_mode_enabled, diagnostics);
+  const std::unordered_map<std::string, Objc3InterfaceGenericDefinition>
+      generic_definitions =
+          BuildInterfaceGenericDefinitions(ast, protocol_definitions,
+                                           diagnostics);
+  std::unordered_set<std::string> generic_interface_names;
+  for (const auto &entry : generic_definitions) {
+    if (!entry.second.parameters.empty()) {
+      generic_interface_names.insert(entry.first);
+    }
+  }
+  ValidateInterfaceGenericSpecializations(ast, generic_definitions,
+                                          protocol_definitions, diagnostics);
   ValidateProtocolCompositionIdentifierBindings(ast, protocol_definitions,
                                                 diagnostics);
   // diagnostic precision anchor: class interface/implementation
@@ -22530,6 +23013,10 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     // namespace so later executable accessors never inherit ambiguous getter
     // or setter bindings from source.
     interface_info.super_name = interface_decl.super_name;
+    for (const auto &generic_param : interface_decl.generic_params) {
+      interface_info.generic_parameter_names_source_order.push_back(
+          generic_param.name);
+    }
     interface_info.objc_direct_members_declared =
         interface_decl.objc_direct_members_declared;
     interface_info.objc_final_declared = interface_decl.objc_final_declared;
@@ -22575,7 +23062,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
         setter_owner_states;
     for (const auto &property_decl : interface_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, container_name,
-                                   container_label, diagnostics);
+                                   container_label, diagnostics,
+                                   &generic_interface_names);
       Objc3PropertyInfo property_info =
           BuildPropertyInfo(property_decl, container_name, container_label,
                             arc_mode_enabled,
@@ -22610,9 +23098,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                                  selector_contract,
                                                  diagnostics);
       ValidateMethodReturnTypeSuffixes(method_decl, container_name,
-                                       container_label, diagnostics);
+                                       container_label, diagnostics,
+                                       &generic_interface_names);
       ValidateMethodParameterTypeSuffixes(method_decl, container_name,
-                                          container_label, diagnostics);
+                                          container_label, diagnostics,
+                                          &generic_interface_names);
       if (method_decl.objc_macro_declared ||
           method_decl.objc_macro_package_declared ||
           method_decl.objc_macro_provenance_declared) {
@@ -22721,7 +23211,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
         setter_owner_states;
     for (const auto &property_decl : implementation_decl.properties) {
       ValidatePropertyTypeSuffixes(property_decl, container_name,
-                                   container_label, diagnostics);
+                                   container_label, diagnostics,
+                                   &generic_interface_names);
       Objc3PropertyInfo property_info =
           BuildPropertyInfo(property_decl, container_name, container_label,
                             arc_mode_enabled,
@@ -22828,9 +23319,11 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                                  selector_contract,
                                                  diagnostics);
       ValidateMethodReturnTypeSuffixes(method_decl, container_name,
-                                       container_label, diagnostics);
+                                       container_label, diagnostics,
+                                       &generic_interface_names);
       ValidateMethodParameterTypeSuffixes(method_decl, container_name,
-                                          container_label, diagnostics);
+                                          container_label, diagnostics,
+                                          &generic_interface_names);
       if (method_decl.objc_macro_declared ||
           method_decl.objc_macro_package_declared ||
           method_decl.objc_macro_provenance_declared) {
@@ -27959,6 +28452,12 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
       protocol_definitions = BuildProtocolSemanticDefinitions(
           ast, options.arc_mode_enabled, protocol_definition_diagnostics);
+  std::unordered_set<std::string> generic_interface_names;
+  for (const auto &entry : surface.interfaces) {
+    if (!entry.second.generic_parameter_names_source_order.empty()) {
+      generic_interface_names.insert(entry.first);
+    }
+  }
   const auto borrowed_callable_contracts =
       BuildOwnershipBorrowedCallableContracts(ast);
   std::unordered_map<std::string, const Objc3InterfaceDecl *> actor_interfaces;
@@ -28000,8 +28499,8 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
   }
 
   for (const auto &fn : ast.functions) {
-    ValidateReturnTypeSuffixes(fn, diagnostics);
-    ValidateParameterTypeSuffixes(fn, diagnostics);
+    ValidateReturnTypeSuffixes(fn, diagnostics, &generic_interface_names);
+    ValidateParameterTypeSuffixes(fn, diagnostics, &generic_interface_names);
     DiagnoseOwnershipRetainableFamilyCallableLegality(
         fn, "function '" + fn.name + "'", diagnostics);
     if (fn.executor_affinity_declared && !fn.async_declared) {
