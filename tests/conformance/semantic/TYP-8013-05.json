@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-05",
+  "title": "Reject protocol property nullability drift against canonical semantic types",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_property_nullability_conflict.objc3",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S218.\nmodule NegativeTypeSemanticProtocolPropertyNullabilityConflict;\n\n@protocol Worker\n@required\n@property (readonly) id! token;\n@end\n\n@interface Widget <Worker>\n@property (readonly) id? token;\n@end\n\n@implementation Widget\n@property (readonly) id? token;\n@end\n\nfn main() -> i32 {\n  return 0;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S218",
+        "line": 9,
+        "column": 1
+      }
+    ]
+  }
+}

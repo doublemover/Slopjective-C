@@ -1,0 +1,21 @@
+// Expected diagnostic code(s): O3S218.
+module NegativeTypeSemanticProtocolMethodNullabilityConflict;
+
+@protocol Worker
+@required
+- (id!) requiredValue:(id!)value;
+@end
+
+@interface Widget <Worker>
+- (id?) requiredValue:(id?)value;
+@end
+
+@implementation Widget
+- (id?) requiredValue:(id?)value {
+  return value;
+}
+@end
+
+fn main() -> i32 {
+  return 0;
+}

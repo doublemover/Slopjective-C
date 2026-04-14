@@ -5,6 +5,9 @@
 - Issue: `#8013`
 - Positive fixture: `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`
 - Negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`
+- Nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3`
+- Protocol method nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3`
+- Protocol property nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_property_nullability_conflict.objc3`
 
 ## Checks
 - `positive_fixture_compiles`: `PASS`
@@ -24,18 +27,32 @@
 - `nullability_negative_fixture_fails_closed`: `PASS`
 - `nullability_negative_diagnostics_json_emitted`: `PASS`
 - `nullable_to_nonnull_diagnostic_observed`: `PASS`
+- `protocol_method_nullability_negative_fixture_fails_closed`: `PASS`
+- `protocol_method_nullability_negative_diagnostics_json_emitted`: `PASS`
+- `protocol_method_nullability_conflict_diagnostic_observed`: `PASS`
+- `protocol_property_nullability_negative_fixture_fails_closed`: `PASS`
+- `protocol_property_nullability_negative_diagnostics_json_emitted`: `PASS`
+- `protocol_property_nullability_conflict_diagnostic_observed`: `PASS`
 - `semantic_manifest_indexes_typ_8013_01`: `PASS`
 - `semantic_manifest_indexes_typ_8013_02`: `PASS`
 - `semantic_manifest_indexes_typ_8013_03`: `PASS`
+- `semantic_manifest_indexes_typ_8013_04`: `PASS`
+- `semantic_manifest_indexes_typ_8013_05`: `PASS`
 - `semantic_readme_mentions_issue_8013`: `PASS`
 - `semantic_readme_mentions_positive_fixture`: `PASS`
 - `semantic_readme_mentions_negative_fixture`: `PASS`
 - `semantic_readme_mentions_nullability_negative_fixture`: `PASS`
+- `semantic_readme_mentions_protocol_method_nullability_negative_fixture`: `PASS`
+- `semantic_readme_mentions_protocol_property_nullability_negative_fixture`: `PASS`
 - `positive_conformance_references_fixture`: `PASS`
 - `negative_conformance_references_fixture`: `PASS`
 - `nullability_negative_conformance_references_fixture`: `PASS`
+- `protocol_method_nullability_negative_conformance_references_fixture`: `PASS`
+- `protocol_property_nullability_negative_conformance_references_fixture`: `PASS`
 - `negative_conformance_expects_o3s206_location`: `PASS`
 - `nullability_negative_conformance_expects_o3s227_location`: `PASS`
+- `protocol_method_nullability_negative_conformance_expects_o3s218_location`: `PASS`
+- `protocol_property_nullability_negative_conformance_expects_o3s218_location`: `PASS`
 - `stress_manifest_compiles_positive_fixture`: `PASS`
 - `no_tmp_source_truth`: `PASS`
 - `static_sema_contract_fields_present`: `PASS`
