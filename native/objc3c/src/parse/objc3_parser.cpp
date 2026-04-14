@@ -8832,6 +8832,15 @@ class Objc3Parser {
     }
     if (expr->kind == Expr::Kind::BlockLiteral) {
       ++summary.block_literal_sites;
+      if (expr->block_has_explicit_capture_list) {
+        ++summary.block_explicit_capture_list_sites;
+      }
+      summary.block_explicit_capture_byref_sites +=
+          expr->block_explicit_capture_byref_count;
+      summary.block_byref_capture_sites += expr->block_byref_capture_count;
+      if (expr->block_escape_shape_promotes_to_heap_candidate) {
+        ++summary.block_heap_escape_candidate_sites;
+      }
       CountDraftSyntaxStatements(expr->block_body, summary);
     }
     if (expr->try_expression_enabled) {
@@ -8987,6 +8996,10 @@ class Objc3Parser {
     std::ostringstream out;
     out << "draft-syntax-surfaces:v1"
         << ";blocks=" << summary.block_literal_sites
+        << ";block_capture_lists=" << summary.block_explicit_capture_list_sites
+        << ";block_byref_explicit=" << summary.block_explicit_capture_byref_sites
+        << ";block_byref_captures=" << summary.block_byref_capture_sites
+        << ";block_heap_candidates=" << summary.block_heap_escape_candidate_sites
         << ";try=" << summary.try_expression_sites
         << ";throw=" << summary.throw_statement_sites
         << ";do_catch=" << summary.do_catch_sites
@@ -9040,7 +9053,10 @@ class Objc3Parser {
       CountDraftSyntaxCallable(function, summary);
     }
     summary.draft_syntax_surface_sites =
-        summary.block_literal_sites + summary.try_expression_sites +
+        summary.block_literal_sites + summary.block_explicit_capture_list_sites +
+        summary.block_explicit_capture_byref_sites +
+        summary.block_byref_capture_sites +
+        summary.block_heap_escape_candidate_sites + summary.try_expression_sites +
         summary.throw_statement_sites + summary.do_catch_sites +
         summary.throws_callable_sites + summary.async_callable_sites +
         summary.await_expression_sites + summary.actor_interface_sites +
@@ -9053,6 +9069,8 @@ class Objc3Parser {
     summary.normalized =
         !summary.replay_key.empty() &&
         summary.draft_syntax_surface_sites >= summary.block_literal_sites &&
+        summary.block_explicit_capture_byref_sites <=
+            summary.block_byref_capture_sites &&
         summary.draft_syntax_surface_sites >= summary.interop_attribute_sites;
     return summary;
   }
@@ -13403,8 +13421,13 @@ class Objc3Parser {
         Expr::ExplicitBlockCaptureItem item;
         item.mode = "plain";
         if (At(TokenKind::Identifier) &&
-            (Peek().text == "weak" || Peek().text == "unowned" || Peek().text == "move")) {
+            (Peek().text == "weak" || Peek().text == "unowned" ||
+             Peek().text == "move" || Peek().text == "byref" ||
+             Peek().text == "__block")) {
           item.mode = Advance().text;
+          if (item.mode == "__block") {
+            item.mode = "byref";
+          }
         }
         if (!At(TokenKind::Identifier)) {
           const Token &token = Peek();
@@ -13533,6 +13556,8 @@ class Objc3Parser {
         ++block->block_explicit_capture_unowned_count;
       } else if (item.mode == "move") {
         ++block->block_explicit_capture_move_count;
+      } else if (item.mode == "byref") {
+        ++block->block_explicit_capture_byref_count;
       } else {
         ++block->block_explicit_capture_plain_count;
       }
@@ -13549,6 +13574,7 @@ class Objc3Parser {
           << ";weak=" << block->block_explicit_capture_weak_count
           << ";unowned=" << block->block_explicit_capture_unowned_count
           << ";move=" << block->block_explicit_capture_move_count
+          << ";byref=" << block->block_explicit_capture_byref_count
           << ";plain=" << block->block_explicit_capture_plain_count;
       block->block_explicit_capture_profile = out.str();
     }
@@ -13561,6 +13587,13 @@ class Objc3Parser {
         block->block_mutated_capture_names_lexicographic.size();
     block->block_byref_capture_names_lexicographic =
         block->block_mutated_capture_names_lexicographic;
+    for (const auto &item : block->block_explicit_capture_items_source_order) {
+      if (item.mode == "byref") {
+        block->block_byref_capture_names_lexicographic.push_back(item.name);
+      }
+    }
+    block->block_byref_capture_names_lexicographic =
+        BuildSortedUniqueStrings(block->block_byref_capture_names_lexicographic);
     block->block_byref_capture_count =
         block->block_byref_capture_names_lexicographic.size();
     block->block_capture_inventory_profile =
@@ -13666,11 +13699,15 @@ class Objc3Parser {
         !block->block_helper_intent_profile.empty() &&
         !block->block_escape_shape_symbol.empty() &&
         !block->block_escape_shape_profile.empty();
-    block->block_storage_mutable_capture_count = 0;
-    block->block_storage_byref_slot_count = 0;
-    block->block_storage_requires_byref_cells = false;
+    block->block_storage_mutable_capture_count =
+        block->block_mutated_capture_count;
+    block->block_storage_byref_slot_count =
+        block->block_byref_capture_count;
+    block->block_storage_requires_byref_cells =
+        block->block_storage_byref_slot_count > 0u;
     block->block_storage_escape_analysis_enabled = true;
-    block->block_storage_escape_to_heap = false;
+    block->block_storage_escape_to_heap =
+        block->block_escape_shape_promotes_to_heap_candidate;
     block->block_storage_escape_profile =
         BuildBlockStorageEscapeProfile(
             block->block_storage_mutable_capture_count,
@@ -13686,7 +13723,7 @@ class Objc3Parser {
             block->block_storage_escape_to_heap);
     block->block_storage_escape_profile_is_normalized =
         block->block_literal_is_normalized && block->block_capture_set_deterministic;
-    block->block_copy_helper_required = block->block_storage_mutable_capture_count > 0u;
+    block->block_copy_helper_required = block->block_storage_byref_slot_count > 0u;
     block->block_dispose_helper_required = block->block_storage_byref_slot_count > 0u;
     block->block_copy_dispose_profile =
         BuildBlockCopyDisposeProfile(

@@ -27,6 +27,10 @@ ARTIFACTS = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
 REQUIRED_AST_FIELDS = [
     "struct Objc3DraftSyntaxSurfaceSummary",
     "block_literal_sites",
+    "block_explicit_capture_list_sites",
+    "block_explicit_capture_byref_sites",
+    "block_byref_capture_sites",
+    "block_heap_escape_candidate_sites",
     "try_expression_sites",
     "throw_statement_sites",
     "do_catch_sites",
@@ -54,6 +58,8 @@ REQUIRED_PARSER_ANCHORS = [
     "CountDraftSyntaxExpr",
     "CountDraftSyntaxCallable",
     "ParseBlockLiteralExpression",
+    "block_explicit_capture_byref_count",
+    "block_storage_requires_byref_cells",
     "ParseOptionalThrowsClause",
     "ParseOptionalAsyncClause",
     "ParseObjcActorInterfaceDecl",
@@ -85,7 +91,9 @@ REQUIRED_ARTIFACT_FIELDS = [
 ]
 
 POSITIVE_TOKENS = [
-    "let callback = ^(i32 value)",
+    "let callback = ^[__block scratch] (i32 value)",
+    "scratch = scratch + value;",
+    "return seed + scratch;",
     "fn risky(value: i32) throws -> i32",
     "throw 7;",
     "let direct = try risky(0);",

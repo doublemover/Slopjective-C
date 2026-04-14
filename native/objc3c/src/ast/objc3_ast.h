@@ -357,6 +357,7 @@ struct Expr {
   std::size_t block_explicit_capture_move_count = 0;
   std::size_t block_explicit_capture_weak_count = 0;
   std::size_t block_explicit_capture_unowned_count = 0;
+  std::size_t block_explicit_capture_byref_count = 0;
   std::size_t block_explicit_capture_plain_count = 0;
   std::string block_explicit_capture_profile;
   std::vector<std::string> block_mutated_capture_names_lexicographic;
@@ -2161,6 +2162,10 @@ struct GlobalDecl {
 
 struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t block_literal_sites = 0;
+  std::size_t block_explicit_capture_list_sites = 0;
+  std::size_t block_explicit_capture_byref_sites = 0;
+  std::size_t block_byref_capture_sites = 0;
+  std::size_t block_heap_escape_candidate_sites = 0;
   std::size_t try_expression_sites = 0;
   std::size_t throw_statement_sites = 0;
   std::size_t do_catch_sites = 0;

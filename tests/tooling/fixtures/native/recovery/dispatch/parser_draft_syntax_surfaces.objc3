@@ -65,8 +65,10 @@ async fn runTask() -> i32 __attribute__((objc_executor(main))) {
 
 fn main() -> i32 {
   let seed = traced();
-  let callback = ^(i32 value) {
-    return seed + value;
+  let scratch = seed;
+  let callback = ^[__block scratch] (i32 value) {
+    scratch = scratch + value;
+    return seed + scratch;
   };
   return seed + foreignEntry();
 }

@@ -6498,6 +6498,12 @@ static void ValidateBlockLiteralCaptureLegality(
   std::unordered_set<std::string> mutated_names(
       expr->block_mutated_capture_names_lexicographic.begin(),
       expr->block_mutated_capture_names_lexicographic.end());
+  std::unordered_set<std::string> explicit_byref_capture_names;
+  for (const auto &item : expr->block_explicit_capture_items_source_order) {
+    if (item.mode == "byref") {
+      explicit_byref_capture_names.insert(item.name);
+    }
+  }
   std::unordered_set<std::string> explicit_capture_names;
   std::size_t owned_object_capture_count = 0;
   std::size_t weak_object_capture_count = 0;
@@ -6513,13 +6519,14 @@ static void ValidateBlockLiteralCaptureLegality(
     }
   }
   for (const auto &byref_name : expr->block_byref_capture_names_lexicographic) {
-    if (mutated_names.count(byref_name) == 0u) {
+    if (mutated_names.count(byref_name) == 0u &&
+        explicit_byref_capture_names.count(byref_name) == 0u) {
       diagnostics.push_back(
           MakeDiag(expr->line,
                    expr->column,
                    "O3S206",
                    "type mismatch: block byref capture '" + byref_name +
-                       "' is not present in the mutated-capture inventory"));
+                       "' is not present in the mutated-capture inventory or explicit byref capture list"));
     }
   }
   for (const auto &item : expr->block_explicit_capture_items_source_order) {

@@ -13,7 +13,11 @@
     {
       "id": "block_literal",
       "summary_field": "block_literal_sites",
-      "positive_tokens": ["let callback = ^(i32 value)", "return seed + value;"],
+      "positive_tokens": [
+        "let callback = ^[__block scratch] (i32 value)",
+        "scratch = scratch + value;",
+        "return seed + scratch;"
+      ],
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_block_missing_body.objc3",
       "expected_diagnostic": {"code": "O3P166", "line": 5, "column": 30}
     },

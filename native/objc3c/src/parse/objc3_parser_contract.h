@@ -279,6 +279,18 @@ inline std::uint64_t BuildObjc3DraftSyntaxSurfaceFingerprint(
       static_cast<std::uint64_t>(summary.block_literal_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
+      static_cast<std::uint64_t>(summary.block_explicit_capture_list_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.block_explicit_capture_byref_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.block_byref_capture_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.block_heap_escape_candidate_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
       static_cast<std::uint64_t>(summary.try_expression_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
