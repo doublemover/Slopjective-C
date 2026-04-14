@@ -1,0 +1,7 @@
+{
+  "fixture": "class_metaclass_root_runtime_dispatch.objc3",
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
+  }
+}

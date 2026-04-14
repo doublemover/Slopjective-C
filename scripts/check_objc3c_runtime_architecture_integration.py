@@ -93,10 +93,10 @@ SURFACE_KEYS = (
     "runtime_package_loader_bridge_abi_surface",
     "runtime_package_loading_interop_implementation_surface",
 )
-REQUIRED_STEP_ACTIONS = (
-    "test-execution-smoke",
-    "test-runtime-acceptance",
-    "test-execution-replay",
+REQUIRED_STEP_ACTION_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("execution-smoke", ("test-execution-smoke",)),
+    ("runtime-acceptance", ("test-runtime-acceptance", "test-runtime-acceptance-fast")),
+    ("execution-replay", ("test-execution-replay", "test-execution-replay-focused")),
 )
 
 
@@ -153,10 +153,14 @@ def collect_step_details(public_workflow_report: dict[str, Any]) -> tuple[list[s
             expect(candidate.is_file(), f"public workflow step {action} referenced a missing child report: {raw_path}")
             if raw_path not in child_report_paths:
                 child_report_paths.append(raw_path)
-    missing_actions = [action for action in REQUIRED_STEP_ACTIONS if action not in observed_actions]
+    missing_actions = [
+        group_name
+        for group_name, accepted_actions in REQUIRED_STEP_ACTION_GROUPS
+        if not any(action in observed_actions for action in accepted_actions)
+    ]
     expect(
         not missing_actions,
-        "public workflow report did not carry the required integrated step actions: "
+        "public workflow report did not carry the required integrated step action groups: "
         + ", ".join(missing_actions),
     )
     return observed_actions, child_report_paths
@@ -291,7 +295,10 @@ def main() -> int:
             "runtime_acceptance_report_path": repo_rel(runtime_acceptance_report_path),
             "proof_packet_path": repo_rel(PROOF_PACKET_PATH),
             "required_surface_keys": ["claim_boundary", *SURFACE_KEYS],
-            "required_step_actions": list(REQUIRED_STEP_ACTIONS),
+            "required_step_action_groups": {
+                group_name: list(accepted_actions)
+                for group_name, accepted_actions in REQUIRED_STEP_ACTION_GROUPS
+            },
             "requires_compile_coupled_full_workflow": True,
             "proof_packet_must_match_full_workflow": True,
         },

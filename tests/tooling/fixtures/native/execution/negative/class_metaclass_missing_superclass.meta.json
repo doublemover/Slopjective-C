@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "fixture": "class_metaclass_missing_superclass.objc3",
+  "expect_failure": {
+    "stage": "compile",
+    "required_diagnostic_tokens": [
+      "runtime realization failed: interface 'Widget' inherits from missing superclass 'MissingRoot'",
+      "O3S220"
+    ]
+  },
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": false
+  }
+}

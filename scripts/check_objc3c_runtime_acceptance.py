@@ -5347,6 +5347,7 @@ RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
         "unified-concurrency-runtime-abi",
         "live-error-runtime-integration",
         "canonical-dispatch",
+        "metaclass-graph-root-class",
         "live-dispatch-fast-path",
         "storage-ownership-reflection",
         "accessor-storage-lowering-metadata-surface",
@@ -7809,6 +7810,7 @@ def build_runtime_object_model_realization_source_surface(
         if result.case_id in {
             "imported-runtime-packaging-replay",
             "canonical-dispatch",
+            "metaclass-graph-root-class",
             "canonical-sample-set",
             "dispatch-fast-path",
         }
@@ -7839,12 +7841,14 @@ def build_runtime_object_model_realization_source_surface(
         "authoritative_fixture_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+            "tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3",
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
             "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
+            "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp",
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
@@ -8850,6 +8854,7 @@ def build_runtime_object_model_abi_query_surface(
         in {
             "imported-runtime-packaging-replay",
             "canonical-dispatch",
+            "metaclass-graph-root-class",
             "canonical-sample-set",
             "realization-lookup-reflection-runtime",
             "dispatch-fast-path",
@@ -8901,6 +8906,7 @@ def build_runtime_object_model_abi_query_surface(
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
+            "tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3",
             "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3",
             "tests/tooling/fixtures/native/live_dispatch_fast_path_positive.objc3",
             "tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3",
@@ -8910,6 +8916,7 @@ def build_runtime_object_model_abi_query_surface(
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
+            "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp",
             "tests/tooling/runtime/canonical_runnable_sample_set_probe.cpp",
             REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE,
             "tests/tooling/runtime/live_dispatch_fast_path_probe.cpp",
@@ -9116,6 +9123,7 @@ def build_runtime_class_metaclass_protocol_realization_surface(
         if result.case_id in {
             "imported-runtime-packaging-replay",
             "canonical-dispatch",
+            "metaclass-graph-root-class",
         }
     ]
     return {
@@ -9151,10 +9159,12 @@ def build_runtime_class_metaclass_protocol_realization_surface(
         "authoritative_fixture_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROVIDER_FIXTURE,
             IMPORTED_RUNTIME_PACKAGING_CONSUMER_FIXTURE,
+            "tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3",
             "tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3",
         ],
         "authoritative_probe_paths": [
             IMPORTED_RUNTIME_PACKAGING_PROBE,
+            "tests/tooling/runtime/metaclass_graph_root_class_probe.cpp",
             "tests/tooling/runtime/runtime_canonical_runnable_object_probe.cpp",
         ],
         "requires_coupled_registration_manifest": True,
@@ -14637,6 +14647,181 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
             "live_dispatch_count": method_state["live_dispatch_count"],
             "attached_category_count": payload.get("graph_state", {}).get("attached_category_count"),
             "ignored_fallback": payload["ignored_expected"],
+        },
+    )
+
+
+def check_metaclass_graph_root_class_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_id = "metaclass-graph-root-class"
+    case_dir = run_dir / case_id
+    fixture = ROOT / "tests" / "tooling" / "fixtures" / "native" / "metaclass_graph_root_class_library.objc3"
+    obj_path, ll_path, manifest_path = compile_fixture_outputs(fixture, case_dir / "compile")
+    probe = ROOT / "tests" / "tooling" / "runtime" / "metaclass_graph_root_class_probe.cpp"
+    exe_path = case_dir / "metaclass_graph_root_class_probe.exe"
+    compile_probe(clangxx, probe, exe_path, [obj_path])
+    payload = parse_json_output(run_probe(exe_path), "metaclass/root-class graph probe")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    ll_text = ll_path.read_text(encoding="utf-8")
+
+    graph_state = payload.get("graph_state", {})
+    root_entry = payload.get("root_entry", {})
+    widget_entry = payload.get("widget_entry", {})
+    root_class_state = payload.get("root_class_state", {})
+    widget_class_state = payload.get("widget_class_state", {})
+    widget_known_class_state = payload.get("widget_known_class_state", {})
+    widget_inherited_state = payload.get("widget_inherited_state", {})
+    widget_own_state = payload.get("widget_own_state", {})
+    root_shared_entry = payload.get("root_shared_entry", {})
+    widget_shared_entry = payload.get("widget_shared_entry", {})
+    widget_inherited_entry = payload.get("widget_inherited_entry", {})
+    widget_own_entry = payload.get("widget_own_entry", {})
+    surface = manifest.get("runtime_class_metaclass_protocol_realization_surface")
+
+    expect(payload.get("root_class_value") == 19, "expected root class method dispatch to return 19")
+    expect(payload.get("widget_class_value") == 19, "expected Widget class dispatch to inherit RootObject +shared")
+    expect(payload.get("widget_known_class_value") == 19, "expected normalized Widget class receiver to reuse inherited class dispatch")
+    expect(payload.get("widget_inherited_instance_value") == 17, "expected Widget instance dispatch to inherit RootObject -rootValue")
+    expect(payload.get("widget_own_instance_value") == 23, "expected Widget instance dispatch to resolve Widget -widgetValue")
+    expect(
+        graph_state.get("realized_class_count") == 2
+        and graph_state.get("root_class_count") == 1
+        and graph_state.get("metaclass_edge_count") == 1
+        and graph_state.get("receiver_class_binding_count") == 2
+        and graph_state.get("last_realized_class_name") == "Widget"
+        and graph_state.get("last_realized_class_owner_identity") == "class:Widget"
+        and graph_state.get("last_realized_metaclass_owner_identity") == "metaclass:Widget",
+        "expected realized graph to publish RootObject as the sole root and Widget as the single class/metaclass edge",
+    )
+    expect(
+        root_entry.get("found") == 1
+        and root_entry.get("base_identity") == 1024
+        and root_entry.get("is_root_class") == 1
+        and root_entry.get("implementation_backed") == 1
+        and root_entry.get("class_name") == "RootObject"
+        and root_entry.get("class_owner_identity") == "class:RootObject"
+        and root_entry.get("metaclass_owner_identity") == "metaclass:RootObject"
+        and root_entry.get("super_class_owner_identity") is None
+        and root_entry.get("super_metaclass_owner_identity") is None,
+        "expected RootObject entry to realize as an implementation-backed root with null superclass and metaclass-super links",
+    )
+    expect(
+        widget_entry.get("found") == 1
+        and widget_entry.get("base_identity") == 1041
+        and widget_entry.get("is_root_class") == 0
+        and widget_entry.get("implementation_backed") == 1
+        and widget_entry.get("class_name") == "Widget"
+        and widget_entry.get("class_owner_identity") == "class:Widget"
+        and widget_entry.get("metaclass_owner_identity") == "metaclass:Widget"
+        and widget_entry.get("super_class_owner_identity") == "class:RootObject"
+        and widget_entry.get("super_metaclass_owner_identity") == "metaclass:RootObject",
+        "expected Widget entry to publish stable class/metaclass owner identities and RootObject superclass links",
+    )
+    expect(
+        root_class_state.get("last_resolved_class_name") == "RootObject"
+        and root_class_state.get("last_resolved_owner_identity") == "implementation:RootObject::class_method:shared"
+        and root_class_state.get("last_dispatch_resolved_live_method") == 1,
+        "expected RootObject class dispatch to resolve through the live metaclass method list",
+    )
+    expect(
+        widget_class_state.get("last_resolved_class_name") == "RootObject"
+        and widget_class_state.get("last_resolved_owner_identity") == "implementation:RootObject::class_method:shared"
+        and widget_class_state.get("last_dispatch_resolved_live_method") == 1,
+        "expected Widget class dispatch to walk the metaclass superclass chain",
+    )
+    expect(
+        widget_known_class_state.get("last_dispatch_used_cache") == 1
+        and widget_known_class_state.get("last_resolved_class_name") == "RootObject",
+        "expected repeated Widget class dispatch to reuse the cache while preserving inherited RootObject resolution",
+    )
+    expect(
+        widget_inherited_state.get("last_resolved_class_name") == "RootObject"
+        and widget_inherited_state.get("last_resolved_owner_identity") == "implementation:RootObject::instance_method:rootValue",
+        "expected Widget instance dispatch to walk the class superclass chain for RootObject -rootValue",
+    )
+    expect(
+        widget_own_state.get("last_resolved_class_name") == "Widget"
+        and widget_own_state.get("last_resolved_owner_identity") == "implementation:Widget::instance_method:widgetValue",
+        "expected Widget instance dispatch to resolve its own method before walking superclasses",
+    )
+    for entry_name, entry, expected_owner, expected_class_dispatch in (
+        ("root_shared_entry", root_shared_entry, "implementation:RootObject::class_method:shared", 1),
+        ("widget_shared_entry", widget_shared_entry, "implementation:RootObject::class_method:shared", 1),
+        ("widget_inherited_entry", widget_inherited_entry, "implementation:RootObject::instance_method:rootValue", 0),
+        ("widget_own_entry", widget_own_entry, "implementation:Widget::instance_method:widgetValue", 0),
+    ):
+        expect(
+            entry.get("found") == 1
+            and entry.get("resolved") == 1
+            and entry.get("dispatch_family_is_class") == expected_class_dispatch
+            and entry.get("resolved_owner_identity") == expected_owner,
+            f"expected {entry_name} to publish a resolved method-cache entry with stable owner identity",
+        )
+    expect(
+        isinstance(surface, dict)
+        and surface.get("contract_id")
+        == RUNTIME_CLASS_METACLASS_PROTOCOL_REALIZATION_SURFACE_CONTRACT_ID
+        and surface.get("realized_class_graph_snapshot_symbol")
+        == "objc3_runtime_copy_realized_class_graph_state_for_testing"
+        and surface.get("realized_class_entry_snapshot_symbol")
+        == "objc3_runtime_copy_realized_class_entry_for_testing",
+        "expected compile manifest to publish the class/metaclass protocol realization surface and private snapshot symbols",
+    )
+    expect(
+        "runtime_metadata_class_metaclass_emission" in ll_text
+        and "runtime_metaclass_graph_root_class_baseline" in ll_text,
+        "expected LLVM IR to carry class/metaclass emission and root-class baseline proof comments",
+    )
+
+    negative_batch = compile_negative_diagnostic_batch(
+        case_id=case_id,
+        out_dir=case_dir / "negative-diagnostics-batch",
+        expectations=[
+            NegativeDiagnosticExpectation(
+                key="missing-superclass",
+                fixture=ROOT / "tests" / "tooling" / "fixtures" / "native" / "inheritance_override_missing_superclass.objc3",
+                expected_snippets=[
+                    "runtime realization failed: interface 'Widget' inherits from missing superclass 'MissingRoot'",
+                ],
+                expected_codes=["O3S220"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="unrealized-superclass",
+                fixture=ROOT / "tests" / "tooling" / "fixtures" / "native" / "inheritance_override_unrealized_superclass.objc3",
+                expected_snippets=[
+                    "runtime realization failed: implementation 'Widget' requires realized superclass implementation 'Root'",
+                ],
+                expected_codes=["O3S220"],
+            ),
+            NegativeDiagnosticExpectation(
+                key="superclass-cycle",
+                fixture=ROOT / "tests" / "tooling" / "fixtures" / "native" / "inheritance_override_cycle.objc3",
+                expected_snippets=[
+                    "cyclic Objective-C interface inheritance cannot produce a stable ivar layout",
+                    "runtime metadata export blocked",
+                ],
+                expected_codes=["O3P150", "O3S260"],
+            ),
+        ],
+    )
+
+    return CaseResult(
+        case_id=case_id,
+        probe=str(probe.relative_to(ROOT)).replace("\\", "/"),
+        fixture=str(fixture.relative_to(ROOT)).replace("\\", "/"),
+        claim_class="linked-runtime-probe",
+        passed=True,
+        summary={
+            "compile_manifest": str(manifest_path.relative_to(ROOT)).replace("\\", "/"),
+            "llvm_ir": str(ll_path.relative_to(ROOT)).replace("\\", "/"),
+            "positive_execution_fixture": "tests/tooling/fixtures/native/execution/positive/class_metaclass_root_runtime_dispatch.objc3",
+            "negative_execution_fixture": "tests/tooling/fixtures/native/execution/negative/class_metaclass_missing_superclass.objc3",
+            "realized_class_count": graph_state.get("realized_class_count"),
+            "root_class_count": graph_state.get("root_class_count"),
+            "metaclass_edge_count": graph_state.get("metaclass_edge_count"),
+            "receiver_class_binding_count": graph_state.get("receiver_class_binding_count"),
+            "root_base_identity": root_entry.get("base_identity"),
+            "widget_base_identity": widget_entry.get("base_identity"),
+            "negative_diagnostics_batch": negative_batch,
         },
     )
 
@@ -20701,6 +20886,7 @@ def main(argv: list[str] | None = None) -> int:
         ("cross-module-storage-reflection-artifact-preservation", lambda: check_cross_module_storage_reflection_artifact_preservation_case(run_dir)),
         ("imported-runtime-packaging-replay", lambda: check_imported_runtime_packaging_replay_case(clangxx, run_dir)),
         ("canonical-dispatch", lambda: check_canonical_dispatch_case(clangxx, run_dir)),
+        ("metaclass-graph-root-class", lambda: check_metaclass_graph_root_class_case(clangxx, run_dir)),
         ("canonical-sample-set", lambda: check_canonical_sample_set_case(clangxx, run_dir)),
         ("realization-lookup-reflection-runtime", lambda: check_realization_lookup_reflection_runtime_case(clangxx, run_dir)),
         ("live-dispatch-fast-path", lambda: check_live_dispatch_fast_path_case(clangxx, run_dir)),

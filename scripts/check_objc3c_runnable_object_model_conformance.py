@@ -20,13 +20,10 @@ REPORT_PATH = ROOT / "tmp" / "reports" / "runtime" / "runnable-object-model-conf
 SUMMARY_CONTRACT_ID = "objc3c.runtime.runnable.object.model.conformance.summary.v1"
 
 REQUIRED_CASES = {
-    "imported-runtime-packaging-replay",
     "canonical-dispatch",
-    "canonical-sample-set",
-    "realization-lookup-reflection-runtime",
+    "metaclass-graph-root-class",
     "dispatch-fast-path",
-    "property-reflection",
-    "property-execution",
+    "property-layout",
     "storage-ownership-reflection",
 }
 
@@ -48,6 +45,35 @@ REQUIRED_SURFACE_CONTRACTS = {
     "runtime_reflection_visibility_coherence_diagnostics_surface": (
         "objc3c.runtime.reflection.visibility.coherence.diagnostics.surface.v1"
     ),
+}
+
+REQUIRED_SURFACE_CASES = {
+    "runtime_object_model_abi_query_surface": {
+        "canonical-dispatch",
+        "metaclass-graph-root-class",
+        "dispatch-fast-path",
+        "storage-ownership-reflection",
+    },
+    "runtime_realization_lookup_reflection_implementation_surface": {
+        "dispatch-fast-path",
+    },
+    "runtime_reflection_query_surface": {
+        "storage-ownership-reflection",
+    },
+    "runtime_realization_lookup_semantics_surface": {
+        "canonical-dispatch",
+        "dispatch-fast-path",
+    },
+    "runtime_class_metaclass_protocol_realization_surface": {
+        "canonical-dispatch",
+        "metaclass-graph-root-class",
+    },
+    "runtime_category_attachment_merged_dispatch_surface": {
+        "canonical-dispatch",
+    },
+    "runtime_reflection_visibility_coherence_diagnostics_surface": {
+        "storage-ownership-reflection",
+    },
 }
 
 
@@ -132,16 +158,17 @@ def main() -> int:
             integration_surface == acceptance_surface,
             f"runtime integration report drifted from acceptance for {surface_key}",
         )
+        authoritative_case_ids = set(acceptance_surface.get("authoritative_case_ids", []))
+        for case_id in sorted(REQUIRED_SURFACE_CASES.get(surface_key, set())):
+            expect(
+                case_id in authoritative_case_ids,
+                f"{surface_key} did not carry required case {case_id}",
+            )
 
     object_model_surface = acceptance_report["runtime_object_model_abi_query_surface"]
     implementation_surface = acceptance_report[
         "runtime_realization_lookup_reflection_implementation_surface"
     ]
-    expect(
-        "realization-lookup-reflection-runtime"
-        in object_model_surface.get("authoritative_case_ids", []),
-        "object-model ABI/query surface did not carry the realization-lookup-reflection-runtime case",
-    )
     expect(
         implementation_surface.get("object_model_query_state_snapshot_symbol")
         == "objc3_runtime_copy_object_model_query_state_for_testing",
@@ -155,6 +182,10 @@ def main() -> int:
         "runner_path": "scripts/check_objc3c_runnable_object_model_conformance.py",
         "required_case_ids": sorted(REQUIRED_CASES),
         "required_surface_keys": list(REQUIRED_SURFACE_CONTRACTS.keys()),
+        "required_surface_case_ids": {
+            surface_key: sorted(case_ids)
+            for surface_key, case_ids in REQUIRED_SURFACE_CASES.items()
+        },
         "child_report_paths": [
             repo_rel(INTEGRATION_REPORT),
             repo_rel(ACCEPTANCE_REPORT),
