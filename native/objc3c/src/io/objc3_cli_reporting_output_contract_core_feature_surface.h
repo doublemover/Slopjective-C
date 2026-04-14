@@ -5,6 +5,7 @@
 #include <string>
 
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
+#include "support/objc3_string_predicates.h"
 
 struct Objc3CliReportingOutputContractCoreFeatureSurface {
   bool scaffold_ready = false;
@@ -22,12 +23,6 @@ struct Objc3CliReportingOutputContractCoreFeatureSurface {
   std::string failure_reason;
 };
 
-inline bool Objc3CliReportingOutputContractHasSuffix(
-    const std::string &value,
-    const std::string &suffix) {
-  return value.size() >= suffix.size() &&
-         value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
 
 inline std::string BuildObjc3CliReportingOutputContractCoreFeatureKey(
     const Objc3CliReportingOutputContractCoreFeatureSurface &surface) {
@@ -66,7 +61,7 @@ BuildObjc3CliReportingOutputContractCoreFeatureSurface(
       summary_output_path.extension() == ".json";
   surface.diagnostics_output_path_deterministic =
       diagnostics_output_path.has_filename() &&
-      Objc3CliReportingOutputContractHasSuffix(
+      objc3c::support::EndsWith(
           diagnostics_output_path.filename().string(),
           ".diagnostics.json");
   surface.output_paths_distinct =

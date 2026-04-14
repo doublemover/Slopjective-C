@@ -5,6 +5,7 @@
 #include <string>
 
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
+#include "support/objc3_string_predicates.h"
 
 struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   bool scaffold_ready = false;
@@ -51,11 +52,6 @@ struct Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface {
   std::string failure_reason;
 };
 
-inline bool Objc3ToolchainRuntimeGaOperationsHasSuffix(const std::string &value,
-                                                       const std::string &suffix) {
-  return value.size() >= suffix.size() &&
-         value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
-}
 
 inline std::string BuildObjc3ToolchainRuntimeGaOperationsCoreFeatureExpansionKey(
     const Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface &surface) {
@@ -295,7 +291,7 @@ inline Objc3ToolchainRuntimeGaOperationsCoreFeatureSurface BuildObjc3ToolchainRu
                                                       : std::string{});
   surface.backend_output_path_deterministic =
       backend_output_path.has_filename() &&
-      Objc3ToolchainRuntimeGaOperationsHasSuffix(
+      objc3c::support::EndsWith(
           backend_output_path.filename().string(), ".object-backend.txt");
   surface.backend_output_payload_consistent =
       surface.backend_output_recorded &&

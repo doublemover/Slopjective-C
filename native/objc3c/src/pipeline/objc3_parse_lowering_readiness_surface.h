@@ -11,6 +11,7 @@
 #include "parse/objc3_diagnostic_source_precision_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "pipeline/objc3_typed_sema_to_lowering_contract_surface.h"
+#include "support/objc3_string_predicates.h"
 
 inline std::size_t Objc3ParserSnapshotDeclarationBreakdownCount(const Objc3ParserContractSnapshot &snapshot) {
   return snapshot.global_decl_count + snapshot.protocol_decl_count +
@@ -352,12 +353,6 @@ inline std::string BuildObjc3DiagnosticGrammarHooksConformanceCorpusKey(
          (parser_diagnostic_grammar_hooks_conformance_corpus_ready ? "true" : "false");
 }
 
-inline bool Objc3ParseLoweringReadinessKeyHasPrefix(
-    const std::string &value,
-    const std::string &prefix) {
-  return value.size() >= prefix.size() &&
-         value.compare(0, prefix.size(), prefix) == 0;
-}
 
 inline bool IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
     bool parser_recovery_replay_ready,
@@ -377,25 +372,25 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsi
          long_tail_grammar_replay_keys_ready &&
          long_tail_grammar_diagnostics_hardening_ready &&
          parse_recovery_determinism_hardening_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_artifact_handoff_key,
              "parser_snapshot=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_artifact_replay_key,
              "parser_snapshot_fingerprint=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_artifact_diagnostics_hardening_key,
              "parser_diagnostics=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_artifact_edge_robustness_key,
              "parser_tokens=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_handoff_key,
              "long-tail-grammar:v1:constructs=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_diagnostics_hardening_key,
              "parser_diagnostic_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_recovery_determinism_hardening_key,
              "snapshot_present=");
 }
@@ -408,7 +403,7 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady
   return toolchain_runtime_ga_operations_recovery_determinism_consistent &&
          long_tail_grammar_recovery_determinism_consistent &&
          long_tail_grammar_recovery_determinism_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_recovery_determinism_key,
              "parser_recovery_replay_ready=");
 }
@@ -484,35 +479,35 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHard
     bool toolchain_runtime_ga_operations_recovery_determinism_consistent,
     bool toolchain_runtime_ga_operations_recovery_determinism_ready) {
   const bool parse_artifact_handoff_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_artifact_handoff_key,
           "parser_snapshot=");
   const bool parse_artifact_replay_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_artifact_replay_key,
           "parser_snapshot_fingerprint=");
   const bool parse_artifact_diagnostics_hardening_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_artifact_diagnostics_hardening_key,
           "parser_diagnostics=");
   const bool parse_artifact_edge_robustness_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_artifact_edge_robustness_key,
           "parser_tokens=");
   const bool long_tail_grammar_handoff_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_handoff_key,
           "long-tail-grammar:v1:constructs=");
   const bool long_tail_grammar_diagnostics_hardening_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_diagnostics_hardening_key,
           "parser_diagnostic_count=");
   const bool parse_recovery_determinism_hardening_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_recovery_determinism_hardening_key,
           "snapshot_present=");
   const bool long_tail_grammar_recovery_determinism_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_recovery_determinism_key,
           "parser_recovery_replay_ready=");
   return std::string("parser_recovery_replay_ready=") +
@@ -704,10 +699,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsConformanceMatrixReady(
     const std::string &parse_lowering_conformance_matrix_key,
     const std::string &long_tail_grammar_conformance_matrix_key) {
   return toolchain_runtime_ga_operations_conformance_matrix_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_conformance_matrix_key,
              "case_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_conformance_matrix_key,
              "conformance_matrix_case_count=");
 }
@@ -721,11 +716,11 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceMatrixKey(
     bool toolchain_runtime_ga_operations_conformance_matrix_consistent,
     bool toolchain_runtime_ga_operations_conformance_matrix_ready) {
   const bool parse_lowering_conformance_matrix_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_conformance_matrix_key,
           "case_count=");
   const bool long_tail_grammar_conformance_matrix_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_conformance_matrix_key,
           "conformance_matrix_case_count=");
   return std::string("parse_lowering_conformance_matrix_consistent=") +
@@ -755,13 +750,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsConformanceCorpusConsistent(
          toolchain_runtime_ga_operations_conformance_matrix_ready &&
          parse_lowering_conformance_matrix_consistent &&
          parse_lowering_conformance_corpus_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_conformance_matrix_key,
              "case_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_conformance_corpus_key,
              "case_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_conformance_matrix_key,
              "conformance_matrix_case_count=");
 }
@@ -770,7 +765,7 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsConformanceCorpusReady(
     bool toolchain_runtime_ga_operations_conformance_corpus_consistent,
     const std::string &parse_lowering_conformance_corpus_key) {
   return toolchain_runtime_ga_operations_conformance_corpus_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_conformance_corpus_key,
              "case_count=");
 }
@@ -784,15 +779,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsConformanceCorpusKey(
     bool toolchain_runtime_ga_operations_conformance_corpus_consistent,
     bool toolchain_runtime_ga_operations_conformance_corpus_ready) {
   const bool parse_lowering_conformance_matrix_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_conformance_matrix_key,
           "case_count=");
   const bool parse_lowering_conformance_corpus_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_conformance_corpus_key,
           "case_count=");
   const bool long_tail_grammar_conformance_matrix_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_conformance_matrix_key,
           "conformance_matrix_case_count=");
   return std::string("parse_lowering_conformance_matrix_consistent=") +
@@ -822,13 +817,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsConsi
          toolchain_runtime_ga_operations_conformance_corpus_ready &&
          parse_lowering_conformance_corpus_consistent &&
          parse_lowering_performance_quality_guardrails_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_conformance_corpus_key,
              "case_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_conformance_matrix_key,
              "conformance_matrix_case_count=");
 }
@@ -837,7 +832,7 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuardrailsReady
     bool toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
     const std::string &parse_lowering_performance_quality_guardrails_key) {
   return toolchain_runtime_ga_operations_performance_quality_guardrails_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -851,15 +846,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsPerformanceQualityGuard
     bool toolchain_runtime_ga_operations_performance_quality_guardrails_consistent,
     bool toolchain_runtime_ga_operations_performance_quality_guardrails_ready) {
   const bool parse_lowering_conformance_corpus_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_conformance_corpus_key,
           "case_count=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   const bool long_tail_grammar_conformance_matrix_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_conformance_matrix_key,
           "conformance_matrix_case_count=");
   return std::string("parse_lowering_conformance_corpus_consistent=") +
@@ -900,10 +895,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsCrossLaneIntegrationConsistent(
          parse_lowering_performance_quality_guardrails_consistent &&
          !parse_artifact_replay_key.empty() &&
          !lowering_boundary_replay_key.empty() &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_conformance_corpus_key,
              "case_count=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -916,7 +911,7 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsCrossLaneIntegrationReady(
   return toolchain_runtime_ga_operations_cross_lane_integration_consistent &&
          !parse_artifact_replay_key.empty() &&
          !lowering_boundary_replay_key.empty() &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -934,11 +929,11 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsCrossLaneIntegrationKey
     bool toolchain_runtime_ga_operations_cross_lane_integration_consistent,
     bool toolchain_runtime_ga_operations_cross_lane_integration_ready) {
   const bool parse_lowering_conformance_corpus_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_conformance_corpus_key,
           "case_count=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("parse_snapshot_replay_ready=") +
@@ -973,10 +968,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncConsistent(
          toolchain_runtime_ga_operations_cross_lane_integration_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -985,7 +980,7 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncReady(
     bool toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_docs_runbook_sync_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -998,11 +993,11 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncKey(
     bool toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
     bool toolchain_runtime_ga_operations_docs_runbook_sync_ready) {
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("long_tail_grammar_integration_closeout_consistent=") +
@@ -1030,13 +1025,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreConsistent(
          toolchain_runtime_ga_operations_docs_runbook_sync_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_docs_runbook_sync_key,
              "long_tail_grammar_integration_closeout_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1046,10 +1041,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreReady(
     const std::string &toolchain_runtime_ga_operations_docs_runbook_sync_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_core_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_docs_runbook_sync_key,
              "long_tail_grammar_integration_closeout_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1063,15 +1058,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedCoreKey(
     bool toolchain_runtime_ga_operations_advanced_core_consistent,
     bool toolchain_runtime_ga_operations_advanced_core_ready) {
   const bool docs_runbook_sync_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_docs_runbook_sync_key,
           "long_tail_grammar_integration_closeout_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_docs_runbook_sync_consistent=") +
@@ -1101,13 +1096,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityConsiste
          toolchain_runtime_ga_operations_advanced_core_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_core_key,
              "toolchain_runtime_ga_operations_docs_runbook_sync_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1117,10 +1112,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityReady(
     const std::string &toolchain_runtime_ga_operations_advanced_core_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_core_key,
              "toolchain_runtime_ga_operations_docs_runbook_sync_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1134,15 +1129,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibili
     bool toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent,
     bool toolchain_runtime_ga_operations_advanced_edge_compatibility_ready) {
   const bool advanced_core_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_core_key,
           "toolchain_runtime_ga_operations_docs_runbook_sync_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_core_consistent=") +
@@ -1172,13 +1167,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedDiagnosticsConsistent(
          toolchain_runtime_ga_operations_advanced_edge_compatibility_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
              "toolchain_runtime_ga_operations_advanced_core_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1188,10 +1183,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedDiagnosticsReady(
     const std::string &toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_diagnostics_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
              "toolchain_runtime_ga_operations_advanced_core_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1205,15 +1200,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedDiagnosticsKey(
     bool toolchain_runtime_ga_operations_advanced_diagnostics_consistent,
     bool toolchain_runtime_ga_operations_advanced_diagnostics_ready) {
   const bool advanced_edge_compatibility_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
           "toolchain_runtime_ga_operations_advanced_core_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent=") +
@@ -1243,13 +1238,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedConformanceConsistent(
          toolchain_runtime_ga_operations_advanced_diagnostics_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_diagnostics_key,
              "toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1259,10 +1254,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedConformanceReady(
     const std::string &toolchain_runtime_ga_operations_advanced_diagnostics_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_conformance_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_diagnostics_key,
              "toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1276,15 +1271,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedConformanceKey(
     bool toolchain_runtime_ga_operations_advanced_conformance_consistent,
     bool toolchain_runtime_ga_operations_advanced_conformance_ready) {
   const bool advanced_diagnostics_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_diagnostics_key,
           "toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_diagnostics_consistent=") +
@@ -1314,13 +1309,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedIntegrationConsistent(
          toolchain_runtime_ga_operations_advanced_conformance_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_conformance_key,
              "toolchain_runtime_ga_operations_advanced_diagnostics_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1330,10 +1325,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedIntegrationReady(
     const std::string &toolchain_runtime_ga_operations_advanced_conformance_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_integration_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_conformance_key,
              "toolchain_runtime_ga_operations_advanced_diagnostics_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1347,15 +1342,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedIntegrationKey(
     bool toolchain_runtime_ga_operations_advanced_integration_consistent,
     bool toolchain_runtime_ga_operations_advanced_integration_ready) {
   const bool advanced_conformance_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_conformance_key,
           "toolchain_runtime_ga_operations_advanced_diagnostics_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_conformance_consistent=") +
@@ -1385,13 +1380,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedPerformanceConsistent(
          toolchain_runtime_ga_operations_advanced_integration_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_integration_key,
              "toolchain_runtime_ga_operations_advanced_conformance_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1401,10 +1396,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedPerformanceReady(
     const std::string &toolchain_runtime_ga_operations_advanced_integration_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_performance_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_integration_key,
              "toolchain_runtime_ga_operations_advanced_conformance_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1418,15 +1413,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedPerformanceKey(
     bool toolchain_runtime_ga_operations_advanced_performance_consistent,
     bool toolchain_runtime_ga_operations_advanced_performance_ready) {
   const bool advanced_integration_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_integration_key,
           "toolchain_runtime_ga_operations_advanced_conformance_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_integration_consistent=") +
@@ -1456,13 +1451,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreShard2Consistent(
          toolchain_runtime_ga_operations_advanced_performance_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_performance_key,
              "toolchain_runtime_ga_operations_advanced_integration_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1472,10 +1467,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreShard2Ready(
     const std::string &toolchain_runtime_ga_operations_advanced_performance_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_advanced_core_shard2_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_performance_key,
              "toolchain_runtime_ga_operations_advanced_integration_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1489,15 +1484,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsAdvancedCoreShard2Key(
     bool toolchain_runtime_ga_operations_advanced_core_shard2_consistent,
     bool toolchain_runtime_ga_operations_advanced_core_shard2_ready) {
   const bool advanced_performance_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_performance_key,
           "toolchain_runtime_ga_operations_advanced_integration_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_performance_consistent=") +
@@ -1527,13 +1522,13 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffConsist
          toolchain_runtime_ga_operations_advanced_core_shard2_ready &&
          long_tail_grammar_integration_closeout_consistent &&
          long_tail_grammar_gate_signoff_ready &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_core_shard2_key,
              "toolchain_runtime_ga_operations_advanced_performance_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              parse_lowering_performance_quality_guardrails_key,
              "case_count=");
 }
@@ -1543,10 +1538,10 @@ inline bool IsObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffReady(
     const std::string &toolchain_runtime_ga_operations_advanced_core_shard2_key,
     const std::string &long_tail_grammar_integration_closeout_key) {
   return toolchain_runtime_ga_operations_integration_closeout_signoff_consistent &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              toolchain_runtime_ga_operations_advanced_core_shard2_key,
              "toolchain_runtime_ga_operations_advanced_performance_consistent=") &&
-         Objc3ParseLoweringReadinessKeyHasPrefix(
+         objc3c::support::StartsWith(
              long_tail_grammar_integration_closeout_key,
              "conformance_matrix_ready=");
 }
@@ -1560,15 +1555,15 @@ inline std::string BuildObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSign
     bool toolchain_runtime_ga_operations_integration_closeout_signoff_consistent,
     bool toolchain_runtime_ga_operations_integration_closeout_signoff_ready) {
   const bool advanced_core_shard2_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           toolchain_runtime_ga_operations_advanced_core_shard2_key,
           "toolchain_runtime_ga_operations_advanced_performance_consistent=");
   const bool long_tail_grammar_integration_closeout_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           long_tail_grammar_integration_closeout_key,
           "conformance_matrix_ready=");
   const bool parse_lowering_performance_quality_guardrails_key_shape_deterministic =
-      Objc3ParseLoweringReadinessKeyHasPrefix(
+      objc3c::support::StartsWith(
           parse_lowering_performance_quality_guardrails_key,
           "case_count=");
   return std::string("toolchain_runtime_ga_operations_advanced_core_shard2_consistent=") +
