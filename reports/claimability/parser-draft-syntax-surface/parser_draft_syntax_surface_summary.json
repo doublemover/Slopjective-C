@@ -66,6 +66,8 @@
       "draft_syntax_surface_handoff_key": true
     },
     "positive_fixture": {
+      "@property (retain, nullable, direct, behavior=Observed": true,
+      "@property (unsafe_unretained, null_resettable, class, behavior=Observed": true,
       "actor class SyntaxActor": true,
       "async fn runTask()": true,
       "behavior=Observed": true,

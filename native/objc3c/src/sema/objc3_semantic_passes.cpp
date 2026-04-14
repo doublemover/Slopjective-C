@@ -4586,7 +4586,9 @@ static bool HasInvalidPropertyTypeSuffix(const Objc3PropertyDecl &property) {
 
 static bool IsKnownPropertyAttributeName(const std::string &name) {
   return name == "readonly" || name == "readwrite" || name == "atomic" || name == "nonatomic" || name == "copy" ||
-         name == "strong" || name == "weak" || name == "unowned" || name == "assign" || name == "getter" ||
+         name == "retain" || name == "strong" || name == "weak" || name == "unowned" ||
+         name == "unsafe_unretained" || name == "assign" || name == "nullable" || name == "nonnull" ||
+         name == "null_resettable" || name == "class" || name == "direct" || name == "getter" ||
          name == "setter" || name == "behavior";
 }
 
@@ -5115,9 +5117,11 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       };
   const bool property_has_arc_runtime_owned_attribute =
       property_has_attribute_named("strong") ||
+      property_has_attribute_named("retain") ||
       property_has_attribute_named("copy") ||
       property_has_attribute_named("weak") ||
       property_profile_contains(property.property_attribute_profile, "strong=1") ||
+      property_profile_contains(property.property_attribute_profile, "retain=1") ||
       property_profile_contains(property.property_attribute_profile, "copy=1") ||
       property_profile_contains(property.property_attribute_profile, "weak=1");
   const auto build_accessor_ownership_profile =
@@ -5172,10 +5176,17 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   info.is_atomic = property.is_atomic;
   info.is_nonatomic = property.is_nonatomic;
   info.is_copy = property.is_copy;
+  info.is_retain = property.is_retain;
   info.is_strong = property.is_strong;
   info.is_weak = property.is_weak;
   info.is_unowned = property.is_unowned;
+  info.is_unsafe_unretained = property.is_unsafe_unretained;
   info.is_assign = property.is_assign;
+  info.is_nullable = property.is_nullable;
+  info.is_nonnull = property.is_nonnull;
+  info.is_null_resettable = property.is_null_resettable;
+  info.is_class = property.is_class;
+  info.is_direct = property.is_direct;
   info.has_getter = property.has_getter;
   info.has_setter = property.has_setter;
   info.getter_selector = TrimAsciiWhitespace(property.getter_selector);
@@ -5220,7 +5231,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
 
   const bool arc_inferred_strong_object_property =
       arc_mode_enabled && !info.has_ownership_qualifier && !info.is_weak &&
-      !info.is_unowned && !info.is_assign &&
+      !info.is_unowned && !info.is_unsafe_unretained && !info.is_assign &&
       property_is_object_like(info);
   if (arc_inferred_strong_object_property) {
     // ARC inference/lifetime implementation anchor: under explicit
@@ -5261,11 +5272,14 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       info.ownership_lifetime_profile = "weak";
       info.ownership_runtime_hook_profile = "objc-weak-side-table";
       info.ownership_is_weak_reference = true;
-    } else if (info.is_strong || info.is_copy ||
+    } else if (info.is_strong || info.is_retain || info.is_copy ||
                property_has_attribute_named("strong") ||
+               property_has_attribute_named("retain") ||
                property_has_attribute_named("copy") ||
                property_profile_contains(info.property_attribute_profile,
                                          "strong=1") ||
+               property_profile_contains(info.property_attribute_profile,
+                                         "retain=1") ||
                property_profile_contains(info.property_attribute_profile,
                                          "copy=1")) {
       info.ownership_lifetime_profile = "strong-owned";
@@ -5373,9 +5387,12 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         "type mismatch: @property modifiers 'atomic' and 'nonatomic' conflict for property '" + property.name +
             "' in " + owner_kind + " '" + owner_name + "'");
   }
-  const std::size_t ownership_modifiers = (info.is_copy ? 1u : 0u) + (info.is_strong ? 1u : 0u) +
-                                          (info.is_weak ? 1u : 0u) + (info.is_unowned ? 1u : 0u) +
-                                          (info.is_assign ? 1u : 0u);
+  const std::size_t ownership_modifiers =
+      (info.is_copy ? 1u : 0u) +
+      ((info.is_strong || info.is_retain) ? 1u : 0u) +
+      (info.is_weak ? 1u : 0u) +
+      (info.is_unowned ? 1u : 0u) +
+      ((info.is_assign || info.is_unsafe_unretained) ? 1u : 0u);
   if (ownership_modifiers > 1u) {
     info.has_ownership_conflict = true;
     emit_property_contract_violation(
@@ -5384,7 +5401,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         "type mismatch: @property ownership modifiers conflict for property '" + property.name + "' in " + owner_kind +
             " '" + owner_name + "'");
   }
-  info.has_weak_unowned_conflict = property.has_weak_unowned_conflict || (info.is_weak && info.is_unowned);
+  info.has_weak_unowned_conflict =
+      property.has_weak_unowned_conflict ||
+      (info.is_weak && (info.is_unowned || info.is_unsafe_unretained));
   if (info.has_weak_unowned_conflict) {
     emit_property_contract_violation(
         property.line,
@@ -5397,7 +5416,8 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       (info.id_spelling || info.class_spelling || info.instancetype_spelling ||
        info.object_pointer_type_spelling);
   const bool has_runtime_managed_ownership_modifier =
-      info.is_copy || info.is_strong || info.is_weak || info.is_unowned;
+      info.is_copy || info.is_strong || info.is_retain || info.is_weak ||
+      info.is_unowned || info.is_unsafe_unretained;
   const bool has_explicit_runtime_backed_storage_modifier =
       has_runtime_managed_ownership_modifier || info.is_assign;
   // accessor/ownership legality anchor: lane-B remains the
@@ -5407,12 +5427,16 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
   if (has_runtime_managed_ownership_modifier &&
       !supports_runtime_managed_ownership) {
     std::string ownership_modifier = "copy";
-    if (info.is_strong) {
+    if (info.is_retain) {
+      ownership_modifier = "retain";
+    } else if (info.is_strong) {
       ownership_modifier = "strong";
     } else if (info.is_weak) {
       ownership_modifier = "weak";
     } else if (info.is_unowned) {
       ownership_modifier = "unowned";
+    } else if (info.is_unsafe_unretained) {
+      ownership_modifier = "unsafe_unretained";
     }
     emit_property_contract_violation(
         property.line,
@@ -5435,6 +5459,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
     if (info.is_copy) {
       return "copy";
     }
+    if (info.is_retain) {
+      return "retain";
+    }
     if (info.is_strong) {
       return "strong";
     }
@@ -5443,6 +5470,9 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
     }
     if (info.is_unowned) {
       return "unowned";
+    }
+    if (info.is_unsafe_unretained) {
+      return "unsafe_unretained";
     }
     if (info.is_assign) {
       return "assign";
@@ -5472,13 +5502,14 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
       emit_ownership_qualifier_storage_mismatch(
           "@property modifier 'weak' or no explicit ownership modifier");
     } else if (property.ownership_qualifier_spelling == "__unsafe_unretained" &&
-               explicit_modifier != "assign") {
+               explicit_modifier != "assign" && explicit_modifier != "unsafe_unretained") {
       emit_ownership_qualifier_storage_mismatch(
-          "@property modifier 'assign' or no explicit ownership modifier");
+          "@property modifier 'assign', 'unsafe_unretained', or no explicit ownership modifier");
     } else if (property.ownership_qualifier_spelling == "__strong" &&
-               explicit_modifier != "strong" && explicit_modifier != "copy") {
+               explicit_modifier != "strong" && explicit_modifier != "retain" &&
+               explicit_modifier != "copy") {
       emit_ownership_qualifier_storage_mismatch(
-          "@property modifier 'strong', 'copy', or no explicit ownership modifier");
+          "@property modifier 'strong', 'retain', 'copy', or no explicit ownership modifier");
     }
   }
   if (info.is_atomic && has_runtime_managed_ownership_modifier &&
@@ -5489,6 +5520,20 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
         "type mismatch: atomic ownership-aware property '" + property.name +
             "' in " + owner_kind + " '" + owner_name +
             "' is unsupported until executable accessor storage semantics land");
+  }
+  if (info.is_nullable && info.is_nonnull) {
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property nullability modifiers 'nullable' and 'nonnull' conflict for property '" +
+            property.name + "' in " + owner_kind + " '" + owner_name + "'");
+  }
+  if (info.is_null_resettable && (info.is_nullable || info.is_nonnull)) {
+    emit_property_contract_violation(
+        property.line,
+        property.column,
+        "type mismatch: @property modifier 'null_resettable' conflicts with explicit nullable/nonnull for property '" +
+            property.name + "' in " + owner_kind + " '" + owner_name + "'");
   }
   if (info.is_readonly && info.has_setter) {
     info.has_accessor_selector_contract_violation = true;
@@ -5753,10 +5798,17 @@ static bool IsCompatiblePropertySignature(const Objc3PropertyInfo &lhs, const Ob
          lhs.is_atomic == rhs.is_atomic &&
          lhs.is_nonatomic == rhs.is_nonatomic &&
          lhs.is_copy == rhs.is_copy &&
+         lhs.is_retain == rhs.is_retain &&
          lhs.is_strong == rhs.is_strong &&
          lhs.is_weak == rhs.is_weak &&
          lhs.is_unowned == rhs.is_unowned &&
+         lhs.is_unsafe_unretained == rhs.is_unsafe_unretained &&
          lhs.is_assign == rhs.is_assign &&
+         lhs.is_nullable == rhs.is_nullable &&
+         lhs.is_nonnull == rhs.is_nonnull &&
+         lhs.is_null_resettable == rhs.is_null_resettable &&
+         lhs.is_class == rhs.is_class &&
+         lhs.is_direct == rhs.is_direct &&
          lhs.has_getter == rhs.has_getter &&
          lhs.has_setter == rhs.has_setter &&
          lhs.getter_selector == rhs.getter_selector &&
@@ -13043,13 +13095,13 @@ static void AccumulatePropertyAttributeSummaryFromPropertyInfo(const Objc3Proper
   if (property.is_copy) {
     ++summary.copy_modifiers;
   }
-  if (property.is_strong) {
+  if (property.is_strong || property.is_retain) {
     ++summary.strong_modifiers;
   }
   if (property.is_weak) {
     ++summary.weak_modifiers;
   }
-  if (property.is_assign) {
+  if (property.is_assign || property.is_unsafe_unretained) {
     ++summary.assign_modifiers;
   }
   if (property.has_getter) {
@@ -13071,9 +13123,17 @@ static void AccumulatePropertyAttributeSummaryFromPropertyInfo(const Objc3Proper
   if (property.has_atomicity_conflict != (property.is_atomic && property.is_nonatomic)) {
     summary.deterministic = false;
   }
-  const std::size_t ownership_modifiers = (property.is_copy ? 1u : 0u) + (property.is_strong ? 1u : 0u) +
-                                          (property.is_weak ? 1u : 0u) + (property.is_assign ? 1u : 0u);
+  const std::size_t ownership_modifiers =
+      (property.is_copy ? 1u : 0u) +
+      ((property.is_strong || property.is_retain) ? 1u : 0u) +
+      (property.is_weak ? 1u : 0u) +
+      (property.is_unowned ? 1u : 0u) +
+      ((property.is_assign || property.is_unsafe_unretained) ? 1u : 0u);
   if (property.has_ownership_conflict != (ownership_modifiers > 1u)) {
+    summary.deterministic = false;
+  }
+  if (property.has_weak_unowned_conflict !=
+      (property.is_weak && (property.is_unowned || property.is_unsafe_unretained))) {
     summary.deterministic = false;
   }
   if (property.has_setter && property.setter_selector.empty()) {
@@ -13085,6 +13145,7 @@ static void AccumulatePropertyAttributeSummaryFromPropertyInfo(const Objc3Proper
   const bool expected_invalid_contract =
       property.has_unknown_attribute || property.has_duplicate_attribute || property.has_readwrite_conflict ||
       property.has_atomicity_conflict || property.has_ownership_conflict ||
+      property.has_weak_unowned_conflict ||
       property.has_accessor_selector_contract_violation || property.invalid_attribute_entries > 0 ||
       property.property_contract_violations > 0;
   if (property.has_invalid_attribute_contract != expected_invalid_contract) {
@@ -16725,9 +16786,17 @@ static bool IsCompatiblePropertyTypeMetadataSignature(const Objc3SemanticPropert
          lhs.is_atomic == rhs.is_atomic &&
          lhs.is_nonatomic == rhs.is_nonatomic &&
          lhs.is_copy == rhs.is_copy &&
+         lhs.is_retain == rhs.is_retain &&
          lhs.is_strong == rhs.is_strong &&
          lhs.is_weak == rhs.is_weak &&
+         lhs.is_unowned == rhs.is_unowned &&
+         lhs.is_unsafe_unretained == rhs.is_unsafe_unretained &&
          lhs.is_assign == rhs.is_assign &&
+         lhs.is_nullable == rhs.is_nullable &&
+         lhs.is_nonnull == rhs.is_nonnull &&
+         lhs.is_null_resettable == rhs.is_null_resettable &&
+         lhs.is_class == rhs.is_class &&
+         lhs.is_direct == rhs.is_direct &&
          lhs.has_getter == rhs.has_getter &&
          lhs.has_setter == rhs.has_setter &&
          lhs.getter_selector == rhs.getter_selector &&
@@ -22032,10 +22101,17 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.is_atomic = source.is_atomic;
       property_metadata.is_nonatomic = source.is_nonatomic;
       property_metadata.is_copy = source.is_copy;
+      property_metadata.is_retain = source.is_retain;
       property_metadata.is_strong = source.is_strong;
       property_metadata.is_weak = source.is_weak;
       property_metadata.is_unowned = source.is_unowned;
+      property_metadata.is_unsafe_unretained = source.is_unsafe_unretained;
       property_metadata.is_assign = source.is_assign;
+      property_metadata.is_nullable = source.is_nullable;
+      property_metadata.is_nonnull = source.is_nonnull;
+      property_metadata.is_null_resettable = source.is_null_resettable;
+      property_metadata.is_class = source.is_class;
+      property_metadata.is_direct = source.is_direct;
       property_metadata.has_getter = source.has_getter;
       property_metadata.has_setter = source.has_setter;
       property_metadata.getter_selector = source.getter_selector;
@@ -22386,10 +22462,17 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       property_metadata.is_atomic = source.is_atomic;
       property_metadata.is_nonatomic = source.is_nonatomic;
       property_metadata.is_copy = source.is_copy;
+      property_metadata.is_retain = source.is_retain;
       property_metadata.is_strong = source.is_strong;
       property_metadata.is_weak = source.is_weak;
       property_metadata.is_unowned = source.is_unowned;
+      property_metadata.is_unsafe_unretained = source.is_unsafe_unretained;
       property_metadata.is_assign = source.is_assign;
+      property_metadata.is_nullable = source.is_nullable;
+      property_metadata.is_nonnull = source.is_nonnull;
+      property_metadata.is_null_resettable = source.is_null_resettable;
+      property_metadata.is_class = source.is_class;
+      property_metadata.is_direct = source.is_direct;
       property_metadata.has_getter = source.has_getter;
       property_metadata.has_setter = source.has_setter;
       property_metadata.getter_selector = source.getter_selector;

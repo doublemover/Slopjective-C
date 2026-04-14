@@ -5179,6 +5179,9 @@ static Objc3WeakUnownedLifetimeProfile BuildPropertyWeakUnownedLifetimeProfile(
   if (property.is_unowned) {
     return BuildWeakUnownedLifetimeProfile("__unsafe_unretained", true);
   }
+  if (property.is_unsafe_unretained) {
+    return BuildWeakUnownedLifetimeProfile("__unsafe_unretained", false);
+  }
   if (!property.ownership_qualifier_spelling.empty()) {
     return BuildWeakUnownedLifetimeProfile(property.ownership_qualifier_spelling, false);
   }
@@ -9073,10 +9076,17 @@ class Objc3Parser {
         << ";atomic=" << (property.is_atomic ? 1 : 0)
         << ";nonatomic=" << (property.is_nonatomic ? 1 : 0)
         << ";copy=" << (property.is_copy ? 1 : 0)
+        << ";retain=" << (property.is_retain ? 1 : 0)
         << ";strong=" << (property.is_strong ? 1 : 0)
         << ";weak=" << (property.is_weak ? 1 : 0)
         << ";unowned=" << (property.is_unowned ? 1 : 0)
+        << ";unsafe_unretained=" << (property.is_unsafe_unretained ? 1 : 0)
         << ";assign=" << (property.is_assign ? 1 : 0)
+        << ";nullable=" << (property.is_nullable ? 1 : 0)
+        << ";nonnull=" << (property.is_nonnull ? 1 : 0)
+        << ";null_resettable=" << (property.is_null_resettable ? 1 : 0)
+        << ";class=" << (property.is_class ? 1 : 0)
+        << ";direct=" << (property.is_direct ? 1 : 0)
         << ";attributes=";
     for (std::size_t i = 0; i < attributes.size(); ++i) {
       if (i != 0u) {
@@ -9469,14 +9479,28 @@ class Objc3Parser {
         property.is_nonatomic = true;
       } else if (attribute.name == "copy") {
         property.is_copy = true;
+      } else if (attribute.name == "retain") {
+        property.is_retain = true;
       } else if (attribute.name == "strong") {
         property.is_strong = true;
       } else if (attribute.name == "weak") {
         property.is_weak = true;
       } else if (attribute.name == "unowned") {
         property.is_unowned = true;
+      } else if (attribute.name == "unsafe_unretained") {
+        property.is_unsafe_unretained = true;
       } else if (attribute.name == "assign") {
         property.is_assign = true;
+      } else if (attribute.name == "nullable") {
+        property.is_nullable = true;
+      } else if (attribute.name == "nonnull") {
+        property.is_nonnull = true;
+      } else if (attribute.name == "null_resettable") {
+        property.is_null_resettable = true;
+      } else if (attribute.name == "class") {
+        property.is_class = true;
+      } else if (attribute.name == "direct") {
+        property.is_direct = true;
       } else if (attribute.name == "getter") {
         property.has_getter = true;
         property.getter_selector = attribute.value;
@@ -9531,7 +9555,9 @@ class Objc3Parser {
     property.ownership_is_unowned_safe_reference = property_lifetime_profile.is_unowned_safe_reference;
     property.ownership_lifetime_profile = property_lifetime_profile.lifetime_profile;
     property.ownership_runtime_hook_profile = property_lifetime_profile.runtime_hook_profile;
-    property.has_weak_unowned_conflict = property.is_weak && property.is_unowned;
+    property.has_weak_unowned_conflict =
+        property.is_weak &&
+        (property.is_unowned || property.is_unsafe_unretained);
     const Objc3ArcDiagnosticFixitProfile property_arc_diagnostic_profile =
         BuildArcDiagnosticFixitProfile(
             property.ownership_qualifier_spelling,

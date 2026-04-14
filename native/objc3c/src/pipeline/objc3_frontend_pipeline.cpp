@@ -4337,13 +4337,37 @@ void AccumulatePropertyAttributeSummary(const Container &declarations,
       if (property.is_copy) {
         ++accessor_modifier_entries;
       }
+      if (property.is_retain) {
+        ++accessor_modifier_entries;
+      }
       if (property.is_strong) {
         ++accessor_modifier_entries;
       }
       if (property.is_weak) {
         ++accessor_modifier_entries;
       }
+      if (property.is_unowned) {
+        ++accessor_modifier_entries;
+      }
+      if (property.is_unsafe_unretained) {
+        ++accessor_modifier_entries;
+      }
       if (property.is_assign) {
+        ++accessor_modifier_entries;
+      }
+      if (property.is_nullable) {
+        ++accessor_modifier_entries;
+      }
+      if (property.is_nonnull) {
+        ++accessor_modifier_entries;
+      }
+      if (property.is_null_resettable) {
+        ++accessor_modifier_entries;
+      }
+      if (property.is_class) {
+        ++accessor_modifier_entries;
+      }
+      if (property.is_direct) {
         ++accessor_modifier_entries;
       }
       if (property.has_getter) {
@@ -4375,6 +4399,9 @@ void AccumulatePropertyAttributeSummary(const Container &declarations,
           !property.name.empty() &&
           (!property.is_readonly || !property.is_readwrite) &&
           (!property.is_atomic || !property.is_nonatomic) &&
+          (!property.is_weak || (!property.is_unowned && !property.is_unsafe_unretained)) &&
+          (!property.is_nullable || !property.is_nonnull) &&
+          (!property.is_null_resettable || (!property.is_nullable && !property.is_nonnull)) &&
           (!property.has_getter || !property.getter_selector.empty()) &&
           (!property.has_setter || !property.setter_selector.empty()) &&
           attribute_names_complete &&

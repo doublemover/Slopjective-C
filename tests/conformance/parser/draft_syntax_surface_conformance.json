@@ -90,7 +90,11 @@
     {
       "id": "property_behavior",
       "summary_field": "property_behavior_sites",
-      "positive_tokens": ["behavior=Observed"],
+      "positive_tokens": [
+        "behavior=Observed",
+        "@property (retain, nullable, direct, behavior=Observed",
+        "@property (unsafe_unretained, null_resettable, class, behavior=Observed"
+      ],
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
       "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
     },

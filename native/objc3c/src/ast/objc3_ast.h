@@ -1747,10 +1747,17 @@ struct Objc3PropertyDecl {
   bool is_atomic = false;
   bool is_nonatomic = false;
   bool is_copy = false;
+  bool is_retain = false;
   bool is_strong = false;
   bool is_weak = false;
   bool is_unowned = false;
+  bool is_unsafe_unretained = false;
   bool is_assign = false;
+  bool is_nullable = false;
+  bool is_nonnull = false;
+  bool is_null_resettable = false;
+  bool is_class = false;
+  bool is_direct = false;
   bool has_weak_unowned_conflict = false;
   bool ownership_is_weak_reference = false;
   bool ownership_is_unowned_reference = false;

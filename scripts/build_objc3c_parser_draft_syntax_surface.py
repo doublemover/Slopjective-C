@@ -100,6 +100,8 @@ POSITIVE_TOKENS = [
     "objc_macro_package(named(\"std.metaprogramming.trace\"))",
     "objc_macro_provenance(named(\"sha256:abc123\"))",
     "behavior=Observed",
+    "@property (retain, nullable, direct, behavior=Observed",
+    "@property (unsafe_unretained, null_resettable, class, behavior=Observed",
     "objc_foreign",
     "objc_import_module(named(\"ParserKit\"))",
     "objc_export_header(named(\"ParserKit/ParserKit.h\"))",

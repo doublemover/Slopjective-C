@@ -2,24 +2,24 @@ module ParserDraftSyntaxSurfaces;
 
 __attribute__((objc_derive(named("Equatable"))))
 @interface SyntaxBox
-@property (strong, behavior=Observed, getter=currentValue, setter=setCurrentValue:) id value;
+@property (retain, nullable, direct, behavior=Observed, getter=currentValue, setter=setCurrentValue:) id value;
 - (i32)load async __attribute__((objc_executor(main)));
 @end
 
 actor class SyntaxActor
-@property (strong, behavior=Observed) id token;
+@property (unsafe_unretained, null_resettable, class, behavior=Observed) id token;
 - (i32)hop async __attribute__((objc_executor(named("parser.actor"))));
 @end
 
 @implementation SyntaxBox
-@property (strong, behavior=Observed, getter=currentValue, setter=setCurrentValue:) id value;
+@property (retain, nullable, direct, behavior=Observed, getter=currentValue, setter=setCurrentValue:) id value;
 - (i32)load async __attribute__((objc_executor(main))) {
   return await produce();
 }
 @end
 
 @implementation SyntaxActor
-@property (strong, behavior=Observed) id token;
+@property (unsafe_unretained, null_resettable, class, behavior=Observed) id token;
 - (i32)hop async __attribute__((objc_executor(named("parser.actor")))) {
   return await produce();
 }
