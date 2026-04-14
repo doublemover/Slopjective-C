@@ -523,11 +523,90 @@ def write_drifted_generic_contract_surface(provider_run: dict[str, Any]) -> Path
     return drift_path
 
 
+def compile_cross_module_nullability_contract_summary(provider_run: dict[str, Any], consumer_run: dict[str, Any]) -> dict[str, bool]:
+    provider_surface_path_value = provider_run.get("runtime_import_surface_path")
+    provider_surface = load_json(ROOT / provider_surface_path_value) if isinstance(provider_surface_path_value, str) else None
+    preservation = (
+        provider_surface.get("objc_type_system_nullability_contract_preservation")
+        if isinstance(provider_surface, dict)
+        else None
+    )
+    imported_rules = find_imported_runtime_metadata_semantic_rules(consumer_run.get("manifest"))
+    provider_canonical_count = int(preservation.get("canonical_type_count", -1)) if isinstance(preservation, dict) else -1
+    provider_nullable_count = int(preservation.get("nullable_entry_count", -1)) if isinstance(preservation, dict) else -1
+    provider_unspecified_count = int(preservation.get("unspecified_nullability_entry_count", -1)) if isinstance(preservation, dict) else -1
+    return {
+        "cross_module_provider_nullability_contract_preservation_emitted": isinstance(preservation, dict),
+        "cross_module_provider_nullability_contract_ready": isinstance(preservation, dict)
+        and preservation.get("ready") is True
+        and preservation.get("deterministic") is True,
+        "cross_module_provider_nullability_counts_are_complete": isinstance(preservation, dict)
+        and provider_canonical_count
+        == int(preservation.get("nullable_entry_count", -2))
+        + int(preservation.get("nonnull_entry_count", -2))
+        + int(preservation.get("implicitly_unwrapped_entry_count", -2))
+        + int(preservation.get("null_resettable_entry_count", -2))
+        + int(preservation.get("unspecified_nullability_entry_count", -2)),
+        "cross_module_provider_nullability_preserves_nullable_and_unspecified": provider_nullable_count > 0
+        and provider_unspecified_count > 0,
+        "cross_module_consumer_imports_nullability_contract_surface": consumer_run["exit_code"] == 0
+        and isinstance(imported_rules, dict)
+        and int(imported_rules.get("imported_type_system_nullability_contract_module_count", 0)) == 1,
+        "cross_module_consumer_imported_nullability_counts_match_provider": isinstance(imported_rules, dict)
+        and int(imported_rules.get("imported_nullability_canonical_type_count", -1)) == provider_canonical_count
+        and int(imported_rules.get("imported_nullable_entry_count", -1)) == provider_nullable_count
+        and int(imported_rules.get("imported_unspecified_nullability_entry_count", -1)) == provider_unspecified_count,
+        "cross_module_consumer_nullability_replay_key_covers_imported_contract": isinstance(imported_rules, dict)
+        and "imported_type_system_nullability_contract_module_count=1" in str(imported_rules.get("replay_key", ""))
+        and "imported_nullable_entry_count=" in str(imported_rules.get("replay_key", "")),
+    }
+
+
+def write_drifted_nullability_contract_surface(provider_run: dict[str, Any]) -> Path:
+    provider_surface_path_value = provider_run.get("runtime_import_surface_path")
+    if not isinstance(provider_surface_path_value, str):
+        raise RuntimeError("provider did not emit a runtime import surface")
+    surface = load_json(ROOT / provider_surface_path_value)
+    preservation = surface.get("objc_type_system_nullability_contract_preservation")
+    if not isinstance(preservation, dict):
+        raise RuntimeError("provider runtime import surface did not emit nullability preservation")
+    preservation["unspecified_nullability_entry_count"] = max(
+        0,
+        int(preservation.get("unspecified_nullability_entry_count", 0)) - 1,
+    )
+    drift_dir = TMP_ROOT / "drifted-surfaces"
+    drift_dir.mkdir(parents=True, exist_ok=True)
+    drift_path = drift_dir / "nullability-contract-drift.runtime-import-surface.json"
+    drift_path.write_text(canonical_json(surface), encoding="utf-8")
+    return drift_path
+
+
 def build_summary() -> dict[str, Any]:
     positive_run = run_compiler(POSITIVE_FIXTURE, TMP_ROOT / "positive")
     nested_generic_positive_run = run_compiler(NESTED_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-nested-generic")
     generic_variance_positive_run = run_compiler(GENERIC_VARIANCE_POSITIVE_FIXTURE, TMP_ROOT / "positive-generic-variance")
     protocol_generic_positive_run = run_compiler(PROTOCOL_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-protocol-generic")
+    cross_module_nullability_drift_surface = write_drifted_nullability_contract_surface(positive_run)
+    cross_module_nullability_consumer_run = run_compiler(
+        GENERIC_VARIANCE_POSITIVE_FIXTURE,
+        TMP_ROOT / "positive-cross-module-nullability-consumer",
+        [
+            "--objc3-import-runtime-surface",
+            str(TMP_ROOT / "positive" / "module.runtime-import-surface.json"),
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+        ],
+    )
+    cross_module_nullability_drift_run = run_compiler(
+        GENERIC_VARIANCE_POSITIVE_FIXTURE,
+        TMP_ROOT / "negative-cross-module-nullability-drift",
+        [
+            "--objc3-import-runtime-surface",
+            str(cross_module_nullability_drift_surface),
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+        ],
+    )
     cross_module_generic_drift_surface = write_drifted_generic_contract_surface(protocol_generic_positive_run)
     cross_module_generic_consumer_run = run_compiler(
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
@@ -578,6 +657,19 @@ def build_summary() -> dict[str, Any]:
             + " ".join(str(diag.get("message", "")) for diag in cross_module_generic_drift_run["diagnostics"])
         ),
     }
+    cross_module_nullability_checks = compile_cross_module_nullability_contract_summary(
+        positive_run,
+        cross_module_nullability_consumer_run,
+    )
+    cross_module_nullability_drift_checks = {
+        "cross_module_nullability_contract_drift_fails_closed": cross_module_nullability_drift_run["exit_code"] != 0,
+        "cross_module_nullability_contract_drift_reports_entry_loss": "type-system nullability contract preservation dropped canonical nullability entries"
+        in (
+            cross_module_nullability_drift_run["stderr"]
+            + cross_module_nullability_drift_run["stdout"]
+            + " ".join(str(diag.get("message", "")) for diag in cross_module_nullability_drift_run["diagnostics"])
+        ),
+    }
 
     sema_contract_text = read(SEMA_CONTRACT)
     semantic_passes_text = read(SEMANTIC_PASSES)
@@ -612,6 +704,7 @@ def build_summary() -> dict[str, Any]:
         "semantic_pass_sources_and_replay_key": contains_all(semantic_passes_text, STATIC_FIELD_TOKENS + SEMANTIC_PASS_TOKENS + REPLAY_KEY_SEGMENTS),
         "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types", "object_pointer_type_name", "generic_parameter_variance_source_order"]),
         "runtime_import_surface_generic_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_generic_contract_preservation", "PopulateImportedTypeSystemGenericContractPreservation", "type_system_generic_contract_preservation_present", "type_system_protocol_qualified_generic_argument_count"]),
+        "runtime_import_surface_nullability_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_nullability_contract_preservation", "PopulateImportedTypeSystemNullabilityContractPreservation", "type_system_nullability_contract_preservation_present", "type_system_unspecified_nullability_entry_count"]),
         "lowering_contract_runtime_surface_present": contains_all(lowering_text, ["Lowering", "runtime"]),
         "ir_emitter_runtime_surface_present": contains_all(ir_text, ["Objc3", "Emit"]),
     }
@@ -782,12 +875,15 @@ def build_summary() -> dict[str, Any]:
         **protocol_generic_positive_checks,
         **cross_module_generic_checks,
         **cross_module_generic_drift_checks,
+        **cross_module_nullability_checks,
+        **cross_module_nullability_drift_checks,
         **negative_checks,
         **conformance_checks,
         "static_sema_contract_fields_present": all(static_presence["sema_contract_fields"].values()),
         "static_semantic_pass_sources_present": all(static_presence["semantic_pass_sources_and_replay_key"].values()),
         "static_artifact_json_fields_present": all(static_presence["artifact_json_fields"].values()),
         "static_runtime_import_surface_generic_contract_present": all(static_presence["runtime_import_surface_generic_contract"].values()),
+        "static_runtime_import_surface_nullability_contract_present": all(static_presence["runtime_import_surface_nullability_contract"].values()),
         "runtime_lowering_and_ir_source_refs_exist": LOWERING_CONTRACT.is_file() and IR_EMITTER.is_file(),
     }
     status = "PASS" if all(checks.values()) else "FAIL"
@@ -823,6 +919,8 @@ def build_summary() -> dict[str, Any]:
         "protocol_generic_positive_compile": {key: value for key, value in protocol_generic_positive_run.items() if key != "manifest"},
         "cross_module_generic_consumer_compile": {key: value for key, value in cross_module_generic_consumer_run.items() if key != "manifest"},
         "cross_module_generic_drift_compile": {key: value for key, value in cross_module_generic_drift_run.items() if key != "manifest"},
+        "cross_module_nullability_consumer_compile": {key: value for key, value in cross_module_nullability_consumer_run.items() if key != "manifest"},
+        "cross_module_nullability_drift_compile": {key: value for key, value in cross_module_nullability_drift_run.items() if key != "manifest"},
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
         "nullability_negative_compile": {key: value for key, value in nullability_negative_run.items() if key != "manifest"},
         "protocol_method_nullability_negative_compile": {key: value for key, value in protocol_method_nullability_negative_run.items() if key != "manifest"},

@@ -1250,6 +1250,8 @@ inline constexpr const char *kObjc3TypeSystemTypeSemanticModelCoreRule =
     "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
 inline constexpr const char *kObjc3TypeSystemGenericContractPreservationContractId =
     "objc3c.type_system.generic.contract.preservation.v1";
+inline constexpr const char *kObjc3TypeSystemNullabilityContractPreservationContractId =
+    "objc3c.type_system.nullability.contract.preservation.v1";
 
 struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   std::string contract_id = kObjc3TypeSystemTypeSourceClosureContractId;
@@ -3023,6 +3025,15 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   std::size_t imported_generic_variance_annotation_count = 0;
   std::size_t imported_generic_argument_reference_count = 0;
   std::size_t imported_protocol_qualified_generic_argument_count = 0;
+  std::size_t imported_type_system_nullability_contract_module_count = 0;
+  std::size_t imported_nullability_canonical_type_count = 0;
+  std::size_t imported_nullability_object_type_count = 0;
+  std::size_t imported_nullable_entry_count = 0;
+  std::size_t imported_nonnull_entry_count = 0;
+  std::size_t imported_implicitly_unwrapped_entry_count = 0;
+  std::size_t imported_null_resettable_entry_count = 0;
+  std::size_t imported_unspecified_nullability_entry_count = 0;
+  std::size_t imported_invalid_nullability_entry_count = 0;
   bool fail_closed = false;
   bool source_semantic_preservation_contract_ready = false;
   bool semantic_surface_published = false;

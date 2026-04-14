@@ -2408,6 +2408,65 @@ std::string BuildTypeSystemGenericContractPreservationJson(
   return out.str();
 }
 
+std::string BuildTypeSystemNullabilityContractPreservationReplayKey(
+    const Objc3TypeSystemTypeSemanticModelSummary &summary) {
+  std::ostringstream out;
+  out << kObjc3TypeSystemNullabilityContractPreservationContractId
+      << ";source_contract=" << kObjc3TypeSystemTypeSemanticModelContractId
+      << ";type_semantic_replay=" << summary.replay_key
+      << ";canonical_types=" << summary.canonical_type_entries
+      << ";object_types=" << summary.canonical_object_type_entries
+      << ";nullable=" << summary.canonical_nullable_entries
+      << ";nonnull=" << summary.canonical_nonnull_entries
+      << ";iuo=" << summary.canonical_implicitly_unwrapped_entries
+      << ";null_resettable=" << summary.canonical_null_resettable_entries
+      << ";unspecified=" << summary.canonical_unspecified_nullability_entries
+      << ";invalid=" << summary.canonical_invalid_type_entries;
+  return out.str();
+}
+
+std::string BuildTypeSystemNullabilityContractPreservationJson(
+    const Objc3TypeSystemTypeSemanticModelSummary &summary) {
+  const std::string replay_key =
+      BuildTypeSystemNullabilityContractPreservationReplayKey(summary);
+  const bool nullability_count_consistent =
+      summary.canonical_type_entries ==
+      summary.canonical_nullable_entries + summary.canonical_nonnull_entries +
+          summary.canonical_implicitly_unwrapped_entries +
+          summary.canonical_null_resettable_entries +
+          summary.canonical_unspecified_nullability_entries;
+  const bool ready = summary.ready_for_lowering_and_runtime &&
+                     summary.deterministic &&
+                     nullability_count_consistent &&
+                     !summary.replay_key.empty();
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(
+             kObjc3TypeSystemNullabilityContractPreservationContractId)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(kObjc3TypeSystemTypeSemanticModelContractId)
+      << "\",\"preservation_model\":\"runtime-import-surface-preserves-canonical-nullability-counts-and-type-semantic-replay-boundary\""
+      << ",\"canonical_type_count\":" << summary.canonical_type_entries
+      << ",\"object_type_count\":" << summary.canonical_object_type_entries
+      << ",\"nullable_entry_count\":" << summary.canonical_nullable_entries
+      << ",\"nonnull_entry_count\":" << summary.canonical_nonnull_entries
+      << ",\"implicitly_unwrapped_entry_count\":"
+      << summary.canonical_implicitly_unwrapped_entries
+      << ",\"null_resettable_entry_count\":"
+      << summary.canonical_null_resettable_entries
+      << ",\"unspecified_nullability_entry_count\":"
+      << summary.canonical_unspecified_nullability_entries
+      << ",\"invalid_nullability_entry_count\":"
+      << summary.canonical_invalid_type_entries
+      << ",\"ready\":" << (ready ? "true" : "false")
+      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
+      << ",\"type_semantic_replay_key\":\""
+      << EscapeJsonString(summary.replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key) << "\"}";
+  return out.str();
+}
+
 std::string BuildEffectsOwnershipSemanticModelSummaryJson(
     const Objc3EffectsOwnershipSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -7171,6 +7230,24 @@ std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
       << summary.imported_generic_argument_reference_count
       << ";imported_protocol_qualified_generic_argument_count="
       << summary.imported_protocol_qualified_generic_argument_count
+      << ";imported_type_system_nullability_contract_module_count="
+      << summary.imported_type_system_nullability_contract_module_count
+      << ";imported_nullability_canonical_type_count="
+      << summary.imported_nullability_canonical_type_count
+      << ";imported_nullability_object_type_count="
+      << summary.imported_nullability_object_type_count
+      << ";imported_nullable_entry_count="
+      << summary.imported_nullable_entry_count
+      << ";imported_nonnull_entry_count="
+      << summary.imported_nonnull_entry_count
+      << ";imported_implicitly_unwrapped_entry_count="
+      << summary.imported_implicitly_unwrapped_entry_count
+      << ";imported_null_resettable_entry_count="
+      << summary.imported_null_resettable_entry_count
+      << ";imported_unspecified_nullability_entry_count="
+      << summary.imported_unspecified_nullability_entry_count
+      << ";imported_invalid_nullability_entry_count="
+      << summary.imported_invalid_nullability_entry_count
       << ";modules=";
   for (std::size_t i = 0; i < summary.imported_module_names_lexicographic.size();
        ++i) {
@@ -7305,6 +7382,25 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
       summary.imported_protocol_qualified_generic_argument_count +=
           surface.type_system_protocol_qualified_generic_argument_count;
     }
+    if (surface.type_system_nullability_contract_preservation_present) {
+      ++summary.imported_type_system_nullability_contract_module_count;
+      summary.imported_nullability_canonical_type_count +=
+          surface.type_system_nullability_canonical_type_count;
+      summary.imported_nullability_object_type_count +=
+          surface.type_system_nullability_object_type_count;
+      summary.imported_nullable_entry_count +=
+          surface.type_system_nullable_entry_count;
+      summary.imported_nonnull_entry_count +=
+          surface.type_system_nonnull_entry_count;
+      summary.imported_implicitly_unwrapped_entry_count +=
+          surface.type_system_implicitly_unwrapped_entry_count;
+      summary.imported_null_resettable_entry_count +=
+          surface.type_system_null_resettable_entry_count;
+      summary.imported_unspecified_nullability_entry_count +=
+          surface.type_system_unspecified_nullability_entry_count;
+      summary.imported_invalid_nullability_entry_count +=
+          surface.type_system_invalid_nullability_entry_count;
+    }
   }
 
   std::sort(summary.imported_module_names_lexicographic.begin(),
@@ -7329,8 +7425,17 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
       summary.imported_type_system_generic_contract_module_count == 0u ||
       summary.imported_generic_variance_annotation_count >=
           summary.imported_generic_parameter_count;
+  const bool imported_nullability_contract_landed =
+      summary.imported_type_system_nullability_contract_module_count == 0u ||
+      summary.imported_nullability_canonical_type_count ==
+          summary.imported_nullable_entry_count +
+              summary.imported_nonnull_entry_count +
+              summary.imported_implicitly_unwrapped_entry_count +
+              summary.imported_null_resettable_entry_count +
+              summary.imported_unspecified_nullability_entry_count;
   summary.imported_type_system_type_surface_landed =
-      imported_optional_keypath_landed && imported_generic_contract_landed;
+      imported_optional_keypath_landed && imported_generic_contract_landed &&
+      imported_nullability_contract_landed;
   summary.imported_optional_runtime_semantics_landed =
       summary.optional_send_site_count == 0u ||
       summary.imported_optional_runtime_ready_module_count > 0u;
@@ -7433,6 +7538,24 @@ std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
       << summary.imported_generic_argument_reference_count
       << ",\"imported_protocol_qualified_generic_argument_count\":"
       << summary.imported_protocol_qualified_generic_argument_count
+      << ",\"imported_type_system_nullability_contract_module_count\":"
+      << summary.imported_type_system_nullability_contract_module_count
+      << ",\"imported_nullability_canonical_type_count\":"
+      << summary.imported_nullability_canonical_type_count
+      << ",\"imported_nullability_object_type_count\":"
+      << summary.imported_nullability_object_type_count
+      << ",\"imported_nullable_entry_count\":"
+      << summary.imported_nullable_entry_count
+      << ",\"imported_nonnull_entry_count\":"
+      << summary.imported_nonnull_entry_count
+      << ",\"imported_implicitly_unwrapped_entry_count\":"
+      << summary.imported_implicitly_unwrapped_entry_count
+      << ",\"imported_null_resettable_entry_count\":"
+      << summary.imported_null_resettable_entry_count
+      << ",\"imported_unspecified_nullability_entry_count\":"
+      << summary.imported_unspecified_nullability_entry_count
+      << ",\"imported_invalid_nullability_entry_count\":"
+      << summary.imported_invalid_nullability_entry_count
       << ",\"ready\":"
       << (IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary)
               ? "true"
@@ -8896,6 +9019,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &type_system_optional_keypath_lowering_contract_json,
     const std::string &type_system_optional_keypath_runtime_helper_contract_json,
     const std::string &type_system_generic_contract_preservation_json,
+    const std::string &type_system_nullability_contract_preservation_json,
     const std::string &error_handling_result_and_bridging_artifact_replay_json,
     const std::string &concurrency_actor_mailbox_runtime_import_json,
     const std::string &interop_foreign_surface_interface_preservation_json,
@@ -8988,6 +9112,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << type_system_optional_keypath_runtime_helper_contract_json << ",\n"
       << "  \"objc_type_system_generic_contract_preservation\": "
       << type_system_generic_contract_preservation_json << ",\n"
+      << "  \"objc_type_system_nullability_contract_preservation\": "
+      << type_system_nullability_contract_preservation_json << ",\n"
       << "  \"objc_error_handling_result_and_bridging_artifact_replay\": "
       << error_handling_result_and_bridging_artifact_replay_json << ",\n"
       << "  \"objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface\": "
@@ -25500,6 +25626,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 type_system_optional_keypath_lowering_replay_key),
             BuildTypeSystemGenericContractPreservationJson(
                 type_metadata_handoff, type_system_type_semantic_model_summary),
+            BuildTypeSystemNullabilityContractPreservationJson(
+                type_system_type_semantic_model_summary),
             BuildErrorHandlingResultAndBridgingArtifactReplaySummaryJson(
                 error_handling_result_and_bridging_artifact_replay_summary),
             BuildConcurrencyActorMailboxRuntimeImportSummaryJson(

@@ -78,6 +78,15 @@
 - `cross_module_consumer_replay_key_covers_imported_generic_contract`: `PASS`
 - `cross_module_generic_contract_drift_fails_closed`: `PASS`
 - `cross_module_generic_contract_drift_reports_variance_loss`: `PASS`
+- `cross_module_provider_nullability_contract_preservation_emitted`: `PASS`
+- `cross_module_provider_nullability_contract_ready`: `PASS`
+- `cross_module_provider_nullability_counts_are_complete`: `PASS`
+- `cross_module_provider_nullability_preserves_nullable_and_unspecified`: `PASS`
+- `cross_module_consumer_imports_nullability_contract_surface`: `PASS`
+- `cross_module_consumer_imported_nullability_counts_match_provider`: `PASS`
+- `cross_module_consumer_nullability_replay_key_covers_imported_contract`: `PASS`
+- `cross_module_nullability_contract_drift_fails_closed`: `PASS`
+- `cross_module_nullability_contract_drift_reports_entry_loss`: `PASS`
 - `negative_fixture_fails_closed`: `PASS`
 - `negative_diagnostics_json_emitted`: `PASS`
 - `negative_duplicate_protocol_diagnostic_observed`: `PASS`
@@ -188,6 +197,7 @@
 - `static_semantic_pass_sources_present`: `PASS`
 - `static_artifact_json_fields_present`: `PASS`
 - `static_runtime_import_surface_generic_contract_present`: `PASS`
+- `static_runtime_import_surface_nullability_contract_present`: `PASS`
 - `runtime_lowering_and_ir_source_refs_exist`: `PASS`
 
 ## Observed Positive Counts
