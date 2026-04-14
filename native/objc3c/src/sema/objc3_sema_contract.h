@@ -303,6 +303,16 @@ struct Objc3TypeSystemTypeSemanticModelSummary {
   std::size_t generic_erasure_semantic_sites = 0;
   std::size_t nullability_suffix_semantic_sites = 0;
   std::size_t nullability_semantic_sites = 0;
+  std::size_t canonical_type_entries = 0;
+  std::size_t canonical_object_type_entries = 0;
+  std::size_t canonical_protocol_qualified_entries = 0;
+  std::size_t canonical_generic_argument_entries = 0;
+  std::size_t canonical_nullable_entries = 0;
+  std::size_t canonical_nonnull_entries = 0;
+  std::size_t canonical_implicitly_unwrapped_entries = 0;
+  std::size_t canonical_null_resettable_entries = 0;
+  std::size_t canonical_unspecified_nullability_entries = 0;
+  std::size_t canonical_invalid_type_entries = 0;
   std::size_t invalid_generic_suffix_semantic_sites = 0;
   std::size_t invalid_nullability_suffix_semantic_sites = 0;
   std::size_t invalid_protocol_composition_semantic_sites = 0;
@@ -2825,9 +2835,68 @@ struct Objc3AutoreleasePoolScopeSummary {
   bool deterministic = true;
 };
 
+enum class Objc3SemanticCanonicalTypeKind : std::uint8_t {
+  Unknown = 0,
+  Scalar = 1,
+  Function = 2,
+  Block = 3,
+  Object = 4,
+  ClassObject = 5,
+  Selector = 6,
+  ProtocolObject = 7,
+  Instancetype = 8,
+  ObjectPointer = 9,
+  ForeignObject = 10,
+  Vector = 11,
+};
+
+enum class Objc3SemanticCanonicalNullability : std::uint8_t {
+  Unspecified = 0,
+  Nullable = 1,
+  Nonnull = 2,
+  ImplicitlyUnwrapped = 3,
+  NullResettable = 4,
+  Inherited = 5,
+};
+
+enum class Objc3SemanticCanonicalOwnership : std::uint8_t {
+  Unspecified = 0,
+  Strong = 1,
+  Copy = 2,
+  Retain = 3,
+  Weak = 4,
+  Unowned = 5,
+  UnsafeUnretained = 6,
+  Assign = 7,
+};
+
+struct Objc3SemanticCanonicalType {
+  ValueType value_type = ValueType::Unknown;
+  Objc3SemanticCanonicalTypeKind kind =
+      Objc3SemanticCanonicalTypeKind::Unknown;
+  Objc3SemanticCanonicalNullability nullability =
+      Objc3SemanticCanonicalNullability::Unspecified;
+  Objc3SemanticCanonicalOwnership ownership =
+      Objc3SemanticCanonicalOwnership::Unspecified;
+  bool is_vector = false;
+  std::string vector_base_spelling;
+  unsigned vector_lane_count = 1;
+  bool has_pointer_declarator = false;
+  unsigned pointer_declarator_depth = 0;
+  bool has_protocol_composition = false;
+  std::vector<std::string> protocol_composition_lexicographic;
+  bool has_generic_suffix = false;
+  std::vector<std::string> generic_arguments_lexicographic;
+  bool has_invalid_type_suffix = false;
+  bool deterministic = true;
+  std::string canonical_spelling;
+  std::string replay_key;
+};
+
 struct FunctionInfo {
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
+  std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
@@ -2881,6 +2950,7 @@ struct FunctionInfo {
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
+  Objc3SemanticCanonicalType return_canonical_type;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
@@ -2959,6 +3029,7 @@ struct Objc3MethodInfo {
   bool selector_has_missing_piece_keyword = false;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
+  std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
@@ -3012,6 +3083,7 @@ struct Objc3MethodInfo {
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
+  Objc3SemanticCanonicalType return_canonical_type;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
@@ -3083,6 +3155,7 @@ struct Objc3MethodInfo {
 
 struct Objc3PropertyInfo {
   ValueType type = ValueType::Unknown;
+  Objc3SemanticCanonicalType canonical_type;
   bool is_vector = false;
   std::string vector_base_spelling;
   unsigned vector_lane_count = 1;
@@ -3644,6 +3717,7 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::string name;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
+  std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
@@ -3697,6 +3771,7 @@ struct Objc3SemanticFunctionTypeMetadata {
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
+  Objc3SemanticCanonicalType return_canonical_type;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
@@ -3776,6 +3851,7 @@ struct Objc3SemanticMethodTypeMetadata {
   bool selector_has_missing_piece_keyword = false;
   std::size_t arity = 0;
   std::vector<ValueType> param_types;
+  std::vector<Objc3SemanticCanonicalType> param_canonical_types;
   std::vector<bool> param_is_vector;
   std::vector<std::string> param_vector_base_spelling;
   std::vector<unsigned> param_vector_lane_count;
@@ -3829,6 +3905,7 @@ struct Objc3SemanticMethodTypeMetadata {
   std::string return_ownership_arc_diagnostic_profile;
   std::string return_ownership_arc_fixit_hint;
   ValueType return_type = ValueType::I32;
+  Objc3SemanticCanonicalType return_canonical_type;
   bool return_is_vector = false;
   std::string return_vector_base_spelling;
   unsigned return_vector_lane_count = 1;
@@ -3897,6 +3974,7 @@ struct Objc3SemanticMethodTypeMetadata {
 struct Objc3SemanticPropertyTypeMetadata {
   std::string name;
   ValueType type = ValueType::Unknown;
+  Objc3SemanticCanonicalType canonical_type;
   bool is_vector = false;
   std::string vector_base_spelling;
   unsigned vector_lane_count = 1;

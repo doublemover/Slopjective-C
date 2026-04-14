@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-03",
+  "title": "Reject nullable Objective-C reference flow into nonnull parameters",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S227.\nmodule NegativeTypeSemanticNullableToNonnullFlow;\n\nfn needsNonnull(value: id!) -> i32 {\n  return 0;\n}\n\nfn main(maybeValue: id?) -> i32 {\n  return needsNonnull(maybeValue);\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S227",
+        "line": 9,
+        "column": 23
+      }
+    ]
+  }
+}

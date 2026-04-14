@@ -36,6 +36,6 @@ fn main(maybeValue: id?, fallback: id, box: id<SemanticValue>*?) -> i32 {
   let resolved = maybeValue ?? fallback;
   let sent = [maybeValue? description];
   let path = @keypath(SemanticBox, title);
-  let selected = choose(true, box, box);
+  let selected = choose(true, box, fallback);
   return 0;
 }

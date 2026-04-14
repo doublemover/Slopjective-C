@@ -1,0 +1,10 @@
+// Expected diagnostic code(s): O3S227.
+module NegativeTypeSemanticNullableToNonnullFlow;
+
+fn needsNonnull(value: id!) -> i32 {
+  return 0;
+}
+
+fn main(maybeValue: id?) -> i32 {
+  return needsNonnull(maybeValue);
+}

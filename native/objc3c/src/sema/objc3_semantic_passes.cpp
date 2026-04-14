@@ -40,6 +40,7 @@ enum class SemanticOwnershipKind {
 
 struct SemanticTypeInfo {
   ValueType type = ValueType::Unknown;
+  Objc3SemanticCanonicalType canonical_type;
   bool is_vector = false;
   std::string vector_base_spelling;
   unsigned vector_lane_count = 1;
@@ -57,6 +58,15 @@ struct SemanticTypeInfo {
 };
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
+
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
+    const FuncParam &param);
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
+    const FunctionDecl &fn);
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
+    const Objc3MethodDecl &method);
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
+    const Objc3PropertyDecl &property);
 
 struct OwnershipResourceMoveBindingState {
   bool cleanup_owned = false;
@@ -97,6 +107,12 @@ static SemanticTypeInfo ScopeLookupType(
 static SemanticTypeInfo MakeScalarSemanticType(ValueType type) {
   SemanticTypeInfo info;
   info.type = type;
+  info.canonical_type.value_type = type;
+  info.canonical_type.kind =
+      IsObjCReferenceAliasValueType(type)
+          ? Objc3SemanticCanonicalTypeKind::Object
+          : Objc3SemanticCanonicalTypeKind::Scalar;
+  info.canonical_type.canonical_spelling = objc3c::support::ValueTypeName(type);
   if (IsObjCReferenceAliasValueType(type)) {
     info.ownership_kind = SemanticOwnershipKind::Retained;
   }
@@ -107,6 +123,13 @@ static SemanticTypeInfo MakeVectorSemanticType(ValueType base_type, const std::s
                                                unsigned lane_count) {
   SemanticTypeInfo info;
   info.type = base_type;
+  info.canonical_type.value_type = base_type;
+  info.canonical_type.kind = Objc3SemanticCanonicalTypeKind::Vector;
+  info.canonical_type.is_vector = true;
+  info.canonical_type.vector_base_spelling = base_spelling;
+  info.canonical_type.vector_lane_count = lane_count;
+  info.canonical_type.canonical_spelling =
+      "vector<" + base_spelling + "," + std::to_string(lane_count) + ">";
   info.is_vector = true;
   info.vector_base_spelling = base_spelling;
   info.vector_lane_count = lane_count;
@@ -118,6 +141,7 @@ static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
     return MakeVectorSemanticType(param.type, param.vector_base_spelling, param.vector_lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(param.type);
+  info.canonical_type = BuildCanonicalSemanticTypeFromParam(param);
   if (IsObjCReferenceAliasValueType(param.type)) {
     if (param.ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -136,6 +160,7 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &f
     return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
+  info.canonical_type = BuildCanonicalSemanticTypeFromFunctionReturn(fn);
   if (IsObjCReferenceAliasValueType(fn.return_type)) {
     if (fn.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -154,6 +179,7 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodReturn(const Objc3MethodDecl &
     return MakeVectorSemanticType(method.return_type, method.return_vector_base_spelling, method.return_vector_lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
+  info.canonical_type = BuildCanonicalSemanticTypeFromMethodReturn(method);
   if (IsObjCReferenceAliasValueType(method.return_type)) {
     if (method.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -179,6 +205,9 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoParam(const FunctionInfo
     return MakeVectorSemanticType(fn.param_types[index], base_spelling, lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(fn.param_types[index]);
+  if (index < fn.param_canonical_types.size()) {
+    info.canonical_type = fn.param_canonical_types[index];
+  }
   if (IsObjCReferenceAliasValueType(fn.param_types[index])) {
     if (index < fn.param_ownership_is_weak_reference.size() &&
         fn.param_ownership_is_weak_reference[index]) {
@@ -201,6 +230,7 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionInfoReturn(const FunctionInf
     return MakeVectorSemanticType(fn.return_type, fn.return_vector_base_spelling, fn.return_vector_lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
+  info.canonical_type = fn.return_canonical_type;
   if (IsObjCReferenceAliasValueType(fn.return_type)) {
     if (fn.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -232,6 +262,9 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoParam(const Objc3MethodInf
                                   lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(method.param_types[index]);
+  if (index < method.param_canonical_types.size()) {
+    info.canonical_type = method.param_canonical_types[index];
+  }
   if (IsObjCReferenceAliasValueType(method.param_types[index])) {
     if (index < method.param_ownership_is_weak_reference.size() &&
         method.param_ownership_is_weak_reference[index]) {
@@ -257,6 +290,7 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodInfoReturn(
                                   method.return_vector_lane_count);
   }
   SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
+  info.canonical_type = method.return_canonical_type;
   if (IsObjCReferenceAliasValueType(method.return_type)) {
     if (method.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -278,6 +312,10 @@ static SemanticTypeInfo MakeCallableSemanticType(std::vector<ValueType> param_ty
                                                  ValueType return_type) {
   SemanticTypeInfo info;
   info.type = ValueType::Function;
+  info.canonical_type.value_type = ValueType::Function;
+  info.canonical_type.kind = Objc3SemanticCanonicalTypeKind::Block;
+  info.canonical_type.canonical_spelling = "block";
+  info.canonical_type.replay_key = "value=Function;kind=block";
   info.is_callable = true;
   info.callable_param_types = std::move(param_types);
   info.callable_return_type = return_type;
@@ -362,9 +400,37 @@ static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
   return !info.is_vector && IsObjCReferenceValueType(info.type);
 }
 
+static bool AreObjCReferenceTypesAssignmentCompatible(
+    const SemanticTypeInfo &target, const SemanticTypeInfo &value);
+
 static bool IsNullableObjCReferenceSemanticType(const SemanticTypeInfo &info) {
-  return IsObjCReferenceSemanticType(info) && info.has_nullability_suffix &&
-         !info.is_refined_nonnull_reference;
+  return IsObjCReferenceSemanticType(info) &&
+         !info.is_refined_nonnull_reference &&
+         (info.canonical_type.nullability ==
+              Objc3SemanticCanonicalNullability::Nullable ||
+          info.canonical_type.nullability ==
+              Objc3SemanticCanonicalNullability::ImplicitlyUnwrapped ||
+          (info.has_nullability_suffix &&
+           info.canonical_type.nullability ==
+               Objc3SemanticCanonicalNullability::Unspecified));
+}
+
+static bool IsNonnullDestinationObjCReferenceSemanticType(
+    const SemanticTypeInfo &info) {
+  return IsObjCReferenceSemanticType(info) &&
+         (info.canonical_type.nullability ==
+              Objc3SemanticCanonicalNullability::Nonnull ||
+          info.canonical_type.nullability ==
+              Objc3SemanticCanonicalNullability::ImplicitlyUnwrapped ||
+          info.canonical_type.nullability ==
+              Objc3SemanticCanonicalNullability::NullResettable);
+}
+
+static bool IsUnsafeNullableToNonnullFlow(const SemanticTypeInfo &target,
+                                          const SemanticTypeInfo &value) {
+  return IsNonnullDestinationObjCReferenceSemanticType(target) &&
+         IsNullableObjCReferenceSemanticType(value) &&
+         AreObjCReferenceTypesAssignmentCompatible(target, value);
 }
 
 static bool IsVoidSemanticType(const SemanticTypeInfo &info) {
@@ -377,6 +443,8 @@ static SemanticTypeInfo MakeNonnullRefinedSemanticType(
   if (IsObjCReferenceSemanticType(refined)) {
     refined.has_nullability_suffix = false;
     refined.is_refined_nonnull_reference = true;
+    refined.canonical_type.nullability =
+        Objc3SemanticCanonicalNullability::Nonnull;
   }
   return refined;
 }
@@ -4649,6 +4717,231 @@ static ProtocolCompositionInfo BuildProtocolCompositionInfoFromMethodReturn(cons
   return info;
 }
 
+static Objc3SemanticCanonicalTypeKind CanonicalTypeKindForValueType(
+    ValueType type, bool is_vector, bool object_pointer_type_spelling,
+    bool id_spelling, bool class_spelling, bool sel_spelling,
+    bool instancetype_spelling) {
+  if (is_vector) {
+    return Objc3SemanticCanonicalTypeKind::Vector;
+  }
+  if (object_pointer_type_spelling || type == ValueType::ObjCObjectPtr) {
+    return Objc3SemanticCanonicalTypeKind::ObjectPointer;
+  }
+  if (instancetype_spelling || type == ValueType::ObjCInstancetype) {
+    return Objc3SemanticCanonicalTypeKind::Instancetype;
+  }
+  if (class_spelling || type == ValueType::ObjCClass) {
+    return Objc3SemanticCanonicalTypeKind::ClassObject;
+  }
+  if (sel_spelling || type == ValueType::ObjCSel) {
+    return Objc3SemanticCanonicalTypeKind::Selector;
+  }
+  if (type == ValueType::ObjCProtocol) {
+    return Objc3SemanticCanonicalTypeKind::ProtocolObject;
+  }
+  if (id_spelling || type == ValueType::ObjCId) {
+    return Objc3SemanticCanonicalTypeKind::Object;
+  }
+  if (type == ValueType::Function) {
+    return Objc3SemanticCanonicalTypeKind::Function;
+  }
+  if (type == ValueType::Unknown) {
+    return Objc3SemanticCanonicalTypeKind::Unknown;
+  }
+  return Objc3SemanticCanonicalTypeKind::Scalar;
+}
+
+static Objc3SemanticCanonicalNullability CanonicalNullabilityFromTokens(
+    const std::vector<Objc3SemaTokenMetadata> &tokens) {
+  if (tokens.empty()) {
+    return Objc3SemanticCanonicalNullability::Unspecified;
+  }
+  const std::string &text = tokens.back().text;
+  if (text == "?") {
+    return Objc3SemanticCanonicalNullability::Nullable;
+  }
+  if (text == "!") {
+    return Objc3SemanticCanonicalNullability::ImplicitlyUnwrapped;
+  }
+  return Objc3SemanticCanonicalNullability::Unspecified;
+}
+
+static Objc3SemanticCanonicalOwnership CanonicalOwnershipFromQualifiers(
+    bool has_ownership_qualifier, bool weak_reference, bool unowned_reference,
+    bool unsafe_unretained, bool assign, bool copy, bool retain, bool strong) {
+  if (weak_reference) {
+    return Objc3SemanticCanonicalOwnership::Weak;
+  }
+  if (unowned_reference) {
+    return Objc3SemanticCanonicalOwnership::Unowned;
+  }
+  if (unsafe_unretained) {
+    return Objc3SemanticCanonicalOwnership::UnsafeUnretained;
+  }
+  if (assign) {
+    return Objc3SemanticCanonicalOwnership::Assign;
+  }
+  if (copy) {
+    return Objc3SemanticCanonicalOwnership::Copy;
+  }
+  if (retain) {
+    return Objc3SemanticCanonicalOwnership::Retain;
+  }
+  if (strong || has_ownership_qualifier) {
+    return Objc3SemanticCanonicalOwnership::Strong;
+  }
+  return Objc3SemanticCanonicalOwnership::Unspecified;
+}
+
+static std::string CanonicalTypeReplayKey(
+    const Objc3SemanticCanonicalType &type) {
+  std::ostringstream out;
+  out << "value=" << objc3c::support::ValueTypeName(type.value_type)
+      << ";kind=" << static_cast<int>(type.kind)
+      << ";nullability=" << static_cast<int>(type.nullability)
+      << ";ownership=" << static_cast<int>(type.ownership)
+      << ";vector=" << (type.is_vector ? 1 : 0)
+      << ";vector-base=" << type.vector_base_spelling
+      << ";lanes=" << type.vector_lane_count
+      << ";pointer=" << (type.has_pointer_declarator ? 1 : 0)
+      << ";pointer-depth=" << type.pointer_declarator_depth
+      << ";protocols="
+      << JoinStringVector(type.protocol_composition_lexicographic, "+")
+      << ";generics=" << JoinStringVector(type.generic_arguments_lexicographic, "+")
+      << ";invalid=" << (type.has_invalid_type_suffix ? 1 : 0);
+  return out.str();
+}
+
+static Objc3SemanticCanonicalType BuildCanonicalSemanticType(
+    ValueType value_type, bool is_vector, const std::string &vector_base_spelling,
+    unsigned vector_lane_count, bool id_spelling, bool class_spelling,
+    bool sel_spelling, bool instancetype_spelling,
+    bool object_pointer_type_spelling, bool has_generic_suffix,
+    const std::string &generic_suffix_text, bool has_pointer_declarator,
+    unsigned pointer_declarator_depth,
+    const std::vector<Objc3SemaTokenMetadata> &nullability_tokens,
+    bool has_ownership_qualifier, bool ownership_is_weak_reference,
+    bool ownership_is_unowned_reference, bool unsafe_unretained, bool assign,
+    bool copy, bool retain, bool strong, bool property_nullable,
+    bool property_nonnull, bool property_null_resettable,
+    bool has_invalid_type_suffix) {
+  Objc3SemanticCanonicalType type;
+  type.value_type = value_type;
+  type.kind = CanonicalTypeKindForValueType(
+      value_type, is_vector, object_pointer_type_spelling, id_spelling,
+      class_spelling, sel_spelling, instancetype_spelling);
+  type.is_vector = is_vector;
+  type.vector_base_spelling = vector_base_spelling;
+  type.vector_lane_count = vector_lane_count;
+  type.has_pointer_declarator = has_pointer_declarator;
+  type.pointer_declarator_depth = pointer_declarator_depth;
+  type.nullability = CanonicalNullabilityFromTokens(nullability_tokens);
+  if (property_null_resettable) {
+    type.nullability = Objc3SemanticCanonicalNullability::NullResettable;
+  } else if (property_nonnull) {
+    type.nullability = Objc3SemanticCanonicalNullability::Nonnull;
+  } else if (property_nullable) {
+    type.nullability = Objc3SemanticCanonicalNullability::Nullable;
+  }
+  type.ownership = CanonicalOwnershipFromQualifiers(
+      has_ownership_qualifier, ownership_is_weak_reference,
+      ownership_is_unowned_reference, unsafe_unretained, assign, copy, retain,
+      strong);
+  type.has_generic_suffix = has_generic_suffix;
+  if (has_generic_suffix) {
+    const ProtocolCompositionParseResult parsed =
+        ParseProtocolCompositionSuffixText(generic_suffix_text);
+    type.has_protocol_composition = true;
+    type.protocol_composition_lexicographic = parsed.names_lexicographic;
+    type.generic_arguments_lexicographic = parsed.names_lexicographic;
+  }
+  type.has_invalid_type_suffix = has_invalid_type_suffix;
+  type.deterministic = IsSortedUniqueStrings(type.protocol_composition_lexicographic) &&
+                       IsSortedUniqueStrings(type.generic_arguments_lexicographic);
+  type.canonical_spelling = objc3c::support::ValueTypeName(value_type);
+  if (type.has_protocol_composition) {
+    type.canonical_spelling += "<" +
+                               JoinStringVector(
+                                   type.protocol_composition_lexicographic, ",") +
+                               ">";
+  }
+  if (type.has_pointer_declarator) {
+    type.canonical_spelling += std::string(type.pointer_declarator_depth, '*');
+  }
+  type.replay_key = CanonicalTypeReplayKey(type);
+  return type;
+}
+
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
+    const FuncParam &param) {
+  return BuildCanonicalSemanticType(
+      param.type, param.vector_spelling, param.vector_base_spelling,
+      param.vector_lane_count, param.id_spelling, param.class_spelling,
+      param.sel_spelling, param.instancetype_spelling,
+      param.object_pointer_type_spelling, param.has_generic_suffix,
+      param.generic_suffix_text, param.has_pointer_declarator,
+      param.pointer_declarator_depth, param.nullability_suffix_tokens,
+      param.has_ownership_qualifier, param.ownership_is_weak_reference,
+      param.ownership_is_unowned_reference, false, false, false, false, false,
+      false, false, false, HasInvalidParamTypeSuffix(param));
+}
+
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
+    const FunctionDecl &fn) {
+  return BuildCanonicalSemanticType(
+      fn.return_type, fn.return_vector_spelling, fn.return_vector_base_spelling,
+      fn.return_vector_lane_count, fn.return_id_spelling, fn.return_class_spelling,
+      fn.return_sel_spelling, fn.return_instancetype_spelling,
+      fn.return_object_pointer_type_spelling, fn.has_return_generic_suffix,
+      fn.return_generic_suffix_text, fn.has_return_pointer_declarator,
+      fn.return_pointer_declarator_depth, fn.return_nullability_suffix_tokens,
+      fn.has_return_ownership_qualifier, fn.return_ownership_is_weak_reference,
+      fn.return_ownership_is_unowned_reference, false, false, false, false,
+      false, false, false, false,
+      HasInvalidGenericReturnTypeSuffix(fn) ||
+          HasInvalidPointerReturnTypeDeclarator(fn) ||
+          HasInvalidNullabilityReturnTypeSuffix(fn) ||
+          HasInvalidOwnershipQualifierReturnTypeSuffix(fn));
+}
+
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
+    const Objc3MethodDecl &method) {
+  return BuildCanonicalSemanticType(
+      method.return_type, method.return_vector_spelling,
+      method.return_vector_base_spelling, method.return_vector_lane_count,
+      method.return_id_spelling, method.return_class_spelling,
+      method.return_sel_spelling, method.return_instancetype_spelling,
+      method.return_object_pointer_type_spelling,
+      method.has_return_generic_suffix, method.return_generic_suffix_text,
+      method.has_return_pointer_declarator,
+      method.return_pointer_declarator_depth,
+      method.return_nullability_suffix_tokens,
+      method.has_return_ownership_qualifier,
+      method.return_ownership_is_weak_reference,
+      method.return_ownership_is_unowned_reference, false, false, false, false,
+      false, false, false, false,
+      HasInvalidGenericReturnTypeSuffix(method) ||
+          HasInvalidPointerReturnTypeDeclarator(method) ||
+          HasInvalidNullabilityReturnTypeSuffix(method) ||
+          HasInvalidOwnershipQualifierReturnTypeSuffix(method));
+}
+
+static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
+    const Objc3PropertyDecl &property) {
+  return BuildCanonicalSemanticType(
+      property.type, property.vector_spelling, property.vector_base_spelling,
+      property.vector_lane_count, property.id_spelling, property.class_spelling,
+      property.sel_spelling, property.instancetype_spelling,
+      property.object_pointer_type_spelling, property.has_generic_suffix,
+      property.generic_suffix_text, property.has_pointer_declarator,
+      property.pointer_declarator_depth, property.nullability_suffix_tokens,
+      property.has_ownership_qualifier, property.ownership_is_weak_reference,
+      property.ownership_is_unowned_reference, property.is_unsafe_unretained,
+      property.is_assign, property.is_copy, property.is_retain,
+      property.is_strong, property.is_nullable, property.is_nonnull,
+      property.is_null_resettable, HasInvalidPropertyTypeSuffix(property));
+}
+
 static void ValidateProtocolCompositionSuffix(const std::string &suffix_text,
                                               unsigned line,
                                               unsigned column,
@@ -5142,6 +5435,7 @@ static Objc3PropertyInfo BuildPropertyInfo(const Objc3PropertyDecl &property,
 
   Objc3PropertyInfo info;
   info.type = property.type;
+  info.canonical_type = BuildCanonicalSemanticTypeFromProperty(property);
   info.is_vector = property.vector_spelling;
   info.vector_base_spelling = property.vector_base_spelling;
   info.vector_lane_count = property.vector_lane_count;
@@ -5840,6 +6134,7 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.selector_has_missing_piece_keyword = selector_contract.selector_has_missing_piece_keyword;
   info.arity = method.params.size();
   info.param_types.reserve(method.params.size());
+  info.param_canonical_types.reserve(method.params.size());
   info.param_is_vector.reserve(method.params.size());
   info.param_vector_base_spelling.reserve(method.params.size());
   info.param_vector_lane_count.reserve(method.params.size());
@@ -5872,6 +6167,7 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   for (const auto &param : method.params) {
     const ProtocolCompositionInfo protocol_composition = BuildProtocolCompositionInfoFromParam(param);
     info.param_types.push_back(param.type);
+    info.param_canonical_types.push_back(BuildCanonicalSemanticTypeFromParam(param));
     info.param_is_vector.push_back(param.vector_spelling);
     info.param_vector_base_spelling.push_back(param.vector_base_spelling);
     info.param_vector_lane_count.push_back(param.vector_lane_count);
@@ -5953,6 +6249,7 @@ static Objc3MethodInfo BuildMethodInfo(const Objc3MethodDecl &method,
   info.return_ownership_arc_diagnostic_profile = method.return_ownership_arc_diagnostic_profile;
   info.return_ownership_arc_fixit_hint = method.return_ownership_arc_fixit_hint;
   info.return_type = method.return_type;
+  info.return_canonical_type = BuildCanonicalSemanticTypeFromMethodReturn(method);
   info.return_is_vector = method.return_vector_spelling;
   info.return_vector_base_spelling = method.return_vector_base_spelling;
   info.return_vector_lane_count = method.return_vector_lane_count;
@@ -6743,8 +7040,13 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
       return MakeScalarSemanticType(ValueType::I32);
     case Expr::Kind::BoolLiteral:
       return MakeScalarSemanticType(ValueType::Bool);
-    case Expr::Kind::NilLiteral:
-      return MakeScalarSemanticType(ValueType::ObjCId);
+    case Expr::Kind::NilLiteral: {
+      SemanticTypeInfo nil_type = MakeScalarSemanticType(ValueType::ObjCId);
+      nil_type.canonical_type.nullability =
+          Objc3SemanticCanonicalNullability::Nullable;
+      nil_type.has_nullability_suffix = true;
+      return nil_type;
+    }
     case Expr::Kind::Identifier: {
       if (expr->typed_keypath_literal_enabled) {
         if (!expr->typed_keypath_literal_is_normalized ||
@@ -7092,6 +7394,17 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                   expr->args[i]->line, expr->args[i]->column, arg_type,
                   diagnostics);
             }
+            if (IsUnsafeNullableToNonnullFlow(expected, arg_type)) {
+              diagnostics.push_back(
+                  MakeDiag(expr->args[i]->line,
+                           expr->args[i]->column,
+                           "O3S227",
+                           "nullability mismatch: parameter " +
+                               std::to_string(i) + " of callable '" +
+                               expr->ident +
+                               "' requires a nonnull Objective-C reference"));
+              continue;
+            }
             if (!IsUnknownSemanticType(expected) &&
                 !IsUnknownSemanticType(arg_type) &&
                 !IsSameSemanticType(arg_type, expected) &&
@@ -7150,6 +7463,14 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
             DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
                 expr->args[i]->line, expr->args[i]->column, arg_type,
                 diagnostics);
+          }
+          if (IsUnsafeNullableToNonnullFlow(expected, arg_type)) {
+            diagnostics.push_back(
+                MakeDiag(expr->args[i]->line, expr->args[i]->column, "O3S227",
+                         "nullability mismatch: parameter " +
+                             std::to_string(i) + " of '" + expr->ident +
+                             "' requires a nonnull Objective-C reference"));
+            continue;
           }
           if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
               !IsSameSemanticType(arg_type, expected) &&
@@ -7425,6 +7746,14 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
     if (IsEscapingBlockRuntimeHandleCompatible(target_type, value_type)) {
       DiagnoseEscapingBlockRuntimeHandleCaptureLegality(line, column, value_type,
                                                         diagnostics);
+    }
+    if (found_target && IsUnsafeNullableToNonnullFlow(target_type, value_type)) {
+      diagnostics.push_back(MakeDiag(
+          line, column, "O3S227",
+          "nullability mismatch: assignment to nonnull Objective-C reference '" +
+              target_name + "' may receive nullable value '" +
+              SemanticTypeName(value_type) + "'"));
+      return;
     }
     if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) &&
         !value_known_scalar && !assign_matches) {
@@ -7858,6 +8187,14 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
                                                    return_type)) {
           DiagnoseEscapingBlockRuntimeHandleCaptureLegality(
               ret->line, ret->column, return_type, diagnostics);
+        }
+        if (IsUnsafeNullableToNonnullFlow(expected_return_type, return_type)) {
+          diagnostics.push_back(MakeDiag(
+              ret->line, ret->column, "O3S227",
+              "nullability mismatch: return expression in function '" +
+                  function_name +
+                  "' may flow nullable value into nonnull Objective-C reference return"));
+          return;
         }
         const bool return_matches = IsSameSemanticType(return_type, expected_return_type) ||
             AreScalarI32AliasCompatible(expected_return_type, return_type) ||
@@ -8527,10 +8864,85 @@ static void CollectTypeSystemTypeSemanticStmtSites(
   }
 }
 
+static void AccumulateCanonicalTypeSemanticModelSummary(
+    const Objc3SemanticCanonicalType &type,
+    Objc3TypeSystemTypeSemanticModelSummary &summary) {
+  ++summary.canonical_type_entries;
+  if (type.kind == Objc3SemanticCanonicalTypeKind::Object ||
+      type.kind == Objc3SemanticCanonicalTypeKind::ClassObject ||
+      type.kind == Objc3SemanticCanonicalTypeKind::ProtocolObject ||
+      type.kind == Objc3SemanticCanonicalTypeKind::Instancetype ||
+      type.kind == Objc3SemanticCanonicalTypeKind::ObjectPointer ||
+      type.kind == Objc3SemanticCanonicalTypeKind::ForeignObject) {
+    ++summary.canonical_object_type_entries;
+  }
+  if (type.has_protocol_composition) {
+    ++summary.canonical_protocol_qualified_entries;
+  }
+  summary.canonical_generic_argument_entries +=
+      type.generic_arguments_lexicographic.size();
+  switch (type.nullability) {
+    case Objc3SemanticCanonicalNullability::Nullable:
+      ++summary.canonical_nullable_entries;
+      break;
+    case Objc3SemanticCanonicalNullability::Nonnull:
+      ++summary.canonical_nonnull_entries;
+      break;
+    case Objc3SemanticCanonicalNullability::ImplicitlyUnwrapped:
+      ++summary.canonical_implicitly_unwrapped_entries;
+      break;
+    case Objc3SemanticCanonicalNullability::NullResettable:
+      ++summary.canonical_null_resettable_entries;
+      break;
+    case Objc3SemanticCanonicalNullability::Inherited:
+    case Objc3SemanticCanonicalNullability::Unspecified:
+      ++summary.canonical_unspecified_nullability_entries;
+      break;
+  }
+  if (type.has_invalid_type_suffix || !type.deterministic) {
+    ++summary.canonical_invalid_type_entries;
+  }
+}
+
+static void AccumulateCanonicalTypeSemanticModelSummaryFromSurface(
+    const Objc3SemanticIntegrationSurface &surface,
+    Objc3TypeSystemTypeSemanticModelSummary &summary) {
+  for (const auto &function_entry : surface.functions) {
+    const FunctionInfo &function = function_entry.second;
+    for (const auto &param_type : function.param_canonical_types) {
+      AccumulateCanonicalTypeSemanticModelSummary(param_type, summary);
+    }
+    AccumulateCanonicalTypeSemanticModelSummary(function.return_canonical_type,
+                                               summary);
+  }
+  const auto accumulate_container =
+      [&summary](const auto &container_map) {
+        for (const auto &container_entry : container_map) {
+          for (const auto &property_entry : container_entry.second.properties) {
+            AccumulateCanonicalTypeSemanticModelSummary(
+                property_entry.second.canonical_type, summary);
+          }
+          for (const auto &method_entry : container_entry.second.methods) {
+            const Objc3MethodInfo &method = method_entry.second;
+            for (const auto &param_type : method.param_canonical_types) {
+              AccumulateCanonicalTypeSemanticModelSummary(param_type, summary);
+            }
+            AccumulateCanonicalTypeSemanticModelSummary(
+                method.return_canonical_type, summary);
+          }
+        }
+      };
+  accumulate_container(surface.interfaces);
+  accumulate_container(surface.implementations);
+  accumulate_container(surface.category_interfaces);
+  accumulate_container(surface.category_implementations);
+}
+
 Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
     const Objc3Program &ast, const Objc3SemanticIntegrationSurface &surface,
     std::size_t max_message_send_args) {
   Objc3TypeSystemTypeSemanticModelSummary summary;
+  AccumulateCanonicalTypeSemanticModelSummaryFromSurface(surface, summary);
   summary.object_pointer_semantic_sites =
       surface.type_annotation_surface_summary.object_pointer_type_sites;
   summary.protocol_composition_semantic_sites =
@@ -8625,6 +9037,16 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
           summary.nullability_suffix_semantic_sites &&
       summary.invalid_protocol_composition_semantic_sites <=
           summary.protocol_composition_semantic_sites &&
+      summary.canonical_invalid_type_entries <= summary.canonical_type_entries &&
+      summary.canonical_object_type_entries <= summary.canonical_type_entries &&
+      summary.canonical_protocol_qualified_entries <=
+          summary.canonical_type_entries &&
+      summary.canonical_nullable_entries +
+              summary.canonical_nonnull_entries +
+              summary.canonical_implicitly_unwrapped_entries +
+              summary.canonical_null_resettable_entries +
+              summary.canonical_unspecified_nullability_entries ==
+          summary.canonical_type_entries &&
       summary.optional_propagation_sites == summary.nil_coalescing_sites &&
       summary.guard_binding_exit_enforcement_sites <=
           summary.guard_binding_sites;
@@ -8649,6 +9071,22 @@ Objc3TypeSystemTypeSemanticModelSummary BuildTypeSystemTypeSemanticModelSummary(
       << ";nullability-suffixes="
       << summary.nullability_suffix_semantic_sites
       << ";nullability=" << summary.nullability_semantic_sites
+      << ";canonical-types=" << summary.canonical_type_entries
+      << ";canonical-object-types="
+      << summary.canonical_object_type_entries
+      << ";canonical-protocol-qualified="
+      << summary.canonical_protocol_qualified_entries
+      << ";canonical-generics="
+      << summary.canonical_generic_argument_entries
+      << ";canonical-nullable=" << summary.canonical_nullable_entries
+      << ";canonical-nonnull=" << summary.canonical_nonnull_entries
+      << ";canonical-iuo="
+      << summary.canonical_implicitly_unwrapped_entries
+      << ";canonical-null-resettable="
+      << summary.canonical_null_resettable_entries
+      << ";canonical-unspecified-nullability="
+      << summary.canonical_unspecified_nullability_entries
+      << ";canonical-invalid=" << summary.canonical_invalid_type_entries
       << ";invalid-generic-suffixes="
       << summary.invalid_generic_suffix_semantic_sites
       << ";invalid-nullability-suffixes="
@@ -20577,6 +21015,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       FunctionInfo info;
       info.arity = fn.params.size();
       info.param_types.reserve(fn.params.size());
+      info.param_canonical_types.reserve(fn.params.size());
       info.param_is_vector.reserve(fn.params.size());
       info.param_vector_base_spelling.reserve(fn.params.size());
       info.param_vector_lane_count.reserve(fn.params.size());
@@ -20609,6 +21048,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       for (const auto &param : fn.params) {
         const ProtocolCompositionInfo protocol_composition = BuildProtocolCompositionInfoFromParam(param);
         info.param_types.push_back(param.type);
+        info.param_canonical_types.push_back(BuildCanonicalSemanticTypeFromParam(param));
         info.param_is_vector.push_back(param.vector_spelling);
         info.param_vector_base_spelling.push_back(param.vector_base_spelling);
         info.param_vector_lane_count.push_back(param.vector_lane_count);
@@ -20693,6 +21133,7 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       info.return_ownership_arc_diagnostic_profile = fn.return_ownership_arc_diagnostic_profile;
       info.return_ownership_arc_fixit_hint = fn.return_ownership_arc_fixit_hint;
       info.return_type = fn.return_type;
+      info.return_canonical_type = BuildCanonicalSemanticTypeFromFunctionReturn(fn);
       info.return_is_vector = fn.return_vector_spelling;
       info.return_vector_base_spelling = fn.return_vector_base_spelling;
       info.return_vector_lane_count = fn.return_vector_lane_count;
@@ -20996,6 +21437,9 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
       existing.param_has_invalid_protocol_composition[i] =
           existing.param_has_invalid_protocol_composition[i] || param_protocol_composition.has_invalid_protocol_composition;
     }
+    for (std::size_t i = 0; i < fn.params.size() && i < existing.param_canonical_types.size(); ++i) {
+      existing.param_canonical_types[i] = BuildCanonicalSemanticTypeFromParam(fn.params[i]);
+    }
     existing.return_has_generic_suffix = existing.return_has_generic_suffix || fn.has_return_generic_suffix;
     existing.return_has_pointer_declarator = existing.return_has_pointer_declarator || fn.has_return_pointer_declarator;
     existing.return_has_nullability_suffix =
@@ -21023,6 +21467,8 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
                                              existing.return_has_invalid_ownership_qualifier;
     existing.return_has_invalid_protocol_composition =
         existing.return_has_invalid_protocol_composition || return_protocol_composition.has_invalid_protocol_composition;
+    existing.return_canonical_type =
+        BuildCanonicalSemanticTypeFromFunctionReturn(fn);
     existing.async_continuation_profile_is_normalized =
         existing.async_continuation_profile_is_normalized ||
         fn.async_continuation_profile_is_normalized;
@@ -21835,6 +22281,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.name = name;
     metadata.arity = source.arity;
     metadata.param_types = source.param_types;
+    metadata.param_canonical_types = source.param_canonical_types;
     metadata.param_is_vector = source.param_is_vector;
     metadata.param_vector_base_spelling = source.param_vector_base_spelling;
     metadata.param_vector_lane_count = source.param_vector_lane_count;
@@ -21888,6 +22335,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     metadata.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
     metadata.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
     metadata.return_type = source.return_type;
+    metadata.return_canonical_type = source.return_canonical_type;
     metadata.return_is_vector = source.return_is_vector;
     metadata.return_vector_base_spelling = source.return_vector_base_spelling;
     metadata.return_vector_lane_count = source.return_vector_lane_count;
@@ -22073,6 +22521,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       Objc3SemanticPropertyTypeMetadata property_metadata;
       property_metadata.name = property_name;
       property_metadata.type = source.type;
+      property_metadata.canonical_type = source.canonical_type;
       property_metadata.is_vector = source.is_vector;
       property_metadata.vector_base_spelling = source.vector_base_spelling;
       property_metadata.vector_lane_count = source.vector_lane_count;
@@ -22236,6 +22685,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.selector_has_missing_piece_keyword = source.selector_has_missing_piece_keyword;
       method_metadata.arity = source.arity;
       method_metadata.param_types = source.param_types;
+      method_metadata.param_canonical_types = source.param_canonical_types;
       method_metadata.param_is_vector = source.param_is_vector;
       method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
       method_metadata.param_vector_lane_count = source.param_vector_lane_count;
@@ -22289,6 +22739,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
       method_metadata.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
       method_metadata.return_type = source.return_type;
+      method_metadata.return_canonical_type = source.return_canonical_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
       method_metadata.return_vector_lane_count = source.return_vector_lane_count;
@@ -22434,6 +22885,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       Objc3SemanticPropertyTypeMetadata property_metadata;
       property_metadata.name = property_name;
       property_metadata.type = source.type;
+      property_metadata.canonical_type = source.canonical_type;
       property_metadata.is_vector = source.is_vector;
       property_metadata.vector_base_spelling = source.vector_base_spelling;
       property_metadata.vector_lane_count = source.vector_lane_count;
@@ -22571,6 +23023,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.selector_has_missing_piece_keyword = source.selector_has_missing_piece_keyword;
       method_metadata.arity = source.arity;
       method_metadata.param_types = source.param_types;
+      method_metadata.param_canonical_types = source.param_canonical_types;
       method_metadata.param_is_vector = source.param_is_vector;
       method_metadata.param_vector_base_spelling = source.param_vector_base_spelling;
       method_metadata.param_vector_lane_count = source.param_vector_lane_count;
@@ -22624,6 +23077,7 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
       method_metadata.return_ownership_arc_diagnostic_profile = source.return_ownership_arc_diagnostic_profile;
       method_metadata.return_ownership_arc_fixit_hint = source.return_ownership_arc_fixit_hint;
       method_metadata.return_type = source.return_type;
+      method_metadata.return_canonical_type = source.return_canonical_type;
       method_metadata.return_is_vector = source.return_is_vector;
       method_metadata.return_vector_base_spelling = source.return_vector_base_spelling;
       method_metadata.return_vector_lane_count = source.return_vector_lane_count;

@@ -2206,6 +2206,26 @@ std::string BuildTypeSystemTypeSemanticModelSummaryJson(
       << summary.nullability_suffix_semantic_sites
       << ",\"nullability_semantic_sites\":"
       << summary.nullability_semantic_sites
+      << ",\"canonical_type_entries\":"
+      << summary.canonical_type_entries
+      << ",\"canonical_object_type_entries\":"
+      << summary.canonical_object_type_entries
+      << ",\"canonical_protocol_qualified_entries\":"
+      << summary.canonical_protocol_qualified_entries
+      << ",\"canonical_generic_argument_entries\":"
+      << summary.canonical_generic_argument_entries
+      << ",\"canonical_nullable_entries\":"
+      << summary.canonical_nullable_entries
+      << ",\"canonical_nonnull_entries\":"
+      << summary.canonical_nonnull_entries
+      << ",\"canonical_implicitly_unwrapped_entries\":"
+      << summary.canonical_implicitly_unwrapped_entries
+      << ",\"canonical_null_resettable_entries\":"
+      << summary.canonical_null_resettable_entries
+      << ",\"canonical_unspecified_nullability_entries\":"
+      << summary.canonical_unspecified_nullability_entries
+      << ",\"canonical_invalid_type_entries\":"
+      << summary.canonical_invalid_type_entries
       << ",\"invalid_generic_suffix_semantic_sites\":"
       << summary.invalid_generic_suffix_semantic_sites
       << ",\"invalid_nullability_suffix_semantic_sites\":"
