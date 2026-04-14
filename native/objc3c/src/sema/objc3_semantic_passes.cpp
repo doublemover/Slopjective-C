@@ -3,6 +3,8 @@
 #include "sema/objc3_type_form_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
 
+#include "diag/objc3_diag_utils.h"
+
 #include <algorithm>
 #include <cctype>
 #include <limits>
@@ -12,12 +14,6 @@
 #include <type_traits>
 #include <unordered_set>
 #include <vector>
-
-static std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
-  std::ostringstream out;
-  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
-  return out.str();
-}
 
 static std::string JoinStringVector(const std::vector<std::string> &items,
                                     const std::string &separator) {

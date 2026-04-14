@@ -157,6 +157,10 @@ add_library(objc3c_diag STATIC
 objc3c_apply_build_defaults(objc3c_diag)
 objc3c_apply_llvm_direct_config(objc3c_diag)
 
+target_link_libraries(objc3c_lex PUBLIC
+  objc3c_diag
+)
+
 add_library(objc3c_parse STATIC
   src/parse/objc3_ast_builder.cpp
   src/parse/objc3_ast_builder_contract.cpp
@@ -169,6 +173,7 @@ objc3c_apply_build_defaults(objc3c_parse)
 objc3c_apply_llvm_direct_config(objc3c_parse)
 target_link_libraries(objc3c_parse PUBLIC
   objc3c_lex
+  objc3c_diag
 )
 
 add_library(objc3c_sema STATIC
@@ -232,6 +237,7 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_sema
   objc3c_lower
   objc3c_ir
+  objc3c_diag
   objc3c_json
 )
 
@@ -263,6 +269,7 @@ target_link_libraries(objc3c_runtime_abi PUBLIC
   objc3c_json
 )
 target_link_libraries(objc3c_io PUBLIC
+  objc3c_diag
   objc3c_json
   objc3c_runtime_abi
 )

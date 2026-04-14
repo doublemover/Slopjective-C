@@ -2,10 +2,12 @@
 
 #include <string>
 
+#include "diag/objc3_diag_utils.h"
+
 namespace objc3c::parse::support {
 
 bool ParseIntegerLiteralValue(const std::string &text, int &value);
 
-std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message);
+using ::MakeDiag;
 
 }  // namespace objc3c::parse::support

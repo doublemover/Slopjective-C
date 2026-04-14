@@ -11,6 +11,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "contracts/objc3_frontend_diagnostics_bus_contract.h"
+#include "diag/objc3_diag_utils.h"
 #include "ir/objc3_ir_emitter.h"
 #include "io/objc3_json.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
@@ -11036,21 +11038,6 @@ std::string BuildExecutableMetadataRuntimeIngestBinaryBoundarySummaryJson(
       << "\",\"failure_reason\":\""
       << EscapeJsonString(summary.failure_reason) << "\"}";
   return out.str();
-}
-
-std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
-  std::ostringstream out;
-  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
-  return out.str();
-}
-
-std::vector<std::string> FlattenStageDiagnostics(const Objc3FrontendDiagnosticsBus &diagnostics_bus) {
-  std::vector<std::string> diagnostics;
-  diagnostics.reserve(diagnostics_bus.size());
-  diagnostics.insert(diagnostics.end(), diagnostics_bus.lexer.begin(), diagnostics_bus.lexer.end());
-  diagnostics.insert(diagnostics.end(), diagnostics_bus.parser.begin(), diagnostics_bus.parser.end());
-  diagnostics.insert(diagnostics.end(), diagnostics_bus.semantic.begin(), diagnostics_bus.semantic.end());
-  return diagnostics;
 }
 
 struct Objc3ParserDiagnosticCodeCoverage {

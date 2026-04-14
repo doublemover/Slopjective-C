@@ -13,17 +13,6 @@ namespace {
 
 using objc3::io::EscapeJsonString;
 
-std::vector<std::string> FlattenStageDiagnostics(const Objc3FrontendDiagnosticsBus &stage_diagnostics,
-                                                 const std::vector<std::string> &post_pipeline_diagnostics) {
-  std::vector<std::string> diagnostics;
-  diagnostics.reserve(stage_diagnostics.size() + post_pipeline_diagnostics.size());
-  diagnostics.insert(diagnostics.end(), stage_diagnostics.lexer.begin(), stage_diagnostics.lexer.end());
-  diagnostics.insert(diagnostics.end(), stage_diagnostics.parser.begin(), stage_diagnostics.parser.end());
-  diagnostics.insert(diagnostics.end(), stage_diagnostics.semantic.begin(), stage_diagnostics.semantic.end());
-  diagnostics.insert(diagnostics.end(), post_pipeline_diagnostics.begin(), post_pipeline_diagnostics.end());
-  return diagnostics;
-}
-
 void WriteDiagnosticsTextArtifact(const std::filesystem::path &out_dir,
                                   const std::string &emit_prefix,
                                   const std::vector<std::string> &diagnostics) {

@@ -33,12 +33,6 @@ bool IsDiagnosticLess(const std::string &lhs, const std::string &rhs) {
   return lhs_key.raw < rhs_key.raw;
 }
 
-std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
-  std::ostringstream out;
-  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
-  return out.str();
-}
-
 void AppendMigrationAssistDiagnostics(const Objc3SemaPassManagerInput &input, std::vector<std::string> &diagnostics) {
   // runnable-core compatibility guard anchor: migration assist only
   // becomes a live fail-closed diagnostic surface in canonical mode.

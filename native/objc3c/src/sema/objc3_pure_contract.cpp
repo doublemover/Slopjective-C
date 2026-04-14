@@ -1,17 +1,12 @@
 #include "sema/objc3_semantic_passes.h"
 
+#include "diag/objc3_diag_utils.h"
+
 #include <algorithm>
-#include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-static std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
-  std::ostringstream out;
-  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
-  return out.str();
-}
 
 struct PureContractEffectInfo {
   struct SourceLoc {
@@ -476,4 +471,3 @@ void ValidatePureContractSemanticDiagnostics(const Objc3ParsedProgram &program,
                                        std::to_string(cause.detail_column) + ")"));
   }
 }
-

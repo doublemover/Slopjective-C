@@ -1,75 +1,8 @@
 #include "parse/objc3_diagnostic_source_precision_scaffold.h"
 
-#include <cstddef>
+#include "diag/objc3_diag_utils.h"
+
 #include <string>
-
-namespace {
-
-bool StartsWith(const std::string &value, const std::string &prefix) {
-  return value.size() >= prefix.size() &&
-         value.compare(0, prefix.size(), prefix) == 0;
-}
-
-bool TryParseUnsignedSegment(
-    const std::string &text,
-    std::size_t begin,
-    std::size_t delimiter_offset,
-    unsigned &value) {
-  if (delimiter_offset <= begin) {
-    return false;
-  }
-  unsigned parsed = 0;
-  for (std::size_t i = begin; i < delimiter_offset; ++i) {
-    const char c = text[i];
-    if (c < '0' || c > '9') {
-      return false;
-    }
-    const unsigned digit = static_cast<unsigned>(c - '0');
-    parsed = parsed * 10u + digit;
-  }
-  value = parsed;
-  return true;
-}
-
-bool TryParseDiagnosticCoordinateAndCode(
-    const std::string &diag_text,
-    unsigned &line,
-    unsigned &column,
-    std::string &code) {
-  constexpr const char *kPrefix = "error:";
-  if (!StartsWith(diag_text, kPrefix)) {
-    return false;
-  }
-
-  const std::size_t line_begin = 6u;
-  const std::size_t first_colon = diag_text.find(':', line_begin);
-  if (first_colon == std::string::npos ||
-      !TryParseUnsignedSegment(diag_text, line_begin, first_colon, line)) {
-    return false;
-  }
-
-  const std::size_t column_begin = first_colon + 1u;
-  const std::size_t second_colon = diag_text.find(':', column_begin);
-  if (second_colon == std::string::npos ||
-      !TryParseUnsignedSegment(diag_text, column_begin, second_colon, column)) {
-    return false;
-  }
-  if (second_colon + 1u >= diag_text.size() || diag_text[second_colon + 1u] != ' ') {
-    return false;
-  }
-
-  const std::size_t code_begin_marker = diag_text.rfind(" [");
-  if (code_begin_marker == std::string::npos ||
-      code_begin_marker + 3u >= diag_text.size() ||
-      diag_text.back() != ']') {
-    return false;
-  }
-
-  code = diag_text.substr(code_begin_marker + 2u, diag_text.size() - code_begin_marker - 3u);
-  return !code.empty();
-}
-
-}  // namespace
 
 std::string BuildObjc3ParserDiagnosticSourcePrecisionScaffoldKey(
     const Objc3ParserDiagnosticSourcePrecisionScaffold &scaffold,

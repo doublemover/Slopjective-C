@@ -4,7 +4,6 @@
 #include <cctype>
 #include <cstdlib>
 #include <limits>
-#include <sstream>
 
 namespace objc3c::parse::support {
 
@@ -104,12 +103,6 @@ bool ParseIntegerLiteralValue(const std::string &text, int &value) {
 
   value = static_cast<int>(parsed);
   return true;
-}
-
-std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
-  std::ostringstream out;
-  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
-  return out.str();
 }
 
 }  // namespace objc3c::parse::support

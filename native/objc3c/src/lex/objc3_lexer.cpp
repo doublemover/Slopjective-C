@@ -1,8 +1,9 @@
 #include "lex/objc3_lexer.h"
 
 #include <cctype>
-#include <sstream>
 #include <string>
+
+#include "diag/objc3_diag_utils.h"
 
 namespace {
 
@@ -49,12 +50,6 @@ std::string EscapeStringTokenText(const std::string &value) {
   }
   escaped.push_back('"');
   return escaped;
-}
-
-std::string MakeDiag(unsigned line, unsigned column, const std::string &code, const std::string &message) {
-  std::ostringstream out;
-  out << "error:" << line << ":" << column << ": " << message << " [" << code << "]";
-  return out.str();
 }
 
 }  // namespace
