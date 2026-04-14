@@ -9043,6 +9043,23 @@ class Objc3Parser {
     if (decl.objc_package_entry_declared) {
       ++summary.interop_package_entry_sites;
     }
+    if (decl.objc_import_module_declared) {
+      ++summary.interop_import_module_sites;
+    }
+    if (decl.objc_swift_name_declared) {
+      ++summary.interop_swift_annotation_sites;
+    }
+    if (decl.objc_swift_private_declared) {
+      ++summary.interop_swift_annotation_sites;
+    }
+    if (decl.objc_cxx_name_declared) {
+      ++summary.interop_cxx_annotation_sites;
+    }
+    if (decl.objc_header_name_declared) {
+      ++summary.interop_header_import_sites;
+    }
+    summary.interop_error_bridge_sites +=
+        decl.objc_nserror_attribute_sites + decl.objc_status_code_attribute_sites;
     CountDraftSyntaxStatements(decl.body, summary);
   }
 
@@ -9136,11 +9153,17 @@ class Objc3Parser {
         << ";property_ownership_nullability="
         << summary.property_ownership_nullability_sites
         << ";interop_attrs=" << summary.interop_attribute_sites
+        << ";interop_import_modules=" << summary.interop_import_module_sites
+        << ";interop_swift_annotations="
+        << summary.interop_swift_annotation_sites
+        << ";interop_cxx_annotations=" << summary.interop_cxx_annotation_sites
+        << ";interop_header_imports=" << summary.interop_header_import_sites
         << ";interop_export_headers=" << summary.interop_header_export_sites
         << ";interop_abi_align=" << summary.interop_abi_alignment_sites
         << ";interop_foreign_type=" << summary.interop_foreign_type_sites
         << ";interop_mixed_images=" << summary.interop_mixed_image_sites
         << ";interop_package_entries=" << summary.interop_package_entry_sites
+        << ";interop_error_bridges=" << summary.interop_error_bridge_sites
         << ";total=" << summary.draft_syntax_surface_sites;
     return out.str();
   }
@@ -9202,9 +9225,14 @@ class Objc3Parser {
         summary.property_synthesis_metadata_sites +
         summary.property_reflection_input_sites +
         summary.property_ownership_nullability_sites +
-        summary.interop_attribute_sites + summary.interop_header_export_sites +
+        summary.interop_attribute_sites + summary.interop_import_module_sites +
+        summary.interop_swift_annotation_sites +
+        summary.interop_cxx_annotation_sites +
+        summary.interop_header_import_sites +
+        summary.interop_header_export_sites +
         summary.interop_abi_alignment_sites + summary.interop_foreign_type_sites +
-        summary.interop_mixed_image_sites + summary.interop_package_entry_sites;
+        summary.interop_mixed_image_sites + summary.interop_package_entry_sites +
+        summary.interop_error_bridge_sites;
     summary.replay_key = BuildObjc3DraftSyntaxSurfaceReplayKey(summary);
     summary.normalized =
         !summary.replay_key.empty() &&

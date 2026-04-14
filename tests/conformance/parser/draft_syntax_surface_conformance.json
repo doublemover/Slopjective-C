@@ -251,6 +251,46 @@
           "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 86}
         }
       ]
+    },
+    {
+      "id": "interop_import_module",
+      "summary_field": "interop_import_module_sites",
+      "positive_tokens": ["objc_import_module(named(\"ParserKit\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_import_module_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87}
+    },
+    {
+      "id": "interop_swift_annotation",
+      "summary_field": "interop_swift_annotation_sites",
+      "positive_tokens": [
+        "objc_swift_name(named(\"ParserKit.foreignEntry()\"))",
+        "objc_swift_private"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_import_module_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87}
+    },
+    {
+      "id": "interop_cxx_annotation",
+      "summary_field": "interop_cxx_annotation_sites",
+      "positive_tokens": ["objc_cxx_name(named(\"ParserKit::foreignEntry\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_import_module_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87}
+    },
+    {
+      "id": "interop_header_import",
+      "summary_field": "interop_header_import_sites",
+      "positive_tokens": ["objc_header_name(named(\"ParserKit/ForeignEntry.h\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_export_header_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87}
+    },
+    {
+      "id": "interop_error_bridge",
+      "summary_field": "interop_error_bridge_sites",
+      "positive_tokens": [
+        "objc_foreign, objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
+      "expected_diagnostic": {"code": "O3P280", "line": 4, "column": 69}
     }
   ]
 }

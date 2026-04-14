@@ -2205,11 +2205,16 @@ struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t property_reflection_input_sites = 0;
   std::size_t property_ownership_nullability_sites = 0;
   std::size_t interop_attribute_sites = 0;
+  std::size_t interop_import_module_sites = 0;
+  std::size_t interop_swift_annotation_sites = 0;
+  std::size_t interop_cxx_annotation_sites = 0;
+  std::size_t interop_header_import_sites = 0;
   std::size_t interop_header_export_sites = 0;
   std::size_t interop_abi_alignment_sites = 0;
   std::size_t interop_foreign_type_sites = 0;
   std::size_t interop_mixed_image_sites = 0;
   std::size_t interop_package_entry_sites = 0;
+  std::size_t interop_error_bridge_sites = 0;
   std::size_t draft_syntax_surface_sites = 0;
   bool normalized = false;
   std::string replay_key;

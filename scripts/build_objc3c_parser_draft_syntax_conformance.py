@@ -49,6 +49,11 @@ REQUIRED_SURFACES = [
     "property_reflection_input",
     "property_ownership_nullability",
     "interop_attribute",
+    "interop_import_module",
+    "interop_swift_annotation",
+    "interop_cxx_annotation",
+    "interop_header_import",
+    "interop_error_bridge",
 ]
 REPLAY_KEY_FIELDS = {
     "block_literal": "blocks",
@@ -75,6 +80,11 @@ REPLAY_KEY_FIELDS = {
     "property_reflection_input": "property_reflection_inputs",
     "property_ownership_nullability": "property_ownership_nullability",
     "interop_attribute": "interop_attrs",
+    "interop_import_module": "interop_import_modules",
+    "interop_swift_annotation": "interop_swift_annotations",
+    "interop_cxx_annotation": "interop_cxx_annotations",
+    "interop_header_import": "interop_header_imports",
+    "interop_error_bridge": "interop_error_bridges",
 }
 HEADER_RE = re.compile(r"(?mi)^\s*//\s*Expected diagnostic code\(s\):\s*(.+?)\s*$")
 CODE_RE = re.compile(r"O3[A-Z]\d{3}")

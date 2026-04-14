@@ -386,6 +386,18 @@ inline std::uint64_t BuildObjc3DraftSyntaxSurfaceFingerprint(
       static_cast<std::uint64_t>(summary.interop_attribute_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
+      static_cast<std::uint64_t>(summary.interop_import_module_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_swift_annotation_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_cxx_annotation_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_header_import_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
       static_cast<std::uint64_t>(summary.interop_header_export_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
@@ -399,6 +411,9 @@ inline std::uint64_t BuildObjc3DraftSyntaxSurfaceFingerprint(
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
       static_cast<std::uint64_t>(summary.interop_package_entry_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_error_bridge_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
       static_cast<std::uint64_t>(summary.draft_syntax_surface_sites));

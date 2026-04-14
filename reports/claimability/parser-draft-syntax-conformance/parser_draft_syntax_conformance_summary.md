@@ -43,6 +43,11 @@
 - `property_reflection_input`: `PASS`; replay `property_reflection_inputs`=`16`; negative fixtures=`1`
 - `property_ownership_nullability`: `PASS`; replay `property_ownership_nullability`=`8`; negative fixtures=`1`
 - `interop_attribute`: `PASS`; replay `interop_attrs`=`2`; negative fixtures=`6`
+- `interop_import_module`: `PASS`; replay `interop_import_modules`=`1`; negative fixtures=`1`
+- `interop_swift_annotation`: `PASS`; replay `interop_swift_annotations`=`2`; negative fixtures=`1`
+- `interop_cxx_annotation`: `PASS`; replay `interop_cxx_annotations`=`1`; negative fixtures=`1`
+- `interop_header_import`: `PASS`; replay `interop_header_imports`=`1`; negative fixtures=`1`
+- `interop_error_bridge`: `PASS`; replay `interop_error_bridges`=`1`; negative fixtures=`1`
 
 ## Validation Commands
 - `python scripts/build_objc3c_parser_draft_syntax_conformance.py --check`
