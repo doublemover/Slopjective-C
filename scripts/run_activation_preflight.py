@@ -13,6 +13,7 @@ from typing import Any, Sequence
 from objc3c_tooling.json_io import write_text_file
 from objc3c_tooling.paths import display_path, resolve_repo_path
 from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.public_workflow_output import normalize_newlines
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG_JSON = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
@@ -57,8 +58,6 @@ class CommandResult:
     stderr: str
 
 
-def normalize_newlines(value: str) -> str:
-    return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
 

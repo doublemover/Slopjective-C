@@ -12,6 +12,7 @@ from typing import Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -26,12 +27,6 @@ REPORT_PATH = ROOT / "tmp" / "reports" / "bonus-experiences" / "integration-summ
 
 
 
-def extract_line_value(stdout: str, prefix: str) -> str:
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
-    return ""
 
 
 def expect(condition: bool, message: str, failures: list[str]) -> None:

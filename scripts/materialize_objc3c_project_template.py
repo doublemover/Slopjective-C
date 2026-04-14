@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import display_path
 from objc3c_tooling.subprocesses import run_timed
+from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,12 +49,6 @@ def application_architecture_contract_paths() -> dict[str, Path]:
     }
 
 
-def extract_line_value(stdout: str, prefix: str) -> str:
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
-    return ""
 
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:

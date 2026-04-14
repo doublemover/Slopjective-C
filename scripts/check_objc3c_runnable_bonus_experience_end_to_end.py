@@ -14,6 +14,8 @@ from typing import Any, Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
 from objc3c_tooling.json_io import load_json_object
 from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.public_workflow_output import extract_output_value
+from objc3c_tooling.public_workflow_output import extract_report_paths
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,25 +35,8 @@ def expect(condition: bool, message: str) -> None:
 
 
 
-def extract_output_value(stdout: str, key: str) -> str | None:
-    prefix = f"{key}:"
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
-    return None
 
 
-def extract_report_paths(stdout: str) -> list[str]:
-    report_paths: list[str] = []
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith("summary_path:"):
-            report_paths.append(line.split(":", 1)[1].strip().replace("\\", "/"))
-            continue
-        if line.startswith("public-workflow-report:"):
-            report_paths.append(line.split(":", 1)[1].strip().replace("\\", "/"))
-    return report_paths
 
 
 def load_json(path: Path) -> dict[str, Any]:

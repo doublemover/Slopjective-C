@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.public_workflow_output import case_ids_from_acceptance
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/metaprogramming_interop_closure/executable_proof_abi_contract.json"
@@ -19,8 +20,6 @@ def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def case_ids_from_acceptance(report: dict[str, Any]) -> set[str]:
-    return {case.get("case_id") for case in report.get("cases", []) if isinstance(case, dict) and case.get("case_id")}
 
 
 def main() -> int:

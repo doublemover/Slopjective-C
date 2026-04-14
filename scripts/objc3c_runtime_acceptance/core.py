@@ -16,6 +16,8 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable
+from objc3c_tooling.probe_output import parse_json_output
+from objc3c_tooling.probe_output import parse_key_value_output
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -5272,17 +5274,6 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def parse_json_output(result: subprocess.CompletedProcess[str], label: str) -> dict[str, Any]:
-    stdout = result.stdout.strip()
-    if not stdout:
-        raise RuntimeError(f"{label} produced no JSON output")
-    try:
-        payload = json.loads(stdout)
-    except json.JSONDecodeError as exc:
-        raise RuntimeError(f"{label} produced invalid JSON: {exc}\nstdout:\n{stdout}") from exc
-    if not isinstance(payload, dict):
-        raise RuntimeError(f"{label} did not produce a JSON object")
-    return payload
 
 
 def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -> bool:
@@ -5304,29 +5295,6 @@ def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -
     return False
 
 
-def parse_key_value_output(
-    result: subprocess.CompletedProcess[str], label: str
-) -> dict[str, Any]:
-    stdout = result.stdout.strip()
-    if not stdout:
-        raise RuntimeError(f"{label} produced no key/value output")
-    payload: dict[str, Any] = {}
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if not line:
-            continue
-        if "=" not in line:
-            raise RuntimeError(f"{label} produced malformed line: {line}")
-        key, value = line.split("=", 1)
-        key = key.strip()
-        value = value.strip()
-        if value and (value.lstrip("-").isdigit()):
-            payload[key] = int(value)
-        else:
-            payload[key] = value
-    if not payload:
-        raise RuntimeError(f"{label} produced no parseable key/value output")
-    return payload
 
 
 @dataclass(frozen=True)

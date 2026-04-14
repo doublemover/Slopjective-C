@@ -10,6 +10,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import display_path, resolve_repo_path
+from objc3c_tooling.public_workflow_output import normalize_newlines
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -28,8 +29,6 @@ EXIT_GATE_OPEN = 1
 EXIT_HARD_FAILURE = 2
 
 
-def normalize_newlines(value: str) -> str:
-    return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
 

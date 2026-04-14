@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Callable, Sequence
 from objc3c_tooling.paths import display_path
 from objc3c_tooling.json_io import render_json
+from objc3c_tooling.public_workflow_output import normalize_newlines
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INPUT = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
@@ -66,8 +67,6 @@ class OverlapConflictRow:
     lanes: tuple[str, ...]
 
 
-def normalize_newlines(value: str) -> str:
-    return value.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def normalize_inline_text(value: str) -> str:

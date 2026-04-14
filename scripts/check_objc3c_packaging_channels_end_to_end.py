@@ -15,6 +15,7 @@ from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import run_capture
+from objc3c_tooling.public_workflow_output import extract_output_value
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -39,13 +40,6 @@ def extract_zip(zip_path: Path, destination: Path) -> None:
         archive.extractall(destination)
 
 
-def extract_output_value(stdout: str, key: str) -> str | None:
-    prefix = f"{key}:"
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
-    return None
 
 
 def main() -> int:

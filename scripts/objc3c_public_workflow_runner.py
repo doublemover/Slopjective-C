@@ -17,6 +17,7 @@ from time import perf_counter
 from typing import Callable, Sequence
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import run_capture, run_completed
+from objc3c_tooling.public_workflow_output import extract_public_workflow_report_paths as extract_report_paths
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -1261,32 +1262,6 @@ def to_repo_relative(raw_path: str) -> str:
     return raw_path.strip().replace("\\", "/")
 
 
-def extract_report_paths(stdout: str) -> list[str]:
-    report_paths: list[str] = []
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith("summary_path:"):
-            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
-            continue
-        if line.startswith("dump_path:"):
-            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
-            continue
-        if line.startswith("workspace_path:"):
-            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
-            continue
-        if line.startswith("template_path:"):
-            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
-            continue
-        if line.startswith("harness_path:"):
-            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
-            continue
-        match = re.search(r"runtime-acceptance:\s+PASS\s+\((.+)\)", line)
-        if match:
-            report_paths.append(to_repo_relative(match.group(1)))
-            continue
-        if line.startswith("out_dir:"):
-            report_paths.append(to_repo_relative(line.split(":", 1)[1]))
-    return report_paths
 
 
 def load_surface_from_report(
