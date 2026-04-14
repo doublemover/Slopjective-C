@@ -1,0 +1,16 @@
+// Expected diagnostic code(s): O3S216.
+module NegativeTypeSemanticProtocolQualifiedUnknownMessage;
+
+@protocol Worker
+@required
+- (id) requiredValue;
+@optional
+- (id) optionalValue;
+@end
+
+fn consume(worker: id<Worker>*?) -> i32 {
+  let required = [worker? requiredValue];
+  let optional = [worker? optionalValue];
+  let missing = [worker? missingValue];
+  return 0;
+}

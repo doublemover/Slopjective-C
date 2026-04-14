@@ -30,6 +30,7 @@ static std::string JoinStringVector(const std::vector<std::string> &items,
 }
 
 static bool IsObjCReferenceAliasValueType(ValueType type);
+struct Objc3ProtocolSemanticDefinition;
 
 enum class SemanticOwnershipKind {
   None,
@@ -1726,6 +1727,8 @@ DiagnoseUnsupportedFeatureClaimSources(
 
 struct Objc3MessageSendResolutionContext {
   const Objc3SemanticIntegrationSurface *surface = nullptr;
+  const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+      *protocol_definitions = nullptr;
   std::string current_implementation_name;
   std::string current_super_name;
   bool inside_method = false;
@@ -6412,8 +6415,12 @@ struct Objc3ProtocolSemanticDefinition {
   std::vector<std::string> inherited_protocols_lexicographic;
   std::unordered_map<std::string, Objc3ProtocolPropertyRequirementInfo>
       required_properties_by_name;
+  std::unordered_map<std::string, Objc3ProtocolPropertyRequirementInfo>
+      optional_properties_by_name;
   std::unordered_map<std::string, Objc3ProtocolRequirementInfo>
       required_methods_by_key;
+  std::unordered_map<std::string, Objc3ProtocolRequirementInfo>
+      optional_methods_by_key;
 };
 
 enum class Objc3ProtocolRequirementClosureStatus {
@@ -6433,9 +6440,42 @@ struct Objc3ProtocolRequirementClosure {
   bool conflicting_selector_is_class_method = false;
   std::unordered_map<std::string, const Objc3ProtocolPropertyRequirementInfo *>
       required_properties_by_name;
+  std::unordered_map<std::string, const Objc3ProtocolPropertyRequirementInfo *>
+      optional_properties_by_name;
   std::unordered_map<std::string, const Objc3ProtocolRequirementInfo *>
       required_methods_by_key;
+  std::unordered_map<std::string, const Objc3ProtocolRequirementInfo *>
+      optional_methods_by_key;
 };
+
+struct Objc3ProtocolQualifiedMessageRequirementResolution {
+  enum class Status {
+    NotProtocolQualified,
+    MissingRequirementClosure,
+    MissingSelector,
+    AmbiguousSelector,
+    Resolved,
+  };
+
+  Status status = Status::NotProtocolQualified;
+  const Objc3ProtocolRequirementInfo *requirement = nullptr;
+  std::string protocol_name;
+  std::string failing_protocol_name;
+};
+
+static bool CollectProtocolRequirementClosure(
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &definitions,
+    const std::string &protocol_name,
+    std::unordered_set<std::string> &active_protocols,
+    Objc3ProtocolRequirementClosure &closure);
+
+static Objc3ProtocolQualifiedMessageRequirementResolution
+ResolveProtocolQualifiedMessageRequirement(
+    const Objc3SemanticCanonicalType &receiver_type,
+    const std::string &selector,
+    bool is_class_method,
+    const Objc3MessageSendResolutionContext &context);
 
 static std::string BuildProtocolRequirementKey(const std::string &selector,
                                                bool is_class_method) {
@@ -6497,6 +6537,9 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
       definition_it->second.inherited_protocols_lexicographic =
           BuildSortedUniqueStringsLocal(protocol_decl.inherited_protocols);
       definition_it->second.required_methods_by_key.clear();
+      definition_it->second.optional_methods_by_key.clear();
+      definition_it->second.required_properties_by_name.clear();
+      definition_it->second.optional_properties_by_name.clear();
     } else {
       continue;
     }
@@ -6535,17 +6578,18 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
           getter_owner_states,
           setter_owner_states,
           diagnostics);
-      if (property_decl.protocol_requirement_kind ==
-          Objc3ProtocolRequirementKind::Optional) {
-        continue;
-      }
-
       Objc3ProtocolPropertyRequirementInfo requirement;
       requirement.property_name = property_decl.name;
       requirement.property = property_insert.first->second;
       requirement.protocol_name = protocol_decl.name;
       requirement.line = property_decl.line;
       requirement.column = property_decl.column;
+      if (property_decl.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        definition_it->second.optional_properties_by_name.emplace(
+            requirement.property_name, std::move(requirement));
+        continue;
+      }
       definition_it->second.required_properties_by_name.emplace(
           requirement.property_name, std::move(requirement));
     }
@@ -6580,7 +6624,9 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
       const std::string requirement_key = BuildProtocolRequirementKey(
           selector_contract.normalized_selector, method_decl.is_class_method);
       if (definition_it->second.required_methods_by_key.find(requirement_key) !=
-          definition_it->second.required_methods_by_key.end()) {
+              definition_it->second.required_methods_by_key.end() ||
+          definition_it->second.optional_methods_by_key.find(requirement_key) !=
+              definition_it->second.optional_methods_by_key.end()) {
         diagnostics.push_back(MakeDiag(
             method_decl.line, method_decl.column, "O3S200",
             "duplicate protocol selector '" +
@@ -6590,11 +6636,6 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
                 "' in protocol '" + protocol_decl.name + "'"));
         continue;
       }
-      if (method_decl.protocol_requirement_kind ==
-          Objc3ProtocolRequirementKind::Optional) {
-        continue;
-      }
-
       Objc3ProtocolRequirementInfo requirement;
       requirement.selector = selector_contract.normalized_selector;
       requirement.method =
@@ -6602,6 +6643,12 @@ BuildProtocolSemanticDefinitions(const Objc3Program &ast,
       requirement.protocol_name = protocol_decl.name;
       requirement.line = method_decl.line;
       requirement.column = method_decl.column;
+      if (method_decl.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        definition_it->second.optional_methods_by_key.emplace(requirement_key,
+                                                              std::move(requirement));
+        continue;
+      }
       definition_it->second.required_methods_by_key.emplace(requirement_key,
                                                             std::move(requirement));
     }
@@ -7733,6 +7780,98 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
                                          "' must be ObjC-reference-compatible or scalar bridge-compatible, got '" +
                                           SemanticTypeName(arg_type) + "'"));
     }
+  }
+  const Objc3ProtocolQualifiedMessageRequirementResolution protocol_resolution =
+      ResolveProtocolQualifiedMessageRequirement(
+          receiver_type.canonical_type, selector, false, message_send_context);
+  if (protocol_resolution.status ==
+      Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+          MissingRequirementClosure) {
+    const unsigned diag_line =
+        expr->receiver != nullptr ? expr->receiver->line : expr->line;
+    const unsigned diag_column =
+        expr->receiver != nullptr ? expr->receiver->column : expr->column;
+    diagnostics.push_back(MakeDiag(
+        diag_line, diag_column, "O3S216",
+        "selector resolution failed: protocol-qualified receiver '" +
+            receiver_type.canonical_type.canonical_spelling +
+            "' cannot resolve selector '" + selector +
+            "' because protocol '" + protocol_resolution.failing_protocol_name +
+            "' requirements are unavailable"));
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (protocol_resolution.status ==
+      Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+          MissingSelector) {
+    const unsigned diag_line =
+        expr->receiver != nullptr ? expr->receiver->line : expr->line;
+    const unsigned diag_column =
+        expr->receiver != nullptr ? expr->receiver->column : expr->column;
+    diagnostics.push_back(MakeDiag(
+        diag_line, diag_column, "O3S216",
+        "selector resolution failed: protocol-qualified receiver '" +
+            receiver_type.canonical_type.canonical_spelling +
+            "' does not provide selector '" +
+            FormatMethodSelectorForDiagnostic(selector, false) + "'"));
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (protocol_resolution.status ==
+      Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+          AmbiguousSelector) {
+    const unsigned diag_line =
+        expr->receiver != nullptr ? expr->receiver->line : expr->line;
+    const unsigned diag_column =
+        expr->receiver != nullptr ? expr->receiver->column : expr->column;
+    diagnostics.push_back(MakeDiag(
+        diag_line, diag_column, "O3S217",
+        "selector resolution is ambiguous for protocol-qualified receiver '" +
+            receiver_type.canonical_type.canonical_spelling +
+            "' and selector '" +
+            FormatMethodSelectorForDiagnostic(selector, false) +
+            "': incompatible protocol requirements"));
+    return MakeScalarSemanticType(ValueType::Unknown);
+  }
+  if (protocol_resolution.status ==
+          Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+              Resolved &&
+      protocol_resolution.requirement != nullptr) {
+    const Objc3MethodInfo &method = protocol_resolution.requirement->method;
+    if (expr->args.size() != method.arity) {
+      diagnostics.push_back(MakeDiag(
+          expr->line, expr->column, "O3S216",
+          "selector resolution failed: selector '" + selector +
+              "' resolves to arity " + std::to_string(method.arity) +
+              " for protocol-qualified receiver '" +
+              receiver_type.canonical_type.canonical_spelling + "'"));
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+    for (std::size_t i = 0; i < expr->args.size(); ++i) {
+      const SemanticTypeInfo arg_type = ValidateExpr(
+          expr->args[i].get(), scopes, globals, functions, diagnostics,
+          max_message_send_args, message_send_context);
+      const SemanticTypeInfo expected =
+          MakeSemanticTypeFromMethodInfoParam(method, i);
+      const bool bool_coercion =
+          !expected.is_vector && expected.type == ValueType::Bool &&
+          !arg_type.is_vector && arg_type.type == ValueType::I32;
+      const bool i32_alias_coercion =
+          AreScalarI32AliasCompatible(expected, arg_type);
+      const bool objc_reference_coercion =
+          AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+      if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
+          !IsSameSemanticType(arg_type, expected) && !bool_coercion &&
+          !i32_alias_coercion && !objc_reference_coercion) {
+        diagnostics.push_back(MakeDiag(
+            expr->args[i]->line, expr->args[i]->column, "O3S206",
+            "type mismatch: selector '" + selector +
+                "' on protocol-qualified receiver '" +
+                receiver_type.canonical_type.canonical_spelling +
+                "' expects '" + SemanticTypeName(expected) +
+                "' for argument " + std::to_string(i) + ", got '" +
+                SemanticTypeName(arg_type) + "'"));
+      }
+    }
+    return MakeSemanticTypeFromMethodInfoReturn(method);
   }
   const Objc3ResolvedMessageSendMethod resolution =
       ResolveConcreteMessageSendMethod(*expr, message_send_context);
@@ -16566,7 +16705,59 @@ static bool CollectProtocolRequirementClosure(
       }
       continue;
     }
+    const auto existing_optional_it =
+        closure.optional_properties_by_name.find(property_name);
+    if (existing_optional_it != closure.optional_properties_by_name.end() &&
+        !IsCompatiblePropertySignature(existing_optional_it->second->property,
+                                       requirement.property)) {
+      closure.status = Objc3ProtocolRequirementClosureStatus::
+          IncompatibleInheritedRequirement;
+      closure.failing_protocol_name = protocol_name;
+      closure.conflicting_member_name = requirement.property_name;
+      closure.conflicting_member_is_method = false;
+      closure.conflicting_selector_is_class_method = false;
+      active_protocols.erase(protocol_name);
+      return false;
+    }
     closure.required_properties_by_name.emplace(property_name, &requirement);
+  }
+
+  for (const auto &entry : definition.optional_properties_by_name) {
+    const std::string &property_name = entry.first;
+    const Objc3ProtocolPropertyRequirementInfo &requirement = entry.second;
+    const auto existing_required_it =
+        closure.required_properties_by_name.find(property_name);
+    if (existing_required_it != closure.required_properties_by_name.end()) {
+      if (!IsCompatiblePropertySignature(existing_required_it->second->property,
+                                         requirement.property)) {
+        closure.status = Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement;
+        closure.failing_protocol_name = protocol_name;
+        closure.conflicting_member_name = requirement.property_name;
+        closure.conflicting_member_is_method = false;
+        closure.conflicting_selector_is_class_method = false;
+        active_protocols.erase(protocol_name);
+        return false;
+      }
+      continue;
+    }
+    const auto existing_optional_it =
+        closure.optional_properties_by_name.find(property_name);
+    if (existing_optional_it != closure.optional_properties_by_name.end()) {
+      if (!IsCompatiblePropertySignature(existing_optional_it->second->property,
+                                         requirement.property)) {
+        closure.status = Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement;
+        closure.failing_protocol_name = protocol_name;
+        closure.conflicting_member_name = requirement.property_name;
+        closure.conflicting_member_is_method = false;
+        closure.conflicting_selector_is_class_method = false;
+        active_protocols.erase(protocol_name);
+        return false;
+      }
+      continue;
+    }
+    closure.optional_properties_by_name.emplace(property_name, &requirement);
   }
 
   for (const auto &entry : definition.required_methods_by_key) {
@@ -16589,11 +16780,141 @@ static bool CollectProtocolRequirementClosure(
       }
       continue;
     }
+    const auto existing_optional_it =
+        closure.optional_methods_by_key.find(requirement_key);
+    if (existing_optional_it != closure.optional_methods_by_key.end() &&
+        !IsCompatibleMethodSignature(existing_optional_it->second->method,
+                                     requirement.method)) {
+      closure.status = Objc3ProtocolRequirementClosureStatus::
+          IncompatibleInheritedRequirement;
+      closure.failing_protocol_name = protocol_name;
+      closure.conflicting_member_name = requirement.selector;
+      closure.conflicting_member_is_method = true;
+      closure.conflicting_selector_is_class_method =
+          requirement.method.is_class_method;
+      active_protocols.erase(protocol_name);
+      return false;
+    }
     closure.required_methods_by_key.emplace(requirement_key, &requirement);
+  }
+
+  for (const auto &entry : definition.optional_methods_by_key) {
+    const std::string &requirement_key = entry.first;
+    const Objc3ProtocolRequirementInfo &requirement = entry.second;
+    const auto existing_required_it =
+        closure.required_methods_by_key.find(requirement_key);
+    if (existing_required_it != closure.required_methods_by_key.end()) {
+      if (!IsCompatibleMethodSignature(existing_required_it->second->method,
+                                       requirement.method)) {
+        closure.status = Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement;
+        closure.failing_protocol_name = protocol_name;
+        closure.conflicting_member_name = requirement.selector;
+        closure.conflicting_member_is_method = true;
+        closure.conflicting_selector_is_class_method =
+            requirement.method.is_class_method;
+        active_protocols.erase(protocol_name);
+        return false;
+      }
+      continue;
+    }
+    const auto existing_optional_it =
+        closure.optional_methods_by_key.find(requirement_key);
+    if (existing_optional_it != closure.optional_methods_by_key.end()) {
+      if (!IsCompatibleMethodSignature(existing_optional_it->second->method,
+                                       requirement.method)) {
+        closure.status = Objc3ProtocolRequirementClosureStatus::
+            IncompatibleInheritedRequirement;
+        closure.failing_protocol_name = protocol_name;
+        closure.conflicting_member_name = requirement.selector;
+        closure.conflicting_member_is_method = true;
+        closure.conflicting_selector_is_class_method =
+            requirement.method.is_class_method;
+        active_protocols.erase(protocol_name);
+        return false;
+      }
+      continue;
+    }
+    closure.optional_methods_by_key.emplace(requirement_key, &requirement);
   }
 
   active_protocols.erase(protocol_name);
   return true;
+}
+
+static Objc3ProtocolQualifiedMessageRequirementResolution
+ResolveProtocolQualifiedMessageRequirement(
+    const Objc3SemanticCanonicalType &receiver_type,
+    const std::string &selector,
+    bool is_class_method,
+    const Objc3MessageSendResolutionContext &context) {
+  Objc3ProtocolQualifiedMessageRequirementResolution resolution;
+  if (!receiver_type.has_protocol_composition ||
+      receiver_type.protocol_composition_lexicographic.empty()) {
+    return resolution;
+  }
+  if (context.protocol_definitions == nullptr) {
+    resolution.status =
+        Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+            NotProtocolQualified;
+    return resolution;
+  }
+
+  resolution.status =
+      Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+          MissingSelector;
+  const std::string requirement_key =
+      BuildProtocolRequirementKey(selector, is_class_method);
+  for (const auto &protocol_name :
+       receiver_type.protocol_composition_lexicographic) {
+    Objc3ProtocolRequirementClosure closure;
+    std::unordered_set<std::string> active_protocols;
+    if (!CollectProtocolRequirementClosure(*context.protocol_definitions,
+                                          protocol_name, active_protocols,
+                                          closure)) {
+      resolution.status =
+          Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+              MissingRequirementClosure;
+      resolution.failing_protocol_name = closure.failing_protocol_name.empty()
+                                             ? protocol_name
+                                             : closure.failing_protocol_name;
+      return resolution;
+    }
+
+    const Objc3ProtocolRequirementInfo *candidate = nullptr;
+    const auto required_it =
+        closure.required_methods_by_key.find(requirement_key);
+    if (required_it != closure.required_methods_by_key.end()) {
+      candidate = required_it->second;
+    } else {
+      const auto optional_it =
+          closure.optional_methods_by_key.find(requirement_key);
+      if (optional_it != closure.optional_methods_by_key.end()) {
+        candidate = optional_it->second;
+      }
+    }
+    if (candidate == nullptr) {
+      continue;
+    }
+    if (resolution.requirement != nullptr &&
+        !IsCompatibleMethodSignature(resolution.requirement->method,
+                                     candidate->method)) {
+      resolution.status =
+          Objc3ProtocolQualifiedMessageRequirementResolution::Status::
+              AmbiguousSelector;
+      resolution.protocol_name = protocol_name;
+      return resolution;
+    }
+    if (resolution.requirement == nullptr) {
+      resolution.requirement = candidate;
+      resolution.protocol_name = candidate->protocol_name;
+    }
+  }
+  if (resolution.requirement != nullptr) {
+    resolution.status =
+        Objc3ProtocolQualifiedMessageRequirementResolution::Status::Resolved;
+  }
+  return resolution;
 }
 
 static bool IsRealizedClassOwner(const Objc3SemanticIntegrationSurface &surface,
@@ -27227,6 +27548,10 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
                             const Objc3SemanticValidationOptions &options,
                             std::vector<std::string> &diagnostics) {
   const Objc3Program &ast = Objc3ParsedProgramAst(program);
+  std::vector<std::string> protocol_definition_diagnostics;
+  const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+      protocol_definitions = BuildProtocolSemanticDefinitions(
+          ast, options.arc_mode_enabled, protocol_definition_diagnostics);
   const auto borrowed_callable_contracts =
       BuildOwnershipBorrowedCallableContracts(ast);
   std::unordered_map<std::string, const Objc3InterfaceDecl *> actor_interfaces;
@@ -27320,6 +27645,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
       const StaticScalarBindings static_scalar_bindings = CollectFunctionStaticScalarBindings(fn, &global_static_bindings);
       Objc3MessageSendResolutionContext message_send_context;
       message_send_context.surface = &surface;
+      message_send_context.protocol_definitions = &protocol_definitions;
       message_send_context.inside_async_context = fn.async_declared;
       ValidateStatements(fn.body, scopes, body_globals, surface.functions, expected_return_type, fn.name, diagnostics,
                          0, 0, 0, 0, false, options.max_message_send_args,
@@ -27423,6 +27749,7 @@ void ValidateSemanticBodies(const Objc3ParsedProgram &program, const Objc3Semant
           "method '" + MethodSelectorName(method) + "' in implementation '" + implementation_decl.name + "'";
       Objc3MessageSendResolutionContext message_send_context;
       message_send_context.surface = &surface;
+      message_send_context.protocol_definitions = &protocol_definitions;
       message_send_context.current_implementation_name = implementation_decl.name;
       message_send_context.inside_method = true;
       message_send_context.is_class_method = method.is_class_method;
