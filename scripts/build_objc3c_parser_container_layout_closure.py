@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.reports import expected_json_report
 from objc3c_tooling.reports import write_report_outputs
+from objc3c_tooling.validation import contains_all
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "reports" / "claimability" / "parser-container-layout"
@@ -56,9 +58,6 @@ def rel(path: Path) -> str:
 def read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
 
-
-def contains_all(text: str, tokens: list[str]) -> dict[str, bool]:
-    return {token: token in text for token in tokens}
 
 
 def build_summary() -> dict:
@@ -158,7 +157,7 @@ def write_outputs(summary: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true")
+    add_check_argument(parser)
     args = parser.parse_args()
     summary = build_summary()
     expected_json = expected_json_report(summary)

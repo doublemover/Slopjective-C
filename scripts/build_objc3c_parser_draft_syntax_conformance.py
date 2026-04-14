@@ -7,6 +7,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.reports import expected_json_report
 from objc3c_tooling.reports import write_report_outputs
 from objc3c_tooling.json_io import load_json_any as load_json
@@ -329,7 +330,7 @@ def write_outputs(summary: dict[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true")
+    add_check_argument(parser)
     args = parser.parse_args()
     summary = build_summary()
     expected_json = expected_json_report(summary)

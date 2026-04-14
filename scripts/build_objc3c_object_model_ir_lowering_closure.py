@@ -7,6 +7,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
+from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.reports import expected_json_report
 from objc3c_tooling.reports import write_report_outputs
 
@@ -376,7 +377,7 @@ def write_outputs(summary: dict) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--check", action="store_true")
+    add_check_argument(parser)
     args = parser.parse_args()
     summary = build_summary()
     expected_json = expected_json_report(summary)

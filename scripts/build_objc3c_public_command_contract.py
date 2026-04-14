@@ -4,12 +4,13 @@
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.json_io import load_json_any as load_json
+from objc3c_tooling.public_runner import load_public_workflow_runner
 
 sys.dont_write_bytecode = True
 
@@ -23,18 +24,16 @@ DEFAULT_OUTPUT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument('--check', action='store_true')
+    add_check_argument(parser)
     return parser.parse_args(argv)
 
 
 
 def load_runner() -> Any:
-    spec = importlib.util.spec_from_file_location('objc3c_public_workflow_runner_contract_builder', RUNNER_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_public_workflow_runner(
+        runner_path=RUNNER_PATH,
+        module_name='objc3c_public_workflow_runner_contract_builder',
+    )
 
 
 def build_contract() -> dict[str, object]:

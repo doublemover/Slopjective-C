@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import importlib.util
 import json
 import subprocess
 import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.json_io import write_text_file as write_text
+from objc3c_tooling.public_runner import load_public_workflow_runner
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
@@ -24,12 +24,10 @@ REPORT_MD_PATH = REPORT_DIR / 'workflow_integration_report.md'
 
 
 def load_runner() -> Any:
-    spec = importlib.util.spec_from_file_location('objc3c_public_workflow_runner_m314_d001', RUNNER_PATH)
-    module = importlib.util.module_from_spec(spec)
-    assert spec.loader is not None
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
+    return load_public_workflow_runner(
+        runner_path=RUNNER_PATH,
+        module_name='objc3c_public_workflow_runner_m314_d001',
+    )
 
 
 def main() -> None:

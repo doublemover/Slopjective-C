@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from objc3c_tooling.cli import add_check_argument
 from objc3c_tooling.reports import markdown_table
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +23,7 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument('--contract', type=Path, default=DEFAULT_CONTRACT)
-    parser.add_argument('--check', action='store_true')
+    add_check_argument(parser)
     return parser.parse_args(argv)
 
 
