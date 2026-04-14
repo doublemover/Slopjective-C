@@ -9967,7 +9967,8 @@ class Objc3Parser {
                                  unsigned &line,
                                  unsigned &column,
                                  const std::string &diagnostic_code,
-                                 const std::string &diagnostic_message) {
+                                 const std::string &diagnostic_message,
+                                 unsigned *split_closing_greater_tokens = nullptr) {
     if (!Match(TokenKind::Less)) {
       return false;
     }
@@ -9991,6 +9992,26 @@ class Objc3Parser {
         }
         continue;
       }
+      if (Match(TokenKind::GreaterGreater)) {
+        if (depth >= 2) {
+          suffix_text += ">>";
+          depth -= 2;
+          if (depth == 0) {
+            suffix_terminated = true;
+          }
+          continue;
+        }
+        if (split_closing_greater_tokens != nullptr) {
+          suffix_text += ">";
+          --depth;
+          *split_closing_greater_tokens += 1;
+          suffix_terminated = true;
+          continue;
+        }
+        suffix_text += ">>";
+        depth = -1;
+        break;
+      }
       suffix_text += Advance().text;
     }
     if (!suffix_terminated) {
@@ -10006,7 +10027,9 @@ class Objc3Parser {
       return true;
     }
     Match(TokenKind::Less);
-    while (!At(TokenKind::Greater) && !At(TokenKind::Eof)) {
+    bool clause_closed_by_constraint_suffix = false;
+    while (!At(TokenKind::Greater) && !At(TokenKind::Eof) &&
+           !clause_closed_by_constraint_suffix) {
       Objc3GenericParamDecl param;
       if (At(TokenKind::Identifier) &&
           IsGenericVarianceMarker(Peek().text)) {
@@ -10039,26 +10062,33 @@ class Objc3Parser {
           return false;
         }
         if (At(TokenKind::Less)) {
+          unsigned split_closing_greater_tokens = 0;
           param.has_constraint_generic_suffix =
               ParseRawGenericSuffixText(param.constraint_generic_suffix_text,
                                         param.constraint_generic_suffix_terminated,
                                         param.constraint_line,
                                         param.constraint_column, "O3P112",
-                                        "unterminated Objective-C interface generic constraint suffix");
+                                        "unterminated Objective-C interface generic constraint suffix",
+                                        &split_closing_greater_tokens);
           if (!param.has_constraint_generic_suffix) {
             return false;
           }
+          clause_closed_by_constraint_suffix =
+              split_closing_greater_tokens > 0u;
         }
       }
 
       decl.generic_params.push_back(std::move(param));
+      if (clause_closed_by_constraint_suffix) {
+        break;
+      }
       if (Match(TokenKind::Comma)) {
         continue;
       }
       break;
     }
 
-    if (!Match(TokenKind::Greater)) {
+    if (!clause_closed_by_constraint_suffix && !Match(TokenKind::Greater)) {
       const Token &token = Peek();
       diagnostics_.push_back(MakeDiag(
           token.line, token.column, "O3P112",
@@ -10869,6 +10899,19 @@ class Objc3Parser {
             }
             continue;
           }
+          if (Match(TokenKind::GreaterGreater)) {
+            if (depth >= 2) {
+              fn.return_generic_suffix_text += ">>";
+              depth -= 2;
+              if (depth == 0) {
+                fn.return_generic_suffix_terminated = true;
+              }
+              continue;
+            }
+            fn.return_generic_suffix_text += ">>";
+            depth = -1;
+            break;
+          }
           fn.return_generic_suffix_text += Advance().text;
         }
         if (!fn.return_generic_suffix_terminated) {
@@ -11426,6 +11469,19 @@ class Objc3Parser {
               param.generic_suffix_terminated = true;
             }
             continue;
+          }
+          if (Match(TokenKind::GreaterGreater)) {
+            if (depth >= 2) {
+              param.generic_suffix_text += ">>";
+              depth -= 2;
+              if (depth == 0) {
+                param.generic_suffix_terminated = true;
+              }
+              continue;
+            }
+            param.generic_suffix_text += ">>";
+            depth = -1;
+            break;
           }
           param.generic_suffix_text += Advance().text;
         }

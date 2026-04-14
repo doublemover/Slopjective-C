@@ -31,6 +31,7 @@ PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling"
 TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_typed_object_receiver_unknown_message.objc3"
 GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_constraint_violation.objc3"
 GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_substitution_unknown_message.objc3"
+NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nested_generic_constraint_violation.objc3"
 SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json"
 SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
 CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-01.json"
@@ -43,6 +44,7 @@ CONFORMANCE_PROTOCOL_QUALIFIED_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conf
 CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-08.json"
 CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-09.json"
 CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-10.json"
+CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-11.json"
 STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering_runtime_stress_manifest.json"
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
@@ -195,6 +197,7 @@ SEMANTIC_PASS_TOKENS = [
     "BuildInterfaceGenericDefinitions",
     "ValidateInterfaceGenericSpecializations",
     "SubstituteGenericReceiverType",
+    "ExtractGenericArgumentSpecialization",
     "generic_arguments_source_order",
     "SupportsPointerParamTypeDeclarator",
     "optional_methods_by_key",
@@ -342,6 +345,7 @@ def build_summary() -> dict[str, Any]:
     typed_object_receiver_unknown_message_negative_run = run_compiler(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-typed-object-receiver-unknown-message")
     generic_constraint_violation_negative_run = run_compiler(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-constraint-violation")
     generic_substitution_unknown_message_negative_run = run_compiler(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-substitution-unknown-message")
+    nested_generic_constraint_violation_negative_run = run_compiler(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nested-generic-constraint-violation")
     model, positive_checks = compile_positive_summary(positive_run)
 
     sema_contract_text = read(SEMA_CONTRACT)
@@ -362,6 +366,7 @@ def build_summary() -> dict[str, Any]:
     conformance_typed_object_receiver_unknown_message_negative = load_json(CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE)
     conformance_generic_constraint_violation_negative = load_json(CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE)
     conformance_generic_substitution_unknown_message_negative = load_json(CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE)
+    conformance_nested_generic_constraint_violation_negative = load_json(CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE)
 
     static_presence = {
         "sema_contract_fields": contains_all(sema_contract_text, STATIC_FIELD_TOKENS),
@@ -382,6 +387,7 @@ def build_summary() -> dict[str, Any]:
         TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
         GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
         GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
+        NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
         CONFORMANCE_POSITIVE,
         CONFORMANCE_NEGATIVE,
         CONFORMANCE_NULLABILITY_NEGATIVE,
@@ -392,6 +398,7 @@ def build_summary() -> dict[str, Any]:
         CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE,
         CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE,
         CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE,
+        CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE,
         SEMANTIC_MANIFEST,
         SEMANTIC_README,
         STRESS_MANIFEST,
@@ -431,6 +438,9 @@ def build_summary() -> dict[str, Any]:
         "generic_substitution_unknown_message_negative_fixture_fails_closed": generic_substitution_unknown_message_negative_run["exit_code"] != 0,
         "generic_substitution_unknown_message_negative_diagnostics_json_emitted": generic_substitution_unknown_message_negative_run["diagnostics_path"] is not None,
         "generic_substitution_unknown_message_diagnostic_observed": diagnostic_matches(generic_substitution_unknown_message_negative_run["diagnostics"], "O3S216", 23, 18),
+        "nested_generic_constraint_violation_negative_fixture_fails_closed": nested_generic_constraint_violation_negative_run["exit_code"] != 0,
+        "nested_generic_constraint_violation_negative_diagnostics_json_emitted": nested_generic_constraint_violation_negative_run["diagnostics_path"] is not None,
+        "nested_generic_constraint_violation_diagnostic_observed": diagnostic_matches(nested_generic_constraint_violation_negative_run["diagnostics"], "O3S206", 33, 12),
     }
 
     conformance_checks = {
@@ -444,6 +454,7 @@ def build_summary() -> dict[str, Any]:
         "semantic_manifest_indexes_typ_8013_08": "TYP-8013-08.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_09": "TYP-8013-09.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_10": "TYP-8013-10.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_11": "TYP-8013-11.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
@@ -455,6 +466,7 @@ def build_summary() -> dict[str, Any]:
         "semantic_readme_mentions_typed_object_receiver_unknown_message_negative_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_generic_constraint_violation_negative_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
+        "semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
@@ -465,6 +477,7 @@ def build_summary() -> dict[str, Any]:
         "typed_object_receiver_unknown_message_negative_conformance_references_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_typed_object_receiver_unknown_message_negative.get("references", []),
         "generic_constraint_violation_negative_conformance_references_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in conformance_generic_constraint_violation_negative.get("references", []),
         "generic_substitution_unknown_message_negative_conformance_references_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_generic_substitution_unknown_message_negative.get("references", []),
+        "nested_generic_constraint_violation_negative_conformance_references_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in conformance_nested_generic_constraint_violation_negative.get("references", []),
         "negative_conformance_expects_o3s206_location": conformance_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 7, "column": 21}],
         "nullability_negative_conformance_expects_o3s227_location": conformance_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S227", "line": 9, "column": 23}],
         "protocol_method_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_method_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
@@ -474,6 +487,7 @@ def build_summary() -> dict[str, Any]:
         "typed_object_receiver_unknown_message_negative_conformance_expects_o3s216_location": conformance_typed_object_receiver_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 18, "column": 18}],
         "generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 29, "column": 50}],
         "generic_substitution_unknown_message_negative_conformance_expects_o3s216_location": conformance_generic_substitution_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 23, "column": 18}],
+        "nested_generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_nested_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 33, "column": 12}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": no_tmp_source_truth,
     }
@@ -506,6 +520,7 @@ def build_summary() -> dict[str, Any]:
         "typed_object_receiver_unknown_message_negative_fixture": rel(TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
         "generic_constraint_violation_negative_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
         "generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
+        "nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
         "positive_compile": {key: value for key, value in positive_run.items() if key != "manifest"},
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
         "nullability_negative_compile": {key: value for key, value in nullability_negative_run.items() if key != "manifest"},
@@ -516,6 +531,7 @@ def build_summary() -> dict[str, Any]:
         "typed_object_receiver_unknown_message_negative_compile": {key: value for key, value in typed_object_receiver_unknown_message_negative_run.items() if key != "manifest"},
         "generic_constraint_violation_negative_compile": {key: value for key, value in generic_constraint_violation_negative_run.items() if key != "manifest"},
         "generic_substitution_unknown_message_negative_compile": {key: value for key, value in generic_substitution_unknown_message_negative_run.items() if key != "manifest"},
+        "nested_generic_constraint_violation_negative_compile": {key: value for key, value in nested_generic_constraint_violation_negative_run.items() if key != "manifest"},
         "type_semantic_model": model,
         "required_summary_fields": SUMMARY_FIELDS,
         "positive_minimum_counts": POSITIVE_MIN_COUNTS,
@@ -548,6 +564,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Typed object receiver unknown message negative fixture: `{summary['typed_object_receiver_unknown_message_negative_fixture']}`",
         f"- Generic constraint violation negative fixture: `{summary['generic_constraint_violation_negative_fixture']}`",
         f"- Generic substitution unknown message negative fixture: `{summary['generic_substitution_unknown_message_negative_fixture']}`",
+        f"- Nested generic constraint violation negative fixture: `{summary['nested_generic_constraint_violation_negative_fixture']}`",
         "",
         "## Checks",
     ]

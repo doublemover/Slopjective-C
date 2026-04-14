@@ -6949,6 +6949,42 @@ static std::string GenericArgumentObjectTypeName(const std::string &argument) {
   return trimmed.substr(0, end);
 }
 
+static bool ExtractGenericArgumentSpecialization(
+    const std::string &argument, std::string &object_name,
+    std::string &generic_suffix_text) {
+  const std::string trimmed = TrimAsciiWhitespace(argument);
+  object_name = GenericArgumentObjectTypeName(trimmed);
+  generic_suffix_text.clear();
+  if (object_name.empty()) {
+    return false;
+  }
+  std::size_t cursor = object_name.size();
+  while (cursor < trimmed.size() &&
+         std::isspace(static_cast<unsigned char>(trimmed[cursor])) != 0) {
+    ++cursor;
+  }
+  if (cursor >= trimmed.size() || trimmed[cursor] != '<') {
+    return true;
+  }
+  int depth = 0;
+  for (std::size_t index = cursor; index < trimmed.size(); ++index) {
+    const char c = trimmed[index];
+    if (c == '<') {
+      ++depth;
+    } else if (c == '>') {
+      --depth;
+      if (depth == 0) {
+        generic_suffix_text = trimmed.substr(cursor, index - cursor + 1u);
+        return true;
+      }
+      if (depth < 0) {
+        return false;
+      }
+    }
+  }
+  return false;
+}
+
 static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
     const std::string &argument_text) {
   const std::string argument = TrimAsciiWhitespace(argument_text);
@@ -6964,6 +7000,10 @@ static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
 
   const std::string object_name = GenericArgumentObjectTypeName(argument);
   if (!object_name.empty()) {
+    std::string specialized_object_name;
+    std::string generic_suffix_text;
+    const bool has_specialization = ExtractGenericArgumentSpecialization(
+        argument, specialized_object_name, generic_suffix_text);
     unsigned pointer_depth = 0;
     for (const char c : argument) {
       if (c == '*') {
@@ -6976,7 +7016,8 @@ static SemanticTypeInfo MakeSemanticTypeFromGenericArgumentText(
     SemanticTypeInfo info = MakeScalarSemanticType(ValueType::ObjCObjectPtr);
     info.canonical_type = BuildCanonicalSemanticType(
         ValueType::ObjCObjectPtr, false, "", 1u, false, false, false, false,
-        true, object_name, false, "", true, pointer_depth, {}, false, false,
+        true, object_name, has_specialization && !generic_suffix_text.empty(),
+        generic_suffix_text, true, pointer_depth, {}, false, false,
         false, false, false, false, false, false, false, false, false,
         false);
     info.object_pointer_type_name = object_name;
@@ -7029,9 +7070,14 @@ static bool GenericArgumentSatisfiesProtocolConstraint(
   if (trimmed.rfind("id<", 0) == 0u) {
     const ProtocolCompositionParseResult parsed =
         ParseProtocolCompositionSuffixText(trimmed.substr(2));
-    return std::find(parsed.names_lexicographic.begin(),
-                     parsed.names_lexicographic.end(),
-                     required_protocol) != parsed.names_lexicographic.end();
+    for (const auto &protocol_name : parsed.names_lexicographic) {
+      std::unordered_set<std::string> active_protocols;
+      if (ProtocolSatisfiesConstraint(protocol_definitions, protocol_name,
+                                      required_protocol, active_protocols)) {
+        return true;
+      }
+    }
+    return false;
   }
   const std::string object_name = GenericArgumentObjectTypeName(trimmed);
   if (object_name.empty()) {
@@ -7060,7 +7106,15 @@ static void ValidateGenericSpecializationType(
         &protocol_definitions,
     const std::string &object_pointer_type_name, bool has_generic_suffix,
     const std::string &generic_suffix_text, unsigned line, unsigned column,
-    const std::string &context, std::vector<std::string> &diagnostics) {
+    const std::string &context, std::vector<std::string> &diagnostics,
+    unsigned recursion_depth = 0u) {
+  if (recursion_depth > 16u) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: generic specialization for " + context +
+            " exceeds supported nested generic depth"));
+    return;
+  }
   const auto definition_it = generic_definitions.find(object_pointer_type_name);
   if (definition_it == generic_definitions.end()) {
     return;
@@ -7088,6 +7142,27 @@ static void ValidateGenericSpecializationType(
   }
   for (std::size_t index = 0; index < arguments.size(); ++index) {
     const auto &param = definition.parameters[index];
+    std::string nested_object_name;
+    std::string nested_generic_suffix_text;
+    if (!ExtractGenericArgumentSpecialization(arguments[index],
+                                             nested_object_name,
+                                             nested_generic_suffix_text)) {
+      diagnostics.push_back(MakeDiag(
+          line, column, "O3S206",
+          "type mismatch: generic argument '" + arguments[index] +
+              "' for parameter '" + param.name + "' of interface '" +
+              object_pointer_type_name +
+              "' has an unterminated nested generic specialization"));
+    } else if (!nested_object_name.empty() &&
+               generic_definitions.find(nested_object_name) !=
+                   generic_definitions.end()) {
+      ValidateGenericSpecializationType(
+          ast, generic_definitions, protocol_definitions, nested_object_name,
+          !nested_generic_suffix_text.empty(), nested_generic_suffix_text,
+          line, column,
+          "nested generic argument '" + arguments[index] + "' in " + context,
+          diagnostics, recursion_depth + 1u);
+    }
     for (const auto &required_protocol :
          param.constraint_protocols_lexicographic) {
       if (!GenericArgumentSatisfiesProtocolConstraint(

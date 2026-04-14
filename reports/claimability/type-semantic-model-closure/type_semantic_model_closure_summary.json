@@ -23,6 +23,11 @@
     "negative_diagnostics_json_emitted": true,
     "negative_duplicate_protocol_diagnostic_observed": true,
     "negative_fixture_fails_closed": true,
+    "nested_generic_constraint_violation_diagnostic_observed": true,
+    "nested_generic_constraint_violation_negative_conformance_expects_o3s206_location": true,
+    "nested_generic_constraint_violation_negative_conformance_references_fixture": true,
+    "nested_generic_constraint_violation_negative_diagnostics_json_emitted": true,
+    "nested_generic_constraint_violation_negative_fixture_fails_closed": true,
     "no_tmp_source_truth": true,
     "nullability_negative_conformance_expects_o3s227_location": true,
     "nullability_negative_conformance_references_fixture": true,
@@ -63,10 +68,12 @@
     "semantic_manifest_indexes_typ_8013_08": true,
     "semantic_manifest_indexes_typ_8013_09": true,
     "semantic_manifest_indexes_typ_8013_10": true,
+    "semantic_manifest_indexes_typ_8013_11": true,
     "semantic_readme_mentions_generic_constraint_violation_negative_fixture": true,
     "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": true,
     "semantic_readme_mentions_issue_8013": true,
     "semantic_readme_mentions_negative_fixture": true,
+    "semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture": true,
     "semantic_readme_mentions_nullability_negative_fixture": true,
     "semantic_readme_mentions_positive_fixture": true,
     "semantic_readme_mentions_protocol_method_nullability_negative_fixture": true,
@@ -154,6 +161,27 @@
     "stdout": ""
   },
   "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3",
+  "nested_generic_constraint_violation_negative_compile": {
+    "diagnostics": [
+      {
+        "code": "O3S206",
+        "column": 12,
+        "line": 33,
+        "message": "type mismatch: generic argument 'PlainBox*' for parameter 'T' of interface 'SemanticVault' does not satisfy protocol constraint 'Persistable'",
+        "raw": "error:33:12: type mismatch: generic argument 'PlainBox*' for parameter 'T' of interface 'SemanticVault' does not satisfy protocol constraint 'Persistable' [O3S206]",
+        "severity": "error"
+      }
+    ],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-nested-generic-constraint-violation/module.diagnostics.json",
+    "exit_code": 1,
+    "llvm_ir_path": null,
+    "manifest_path": null,
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-nested-generic-constraint-violation",
+    "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "nested_generic_constraint_violation_negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
   "nullability_negative_compile": {
     "diagnostics": [
       {
@@ -351,6 +379,7 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
     "tests/conformance/semantic/TYP-8013-01.json",
     "tests/conformance/semantic/TYP-8013-02.json",
     "tests/conformance/semantic/TYP-8013-03.json",
@@ -361,6 +390,7 @@
     "tests/conformance/semantic/TYP-8013-08.json",
     "tests/conformance/semantic/TYP-8013-09.json",
     "tests/conformance/semantic/TYP-8013-10.json",
+    "tests/conformance/semantic/TYP-8013-11.json",
     "tests/conformance/semantic/manifest.json",
     "tests/conformance/semantic/README.md",
     "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
@@ -416,6 +446,7 @@
     "semantic_pass_sources_and_replay_key": {
       "BuildInterfaceGenericDefinitions": true,
       "BuildTypeSystemTypeSemanticModelSummary": true,
+      "ExtractGenericArgumentSpecialization": true,
       "IsCompatibleCanonicalSemanticType": true,
       "IsUnsafeNullableToNonnullFlow": true,
       "MakeSemanticTypeFromPropertyInfo": true,

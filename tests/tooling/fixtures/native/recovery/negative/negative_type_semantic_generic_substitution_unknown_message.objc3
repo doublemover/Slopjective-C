@@ -11,7 +11,7 @@ module NegativeTypeSemanticGenericSubstitutionUnknownMessage;
 @implementation SemanticBox
 @end
 
-@interface SemanticVault<__covariant T : id<Persistable> >
+@interface SemanticVault<__covariant T : id<Persistable>>
 - (T)peek;
 @end
 

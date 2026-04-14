@@ -1,0 +1,35 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticNestedGenericConstraintViolation;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+@interface PlainBox
+@end
+
+@implementation PlainBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable>>
+- (T)peek;
+@end
+
+@implementation SemanticVault
+@end
+
+@interface SemanticEnvelope<__covariant T>
+- (T)unwrap;
+@end
+
+@implementation SemanticEnvelope
+@end
+
+fn consume(bad: SemanticEnvelope<SemanticVault<PlainBox *> *> *?) -> i32 {
+  return 0;
+}
