@@ -24945,7 +24945,16 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       manifest << ",";
     }
     manifest << "{\"name\":\"" << EscapeJsonString(interface_metadata.name)
-             << "\",\"properties\":[";
+             << "\",\"generic_parameter_names_source_order\":"
+             << BuildStringArrayJson(
+                    interface_metadata.generic_parameter_names_source_order)
+             << ",\"generic_parameter_variance_source_order\":"
+             << BuildStringArrayJson(
+                    interface_metadata.generic_parameter_variance_source_order)
+             << ",\"adopted_protocols_lexicographic\":"
+             << BuildStringArrayJson(
+                    interface_metadata.adopted_protocols_lexicographic)
+             << ",\"properties\":[";
     for (std::size_t property_index = 0;
          property_index < interface_metadata.properties_lexicographic.size();
          ++property_index) {

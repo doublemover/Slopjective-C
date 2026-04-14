@@ -1,0 +1,18 @@
+{
+  "id": "TYP-8013-13",
+  "title": "Accept covariant generic assignment through declared interface variance",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "issue": 8013,
+  "references": [
+    "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "module TypeSemanticGenericVariancePositive;\n\n@protocol Persistable\n@end\n\n@interface SemanticBase <Persistable>\n@end\n\n@implementation SemanticBase\n@end\n\n@interface SemanticBox : SemanticBase <Persistable>\n@end\n\n@implementation SemanticBox\n@end\n\n@interface SemanticVault<__covariant T : id<Persistable>>\n@end\n\n@implementation SemanticVault\n@end\n\nfn acceptCovariant(erased: SemanticVault<SemanticBase *> *?) -> i32 {\n  return 0;\n}\n\nfn consumeCovariant(boxes: SemanticVault<SemanticBox *> *?) -> i32 {\n  return acceptCovariant(boxes);\n}\n",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "manifest_surface": "semantic_canonical_type_metadata.interfaces.SemanticVault.generic_parameter_variance_source_order"
+  }
+}

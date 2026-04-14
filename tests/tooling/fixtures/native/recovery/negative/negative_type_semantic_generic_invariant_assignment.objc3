@@ -1,0 +1,31 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticGenericInvariantAssignment;
+
+@protocol Persistable
+@end
+
+@interface SemanticBase <Persistable>
+@end
+
+@implementation SemanticBase
+@end
+
+@interface SemanticBox : SemanticBase <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+@interface SemanticInvariantBox<T : id<Persistable>>
+@end
+
+@implementation SemanticInvariantBox
+@end
+
+fn acceptInvariant(erased: SemanticInvariantBox<SemanticBase *> *?) -> i32 {
+  return 0;
+}
+
+fn rejectInvariant(boxes: SemanticInvariantBox<SemanticBox *> *?) -> i32 {
+  return acceptInvariant(boxes);
+}

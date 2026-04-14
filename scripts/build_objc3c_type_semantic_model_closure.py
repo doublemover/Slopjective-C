@@ -23,6 +23,7 @@ ISSUE = "#8013"
 COMPILER = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
 POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_model_closure_positive.objc3"
 NESTED_GENERIC_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_nested_generic_positive.objc3"
+GENERIC_VARIANCE_POSITIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "type_semantic_generic_variance_positive.objc3"
 NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_duplicate_protocol_composition.objc3"
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
 PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_method_nullability_conflict.objc3"
@@ -33,10 +34,12 @@ TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooli
 GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_constraint_violation.objc3"
 GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_substitution_unknown_message.objc3"
 NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nested_generic_constraint_violation.objc3"
+GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_generic_invariant_assignment.objc3"
 SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json"
 SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
 CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-01.json"
 CONFORMANCE_NESTED_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-12.json"
+CONFORMANCE_GENERIC_VARIANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-13.json"
 CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-02.json"
 CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
 CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
@@ -47,6 +50,7 @@ CONFORMANCE_TYPED_OBJECT_RECEIVER_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "c
 CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-09.json"
 CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-10.json"
 CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-11.json"
+CONFORMANCE_GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-14.json"
 STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering_runtime_stress_manifest.json"
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
@@ -198,8 +202,10 @@ SEMANTIC_PASS_TOKENS = [
     "Objc3InterfaceGenericDefinition",
     "BuildInterfaceGenericDefinitions",
     "ValidateInterfaceGenericSpecializations",
+    "AreGenericSpecializationsVarianceAssignmentCompatible",
     "SubstituteGenericReceiverType",
     "ExtractGenericArgumentSpecialization",
+    "generic_parameter_variance_source_order",
     "generic_arguments_source_order",
     "SupportsPointerParamTypeDeclarator",
     "optional_methods_by_key",
@@ -363,9 +369,37 @@ def compile_nested_generic_positive_summary(run: dict[str, Any]) -> dict[str, bo
     }
 
 
+def compile_generic_variance_positive_summary(run: dict[str, Any]) -> dict[str, bool]:
+    manifest = run.get("manifest")
+    canonical_metadata = manifest.get("semantic_canonical_type_metadata") if isinstance(manifest, dict) else None
+    canonical_interfaces = canonical_metadata.get("interfaces", []) if isinstance(canonical_metadata, dict) else []
+    semantic_vault = next((entry for entry in canonical_interfaces if entry.get("name") == "SemanticVault"), None)
+    canonical_functions = canonical_metadata.get("functions", []) if isinstance(canonical_metadata, dict) else []
+    accept_covariant = next((entry for entry in canonical_functions if entry.get("name") == "acceptCovariant"), None)
+    consume_covariant = next((entry for entry in canonical_functions if entry.get("name") == "consumeCovariant"), None)
+    accept_param_types = accept_covariant.get("param_canonical_types", []) if isinstance(accept_covariant, dict) else []
+    consume_param_types = consume_covariant.get("param_canonical_types", []) if isinstance(consume_covariant, dict) else []
+    return {
+        "generic_variance_positive_fixture_compiles": run["exit_code"] == 0,
+        "generic_variance_positive_manifest_emitted": run["manifest_path"] is not None,
+        "generic_variance_positive_llvm_ir_emitted": run["llvm_ir_path"] is not None,
+        "generic_variance_interface_metadata_preserves_parameter_name": isinstance(semantic_vault, dict)
+        and semantic_vault.get("generic_parameter_names_source_order") == ["T"],
+        "generic_variance_interface_metadata_preserves_covariance": isinstance(semantic_vault, dict)
+        and semantic_vault.get("generic_parameter_variance_source_order") == ["__covariant"],
+        "generic_variance_interface_metadata_preserves_protocol_adoption": isinstance(semantic_vault, dict)
+        and semantic_vault.get("adopted_protocols_lexicographic") == [],
+        "generic_variance_assignment_param_metadata_preserves_erased_target": len(accept_param_types) == 1
+        and (accept_param_types[0] or {}).get("generic_arguments_source_order") == ["SemanticBase*"],
+        "generic_variance_assignment_param_metadata_preserves_concrete_value": len(consume_param_types) == 1
+        and (consume_param_types[0] or {}).get("generic_arguments_source_order") == ["SemanticBox*"],
+    }
+
+
 def build_summary() -> dict[str, Any]:
     positive_run = run_compiler(POSITIVE_FIXTURE, TMP_ROOT / "positive")
     nested_generic_positive_run = run_compiler(NESTED_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-nested-generic")
+    generic_variance_positive_run = run_compiler(GENERIC_VARIANCE_POSITIVE_FIXTURE, TMP_ROOT / "positive-generic-variance")
     negative_run = run_compiler(NEGATIVE_FIXTURE, TMP_ROOT / "negative-duplicate-protocol")
     nullability_negative_run = run_compiler(NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nullability-flow")
     protocol_method_nullability_negative_run = run_compiler(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-method-nullability")
@@ -376,8 +410,10 @@ def build_summary() -> dict[str, Any]:
     generic_constraint_violation_negative_run = run_compiler(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-constraint-violation")
     generic_substitution_unknown_message_negative_run = run_compiler(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-substitution-unknown-message")
     nested_generic_constraint_violation_negative_run = run_compiler(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nested-generic-constraint-violation")
+    generic_invariant_assignment_negative_run = run_compiler(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE, TMP_ROOT / "negative-generic-invariant-assignment")
     model, positive_checks = compile_positive_summary(positive_run)
     nested_generic_positive_checks = compile_nested_generic_positive_summary(nested_generic_positive_run)
+    generic_variance_positive_checks = compile_generic_variance_positive_summary(generic_variance_positive_run)
 
     sema_contract_text = read(SEMA_CONTRACT)
     semantic_passes_text = read(SEMANTIC_PASSES)
@@ -389,6 +425,7 @@ def build_summary() -> dict[str, Any]:
     stress_manifest_text = read(STRESS_MANIFEST)
     conformance_positive = load_json(CONFORMANCE_POSITIVE)
     conformance_nested_generic_positive = load_json(CONFORMANCE_NESTED_GENERIC_POSITIVE)
+    conformance_generic_variance_positive = load_json(CONFORMANCE_GENERIC_VARIANCE_POSITIVE)
     conformance_negative = load_json(CONFORMANCE_NEGATIVE)
     conformance_nullability_negative = load_json(CONFORMANCE_NULLABILITY_NEGATIVE)
     conformance_protocol_method_nullability_negative = load_json(CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE)
@@ -399,11 +436,12 @@ def build_summary() -> dict[str, Any]:
     conformance_generic_constraint_violation_negative = load_json(CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE)
     conformance_generic_substitution_unknown_message_negative = load_json(CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE)
     conformance_nested_generic_constraint_violation_negative = load_json(CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE)
+    conformance_generic_invariant_assignment_negative = load_json(CONFORMANCE_GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE)
 
     static_presence = {
         "sema_contract_fields": contains_all(sema_contract_text, STATIC_FIELD_TOKENS),
         "semantic_pass_sources_and_replay_key": contains_all(semantic_passes_text, STATIC_FIELD_TOKENS + SEMANTIC_PASS_TOKENS + REPLAY_KEY_SEGMENTS),
-        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types", "object_pointer_type_name"]),
+        "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types", "object_pointer_type_name", "generic_parameter_variance_source_order"]),
         "lowering_contract_runtime_surface_present": contains_all(lowering_text, ["Lowering", "runtime"]),
         "ir_emitter_runtime_surface_present": contains_all(ir_text, ["Objc3", "Emit"]),
     }
@@ -411,6 +449,7 @@ def build_summary() -> dict[str, Any]:
     source_truth_paths = [
         POSITIVE_FIXTURE,
         NESTED_GENERIC_POSITIVE_FIXTURE,
+        GENERIC_VARIANCE_POSITIVE_FIXTURE,
         NEGATIVE_FIXTURE,
         NULLABILITY_NEGATIVE_FIXTURE,
         PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE,
@@ -421,8 +460,10 @@ def build_summary() -> dict[str, Any]:
         GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
         GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE,
         NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE,
+        GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE,
         CONFORMANCE_POSITIVE,
         CONFORMANCE_NESTED_GENERIC_POSITIVE,
+        CONFORMANCE_GENERIC_VARIANCE_POSITIVE,
         CONFORMANCE_NEGATIVE,
         CONFORMANCE_NULLABILITY_NEGATIVE,
         CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
@@ -433,6 +474,7 @@ def build_summary() -> dict[str, Any]:
         CONFORMANCE_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE,
         CONFORMANCE_GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE,
         CONFORMANCE_NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE,
+        CONFORMANCE_GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE,
         SEMANTIC_MANIFEST,
         SEMANTIC_README,
         STRESS_MANIFEST,
@@ -475,6 +517,9 @@ def build_summary() -> dict[str, Any]:
         "nested_generic_constraint_violation_negative_fixture_fails_closed": nested_generic_constraint_violation_negative_run["exit_code"] != 0,
         "nested_generic_constraint_violation_negative_diagnostics_json_emitted": nested_generic_constraint_violation_negative_run["diagnostics_path"] is not None,
         "nested_generic_constraint_violation_diagnostic_observed": diagnostic_matches(nested_generic_constraint_violation_negative_run["diagnostics"], "O3S206", 33, 12),
+        "generic_invariant_assignment_negative_fixture_fails_closed": generic_invariant_assignment_negative_run["exit_code"] != 0,
+        "generic_invariant_assignment_negative_diagnostics_json_emitted": generic_invariant_assignment_negative_run["diagnostics_path"] is not None,
+        "generic_invariant_assignment_diagnostic_observed": diagnostic_matches(generic_invariant_assignment_negative_run["diagnostics"], "O3S206", 30, 26),
     }
 
     conformance_checks = {
@@ -490,9 +535,12 @@ def build_summary() -> dict[str, Any]:
         "semantic_manifest_indexes_typ_8013_10": "TYP-8013-10.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_11": "TYP-8013-11.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_12": "TYP-8013-12.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_13": "TYP-8013-13.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_14": "TYP-8013-14.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in readme_text,
+        "semantic_readme_mentions_generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
@@ -503,8 +551,10 @@ def build_summary() -> dict[str, Any]:
         "semantic_readme_mentions_generic_constraint_violation_negative_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in readme_text,
+        "semantic_readme_mentions_generic_invariant_assignment_negative_fixture": rel(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE) in readme_text,
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
         "nested_generic_positive_conformance_references_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in conformance_nested_generic_positive.get("references", []),
+        "generic_variance_positive_conformance_references_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_generic_variance_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
         "protocol_method_nullability_negative_conformance_references_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_method_nullability_negative.get("references", []),
@@ -515,6 +565,7 @@ def build_summary() -> dict[str, Any]:
         "generic_constraint_violation_negative_conformance_references_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in conformance_generic_constraint_violation_negative.get("references", []),
         "generic_substitution_unknown_message_negative_conformance_references_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE) in conformance_generic_substitution_unknown_message_negative.get("references", []),
         "nested_generic_constraint_violation_negative_conformance_references_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE) in conformance_nested_generic_constraint_violation_negative.get("references", []),
+        "generic_invariant_assignment_negative_conformance_references_fixture": rel(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE) in conformance_generic_invariant_assignment_negative.get("references", []),
         "negative_conformance_expects_o3s206_location": conformance_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 7, "column": 21}],
         "nullability_negative_conformance_expects_o3s227_location": conformance_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S227", "line": 9, "column": 23}],
         "protocol_method_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_method_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
@@ -525,14 +576,17 @@ def build_summary() -> dict[str, Any]:
         "generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 29, "column": 50}],
         "generic_substitution_unknown_message_negative_conformance_expects_o3s216_location": conformance_generic_substitution_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 23, "column": 18}],
         "nested_generic_constraint_violation_negative_conformance_expects_o3s206_location": conformance_nested_generic_constraint_violation_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 33, "column": 12}],
+        "generic_invariant_assignment_negative_conformance_expects_o3s206_location": conformance_generic_invariant_assignment_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 30, "column": 26}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "stress_manifest_compiles_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in stress_manifest_text,
+        "stress_manifest_compiles_generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": no_tmp_source_truth,
     }
 
     checks = {
         **positive_checks,
         **nested_generic_positive_checks,
+        **generic_variance_positive_checks,
         **negative_checks,
         **conformance_checks,
         "static_sema_contract_fields_present": all(static_presence["sema_contract_fields"].values()),
@@ -551,6 +605,7 @@ def build_summary() -> dict[str, Any]:
         "source_truth_paths": [rel(path) for path in source_truth_paths],
         "positive_fixture": rel(POSITIVE_FIXTURE),
         "nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE),
+        "generic_variance_positive_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
         "nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE),
@@ -561,8 +616,10 @@ def build_summary() -> dict[str, Any]:
         "generic_constraint_violation_negative_fixture": rel(GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
         "generic_substitution_unknown_message_negative_fixture": rel(GENERIC_SUBSTITUTION_UNKNOWN_MESSAGE_NEGATIVE_FIXTURE),
         "nested_generic_constraint_violation_negative_fixture": rel(NESTED_GENERIC_CONSTRAINT_VIOLATION_NEGATIVE_FIXTURE),
+        "generic_invariant_assignment_negative_fixture": rel(GENERIC_INVARIANT_ASSIGNMENT_NEGATIVE_FIXTURE),
         "positive_compile": {key: value for key, value in positive_run.items() if key != "manifest"},
         "nested_generic_positive_compile": {key: value for key, value in nested_generic_positive_run.items() if key != "manifest"},
+        "generic_variance_positive_compile": {key: value for key, value in generic_variance_positive_run.items() if key != "manifest"},
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
         "nullability_negative_compile": {key: value for key, value in nullability_negative_run.items() if key != "manifest"},
         "protocol_method_nullability_negative_compile": {key: value for key, value in protocol_method_nullability_negative_run.items() if key != "manifest"},
@@ -573,6 +630,7 @@ def build_summary() -> dict[str, Any]:
         "generic_constraint_violation_negative_compile": {key: value for key, value in generic_constraint_violation_negative_run.items() if key != "manifest"},
         "generic_substitution_unknown_message_negative_compile": {key: value for key, value in generic_substitution_unknown_message_negative_run.items() if key != "manifest"},
         "nested_generic_constraint_violation_negative_compile": {key: value for key, value in nested_generic_constraint_violation_negative_run.items() if key != "manifest"},
+        "generic_invariant_assignment_negative_compile": {key: value for key, value in generic_invariant_assignment_negative_run.items() if key != "manifest"},
         "type_semantic_model": model,
         "required_summary_fields": SUMMARY_FIELDS,
         "positive_minimum_counts": POSITIVE_MIN_COUNTS,
@@ -597,6 +655,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Issue: `{summary['issue']}`",
         f"- Positive fixture: `{summary['positive_fixture']}`",
         f"- Nested generic positive fixture: `{summary['nested_generic_positive_fixture']}`",
+        f"- Generic variance positive fixture: `{summary['generic_variance_positive_fixture']}`",
         f"- Negative fixture: `{summary['negative_fixture']}`",
         f"- Nullability negative fixture: `{summary['nullability_negative_fixture']}`",
         f"- Protocol method nullability negative fixture: `{summary['protocol_method_nullability_negative_fixture']}`",
@@ -607,6 +666,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Generic constraint violation negative fixture: `{summary['generic_constraint_violation_negative_fixture']}`",
         f"- Generic substitution unknown message negative fixture: `{summary['generic_substitution_unknown_message_negative_fixture']}`",
         f"- Nested generic constraint violation negative fixture: `{summary['nested_generic_constraint_violation_negative_fixture']}`",
+        f"- Generic invariant assignment negative fixture: `{summary['generic_invariant_assignment_negative_fixture']}`",
         "",
         "## Checks",
     ]

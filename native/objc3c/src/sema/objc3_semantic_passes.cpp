@@ -429,11 +429,17 @@ static bool IsObjCReferenceValueType(ValueType type) {
 }
 
 static bool IsObjCReferenceSemanticType(const SemanticTypeInfo &info) {
-  return !info.is_vector && IsObjCReferenceValueType(info.type);
+  return !info.is_vector &&
+         (IsObjCReferenceValueType(info.type) ||
+          IsObjCReferenceAliasValueType(info.type));
 }
 
 static bool AreObjCReferenceTypesAssignmentCompatible(
-    const SemanticTypeInfo &target, const SemanticTypeInfo &value);
+    const SemanticTypeInfo &target, const SemanticTypeInfo &value,
+    const Objc3SemanticIntegrationSurface *surface = nullptr);
+static std::optional<bool> AreGenericSpecializationsVarianceAssignmentCompatible(
+    const SemanticTypeInfo &target, const SemanticTypeInfo &value,
+    const Objc3SemanticIntegrationSurface *surface);
 
 static bool IsNullableObjCReferenceSemanticType(const SemanticTypeInfo &info) {
   return IsObjCReferenceSemanticType(info) &&
@@ -459,10 +465,11 @@ static bool IsNonnullDestinationObjCReferenceSemanticType(
 }
 
 static bool IsUnsafeNullableToNonnullFlow(const SemanticTypeInfo &target,
-                                          const SemanticTypeInfo &value) {
+                                          const SemanticTypeInfo &value,
+                                          const Objc3SemanticIntegrationSurface *surface = nullptr) {
   return IsNonnullDestinationObjCReferenceSemanticType(target) &&
          IsNullableObjCReferenceSemanticType(value) &&
-         AreObjCReferenceTypesAssignmentCompatible(target, value);
+         AreObjCReferenceTypesAssignmentCompatible(target, value, surface);
 }
 
 static bool IsVoidSemanticType(const SemanticTypeInfo &info) {
@@ -504,12 +511,18 @@ static bool IsMessageCompatibleType(const SemanticTypeInfo &info) {
 }
 
 static bool AreObjCReferenceTypesAssignmentCompatible(const SemanticTypeInfo &target,
-                                                      const SemanticTypeInfo &value) {
+                                                      const SemanticTypeInfo &value,
+                                                      const Objc3SemanticIntegrationSurface *surface) {
   if (!IsCanonicalObjc3TypeFormScaffoldReady()) {
     return false;
   }
   if (!IsObjCReferenceSemanticType(target) || !IsObjCReferenceSemanticType(value)) {
     return false;
+  }
+  if (const std::optional<bool> variance_compatibility =
+          AreGenericSpecializationsVarianceAssignmentCompatible(target, value,
+                                                               surface)) {
+    return *variance_compatibility;
   }
   if (target.type == value.type) {
     return true;
@@ -7127,6 +7140,223 @@ static bool GenericArgumentSatisfiesProtocolConstraint(
   return false;
 }
 
+static std::string NormalizeGenericArgumentTypeSpelling(
+    const std::string &argument) {
+  std::string normalized;
+  normalized.reserve(argument.size());
+  for (const unsigned char c : argument) {
+    if (std::isspace(c) == 0) {
+      normalized.push_back(static_cast<char>(c));
+    }
+  }
+  return normalized;
+}
+
+static bool InterfaceAdoptsProtocolDirectly(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &interface_name,
+    const std::string &protocol_name) {
+  const auto interface_it = surface.interfaces.find(interface_name);
+  if (interface_it == surface.interfaces.end()) {
+    return false;
+  }
+  const auto &adopted_protocols =
+      interface_it->second.adopted_protocols_lexicographic;
+  return std::binary_search(adopted_protocols.begin(), adopted_protocols.end(),
+                            protocol_name);
+}
+
+static bool IsSameOrDerivedInterface(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &target_interface_name,
+    const std::string &value_interface_name) {
+  if (target_interface_name.empty() || value_interface_name.empty()) {
+    return false;
+  }
+  if (target_interface_name == value_interface_name) {
+    return true;
+  }
+  std::unordered_set<std::string> visited;
+  std::string current = value_interface_name;
+  while (!current.empty() && visited.insert(current).second) {
+    const auto interface_it = surface.interfaces.find(current);
+    if (interface_it == surface.interfaces.end()) {
+      return false;
+    }
+    current = interface_it->second.super_name;
+    if (current == target_interface_name) {
+      return true;
+    }
+  }
+  return false;
+}
+
+static bool IsGenericArgumentAssignableTo(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &target_argument,
+    const std::string &value_argument,
+    unsigned recursion_depth = 0u) {
+  if (recursion_depth > 16u) {
+    return false;
+  }
+  const std::string normalized_target =
+      NormalizeGenericArgumentTypeSpelling(target_argument);
+  const std::string normalized_value =
+      NormalizeGenericArgumentTypeSpelling(value_argument);
+  if (normalized_target == normalized_value) {
+    return true;
+  }
+  if (normalized_target == "id" || normalized_target == "id*") {
+    return true;
+  }
+  if (normalized_target.rfind("id<", 0) == 0u) {
+    const std::string target_suffix =
+        normalized_target.size() > 2u ? normalized_target.substr(2) : "";
+    const ProtocolCompositionParseResult target_protocols =
+        ParseProtocolCompositionSuffixText(target_suffix);
+    if (!target_protocols.IsValid()) {
+      return false;
+    }
+    if (normalized_value.rfind("id<", 0) == 0u) {
+      const std::string value_suffix =
+          normalized_value.size() > 2u ? normalized_value.substr(2) : "";
+      const ProtocolCompositionParseResult value_protocols =
+          ParseProtocolCompositionSuffixText(value_suffix);
+      if (!value_protocols.IsValid()) {
+        return false;
+      }
+      return std::includes(value_protocols.names_lexicographic.begin(),
+                           value_protocols.names_lexicographic.end(),
+                           target_protocols.names_lexicographic.begin(),
+                           target_protocols.names_lexicographic.end());
+    }
+    const std::string value_object_name =
+        GenericArgumentObjectTypeName(normalized_value);
+    if (value_object_name.empty()) {
+      return false;
+    }
+    for (const auto &required_protocol :
+         target_protocols.names_lexicographic) {
+      if (!InterfaceAdoptsProtocolDirectly(surface, value_object_name,
+                                           required_protocol)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  const std::string target_object_name =
+      GenericArgumentObjectTypeName(normalized_target);
+  const std::string value_object_name =
+      GenericArgumentObjectTypeName(normalized_value);
+  if (target_object_name.empty() || value_object_name.empty()) {
+    return false;
+  }
+  if (!IsSameOrDerivedInterface(surface, target_object_name,
+                                value_object_name)) {
+    return false;
+  }
+
+  std::string target_specialized_object_name;
+  std::string target_generic_suffix_text;
+  std::string value_specialized_object_name;
+  std::string value_generic_suffix_text;
+  if (!ExtractGenericArgumentSpecialization(
+          normalized_target, target_specialized_object_name,
+          target_generic_suffix_text) ||
+      !ExtractGenericArgumentSpecialization(
+          normalized_value, value_specialized_object_name,
+          value_generic_suffix_text)) {
+    return false;
+  }
+  if (target_specialized_object_name != value_specialized_object_name ||
+      target_generic_suffix_text.empty() || value_generic_suffix_text.empty()) {
+    return true;
+  }
+
+  SemanticTypeInfo target_info = MakeScalarSemanticType(ValueType::ObjCObjectPtr);
+  target_info.canonical_type = BuildCanonicalSemanticType(
+      ValueType::ObjCObjectPtr, false, "", 1u, false, false, false, false,
+      true, target_specialized_object_name, true, target_generic_suffix_text,
+      true, 1u, {}, false, false, false, false, false, false, false, false,
+      false, false, false, false);
+  SemanticTypeInfo value_info = MakeScalarSemanticType(ValueType::ObjCObjectPtr);
+  value_info.canonical_type = BuildCanonicalSemanticType(
+      ValueType::ObjCObjectPtr, false, "", 1u, false, false, false, false,
+      true, value_specialized_object_name, true, value_generic_suffix_text,
+      true, 1u, {}, false, false, false, false, false, false, false, false,
+      false, false, false, false);
+  const std::optional<bool> nested_compatibility =
+      AreGenericSpecializationsVarianceAssignmentCompatible(target_info,
+                                                            value_info,
+                                                            &surface);
+  return nested_compatibility.value_or(true);
+}
+
+static std::optional<bool> AreGenericSpecializationsVarianceAssignmentCompatible(
+    const SemanticTypeInfo &target, const SemanticTypeInfo &value,
+    const Objc3SemanticIntegrationSurface *surface) {
+  if (surface == nullptr ||
+      target.type != ValueType::ObjCObjectPtr ||
+      value.type != ValueType::ObjCObjectPtr ||
+      target.canonical_type.object_pointer_type_name.empty() ||
+      value.canonical_type.object_pointer_type_name.empty() ||
+      target.canonical_type.object_pointer_type_name !=
+          value.canonical_type.object_pointer_type_name ||
+      !target.canonical_type.has_generic_suffix ||
+      !value.canonical_type.has_generic_suffix) {
+    return std::nullopt;
+  }
+  const auto interface_it =
+      surface->interfaces.find(target.canonical_type.object_pointer_type_name);
+  if (interface_it == surface->interfaces.end() ||
+      interface_it->second.generic_parameter_names_source_order.empty()) {
+    return std::nullopt;
+  }
+  const auto &target_arguments =
+      target.canonical_type.generic_arguments_source_order;
+  const auto &value_arguments =
+      value.canonical_type.generic_arguments_source_order;
+  const auto &parameter_names =
+      interface_it->second.generic_parameter_names_source_order;
+  const auto &parameter_variance =
+      interface_it->second.generic_parameter_variance_source_order;
+  if (target_arguments.size() != value_arguments.size() ||
+      target_arguments.size() != parameter_names.size() ||
+      parameter_variance.size() != parameter_names.size()) {
+    return false;
+  }
+  for (std::size_t index = 0; index < target_arguments.size(); ++index) {
+    const std::string variance = parameter_variance[index];
+    const std::string normalized_target =
+        NormalizeGenericArgumentTypeSpelling(target_arguments[index]);
+    const std::string normalized_value =
+        NormalizeGenericArgumentTypeSpelling(value_arguments[index]);
+    if (variance.empty() || variance == "__invariant") {
+      if (normalized_target != normalized_value) {
+        return false;
+      }
+      continue;
+    }
+    if (variance == "__covariant") {
+      if (!IsGenericArgumentAssignableTo(*surface, target_arguments[index],
+                                         value_arguments[index])) {
+        return false;
+      }
+      continue;
+    }
+    if (variance == "__contravariant") {
+      if (!IsGenericArgumentAssignableTo(*surface, value_arguments[index],
+                                         target_arguments[index])) {
+        return false;
+      }
+      continue;
+    }
+    return false;
+  }
+  return true;
+}
+
 static void ValidateGenericSpecializationType(
     const Objc3Program &ast,
     const std::unordered_map<std::string, Objc3InterfaceGenericDefinition>
@@ -8223,7 +8453,15 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
             const bool i32_alias_coercion =
                 AreScalarI32AliasCompatible(expected, arg_type);
             const bool objc_reference_coercion =
-                AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+                AreObjCReferenceTypesAssignmentCompatible(
+                    expected, arg_type, message_send_context.surface);
+            const bool same_non_objc_semantic_type =
+                IsSameSemanticType(arg_type, expected) &&
+                !(IsObjCReferenceSemanticType(expected) &&
+                  IsObjCReferenceSemanticType(arg_type));
+            const std::optional<bool> generic_variance_compatibility =
+                AreGenericSpecializationsVarianceAssignmentCompatible(
+                    expected, arg_type, message_send_context.surface);
             const bool block_handle_coercion =
                 IsEscapingBlockRuntimeHandleCompatible(expected, arg_type);
             if (block_handle_coercion) {
@@ -8231,7 +8469,8 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                   expr->args[i]->line, expr->args[i]->column, arg_type,
                   diagnostics);
             }
-            if (IsUnsafeNullableToNonnullFlow(expected, arg_type)) {
+            if (IsUnsafeNullableToNonnullFlow(
+                    expected, arg_type, message_send_context.surface)) {
               diagnostics.push_back(
                   MakeDiag(expr->args[i]->line,
                            expr->args[i]->column,
@@ -8242,9 +8481,20 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                                "' requires a nonnull Objective-C reference"));
               continue;
             }
+            if (generic_variance_compatibility.has_value() &&
+                !*generic_variance_compatibility) {
+              diagnostics.push_back(
+                  MakeDiag(expr->args[i]->line,
+                           expr->args[i]->column,
+                           "O3S206",
+                           "type mismatch: generic variance policy rejects argument for parameter " +
+                               std::to_string(i) + " of callable '" +
+                               expr->ident + "'"));
+              continue;
+            }
             if (!IsUnknownSemanticType(expected) &&
                 !IsUnknownSemanticType(arg_type) &&
-                !IsSameSemanticType(arg_type, expected) &&
+                !same_non_objc_semantic_type &&
                 !bool_coercion &&
                 !i32_alias_coercion &&
                 !objc_reference_coercion &&
@@ -8293,7 +8543,15 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
               !expected.is_vector && expected.type == ValueType::Bool && !arg_type.is_vector && arg_type.type == ValueType::I32;
           const bool i32_alias_coercion = AreScalarI32AliasCompatible(expected, arg_type);
           const bool objc_reference_coercion =
-              AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+              AreObjCReferenceTypesAssignmentCompatible(
+                  expected, arg_type, message_send_context.surface);
+          const bool same_non_objc_semantic_type =
+              IsSameSemanticType(arg_type, expected) &&
+              !(IsObjCReferenceSemanticType(expected) &&
+                IsObjCReferenceSemanticType(arg_type));
+          const std::optional<bool> generic_variance_compatibility =
+              AreGenericSpecializationsVarianceAssignmentCompatible(
+                  expected, arg_type, message_send_context.surface);
           const bool block_handle_coercion =
               IsEscapingBlockRuntimeHandleCompatible(expected, arg_type);
           if (block_handle_coercion) {
@@ -8301,7 +8559,8 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                 expr->args[i]->line, expr->args[i]->column, arg_type,
                 diagnostics);
           }
-          if (IsUnsafeNullableToNonnullFlow(expected, arg_type)) {
+          if (IsUnsafeNullableToNonnullFlow(
+                  expected, arg_type, message_send_context.surface)) {
             diagnostics.push_back(
                 MakeDiag(expr->args[i]->line, expr->args[i]->column, "O3S227",
                          "nullability mismatch: parameter " +
@@ -8309,8 +8568,16 @@ static SemanticTypeInfo ValidateExpr(const Expr *expr, const std::vector<Semanti
                              "' requires a nonnull Objective-C reference"));
             continue;
           }
+          if (generic_variance_compatibility.has_value() &&
+              !*generic_variance_compatibility) {
+            diagnostics.push_back(MakeDiag(
+                expr->args[i]->line, expr->args[i]->column, "O3S206",
+                "type mismatch: generic variance policy rejects argument for parameter " +
+                    std::to_string(i) + " of '" + expr->ident + "'"));
+            continue;
+          }
           if (!IsUnknownSemanticType(arg_type) && !IsUnknownSemanticType(expected) &&
-              !IsSameSemanticType(arg_type, expected) &&
+              !same_non_objc_semantic_type &&
               !bool_coercion &&
               !i32_alias_coercion &&
               !objc_reference_coercion &&
@@ -8832,7 +9099,8 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
                                            bool found_target,
                                            const SemanticTypeInfo &target_type,
                                            const SemanticTypeInfo &value_type,
-                                           std::vector<std::string> &diagnostics) {
+                                           std::vector<std::string> &diagnostics,
+                                           const Objc3MessageSendResolutionContext &message_send_context) {
   if (op == "=") {
     const bool target_known_scalar = IsScalarSemanticType(target_type) &&
                                      (target_type.type == ValueType::I32 || target_type.type == ValueType::Bool);
@@ -8840,26 +9108,43 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
                                     (value_type.type == ValueType::I32 || value_type.type == ValueType::Bool);
     const bool target_known_objc_ref = IsObjCReferenceSemanticType(target_type);
     const bool value_known_objc_ref = IsObjCReferenceSemanticType(value_type);
+    const bool same_non_objc_semantic_type =
+        IsSameSemanticType(target_type, value_type) &&
+        !(target_known_objc_ref && value_known_objc_ref);
+    const std::optional<bool> generic_variance_compatibility =
+        AreGenericSpecializationsVarianceAssignmentCompatible(
+            target_type, value_type, message_send_context.surface);
     const bool assign_matches =
-        IsSameSemanticType(target_type, value_type) ||
+        same_non_objc_semantic_type ||
         AreScalarI32AliasCompatible(target_type, value_type) ||
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::I32 &&
          value_type.type == ValueType::Bool) ||
         (target_known_scalar && value_known_scalar && target_type.type == ValueType::Bool &&
          value_type.type == ValueType::I32 && IsBoolLikeI32Literal(value_expr)) ||
         (target_known_objc_ref && value_known_objc_ref &&
-         AreObjCReferenceTypesAssignmentCompatible(target_type, value_type)) ||
+         AreObjCReferenceTypesAssignmentCompatible(target_type, value_type,
+                                                  message_send_context.surface)) ||
         IsEscapingBlockRuntimeHandleCompatible(target_type, value_type);
     if (IsEscapingBlockRuntimeHandleCompatible(target_type, value_type)) {
       DiagnoseEscapingBlockRuntimeHandleCaptureLegality(line, column, value_type,
                                                         diagnostics);
     }
-    if (found_target && IsUnsafeNullableToNonnullFlow(target_type, value_type)) {
+    if (found_target && IsUnsafeNullableToNonnullFlow(
+                            target_type, value_type,
+                            message_send_context.surface)) {
       diagnostics.push_back(MakeDiag(
           line, column, "O3S227",
           "nullability mismatch: assignment to nonnull Objective-C reference '" +
               target_name + "' may receive nullable value '" +
               SemanticTypeName(value_type) + "'"));
+      return;
+    }
+    if (found_target && generic_variance_compatibility.has_value() &&
+        !*generic_variance_compatibility) {
+      diagnostics.push_back(MakeDiag(
+          line, column, "O3S206",
+          "type mismatch: generic variance policy rejects assignment to '" +
+              target_name + "'"));
       return;
     }
     if (found_target && target_known_scalar && !IsUnknownSemanticType(value_type) &&
@@ -8888,7 +9173,8 @@ static void ValidateAssignmentCompatibility(const std::string &target_name, cons
                                          FormatAtomicMemoryOrderMappingHint(op)));
     }
     if (found_target && target_known_objc_ref && !IsUnknownSemanticType(value_type) &&
-        !value_known_objc_ref && !assign_matches) {
+        ((!value_known_objc_ref) ||
+         (value_known_objc_ref && !assign_matches))) {
       diagnostics.push_back(MakeDiag(line, column, "O3S206",
                                      "type mismatch: assignment to '" + target_name + "' expects '" +
                                          SemanticTypeName(target_type) + "', got '" +
@@ -9211,7 +9497,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
             clause.value.get(), scopes, globals, functions, diagnostics,
             max_message_send_args, message_send_context);
         ValidateAssignmentCompatibility(clause.name, clause.op, clause.value.get(), clause.line, clause.column,
-                                        found_target, target_type, value_type, diagnostics);
+                                        found_target, target_type, value_type,
+                                        diagnostics, message_send_context);
         return;
       }
     }
@@ -9250,7 +9537,8 @@ static void ValidateStatement(const Stmt *stmt, std::vector<SemanticScope> &scop
           assign->value.get(), scopes, globals, functions, diagnostics,
           max_message_send_args, message_send_context);
       ValidateAssignmentCompatibility(assign->name, assign->op, assign->value.get(), assign->line, assign->column,
-                                      found_target, target_type, value_type, diagnostics);
+                                      found_target, target_type, value_type,
+                                      diagnostics, message_send_context);
       return;
     }
     case Stmt::Kind::Return:
@@ -23127,9 +23415,13 @@ Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(
     // namespace so later executable accessors never inherit ambiguous getter
     // or setter bindings from source.
     interface_info.super_name = interface_decl.super_name;
+    interface_info.adopted_protocols_lexicographic =
+        BuildSortedUniqueStringsLocal(interface_decl.adopted_protocols);
     for (const auto &generic_param : interface_decl.generic_params) {
       interface_info.generic_parameter_names_source_order.push_back(
           generic_param.name);
+      interface_info.generic_parameter_variance_source_order.push_back(
+          generic_param.variance_spelling);
     }
     interface_info.objc_direct_members_declared =
         interface_decl.objc_direct_members_declared;
@@ -23993,6 +24285,12 @@ Objc3SemanticTypeMetadataHandoff BuildSemanticTypeMetadataHandoff(const Objc3Sem
     Objc3SemanticInterfaceTypeMetadata metadata;
     metadata.name = name;
     metadata.super_name = interface_it->second.super_name;
+    metadata.generic_parameter_names_source_order =
+        interface_it->second.generic_parameter_names_source_order;
+    metadata.generic_parameter_variance_source_order =
+        interface_it->second.generic_parameter_variance_source_order;
+    metadata.adopted_protocols_lexicographic =
+        interface_it->second.adopted_protocols_lexicographic;
 
     std::vector<std::string> property_names;
     property_names.reserve(interface_it->second.properties.size());

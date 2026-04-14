@@ -10,11 +10,25 @@
     "generic_constraint_violation_negative_conformance_references_fixture": true,
     "generic_constraint_violation_negative_diagnostics_json_emitted": true,
     "generic_constraint_violation_negative_fixture_fails_closed": true,
+    "generic_invariant_assignment_diagnostic_observed": true,
+    "generic_invariant_assignment_negative_conformance_expects_o3s206_location": true,
+    "generic_invariant_assignment_negative_conformance_references_fixture": true,
+    "generic_invariant_assignment_negative_diagnostics_json_emitted": true,
+    "generic_invariant_assignment_negative_fixture_fails_closed": true,
     "generic_substitution_unknown_message_diagnostic_observed": true,
     "generic_substitution_unknown_message_negative_conformance_expects_o3s216_location": true,
     "generic_substitution_unknown_message_negative_conformance_references_fixture": true,
     "generic_substitution_unknown_message_negative_diagnostics_json_emitted": true,
     "generic_substitution_unknown_message_negative_fixture_fails_closed": true,
+    "generic_variance_assignment_param_metadata_preserves_concrete_value": true,
+    "generic_variance_assignment_param_metadata_preserves_erased_target": true,
+    "generic_variance_interface_metadata_preserves_covariance": true,
+    "generic_variance_interface_metadata_preserves_parameter_name": true,
+    "generic_variance_interface_metadata_preserves_protocol_adoption": true,
+    "generic_variance_positive_conformance_references_fixture": true,
+    "generic_variance_positive_fixture_compiles": true,
+    "generic_variance_positive_llvm_ir_emitted": true,
+    "generic_variance_positive_manifest_emitted": true,
     "manifest_has_canonical_type_metadata": true,
     "manifest_has_type_semantic_model": true,
     "minimum_positive_counts_observed": true,
@@ -80,8 +94,12 @@
     "semantic_manifest_indexes_typ_8013_10": true,
     "semantic_manifest_indexes_typ_8013_11": true,
     "semantic_manifest_indexes_typ_8013_12": true,
+    "semantic_manifest_indexes_typ_8013_13": true,
+    "semantic_manifest_indexes_typ_8013_14": true,
     "semantic_readme_mentions_generic_constraint_violation_negative_fixture": true,
+    "semantic_readme_mentions_generic_invariant_assignment_negative_fixture": true,
     "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": true,
+    "semantic_readme_mentions_generic_variance_positive_fixture": true,
     "semantic_readme_mentions_issue_8013": true,
     "semantic_readme_mentions_negative_fixture": true,
     "semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture": true,
@@ -96,6 +114,7 @@
     "static_artifact_json_fields_present": true,
     "static_sema_contract_fields_present": true,
     "static_semantic_pass_sources_present": true,
+    "stress_manifest_compiles_generic_variance_positive_fixture": true,
     "stress_manifest_compiles_nested_generic_positive_fixture": true,
     "stress_manifest_compiles_positive_fixture": true,
     "typed_object_receiver_unknown_message_diagnostic_observed": true,
@@ -131,6 +150,27 @@
     "stdout": ""
   },
   "generic_constraint_violation_negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
+  "generic_invariant_assignment_negative_compile": {
+    "diagnostics": [
+      {
+        "code": "O3S206",
+        "column": 26,
+        "line": 30,
+        "message": "type mismatch: generic variance policy rejects argument for parameter 0 of 'acceptInvariant'",
+        "raw": "error:30:26: type mismatch: generic variance policy rejects argument for parameter 0 of 'acceptInvariant' [O3S206]",
+        "severity": "error"
+      }
+    ],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-generic-invariant-assignment/module.diagnostics.json",
+    "exit_code": 1,
+    "llvm_ir_path": null,
+    "manifest_path": null,
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-generic-invariant-assignment",
+    "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "generic_invariant_assignment_negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
   "generic_substitution_unknown_message_negative_compile": {
     "diagnostics": [
       {
@@ -152,6 +192,18 @@
     "stdout": ""
   },
   "generic_substitution_unknown_message_negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3",
+  "generic_variance_positive_compile": {
+    "diagnostics": [],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance/module.diagnostics.json",
+    "exit_code": 0,
+    "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance/module.ll",
+    "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance/module.manifest.json",
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance",
+    "source": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "generic_variance_positive_fixture": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
   "issue": "#8013",
   "negative_compile": {
     "diagnostics": [
@@ -396,6 +448,7 @@
   "source_truth_paths": [
     "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
     "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3",
+    "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3",
@@ -406,8 +459,10 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
     "tests/conformance/semantic/TYP-8013-01.json",
     "tests/conformance/semantic/TYP-8013-12.json",
+    "tests/conformance/semantic/TYP-8013-13.json",
     "tests/conformance/semantic/TYP-8013-02.json",
     "tests/conformance/semantic/TYP-8013-03.json",
     "tests/conformance/semantic/TYP-8013-04.json",
@@ -418,6 +473,7 @@
     "tests/conformance/semantic/TYP-8013-09.json",
     "tests/conformance/semantic/TYP-8013-10.json",
     "tests/conformance/semantic/TYP-8013-11.json",
+    "tests/conformance/semantic/TYP-8013-14.json",
     "tests/conformance/semantic/manifest.json",
     "tests/conformance/semantic/README.md",
     "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
@@ -435,6 +491,7 @@
       "canonical_object_type_entries": true,
       "canonical_protocol_qualified_entries": true,
       "canonical_type_entries": true,
+      "generic_parameter_variance_source_order": true,
       "generic_suffix_semantic_sites": true,
       "invalid_generic_suffix_semantic_sites": true,
       "invalid_nullability_suffix_semantic_sites": true,
@@ -471,6 +528,7 @@
       "protocol_composition_semantic_sites": true
     },
     "semantic_pass_sources_and_replay_key": {
+      "AreGenericSpecializationsVarianceAssignmentCompatible": true,
       "BuildInterfaceGenericDefinitions": true,
       "BuildTypeSystemTypeSemanticModelSummary": true,
       "ExtractGenericArgumentSpecialization": true,
@@ -504,6 +562,7 @@
       "generic-suffixes=": true,
       "generic_arguments_source_order": true,
       "generic_metadata_abi_summary.generic_metadata_abi_sites": true,
+      "generic_parameter_variance_source_order": true,
       "generic_suffix_semantic_sites": true,
       "guard-exit=": true,
       "guards=": true,

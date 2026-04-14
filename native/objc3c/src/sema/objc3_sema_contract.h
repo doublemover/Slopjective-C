@@ -3246,6 +3246,8 @@ struct Objc3PropertyInfo {
 struct Objc3InterfaceInfo {
   std::string super_name;
   std::vector<std::string> generic_parameter_names_source_order;
+  std::vector<std::string> generic_parameter_variance_source_order;
+  std::vector<std::string> adopted_protocols_lexicographic;
   bool objc_direct_members_declared = false;
   bool objc_final_declared = false;
   bool objc_sealed_declared = false;
@@ -4064,6 +4066,9 @@ struct Objc3SemanticPropertyTypeMetadata {
 struct Objc3SemanticInterfaceTypeMetadata {
   std::string name;
   std::string super_name;
+  std::vector<std::string> generic_parameter_names_source_order;
+  std::vector<std::string> generic_parameter_variance_source_order;
+  std::vector<std::string> adopted_protocols_lexicographic;
   std::vector<Objc3SemanticPropertyTypeMetadata> properties_lexicographic;
   std::vector<Objc3SemanticMethodTypeMetadata> methods_lexicographic;
 };

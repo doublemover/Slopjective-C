@@ -1,0 +1,30 @@
+module TypeSemanticGenericVariancePositive;
+
+@protocol Persistable
+@end
+
+@interface SemanticBase <Persistable>
+@end
+
+@implementation SemanticBase
+@end
+
+@interface SemanticBox : SemanticBase <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable>>
+@end
+
+@implementation SemanticVault
+@end
+
+fn acceptCovariant(erased: SemanticVault<SemanticBase *> *?) -> i32 {
+  return 0;
+}
+
+fn consumeCovariant(boxes: SemanticVault<SemanticBox *> *?) -> i32 {
+  return acceptCovariant(boxes);
+}
