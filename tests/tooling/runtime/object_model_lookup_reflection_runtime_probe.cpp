@@ -1,62 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeAggregateSnapshot;
+using objc3c::runtime::probe::StabilizeNullableCString;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeAggregateSnapshot(
-    objc3_runtime_object_model_query_state_snapshot &snapshot,
-    std::string &queried_class_storage, std::string &resolved_class_storage,
-    std::string &resolved_class_owner_storage,
-    std::string &queried_property_storage,
-    std::string &resolved_property_class_storage,
-    std::string &resolved_property_owner_storage,
-    std::string &queried_protocol_class_storage,
-    std::string &queried_protocol_storage,
-    std::string &matched_protocol_owner_storage,
-    std::string &matched_attachment_owner_storage) {
-  StabilizeNullableCString(snapshot.last_queried_class_name,
-                           queried_class_storage,
-                           snapshot.last_queried_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_class_name,
-                           resolved_class_storage,
-                           snapshot.last_resolved_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_class_owner_identity,
-                           resolved_class_owner_storage,
-                           snapshot.last_resolved_class_owner_identity);
-  StabilizeNullableCString(snapshot.last_queried_property_name,
-                           queried_property_storage,
-                           snapshot.last_queried_property_name);
-  StabilizeNullableCString(snapshot.last_resolved_property_class_name,
-                           resolved_property_class_storage,
-                           snapshot.last_resolved_property_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_property_owner_identity,
-                           resolved_property_owner_storage,
-                           snapshot.last_resolved_property_owner_identity);
-  StabilizeNullableCString(snapshot.last_queried_protocol_class_name,
-                           queried_protocol_class_storage,
-                           snapshot.last_queried_protocol_class_name);
-  StabilizeNullableCString(snapshot.last_queried_protocol_name,
-                           queried_protocol_storage,
-                           snapshot.last_queried_protocol_name);
-  StabilizeNullableCString(snapshot.last_matched_protocol_owner_identity,
-                           matched_protocol_owner_storage,
-                           snapshot.last_matched_protocol_owner_identity);
-  StabilizeNullableCString(snapshot.last_matched_attachment_owner_identity,
-                           matched_attachment_owner_storage,
-                           snapshot.last_matched_attachment_owner_identity);
-}
 
 }  // namespace
 

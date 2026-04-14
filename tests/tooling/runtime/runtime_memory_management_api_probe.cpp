@@ -1,26 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizeRealizedClassGraph;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeRealizedClassGraph(
-    objc3_runtime_realized_class_graph_state_snapshot &snapshot,
-    std::string &class_storage) {
-  StabilizeNullableCString(snapshot.last_allocated_class_name, class_storage,
-                           snapshot.last_allocated_class_name);
-}
 
 void PrintGraph(const objc3_runtime_realized_class_graph_state_snapshot &snapshot) {
   std::printf("{");

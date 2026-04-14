@@ -1,59 +1,20 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeMethodCacheEntry;
+using objc3c::runtime::probe::StabilizeMethodCacheState;
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizeRegistrationState;
+using objc3c::runtime::probe::StabilizeSelectorTableState;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeRegistrationState(
-    objc3_runtime_registration_state_snapshot &snapshot,
-    std::string &module_storage, std::string &identity_storage) {
-  StabilizeNullableCString(snapshot.last_registered_module_name, module_storage,
-                           snapshot.last_registered_module_name);
-  StabilizeNullableCString(snapshot.last_registered_translation_unit_identity_key,
-                           identity_storage,
-                           snapshot.last_registered_translation_unit_identity_key);
-}
-
-void StabilizeSelectorTableState(
-    objc3_runtime_selector_lookup_table_state_snapshot &snapshot,
-    std::string &selector_storage) {
-  StabilizeNullableCString(snapshot.last_materialized_selector, selector_storage,
-                           snapshot.last_materialized_selector);
-}
-
-void StabilizeMethodCacheState(
-    objc3_runtime_method_cache_state_snapshot &snapshot,
-    std::string &selector_storage, std::string &class_storage,
-    std::string &owner_storage) {
-  StabilizeNullableCString(snapshot.last_selector, selector_storage,
-                           snapshot.last_selector);
-  StabilizeNullableCString(snapshot.last_resolved_class_name, class_storage,
-                           snapshot.last_resolved_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_owner_identity, owner_storage,
-                           snapshot.last_resolved_owner_identity);
-}
-
-void StabilizeMethodCacheEntry(
-    objc3_runtime_method_cache_entry_snapshot &snapshot,
-    std::string &selector_storage, std::string &class_storage,
-    std::string &owner_storage) {
-  StabilizeNullableCString(snapshot.selector, selector_storage, snapshot.selector);
-  StabilizeNullableCString(snapshot.resolved_class_name, class_storage,
-                           snapshot.resolved_class_name);
-  StabilizeNullableCString(snapshot.resolved_owner_identity, owner_storage,
-                           snapshot.resolved_owner_identity);
-}
 
 void PrintRegistrationState(
     const objc3_runtime_registration_state_snapshot &snapshot) {

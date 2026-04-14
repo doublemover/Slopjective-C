@@ -1,10 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::StabilizeConformanceQuery;
+using objc3c::runtime::probe::StabilizeGraphState;
+using objc3c::runtime::probe::StabilizeMethodCacheState;
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizeRealizedEntry;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
@@ -48,95 +55,6 @@ int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
   return static_cast<int>(value);
 }
 
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeGraphState(
-    objc3_runtime_realized_class_graph_state_snapshot &snapshot,
-    std::string &class_storage, std::string &class_owner_storage,
-    std::string &metaclass_owner_storage, std::string &category_owner_storage,
-    std::string &category_name_storage) {
-  StabilizeNullableCString(snapshot.last_realized_class_name, class_storage,
-                           snapshot.last_realized_class_name);
-  StabilizeNullableCString(snapshot.last_realized_class_owner_identity,
-                           class_owner_storage,
-                           snapshot.last_realized_class_owner_identity);
-  StabilizeNullableCString(snapshot.last_realized_metaclass_owner_identity,
-                           metaclass_owner_storage,
-                           snapshot.last_realized_metaclass_owner_identity);
-  StabilizeNullableCString(snapshot.last_attached_category_owner_identity,
-                           category_owner_storage,
-                           snapshot.last_attached_category_owner_identity);
-  StabilizeNullableCString(snapshot.last_attached_category_name,
-                           category_name_storage,
-                           snapshot.last_attached_category_name);
-}
-
-void StabilizeRealizedEntry(
-    objc3_runtime_realized_class_entry_snapshot &snapshot,
-    std::string &module_storage, std::string &identity_storage,
-    std::string &class_storage, std::string &class_owner_storage,
-    std::string &metaclass_owner_storage,
-    std::string &super_class_owner_storage,
-    std::string &super_metaclass_owner_storage,
-    std::string &category_owner_storage, std::string &category_name_storage) {
-  StabilizeNullableCString(snapshot.module_name, module_storage,
-                           snapshot.module_name);
-  StabilizeNullableCString(snapshot.translation_unit_identity_key,
-                           identity_storage,
-                           snapshot.translation_unit_identity_key);
-  StabilizeNullableCString(snapshot.class_name, class_storage,
-                           snapshot.class_name);
-  StabilizeNullableCString(snapshot.class_owner_identity, class_owner_storage,
-                           snapshot.class_owner_identity);
-  StabilizeNullableCString(snapshot.metaclass_owner_identity,
-                           metaclass_owner_storage,
-                           snapshot.metaclass_owner_identity);
-  StabilizeNullableCString(snapshot.super_class_owner_identity,
-                           super_class_owner_storage,
-                           snapshot.super_class_owner_identity);
-  StabilizeNullableCString(snapshot.super_metaclass_owner_identity,
-                           super_metaclass_owner_storage,
-                           snapshot.super_metaclass_owner_identity);
-  StabilizeNullableCString(snapshot.last_attached_category_owner_identity,
-                           category_owner_storage,
-                           snapshot.last_attached_category_owner_identity);
-  StabilizeNullableCString(snapshot.last_attached_category_name,
-                           category_name_storage,
-                           snapshot.last_attached_category_name);
-}
-
-void StabilizeConformanceQuery(
-    objc3_runtime_protocol_conformance_query_snapshot &snapshot,
-    std::string &class_storage, std::string &protocol_storage,
-    std::string &protocol_owner_storage,
-    std::string &attachment_owner_storage) {
-  StabilizeNullableCString(snapshot.class_name, class_storage,
-                           snapshot.class_name);
-  StabilizeNullableCString(snapshot.protocol_name, protocol_storage,
-                           snapshot.protocol_name);
-  StabilizeNullableCString(snapshot.matched_protocol_owner_identity,
-                           protocol_owner_storage,
-                           snapshot.matched_protocol_owner_identity);
-  StabilizeNullableCString(snapshot.matched_attachment_owner_identity,
-                           attachment_owner_storage,
-                           snapshot.matched_attachment_owner_identity);
-}
-
-void StabilizeMethodCacheState(
-    objc3_runtime_method_cache_state_snapshot &snapshot,
-    std::string &selector_storage, std::string &class_storage,
-    std::string &owner_storage) {
-  StabilizeNullableCString(snapshot.last_selector, selector_storage,
-                           snapshot.last_selector);
-  StabilizeNullableCString(snapshot.last_resolved_class_name, class_storage,
-                           snapshot.last_resolved_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_owner_identity, owner_storage,
-                           snapshot.last_resolved_owner_identity);
-}
 
 void PrintGraphState(
     const objc3_runtime_realized_class_graph_state_snapshot &snapshot) {

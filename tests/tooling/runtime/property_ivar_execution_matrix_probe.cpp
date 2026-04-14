@@ -1,159 +1,21 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeDispatchState;
+using objc3c::runtime::probe::StabilizeMethodCacheEntry;
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizePropertyEntry;
+using objc3c::runtime::probe::StabilizePropertyRegistryState;
+using objc3c::runtime::probe::StabilizeRealizedClassEntry;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizePropertyRegistryState(
-    objc3_runtime_property_registry_state_snapshot &snapshot,
-    std::string &queried_class_storage, std::string &queried_property_storage,
-    std::string &resolved_class_storage, std::string &resolved_owner_storage) {
-  StabilizeNullableCString(snapshot.last_queried_class_name,
-                           queried_class_storage,
-                           snapshot.last_queried_class_name);
-  StabilizeNullableCString(snapshot.last_queried_property_name,
-                           queried_property_storage,
-                           snapshot.last_queried_property_name);
-  StabilizeNullableCString(snapshot.last_resolved_class_name,
-                           resolved_class_storage,
-                           snapshot.last_resolved_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_owner_identity,
-                           resolved_owner_storage,
-                           snapshot.last_resolved_owner_identity);
-}
-
-void StabilizePropertyEntry(
-    objc3_runtime_property_entry_snapshot &snapshot,
-    std::string &queried_class_storage, std::string &resolved_class_storage,
-    std::string &property_name_storage,
-    std::string &declaration_owner_storage,
-    std::string &export_owner_storage, std::string &getter_selector_storage,
-    std::string &setter_selector_storage,
-    std::string &effective_getter_selector_storage,
-    std::string &effective_setter_selector_storage,
-    std::string &ivar_binding_storage,
-    std::string &synthesized_binding_storage,
-    std::string &layout_symbol_storage,
-    std::string &getter_owner_storage,
-    std::string &setter_owner_storage) {
-  StabilizeNullableCString(snapshot.queried_class_name, queried_class_storage,
-                           snapshot.queried_class_name);
-  StabilizeNullableCString(snapshot.resolved_class_name, resolved_class_storage,
-                           snapshot.resolved_class_name);
-  StabilizeNullableCString(snapshot.property_name, property_name_storage,
-                           snapshot.property_name);
-  StabilizeNullableCString(snapshot.declaration_owner_identity,
-                           declaration_owner_storage,
-                           snapshot.declaration_owner_identity);
-  StabilizeNullableCString(snapshot.export_owner_identity, export_owner_storage,
-                           snapshot.export_owner_identity);
-  StabilizeNullableCString(snapshot.getter_selector, getter_selector_storage,
-                           snapshot.getter_selector);
-  StabilizeNullableCString(snapshot.setter_selector, setter_selector_storage,
-                           snapshot.setter_selector);
-  StabilizeNullableCString(snapshot.effective_getter_selector,
-                           effective_getter_selector_storage,
-                           snapshot.effective_getter_selector);
-  StabilizeNullableCString(snapshot.effective_setter_selector,
-                           effective_setter_selector_storage,
-                           snapshot.effective_setter_selector);
-  StabilizeNullableCString(snapshot.ivar_binding_symbol, ivar_binding_storage,
-                           snapshot.ivar_binding_symbol);
-  StabilizeNullableCString(snapshot.synthesized_binding_symbol,
-                           synthesized_binding_storage,
-                           snapshot.synthesized_binding_symbol);
-  StabilizeNullableCString(snapshot.ivar_layout_symbol, layout_symbol_storage,
-                           snapshot.ivar_layout_symbol);
-  StabilizeNullableCString(snapshot.getter_owner_identity,
-                           getter_owner_storage,
-                           snapshot.getter_owner_identity);
-  StabilizeNullableCString(snapshot.setter_owner_identity,
-                           setter_owner_storage,
-                           snapshot.setter_owner_identity);
-}
-
-void StabilizeRealizedClassEntry(
-    objc3_runtime_realized_class_entry_snapshot &snapshot,
-    std::string &module_storage, std::string &identity_storage,
-    std::string &class_storage, std::string &class_owner_storage,
-    std::string &metaclass_owner_storage, std::string &super_class_storage,
-    std::string &super_metaclass_storage, std::string &category_owner_storage,
-    std::string &category_name_storage) {
-  StabilizeNullableCString(snapshot.module_name, module_storage,
-                           snapshot.module_name);
-  StabilizeNullableCString(snapshot.translation_unit_identity_key,
-                           identity_storage,
-                           snapshot.translation_unit_identity_key);
-  StabilizeNullableCString(snapshot.class_name, class_storage,
-                           snapshot.class_name);
-  StabilizeNullableCString(snapshot.class_owner_identity, class_owner_storage,
-                           snapshot.class_owner_identity);
-  StabilizeNullableCString(snapshot.metaclass_owner_identity,
-                           metaclass_owner_storage,
-                           snapshot.metaclass_owner_identity);
-  StabilizeNullableCString(snapshot.super_class_owner_identity,
-                           super_class_storage,
-                           snapshot.super_class_owner_identity);
-  StabilizeNullableCString(snapshot.super_metaclass_owner_identity,
-                           super_metaclass_storage,
-                           snapshot.super_metaclass_owner_identity);
-  StabilizeNullableCString(snapshot.last_attached_category_owner_identity,
-                           category_owner_storage,
-                           snapshot.last_attached_category_owner_identity);
-  StabilizeNullableCString(snapshot.last_attached_category_name,
-                           category_name_storage,
-                           snapshot.last_attached_category_name);
-}
-
-void StabilizeMethodCacheEntry(
-    objc3_runtime_method_cache_entry_snapshot &snapshot,
-    std::string &selector_storage, std::string &class_storage,
-    std::string &owner_storage) {
-  StabilizeNullableCString(snapshot.selector, selector_storage, snapshot.selector);
-  StabilizeNullableCString(snapshot.resolved_class_name, class_storage,
-                           snapshot.resolved_class_name);
-  StabilizeNullableCString(snapshot.resolved_owner_identity, owner_storage,
-                           snapshot.resolved_owner_identity);
-}
-
-void StabilizeDispatchState(
-    objc3_runtime_dispatch_state_snapshot &snapshot,
-    std::string &selector_storage, std::string &fast_path_reason_storage,
-    std::string &dispatch_path_storage,
-    std::string &implementation_kind_storage,
-    std::string &property_name_storage,
-    std::string &resolved_class_storage,
-    std::string &resolved_owner_storage) {
-  StabilizeNullableCString(snapshot.last_selector, selector_storage,
-                           snapshot.last_selector);
-  StabilizeNullableCString(snapshot.last_fast_path_reason,
-                           fast_path_reason_storage,
-                           snapshot.last_fast_path_reason);
-  StabilizeNullableCString(snapshot.last_dispatch_path, dispatch_path_storage,
-                           snapshot.last_dispatch_path);
-  StabilizeNullableCString(snapshot.last_implementation_kind,
-                           implementation_kind_storage,
-                           snapshot.last_implementation_kind);
-  StabilizeNullableCString(snapshot.last_property_name, property_name_storage,
-                           snapshot.last_property_name);
-  StabilizeNullableCString(snapshot.last_resolved_class_name,
-                           resolved_class_storage,
-                           snapshot.last_resolved_class_name);
-  StabilizeNullableCString(snapshot.last_resolved_owner_identity,
-                           resolved_owner_storage,
-                           snapshot.last_resolved_owner_identity);
-}
 
 void PrintPropertyRegistryState(
     const objc3_runtime_property_registry_state_snapshot &snapshot) {

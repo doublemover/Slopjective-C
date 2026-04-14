@@ -1,19 +1,18 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizePropertyEntry;
+using objc3c::runtime::probe::StabilizeRealizedClassEntry;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
 
 struct StablePropertyEntry {
   objc3_runtime_property_entry_snapshot snapshot{};
@@ -50,89 +49,6 @@ struct StableRealizedClassEntry {
   std::string attached_category_name;
 };
 
-void StabilizePropertyEntry(StablePropertyEntry &entry) {
-  StabilizeNullableCString(entry.snapshot.queried_class_name,
-                           entry.queried_class_name,
-                           entry.snapshot.queried_class_name);
-  StabilizeNullableCString(entry.snapshot.resolved_class_name,
-                           entry.resolved_class_name,
-                           entry.snapshot.resolved_class_name);
-  StabilizeNullableCString(entry.snapshot.property_name, entry.property_name,
-                           entry.snapshot.property_name);
-  StabilizeNullableCString(entry.snapshot.declaration_owner_identity,
-                           entry.declaration_owner_identity,
-                           entry.snapshot.declaration_owner_identity);
-  StabilizeNullableCString(entry.snapshot.export_owner_identity,
-                           entry.export_owner_identity,
-                           entry.snapshot.export_owner_identity);
-  StabilizeNullableCString(entry.snapshot.getter_selector,
-                           entry.getter_selector,
-                           entry.snapshot.getter_selector);
-  StabilizeNullableCString(entry.snapshot.setter_selector,
-                           entry.setter_selector,
-                           entry.snapshot.setter_selector);
-  StabilizeNullableCString(entry.snapshot.effective_getter_selector,
-                           entry.effective_getter_selector,
-                           entry.snapshot.effective_getter_selector);
-  StabilizeNullableCString(entry.snapshot.effective_setter_selector,
-                           entry.effective_setter_selector,
-                           entry.snapshot.effective_setter_selector);
-  StabilizeNullableCString(entry.snapshot.ivar_binding_symbol,
-                           entry.ivar_binding_symbol,
-                           entry.snapshot.ivar_binding_symbol);
-  StabilizeNullableCString(entry.snapshot.synthesized_binding_symbol,
-                           entry.synthesized_binding_symbol,
-                           entry.snapshot.synthesized_binding_symbol);
-  StabilizeNullableCString(entry.snapshot.ivar_layout_symbol,
-                           entry.ivar_layout_symbol,
-                           entry.snapshot.ivar_layout_symbol);
-  StabilizeNullableCString(entry.snapshot.property_attribute_profile,
-                           entry.property_attribute_profile,
-                           entry.snapshot.property_attribute_profile);
-  StabilizeNullableCString(entry.snapshot.ownership_lifetime_profile,
-                           entry.ownership_lifetime_profile,
-                           entry.snapshot.ownership_lifetime_profile);
-  StabilizeNullableCString(entry.snapshot.ownership_runtime_hook_profile,
-                           entry.ownership_runtime_hook_profile,
-                           entry.snapshot.ownership_runtime_hook_profile);
-  StabilizeNullableCString(entry.snapshot.accessor_ownership_profile,
-                           entry.accessor_ownership_profile,
-                           entry.snapshot.accessor_ownership_profile);
-  StabilizeNullableCString(entry.snapshot.getter_owner_identity,
-                           entry.getter_owner_identity,
-                           entry.snapshot.getter_owner_identity);
-  StabilizeNullableCString(entry.snapshot.setter_owner_identity,
-                           entry.setter_owner_identity,
-                           entry.snapshot.setter_owner_identity);
-}
-
-void StabilizeRealizedClassEntry(StableRealizedClassEntry &entry) {
-  StabilizeNullableCString(entry.snapshot.module_name, entry.module_name,
-                           entry.snapshot.module_name);
-  StabilizeNullableCString(entry.snapshot.translation_unit_identity_key,
-                           entry.translation_unit_identity_key,
-                           entry.snapshot.translation_unit_identity_key);
-  StabilizeNullableCString(entry.snapshot.class_name, entry.class_name,
-                           entry.snapshot.class_name);
-  StabilizeNullableCString(entry.snapshot.class_owner_identity,
-                           entry.class_owner_identity,
-                           entry.snapshot.class_owner_identity);
-  StabilizeNullableCString(entry.snapshot.metaclass_owner_identity,
-                           entry.metaclass_owner_identity,
-                           entry.snapshot.metaclass_owner_identity);
-  StabilizeNullableCString(entry.snapshot.super_class_owner_identity,
-                           entry.super_class_owner_identity,
-                           entry.snapshot.super_class_owner_identity);
-  StabilizeNullableCString(entry.snapshot.super_metaclass_owner_identity,
-                           entry.super_metaclass_owner_identity,
-                           entry.snapshot.super_metaclass_owner_identity);
-  StabilizeNullableCString(entry.snapshot.last_attached_category_owner_identity,
-                           entry.attached_category_owner_identity,
-                           entry.snapshot.last_attached_category_owner_identity);
-  StabilizeNullableCString(entry.snapshot.last_attached_category_name,
-                           entry.attached_category_name,
-                           entry.snapshot.last_attached_category_name);
-}
 
 void PrintPropertyEntry(const objc3_runtime_property_entry_snapshot &snapshot) {
   std::printf("{");

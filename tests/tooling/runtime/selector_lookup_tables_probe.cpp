@@ -1,5 +1,6 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -7,69 +8,15 @@
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeImageWalkState;
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizeRegistrationState;
+using objc3c::runtime::probe::StabilizeResetReplayState;
+using objc3c::runtime::probe::StabilizeSelectorEntry;
+using objc3c::runtime::probe::StabilizeSelectorTableState;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeRegistrationState(
-    objc3_runtime_registration_state_snapshot &snapshot,
-    std::string &registered_module_storage,
-    std::string &registered_identity_storage,
-    std::string &rejected_module_storage,
-    std::string &rejected_identity_storage) {
-  StabilizeNullableCString(snapshot.last_registered_module_name,
-                           registered_module_storage,
-                           snapshot.last_registered_module_name);
-  StabilizeNullableCString(snapshot.last_registered_translation_unit_identity_key,
-                           registered_identity_storage,
-                           snapshot.last_registered_translation_unit_identity_key);
-  StabilizeNullableCString(snapshot.last_rejected_module_name,
-                           rejected_module_storage,
-                           snapshot.last_rejected_module_name);
-  StabilizeNullableCString(snapshot.last_rejected_translation_unit_identity_key,
-                           rejected_identity_storage,
-                           snapshot.last_rejected_translation_unit_identity_key);
-}
-
-void StabilizeImageWalkState(objc3_runtime_image_walk_state_snapshot &snapshot,
-                             std::string &module_storage,
-                             std::string &identity_storage) {
-  StabilizeNullableCString(snapshot.last_walked_module_name, module_storage,
-                           snapshot.last_walked_module_name);
-  StabilizeNullableCString(snapshot.last_walked_translation_unit_identity_key,
-                           identity_storage,
-                           snapshot.last_walked_translation_unit_identity_key);
-}
-
-void StabilizeResetReplayState(
-    objc3_runtime_reset_replay_state_snapshot &snapshot,
-    std::string &module_storage,
-    std::string &identity_storage) {
-  StabilizeNullableCString(snapshot.last_replayed_module_name, module_storage,
-                           snapshot.last_replayed_module_name);
-  StabilizeNullableCString(snapshot.last_replayed_translation_unit_identity_key,
-                           identity_storage,
-                           snapshot.last_replayed_translation_unit_identity_key);
-}
-
-void StabilizeSelectorTableState(
-    objc3_runtime_selector_lookup_table_state_snapshot &snapshot,
-    std::string &selector_storage) {
-  StabilizeNullableCString(snapshot.last_materialized_selector, selector_storage,
-                           snapshot.last_materialized_selector);
-}
-
-void StabilizeSelectorEntry(
-    objc3_runtime_selector_lookup_entry_snapshot &snapshot,
-    std::string &selector_storage) {
-  StabilizeNullableCString(snapshot.canonical_selector, selector_storage,
-                           snapshot.canonical_selector);
-}
 
 void PrintSelectorTableState(
     const objc3_runtime_selector_lookup_table_state_snapshot &snapshot) {

@@ -1,28 +1,17 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeArcDebugSnapshot;
+using objc3c::runtime::probe::StabilizeNullableCString;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeArcDebugSnapshot(objc3_runtime_arc_debug_state_snapshot &snapshot,
-                               std::string &property_name_storage,
-                               std::string &owner_storage) {
-  StabilizeNullableCString(snapshot.last_property_name, property_name_storage,
-                           snapshot.last_property_name);
-  StabilizeNullableCString(snapshot.last_property_owner_identity, owner_storage,
-                           snapshot.last_property_owner_identity);
-}
 
 void PrintArcDebugSnapshot(const objc3_runtime_arc_debug_state_snapshot &snapshot) {
   // Stable JSON field anchors for tooling contracts:

@@ -1,52 +1,18 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 #include "support/json_probe_writer.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::StabilizeGraph;
+using objc3c::runtime::probe::StabilizeNullableCString;
+using objc3c::runtime::probe::StabilizePropertyEntry;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-
-void StabilizeNullableCString(const char *source, std::string &storage,
-                              const char *&field) {
-  storage = source != nullptr ? source : "";
-  field = storage.empty() ? nullptr : storage.c_str();
-}
-
-void StabilizeGraph(objc3_runtime_realized_class_graph_state_snapshot &snapshot,
-                    std::string &class_storage) {
-  StabilizeNullableCString(snapshot.last_allocated_class_name, class_storage,
-                           snapshot.last_allocated_class_name);
-}
-
-void StabilizePropertyEntry(objc3_runtime_property_entry_snapshot &snapshot,
-                            std::string &queried_class_storage,
-                            std::string &resolved_class_storage,
-                            std::string &property_name_storage,
-                            std::string &owner_storage,
-                            std::string &lifetime_storage,
-                            std::string &hook_storage,
-                            std::string &accessor_storage) {
-  StabilizeNullableCString(snapshot.queried_class_name, queried_class_storage,
-                           snapshot.queried_class_name);
-  StabilizeNullableCString(snapshot.resolved_class_name, resolved_class_storage,
-                           snapshot.resolved_class_name);
-  StabilizeNullableCString(snapshot.property_name, property_name_storage,
-                           snapshot.property_name);
-  StabilizeNullableCString(snapshot.declaration_owner_identity, owner_storage,
-                           snapshot.declaration_owner_identity);
-  StabilizeNullableCString(snapshot.ownership_lifetime_profile,
-                           lifetime_storage,
-                           snapshot.ownership_lifetime_profile);
-  StabilizeNullableCString(snapshot.ownership_runtime_hook_profile,
-                           hook_storage,
-                           snapshot.ownership_runtime_hook_profile);
-  StabilizeNullableCString(snapshot.accessor_ownership_profile,
-                           accessor_storage,
-                           snapshot.accessor_ownership_profile);
-}
 
 void PrintGraph(const objc3_runtime_realized_class_graph_state_snapshot &snapshot) {
   std::printf("{");
