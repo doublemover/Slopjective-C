@@ -45,6 +45,7 @@ CONFORMANCE_NESTED_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic
 CONFORMANCE_GENERIC_VARIANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-13.json"
 CONFORMANCE_PROTOCOL_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-15.json"
 CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-17.json"
+CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-18.json"
 CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-02.json"
 CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
 CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
@@ -581,12 +582,82 @@ def write_drifted_nullability_contract_surface(provider_run: dict[str, Any]) -> 
     return drift_path
 
 
+def compile_cross_module_protocol_contract_summary(provider_run: dict[str, Any], consumer_run: dict[str, Any]) -> dict[str, bool]:
+    provider_surface_path_value = provider_run.get("runtime_import_surface_path")
+    provider_surface = load_json(ROOT / provider_surface_path_value) if isinstance(provider_surface_path_value, str) else None
+    preservation = (
+        provider_surface.get("objc_type_system_protocol_contract_preservation")
+        if isinstance(provider_surface, dict)
+        else None
+    )
+    imported_rules = find_imported_runtime_metadata_semantic_rules(consumer_run.get("manifest"))
+    provider_protocol_count = int(preservation.get("protocol_decl_count", -1)) if isinstance(preservation, dict) else -1
+    provider_inheritance_count = int(preservation.get("protocol_inheritance_edge_count", -1)) if isinstance(preservation, dict) else -1
+    provider_required_method_count = int(preservation.get("protocol_required_method_count", -1)) if isinstance(preservation, dict) else -1
+    provider_optional_method_count = int(preservation.get("protocol_optional_method_count", -1)) if isinstance(preservation, dict) else -1
+    provider_required_property_count = int(preservation.get("protocol_required_property_count", -1)) if isinstance(preservation, dict) else -1
+    provider_optional_property_count = int(preservation.get("protocol_optional_property_count", -1)) if isinstance(preservation, dict) else -1
+    return {
+        "cross_module_provider_protocol_contract_preservation_emitted": isinstance(preservation, dict),
+        "cross_module_provider_protocol_contract_ready": isinstance(preservation, dict)
+        and preservation.get("ready") is True
+        and preservation.get("deterministic") is True,
+        "cross_module_provider_protocol_contract_preserves_requirement_partitions": isinstance(preservation, dict)
+        and provider_protocol_count == 1
+        and provider_required_method_count == 1
+        and provider_optional_method_count == 0
+        and provider_required_property_count == 1
+        and provider_optional_property_count == 1,
+        "cross_module_provider_protocol_contract_preserves_inheritance_and_adoption_edges": isinstance(preservation, dict)
+        and provider_inheritance_count == 0
+        and int(preservation.get("class_protocol_adoption_count", -1)) == 0,
+        "cross_module_provider_protocol_contract_preserves_protocol_payload": isinstance(preservation, dict)
+        and any(
+            entry.get("name") == "SemanticValue"
+            and entry.get("required_method_count") == 1
+            and entry.get("optional_property_count") == 1
+            for entry in preservation.get("protocol_contract_protocols", [])
+        ),
+        "cross_module_consumer_imports_protocol_contract_surface": consumer_run["exit_code"] == 0
+        and isinstance(imported_rules, dict)
+        and int(imported_rules.get("imported_type_system_protocol_contract_module_count", 0)) == 1,
+        "cross_module_consumer_imported_protocol_counts_match_provider": isinstance(imported_rules, dict)
+        and int(imported_rules.get("imported_protocol_decl_count", -1)) == provider_protocol_count
+        and int(imported_rules.get("imported_protocol_required_method_count", -1)) == provider_required_method_count
+        and int(imported_rules.get("imported_protocol_optional_method_count", -1)) == provider_optional_method_count
+        and int(imported_rules.get("imported_class_protocol_adoption_count", -1)) == int(preservation.get("class_protocol_adoption_count", -2) if isinstance(preservation, dict) else -2),
+        "cross_module_consumer_protocol_replay_key_covers_imported_contract": isinstance(imported_rules, dict)
+        and "imported_type_system_protocol_contract_module_count=1" in str(imported_rules.get("replay_key", ""))
+        and "imported_protocol_required_method_count=1" in str(imported_rules.get("replay_key", "")),
+    }
+
+
+def write_drifted_protocol_contract_surface(provider_run: dict[str, Any]) -> Path:
+    provider_surface_path_value = provider_run.get("runtime_import_surface_path")
+    if not isinstance(provider_surface_path_value, str):
+        raise RuntimeError("provider did not emit a runtime import surface")
+    surface = load_json(ROOT / provider_surface_path_value)
+    preservation = surface.get("objc_type_system_protocol_contract_preservation")
+    if not isinstance(preservation, dict):
+        raise RuntimeError("provider runtime import surface did not emit protocol preservation")
+    preservation["protocol_required_method_count"] = max(
+        0,
+        int(preservation.get("protocol_required_method_count", 0)) - 1,
+    )
+    drift_dir = TMP_ROOT / "drifted-surfaces"
+    drift_dir.mkdir(parents=True, exist_ok=True)
+    drift_path = drift_dir / "protocol-contract-drift.runtime-import-surface.json"
+    drift_path.write_text(canonical_json(surface), encoding="utf-8")
+    return drift_path
+
+
 def build_summary() -> dict[str, Any]:
     positive_run = run_compiler(POSITIVE_FIXTURE, TMP_ROOT / "positive")
     nested_generic_positive_run = run_compiler(NESTED_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-nested-generic")
     generic_variance_positive_run = run_compiler(GENERIC_VARIANCE_POSITIVE_FIXTURE, TMP_ROOT / "positive-generic-variance")
     protocol_generic_positive_run = run_compiler(PROTOCOL_GENERIC_POSITIVE_FIXTURE, TMP_ROOT / "positive-protocol-generic")
     cross_module_nullability_drift_surface = write_drifted_nullability_contract_surface(positive_run)
+    cross_module_protocol_drift_surface = write_drifted_protocol_contract_surface(positive_run)
     cross_module_nullability_consumer_run = run_compiler(
         GENERIC_VARIANCE_POSITIVE_FIXTURE,
         TMP_ROOT / "positive-cross-module-nullability-consumer",
@@ -603,6 +674,16 @@ def build_summary() -> dict[str, Any]:
         [
             "--objc3-import-runtime-surface",
             str(cross_module_nullability_drift_surface),
+            "--objc3-bootstrap-registration-order-ordinal",
+            "2",
+        ],
+    )
+    cross_module_protocol_drift_run = run_compiler(
+        GENERIC_VARIANCE_POSITIVE_FIXTURE,
+        TMP_ROOT / "negative-cross-module-protocol-drift",
+        [
+            "--objc3-import-runtime-surface",
+            str(cross_module_protocol_drift_surface),
             "--objc3-bootstrap-registration-order-ordinal",
             "2",
         ],
@@ -670,6 +751,19 @@ def build_summary() -> dict[str, Any]:
             + " ".join(str(diag.get("message", "")) for diag in cross_module_nullability_drift_run["diagnostics"])
         ),
     }
+    cross_module_protocol_checks = compile_cross_module_protocol_contract_summary(
+        positive_run,
+        cross_module_nullability_consumer_run,
+    )
+    cross_module_protocol_drift_checks = {
+        "cross_module_protocol_contract_drift_fails_closed": cross_module_protocol_drift_run["exit_code"] != 0,
+        "cross_module_protocol_contract_drift_reports_requirement_loss": "type-system protocol contract preservation dropped requirement or inheritance entries"
+        in (
+            cross_module_protocol_drift_run["stderr"]
+            + cross_module_protocol_drift_run["stdout"]
+            + " ".join(str(diag.get("message", "")) for diag in cross_module_protocol_drift_run["diagnostics"])
+        ),
+    }
 
     sema_contract_text = read(SEMA_CONTRACT)
     semantic_passes_text = read(SEMANTIC_PASSES)
@@ -686,6 +780,7 @@ def build_summary() -> dict[str, Any]:
     conformance_generic_variance_positive = load_json(CONFORMANCE_GENERIC_VARIANCE_POSITIVE)
     conformance_protocol_generic_positive = load_json(CONFORMANCE_PROTOCOL_GENERIC_POSITIVE)
     conformance_cross_module_generic_positive = load_json(CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE)
+    conformance_cross_module_protocol_positive = load_json(CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE)
     conformance_negative = load_json(CONFORMANCE_NEGATIVE)
     conformance_nullability_negative = load_json(CONFORMANCE_NULLABILITY_NEGATIVE)
     conformance_protocol_method_nullability_negative = load_json(CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE)
@@ -705,6 +800,7 @@ def build_summary() -> dict[str, Any]:
         "artifact_json_fields": contains_all(artifacts_text, STATIC_FIELD_TOKENS + ["semantic_canonical_type_metadata", "return_canonical_type", "param_canonical_types", "object_pointer_type_name", "generic_parameter_variance_source_order"]),
         "runtime_import_surface_generic_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_generic_contract_preservation", "PopulateImportedTypeSystemGenericContractPreservation", "type_system_generic_contract_preservation_present", "type_system_protocol_qualified_generic_argument_count"]),
         "runtime_import_surface_nullability_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_nullability_contract_preservation", "PopulateImportedTypeSystemNullabilityContractPreservation", "type_system_nullability_contract_preservation_present", "type_system_unspecified_nullability_entry_count"]),
+        "runtime_import_surface_protocol_contract": contains_all(runtime_import_surface_text + runtime_import_surface_header_text, ["objc_type_system_protocol_contract_preservation", "PopulateImportedTypeSystemProtocolContractPreservation", "type_system_protocol_contract_preservation_present", "type_system_protocol_required_method_count"]),
         "lowering_contract_runtime_surface_present": contains_all(lowering_text, ["Lowering", "runtime"]),
         "ir_emitter_runtime_surface_present": contains_all(ir_text, ["Objc3", "Emit"]),
     }
@@ -731,6 +827,7 @@ def build_summary() -> dict[str, Any]:
         CONFORMANCE_GENERIC_VARIANCE_POSITIVE,
         CONFORMANCE_PROTOCOL_GENERIC_POSITIVE,
         CONFORMANCE_CROSS_MODULE_GENERIC_POSITIVE,
+        CONFORMANCE_CROSS_MODULE_PROTOCOL_POSITIVE,
         CONFORMANCE_NEGATIVE,
         CONFORMANCE_NULLABILITY_NEGATIVE,
         CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
@@ -813,6 +910,7 @@ def build_summary() -> dict[str, Any]:
         "semantic_manifest_indexes_typ_8013_15": "TYP-8013-15.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_16": "TYP-8013-16.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_17": "TYP-8013-17.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_18": "TYP-8013-18.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nested_generic_positive_fixture": rel(NESTED_GENERIC_POSITIVE_FIXTURE) in readme_text,
@@ -837,6 +935,9 @@ def build_summary() -> dict[str, Any]:
         "cross_module_generic_positive_conformance_references_provider_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE) in conformance_cross_module_generic_positive.get("references", []),
         "cross_module_generic_positive_conformance_references_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_cross_module_generic_positive.get("references", []),
         "cross_module_generic_positive_conformance_references_runtime_import_surface": rel(RUNTIME_IMPORT_SURFACE) in conformance_cross_module_generic_positive.get("references", []),
+        "cross_module_protocol_positive_conformance_references_provider_fixture": rel(POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
+        "cross_module_protocol_positive_conformance_references_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE) in conformance_cross_module_protocol_positive.get("references", []),
+        "cross_module_protocol_positive_conformance_references_runtime_import_surface": rel(RUNTIME_IMPORT_SURFACE) in conformance_cross_module_protocol_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
         "protocol_method_nullability_negative_conformance_references_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_method_nullability_negative.get("references", []),
@@ -877,6 +978,8 @@ def build_summary() -> dict[str, Any]:
         **cross_module_generic_drift_checks,
         **cross_module_nullability_checks,
         **cross_module_nullability_drift_checks,
+        **cross_module_protocol_checks,
+        **cross_module_protocol_drift_checks,
         **negative_checks,
         **conformance_checks,
         "static_sema_contract_fields_present": all(static_presence["sema_contract_fields"].values()),
@@ -884,6 +987,7 @@ def build_summary() -> dict[str, Any]:
         "static_artifact_json_fields_present": all(static_presence["artifact_json_fields"].values()),
         "static_runtime_import_surface_generic_contract_present": all(static_presence["runtime_import_surface_generic_contract"].values()),
         "static_runtime_import_surface_nullability_contract_present": all(static_presence["runtime_import_surface_nullability_contract"].values()),
+        "static_runtime_import_surface_protocol_contract_present": all(static_presence["runtime_import_surface_protocol_contract"].values()),
         "runtime_lowering_and_ir_source_refs_exist": LOWERING_CONTRACT.is_file() and IR_EMITTER.is_file(),
     }
     status = "PASS" if all(checks.values()) else "FAIL"
@@ -901,6 +1005,8 @@ def build_summary() -> dict[str, Any]:
         "protocol_generic_positive_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE),
         "cross_module_generic_provider_fixture": rel(PROTOCOL_GENERIC_POSITIVE_FIXTURE),
         "cross_module_generic_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
+        "cross_module_protocol_provider_fixture": rel(POSITIVE_FIXTURE),
+        "cross_module_protocol_consumer_fixture": rel(GENERIC_VARIANCE_POSITIVE_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
         "nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE),
@@ -921,6 +1027,8 @@ def build_summary() -> dict[str, Any]:
         "cross_module_generic_drift_compile": {key: value for key, value in cross_module_generic_drift_run.items() if key != "manifest"},
         "cross_module_nullability_consumer_compile": {key: value for key, value in cross_module_nullability_consumer_run.items() if key != "manifest"},
         "cross_module_nullability_drift_compile": {key: value for key, value in cross_module_nullability_drift_run.items() if key != "manifest"},
+        "cross_module_protocol_consumer_compile": {key: value for key, value in cross_module_nullability_consumer_run.items() if key != "manifest"},
+        "cross_module_protocol_drift_compile": {key: value for key, value in cross_module_protocol_drift_run.items() if key != "manifest"},
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
         "nullability_negative_compile": {key: value for key, value in nullability_negative_run.items() if key != "manifest"},
         "protocol_method_nullability_negative_compile": {key: value for key, value in protocol_method_nullability_negative_run.items() if key != "manifest"},
@@ -961,6 +1069,8 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Protocol generic positive fixture: `{summary['protocol_generic_positive_fixture']}`",
         f"- Cross-module generic provider fixture: `{summary['cross_module_generic_provider_fixture']}`",
         f"- Cross-module generic consumer fixture: `{summary['cross_module_generic_consumer_fixture']}`",
+        f"- Cross-module protocol provider fixture: `{summary['cross_module_protocol_provider_fixture']}`",
+        f"- Cross-module protocol consumer fixture: `{summary['cross_module_protocol_consumer_fixture']}`",
         f"- Negative fixture: `{summary['negative_fixture']}`",
         f"- Nullability negative fixture: `{summary['nullability_negative_fixture']}`",
         f"- Protocol method nullability negative fixture: `{summary['protocol_method_nullability_negative_fixture']}`",

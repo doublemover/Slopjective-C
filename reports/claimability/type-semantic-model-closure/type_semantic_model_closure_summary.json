@@ -6,9 +6,12 @@
     "canonical_named_object_pointer_metadata_publishes_owner": true,
     "cross_module_consumer_imported_generic_counts_match_provider": true,
     "cross_module_consumer_imported_nullability_counts_match_provider": true,
+    "cross_module_consumer_imported_protocol_counts_match_provider": true,
     "cross_module_consumer_imports_generic_contract_surface": true,
     "cross_module_consumer_imports_nullability_contract_surface": true,
+    "cross_module_consumer_imports_protocol_contract_surface": true,
     "cross_module_consumer_nullability_replay_key_covers_imported_contract": true,
+    "cross_module_consumer_protocol_replay_key_covers_imported_contract": true,
     "cross_module_consumer_replay_key_covers_imported_generic_contract": true,
     "cross_module_consumer_type_surface_landed": true,
     "cross_module_generic_contract_drift_fails_closed": true,
@@ -18,6 +21,11 @@
     "cross_module_generic_positive_conformance_references_runtime_import_surface": true,
     "cross_module_nullability_contract_drift_fails_closed": true,
     "cross_module_nullability_contract_drift_reports_entry_loss": true,
+    "cross_module_protocol_contract_drift_fails_closed": true,
+    "cross_module_protocol_contract_drift_reports_requirement_loss": true,
+    "cross_module_protocol_positive_conformance_references_consumer_fixture": true,
+    "cross_module_protocol_positive_conformance_references_provider_fixture": true,
+    "cross_module_protocol_positive_conformance_references_runtime_import_surface": true,
     "cross_module_provider_fixture_compiles": true,
     "cross_module_provider_generic_contract_preservation_emitted": true,
     "cross_module_provider_generic_contract_preserves_interface_count": true,
@@ -29,6 +37,11 @@
     "cross_module_provider_nullability_contract_ready": true,
     "cross_module_provider_nullability_counts_are_complete": true,
     "cross_module_provider_nullability_preserves_nullable_and_unspecified": true,
+    "cross_module_provider_protocol_contract_preservation_emitted": true,
+    "cross_module_provider_protocol_contract_preserves_inheritance_and_adoption_edges": true,
+    "cross_module_provider_protocol_contract_preserves_protocol_payload": true,
+    "cross_module_provider_protocol_contract_preserves_requirement_partitions": true,
+    "cross_module_provider_protocol_contract_ready": true,
     "cross_module_provider_runtime_import_surface_emitted": true,
     "deterministic": true,
     "generic_constraint_violation_diagnostic_observed": true,
@@ -140,6 +153,7 @@
     "semantic_manifest_indexes_typ_8013_15": true,
     "semantic_manifest_indexes_typ_8013_16": true,
     "semantic_manifest_indexes_typ_8013_17": true,
+    "semantic_manifest_indexes_typ_8013_18": true,
     "semantic_readme_mentions_generic_constraint_violation_negative_fixture": true,
     "semantic_readme_mentions_generic_invariant_assignment_negative_fixture": true,
     "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": true,
@@ -160,6 +174,7 @@
     "static_artifact_json_fields_present": true,
     "static_runtime_import_surface_generic_contract_present": true,
     "static_runtime_import_surface_nullability_contract_present": true,
+    "static_runtime_import_surface_protocol_contract_present": true,
     "static_sema_contract_fields_present": true,
     "static_semantic_pass_sources_present": true,
     "stress_manifest_compiles_generic_variance_positive_fixture": true,
@@ -246,6 +261,41 @@
     "stderr": "",
     "stdout": ""
   },
+  "cross_module_protocol_consumer_compile": {
+    "diagnostics": [],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-nullability-consumer/module.diagnostics.json",
+    "exit_code": 0,
+    "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-nullability-consumer/module.ll",
+    "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-nullability-consumer/module.manifest.json",
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-nullability-consumer",
+    "runtime_import_surface_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-nullability-consumer/module.runtime-import-surface.json",
+    "source": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "cross_module_protocol_consumer_fixture": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+  "cross_module_protocol_drift_compile": {
+    "diagnostics": [
+      {
+        "code": "O3S264",
+        "column": 1,
+        "line": 1,
+        "message": "imported runtime surface load failed: C:/Users/sneak/Development/Slopjective-C/tmp/artifacts/objc3c-native/type-semantic-model-closure/drifted-surfaces/protocol-contract-drift.runtime-import-surface.json: type-system protocol contract preservation dropped requirement or inheritance entries",
+        "raw": "error:1:1: imported runtime surface load failed: C:/Users/sneak/Development/Slopjective-C/tmp/artifacts/objc3c-native/type-semantic-model-closure/drifted-surfaces/protocol-contract-drift.runtime-import-surface.json: type-system protocol contract preservation dropped requirement or inheritance entries [O3S264]",
+        "severity": "error"
+      }
+    ],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-cross-module-protocol-drift/module.diagnostics.json",
+    "exit_code": 1,
+    "llvm_ir_path": null,
+    "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-cross-module-protocol-drift/module.manifest.json",
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-cross-module-protocol-drift",
+    "runtime_import_surface_path": null,
+    "source": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "cross_module_protocol_provider_fixture": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
   "generic_constraint_violation_negative_compile": {
     "diagnostics": [
       {
@@ -631,6 +681,7 @@
     "tests/conformance/semantic/TYP-8013-13.json",
     "tests/conformance/semantic/TYP-8013-15.json",
     "tests/conformance/semantic/TYP-8013-17.json",
+    "tests/conformance/semantic/TYP-8013-18.json",
     "tests/conformance/semantic/TYP-8013-02.json",
     "tests/conformance/semantic/TYP-8013-03.json",
     "tests/conformance/semantic/TYP-8013-04.json",
@@ -694,6 +745,12 @@
       "objc_type_system_nullability_contract_preservation": true,
       "type_system_nullability_contract_preservation_present": true,
       "type_system_unspecified_nullability_entry_count": true
+    },
+    "runtime_import_surface_protocol_contract": {
+      "PopulateImportedTypeSystemProtocolContractPreservation": true,
+      "objc_type_system_protocol_contract_preservation": true,
+      "type_system_protocol_contract_preservation_present": true,
+      "type_system_protocol_required_method_count": true
     },
     "sema_contract_fields": {
       "canonical_implicitly_unwrapped_entries": true,

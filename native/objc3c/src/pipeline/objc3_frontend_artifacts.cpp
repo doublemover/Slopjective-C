@@ -2467,6 +2467,214 @@ std::string BuildTypeSystemNullabilityContractPreservationJson(
   return out.str();
 }
 
+struct Objc3TypeSystemProtocolContractInventory {
+  std::size_t protocol_decl_count = 0;
+  std::size_t protocol_forward_declaration_count = 0;
+  std::size_t protocol_inheritance_edge_count = 0;
+  std::size_t protocol_required_method_count = 0;
+  std::size_t protocol_optional_method_count = 0;
+  std::size_t protocol_required_property_count = 0;
+  std::size_t protocol_optional_property_count = 0;
+  std::size_t class_protocol_adoption_count = 0;
+  std::size_t category_protocol_adoption_count = 0;
+};
+
+std::string Objc3ProtocolRequirementKindName(
+    Objc3ProtocolRequirementKind kind) {
+  switch (kind) {
+    case Objc3ProtocolRequirementKind::Required:
+      return "required";
+    case Objc3ProtocolRequirementKind::Optional:
+      return "optional";
+    case Objc3ProtocolRequirementKind::NotApplicable:
+      break;
+  }
+  return "not-applicable";
+}
+
+Objc3TypeSystemProtocolContractInventory
+BuildTypeSystemProtocolContractInventory(
+    const Objc3Program &program,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_records) {
+  Objc3TypeSystemProtocolContractInventory inventory;
+  inventory.protocol_decl_count = program.protocols.size();
+  for (const Objc3ProtocolDecl &protocol : program.protocols) {
+    if (protocol.is_forward_declaration) {
+      ++inventory.protocol_forward_declaration_count;
+    }
+    inventory.protocol_inheritance_edge_count +=
+        protocol.inherited_protocols_lexicographic.size();
+    for (const Objc3MethodDecl &method : protocol.methods) {
+      if (method.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        ++inventory.protocol_optional_method_count;
+      } else {
+        ++inventory.protocol_required_method_count;
+      }
+    }
+    for (const Objc3PropertyDecl &property : protocol.properties) {
+      if (property.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        ++inventory.protocol_optional_property_count;
+      } else {
+        ++inventory.protocol_required_property_count;
+      }
+    }
+  }
+  for (const Objc3RuntimeMetadataClassSourceRecord &class_record :
+       runtime_records.classes_lexicographic) {
+    inventory.class_protocol_adoption_count +=
+        class_record.adopted_protocols_lexicographic.size();
+  }
+  for (const Objc3RuntimeMetadataCategorySourceRecord &category_record :
+       runtime_records.categories_lexicographic) {
+    inventory.category_protocol_adoption_count +=
+        category_record.adopted_protocols_lexicographic.size();
+  }
+  return inventory;
+}
+
+std::string BuildTypeSystemProtocolContractPreservationReplayKey(
+    const Objc3TypeSystemProtocolContractInventory &inventory,
+    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+  std::ostringstream out;
+  out << kObjc3TypeSystemProtocolContractPreservationContractId
+      << ";source_contract=" << kObjc3TypeSystemTypeSemanticModelContractId
+      << ";type_semantic_replay=" << semantic_summary.replay_key
+      << ";protocols=" << inventory.protocol_decl_count
+      << ";forward_declarations="
+      << inventory.protocol_forward_declaration_count
+      << ";inherited_edges=" << inventory.protocol_inheritance_edge_count
+      << ";required_methods=" << inventory.protocol_required_method_count
+      << ";optional_methods=" << inventory.protocol_optional_method_count
+      << ";required_properties=" << inventory.protocol_required_property_count
+      << ";optional_properties=" << inventory.protocol_optional_property_count
+      << ";class_adoptions=" << inventory.class_protocol_adoption_count
+      << ";category_adoptions=" << inventory.category_protocol_adoption_count;
+  return out.str();
+}
+
+std::string BuildTypeSystemProtocolContractPreservationJson(
+    const Objc3Program &program,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_records,
+    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+  const Objc3TypeSystemProtocolContractInventory inventory =
+      BuildTypeSystemProtocolContractInventory(program, runtime_records);
+  const bool deterministic = runtime_records.deterministic;
+  const bool ready =
+      deterministic && semantic_summary.ready_for_lowering_and_runtime &&
+      semantic_summary.deterministic && !semantic_summary.replay_key.empty() &&
+      inventory.protocol_decl_count >=
+          inventory.protocol_forward_declaration_count;
+  const std::string replay_key =
+      BuildTypeSystemProtocolContractPreservationReplayKey(inventory,
+                                                           semantic_summary);
+  std::vector<const Objc3ProtocolDecl *> protocols;
+  protocols.reserve(program.protocols.size());
+  for (const Objc3ProtocolDecl &protocol : program.protocols) {
+    protocols.push_back(&protocol);
+  }
+  std::sort(protocols.begin(), protocols.end(),
+            [](const Objc3ProtocolDecl *lhs, const Objc3ProtocolDecl *rhs) {
+              return lhs->name < rhs->name;
+            });
+
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(
+             kObjc3TypeSystemProtocolContractPreservationContractId)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(kObjc3TypeSystemTypeSemanticModelContractId)
+      << "\",\"preservation_model\":\"runtime-import-surface-preserves-protocol-requirement-partitions-inheritance-and-conformance-edges\""
+      << ",\"protocol_decl_count\":" << inventory.protocol_decl_count
+      << ",\"protocol_forward_declaration_count\":"
+      << inventory.protocol_forward_declaration_count
+      << ",\"protocol_inheritance_edge_count\":"
+      << inventory.protocol_inheritance_edge_count
+      << ",\"protocol_required_method_count\":"
+      << inventory.protocol_required_method_count
+      << ",\"protocol_optional_method_count\":"
+      << inventory.protocol_optional_method_count
+      << ",\"protocol_required_property_count\":"
+      << inventory.protocol_required_property_count
+      << ",\"protocol_optional_property_count\":"
+      << inventory.protocol_optional_property_count
+      << ",\"class_protocol_adoption_count\":"
+      << inventory.class_protocol_adoption_count
+      << ",\"category_protocol_adoption_count\":"
+      << inventory.category_protocol_adoption_count
+      << ",\"ready\":" << (ready ? "true" : "false")
+      << ",\"deterministic\":" << (deterministic ? "true" : "false")
+      << ",\"type_semantic_replay_key\":\""
+      << EscapeJsonString(semantic_summary.replay_key)
+      << "\",\"protocol_contract_protocols\":[";
+  for (std::size_t i = 0; i < protocols.size(); ++i) {
+    const Objc3ProtocolDecl &protocol = *protocols[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    std::size_t required_methods = 0;
+    std::size_t optional_methods = 0;
+    for (const Objc3MethodDecl &method : protocol.methods) {
+      if (method.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        ++optional_methods;
+      } else {
+        ++required_methods;
+      }
+    }
+    std::size_t required_properties = 0;
+    std::size_t optional_properties = 0;
+    for (const Objc3PropertyDecl &property : protocol.properties) {
+      if (property.protocol_requirement_kind ==
+          Objc3ProtocolRequirementKind::Optional) {
+        ++optional_properties;
+      } else {
+        ++required_properties;
+      }
+    }
+    out << "{\"name\":\"" << EscapeJsonString(protocol.name)
+        << "\",\"is_forward_declaration\":"
+        << (protocol.is_forward_declaration ? "true" : "false")
+        << ",\"inherited_protocols_lexicographic\":"
+        << BuildStringArrayJson(protocol.inherited_protocols_lexicographic)
+        << ",\"required_method_count\":" << required_methods
+        << ",\"optional_method_count\":" << optional_methods
+        << ",\"required_property_count\":" << required_properties
+        << ",\"optional_property_count\":" << optional_properties
+        << ",\"methods\":[";
+    for (std::size_t method_index = 0; method_index < protocol.methods.size();
+         ++method_index) {
+      const Objc3MethodDecl &method = protocol.methods[method_index];
+      if (method_index != 0u) {
+        out << ",";
+      }
+      out << "{\"selector\":\"" << EscapeJsonString(method.selector)
+          << "\",\"requirement_kind\":\""
+          << Objc3ProtocolRequirementKindName(method.protocol_requirement_kind)
+          << "\",\"is_class_method\":"
+          << (method.is_class_method ? "true" : "false") << "}";
+    }
+    out << "],\"properties\":[";
+    for (std::size_t property_index = 0;
+         property_index < protocol.properties.size(); ++property_index) {
+      const Objc3PropertyDecl &property = protocol.properties[property_index];
+      if (property_index != 0u) {
+        out << ",";
+      }
+      out << "{\"name\":\"" << EscapeJsonString(property.name)
+          << "\",\"requirement_kind\":\""
+          << Objc3ProtocolRequirementKindName(
+                 property.protocol_requirement_kind)
+          << "\"}";
+    }
+    out << "]}";
+  }
+  out << "],\"replay_key\":\"" << EscapeJsonString(replay_key) << "\"}";
+  return out.str();
+}
+
 std::string BuildEffectsOwnershipSemanticModelSummaryJson(
     const Objc3EffectsOwnershipSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -7248,6 +7456,24 @@ std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
       << summary.imported_unspecified_nullability_entry_count
       << ";imported_invalid_nullability_entry_count="
       << summary.imported_invalid_nullability_entry_count
+      << ";imported_type_system_protocol_contract_module_count="
+      << summary.imported_type_system_protocol_contract_module_count
+      << ";imported_protocol_decl_count="
+      << summary.imported_protocol_decl_count
+      << ";imported_protocol_inheritance_edge_count="
+      << summary.imported_protocol_inheritance_edge_count
+      << ";imported_protocol_required_method_count="
+      << summary.imported_protocol_required_method_count
+      << ";imported_protocol_optional_method_count="
+      << summary.imported_protocol_optional_method_count
+      << ";imported_protocol_required_property_count="
+      << summary.imported_protocol_required_property_count
+      << ";imported_protocol_optional_property_count="
+      << summary.imported_protocol_optional_property_count
+      << ";imported_class_protocol_adoption_count="
+      << summary.imported_class_protocol_adoption_count
+      << ";imported_category_protocol_adoption_count="
+      << summary.imported_category_protocol_adoption_count
       << ";modules=";
   for (std::size_t i = 0; i < summary.imported_module_names_lexicographic.size();
        ++i) {
@@ -7401,6 +7627,27 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
       summary.imported_invalid_nullability_entry_count +=
           surface.type_system_invalid_nullability_entry_count;
     }
+    if (surface.type_system_protocol_contract_preservation_present) {
+      ++summary.imported_type_system_protocol_contract_module_count;
+      summary.imported_protocol_decl_count +=
+          surface.type_system_protocol_decl_count;
+      summary.imported_protocol_forward_declaration_count +=
+          surface.type_system_protocol_forward_declaration_count;
+      summary.imported_protocol_inheritance_edge_count +=
+          surface.type_system_protocol_inheritance_edge_count;
+      summary.imported_protocol_required_method_count +=
+          surface.type_system_protocol_required_method_count;
+      summary.imported_protocol_optional_method_count +=
+          surface.type_system_protocol_optional_method_count;
+      summary.imported_protocol_required_property_count +=
+          surface.type_system_protocol_required_property_count;
+      summary.imported_protocol_optional_property_count +=
+          surface.type_system_protocol_optional_property_count;
+      summary.imported_class_protocol_adoption_count +=
+          surface.type_system_class_protocol_adoption_count;
+      summary.imported_category_protocol_adoption_count +=
+          surface.type_system_category_protocol_adoption_count;
+    }
   }
 
   std::sort(summary.imported_module_names_lexicographic.begin(),
@@ -7433,9 +7680,13 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
               summary.imported_implicitly_unwrapped_entry_count +
               summary.imported_null_resettable_entry_count +
               summary.imported_unspecified_nullability_entry_count;
+  const bool imported_protocol_contract_landed =
+      summary.imported_type_system_protocol_contract_module_count == 0u ||
+      summary.imported_protocol_decl_count >=
+          summary.imported_protocol_forward_declaration_count;
   summary.imported_type_system_type_surface_landed =
       imported_optional_keypath_landed && imported_generic_contract_landed &&
-      imported_nullability_contract_landed;
+      imported_nullability_contract_landed && imported_protocol_contract_landed;
   summary.imported_optional_runtime_semantics_landed =
       summary.optional_send_site_count == 0u ||
       summary.imported_optional_runtime_ready_module_count > 0u;
@@ -7556,6 +7807,26 @@ std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
       << summary.imported_unspecified_nullability_entry_count
       << ",\"imported_invalid_nullability_entry_count\":"
       << summary.imported_invalid_nullability_entry_count
+      << ",\"imported_type_system_protocol_contract_module_count\":"
+      << summary.imported_type_system_protocol_contract_module_count
+      << ",\"imported_protocol_decl_count\":"
+      << summary.imported_protocol_decl_count
+      << ",\"imported_protocol_forward_declaration_count\":"
+      << summary.imported_protocol_forward_declaration_count
+      << ",\"imported_protocol_inheritance_edge_count\":"
+      << summary.imported_protocol_inheritance_edge_count
+      << ",\"imported_protocol_required_method_count\":"
+      << summary.imported_protocol_required_method_count
+      << ",\"imported_protocol_optional_method_count\":"
+      << summary.imported_protocol_optional_method_count
+      << ",\"imported_protocol_required_property_count\":"
+      << summary.imported_protocol_required_property_count
+      << ",\"imported_protocol_optional_property_count\":"
+      << summary.imported_protocol_optional_property_count
+      << ",\"imported_class_protocol_adoption_count\":"
+      << summary.imported_class_protocol_adoption_count
+      << ",\"imported_category_protocol_adoption_count\":"
+      << summary.imported_category_protocol_adoption_count
       << ",\"ready\":"
       << (IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary)
               ? "true"
@@ -9020,6 +9291,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const std::string &type_system_optional_keypath_runtime_helper_contract_json,
     const std::string &type_system_generic_contract_preservation_json,
     const std::string &type_system_nullability_contract_preservation_json,
+    const std::string &type_system_protocol_contract_preservation_json,
     const std::string &error_handling_result_and_bridging_artifact_replay_json,
     const std::string &concurrency_actor_mailbox_runtime_import_json,
     const std::string &interop_foreign_surface_interface_preservation_json,
@@ -9114,6 +9386,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << type_system_generic_contract_preservation_json << ",\n"
       << "  \"objc_type_system_nullability_contract_preservation\": "
       << type_system_nullability_contract_preservation_json << ",\n"
+      << "  \"objc_type_system_protocol_contract_preservation\": "
+      << type_system_protocol_contract_preservation_json << ",\n"
       << "  \"objc_error_handling_result_and_bridging_artifact_replay\": "
       << error_handling_result_and_bridging_artifact_replay_json << ",\n"
       << "  \"objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface\": "
@@ -25627,6 +25901,9 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
             BuildTypeSystemGenericContractPreservationJson(
                 type_metadata_handoff, type_system_type_semantic_model_summary),
             BuildTypeSystemNullabilityContractPreservationJson(
+                type_system_type_semantic_model_summary),
+            BuildTypeSystemProtocolContractPreservationJson(
+                program, runtime_metadata_source_records,
                 type_system_type_semantic_model_summary),
             BuildErrorHandlingResultAndBridgingArtifactReplaySummaryJson(
                 error_handling_result_and_bridging_artifact_replay_summary),

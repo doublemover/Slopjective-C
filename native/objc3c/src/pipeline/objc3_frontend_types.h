@@ -1252,6 +1252,8 @@ inline constexpr const char *kObjc3TypeSystemGenericContractPreservationContract
     "objc3c.type_system.generic.contract.preservation.v1";
 inline constexpr const char *kObjc3TypeSystemNullabilityContractPreservationContractId =
     "objc3c.type_system.nullability.contract.preservation.v1";
+inline constexpr const char *kObjc3TypeSystemProtocolContractPreservationContractId =
+    "objc3c.type_system.protocol.contract.preservation.v1";
 
 struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   std::string contract_id = kObjc3TypeSystemTypeSourceClosureContractId;
@@ -3034,6 +3036,16 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   std::size_t imported_null_resettable_entry_count = 0;
   std::size_t imported_unspecified_nullability_entry_count = 0;
   std::size_t imported_invalid_nullability_entry_count = 0;
+  std::size_t imported_type_system_protocol_contract_module_count = 0;
+  std::size_t imported_protocol_decl_count = 0;
+  std::size_t imported_protocol_forward_declaration_count = 0;
+  std::size_t imported_protocol_inheritance_edge_count = 0;
+  std::size_t imported_protocol_required_method_count = 0;
+  std::size_t imported_protocol_optional_method_count = 0;
+  std::size_t imported_protocol_required_property_count = 0;
+  std::size_t imported_protocol_optional_property_count = 0;
+  std::size_t imported_class_protocol_adoption_count = 0;
+  std::size_t imported_category_protocol_adoption_count = 0;
   bool fail_closed = false;
   bool source_semantic_preservation_contract_ready = false;
   bool semantic_surface_published = false;

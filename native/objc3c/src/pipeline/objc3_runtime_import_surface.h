@@ -15,6 +15,7 @@ struct Objc3ImportedRuntimeModuleSurface {
   bool type_system_optional_keypath_lowering_contract_present = false;
   bool type_system_generic_contract_preservation_present = false;
   bool type_system_nullability_contract_preservation_present = false;
+  bool type_system_protocol_contract_preservation_present = false;
   bool error_handling_result_and_bridging_artifact_replay_present = false;
   bool concurrency_actor_mailbox_runtime_import_present = false;
   bool interop_foreign_surface_interface_preservation_present = false;
@@ -54,6 +55,19 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::size_t type_system_invalid_nullability_entry_count = 0;
   std::string type_system_nullability_contract_replay_key;
   std::string type_system_nullability_type_semantic_replay_key;
+  bool type_system_protocol_contract_ready = false;
+  bool type_system_protocol_contract_deterministic = false;
+  std::size_t type_system_protocol_decl_count = 0;
+  std::size_t type_system_protocol_forward_declaration_count = 0;
+  std::size_t type_system_protocol_inheritance_edge_count = 0;
+  std::size_t type_system_protocol_required_method_count = 0;
+  std::size_t type_system_protocol_optional_method_count = 0;
+  std::size_t type_system_protocol_required_property_count = 0;
+  std::size_t type_system_protocol_optional_property_count = 0;
+  std::size_t type_system_class_protocol_adoption_count = 0;
+  std::size_t type_system_category_protocol_adoption_count = 0;
+  std::string type_system_protocol_contract_replay_key;
+  std::string type_system_protocol_type_semantic_replay_key;
   bool error_handling_binary_artifact_replay_ready = false;
   bool error_handling_runtime_import_artifact_ready = false;
   bool error_handling_separate_compilation_replay_ready = false;
