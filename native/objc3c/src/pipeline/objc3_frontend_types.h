@@ -1879,14 +1879,20 @@ struct Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
       kObjc3SourceOnlyFeatureClaimMacroMarkers,
       kObjc3SourceOnlyFeatureClaimMacroPackageMarkers,
       kObjc3SourceOnlyFeatureClaimMacroProvenanceMarkers,
+      kObjc3SourceOnlyFeatureClaimMacroCacheKeyMarkers,
+      kObjc3SourceOnlyFeatureClaimMacroSandboxPolicyMarkers,
       kObjc3SourceOnlyFeatureClaimMacroExpansionVisibleState,
   };
   std::size_t macro_marker_sites = 0;
   std::size_t macro_package_sites = 0;
   std::size_t macro_provenance_sites = 0;
+  std::size_t macro_cache_key_sites = 0;
+  std::size_t macro_sandbox_policy_sites = 0;
   std::size_t expansion_visible_macro_sites = 0;
   bool macro_package_source_supported = false;
   bool macro_provenance_source_supported = false;
+  bool macro_cache_key_source_supported = false;
+  bool macro_sandbox_policy_source_supported = false;
   bool expansion_visible_source_supported = false;
   bool deterministic_handoff = false;
   bool ready_for_semantic_expansion = false;

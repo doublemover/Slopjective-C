@@ -84,11 +84,15 @@ behavior/interop syntax admission and deterministic replay accounting:
 - `tests/tooling/fixtures/native/recovery/dispatch/parser_draft_syntax_surfaces.objc3`:
   accepts one aggregate public-workflow fixture spanning a bound block literal,
   `throws`/`try`/`throw`/`do catch`, async/await executor annotations,
-  contextual `actor class`, macro package/provenance attributes,
+  contextual `actor class`, macro package/provenance/cache/sandbox attributes,
   `behavior=...` properties, and foreign/header interop annotations.
 - `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3`:
   rejects malformed macro payload syntax with `O3P341` so macro admission stays
   fail-closed and source-range stable.
+- `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_cache_key_non_string.objc3`
+  and `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_sandbox_payload.objc3`:
+  reject malformed cache-key and sandbox policy payloads before later macro host
+  semantics can claim runtime behavior.
 
 ## Objective-C 3.0 draft syntax conformance matrix (issue #8012)
 

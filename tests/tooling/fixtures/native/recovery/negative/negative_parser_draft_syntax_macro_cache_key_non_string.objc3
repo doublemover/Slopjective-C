@@ -1,0 +1,6 @@
+// Expected diagnostic code(s): O3P343.
+module NegativeParserDraftSyntaxMacroCacheKeyNonString;
+
+pure fn traced() -> i32 __attribute__((objc_macro(named("Trace")), objc_macro_package(named("std.metaprogramming.trace")), objc_macro_provenance(named("sha256:abc123")), objc_macro_cache_key(named(TraceCache)))) {
+  return 3;
+}

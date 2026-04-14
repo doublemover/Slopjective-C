@@ -106,6 +106,20 @@
       "expected_diagnostic": {"code": "O3P341", "line": 4, "column": 146}
     },
     {
+      "id": "macro_cache_key",
+      "summary_field": "macro_cache_key_sites",
+      "positive_tokens": ["objc_macro_cache_key(named(\"Trace:v1:parser\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_cache_key_non_string.objc3",
+      "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 198}
+    },
+    {
+      "id": "macro_sandbox_policy",
+      "summary_field": "macro_sandbox_policy_sites",
+      "positive_tokens": ["objc_macro_sandbox(named(\"deterministic\"))"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_sandbox_payload.objc3",
+      "expected_diagnostic": {"code": "O3P341", "line": 4, "column": 238}
+    },
+    {
       "id": "property_behavior",
       "summary_field": "property_behavior_sites",
       "positive_tokens": [

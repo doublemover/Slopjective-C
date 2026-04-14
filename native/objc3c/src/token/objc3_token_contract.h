@@ -209,6 +209,10 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroPackageMarkers =
     "source-only:macro-package-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroProvenanceMarkers =
     "source-only:macro-provenance-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroCacheKeyMarkers =
+    "source-only:macro-cache-key-markers";
+inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroSandboxPolicyMarkers =
+    "source-only:macro-sandbox-policy-markers";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimMacroExpansionVisibleState =
     "source-only:macro-expansion-visible-state";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimForeignDeclarationMarkers =

@@ -1064,12 +1064,19 @@ std::string BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummaryJso
       << ",\"macro_marker_sites\":" << summary.macro_marker_sites
       << ",\"macro_package_sites\":" << summary.macro_package_sites
       << ",\"macro_provenance_sites\":" << summary.macro_provenance_sites
+      << ",\"macro_cache_key_sites\":" << summary.macro_cache_key_sites
+      << ",\"macro_sandbox_policy_sites\":"
+      << summary.macro_sandbox_policy_sites
       << ",\"expansion_visible_macro_sites\":"
       << summary.expansion_visible_macro_sites
       << ",\"macro_package_source_supported\":"
       << (summary.macro_package_source_supported ? "true" : "false")
       << ",\"macro_provenance_source_supported\":"
       << (summary.macro_provenance_source_supported ? "true" : "false")
+      << ",\"macro_cache_key_source_supported\":"
+      << (summary.macro_cache_key_source_supported ? "true" : "false")
+      << ",\"macro_sandbox_policy_source_supported\":"
+      << (summary.macro_sandbox_policy_source_supported ? "true" : "false")
       << ",\"expansion_visible_source_supported\":"
       << (summary.expansion_visible_source_supported ? "true" : "false")
       << ",\"deterministic_handoff\":"
@@ -3661,6 +3668,8 @@ std::vector<Objc3IRMetaprogrammingMacroArtifactBundle> BuildMetaprogrammingMacro
     bundle.macro_name = fn.objc_macro_name;
     bundle.package_name = fn.objc_macro_package_name;
     bundle.provenance_name = fn.objc_macro_provenance_name;
+    bundle.cache_key_name = fn.objc_macro_cache_key_name;
+    bundle.sandbox_policy_name = fn.objc_macro_sandbox_name;
     bundle.emitted_symbol =
         BuildMetaprogrammingMacroArtifactSymbol(fn.name, fn.objc_macro_name);
     bundle.line = fn.line;
@@ -3671,9 +3680,11 @@ std::vector<Objc3IRMetaprogrammingMacroArtifactBundle> BuildMetaprogrammingMacro
             [](const Objc3IRMetaprogrammingMacroArtifactBundle &lhs,
                const Objc3IRMetaprogrammingMacroArtifactBundle &rhs) {
               return std::tie(lhs.function_name, lhs.macro_name,
-                              lhs.provenance_name) <
+                              lhs.provenance_name, lhs.cache_key_name,
+                              lhs.sandbox_policy_name) <
                      std::tie(rhs.function_name, rhs.macro_name,
-                              rhs.provenance_name);
+                              rhs.provenance_name, rhs.cache_key_name,
+                              rhs.sandbox_policy_name);
             });
   return bundles;
 }

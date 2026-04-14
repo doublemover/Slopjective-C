@@ -4793,6 +4793,8 @@ std::string BuildMetaprogrammingMacroPackageProvenanceSourceCompletionReplayKey(
       << ";sites=" << summary.macro_marker_sites << ":"
       << summary.macro_package_sites << ":"
       << summary.macro_provenance_sites << ":"
+      << summary.macro_cache_key_sites << ":"
+      << summary.macro_sandbox_policy_sites << ":"
       << summary.expansion_visible_macro_sites
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
@@ -6616,6 +6618,12 @@ BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummary(
     if (decl.objc_macro_provenance_declared) {
       ++summary.macro_provenance_sites;
     }
+    if (decl.objc_macro_cache_key_declared) {
+      ++summary.macro_cache_key_sites;
+    }
+    if (decl.objc_macro_sandbox_declared) {
+      ++summary.macro_sandbox_policy_sites;
+    }
     if (decl.objc_macro_declared && decl.objc_macro_package_declared &&
         decl.objc_macro_provenance_declared) {
       ++summary.expansion_visible_macro_sites;
@@ -6643,6 +6651,8 @@ BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummary(
 
   summary.macro_package_source_supported = true;
   summary.macro_provenance_source_supported = true;
+  summary.macro_cache_key_source_supported = true;
+  summary.macro_sandbox_policy_source_supported = true;
   summary.expansion_visible_source_supported = true;
   summary.deterministic_handoff =
       summary.expansion_visible_macro_sites <= summary.macro_marker_sites &&

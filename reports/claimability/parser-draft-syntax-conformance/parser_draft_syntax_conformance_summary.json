@@ -24,10 +24,10 @@
     "diagnostic_code_fingerprint": 1469598103934665603,
     "diagnostic_code_surface_deterministic": true,
     "diagnostics": 0,
-    "draft_syntax_surface_count": 57,
+    "draft_syntax_surface_count": 59,
     "draft_syntax_surface_deterministic": true,
-    "draft_syntax_surface_fingerprint": 439336634408392089,
-    "draft_syntax_surface_handoff_key": "draft-syntax-surfaces:v1;blocks=1;block_capture_lists=1;block_byref_explicit=1;block_byref_captures=1;block_heap_candidates=1;try=2;throw=1;do_catch=1;throws_callables=2;async_callables=7;await=5;actors=1;actor_nonisolated=2;actor_isolation_markers=2;actor_sendable_markers=1;task_runtime=9;task_cancellation_checks=4;task_suspension_points=1;macro_attrs=1;macro_packages=1;macro_provenance=1;property_behaviors=4;interop_attrs=2;interop_export_headers=1;interop_abi_align=1;interop_foreign_type=1;interop_mixed_images=1;interop_package_entries=1;total=57",
+    "draft_syntax_surface_fingerprint": 18421605946144551146,
+    "draft_syntax_surface_handoff_key": "draft-syntax-surfaces:v1;blocks=1;block_capture_lists=1;block_byref_explicit=1;block_byref_captures=1;block_heap_candidates=1;try=2;throw=1;do_catch=1;throws_callables=2;async_callables=7;await=5;actors=1;actor_nonisolated=2;actor_isolation_markers=2;actor_sendable_markers=1;task_runtime=9;task_cancellation_checks=4;task_suspension_points=1;macro_attrs=1;macro_packages=1;macro_provenance=1;macro_cache_keys=1;macro_sandbox_policies=1;property_behaviors=4;interop_attrs=2;interop_export_headers=1;interop_abi_align=1;interop_foreign_type=1;interop_mixed_images=1;interop_package_entries=1;total=59",
     "function_prototypes": 11,
     "function_pure": 1,
     "functions": 20,
@@ -43,13 +43,13 @@
     "long_tail_grammar_constructs": 22,
     "long_tail_grammar_covered_constructs": 18,
     "long_tail_grammar_deterministic": true,
-    "long_tail_grammar_fingerprint": 5994660010629880984,
-    "long_tail_grammar_handoff_key": "long-tail-grammar:v1:constructs=22;covered=18;fingerprint=5994660010629880984;ast_shape_fingerprint=3981983316438525465;ast_top_level_layout_fingerprint=3877562515725506589;parser_diagnostics=0;deterministic=true",
+    "long_tail_grammar_fingerprint": 11690601686289864116,
+    "long_tail_grammar_handoff_key": "long-tail-grammar:v1:constructs=22;covered=18;fingerprint=11690601686289864116;ast_shape_fingerprint=5801312278551621334;ast_top_level_layout_fingerprint=3877562515725506589;parser_diagnostics=0;deterministic=true",
     "protocol_methods": 0,
     "protocol_properties": 0,
     "protocols": 0,
     "recovery_replay_ready": true,
-    "token_count": 727,
+    "token_count": 743,
     "top_level_declarations": 24
   },
   "replay_key_counts": {
@@ -72,15 +72,17 @@
     "interop_mixed_images": 1,
     "interop_package_entries": 1,
     "macro_attrs": 1,
+    "macro_cache_keys": 1,
     "macro_packages": 1,
     "macro_provenance": 1,
+    "macro_sandbox_policies": 1,
     "property_behaviors": 4,
     "task_cancellation_checks": 4,
     "task_runtime": 9,
     "task_suspension_points": 1,
     "throw": 1,
     "throws_callables": 2,
-    "total": 57,
+    "total": 59,
     "try": 2
   },
   "source_truth_paths": [
@@ -99,9 +101,11 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_export_header_non_string.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_foreign_type_non_string.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_import_module_non_string.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_cache_key_non_string.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_package_non_string.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_provenance_payload.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_sandbox_payload.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_throw_missing_payload.objc3",
@@ -565,6 +569,92 @@
       "replay_key_field": "macro_provenance",
       "status": "PASS",
       "summary_field": "macro_provenance_sites"
+    },
+    {
+      "id": "macro_cache_key",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P343",
+            "column": 198,
+            "line": 4
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_cache_key_non_string.objc3",
+          "header_codes": [
+            "O3P343"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P343",
+              "column": 198,
+              "line": 4,
+              "message": "objc_macro_cache_key named payload requires string literal"
+            },
+            {
+              "code": "O3P100",
+              "column": 1,
+              "line": 6,
+              "message": "unsupported Objective-C 3 statement"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "objc_macro_cache_key(named(\"Trace:v1:parser\"))": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 1,
+      "replay_key_field": "macro_cache_keys",
+      "status": "PASS",
+      "summary_field": "macro_cache_key_sites"
+    },
+    {
+      "id": "macro_sandbox_policy",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P341",
+            "column": 238,
+            "line": 4
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_sandbox_payload.objc3",
+          "header_codes": [
+            "O3P341"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P341",
+              "column": 238,
+              "line": 4,
+              "message": "objc_macro_sandbox requires named(\"...\") payload"
+            },
+            {
+              "code": "O3P100",
+              "column": 1,
+              "line": 6,
+              "message": "unsupported Objective-C 3 statement"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "objc_macro_sandbox(named(\"deterministic\"))": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 1,
+      "replay_key_field": "macro_sandbox_policies",
+      "status": "PASS",
+      "summary_field": "macro_sandbox_policy_sites"
     },
     {
       "id": "property_behavior",

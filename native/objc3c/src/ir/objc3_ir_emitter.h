@@ -152,6 +152,8 @@ struct Objc3IRMetaprogrammingMacroArtifactBundle {
   std::string macro_name;
   std::string package_name;
   std::string provenance_name;
+  std::string cache_key_name;
+  std::string sandbox_policy_name;
   std::string emitted_symbol;
   unsigned line = 1;
   unsigned column = 1;

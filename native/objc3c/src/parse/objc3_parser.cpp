@@ -7374,6 +7374,35 @@ class Objc3Parser {
       decl.objc_macro_provenance_declared = true;
       return true;
     }
+    if (attribute_name.text == "objc_macro_cache_key") {
+      if (decl.objc_macro_cache_key_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P367",
+                     "duplicate objc_macro_cache_key attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(
+              attribute_name, "objc_macro_cache_key",
+              decl.objc_macro_cache_key_name)) {
+        return false;
+      }
+      decl.objc_macro_cache_key_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_macro_sandbox") {
+      if (decl.objc_macro_sandbox_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P368",
+                     "duplicate objc_macro_sandbox attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_macro_sandbox",
+                                            decl.objc_macro_sandbox_name)) {
+        return false;
+      }
+      decl.objc_macro_sandbox_declared = true;
+      return true;
+    }
     if (attribute_name.text == "objc_foreign") {
       if (decl.objc_foreign_declared) {
         diagnostics_.push_back(
@@ -8965,6 +8994,12 @@ class Objc3Parser {
     if (decl.objc_macro_provenance_declared) {
       ++summary.macro_provenance_sites;
     }
+    if (decl.objc_macro_cache_key_declared) {
+      ++summary.macro_cache_key_sites;
+    }
+    if (decl.objc_macro_sandbox_declared) {
+      ++summary.macro_sandbox_policy_sites;
+    }
     if (decl.objc_foreign_declared || decl.objc_import_module_declared ||
         decl.objc_swift_name_declared || decl.objc_swift_private_declared ||
         decl.objc_cxx_name_declared || decl.objc_header_name_declared ||
@@ -9027,6 +9062,8 @@ class Objc3Parser {
         << ";macro_attrs=" << summary.macro_attribute_sites
         << ";macro_packages=" << summary.macro_package_sites
         << ";macro_provenance=" << summary.macro_provenance_sites
+        << ";macro_cache_keys=" << summary.macro_cache_key_sites
+        << ";macro_sandbox_policies=" << summary.macro_sandbox_policy_sites
         << ";property_behaviors=" << summary.property_behavior_sites
         << ";interop_attrs=" << summary.interop_attribute_sites
         << ";interop_export_headers=" << summary.interop_header_export_sites
@@ -9084,7 +9121,8 @@ class Objc3Parser {
         summary.task_cancellation_check_sites +
         summary.task_suspension_point_sites +
         summary.macro_attribute_sites + summary.macro_package_sites +
-        summary.macro_provenance_sites + summary.property_behavior_sites +
+        summary.macro_provenance_sites + summary.macro_cache_key_sites +
+        summary.macro_sandbox_policy_sites + summary.property_behavior_sites +
         summary.interop_attribute_sites + summary.interop_header_export_sites +
         summary.interop_abi_alignment_sites + summary.interop_foreign_type_sites +
         summary.interop_mixed_image_sites + summary.interop_package_entry_sites;

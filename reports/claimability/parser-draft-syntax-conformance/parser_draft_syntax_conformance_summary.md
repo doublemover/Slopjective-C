@@ -30,6 +30,8 @@
 - `macro_attribute`: `PASS`; replay `macro_attrs`=`1`; negative fixtures=`1`
 - `macro_package`: `PASS`; replay `macro_packages`=`1`; negative fixtures=`1`
 - `macro_provenance`: `PASS`; replay `macro_provenance`=`1`; negative fixtures=`1`
+- `macro_cache_key`: `PASS`; replay `macro_cache_keys`=`1`; negative fixtures=`1`
+- `macro_sandbox_policy`: `PASS`; replay `macro_sandbox_policies`=`1`; negative fixtures=`1`
 - `property_behavior`: `PASS`; replay `property_behaviors`=`4`; negative fixtures=`1`
 - `interop_attribute`: `PASS`; replay `interop_attrs`=`2`; negative fixtures=`6`
 

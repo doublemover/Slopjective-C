@@ -1498,6 +1498,10 @@ struct Objc3MethodDecl {
   std::string objc_macro_package_name;
   bool objc_macro_provenance_declared = false;
   std::string objc_macro_provenance_name;
+  bool objc_macro_cache_key_declared = false;
+  std::string objc_macro_cache_key_name;
+  bool objc_macro_sandbox_declared = false;
+  std::string objc_macro_sandbox_name;
   bool objc_foreign_declared = false;
   bool objc_import_module_declared = false;
   std::string objc_import_module_name;
@@ -1966,6 +1970,10 @@ struct FunctionDecl {
   std::string objc_macro_package_name;
   bool objc_macro_provenance_declared = false;
   std::string objc_macro_provenance_name;
+  bool objc_macro_cache_key_declared = false;
+  std::string objc_macro_cache_key_name;
+  bool objc_macro_sandbox_declared = false;
+  std::string objc_macro_sandbox_name;
   bool objc_foreign_declared = false;
   bool objc_import_module_declared = false;
   std::string objc_import_module_name;
@@ -2182,6 +2190,8 @@ struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t macro_attribute_sites = 0;
   std::size_t macro_package_sites = 0;
   std::size_t macro_provenance_sites = 0;
+  std::size_t macro_cache_key_sites = 0;
+  std::size_t macro_sandbox_policy_sites = 0;
   std::size_t property_behavior_sites = 0;
   std::size_t interop_attribute_sites = 0;
   std::size_t interop_header_export_sites = 0;

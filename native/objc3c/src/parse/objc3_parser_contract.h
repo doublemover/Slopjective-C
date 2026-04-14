@@ -339,6 +339,12 @@ inline std::uint64_t BuildObjc3DraftSyntaxSurfaceFingerprint(
       static_cast<std::uint64_t>(summary.macro_provenance_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
+      static_cast<std::uint64_t>(summary.macro_cache_key_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.macro_sandbox_policy_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
       static_cast<std::uint64_t>(summary.property_behavior_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,

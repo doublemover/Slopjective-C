@@ -36,6 +36,8 @@ REQUIRED_SURFACES = [
     "macro_attribute",
     "macro_package",
     "macro_provenance",
+    "macro_cache_key",
+    "macro_sandbox_policy",
     "property_behavior",
     "interop_attribute",
 ]
@@ -51,6 +53,8 @@ REPLAY_KEY_FIELDS = {
     "macro_attribute": "macro_attrs",
     "macro_package": "macro_packages",
     "macro_provenance": "macro_provenance",
+    "macro_cache_key": "macro_cache_keys",
+    "macro_sandbox_policy": "macro_sandbox_policies",
     "property_behavior": "property_behaviors",
     "interop_attribute": "interop_attrs",
 }

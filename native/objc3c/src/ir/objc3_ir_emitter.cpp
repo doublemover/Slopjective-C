@@ -343,7 +343,10 @@ class Objc3IREmitter {
                                "function=" + bundle.function_name +
                                    ";macro=" + bundle.macro_name +
                                    ";package=" + bundle.package_name +
-                                   ";provenance=" + bundle.provenance_name});
+                                   ";provenance=" + bundle.provenance_name +
+                                   ";cache_key=" + bundle.cache_key_name +
+                                   ";sandbox_policy=" +
+                                   bundle.sandbox_policy_name});
     }
     for (const auto &bundle :
          frontend_metadata_.metaprogramming_property_behavior_artifact_bundles_lexicographic) {
