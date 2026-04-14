@@ -4,10 +4,8 @@
 from __future__ import annotations
 
 import json
-import os
 import re
 import shutil
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,6 +16,8 @@ from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.probe_output import parse_key_value_output
 from objc3c_tooling.public_workflow_output import extract_output_value
 from objc3c_tooling.public_workflow_output import extract_report_paths
+from objc3c_tooling.probe_compile import find_clangxx
+from objc3c_tooling.probe_compile import compile_probe
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,43 +52,8 @@ def load_json(path: Path) -> dict[str, Any]:
 
 
 
-def find_clangxx() -> str:
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    candidate = shutil.which("clang++")
-    if candidate:
-        return candidate
-    raise RuntimeError("clang++ not found; set LLVM_ROOT or ensure clang++ is on PATH")
 
 
-def compile_probe(
-    clangxx: str,
-    probe_source: Path,
-    runtime_library: Path,
-    probe_exe: Path,
-    *,
-    cwd: Path,
-) -> None:
-    probe_exe.parent.mkdir(parents=True, exist_ok=True)
-    probe_compile_result = run_capture(
-        [
-            clangxx,
-            "-std=c++20",
-            "-fms-runtime-lib=dll",
-            "-I",
-            str((cwd / "native/objc3c/src").resolve()),
-            str(probe_source),
-            str(runtime_library),
-            "-o",
-            str(probe_exe),
-        ],
-        cwd=cwd,
-    )
-    if probe_compile_result.returncode != 0:
-        raise RuntimeError(f"packaged release-candidate probe compile failed for {probe_source}")
 
 
 def main() -> int:
@@ -215,8 +180,8 @@ def main() -> int:
     )
 
     clangxx = find_clangxx()
-    compile_probe(clangxx, claim_probe, runtime_library, claim_probe_exe, cwd=package_root)
-    compile_probe(clangxx, evidence_probe, runtime_library, evidence_probe_exe, cwd=package_root)
+    compile_probe(clangxx, claim_probe, claim_probe_exe, cwd=package_root, runtime_library=runtime_library)
+    compile_probe(clangxx, evidence_probe, evidence_probe_exe, cwd=package_root, runtime_library=runtime_library)
 
     claim_payload = parse_key_value_output(
         run_capture([str(claim_probe_exe)], cwd=package_root),

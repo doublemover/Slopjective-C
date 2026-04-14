@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import json
-import os
 import shutil
 import subprocess
 import sys
@@ -16,6 +15,7 @@ from objc3c_tooling.json_io import load_json_object
 from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_output_value
 from objc3c_tooling.public_workflow_output import extract_report_paths
+from objc3c_tooling.probe_compile import find_clangxx
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,16 +46,6 @@ def load_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def find_clangxx() -> str:
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    candidate = shutil.which("clang++")
-    if candidate:
-        return candidate
-    raise RuntimeError("clang++ not found; set LLVM_ROOT or ensure clang++ is on PATH")
 
 
 def main() -> int:

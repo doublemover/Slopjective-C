@@ -18,6 +18,8 @@ from time import perf_counter
 from typing import Any, Callable
 from objc3c_tooling.probe_output import parse_json_output
 from objc3c_tooling.probe_output import parse_key_value_output
+from objc3c_tooling.probe_compile import compile_probe as compile_runtime_probe
+from objc3c_tooling.probe_compile import find_clangxx
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -1333,16 +1335,6 @@ def ensure_native_binaries() -> None:
         raise RuntimeError("native build completed without publishing the runtime executable/library")
 
 
-def find_clangxx() -> str:
-    llvm_root = os.environ.get("LLVM_ROOT")
-    if llvm_root:
-        candidate = Path(llvm_root) / "bin" / "clang++.exe"
-        if candidate.is_file():
-            return str(candidate)
-    candidate = shutil.which("clang++")
-    if candidate:
-        return candidate
-    raise RuntimeError("clang++ not found; set LLVM_ROOT or ensure clang++ is on PATH")
 
 
 def compile_fixture_with_args(
@@ -5183,27 +5175,17 @@ def compile_probe_with_args(
     extra_objects: list[Path],
     extra_args: list[str],
 ) -> None:
-    exe_path.parent.mkdir(parents=True, exist_ok=True)
-    command = [
+    compile_runtime_probe(
         clangxx,
-        "-std=c++20",
-        "-fms-runtime-lib=dll",
-        "-I",
-        str(ROOT / "native" / "objc3c" / "src"),
-        "-I",
-        str(ROOT / "tests" / "tooling" / "runtime"),
-        *extra_args,
-        str(probe),
-        *[str(path) for path in extra_objects],
-        str(RUNTIME_LIB),
-        "-o",
-        str(exe_path),
-    ]
-    result = run(command)
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"probe link failed for {probe}:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-        )
+        probe,
+        exe_path,
+        cwd=ROOT,
+        runtime_library=RUNTIME_LIB,
+        object_inputs=extra_objects,
+        extra_args=extra_args,
+        failure_context=f"probe link failed for {probe}",
+        runner=run,
+    )
 
 
 def link_fixture_executable(clangxx: str, obj_path: Path, exe_path: Path) -> None:
