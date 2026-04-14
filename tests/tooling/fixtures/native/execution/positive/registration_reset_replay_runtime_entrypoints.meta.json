@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "fixture": "registration_reset_replay_runtime_entrypoints.objc3",
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

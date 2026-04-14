@@ -1,0 +1,9 @@
+module registrationResetReplayRuntimeEntrypoints;
+
+extern fn objc3_runtime_reset_for_testing() -> void;
+extern fn objc3_runtime_replay_registered_images_for_testing() -> i32;
+
+fn main() -> i32 {
+  objc3_runtime_reset_for_testing();
+  return objc3_runtime_replay_registered_images_for_testing();
+}

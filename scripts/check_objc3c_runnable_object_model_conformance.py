@@ -23,6 +23,8 @@ REQUIRED_CASES = {
     "canonical-dispatch",
     "metaclass-graph-root-class",
     "dispatch-fast-path",
+    "imported-runtime-packaging-replay",
+    "multi-image-registration-reset-replay",
     "property-layout",
     "instance-allocation-layout-runtime",
     "storage-ownership-reflection",
@@ -40,6 +42,9 @@ REQUIRED_SURFACE_CONTRACTS = {
     "runtime_class_metaclass_protocol_realization_surface": (
         "objc3c.runtime.class.metaclass.protocol.realization.v1"
     ),
+    "runtime_cross_module_realized_metadata_replay_preservation_surface": (
+        "objc3c.runtime.cross.module.realized.metadata.replay.preservation.surface.v1"
+    ),
     "runtime_category_attachment_merged_dispatch_surface": (
         "objc3c.runtime.category.attachment.merged.dispatch.surface.v1"
     ),
@@ -53,6 +58,8 @@ REQUIRED_SURFACE_CASES = {
         "canonical-dispatch",
         "metaclass-graph-root-class",
         "dispatch-fast-path",
+        "imported-runtime-packaging-replay",
+        "multi-image-registration-reset-replay",
         "instance-allocation-layout-runtime",
         "storage-ownership-reflection",
     },
@@ -69,6 +76,10 @@ REQUIRED_SURFACE_CASES = {
     "runtime_class_metaclass_protocol_realization_surface": {
         "canonical-dispatch",
         "metaclass-graph-root-class",
+    },
+    "runtime_cross_module_realized_metadata_replay_preservation_surface": {
+        "imported-runtime-packaging-replay",
+        "multi-image-registration-reset-replay",
     },
     "runtime_category_attachment_merged_dispatch_surface": {
         "canonical-dispatch",
