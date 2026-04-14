@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3P110.
+module NegativeParserDraftSyntaxNestedCleanupDeferBody;
+
+extern fn cleanup_release_marker() -> i32;
+
+fn recover() throws -> i32 {
+  do {
+    defer cleanup_release_marker();
+  } catch {
+    return 0;
+  }
+}

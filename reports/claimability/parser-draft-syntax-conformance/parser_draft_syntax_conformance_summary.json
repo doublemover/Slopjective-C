@@ -24,10 +24,10 @@
     "diagnostic_code_fingerprint": 1469598103934665603,
     "diagnostic_code_surface_deterministic": true,
     "diagnostics": 0,
-    "draft_syntax_surface_count": 59,
+    "draft_syntax_surface_count": 68,
     "draft_syntax_surface_deterministic": true,
-    "draft_syntax_surface_fingerprint": 18421605946144551146,
-    "draft_syntax_surface_handoff_key": "draft-syntax-surfaces:v1;blocks=1;block_capture_lists=1;block_byref_explicit=1;block_byref_captures=1;block_heap_candidates=1;try=2;throw=1;do_catch=1;throws_callables=2;async_callables=7;await=5;actors=1;actor_nonisolated=2;actor_isolation_markers=2;actor_sendable_markers=1;task_runtime=9;task_cancellation_checks=4;task_suspension_points=1;macro_attrs=1;macro_packages=1;macro_provenance=1;macro_cache_keys=1;macro_sandbox_policies=1;property_behaviors=4;interop_attrs=2;interop_export_headers=1;interop_abi_align=1;interop_foreign_type=1;interop_mixed_images=1;interop_package_entries=1;total=59",
+    "draft_syntax_surface_fingerprint": 2966573257866671323,
+    "draft_syntax_surface_handoff_key": "draft-syntax-surfaces:v1;blocks=1;block_capture_lists=1;block_byref_explicit=1;block_byref_captures=1;block_heap_candidates=1;try=2;throw=1;do_catch=1;error_catch_clauses=2;error_catch_bindings=1;error_catch_all=1;error_bridge_payloads=3;error_foreign_boundaries=1;error_nested_cleanup_markers=1;throws_callables=2;async_callables=7;await=5;actors=1;actor_nonisolated=2;actor_isolation_markers=2;actor_sendable_markers=1;task_runtime=9;task_cancellation_checks=4;task_suspension_points=1;macro_attrs=1;macro_packages=1;macro_provenance=1;macro_cache_keys=1;macro_sandbox_policies=1;property_behaviors=4;interop_attrs=2;interop_export_headers=1;interop_abi_align=1;interop_foreign_type=1;interop_mixed_images=1;interop_package_entries=1;total=68",
     "function_prototypes": 11,
     "function_pure": 1,
     "functions": 20,
@@ -43,13 +43,13 @@
     "long_tail_grammar_constructs": 22,
     "long_tail_grammar_covered_constructs": 18,
     "long_tail_grammar_deterministic": true,
-    "long_tail_grammar_fingerprint": 11690601686289864116,
-    "long_tail_grammar_handoff_key": "long-tail-grammar:v1:constructs=22;covered=18;fingerprint=11690601686289864116;ast_shape_fingerprint=5801312278551621334;ast_top_level_layout_fingerprint=3877562515725506589;parser_diagnostics=0;deterministic=true",
+    "long_tail_grammar_fingerprint": 15946097123073253549,
+    "long_tail_grammar_handoff_key": "long-tail-grammar:v1:constructs=22;covered=18;fingerprint=15946097123073253549;ast_shape_fingerprint=12155225009022223941;ast_top_level_layout_fingerprint=8979603601756800304;parser_diagnostics=0;deterministic=true",
     "protocol_methods": 0,
     "protocol_properties": 0,
     "protocols": 0,
     "recovery_replay_ready": true,
-    "token_count": 743,
+    "token_count": 752,
     "top_level_declarations": 24
   },
   "replay_key_counts": {
@@ -65,6 +65,12 @@
     "block_heap_candidates": 1,
     "blocks": 1,
     "do_catch": 1,
+    "error_bridge_payloads": 3,
+    "error_catch_all": 1,
+    "error_catch_bindings": 1,
+    "error_catch_clauses": 2,
+    "error_foreign_boundaries": 1,
+    "error_nested_cleanup_markers": 1,
     "interop_abi_align": 1,
     "interop_attrs": 2,
     "interop_export_headers": 1,
@@ -82,7 +88,7 @@
     "task_suspension_points": 1,
     "throw": 1,
     "throws_callables": 2,
-    "total": 59,
+    "total": 68,
     "try": 2
   },
   "source_truth_paths": [
@@ -106,6 +112,7 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_provenance_payload.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_sandbox_payload.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_nested_cleanup_defer_body.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_throw_missing_payload.objc3",
@@ -277,6 +284,169 @@
       "replay_key_field": "do_catch",
       "status": "PASS",
       "summary_field": "do_catch_sites"
+    },
+    {
+      "id": "error_catch_clause",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P103",
+            "column": 5,
+            "line": 7
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_do_catch_empty_pattern.objc3",
+          "header_codes": [
+            "O3P103"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P103",
+              "column": 5,
+              "line": 7,
+              "message": "empty catch pattern is not allowed"
+            },
+            {
+              "code": "O3P100",
+              "column": 3,
+              "line": 10,
+              "message": "unsupported Objective-C 3 statement"
+            },
+            {
+              "code": "O3P100",
+              "column": 1,
+              "line": 11,
+              "message": "unsupported Objective-C 3 statement"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "catch (NSError* error)": true,
+        "} catch {": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 2,
+      "replay_key_field": "error_catch_clauses",
+      "status": "PASS",
+      "summary_field": "error_catch_clause_sites"
+    },
+    {
+      "id": "error_bridge_payload",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P280",
+            "column": 69,
+            "line": 4
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
+          "header_codes": [
+            "O3P280"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P280",
+              "column": 69,
+              "line": 4,
+              "message": "objc_status_code requires success, error_type, and mapping clauses"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "let bridged = try? bridgeStatus(1, 0);": true,
+        "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 3,
+      "replay_key_field": "error_bridge_payloads",
+      "status": "PASS",
+      "summary_field": "error_bridge_payload_sites"
+    },
+    {
+      "id": "error_foreign_boundary",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P280",
+            "column": 69,
+            "line": 4
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
+          "header_codes": [
+            "O3P280"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P280",
+              "column": 69,
+              "line": 4,
+              "message": "objc_status_code requires success, error_type, and mapping clauses"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "objc_foreign, objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 1,
+      "replay_key_field": "error_foreign_boundaries",
+      "status": "PASS",
+      "summary_field": "error_foreign_boundary_annotation_sites"
+    },
+    {
+      "id": "error_nested_cleanup_marker",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P110",
+            "column": 5,
+            "line": 8
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_nested_cleanup_defer_body.objc3",
+          "header_codes": [
+            "O3P110"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P110",
+              "column": 5,
+              "line": 8,
+              "message": "defer requires braced body"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "defer {": true,
+        "produce();": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 1,
+      "replay_key_field": "error_nested_cleanup_markers",
+      "status": "PASS",
+      "summary_field": "error_nested_cleanup_marker_sites"
     },
     {
       "id": "throws_callable",

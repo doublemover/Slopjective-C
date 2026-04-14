@@ -2177,6 +2177,12 @@ struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t try_expression_sites = 0;
   std::size_t throw_statement_sites = 0;
   std::size_t do_catch_sites = 0;
+  std::size_t error_catch_clause_sites = 0;
+  std::size_t error_catch_binding_sites = 0;
+  std::size_t error_catch_all_sites = 0;
+  std::size_t error_bridge_payload_sites = 0;
+  std::size_t error_foreign_boundary_annotation_sites = 0;
+  std::size_t error_nested_cleanup_marker_sites = 0;
   std::size_t throws_callable_sites = 0;
   std::size_t async_callable_sites = 0;
   std::size_t await_expression_sites = 0;

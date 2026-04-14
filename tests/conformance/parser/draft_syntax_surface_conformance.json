@@ -43,6 +43,42 @@
       "expected_diagnostic": {"code": "O3P103", "line": 7, "column": 5}
     },
     {
+      "id": "error_catch_clause",
+      "summary_field": "error_catch_clause_sites",
+      "positive_tokens": ["catch (NSError* error)", "} catch {"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_do_catch_empty_pattern.objc3",
+      "expected_diagnostic": {"code": "O3P103", "line": 7, "column": 5}
+    },
+    {
+      "id": "error_bridge_payload",
+      "summary_field": "error_bridge_payload_sites",
+      "positive_tokens": [
+        "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)",
+        "let bridged = try? bridgeStatus(1, 0);"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
+      "expected_diagnostic": {"code": "O3P280", "line": 4, "column": 69}
+    },
+    {
+      "id": "error_foreign_boundary",
+      "summary_field": "error_foreign_boundary_annotation_sites",
+      "positive_tokens": [
+        "objc_foreign, objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
+      "expected_diagnostic": {"code": "O3P280", "line": 4, "column": 69}
+    },
+    {
+      "id": "error_nested_cleanup_marker",
+      "summary_field": "error_nested_cleanup_marker_sites",
+      "positive_tokens": [
+        "defer {",
+        "produce();"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_nested_cleanup_defer_body.objc3",
+      "expected_diagnostic": {"code": "O3P110", "line": 8, "column": 5}
+    },
+    {
       "id": "throws_callable",
       "summary_field": "throws_callable_sites",
       "positive_tokens": ["fn risky(value: i32) throws -> i32", "fn recover() throws -> i32"],

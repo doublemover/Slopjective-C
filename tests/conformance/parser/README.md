@@ -85,7 +85,8 @@ behavior/interop syntax admission and deterministic replay accounting:
   accepts one aggregate public-workflow fixture spanning a bound block literal,
   `throws`/`try`/`throw`/`do catch`, async/await executor annotations,
   contextual `actor class`, macro package/provenance/cache/sandbox attributes,
-  `behavior=...` properties, and foreign/header interop annotations.
+  `behavior=...` properties, foreign/header interop annotations, bridged error
+  payload metadata, and nested cleanup markers under a do/catch surface.
 - `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3`:
   rejects malformed macro payload syntax with `O3P341` so macro admission stays
   fail-closed and source-range stable.
@@ -93,6 +94,9 @@ behavior/interop syntax admission and deterministic replay accounting:
   and `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_sandbox_payload.objc3`:
   reject malformed cache-key and sandbox policy payloads before later macro host
   semantics can claim runtime behavior.
+- `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_nested_cleanup_defer_body.objc3`:
+  rejects malformed nested cleanup syntax with `O3P110` before unwind lowering
+  can claim the cleanup marker.
 
 ## Objective-C 3.0 draft syntax conformance matrix (issue #8012)
 

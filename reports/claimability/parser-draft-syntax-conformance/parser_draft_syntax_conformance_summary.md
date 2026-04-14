@@ -23,6 +23,10 @@
 - `try_expression`: `PASS`; replay `try`=`2`; negative fixtures=`1`
 - `throw_statement`: `PASS`; replay `throw`=`1`; negative fixtures=`1`
 - `do_catch`: `PASS`; replay `do_catch`=`1`; negative fixtures=`1`
+- `error_catch_clause`: `PASS`; replay `error_catch_clauses`=`2`; negative fixtures=`1`
+- `error_bridge_payload`: `PASS`; replay `error_bridge_payloads`=`3`; negative fixtures=`1`
+- `error_foreign_boundary`: `PASS`; replay `error_foreign_boundaries`=`1`; negative fixtures=`1`
+- `error_nested_cleanup_marker`: `PASS`; replay `error_nested_cleanup_markers`=`1`; negative fixtures=`1`
 - `throws_callable`: `PASS`; replay `throws_callables`=`2`; negative fixtures=`1`
 - `async_callable`: `PASS`; replay `async_callables`=`7`; negative fixtures=`1`
 - `await_expression`: `PASS`; replay `await`=`5`; negative fixtures=`1`

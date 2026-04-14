@@ -8905,6 +8905,13 @@ class Objc3Parser {
     }
     CountDraftSyntaxStatements(block->body, summary);
     for (const auto &clause : block->catch_clauses) {
+      ++summary.error_catch_clause_sites;
+      if (clause.has_binding) {
+        ++summary.error_catch_binding_sites;
+      }
+      if (clause.catch_all) {
+        ++summary.error_catch_all_sites;
+      }
       CountDraftSyntaxStatements(clause.body, summary);
     }
   }
@@ -8913,6 +8920,9 @@ class Objc3Parser {
                             Objc3DraftSyntaxSurfaceSummary &summary) const {
     if (stmt == nullptr) {
       return;
+    }
+    if (stmt->kind == Stmt::Kind::Defer) {
+      ++summary.error_nested_cleanup_marker_sites;
     }
     CountDraftSyntaxBlock(stmt->block_stmt.get(), summary);
     if (stmt->let_stmt != nullptr) {
@@ -8971,6 +8981,15 @@ class Objc3Parser {
     if (decl.throws_declared) {
       ++summary.throws_callable_sites;
     }
+    summary.error_bridge_payload_sites += decl.objc_nserror_attribute_sites;
+    summary.error_bridge_payload_sites += decl.status_code_success_clause_sites;
+    summary.error_bridge_payload_sites += decl.status_code_error_type_clause_sites;
+    summary.error_bridge_payload_sites += decl.status_code_mapping_clause_sites;
+    summary.error_foreign_boundary_annotation_sites +=
+        decl.objc_nserror_attribute_sites + decl.objc_status_code_attribute_sites;
+    summary.error_nested_cleanup_marker_sites +=
+        decl.cleanup_action_sites + decl.cleanup_scope_sites +
+        decl.cleanup_resume_sites;
     if (decl.async_declared) {
       ++summary.async_callable_sites;
     }
@@ -9049,6 +9068,14 @@ class Objc3Parser {
         << ";try=" << summary.try_expression_sites
         << ";throw=" << summary.throw_statement_sites
         << ";do_catch=" << summary.do_catch_sites
+        << ";error_catch_clauses=" << summary.error_catch_clause_sites
+        << ";error_catch_bindings=" << summary.error_catch_binding_sites
+        << ";error_catch_all=" << summary.error_catch_all_sites
+        << ";error_bridge_payloads=" << summary.error_bridge_payload_sites
+        << ";error_foreign_boundaries="
+        << summary.error_foreign_boundary_annotation_sites
+        << ";error_nested_cleanup_markers="
+        << summary.error_nested_cleanup_marker_sites
         << ";throws_callables=" << summary.throws_callable_sites
         << ";async_callables=" << summary.async_callable_sites
         << ";await=" << summary.await_expression_sites
@@ -9112,6 +9139,10 @@ class Objc3Parser {
         summary.block_byref_capture_sites +
         summary.block_heap_escape_candidate_sites + summary.try_expression_sites +
         summary.throw_statement_sites + summary.do_catch_sites +
+        summary.error_catch_clause_sites + summary.error_catch_binding_sites +
+        summary.error_catch_all_sites + summary.error_bridge_payload_sites +
+        summary.error_foreign_boundary_annotation_sites +
+        summary.error_nested_cleanup_marker_sites +
         summary.throws_callable_sites + summary.async_callable_sites +
         summary.await_expression_sites + summary.actor_interface_sites +
         summary.actor_nonisolated_callable_sites +
