@@ -15,6 +15,7 @@
 
 #include "ast/objc3_ast.h"
 #include "parse/objc3_parse_support.h"
+#include "support/objc3_identifier_safe_suffix.h"
 
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 
@@ -3612,20 +3613,8 @@ class Objc3IREmitter {
            RuntimeMetadataLinkerAnchorSuffix();
   }
 
-  static std::string MakeIdentifierSafeSuffix(const std::string &text) {
-    std::string out;
-    out.reserve(text.size());
-    for (unsigned char ch : text) {
-      if (std::isalnum(ch) != 0 || ch == '_') {
-        out.push_back(static_cast<char>(ch));
-      } else {
-        out.push_back('_');
-      }
-    }
-    if (out.empty()) {
-      out = "module";
-    }
-    return out;
+  static std::string MakeModuleIdentifierSafeSuffix(const std::string &text) {
+    return objc3c::support::MakeIdentifierSafeSuffix(text, "module");
   }
 
   static std::string EncodeBoundaryTokenValueHex(const std::string &text) {
@@ -3691,7 +3680,7 @@ class Objc3IREmitter {
   }
 
   std::string RuntimeBootstrapSafeSuffix() const {
-    return MakeIdentifierSafeSuffix(
+    return MakeModuleIdentifierSafeSuffix(
         frontend_metadata_
             .runtime_metadata_archive_static_link_translation_unit_identity_key);
   }
@@ -3710,12 +3699,12 @@ class Objc3IREmitter {
   }
 
   std::string RuntimeBootstrapRegistrationDescriptorIdentifierSafeSuffix() const {
-    return MakeIdentifierSafeSuffix(
+    return MakeModuleIdentifierSafeSuffix(
         frontend_metadata_.runtime_bootstrap_registration_descriptor_identifier);
   }
 
   std::string RuntimeBootstrapImageRootIdentifierSafeSuffix() const {
-    return MakeIdentifierSafeSuffix(
+    return MakeModuleIdentifierSafeSuffix(
         frontend_metadata_.runtime_bootstrap_image_root_identifier);
   }
 

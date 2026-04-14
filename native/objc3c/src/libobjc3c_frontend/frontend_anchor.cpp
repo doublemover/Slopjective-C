@@ -21,6 +21,7 @@
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
+#include "support/objc3_file_reading.h"
 
 using objc3::io::EscapeJsonString;
 
@@ -296,22 +297,6 @@ static bool WriteBinaryFile(const std::filesystem::path &path,
     error = "failed while writing output file '" + path.string() + "'";
     return false;
   }
-  return true;
-}
-
-static bool ReadTextFile(const std::filesystem::path &path, std::string &contents, std::string &error) {
-  std::ifstream input(path, std::ios::binary);
-  if (!input.is_open()) {
-    error = "failed to open input source '" + path.string() + "'";
-    return false;
-  }
-  std::ostringstream buffer;
-  buffer << input.rdbuf();
-  if (!input.good() && !input.eof()) {
-    error = "failed while reading input source '" + path.string() + "'";
-    return false;
-  }
-  contents = buffer.str();
   return true;
 }
 
@@ -1540,7 +1525,11 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   std::string source_text;
   std::string io_error;
   const std::filesystem::path input_path(options->input_path);
-  if (!ReadTextFile(input_path, source_text, io_error)) {
+  if (!objc3c::support::TryReadTextFile(input_path,
+                                        source_text,
+                                        io_error,
+                                        "failed to open input source '" + input_path.string() + "'",
+                                        "failed while reading input source '" + input_path.string() + "'")) {
     return SetUsageError(context, result, io_error);
   }
   return CompileObjc3SourceImpl(context, input_path, source_text, options, result);

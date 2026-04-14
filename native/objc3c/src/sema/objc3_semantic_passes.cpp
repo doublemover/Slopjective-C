@@ -4,6 +4,8 @@
 #include "pipeline/objc3_frontend_types.h"
 
 #include "diag/objc3_diag_utils.h"
+#include "support/objc3_method_family.h"
+#include "support/objc3_value_type_names.h"
 
 #include <algorithm>
 #include <cctype>
@@ -25,33 +27,6 @@ static std::string JoinStringVector(const std::vector<std::string> &items,
     out << items[index];
   }
   return out.str();
-}
-
-static const char *TypeName(ValueType type) {
-  switch (type) {
-    case ValueType::I32:
-      return "i32";
-    case ValueType::Bool:
-      return "bool";
-    case ValueType::Void:
-      return "void";
-    case ValueType::Function:
-      return "function";
-    case ValueType::ObjCId:
-      return "id";
-    case ValueType::ObjCClass:
-      return "Class";
-    case ValueType::ObjCSel:
-      return "SEL";
-    case ValueType::ObjCProtocol:
-      return "Protocol";
-    case ValueType::ObjCInstancetype:
-      return "instancetype";
-    case ValueType::ObjCObjectPtr:
-      return "object-pointer";
-    default:
-      return "unknown";
-  }
 }
 
 static bool IsObjCReferenceAliasValueType(ValueType type);
@@ -876,14 +851,16 @@ static std::string SemanticTypeName(const SemanticTypeInfo &info) {
         if (index > 0u) {
           out << ", ";
         }
-        out << TypeName(info.callable_param_types[index]);
+        out << objc3c::support::ValueTypeName(info.callable_param_types[index]);
       }
-      out << ") -> " << TypeName(info.callable_return_type);
+      out << ") -> " << objc3c::support::ValueTypeName(info.callable_return_type);
       return out.str();
     }
-    return TypeName(info.type);
+    return objc3c::support::ValueTypeName(info.type);
   }
-  const std::string base = info.vector_base_spelling.empty() ? std::string(TypeName(info.type)) : info.vector_base_spelling;
+  const std::string base =
+      info.vector_base_spelling.empty() ? std::string(objc3c::support::ValueTypeName(info.type))
+                                        : info.vector_base_spelling;
   return base + "x" + std::to_string(info.vector_lane_count);
 }
 
@@ -17026,22 +17003,6 @@ static Expr::MessageSendForm ResolveMessageSendForm(const Expr &expr) {
   return expr.args.empty() ? Expr::MessageSendForm::Unary : Expr::MessageSendForm::Keyword;
 }
 
-static std::string ClassifyMethodFamilyFromSelector(const std::string &selector) {
-  if (selector.rfind("mutableCopy", 0) == 0) {
-    return "mutableCopy";
-  }
-  if (selector.rfind("copy", 0) == 0) {
-    return "copy";
-  }
-  if (selector.rfind("init", 0) == 0) {
-    return "init";
-  }
-  if (selector.rfind("new", 0) == 0) {
-    return "new";
-  }
-  return "none";
-}
-
 static Objc3BlockLiteralCaptureSiteMetadata BuildBlockLiteralCaptureSiteMetadata(const Expr &expr) {
   Objc3BlockLiteralCaptureSiteMetadata metadata;
   metadata.parameter_count = expr.block_parameter_count;
@@ -18364,7 +18325,7 @@ static Objc3MessageSendSelectorLoweringSiteMetadata BuildMessageSendSelectorLowe
        metadata.super_dispatch_requires_class_context == metadata.super_dispatch_enabled);
   metadata.method_family_name = expr.method_family_semantics_is_normalized && !expr.method_family_name.empty()
                                     ? expr.method_family_name
-                                    : ClassifyMethodFamilyFromSelector(metadata.selector);
+                                    : objc3c::support::ClassifyMethodFamilyFromSelector(metadata.selector);
   metadata.method_family_returns_retained_result =
       expr.method_family_semantics_is_normalized
           ? expr.method_family_returns_retained_result

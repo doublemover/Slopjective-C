@@ -1,46 +1,29 @@
 #include "driver/objc3_cli_options.h"
 
 #include <cerrno>
-#include <cctype>
 #include <cstdlib>
 #include <filesystem>
 #include <limits>
 #include <string>
 
+#include "support/objc3_ir_object_backend_token.h"
+#include "support/objc3_runtime_dispatch_symbol.h"
+
 namespace {
 
 constexpr std::size_t kMaxMessageSendArgs = 16;
 
-bool IsRuntimeDispatchSymbolStart(char c) {
-  return std::isalpha(static_cast<unsigned char>(c)) != 0 || c == '_' || c == '$' || c == '.';
-}
-
-bool IsRuntimeDispatchSymbolBody(char c) {
-  return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_' || c == '$' || c == '.';
-}
-
-bool IsValidRuntimeDispatchSymbol(const std::string &symbol) {
-  if (symbol.empty() || !IsRuntimeDispatchSymbolStart(symbol[0])) {
+bool ParseObjc3CliIrObjectBackend(const std::string &value, Objc3IrObjectBackend &backend) {
+  objc3c::support::IrObjectBackendToken token;
+  if (!objc3c::support::ParseIrObjectBackendToken(value, token)) {
     return false;
   }
-  for (std::size_t i = 1; i < symbol.size(); ++i) {
-    if (!IsRuntimeDispatchSymbolBody(symbol[i])) {
-      return false;
-    }
-  }
-  return true;
-}
-
-bool ParseIrObjectBackend(const std::string &value, Objc3IrObjectBackend &backend) {
-  if (value == "clang") {
+  if (token == objc3c::support::IrObjectBackendToken::Clang) {
     backend = Objc3IrObjectBackend::kClang;
     return true;
   }
-  if (value == "llvm-direct") {
-    backend = Objc3IrObjectBackend::kLLVMDirect;
-    return true;
-  }
-  return false;
+  backend = Objc3IrObjectBackend::kLLVMDirect;
+  return true;
 }
 
 bool ParseCompatMode(const std::string &value, Objc3CompatMode &mode) {
@@ -276,7 +259,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       options.imported_runtime_surface_paths.push_back(argv[++i]);
     } else if (flag == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
-      if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {
+      if (!ParseObjc3CliIrObjectBackend(backend, options.ir_object_backend)) {
         error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " + backend;
         return false;
       }
@@ -298,7 +281,7 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
       options.max_message_send_args = static_cast<std::size_t>(parsed);
     } else if (flag == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
       const std::string symbol = argv[++i];
-      if (!IsValidRuntimeDispatchSymbol(symbol)) {
+      if (!objc3c::support::IsValidRuntimeDispatchSymbol(symbol)) {
         error = "invalid --objc3-runtime-dispatch-symbol (expected [A-Za-z_.$][A-Za-z0-9_.$]*): " + symbol;
         return false;
       }

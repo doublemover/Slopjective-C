@@ -6,6 +6,7 @@
 // lowering/runtime tranches land.
 #include "parse/objc3_ast_builder.h"
 #include "parse/objc3_parse_support.h"
+#include "support/objc3_method_family.h"
 
 #include <algorithm>
 #include <cctype>
@@ -202,22 +203,6 @@ static std::string DescribeCompatDiagnosticToken(const Token &token) {
 
 static bool IsSuperDispatchReceiver(const Expr &receiver) {
   return receiver.kind == Expr::Kind::Identifier && receiver.ident == "super";
-}
-
-static std::string ClassifyMethodFamilyFromSelector(const std::string &selector) {
-  if (selector.rfind("mutableCopy", 0) == 0) {
-    return "mutableCopy";
-  }
-  if (selector.rfind("copy", 0) == 0) {
-    return "copy";
-  }
-  if (selector.rfind("init", 0) == 0) {
-    return "init";
-  }
-  if (selector.rfind("new", 0) == 0) {
-    return "new";
-  }
-  return "none";
 }
 
 static std::string BuildSuperDispatchSymbol(bool super_dispatch_enabled,
@@ -13903,7 +13888,7 @@ class Objc3Parser {
     message->super_dispatch_symbol = BuildSuperDispatchSymbol(
         message->super_dispatch_enabled, message->super_dispatch_requires_class_context, message->message_send_form);
     message->super_dispatch_semantics_is_normalized = true;
-    message->method_family_name = ClassifyMethodFamilyFromSelector(message->selector);
+    message->method_family_name = objc3c::support::ClassifyMethodFamilyFromSelector(message->selector);
     message->method_family_returns_retained_result = message->method_family_name == "init" ||
                                                      message->method_family_name == "copy" ||
                                                      message->method_family_name == "mutableCopy" ||

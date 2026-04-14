@@ -3,7 +3,6 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
-#include <fstream>
 #include <limits>
 #include <sstream>
 #include <string>
@@ -14,8 +13,13 @@
 
 #include "io/objc3_manifest_artifacts.h"
 #include "lower/objc3_lowering_contract.h"
+#include "support/objc3_file_reading.h"
+#include "support/objc3_runtime_metadata_record_set.h"
 
 namespace {
+
+using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
+using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
 struct JsonValue {
   using Array = std::vector<JsonValue>;
@@ -281,21 +285,6 @@ class JsonParser {
   const std::string &input_;
   std::size_t offset_ = 0;
 };
-
-std::string ReadTextFile(const std::filesystem::path &path, std::string &error) {
-  std::ifstream input(path, std::ios::in | std::ios::binary);
-  if (!input.is_open()) {
-    error = "unable to open file";
-    return "";
-  }
-  std::ostringstream out;
-  out << input.rdbuf();
-  if (!input.good() && !input.eof()) {
-    error = "failed to read file";
-    return "";
-  }
-  return out.str();
-}
 
 const JsonValue::Object *AsObject(const JsonValue &value) {
   return std::get_if<JsonValue::Object>(&value.value);
@@ -1729,51 +1718,6 @@ bool ParseRuntimeMetadataSourceRecordSet(
   return true;
 }
 
-std::size_t CountRuntimeMetadataSourceRecordSetDeclarations(
-    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
-  return record_set.classes_lexicographic.size() +
-         record_set.protocols_lexicographic.size() +
-         record_set.categories_lexicographic.size() +
-         record_set.properties_lexicographic.size() +
-         record_set.methods_lexicographic.size() +
-         record_set.ivars_lexicographic.size();
-}
-
-std::size_t CountRuntimeMetadataSourceRecordSetReferences(
-    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
-  std::size_t references = 0;
-  for (const auto &class_record : record_set.classes_lexicographic) {
-    if (class_record.has_super && !class_record.super_name.empty()) {
-      ++references;
-    }
-    references += class_record.adopted_protocols_lexicographic.size();
-  }
-  for (const auto &protocol_record : record_set.protocols_lexicographic) {
-    references += protocol_record.inherited_protocols_lexicographic.size();
-  }
-  for (const auto &category_record : record_set.categories_lexicographic) {
-    references += category_record.adopted_protocols_lexicographic.size();
-  }
-  for (const auto &property_record : record_set.properties_lexicographic) {
-    if (!property_record.effective_getter_selector.empty()) {
-      ++references;
-    }
-    if (property_record.effective_setter_available &&
-        !property_record.effective_setter_selector.empty()) {
-      ++references;
-    }
-    if (!property_record.ivar_binding_symbol.empty()) {
-      ++references;
-    }
-  }
-  for (const auto &method_record : record_set.methods_lexicographic) {
-    if (!method_record.selector.empty()) {
-      ++references;
-    }
-  }
-  return references;
-}
-
 bool ParseSerializedRuntimeMetadataReusePayload(
     const JsonValue::Object &root, Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
@@ -2203,8 +2147,8 @@ bool TryLoadObjc3ImportedRuntimeModuleSurface(
     Objc3ImportedRuntimeModuleSurface &surface,
     std::string &error) {
   std::string io_error;
-  const std::string payload = ReadTextFile(path, io_error);
-  if (!io_error.empty()) {
+  std::string payload;
+  if (!objc3c::support::TryReadTextFile(path, payload, io_error, "unable to open file", "failed to read file")) {
     error = path.generic_string() + ": " + io_error;
     return false;
   }
@@ -2259,9 +2203,12 @@ bool TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
           .lexically_normal();
 
   std::string manifest_io_error;
-  const std::string manifest_payload =
-      ReadTextFile(registration_manifest_path, manifest_io_error);
-  if (!manifest_io_error.empty()) {
+  std::string manifest_payload;
+  if (!objc3c::support::TryReadTextFile(registration_manifest_path,
+                                        manifest_payload,
+                                        manifest_io_error,
+                                        "unable to open file",
+                                        "failed to read file")) {
     error = registration_manifest_path.generic_string() + ": " + manifest_io_error;
     return false;
   }
@@ -2289,9 +2236,12 @@ bool TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
   }
 
   std::string discovery_io_error;
-  const std::string discovery_payload =
-      ReadTextFile(discovery_artifact_path, discovery_io_error);
-  if (!discovery_io_error.empty()) {
+  std::string discovery_payload;
+  if (!objc3c::support::TryReadTextFile(discovery_artifact_path,
+                                        discovery_payload,
+                                        discovery_io_error,
+                                        "unable to open file",
+                                        "failed to read file")) {
     error = discovery_artifact_path.generic_string() + ": " + discovery_io_error;
     return false;
   }
@@ -2321,9 +2271,12 @@ bool TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
   }
 
   std::string response_io_error;
-  const std::string linker_response_payload =
-      ReadTextFile(linker_response_artifact_path, response_io_error);
-  if (!response_io_error.empty()) {
+  std::string linker_response_payload;
+  if (!objc3c::support::TryReadTextFile(linker_response_artifact_path,
+                                        linker_response_payload,
+                                        response_io_error,
+                                        "unable to open file",
+                                        "failed to read file")) {
     error = linker_response_artifact_path.generic_string() + ": " +
             response_io_error;
     return false;

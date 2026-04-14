@@ -22,6 +22,7 @@
 #include "io/objc3_json.h"
 #include "io/objc3_cli_reporting_output_contract_recovery_determinism_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
+#include "support/objc3_ir_object_backend_token.h"
 
 namespace fs = std::filesystem;
 
@@ -68,16 +69,17 @@ std::string Usage() {
          "[--dump-runtime-inspector-json] [--dump-stage-trace-json]";
 }
 
-bool ParseIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
-  if (value == "clang") {
+bool ParseFrontendRunnerIrObjectBackend(const std::string &value, objc3c_frontend_c_ir_object_backend_t &backend) {
+  objc3c::support::IrObjectBackendToken token;
+  if (!objc3c::support::ParseIrObjectBackendToken(value, token)) {
+    return false;
+  }
+  if (token == objc3c::support::IrObjectBackendToken::Clang) {
     backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
     return true;
   }
-  if (value == "llvm-direct") {
-    backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
-    return true;
-  }
-  return false;
+  backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
+  return true;
 }
 
 bool ParseCompatibilityMode(const std::string &value, std::uint8_t &mode) {
@@ -153,7 +155,7 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       options.migration_assist = true;
     } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
-      if (!ParseIrObjectBackend(backend, options.ir_object_backend)) {
+      if (!ParseFrontendRunnerIrObjectBackend(backend, options.ir_object_backend)) {
         error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " + backend;
         return false;
       }

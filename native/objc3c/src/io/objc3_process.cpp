@@ -3,6 +3,7 @@
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_json.h"
 #include "lower/objc3_lowering_contract.h"
+#include "support/objc3_identifier_safe_suffix.h"
 
 #if defined(_WIN32)
 #include <process.h>
@@ -332,23 +333,6 @@ bool ExtractHexBoundaryTokenValue(const std::string &line,
     return false;
   }
   return DecodeHexString(encoded, value) && !value.empty();
-}
-
-std::string MakeIdentifierSafeSuffix(const std::string &text) {
-  std::string suffix;
-  suffix.reserve(text.size());
-  for (unsigned char c : text) {
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-        (c >= '0' && c <= '9') || c == '_') {
-      suffix.push_back(static_cast<char>(c));
-    } else {
-      suffix.push_back('_');
-    }
-  }
-  if (suffix.empty()) {
-    suffix = "translation_unit";
-  }
-  return suffix;
 }
 
 std::string BuildIndentedStringArrayJson(const std::vector<std::string> &values,
@@ -1014,16 +998,16 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
 
   const std::string constructor_init_stub_symbol =
       inputs.constructor_init_stub_symbol_prefix +
-      MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key);
+      objc3c::support::MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key, "translation_unit");
   const std::string bootstrap_registration_table_symbol =
       inputs.bootstrap_registration_table_symbol_prefix +
-      MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key);
+      objc3c::support::MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key, "translation_unit");
   const std::string bootstrap_image_local_init_state_symbol =
       inputs.bootstrap_image_local_init_state_symbol_prefix +
-      MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key);
+      objc3c::support::MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key, "translation_unit");
   // bootstrap-invariant anchor: later startup registration must
   // preserve one init-stub/root identity per translation unit, reject
   // duplicate registration on the same identity key, and fail closed before
@@ -1606,7 +1590,8 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
   }
 
   const std::string safe_identity_suffix =
-      MakeIdentifierSafeSuffix(linker_retention_artifacts.translation_unit_identity_key);
+      objc3c::support::MakeIdentifierSafeSuffix(linker_retention_artifacts.translation_unit_identity_key,
+                                                "translation_unit");
   const std::string constructor_init_stub_symbol =
       inputs.constructor_init_stub_symbol_prefix + safe_identity_suffix;
   const std::string bootstrap_registration_table_symbol =

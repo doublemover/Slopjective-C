@@ -31,12 +31,16 @@
 #include "pipeline/objc3_parse_lowering_readiness_surface.h"
 #include "pipeline/objc3_runtime_import_surface.h"
 #include "sema/objc3_semantic_passes.h"
+#include "support/objc3_identifier_safe_suffix.h"
+#include "support/objc3_runtime_metadata_record_set.h"
+#include "support/objc3_value_type_names.h"
 
 namespace {
 
 using objc3::io::EscapeJsonString;
+using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
+using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
-std::string MakeIdentifierSafeSuffix(const std::string &text);
 std::string BuildObjc3TranslationUnitIdentityKey(
     const std::string &constructor_root_symbol,
     std::uint64_t bootstrap_registration_order_ordinal);
@@ -226,33 +230,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3OwnershipBorrowedRetainableAbiCompletionProofModel =
         "the-supported-proof-slice-remains-direct-call-abi-emission-and-replay-stability-without-claiming-lane-d-runtime-helper-integration";
-
-const char *TypeName(ValueType type) {
-  switch (type) {
-    case ValueType::I32:
-      return "i32";
-    case ValueType::Bool:
-      return "bool";
-    case ValueType::Void:
-      return "void";
-    case ValueType::Function:
-      return "function";
-    case ValueType::ObjCId:
-      return "id";
-    case ValueType::ObjCClass:
-      return "Class";
-    case ValueType::ObjCSel:
-      return "SEL";
-    case ValueType::ObjCProtocol:
-      return "Protocol";
-    case ValueType::ObjCInstancetype:
-      return "instancetype";
-    case ValueType::ObjCObjectPtr:
-      return "object-pointer";
-    default:
-      return "unknown";
-  }
-}
 
 std::string BuildInteropBridgeCType(ValueType type, unsigned pointer_depth,
                                    bool object_pointer_type_spelling) {
@@ -7568,51 +7545,6 @@ Objc3RuntimeMetadataSourceRecordSet BuildSerializedRuntimeMetadataReuseRecordSet
   return merged;
 }
 
-std::size_t CountRuntimeMetadataSourceRecordSetDeclarations(
-    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
-  return record_set.classes_lexicographic.size() +
-         record_set.protocols_lexicographic.size() +
-         record_set.categories_lexicographic.size() +
-         record_set.properties_lexicographic.size() +
-         record_set.methods_lexicographic.size() +
-         record_set.ivars_lexicographic.size();
-}
-
-std::size_t CountRuntimeMetadataSourceRecordSetReferences(
-    const Objc3RuntimeMetadataSourceRecordSet &record_set) {
-  std::size_t references = 0;
-  for (const auto &class_record : record_set.classes_lexicographic) {
-    if (class_record.has_super && !class_record.super_name.empty()) {
-      ++references;
-    }
-    references += class_record.adopted_protocols_lexicographic.size();
-  }
-  for (const auto &protocol_record : record_set.protocols_lexicographic) {
-    references += protocol_record.inherited_protocols_lexicographic.size();
-  }
-  for (const auto &category_record : record_set.categories_lexicographic) {
-    references += category_record.adopted_protocols_lexicographic.size();
-  }
-  for (const auto &property_record : record_set.properties_lexicographic) {
-    if (!property_record.effective_getter_selector.empty()) {
-      ++references;
-    }
-    if (property_record.effective_setter_available &&
-        !property_record.effective_setter_selector.empty()) {
-      ++references;
-    }
-    if (!property_record.ivar_binding_symbol.empty()) {
-      ++references;
-    }
-  }
-  for (const auto &method_record : record_set.methods_lexicographic) {
-    if (!method_record.selector.empty()) {
-      ++references;
-    }
-  }
-  return references;
-}
-
 std::string BuildSerializedRuntimeMetadataArtifactReuseReplayKey(
     const Objc3SerializedRuntimeMetadataArtifactReuseSummary &summary) {
   std::ostringstream out;
@@ -9109,19 +9041,6 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
               : "false")
       << "}";
   return out.str();
-}
-
-std::string MakeIdentifierSafeSuffix(const std::string &text) {
-  std::string suffix;
-  suffix.reserve(text.size());
-  for (const unsigned char c : text) {
-    if (std::isalnum(c) != 0 || c == '_') {
-      suffix.push_back(static_cast<char>(c));
-    } else {
-      suffix.push_back('_');
-    }
-  }
-  return suffix.empty() ? "objc3_module" : suffix;
 }
 
 std::string BuildObjc3TranslationUnitIdentityKey(
@@ -12451,7 +12370,7 @@ BuildRuntimeRegistrationDescriptorImageRootSourceSurfaceSummary(
       bootstrap_registration_source_pragma_contract.image_root.directive_count;
 
   const std::string safe_module_name =
-      MakeIdentifierSafeSuffix(summary.module_name);
+      objc3c::support::MakeIdentifierSafeSuffix(summary.module_name, "objc3_module");
   if (summary.registration_descriptor_pragma_seen &&
       !bootstrap_registration_source_pragma_contract.registration_descriptor
            .identifier.empty()) {
@@ -24871,13 +24790,13 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
     const auto &fn = *manifest_functions[i];
     manifest << "    {\"name\":\"" << fn.name << "\",\"params\":" << fn.params.size() << ",\"param_types\":[";
     for (std::size_t p = 0; p < fn.params.size(); ++p) {
-      manifest << "\"" << TypeName(fn.params[p].type) << "\"";
+      manifest << "\"" << objc3c::support::ValueTypeName(fn.params[p].type) << "\"";
       if (p + 1 != fn.params.size()) {
         manifest << ",";
       }
     }
     manifest << "]"
-             << ",\"return\":\"" << TypeName(fn.return_type) << "\""
+             << ",\"return\":\"" << objc3c::support::ValueTypeName(fn.return_type) << "\""
              << ",\"line\":" << fn.line << ",\"column\":" << fn.column << "}";
     if (i + 1 != manifest_functions.size()) {
       manifest << ",";

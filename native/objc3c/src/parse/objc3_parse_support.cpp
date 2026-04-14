@@ -5,25 +5,16 @@
 #include <cstdlib>
 #include <limits>
 
+#include "support/objc3_ascii_predicates.h"
+
 namespace objc3c::parse::support {
 
 namespace {
 
-bool IsHexDigit(char c) {
-  return std::isxdigit(static_cast<unsigned char>(c)) != 0;
-}
-
-bool IsBinaryDigit(char c) {
-  return c == '0' || c == '1';
-}
-
-bool IsOctalDigit(char c) {
-  return c >= '0' && c <= '7';
-}
-
-bool IsDigitSeparator(char c) {
-  return c == '_';
-}
+using objc3c::support::IsBinaryDigit;
+using objc3c::support::IsDigitSeparator;
+using objc3c::support::IsHexDigit;
+using objc3c::support::IsOctalDigit;
 
 bool IsDigitForBase(char c, int base) {
   switch (base) {

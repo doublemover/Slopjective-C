@@ -4,9 +4,14 @@
 #include <string>
 
 #include "diag/objc3_diag_utils.h"
+#include "support/objc3_ascii_predicates.h"
 
 namespace {
 
+using objc3c::support::IsBinaryDigit;
+using objc3c::support::IsDigitSeparator;
+using objc3c::support::IsHexDigit;
+using objc3c::support::IsOctalDigit;
 using Token = Objc3LexToken;
 using TokenKind = Objc3LexTokenKind;
 
@@ -16,22 +21,6 @@ bool IsIdentStart(char c) {
 
 bool IsIdentBody(char c) {
   return std::isalnum(static_cast<unsigned char>(c)) != 0 || c == '_';
-}
-
-bool IsHexDigit(char c) {
-  return std::isxdigit(static_cast<unsigned char>(c)) != 0;
-}
-
-bool IsBinaryDigit(char c) {
-  return c == '0' || c == '1';
-}
-
-bool IsOctalDigit(char c) {
-  return c >= '0' && c <= '7';
-}
-
-bool IsDigitSeparator(char c) {
-  return c == '_';
 }
 
 bool IsHorizontalWhitespace(char c) {
