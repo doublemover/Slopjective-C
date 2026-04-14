@@ -22,7 +22,7 @@ Current semantic fixtures for the E.3.3 type-system lane:
   behavior.
 - `KPATH-66-01.json`, `KPATH-66-02.json` for key path support and
   unsupported-mode diagnostics.
-- `TYP-8013-01.json` through `TYP-8013-05.json` for issue #8013 typed object,
+- `TYP-8013-01.json` through `TYP-8013-06.json` for issue #8013 typed object,
   nullability, canonical protocol conformance, protocol-composition,
   generic-suffix, optional-flow, and key-path semantic model closure. These are
   backed by
@@ -31,6 +31,7 @@ Current semantic fixtures for the E.3.3 type-system lane:
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3`,
   `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_property_nullability_conflict.objc3`,
+  `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3`,
   and `scripts/build_objc3c_type_semantic_model_closure.py`.
 - `EFF-8014-01.json`, `EFF-8014-02.json` for issue #8014 effects and ownership
   semantic closure across ARC, escaping blocks/byref cells, throws/unwind

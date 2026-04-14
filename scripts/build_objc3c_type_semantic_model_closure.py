@@ -26,6 +26,7 @@ NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recover
 NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_nullable_to_nonnull_flow.objc3"
 PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_method_nullability_conflict.objc3"
 PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_protocol_property_nullability_conflict.objc3"
+UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "negative" / "negative_type_semantic_unknown_protocol_composition.objc3"
 SEMANTIC_MANIFEST = ROOT / "tests" / "conformance" / "semantic" / "manifest.json"
 SEMANTIC_README = ROOT / "tests" / "conformance" / "semantic" / "README.md"
 CONFORMANCE_POSITIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-01.json"
@@ -33,6 +34,7 @@ CONFORMANCE_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-0
 CONFORMANCE_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-03.json"
 CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-04.json"
 CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-05.json"
+CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE = ROOT / "tests" / "conformance" / "semantic" / "TYP-8013-06.json"
 STRESS_MANIFEST = ROOT / "tests" / "tooling" / "fixtures" / "stress" / "lowering_runtime_stress_manifest.json"
 SEMA_CONTRACT = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_sema_contract.h"
 SEMANTIC_PASSES = ROOT / "native" / "objc3c" / "src" / "sema" / "objc3_semantic_passes.cpp"
@@ -176,6 +178,7 @@ SEMANTIC_PASS_TOKENS = [
     "canonical_type",
     "IsUnsafeNullableToNonnullFlow",
     "IsCompatibleCanonicalSemanticType",
+    "ValidateProtocolCompositionIdentifierBindings",
 ]
 
 
@@ -291,6 +294,7 @@ def build_summary() -> dict[str, Any]:
     nullability_negative_run = run_compiler(NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-nullability-flow")
     protocol_method_nullability_negative_run = run_compiler(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-method-nullability")
     protocol_property_nullability_negative_run = run_compiler(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE, TMP_ROOT / "negative-protocol-property-nullability")
+    unknown_protocol_composition_negative_run = run_compiler(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE, TMP_ROOT / "negative-unknown-protocol-composition")
     model, positive_checks = compile_positive_summary(positive_run)
 
     sema_contract_text = read(SEMA_CONTRACT)
@@ -306,6 +310,7 @@ def build_summary() -> dict[str, Any]:
     conformance_nullability_negative = load_json(CONFORMANCE_NULLABILITY_NEGATIVE)
     conformance_protocol_method_nullability_negative = load_json(CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE)
     conformance_protocol_property_nullability_negative = load_json(CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE)
+    conformance_unknown_protocol_composition_negative = load_json(CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE)
 
     static_presence = {
         "sema_contract_fields": contains_all(sema_contract_text, STATIC_FIELD_TOKENS),
@@ -321,11 +326,13 @@ def build_summary() -> dict[str, Any]:
         NULLABILITY_NEGATIVE_FIXTURE,
         PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE,
         PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE,
+        UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE,
         CONFORMANCE_POSITIVE,
         CONFORMANCE_NEGATIVE,
         CONFORMANCE_NULLABILITY_NEGATIVE,
         CONFORMANCE_PROTOCOL_METHOD_NULLABILITY_NEGATIVE,
         CONFORMANCE_PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE,
+        CONFORMANCE_UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE,
         SEMANTIC_MANIFEST,
         SEMANTIC_README,
         STRESS_MANIFEST,
@@ -350,6 +357,9 @@ def build_summary() -> dict[str, Any]:
         "protocol_property_nullability_negative_fixture_fails_closed": protocol_property_nullability_negative_run["exit_code"] != 0,
         "protocol_property_nullability_negative_diagnostics_json_emitted": protocol_property_nullability_negative_run["diagnostics_path"] is not None,
         "protocol_property_nullability_conflict_diagnostic_observed": diagnostic_matches(protocol_property_nullability_negative_run["diagnostics"], "O3S218", 9, 1),
+        "unknown_protocol_composition_negative_fixture_fails_closed": unknown_protocol_composition_negative_run["exit_code"] != 0,
+        "unknown_protocol_composition_negative_diagnostics_json_emitted": unknown_protocol_composition_negative_run["diagnostics_path"] is not None,
+        "unknown_protocol_composition_diagnostic_observed": diagnostic_matches(unknown_protocol_composition_negative_run["diagnostics"], "O3S206", 4, 21),
     }
 
     conformance_checks = {
@@ -358,21 +368,25 @@ def build_summary() -> dict[str, Any]:
         "semantic_manifest_indexes_typ_8013_03": "TYP-8013-03.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_04": "TYP-8013-04.json" in manifest_text,
         "semantic_manifest_indexes_typ_8013_05": "TYP-8013-05.json" in manifest_text,
+        "semantic_manifest_indexes_typ_8013_06": "TYP-8013-06.json" in manifest_text,
         "semantic_readme_mentions_issue_8013": "#8013" in readme_text,
         "semantic_readme_mentions_positive_fixture": rel(POSITIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_negative_fixture": rel(NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
         "semantic_readme_mentions_protocol_property_nullability_negative_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE) in readme_text,
+        "semantic_readme_mentions_unknown_protocol_composition_negative_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE) in readme_text,
         "positive_conformance_references_fixture": rel(POSITIVE_FIXTURE) in conformance_positive.get("references", []),
         "negative_conformance_references_fixture": rel(NEGATIVE_FIXTURE) in conformance_negative.get("references", []),
         "nullability_negative_conformance_references_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE) in conformance_nullability_negative.get("references", []),
         "protocol_method_nullability_negative_conformance_references_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_method_nullability_negative.get("references", []),
         "protocol_property_nullability_negative_conformance_references_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE) in conformance_protocol_property_nullability_negative.get("references", []),
+        "unknown_protocol_composition_negative_conformance_references_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE) in conformance_unknown_protocol_composition_negative.get("references", []),
         "negative_conformance_expects_o3s206_location": conformance_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 7, "column": 21}],
         "nullability_negative_conformance_expects_o3s227_location": conformance_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S227", "line": 9, "column": 23}],
         "protocol_method_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_method_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
         "protocol_property_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_property_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
+        "unknown_protocol_composition_negative_conformance_expects_o3s206_location": conformance_unknown_protocol_composition_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 4, "column": 21}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": no_tmp_source_truth,
     }
@@ -400,11 +414,13 @@ def build_summary() -> dict[str, Any]:
         "nullability_negative_fixture": rel(NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_method_nullability_negative_fixture": rel(PROTOCOL_METHOD_NULLABILITY_NEGATIVE_FIXTURE),
         "protocol_property_nullability_negative_fixture": rel(PROTOCOL_PROPERTY_NULLABILITY_NEGATIVE_FIXTURE),
+        "unknown_protocol_composition_negative_fixture": rel(UNKNOWN_PROTOCOL_COMPOSITION_NEGATIVE_FIXTURE),
         "positive_compile": {key: value for key, value in positive_run.items() if key != "manifest"},
         "negative_compile": {key: value for key, value in negative_run.items() if key != "manifest"},
         "nullability_negative_compile": {key: value for key, value in nullability_negative_run.items() if key != "manifest"},
         "protocol_method_nullability_negative_compile": {key: value for key, value in protocol_method_nullability_negative_run.items() if key != "manifest"},
         "protocol_property_nullability_negative_compile": {key: value for key, value in protocol_property_nullability_negative_run.items() if key != "manifest"},
+        "unknown_protocol_composition_negative_compile": {key: value for key, value in unknown_protocol_composition_negative_run.items() if key != "manifest"},
         "type_semantic_model": model,
         "required_summary_fields": SUMMARY_FIELDS,
         "positive_minimum_counts": POSITIVE_MIN_COUNTS,
@@ -432,6 +448,7 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Nullability negative fixture: `{summary['nullability_negative_fixture']}`",
         f"- Protocol method nullability negative fixture: `{summary['protocol_method_nullability_negative_fixture']}`",
         f"- Protocol property nullability negative fixture: `{summary['protocol_property_nullability_negative_fixture']}`",
+        f"- Unknown protocol composition negative fixture: `{summary['unknown_protocol_composition_negative_fixture']}`",
         "",
         "## Checks",
     ]
