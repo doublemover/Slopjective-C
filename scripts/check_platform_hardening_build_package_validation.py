@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.subprocesses import run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json"
@@ -25,11 +26,6 @@ def read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def run_capture(command: list[str]) -> subprocess.CompletedProcess[str]:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(command, cwd=ROOT, text=True, check=False, env=env)
-    return result
 
 
 def host_matches_supported_platform(default_platform_id: str) -> bool:

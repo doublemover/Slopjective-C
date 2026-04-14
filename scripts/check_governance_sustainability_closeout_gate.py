@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import run_completed as run_command
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT / "tmp" / "reports" / "governance-sustainability" / "closeout-gate"
@@ -146,10 +147,6 @@ def read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def run_command(command: list[str]) -> subprocess.CompletedProcess[str]:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    return subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False, env=env)
 
 
 def summary_ok(payload: dict[str, Any], field: str, expected: Any | None = None) -> bool:

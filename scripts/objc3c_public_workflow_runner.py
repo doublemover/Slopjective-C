@@ -16,6 +16,7 @@ from pathlib import Path
 from time import perf_counter
 from typing import Callable, Sequence
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_capture, run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -210,27 +211,9 @@ MAINTAINER_ONLY_PUBLIC_SCRIPTS = {
 
 
 def run(command: Sequence[str]) -> int:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    return subprocess.run(list(command), cwd=ROOT, check=False, env=env).returncode
+    return run_completed(command, cwd=ROOT, capture_output=False).returncode
 
 
-def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(
-        list(command),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-        env=env,
-    )
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-    return result
 
 
 

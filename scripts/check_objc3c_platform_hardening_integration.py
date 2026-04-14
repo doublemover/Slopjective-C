@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
@@ -32,12 +33,7 @@ SUMMARY_OUT = ROOT / "tmp" / "reports" / "platform-hardening" / "integration-sum
 
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        check=False,
-        text=True,
-    )
+    completed = run_completed(command, cwd=ROOT, capture_output=False)
     return {"name": name, "command": command, "exit_code": completed.returncode}
 
 

@@ -7,6 +7,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import run_completed
 from objc3c_tooling.paths import repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -23,7 +24,7 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def run(command: list[str]) -> None:
-    result = subprocess.run(command, cwd=ROOT, text=True, check=False)
+    result = run_completed(command, cwd=ROOT, capture_output=False)
     if result.returncode != 0:
         raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
 

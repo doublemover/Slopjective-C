@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,31 +74,21 @@ STEPS = [
 
 
 def run_step(label: str, command: list[str], summary_path: str) -> dict[str, Any]:
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_timed(command, cwd=ROOT, echo=True)
     summary_file = ROOT / summary_path
     summary = load_json(summary_file) if summary_file.is_file() else {}
     status = summary.get("status")
     ok = completed.returncode == 0 and bool(summary.get("ok", status == "PASS"))
     return {
         "label": label,
-        "command": " ".join(command),
-        "exit_code": completed.returncode,
-        "ok": ok,
+        "command": command,
         "summary_path": summary_path,
-        "summary_contract_id": summary.get("contract_id"),
-        "summary_status": status,
+        "exit_code": completed.returncode,
+        "duration_ms": completed.duration_ms,
+        "status": status,
+        "ok": ok,
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
     }
 
 

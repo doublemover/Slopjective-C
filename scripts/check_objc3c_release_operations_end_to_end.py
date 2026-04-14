@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_capture
 
 ROOT = Path(__file__).resolve().parents[1]
 RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
@@ -21,22 +22,6 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "end-to-end-sum
 
 
 
-def run_capture(command: Sequence[str], *, capture_output: bool = True) -> subprocess.CompletedProcess[str]:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(
-        list(command),
-        cwd=ROOT,
-        text=True,
-        capture_output=capture_output,
-        check=False,
-        env=env,
-    )
-    if capture_output and result.stdout:
-        sys.stdout.write(result.stdout)
-    if capture_output and result.stderr:
-        sys.stderr.write(result.stderr)
-    return result
 
 
 def expect(condition: bool, message: str) -> None:

@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 import textwrap
 from dataclasses import dataclass
@@ -13,6 +12,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.json_io import write_text_file
 from objc3c_tooling.paths import display_path, resolve_repo_path
+from objc3c_tooling.subprocesses import run_timed
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CATALOG_JSON = ROOT / "tmp" / "reports" / "remaining_task_review_catalog.json"
@@ -75,32 +75,14 @@ def bool_text(value: bool) -> str:
 
 def run_command(spec: CommandSpec) -> CommandResult:
     command = [sys.executable, str(spec.script_path), *spec.actual_args]
-    try:
-        proc = subprocess.run(
-            command,
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-            encoding="utf-8",
-            errors="replace",
-            check=False,
-            timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS,
-        )
-        return CommandResult(
-            spec=spec,
-            exit_code=int(proc.returncode),
-            stdout=normalize_newlines(proc.stdout),
-            stderr=normalize_newlines(proc.stderr),
-        )
-    except subprocess.TimeoutExpired as exc:
-        stdout = normalize_newlines(exc.stdout or "")
-        stderr = normalize_newlines(exc.stderr or "")
-        timeout_note = (
-            f"error: command timed out after {DEFAULT_COMMAND_TIMEOUT_SECONDS} seconds: "
-            f"{display_path(spec.script_path)}"
-        )
-        merged_stderr = f"{stderr}\n{timeout_note}" if stderr else timeout_note
-        return CommandResult(spec=spec, exit_code=EXIT_RUNNER_ERROR, stdout=stdout, stderr=merged_stderr)
+    execution = run_timed(command, cwd=ROOT, timeout=DEFAULT_COMMAND_TIMEOUT_SECONDS)
+    exit_code = EXIT_RUNNER_ERROR if execution.timeout_seconds is not None else int(execution.returncode)
+    return CommandResult(
+        spec=spec,
+        exit_code=exit_code,
+        stdout=normalize_newlines(execution.stdout),
+        stderr=normalize_newlines(execution.stderr),
+    )
 
 
 def render_command_log(title: str, result: CommandResult) -> str:

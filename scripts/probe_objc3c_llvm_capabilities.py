@@ -8,11 +8,11 @@ import json
 import re
 import subprocess
 import sys
-import time
 from pathlib import Path
 from typing import Sequence
-from objc3c_tooling.paths import display_path
 from objc3c_tooling.json_io import canonical_json, load_json_any as load_json, write_json_file as write_json
+from objc3c_tooling.paths import display_path
+from objc3c_tooling.subprocesses import run_timed
 
 ROOT = Path(__file__).resolve().parents[1]
 MODE = "objc3c-llvm-capabilities-v2"
@@ -36,30 +36,8 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 
 def run_command(command: list[str]) -> tuple[subprocess.CompletedProcess[str], float]:
-    started = time.perf_counter()
-    try:
-        result = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except FileNotFoundError:
-        result = subprocess.CompletedProcess(
-            command,
-            127,
-            stdout="",
-            stderr=f"executable not found: {command[0]}",
-        )
-    except OSError as exc:
-        result = subprocess.CompletedProcess(
-            command,
-            126,
-            stdout="",
-            stderr=f"command launch error ({exc.__class__.__name__}): {command[0]}",
-        )
-    duration_ms = round((time.perf_counter() - started) * 1000.0, 3)
-    return result, duration_ms
+    execution = run_timed(command, cwd=None)
+    return execution.completed_process(), execution.duration_ms
 
 
 def first_non_empty_line(text: str) -> str:

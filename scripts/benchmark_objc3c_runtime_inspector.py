@@ -11,6 +11,7 @@ import time
 from pathlib import Path
 from typing import Sequence
 from objc3c_tooling.paths import display_path
+from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -42,24 +43,12 @@ def extract_line_value(stdout: str, prefix: str) -> str:
 
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:
-    started = time.perf_counter()
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    duration_ms = round((time.perf_counter() - started) * 1000.0, 3)
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_timed(command, cwd=ROOT, echo=True)
     return {
         "name": name,
         "command": command,
         "exit_code": completed.returncode,
-        "duration_ms": duration_ms,
+        "duration_ms": completed.duration_ms,
         "stdout": completed.stdout,
     }
 

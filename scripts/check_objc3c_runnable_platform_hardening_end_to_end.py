@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
 from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.subprocesses import run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
@@ -30,12 +31,7 @@ def expect(condition: bool, message: str) -> None:
 
 
 def run_step(command: Sequence[str], *, cwd: Path) -> int:
-    return subprocess.run(
-        list(command),
-        cwd=cwd,
-        check=False,
-        text=True,
-    ).returncode
+    return run_completed(command, cwd=cwd, capture_output=False).returncode
 
 
 def load_json(path: Path) -> dict[str, Any]:

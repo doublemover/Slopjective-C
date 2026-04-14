@@ -15,6 +15,7 @@ from typing import Any, Sequence
 import check_objc3c_runtime_acceptance as runtime_acceptance
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -70,19 +71,6 @@ def expect(condition: bool, message: str) -> None:
 
 
 
-def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(
-        list(command),
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-    return result
 
 
 def load_json(path: Path) -> dict[str, Any]:

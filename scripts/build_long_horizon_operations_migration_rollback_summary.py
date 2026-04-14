@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,14 +25,11 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "migration
 
 
 def run_step(command: list[str]) -> dict[str, object]:
-    result = subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-    if result.stderr:
-        sys.stderr.write(result.stderr)
+    result = run_timed(command, cwd=ROOT, echo=True)
     return {
         "command": command,
         "exit_code": result.returncode,
+        "duration_ms": result.duration_ms,
         "stdout": result.stdout,
         "stderr": result.stderr,
     }

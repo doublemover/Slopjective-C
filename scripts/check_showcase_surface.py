@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from objc3c_tooling.subprocesses import run_completed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -27,8 +28,7 @@ def fail(message: str) -> int:
 
 
 def run(command: list[str]) -> int:
-    result = subprocess.run(command, cwd=ROOT, check=False)
-    return result.returncode
+    return run_completed(command, cwd=ROOT, capture_output=False).returncode
 
 
 def repo_relative(path: Path) -> str:

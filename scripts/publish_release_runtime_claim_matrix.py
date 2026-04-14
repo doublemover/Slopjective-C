@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import display_path
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_ROOT = ROOT / "tmp" / "reports" / "release_claims" / "publication_matrix"
@@ -24,15 +25,7 @@ RELEASE_CLAIMS_ROOT = ROOT / "tmp" / "reports" / "release_claims"
 
 
 def run(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(
-        list(command),
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
+    return run_completed(command, cwd=ROOT)
 
 
 

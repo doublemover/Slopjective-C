@@ -12,6 +12,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import run_completed
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
 
@@ -42,12 +43,9 @@ def sha256_text(text: str) -> str:
 
 
 def run(command: list[str]) -> None:
-    env = os.environ.copy()
-    env['PYTHONDONTWRITEBYTECODE'] = '1'
-    result = subprocess.run(command, cwd=ROOT, env=env, text=True, check=False)
+    result = run_completed(command, cwd=ROOT, capture_output=False)
     if result.returncode != 0:
-        joined = ' '.join(command)
-        raise RuntimeError(f"command failed with exit code {result.returncode}: {joined}")
+        raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
 
 
 def git_output(*args: str) -> str:

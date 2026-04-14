@@ -13,6 +13,7 @@ import zipfile
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from objc3c_tooling.subprocesses import run_completed
 from objc3c_tooling.json_io import load_json_object as load_json, write_text_file as write_text
 from objc3c_tooling.paths import repo_rel
 
@@ -39,9 +40,7 @@ RELEASE_FOUNDATION_ATTESTATION = ROOT / "tmp" / "artifacts" / "release-foundatio
 
 
 def run(command: list[str]) -> None:
-    env = os.environ.copy()
-    env["PYTHONDONTWRITEBYTECODE"] = "1"
-    result = subprocess.run(command, cwd=ROOT, env=env, text=True, check=False)
+    result = run_completed(command, cwd=ROOT, capture_output=False)
     if result.returncode != 0:
         raise RuntimeError(f"command failed with exit code {result.returncode}: {' '.join(command)}")
 

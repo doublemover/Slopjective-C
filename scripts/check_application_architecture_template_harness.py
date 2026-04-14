@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,21 +23,12 @@ DEFAULT_EXAMPLE = "auroraBoard"
 
 
 def run_step(name: str, command: list[str]) -> dict[str, object]:
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        check=False,
-        text=True,
-        capture_output=True,
-    )
-    if completed.stdout:
-        sys.stdout.write(completed.stdout)
-    if completed.stderr:
-        sys.stderr.write(completed.stderr)
+    completed = run_timed(command, cwd=ROOT, echo=True)
     return {
         "name": name,
         "command": command,
         "exit_code": completed.returncode,
+        "duration_ms": completed.duration_ms,
         "stdout": completed.stdout,
     }
 

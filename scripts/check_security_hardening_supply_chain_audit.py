@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.subprocesses import run_completed as run_step
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -34,8 +35,6 @@ def read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
-def run_step(command: list[str]) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(command, cwd=ROOT, text=True, capture_output=True, check=False)
 
 
 def main() -> int:

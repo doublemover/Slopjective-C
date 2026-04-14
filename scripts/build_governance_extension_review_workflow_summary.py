@@ -4,10 +4,10 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.subprocesses import command_text, run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -31,21 +31,14 @@ def read_json(path: Path) -> dict[str, Any]:
 
 
 def run_command(command: list[str]) -> dict[str, Any]:
-    completed = subprocess.run(
-        command,
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        check=False,
-    )
+    completed = run_timed(command, cwd=ROOT)
     return {
-        "command": " ".join(command),
+        "command": command_text(command),
         "exit_code": completed.returncode,
         "ok": completed.returncode == 0,
         "stdout": completed.stdout.strip(),
         "stderr": completed.stderr.strip(),
+        "duration_ms": completed.duration_ms,
     }
 
 

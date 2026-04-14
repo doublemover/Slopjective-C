@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,13 +34,6 @@ ACTION_REPORTS = {
 
 
 
-def run_capture(command: Sequence[str]) -> subprocess.CompletedProcess[str]:
-    result = subprocess.run(list(command), cwd=ROOT, check=False, text=True, capture_output=True)
-    if result.stdout:
-        sys.stdout.write(result.stdout)
-    if result.stderr:
-        sys.stderr.write(result.stderr)
-    return result
 
 
 def report_passes(path: Path) -> bool:
