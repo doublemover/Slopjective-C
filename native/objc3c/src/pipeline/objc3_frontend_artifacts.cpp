@@ -1137,6 +1137,18 @@ std::string BuildInteropForeignImportSourceClosureSummaryJson(
       << summary.import_module_annotation_sites
       << ",\"imported_module_name_sites\":"
       << summary.imported_module_name_sites
+      << ",\"export_header_annotation_sites\":"
+      << summary.export_header_annotation_sites
+      << ",\"export_header_name_sites\":"
+      << summary.export_header_name_sites
+      << ",\"mixed_image_annotation_sites\":"
+      << summary.mixed_image_annotation_sites
+      << ",\"mixed_image_name_sites\":"
+      << summary.mixed_image_name_sites
+      << ",\"package_entry_annotation_sites\":"
+      << summary.package_entry_annotation_sites
+      << ",\"package_entry_name_sites\":"
+      << summary.package_entry_name_sites
       << ",\"interop_annotation_sites\":"
       << summary.interop_annotation_sites
       << ",\"foreign_declaration_source_supported\":"
@@ -1173,6 +1185,10 @@ std::string BuildInteropCppSwiftInteropAnnotationSourceCompletionSummaryJson(
       << summary.cpp_name_annotation_sites
       << ",\"header_name_annotation_sites\":"
       << summary.header_name_annotation_sites
+      << ",\"abi_alignment_annotation_sites\":"
+      << summary.abi_alignment_annotation_sites
+      << ",\"foreign_type_annotation_sites\":"
+      << summary.foreign_type_annotation_sites
       << ",\"interop_metadata_annotation_sites\":"
       << summary.interop_metadata_annotation_sites
       << ",\"named_annotation_payload_sites\":"
@@ -1518,6 +1534,18 @@ std::string BuildInteropInteropSemanticModelSummaryJson(
       << summary.import_module_annotation_sites
       << ",\"imported_module_name_sites\":"
       << summary.imported_module_name_sites
+      << ",\"export_header_annotation_sites\":"
+      << summary.export_header_annotation_sites
+      << ",\"export_header_name_sites\":"
+      << summary.export_header_name_sites
+      << ",\"mixed_image_annotation_sites\":"
+      << summary.mixed_image_annotation_sites
+      << ",\"mixed_image_name_sites\":"
+      << summary.mixed_image_name_sites
+      << ",\"package_entry_annotation_sites\":"
+      << summary.package_entry_annotation_sites
+      << ",\"package_entry_name_sites\":"
+      << summary.package_entry_name_sites
       << ",\"swift_name_annotation_sites\":"
       << summary.swift_name_annotation_sites
       << ",\"swift_private_annotation_sites\":"
@@ -1526,6 +1554,10 @@ std::string BuildInteropInteropSemanticModelSummaryJson(
       << summary.cpp_name_annotation_sites
       << ",\"header_name_annotation_sites\":"
       << summary.header_name_annotation_sites
+      << ",\"abi_alignment_annotation_sites\":"
+      << summary.abi_alignment_annotation_sites
+      << ",\"foreign_type_annotation_sites\":"
+      << summary.foreign_type_annotation_sites
       << ",\"named_annotation_payload_sites\":"
       << summary.named_annotation_payload_sites
       << ",\"retainable_family_callable_sites\":"
@@ -3336,7 +3368,10 @@ BuildInteropForeignCallLifetimeLoweringContract(
   const auto callable_has_metadata = [](const auto &decl) {
     return decl.objc_foreign_declared || decl.objc_import_module_declared ||
            decl.objc_cxx_name_declared || decl.objc_header_name_declared ||
-           decl.objc_swift_name_declared || decl.objc_swift_private_declared;
+           decl.objc_swift_name_declared || decl.objc_swift_private_declared ||
+           decl.objc_export_header_declared || decl.objc_abi_align_declared ||
+           decl.objc_foreign_type_declared || decl.objc_mixed_image_declared ||
+           decl.objc_package_entry_declared;
   };
   const auto callable_has_lifetime_bridge = [](const auto &decl) {
     if (!decl.return_ownership_lifetime_profile.empty()) {
@@ -4513,6 +4548,25 @@ std::string BuildInteropBridgeHeaderArtifactText(
         !function->objc_import_module_name.empty()) {
       out << " import_module=" << function->objc_import_module_name;
     }
+    if (function->objc_export_header_declared &&
+        !function->objc_export_header_name.empty()) {
+      out << " export_header=" << function->objc_export_header_name;
+    }
+    if (function->objc_abi_align_declared) {
+      out << " abi_align=" << function->objc_abi_alignment_bytes;
+    }
+    if (function->objc_foreign_type_declared &&
+        !function->objc_foreign_type_name.empty()) {
+      out << " foreign_type=" << function->objc_foreign_type_name;
+    }
+    if (function->objc_mixed_image_declared &&
+        !function->objc_mixed_image_name.empty()) {
+      out << " mixed_image=" << function->objc_mixed_image_name;
+    }
+    if (function->objc_package_entry_declared &&
+        !function->objc_package_entry_name.empty()) {
+      out << " package_entry=" << function->objc_package_entry_name;
+    }
     out << " */\n";
     out << BuildInteropBridgeReturnType(*function) << " " << function->name
         << "(";
@@ -4575,6 +4629,16 @@ std::string BuildInteropBridgeArtifactJson(
               << EscapeJsonString(function.objc_cxx_name) << "\""
               << ",\"objc_swift_name\":\""
               << EscapeJsonString(function.objc_swift_name) << "\""
+              << ",\"objc_export_header_name\":\""
+              << EscapeJsonString(function.objc_export_header_name) << "\""
+              << ",\"objc_abi_alignment_bytes\":"
+              << function.objc_abi_alignment_bytes
+              << ",\"objc_foreign_type_name\":\""
+              << EscapeJsonString(function.objc_foreign_type_name) << "\""
+              << ",\"objc_mixed_image_name\":\""
+              << EscapeJsonString(function.objc_mixed_image_name) << "\""
+              << ",\"objc_package_entry_name\":\""
+              << EscapeJsonString(function.objc_package_entry_name) << "\""
               << "}";
     if (index + 1 != foreign_functions.size()) {
       callables << ",";

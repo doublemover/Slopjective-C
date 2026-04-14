@@ -39,6 +39,11 @@ REQUIRED_AST_FIELDS = [
     "macro_provenance_sites",
     "property_behavior_sites",
     "interop_attribute_sites",
+    "interop_header_export_sites",
+    "interop_abi_alignment_sites",
+    "interop_foreign_type_sites",
+    "interop_mixed_image_sites",
+    "interop_package_entry_sites",
     "draft_syntax_surface_sites",
     "draft_syntax_surface_summary",
 ]
@@ -56,6 +61,11 @@ REQUIRED_PARSER_ANCHORS = [
     "objc_macro_provenance",
     "property_behavior_declared",
     "objc_import_module",
+    "objc_export_header",
+    "objc_abi_align",
+    "objc_foreign_type",
+    "objc_mixed_image",
+    "objc_package_entry",
     "objc_status_code",
 ]
 
@@ -92,6 +102,11 @@ POSITIVE_TOKENS = [
     "behavior=Observed",
     "objc_foreign",
     "objc_import_module(named(\"ParserKit\"))",
+    "objc_export_header(named(\"ParserKit/ParserKit.h\"))",
+    "objc_abi_align(bytes: 16)",
+    "objc_foreign_type(named(\"ParserKit.ForeignEntry\"))",
+    "objc_mixed_image(named(\"ParserKitCore\"))",
+    "objc_package_entry(named(\"ParserKit.foreignEntry\"))",
     "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)",
 ]
 

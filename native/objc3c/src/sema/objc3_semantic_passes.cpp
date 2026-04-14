@@ -9958,6 +9958,18 @@ Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
       foreign_source_summary.import_module_annotation_sites;
   summary.imported_module_name_sites =
       foreign_source_summary.imported_module_name_sites;
+  summary.export_header_annotation_sites =
+      foreign_source_summary.export_header_annotation_sites;
+  summary.export_header_name_sites =
+      foreign_source_summary.export_header_name_sites;
+  summary.mixed_image_annotation_sites =
+      foreign_source_summary.mixed_image_annotation_sites;
+  summary.mixed_image_name_sites =
+      foreign_source_summary.mixed_image_name_sites;
+  summary.package_entry_annotation_sites =
+      foreign_source_summary.package_entry_annotation_sites;
+  summary.package_entry_name_sites =
+      foreign_source_summary.package_entry_name_sites;
   summary.swift_name_annotation_sites =
       interop_source_summary.swift_name_annotation_sites;
   summary.swift_private_annotation_sites =
@@ -9966,6 +9978,10 @@ Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
       interop_source_summary.cpp_name_annotation_sites;
   summary.header_name_annotation_sites =
       interop_source_summary.header_name_annotation_sites;
+  summary.abi_alignment_annotation_sites =
+      interop_source_summary.abi_alignment_annotation_sites;
+  summary.foreign_type_annotation_sites =
+      interop_source_summary.foreign_type_annotation_sites;
   summary.named_annotation_payload_sites =
       interop_source_summary.named_annotation_payload_sites;
   summary.retainable_family_callable_sites =
@@ -10013,10 +10029,17 @@ Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
   summary.metadata_payload_profile_frozen =
       summary.imported_module_name_sites <=
           summary.import_module_annotation_sites &&
+      summary.export_header_name_sites <=
+          summary.export_header_annotation_sites &&
+      summary.mixed_image_name_sites <=
+          summary.mixed_image_annotation_sites &&
+      summary.package_entry_name_sites <=
+          summary.package_entry_annotation_sites &&
       summary.named_annotation_payload_sites ==
           summary.swift_name_annotation_sites +
               summary.cpp_name_annotation_sites +
-              summary.header_name_annotation_sites;
+              summary.header_name_annotation_sites +
+              summary.foreign_type_annotation_sites;
   summary.ffi_abi_lowering_deferred = true;
   summary.runtime_bridge_generation_deferred = true;
   summary.deterministic =
@@ -10038,10 +10061,18 @@ Objc3InteropInteropSemanticModelSummary BuildInteropInteropSemanticModelSummary(
       << ";foreign=" << summary.foreign_callable_sites
       << ";import-module=" << summary.import_module_annotation_sites << ":"
       << summary.imported_module_name_sites
+      << ";export-header=" << summary.export_header_annotation_sites << ":"
+      << summary.export_header_name_sites
+      << ";mixed-image=" << summary.mixed_image_annotation_sites << ":"
+      << summary.mixed_image_name_sites
+      << ";package-entry=" << summary.package_entry_annotation_sites << ":"
+      << summary.package_entry_name_sites
       << ";swift=" << summary.swift_name_annotation_sites << ":"
       << summary.swift_private_annotation_sites
       << ";cpp=" << summary.cpp_name_annotation_sites << ":"
       << summary.header_name_annotation_sites
+      << ";abi-align=" << summary.abi_alignment_annotation_sites
+      << ";foreign-type=" << summary.foreign_type_annotation_sites
       << ";named-payload=" << summary.named_annotation_payload_sites
       << ";retainable-family=" << summary.retainable_family_callable_sites
       << ";bridge=" << summary.bridge_callable_sites
@@ -10070,12 +10101,15 @@ static bool HasInteropObjcRuntimeTypeSurface(const CallableDeclT &decl) {
 
 template <typename CallableDeclT>
 static bool HasInteropForeignOrImportAnnotations(const CallableDeclT &decl) {
-  return decl.objc_foreign_declared || decl.objc_import_module_declared;
+  return decl.objc_foreign_declared || decl.objc_import_module_declared ||
+         decl.objc_export_header_declared || decl.objc_mixed_image_declared ||
+         decl.objc_package_entry_declared;
 }
 
 template <typename CallableDeclT>
 static bool HasInteropCppInteropAnnotations(const CallableDeclT &decl) {
-  return decl.objc_cxx_name_declared || decl.objc_header_name_declared;
+  return decl.objc_cxx_name_declared || decl.objc_header_name_declared ||
+         decl.objc_abi_align_declared || decl.objc_foreign_type_declared;
 }
 
 template <typename CallableDeclT>
@@ -10179,8 +10213,7 @@ BuildInteropInteropRuntimeParitySummary(
   summary.implementation_annotations_fail_closed =
       dependency_surface_present &&
       summary.implementation_annotation_rejection_sites <=
-          summary.foreign_callable_sites +
-              summary.import_module_annotation_sites;
+          dependency_summary.interop_metadata_annotation_sites;
   summary.objc_runtime_parity_classified =
       dependency_surface_present &&
       summary.c_foreign_callable_sites <= summary.foreign_callable_sites &&

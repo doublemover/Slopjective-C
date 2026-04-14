@@ -3450,7 +3450,10 @@ class Objc3IREmitter {
   static bool HasInteropInteropSurface(const FunctionDecl &fn) {
     return fn.objc_foreign_declared || fn.objc_import_module_declared ||
            fn.objc_cxx_name_declared || fn.objc_header_name_declared ||
-           fn.objc_swift_name_declared || fn.objc_swift_private_declared;
+           fn.objc_swift_name_declared || fn.objc_swift_private_declared ||
+           fn.objc_export_header_declared || fn.objc_abi_align_declared ||
+           fn.objc_foreign_type_declared || fn.objc_mixed_image_declared ||
+           fn.objc_package_entry_declared;
   }
 
   static bool HasInteropLifetimeBridge(const FuncParam &param) {

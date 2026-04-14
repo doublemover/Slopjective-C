@@ -97,13 +97,38 @@
     {
       "id": "interop_attribute",
       "summary_field": "interop_attribute_sites",
-      "positive_tokens": ["objc_foreign", "objc_import_module(named(\"ParserKit\"))", "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)"],
+      "positive_tokens": [
+        "objc_foreign",
+        "objc_import_module(named(\"ParserKit\"))",
+        "objc_export_header(named(\"ParserKit/ParserKit.h\"))",
+        "objc_abi_align(bytes: 16)",
+        "objc_foreign_type(named(\"ParserKit.ForeignEntry\"))",
+        "objc_mixed_image(named(\"ParserKitCore\"))",
+        "objc_package_entry(named(\"ParserKit.foreignEntry\"))",
+        "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)"
+      ],
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_import_module_non_string.objc3",
       "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87},
       "additional_negative_fixtures": [
         {
           "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_status_code_missing_clause.objc3",
           "expected_diagnostic": {"code": "O3P280", "line": 4, "column": 69}
+        },
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_export_header_non_string.objc3",
+          "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 87}
+        },
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_number.objc3",
+          "expected_diagnostic": {"code": "O3P364", "line": 4, "column": 84}
+        },
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_abi_align_non_power_of_two.objc3",
+          "expected_diagnostic": {"code": "O3P365", "line": 4, "column": 84}
+        },
+        {
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_foreign_type_non_string.objc3",
+          "expected_diagnostic": {"code": "O3P343", "line": 4, "column": 86}
         }
       ]
     }

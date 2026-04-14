@@ -1,0 +1,4 @@
+// Expected diagnostic code(s): O3P343.
+module NegativeParserDraftSyntaxForeignTypeNonString;
+
+extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_foreign_type(named(ParserKitForeignEntry))));

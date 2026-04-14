@@ -315,6 +315,21 @@ inline std::uint64_t BuildObjc3DraftSyntaxSurfaceFingerprint(
       static_cast<std::uint64_t>(summary.interop_attribute_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,
+      static_cast<std::uint64_t>(summary.interop_header_export_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_abi_alignment_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_foreign_type_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_mixed_image_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
+      static_cast<std::uint64_t>(summary.interop_package_entry_sites));
+  fingerprint = MixObjc3ParserContractFingerprint(
+      fingerprint,
       static_cast<std::uint64_t>(summary.draft_syntax_surface_sites));
   fingerprint = MixObjc3ParserContractFingerprint(
       fingerprint,

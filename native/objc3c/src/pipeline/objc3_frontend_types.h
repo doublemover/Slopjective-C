@@ -1939,6 +1939,12 @@ struct Objc3FrontendInteropForeignImportSourceClosureSummary {
   std::size_t extern_foreign_callable_sites = 0;
   std::size_t import_module_annotation_sites = 0;
   std::size_t imported_module_name_sites = 0;
+  std::size_t export_header_annotation_sites = 0;
+  std::size_t export_header_name_sites = 0;
+  std::size_t mixed_image_annotation_sites = 0;
+  std::size_t mixed_image_name_sites = 0;
+  std::size_t package_entry_annotation_sites = 0;
+  std::size_t package_entry_name_sites = 0;
   std::size_t interop_annotation_sites = 0;
   bool foreign_declaration_source_supported = false;
   bool imported_surface_source_supported = false;
@@ -1968,6 +1974,8 @@ struct Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary {
   std::size_t swift_private_annotation_sites = 0;
   std::size_t cpp_name_annotation_sites = 0;
   std::size_t header_name_annotation_sites = 0;
+  std::size_t abi_alignment_annotation_sites = 0;
+  std::size_t foreign_type_annotation_sites = 0;
   std::size_t interop_metadata_annotation_sites = 0;
   std::size_t named_annotation_payload_sites = 0;
   bool swift_annotation_source_supported = false;

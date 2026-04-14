@@ -25,7 +25,7 @@ actor class SyntaxActor
 }
 @end
 
-extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("ParserKit"))));
+extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_import_module(named("ParserKit")), objc_export_header(named("ParserKit/ParserKit.h")), objc_abi_align(bytes: 16), objc_foreign_type(named("ParserKit.ForeignEntry")), objc_mixed_image(named("ParserKitCore")), objc_package_entry(named("ParserKit.foreignEntry"))));
 extern fn bridgeStatus(value: i32, error: NSError*) -> i32 __attribute__((objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)));
 
 fn mapStatus(status: i32) -> NSError {

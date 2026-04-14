@@ -31,7 +31,7 @@
 - `macro_package`: `PASS`; replay `macro_packages`=`1`; negative fixtures=`1`
 - `macro_provenance`: `PASS`; replay `macro_provenance`=`1`; negative fixtures=`1`
 - `property_behavior`: `PASS`; replay `property_behaviors`=`4`; negative fixtures=`1`
-- `interop_attribute`: `PASS`; replay `interop_attrs`=`2`; negative fixtures=`2`
+- `interop_attribute`: `PASS`; replay `interop_attrs`=`2`; negative fixtures=`6`
 
 ## Validation Commands
 - `python scripts/build_objc3c_parser_draft_syntax_conformance.py --check`

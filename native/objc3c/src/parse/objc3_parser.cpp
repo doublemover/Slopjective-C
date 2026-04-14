@@ -6601,6 +6601,68 @@ class Objc3Parser {
     return true;
   }
 
+  template <typename TCallableDecl>
+  bool ParseAbiAlignmentAttributePayload(TCallableDecl &decl,
+                                         const Token &attribute_name) {
+    if (!Match(TokenKind::LParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P361",
+          "missing '(' after objc_abi_align attribute"));
+      return false;
+    }
+    if (!At(TokenKind::Identifier) || Peek().text != "bytes") {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P362",
+          "objc_abi_align requires bytes: integer payload"));
+      return false;
+    }
+    Advance();
+    if (!Match(TokenKind::Colon)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P363",
+          "missing ':' after objc_abi_align bytes label"));
+      return false;
+    }
+    if (!At(TokenKind::Number)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P364",
+          "objc_abi_align bytes payload requires integer literal"));
+      return false;
+    }
+    const Token bytes_token = Advance();
+    std::size_t alignment = 0;
+    try {
+      alignment =
+          static_cast<std::size_t>(std::stoull(bytes_token.text, nullptr, 0));
+    } catch (...) {
+      diagnostics_.push_back(MakeDiag(
+          bytes_token.line, bytes_token.column, "O3P364",
+          "objc_abi_align bytes payload requires integer literal"));
+      return false;
+    }
+    if (alignment == 0u || (alignment & (alignment - 1u)) != 0u) {
+      diagnostics_.push_back(MakeDiag(
+          bytes_token.line, bytes_token.column, "O3P365",
+          "objc_abi_align bytes payload must be a non-zero power of two"));
+      return false;
+    }
+    if (!Match(TokenKind::RParen)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(
+          token.line, token.column, "O3P366",
+          "missing ')' after objc_abi_align payload"));
+      return false;
+    }
+    decl.objc_abi_align_declared = true;
+    decl.objc_abi_alignment_bytes = alignment;
+    (void)attribute_name;
+    return true;
+  }
+
   bool IsBorrowedQualifierSpelling(const std::string &text) const {
     return text == "borrowed";
   }
@@ -7386,6 +7448,71 @@ class Objc3Parser {
         return false;
       }
       decl.objc_header_name_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_export_header") {
+      if (decl.objc_export_header_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P356",
+                     "duplicate objc_export_header attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_export_header",
+                                            decl.objc_export_header_name)) {
+        return false;
+      }
+      decl.objc_export_header_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_abi_align") {
+      if (decl.objc_abi_align_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P357",
+                     "duplicate objc_abi_align attribute"));
+        return false;
+      }
+      return ParseAbiAlignmentAttributePayload(decl, attribute_name);
+    }
+    if (attribute_name.text == "objc_foreign_type") {
+      if (decl.objc_foreign_type_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P358",
+                     "duplicate objc_foreign_type attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_foreign_type",
+                                            decl.objc_foreign_type_name)) {
+        return false;
+      }
+      decl.objc_foreign_type_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_mixed_image") {
+      if (decl.objc_mixed_image_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P359",
+                     "duplicate objc_mixed_image attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_mixed_image",
+                                            decl.objc_mixed_image_name)) {
+        return false;
+      }
+      decl.objc_mixed_image_declared = true;
+      return true;
+    }
+    if (attribute_name.text == "objc_package_entry") {
+      if (decl.objc_package_entry_declared) {
+        diagnostics_.push_back(
+            MakeDiag(attribute_name.line, attribute_name.column, "O3P360",
+                     "duplicate objc_package_entry attribute"));
+        return false;
+      }
+      if (!ParseNamedStringAttributePayload(attribute_name, "objc_package_entry",
+                                            decl.objc_package_entry_name)) {
+        return false;
+      }
+      decl.objc_package_entry_declared = true;
       return true;
     }
     if (attribute_name.text == "objc_nonisolated") {
@@ -8818,8 +8945,26 @@ class Objc3Parser {
     if (decl.objc_foreign_declared || decl.objc_import_module_declared ||
         decl.objc_swift_name_declared || decl.objc_swift_private_declared ||
         decl.objc_cxx_name_declared || decl.objc_header_name_declared ||
+        decl.objc_export_header_declared || decl.objc_abi_align_declared ||
+        decl.objc_foreign_type_declared || decl.objc_mixed_image_declared ||
+        decl.objc_package_entry_declared ||
         decl.objc_nserror_declared || decl.objc_status_code_declared) {
       ++summary.interop_attribute_sites;
+    }
+    if (decl.objc_export_header_declared) {
+      ++summary.interop_header_export_sites;
+    }
+    if (decl.objc_abi_align_declared) {
+      ++summary.interop_abi_alignment_sites;
+    }
+    if (decl.objc_foreign_type_declared) {
+      ++summary.interop_foreign_type_sites;
+    }
+    if (decl.objc_mixed_image_declared) {
+      ++summary.interop_mixed_image_sites;
+    }
+    if (decl.objc_package_entry_declared) {
+      ++summary.interop_package_entry_sites;
     }
     CountDraftSyntaxStatements(decl.body, summary);
   }
@@ -8851,6 +8996,11 @@ class Objc3Parser {
         << ";macro_provenance=" << summary.macro_provenance_sites
         << ";property_behaviors=" << summary.property_behavior_sites
         << ";interop_attrs=" << summary.interop_attribute_sites
+        << ";interop_export_headers=" << summary.interop_header_export_sites
+        << ";interop_abi_align=" << summary.interop_abi_alignment_sites
+        << ";interop_foreign_type=" << summary.interop_foreign_type_sites
+        << ";interop_mixed_images=" << summary.interop_mixed_image_sites
+        << ";interop_package_entries=" << summary.interop_package_entry_sites
         << ";total=" << summary.draft_syntax_surface_sites;
     return out.str();
   }
@@ -8893,7 +9043,9 @@ class Objc3Parser {
         summary.await_expression_sites + summary.actor_interface_sites +
         summary.macro_attribute_sites + summary.macro_package_sites +
         summary.macro_provenance_sites + summary.property_behavior_sites +
-        summary.interop_attribute_sites;
+        summary.interop_attribute_sites + summary.interop_header_export_sites +
+        summary.interop_abi_alignment_sites + summary.interop_foreign_type_sites +
+        summary.interop_mixed_image_sites + summary.interop_package_entry_sites;
     summary.replay_key = BuildObjc3DraftSyntaxSurfaceReplayKey(summary);
     summary.normalized =
         !summary.replay_key.empty() &&

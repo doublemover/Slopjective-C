@@ -1,0 +1,4 @@
+// Expected diagnostic code(s): O3P365.
+module NegativeParserDraftSyntaxAbiAlignNonPowerOfTwo;
+
+extern fn foreignEntry() -> i32 __attribute__((objc_foreign, objc_abi_align(bytes: 12)));

@@ -4797,6 +4797,12 @@ std::string BuildInteropForeignImportSourceClosureReplayKey(
       << summary.extern_foreign_callable_sites << ":"
       << summary.import_module_annotation_sites << ":"
       << summary.imported_module_name_sites << ":"
+      << summary.export_header_annotation_sites << ":"
+      << summary.export_header_name_sites << ":"
+      << summary.mixed_image_annotation_sites << ":"
+      << summary.mixed_image_name_sites << ":"
+      << summary.package_entry_annotation_sites << ":"
+      << summary.package_entry_name_sites << ":"
       << summary.interop_annotation_sites
       << ";deterministic="
       << (summary.deterministic_handoff ? "true" : "false");
@@ -4812,6 +4818,8 @@ std::string BuildInteropCppSwiftInteropAnnotationSourceCompletionReplayKey(
       << summary.swift_private_annotation_sites << ":"
       << summary.cpp_name_annotation_sites << ":"
       << summary.header_name_annotation_sites << ":"
+      << summary.abi_alignment_annotation_sites << ":"
+      << summary.foreign_type_annotation_sites << ":"
       << summary.interop_metadata_annotation_sites << ":"
       << summary.named_annotation_payload_sites
       << ";deterministic="
@@ -6704,6 +6712,27 @@ BuildInteropForeignImportSourceClosureSummary(const Objc3Program &program) {
         ++summary.imported_module_name_sites;
       }
     }
+    if (decl.objc_export_header_declared) {
+      ++summary.export_header_annotation_sites;
+      ++summary.interop_annotation_sites;
+      if (!decl.objc_export_header_name.empty()) {
+        ++summary.export_header_name_sites;
+      }
+    }
+    if (decl.objc_mixed_image_declared) {
+      ++summary.mixed_image_annotation_sites;
+      ++summary.interop_annotation_sites;
+      if (!decl.objc_mixed_image_name.empty()) {
+        ++summary.mixed_image_name_sites;
+      }
+    }
+    if (decl.objc_package_entry_declared) {
+      ++summary.package_entry_annotation_sites;
+      ++summary.interop_annotation_sites;
+      if (!decl.objc_package_entry_name.empty()) {
+        ++summary.package_entry_name_sites;
+      }
+    }
   };
 
   for (const auto &fn : program.functions) {
@@ -6731,8 +6760,14 @@ BuildInteropForeignImportSourceClosureSummary(const Objc3Program &program) {
   summary.deterministic_handoff =
       summary.extern_foreign_callable_sites <= summary.foreign_callable_sites &&
       summary.imported_module_name_sites <= summary.import_module_annotation_sites &&
+      summary.export_header_name_sites <= summary.export_header_annotation_sites &&
+      summary.mixed_image_name_sites <= summary.mixed_image_annotation_sites &&
+      summary.package_entry_name_sites <= summary.package_entry_annotation_sites &&
       summary.interop_annotation_sites ==
-          summary.foreign_callable_sites + summary.import_module_annotation_sites;
+          summary.foreign_callable_sites + summary.import_module_annotation_sites +
+              summary.export_header_annotation_sites +
+              summary.mixed_image_annotation_sites +
+              summary.package_entry_annotation_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key = BuildInteropForeignImportSourceClosureReplayKey(summary);
   return summary;
@@ -6769,6 +6804,17 @@ BuildInteropCppSwiftInteropAnnotationSourceCompletionSummary(
         ++summary.named_annotation_payload_sites;
       }
     }
+    if (decl.objc_abi_align_declared) {
+      ++summary.abi_alignment_annotation_sites;
+      ++summary.interop_metadata_annotation_sites;
+    }
+    if (decl.objc_foreign_type_declared) {
+      ++summary.foreign_type_annotation_sites;
+      ++summary.interop_metadata_annotation_sites;
+      if (!decl.objc_foreign_type_name.empty()) {
+        ++summary.named_annotation_payload_sites;
+      }
+    }
   };
 
   for (const auto &fn : program.functions) {
@@ -6797,12 +6843,15 @@ BuildInteropCppSwiftInteropAnnotationSourceCompletionSummary(
       summary.named_annotation_payload_sites ==
           summary.swift_name_annotation_sites +
               summary.cpp_name_annotation_sites +
-              summary.header_name_annotation_sites &&
+              summary.header_name_annotation_sites +
+              summary.foreign_type_annotation_sites &&
       summary.interop_metadata_annotation_sites ==
           summary.swift_name_annotation_sites +
               summary.swift_private_annotation_sites +
               summary.cpp_name_annotation_sites +
-              summary.header_name_annotation_sites;
+              summary.header_name_annotation_sites +
+              summary.abi_alignment_annotation_sites +
+              summary.foreign_type_annotation_sites;
   summary.ready_for_semantic_expansion = summary.deterministic_handoff;
   summary.replay_key =
       BuildInteropCppSwiftInteropAnnotationSourceCompletionReplayKey(summary);
@@ -6927,10 +6976,18 @@ BuildToolingDiagnosticsMigratorSourceInventorySummary(
       interop_closure_summary.foreign_callable_sites +
       interop_closure_summary.import_module_annotation_sites +
       interop_closure_summary.imported_module_name_sites +
+      interop_closure_summary.export_header_annotation_sites +
+      interop_closure_summary.export_header_name_sites +
+      interop_closure_summary.mixed_image_annotation_sites +
+      interop_closure_summary.mixed_image_name_sites +
+      interop_closure_summary.package_entry_annotation_sites +
+      interop_closure_summary.package_entry_name_sites +
       interop_completion_summary.swift_name_annotation_sites +
       interop_completion_summary.swift_private_annotation_sites +
       interop_completion_summary.cpp_name_annotation_sites +
       interop_completion_summary.header_name_annotation_sites +
+      interop_completion_summary.abi_alignment_annotation_sites +
+      interop_completion_summary.foreign_type_annotation_sites +
       interop_completion_summary.named_annotation_payload_sites;
   summary.diagnostic_surface_sites =
       summary.error_surface_sites + summary.concurrency_surface_sites +
