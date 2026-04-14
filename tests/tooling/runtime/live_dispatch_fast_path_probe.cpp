@@ -2,6 +2,7 @@
 #include <string>
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/dispatch_expectations.h"
 #include "support/runtime_snapshot_text.h"
 
 extern "C" int callImplicit(void);
@@ -10,80 +11,11 @@ extern "C" int callMixed(void);
 
 namespace {
 
+using objc3c::runtime::probe::WriteLabeledFastPathMethodCacheState;
+
+using objc3c::runtime::probe::ComputeFallbackDispatch;
+
 using objc3c::runtime::probe::WriteLabeledDispatchState;
-
-constexpr long long kDispatchModulus = 2147483629LL;
-
-long long ComputeSelectorScore(const char *selector) {
-  if (selector == nullptr) {
-    return 0;
-  }
-  long long selector_score = 0;
-  long long index = 1;
-  const unsigned char *cursor =
-      reinterpret_cast<const unsigned char *>(selector);
-  while (*cursor != 0U) {
-    selector_score =
-        (selector_score + (static_cast<long long>(*cursor) * index)) %
-        kDispatchModulus;
-    ++cursor;
-    ++index;
-  }
-  return selector_score;
-}
-
-int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
-                            int a2, int a3) {
-  long long value = 41;
-  value += static_cast<long long>(receiver) * 97;
-  value += static_cast<long long>(a0) * 7;
-  value += static_cast<long long>(a1) * 11;
-  value += static_cast<long long>(a2) * 13;
-  value += static_cast<long long>(a3) * 17;
-  value += ComputeSelectorScore(selector) * 19;
-  value %= kDispatchModulus;
-  if (value < 0) {
-    value += kDispatchModulus;
-  }
-  return static_cast<int>(value);
-}
-
-void PrintState(const char *label,
-                const objc3_runtime_method_cache_state_snapshot &snapshot,
-                const std::string &last_selector,
-                const std::string &last_fast_path_reason) {
-  std::cout << label << "_cache_entry_count=" << snapshot.cache_entry_count
-            << "\n";
-  std::cout << label << "_cache_hit_count=" << snapshot.cache_hit_count << "\n";
-  std::cout << label << "_cache_miss_count=" << snapshot.cache_miss_count
-            << "\n";
-  std::cout << label
-            << "_slow_path_lookup_count=" << snapshot.slow_path_lookup_count
-            << "\n";
-  std::cout << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
-            << "\n";
-  std::cout << label
-            << "_fallback_dispatch_count=" << snapshot.fallback_dispatch_count
-            << "\n";
-  std::cout << label
-            << "_fast_path_seed_count=" << snapshot.fast_path_seed_count
-            << "\n";
-  std::cout << label << "_fast_path_hit_count=" << snapshot.fast_path_hit_count
-            << "\n";
-  std::cout << label
-            << "_last_dispatch_used_cache=" << snapshot.last_dispatch_used_cache
-            << "\n";
-  std::cout << label << "_last_dispatch_used_fast_path="
-            << snapshot.last_dispatch_used_fast_path << "\n";
-  std::cout << label << "_last_dispatch_resolved_live_method="
-            << snapshot.last_dispatch_resolved_live_method << "\n";
-  std::cout << label
-            << "_last_dispatch_fell_back=" << snapshot.last_dispatch_fell_back
-            << "\n";
-  std::cout << label << "_last_selector=" << last_selector << "\n";
-  std::cout << label << "_last_fast_path_reason=" << last_fast_path_reason
-            << "\n";
-}
 
 void PrintEntry(const char *label,
                 const objc3_runtime_method_cache_entry_snapshot &snapshot,
@@ -442,20 +374,24 @@ int main() {
              explicit_entry_fast_path_reason);
   PrintEntry("fallback_entry", fallback_entry, fallback_entry_selector,
              fallback_entry_fast_path_reason);
-  PrintState("baseline", baseline, baseline_last_selector,
-             baseline_last_fast_path_reason);
-  PrintState("direct", direct_state, direct_last_selector,
-             direct_last_fast_path_reason);
-  PrintState("mixed_first_state", mixed_first_state, mixed_first_last_selector,
-             mixed_first_last_fast_path_reason);
-  PrintState("mixed_second_state", mixed_second_state,
-             mixed_second_last_selector, mixed_second_last_fast_path_reason);
-  PrintState("fallback_first_state", fallback_first_state,
-             fallback_first_last_selector,
-             fallback_first_last_fast_path_reason);
-  PrintState("fallback_second_state", fallback_second_state,
-             fallback_second_last_selector,
-             fallback_second_last_fast_path_reason);
+  WriteLabeledFastPathMethodCacheState(std::cout, "baseline", baseline,
+                                       baseline_last_selector,
+                                       baseline_last_fast_path_reason);
+  WriteLabeledFastPathMethodCacheState(std::cout, "direct", direct_state,
+                                       direct_last_selector,
+                                       direct_last_fast_path_reason);
+  WriteLabeledFastPathMethodCacheState(
+      std::cout, "mixed_first_state", mixed_first_state,
+      mixed_first_last_selector, mixed_first_last_fast_path_reason);
+  WriteLabeledFastPathMethodCacheState(
+      std::cout, "mixed_second_state", mixed_second_state,
+      mixed_second_last_selector, mixed_second_last_fast_path_reason);
+  WriteLabeledFastPathMethodCacheState(
+      std::cout, "fallback_first_state", fallback_first_state,
+      fallback_first_last_selector, fallback_first_last_fast_path_reason);
+  WriteLabeledFastPathMethodCacheState(
+      std::cout, "fallback_second_state", fallback_second_state,
+      fallback_second_last_selector, fallback_second_last_fast_path_reason);
   WriteLabeledDispatchState(std::cout, "mixed_first_dispatch_state",
                             mixed_first_dispatch_state,
                             mixed_first_dispatch_last_selector,

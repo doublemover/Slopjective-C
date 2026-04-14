@@ -50,6 +50,64 @@ WriteLabeledDispatchState(std::ostream &out, const char *label,
       << "\n";
 }
 
+inline void WriteLabeledMethodCacheState(
+    std::ostream &out, const char *label,
+    const objc3_runtime_method_cache_state_snapshot &snapshot,
+    const std::string &last_selector) {
+  out << label << "_cache_entry_count=" << snapshot.cache_entry_count << "\n";
+  out << label << "_cache_hit_count=" << snapshot.cache_hit_count << "\n";
+  out << label << "_cache_miss_count=" << snapshot.cache_miss_count << "\n";
+  out << label << "_slow_path_lookup_count=" << snapshot.slow_path_lookup_count
+      << "\n";
+  out << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
+      << "\n";
+  out << label
+      << "_fallback_dispatch_count=" << snapshot.fallback_dispatch_count
+      << "\n";
+  out << label
+      << "_last_dispatch_used_cache=" << snapshot.last_dispatch_used_cache
+      << "\n";
+  out << label << "_last_dispatch_resolved_live_method="
+      << snapshot.last_dispatch_resolved_live_method << "\n";
+  out << label
+      << "_last_dispatch_fell_back=" << snapshot.last_dispatch_fell_back
+      << "\n";
+  out << label << "_last_selector=" << last_selector << "\n";
+}
+
+inline void WriteLabeledFastPathMethodCacheState(
+    std::ostream &out, const char *label,
+    const objc3_runtime_method_cache_state_snapshot &snapshot,
+    const std::string &last_selector,
+    const std::string &last_fast_path_reason) {
+  out << label << "_cache_entry_count=" << snapshot.cache_entry_count << "\n";
+  out << label << "_cache_hit_count=" << snapshot.cache_hit_count << "\n";
+  out << label << "_cache_miss_count=" << snapshot.cache_miss_count << "\n";
+  out << label << "_slow_path_lookup_count=" << snapshot.slow_path_lookup_count
+      << "\n";
+  out << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
+      << "\n";
+  out << label
+      << "_fallback_dispatch_count=" << snapshot.fallback_dispatch_count
+      << "\n";
+  out << label << "_fast_path_seed_count=" << snapshot.fast_path_seed_count
+      << "\n";
+  out << label << "_fast_path_hit_count=" << snapshot.fast_path_hit_count
+      << "\n";
+  out << label
+      << "_last_dispatch_used_cache=" << snapshot.last_dispatch_used_cache
+      << "\n";
+  out << label << "_last_dispatch_used_fast_path="
+      << snapshot.last_dispatch_used_fast_path << "\n";
+  out << label << "_last_dispatch_resolved_live_method="
+      << snapshot.last_dispatch_resolved_live_method << "\n";
+  out << label
+      << "_last_dispatch_fell_back=" << snapshot.last_dispatch_fell_back
+      << "\n";
+  out << label << "_last_selector=" << last_selector << "\n";
+  out << label << "_last_fast_path_reason=" << last_fast_path_reason << "\n";
+}
+
 } // namespace objc3c::runtime::probe
 
 #endif // OBJC3C_TESTS_TOOLING_RUNTIME_SUPPORT_RUNTIME_SNAPSHOT_TEXT_H_

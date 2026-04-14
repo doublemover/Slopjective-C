@@ -1,4 +1,5 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/dispatch_expectations.h"
 #include "support/json_probe_writer.h"
 #include "support/runtime_snapshot_json.h"
 #include "support/runtime_snapshot_stabilizers.h"
@@ -7,6 +8,8 @@
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::ComputeFallbackDispatch;
 
 using objc3c::runtime::probe::PrintConformanceQueryProtocolCategory;
 using objc3c::runtime::probe::PrintGraphStateProtocolCategory;
@@ -20,45 +23,6 @@ using objc3c::runtime::probe::StabilizeNullableCString;
 using objc3c::runtime::probe::StabilizeRealizedEntry;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
-
-constexpr long long kDispatchModulus = 2147483629LL;
-
-long long ComputeSelectorScore(const char *selector) {
-  if (selector == nullptr) {
-    return 0;
-  }
-  long long selector_score = 0;
-  long long index = 1;
-  const unsigned char *cursor =
-      reinterpret_cast<const unsigned char *>(selector);
-  while (*cursor != 0U) {
-    selector_score =
-        (selector_score + (static_cast<long long>(*cursor) * index)) %
-        kDispatchModulus;
-    ++cursor;
-    ++index;
-  }
-  return selector_score;
-}
-
-int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
-                            int a2, int a3) {
-  if (receiver == 0) {
-    return 0;
-  }
-  long long value = 41;
-  value += static_cast<long long>(receiver) * 97;
-  value += static_cast<long long>(a0) * 7;
-  value += static_cast<long long>(a1) * 11;
-  value += static_cast<long long>(a2) * 13;
-  value += static_cast<long long>(a3) * 17;
-  value += ComputeSelectorScore(selector) * 19;
-  value %= kDispatchModulus;
-  if (value < 0) {
-    value += kDispatchModulus;
-  }
-  return static_cast<int>(value);
-}
 
 } // namespace
 

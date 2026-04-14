@@ -1,7 +1,8 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/dispatch_expectations.h"
 #include "support/json_probe_writer.h"
-#include "support/runtime_snapshot_stabilizers.h"
 #include "support/runtime_snapshot_json.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
@@ -11,6 +12,8 @@ extern "C" int objc3_method_Widget_class_callSharedThroughSelf(void);
 extern "C" int callSharedThroughKnownClass(void);
 
 namespace {
+
+using objc3c::runtime::probe::ComputeFallbackDispatch;
 
 using objc3c::runtime::probe::PrintMethodCacheEntryBasic;
 using objc3c::runtime::probe::PrintMethodCacheStateSlowPath;
@@ -25,45 +28,7 @@ using objc3c::runtime::probe::StabilizeSelectorTableState;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-constexpr long long kDispatchModulus = 2147483629LL;
-
-
-long long ComputeSelectorScore(const char *selector) {
-  if (selector == nullptr) {
-    return 0;
-  }
-  long long selector_score = 0;
-  long long index = 1;
-  const unsigned char *cursor =
-      reinterpret_cast<const unsigned char *>(selector);
-  while (*cursor != 0U) {
-    selector_score =
-        (selector_score + (static_cast<long long>(*cursor) * index)) %
-        kDispatchModulus;
-    ++cursor;
-    ++index;
-  }
-  return selector_score;
-}
-
-int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
-                            int a2, int a3) {
-  long long value = 41;
-  value += static_cast<long long>(receiver) * 97;
-  value += static_cast<long long>(a0) * 7;
-  value += static_cast<long long>(a1) * 11;
-  value += static_cast<long long>(a2) * 13;
-  value += static_cast<long long>(a3) * 17;
-  value += ComputeSelectorScore(selector) * 19;
-  value %= kDispatchModulus;
-  if (value < 0) {
-    value += kDispatchModulus;
-  }
-  return static_cast<int>(value);
-}
-
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_registration_state_snapshot registration_state{};
@@ -114,18 +79,20 @@ int main() {
 
   StabilizeRegistrationState(registration_state, registration_module_storage,
                              registration_identity_storage);
-  StabilizeSelectorTableState(selector_table_state, selector_table_last_storage);
+  StabilizeSelectorTableState(selector_table_state,
+                              selector_table_last_storage);
   const int instance_first = objc3_method_Widget_instance_callCurrentValue();
-  (void)objc3_runtime_copy_method_cache_state_for_testing(&instance_first_state);
-  StabilizeMethodCacheState(instance_first_state, instance_first_selector_storage,
-                            instance_first_class_storage,
-                            instance_first_owner_storage);
+  (void)objc3_runtime_copy_method_cache_state_for_testing(
+      &instance_first_state);
+  StabilizeMethodCacheState(
+      instance_first_state, instance_first_selector_storage,
+      instance_first_class_storage, instance_first_owner_storage);
   const int instance_second = objc3_method_Widget_instance_callCurrentValue();
-  (void)objc3_runtime_copy_method_cache_state_for_testing(&instance_second_state);
-  StabilizeMethodCacheState(instance_second_state,
-                            instance_second_selector_storage,
-                            instance_second_class_storage,
-                            instance_second_owner_storage);
+  (void)objc3_runtime_copy_method_cache_state_for_testing(
+      &instance_second_state);
+  StabilizeMethodCacheState(
+      instance_second_state, instance_second_selector_storage,
+      instance_second_class_storage, instance_second_owner_storage);
   const int class_self = objc3_method_Widget_class_callSharedThroughSelf();
   (void)objc3_runtime_copy_method_cache_state_for_testing(&class_self_state);
   StabilizeMethodCacheState(class_self_state, class_self_selector_storage,
@@ -140,26 +107,29 @@ int main() {
       objc3_runtime_dispatch_i32(1025, fallback_selector, 4, 5, 6, 7);
   const int fallback_expected =
       ComputeFallbackDispatch(1025, fallback_selector, 4, 5, 6, 7);
-  (void)objc3_runtime_copy_method_cache_state_for_testing(&fallback_first_state);
-  StabilizeMethodCacheState(fallback_first_state, fallback_first_selector_storage,
-                            fallback_first_class_storage,
-                            fallback_first_owner_storage);
+  (void)objc3_runtime_copy_method_cache_state_for_testing(
+      &fallback_first_state);
+  StabilizeMethodCacheState(
+      fallback_first_state, fallback_first_selector_storage,
+      fallback_first_class_storage, fallback_first_owner_storage);
   const int fallback_second =
       objc3_runtime_dispatch_i32(1025, fallback_selector, 4, 5, 6, 7);
-  (void)objc3_runtime_copy_method_cache_state_for_testing(&fallback_second_state);
+  (void)objc3_runtime_copy_method_cache_state_for_testing(
+      &fallback_second_state);
   StabilizeMethodCacheState(
       fallback_second_state, fallback_second_selector_storage,
       fallback_second_class_storage, fallback_second_owner_storage);
 
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(
-      1025, "currentValue", &instance_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(1025, "currentValue",
+                                                          &instance_entry);
   StabilizeMethodCacheEntry(instance_entry, instance_entry_selector_storage,
                             instance_entry_class_storage,
                             instance_entry_owner_storage);
   (void)objc3_runtime_copy_method_cache_entry_for_testing(1024, "shared",
                                                           &class_entry);
   StabilizeMethodCacheEntry(class_entry, class_entry_selector_storage,
-                            class_entry_class_storage, class_entry_owner_storage);
+                            class_entry_class_storage,
+                            class_entry_owner_storage);
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       1025, fallback_selector, &fallback_entry);
   StabilizeMethodCacheEntry(fallback_entry, fallback_entry_selector_storage,

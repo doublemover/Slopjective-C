@@ -1,60 +1,20 @@
 #include "runtime/objc3_runtime.h"
+#include "support/dispatch_expectations.h"
 
 #include <cstdint>
 #include <cstring>
 
 namespace {
 
-constexpr std::int64_t kDispatchModulus = 2147483629LL;
+using objc3c::runtime::probe::ExpectedDispatch;
 
-std::int64_t ComputeSelectorScore(const char *selector) {
-  if (selector == nullptr) {
-    return 0;
-  }
-
-  std::int64_t score = 0;
-  std::int64_t index = 1;
-  const unsigned char *cursor =
-      reinterpret_cast<const unsigned char *>(selector);
-  while (*cursor != 0U) {
-    score = (score + (static_cast<std::int64_t>(*cursor) * index)) %
-            kDispatchModulus;
-    ++cursor;
-    ++index;
-  }
-  return score;
-}
-
-int ExpectedDispatch(int receiver, const char *selector, int a0, int a1, int a2,
-                     int a3) {
-  std::int64_t value = 41;
-  value += static_cast<std::int64_t>(receiver) * 97;
-  value += static_cast<std::int64_t>(a0) * 7;
-  value += static_cast<std::int64_t>(a1) * 11;
-  value += static_cast<std::int64_t>(a2) * 13;
-  value += static_cast<std::int64_t>(a3) * 17;
-  value += ComputeSelectorScore(selector) * 19;
-  value %= kDispatchModulus;
-  if (value < 0) {
-    value += kDispatchModulus;
-  }
-  return static_cast<int>(value);
-}
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_reset_for_testing();
 
   const objc3_runtime_image_descriptor image{
-      "probe-module",
-      "probe-tu-identity",
-      1,
-      1,
-      2,
-      3,
-      4,
-      5,
+      "probe-module", "probe-tu-identity", 1, 1, 2, 3, 4, 5,
   };
   if (objc3_runtime_register_image(&image) != 0) {
     return 10;

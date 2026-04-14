@@ -1,12 +1,15 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/dispatch_expectations.h"
 #include "support/json_probe_writer.h"
-#include "support/runtime_snapshot_stabilizers.h"
 #include "support/runtime_snapshot_json.h"
+#include "support/runtime_snapshot_stabilizers.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::ComputeFallbackDispatch;
 
 using objc3c::runtime::probe::PrintMethodCacheEntryWithProbeCounts;
 using objc3c::runtime::probe::PrintMethodCacheStateFull;
@@ -21,48 +24,7 @@ using objc3c::runtime::probe::StabilizeSelectorTableState;
 
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-constexpr long long kDispatchModulus = 2147483629LL;
-
-
-long long ComputeSelectorScore(const char *selector) {
-  if (selector == nullptr) {
-    return 0;
-  }
-  long long selector_score = 0;
-  long long index = 1;
-  const unsigned char *cursor =
-      reinterpret_cast<const unsigned char *>(selector);
-  while (*cursor != 0U) {
-    selector_score =
-        (selector_score + (static_cast<long long>(*cursor) * index)) %
-        kDispatchModulus;
-    ++cursor;
-    ++index;
-  }
-  return selector_score;
-}
-
-int ComputeFallbackDispatch(int receiver, const char *selector, int a0, int a1,
-                            int a2, int a3) {
-  if (receiver == 0) {
-    return 0;
-  }
-  long long value = 41;
-  value += static_cast<long long>(receiver) * 97;
-  value += static_cast<long long>(a0) * 7;
-  value += static_cast<long long>(a1) * 11;
-  value += static_cast<long long>(a2) * 13;
-  value += static_cast<long long>(a3) * 17;
-  value += ComputeSelectorScore(selector) * 19;
-  value %= kDispatchModulus;
-  if (value < 0) {
-    value += kDispatchModulus;
-  }
-  return static_cast<int>(value);
-}
-
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_registration_state_snapshot registration_state{};
@@ -143,10 +105,9 @@ int main() {
       objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &protocol_fallback_state);
-  StabilizeMethodCacheState(protocol_fallback_state,
-                            protocol_fallback_selector_storage,
-                            protocol_fallback_class_storage,
-                            protocol_fallback_owner_storage);
+  StabilizeMethodCacheState(
+      protocol_fallback_state, protocol_fallback_selector_storage,
+      protocol_fallback_class_storage, protocol_fallback_owner_storage);
 
   const int protocol_fallback_cached =
       objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
@@ -166,18 +127,17 @@ int main() {
                             inherited_entry_class_storage,
                             inherited_entry_owner_storage);
 
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(
-      1042, "tracedValue", &category_entry);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(1042, "tracedValue",
+                                                          &category_entry);
   StabilizeMethodCacheEntry(category_entry, category_entry_selector_storage,
                             category_entry_class_storage,
                             category_entry_owner_storage);
 
-  (void)objc3_runtime_copy_method_cache_entry_for_testing(
-      1041, "classValue", &known_class_entry);
-  StabilizeMethodCacheEntry(known_class_entry,
-                            known_class_entry_selector_storage,
-                            known_class_entry_class_storage,
-                            known_class_entry_owner_storage);
+  (void)objc3_runtime_copy_method_cache_entry_for_testing(1041, "classValue",
+                                                          &known_class_entry);
+  StabilizeMethodCacheEntry(
+      known_class_entry, known_class_entry_selector_storage,
+      known_class_entry_class_storage, known_class_entry_owner_storage);
 
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       1042, "ignoredValue", &protocol_fallback_entry);
@@ -189,11 +149,12 @@ int main() {
   (void)objc3_runtime_copy_registration_state_for_testing(&registration_state);
   (void)objc3_runtime_copy_selector_lookup_table_state_for_testing(
       &selector_table_state);
-  StabilizeRegistrationState(
-      registration_state, registration_module_storage,
-      registration_identity_storage, registration_rejected_module_storage,
-      registration_rejected_identity_storage);
-  StabilizeSelectorTableState(selector_table_state, selector_table_last_storage);
+  StabilizeRegistrationState(registration_state, registration_module_storage,
+                             registration_identity_storage,
+                             registration_rejected_module_storage,
+                             registration_rejected_identity_storage);
+  StabilizeSelectorTableState(selector_table_state,
+                              selector_table_last_storage);
 
   std::printf("{");
   std::printf("\"inherited_value\":%d,", inherited_value);
@@ -201,10 +162,8 @@ int main() {
   std::printf("\"class_value\":%d,", class_value);
   std::printf("\"known_class_value\":%d,", known_class_value);
   std::printf("\"protocol_fallback\":%d,", protocol_fallback);
-  std::printf("\"protocol_fallback_cached\":%d,",
-              protocol_fallback_cached);
-  std::printf("\"protocol_fallback_expected\":%d,",
-              protocol_fallback_expected);
+  std::printf("\"protocol_fallback_cached\":%d,", protocol_fallback_cached);
+  std::printf("\"protocol_fallback_expected\":%d,", protocol_fallback_expected);
   std::printf("\"registration_state\":");
   PrintRegistrationStateFull(registration_state);
   std::printf(",\"selector_table_state\":");

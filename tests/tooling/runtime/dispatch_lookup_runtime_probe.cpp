@@ -1,57 +1,19 @@
 #include "runtime/objc3_runtime.h"
+#include "support/dispatch_expectations.h"
 #include "support/json_probe_writer.h"
 
 #include <cstdint>
-#include <cstring>
 #include <cstdio>
+#include <cstring>
 #include <string>
 
 namespace {
 
+using objc3c::runtime::probe::ExpectedDispatch;
+
 using objc3c::runtime::probe::PrintJsonStringOrNull;
 
-constexpr std::int64_t kDispatchModulus = 2147483629LL;
-
-std::int64_t ComputeSelectorScore(const char *selector) {
-  if (selector == nullptr) {
-    return 0;
-  }
-
-  std::int64_t score = 0;
-  std::int64_t index = 1;
-  const unsigned char *cursor =
-      reinterpret_cast<const unsigned char *>(selector);
-  while (*cursor != 0U) {
-    score = (score + (static_cast<std::int64_t>(*cursor) * index)) %
-            kDispatchModulus;
-    ++cursor;
-    ++index;
-  }
-  return score;
-}
-
-int ExpectedDispatch(int receiver, const char *selector, int a0, int a1, int a2,
-                     int a3) {
-  if (receiver == 0) {
-    return 0;
-  }
-
-  std::int64_t value = 41;
-  value += static_cast<std::int64_t>(receiver) * 97;
-  value += static_cast<std::int64_t>(a0) * 7;
-  value += static_cast<std::int64_t>(a1) * 11;
-  value += static_cast<std::int64_t>(a2) * 13;
-  value += static_cast<std::int64_t>(a3) * 17;
-  value += ComputeSelectorScore(selector) * 19;
-  value %= kDispatchModulus;
-  if (value < 0) {
-    value += kDispatchModulus;
-  }
-  return static_cast<int>(value);
-}
-
-
-}  // namespace
+} // namespace
 
 int main() {
   objc3_runtime_reset_for_testing();
@@ -86,8 +48,7 @@ int main() {
   const bool copy_selector_spelling_matches =
       copy_first != nullptr && std::strcmp(copy_first->selector, "copy") == 0;
 
-  const int dispatch_result =
-      objc3_runtime_dispatch_i32(7, "copy", 1, 2, 3, 4);
+  const int dispatch_result = objc3_runtime_dispatch_i32(7, "copy", 1, 2, 3, 4);
   const int expected_dispatch_result = ExpectedDispatch(7, "copy", 1, 2, 3, 4);
   const int nil_dispatch_result =
       objc3_runtime_dispatch_i32(0, "copy", 1, 2, 3, 4);
@@ -114,10 +75,8 @@ int main() {
               null_selector == nullptr ? "true" : "false");
   std::printf("\"copy_selector_reused\":%s,",
               copy_selector_reused ? "true" : "false");
-  std::printf("\"copy_selector_stable_id\":%llu,",
-              copy_selector_stable_id);
-  std::printf("\"gamma_selector_stable_id\":%llu,",
-              gamma_selector_stable_id);
+  std::printf("\"copy_selector_stable_id\":%llu,", copy_selector_stable_id);
+  std::printf("\"gamma_selector_stable_id\":%llu,", gamma_selector_stable_id);
   std::printf("\"copy_selector_spelling_matches\":%s,",
               copy_selector_spelling_matches ? "true" : "false");
   std::printf("\"dispatch_result\":%d,", dispatch_result);
@@ -126,22 +85,25 @@ int main() {
   std::printf("\"snapshot_status\":%d,", snapshot_status);
   std::printf("\"registered_image_count\":%llu,",
               static_cast<unsigned long long>(snapshot.registered_image_count));
-  std::printf("\"registered_descriptor_total\":%llu,",
-              static_cast<unsigned long long>(snapshot.registered_descriptor_total));
+  std::printf(
+      "\"registered_descriptor_total\":%llu,",
+      static_cast<unsigned long long>(snapshot.registered_descriptor_total));
   std::printf("\"next_expected_registration_order_ordinal\":%llu,",
               static_cast<unsigned long long>(
                   snapshot.next_expected_registration_order_ordinal));
   std::printf("\"last_successful_registration_order_ordinal\":%llu,",
               static_cast<unsigned long long>(
                   snapshot.last_successful_registration_order_ordinal));
-  std::printf("\"last_registration_status\":%d,", snapshot.last_registration_status);
+  std::printf("\"last_registration_status\":%d,",
+              snapshot.last_registration_status);
   std::printf("\"last_registered_module_name\":");
   PrintJsonStringOrNull(last_registered_module_name.c_str());
   std::printf(",\"last_registered_translation_unit_identity_key\":");
   PrintJsonStringOrNull(last_registered_translation_unit_identity_key.c_str());
   std::printf(",\"copy_after_reset_stable_id\":%llu",
-              static_cast<unsigned long long>(
-                  copy_after_reset != nullptr ? copy_after_reset->stable_id : 0));
+              static_cast<unsigned long long>(copy_after_reset != nullptr
+                                                  ? copy_after_reset->stable_id
+                                                  : 0));
   std::printf("}\n");
 
   return 0;
