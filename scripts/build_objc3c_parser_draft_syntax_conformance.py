@@ -43,6 +43,11 @@ REQUIRED_SURFACES = [
     "macro_cache_key",
     "macro_sandbox_policy",
     "property_behavior",
+    "property_attribute_metadata",
+    "property_accessor_metadata",
+    "property_synthesis_metadata",
+    "property_reflection_input",
+    "property_ownership_nullability",
     "interop_attribute",
 ]
 REPLAY_KEY_FIELDS = {
@@ -64,6 +69,11 @@ REPLAY_KEY_FIELDS = {
     "macro_cache_key": "macro_cache_keys",
     "macro_sandbox_policy": "macro_sandbox_policies",
     "property_behavior": "property_behaviors",
+    "property_attribute_metadata": "property_attrs",
+    "property_accessor_metadata": "property_accessor_selectors",
+    "property_synthesis_metadata": "property_synthesis_metadata",
+    "property_reflection_input": "property_reflection_inputs",
+    "property_ownership_nullability": "property_ownership_nullability",
     "interop_attribute": "interop_attrs",
 }
 HEADER_RE = re.compile(r"(?mi)^\s*//\s*Expected diagnostic code\(s\):\s*(.+?)\s*$")

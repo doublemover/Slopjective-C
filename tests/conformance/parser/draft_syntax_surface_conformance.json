@@ -167,6 +167,54 @@
       "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
     },
     {
+      "id": "property_attribute_metadata",
+      "summary_field": "property_attribute_sites",
+      "positive_tokens": [
+        "@property (retain, nullable, direct, behavior=Observed",
+        "@property (unsafe_unretained, null_resettable, class, behavior=Observed"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+      "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
+    },
+    {
+      "id": "property_accessor_metadata",
+      "summary_field": "property_accessor_selector_sites",
+      "positive_tokens": ["getter=currentValue", "setter=setCurrentValue:"],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+      "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
+    },
+    {
+      "id": "property_synthesis_metadata",
+      "summary_field": "property_synthesis_metadata_sites",
+      "positive_tokens": [
+        "@implementation SyntaxBox",
+        "@property (retain, nullable, direct, behavior=Observed"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+      "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
+    },
+    {
+      "id": "property_reflection_input",
+      "summary_field": "property_reflection_input_sites",
+      "positive_tokens": [
+        "behavior=Observed",
+        "getter=currentValue",
+        "setter=setCurrentValue:"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+      "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
+    },
+    {
+      "id": "property_ownership_nullability",
+      "summary_field": "property_ownership_nullability_sites",
+      "positive_tokens": [
+        "retain, nullable",
+        "unsafe_unretained, null_resettable"
+      ],
+      "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+      "expected_diagnostic": {"code": "O3P355", "line": 5, "column": 20}
+    },
+    {
       "id": "interop_attribute",
       "summary_field": "interop_attribute_sites",
       "positive_tokens": [

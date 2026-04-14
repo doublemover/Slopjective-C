@@ -37,6 +37,11 @@
 - `macro_cache_key`: `PASS`; replay `macro_cache_keys`=`1`; negative fixtures=`1`
 - `macro_sandbox_policy`: `PASS`; replay `macro_sandbox_policies`=`1`; negative fixtures=`1`
 - `property_behavior`: `PASS`; replay `property_behaviors`=`4`; negative fixtures=`1`
+- `property_attribute_metadata`: `PASS`; replay `property_attrs`=`20`; negative fixtures=`1`
+- `property_accessor_metadata`: `PASS`; replay `property_accessor_selectors`=`4`; negative fixtures=`1`
+- `property_synthesis_metadata`: `PASS`; replay `property_synthesis_metadata`=`4`; negative fixtures=`1`
+- `property_reflection_input`: `PASS`; replay `property_reflection_inputs`=`16`; negative fixtures=`1`
+- `property_ownership_nullability`: `PASS`; replay `property_ownership_nullability`=`8`; negative fixtures=`1`
 - `interop_attribute`: `PASS`; replay `interop_attrs`=`2`; negative fixtures=`6`
 
 ## Validation Commands

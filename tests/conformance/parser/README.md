@@ -85,8 +85,9 @@ behavior/interop syntax admission and deterministic replay accounting:
   accepts one aggregate public-workflow fixture spanning a bound block literal,
   `throws`/`try`/`throw`/`do catch`, async/await executor annotations,
   contextual `actor class`, macro package/provenance/cache/sandbox attributes,
-  `behavior=...` properties, foreign/header interop annotations, bridged error
-  payload metadata, and nested cleanup markers under a do/catch surface.
+  `behavior=...` properties, property accessor/synthesis/reflection metadata,
+  foreign/header interop annotations, bridged error payload metadata, and nested
+  cleanup markers under a do/catch surface.
 - `tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_macro_payload.objc3`:
   rejects malformed macro payload syntax with `O3P341` so macro admission stays
   fail-closed and source-range stable.

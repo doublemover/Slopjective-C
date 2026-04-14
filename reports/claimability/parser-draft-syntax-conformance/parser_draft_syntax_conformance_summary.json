@@ -24,10 +24,10 @@
     "diagnostic_code_fingerprint": 1469598103934665603,
     "diagnostic_code_surface_deterministic": true,
     "diagnostics": 0,
-    "draft_syntax_surface_count": 68,
+    "draft_syntax_surface_count": 120,
     "draft_syntax_surface_deterministic": true,
-    "draft_syntax_surface_fingerprint": 2966573257866671323,
-    "draft_syntax_surface_handoff_key": "draft-syntax-surfaces:v1;blocks=1;block_capture_lists=1;block_byref_explicit=1;block_byref_captures=1;block_heap_candidates=1;try=2;throw=1;do_catch=1;error_catch_clauses=2;error_catch_bindings=1;error_catch_all=1;error_bridge_payloads=3;error_foreign_boundaries=1;error_nested_cleanup_markers=1;throws_callables=2;async_callables=7;await=5;actors=1;actor_nonisolated=2;actor_isolation_markers=2;actor_sendable_markers=1;task_runtime=9;task_cancellation_checks=4;task_suspension_points=1;macro_attrs=1;macro_packages=1;macro_provenance=1;macro_cache_keys=1;macro_sandbox_policies=1;property_behaviors=4;interop_attrs=2;interop_export_headers=1;interop_abi_align=1;interop_foreign_type=1;interop_mixed_images=1;interop_package_entries=1;total=68",
+    "draft_syntax_surface_fingerprint": 5520772219700700893,
+    "draft_syntax_surface_handoff_key": "draft-syntax-surfaces:v1;blocks=1;block_capture_lists=1;block_byref_explicit=1;block_byref_captures=1;block_heap_candidates=1;try=2;throw=1;do_catch=1;error_catch_clauses=2;error_catch_bindings=1;error_catch_all=1;error_bridge_payloads=3;error_foreign_boundaries=1;error_nested_cleanup_markers=1;throws_callables=2;async_callables=7;await=5;actors=1;actor_nonisolated=2;actor_isolation_markers=2;actor_sendable_markers=1;task_runtime=9;task_cancellation_checks=4;task_suspension_points=1;macro_attrs=1;macro_packages=1;macro_provenance=1;macro_cache_keys=1;macro_sandbox_policies=1;property_behaviors=4;property_attrs=20;property_accessor_selectors=4;property_synthesis_metadata=4;property_reflection_inputs=16;property_ownership_nullability=8;interop_attrs=2;interop_export_headers=1;interop_abi_align=1;interop_foreign_type=1;interop_mixed_images=1;interop_package_entries=1;total=120",
     "function_prototypes": 11,
     "function_pure": 1,
     "functions": 20,
@@ -43,8 +43,8 @@
     "long_tail_grammar_constructs": 22,
     "long_tail_grammar_covered_constructs": 18,
     "long_tail_grammar_deterministic": true,
-    "long_tail_grammar_fingerprint": 15946097123073253549,
-    "long_tail_grammar_handoff_key": "long-tail-grammar:v1:constructs=22;covered=18;fingerprint=15946097123073253549;ast_shape_fingerprint=12155225009022223941;ast_top_level_layout_fingerprint=8979603601756800304;parser_diagnostics=0;deterministic=true",
+    "long_tail_grammar_fingerprint": 5838862454118121473,
+    "long_tail_grammar_handoff_key": "long-tail-grammar:v1:constructs=22;covered=18;fingerprint=5838862454118121473;ast_shape_fingerprint=17252136015463569967;ast_top_level_layout_fingerprint=8979603601756800304;parser_diagnostics=0;deterministic=true",
     "protocol_methods": 0,
     "protocol_properties": 0,
     "protocols": 0,
@@ -82,13 +82,18 @@
     "macro_packages": 1,
     "macro_provenance": 1,
     "macro_sandbox_policies": 1,
+    "property_accessor_selectors": 4,
+    "property_attrs": 20,
     "property_behaviors": 4,
+    "property_ownership_nullability": 8,
+    "property_reflection_inputs": 16,
+    "property_synthesis_metadata": 4,
     "task_cancellation_checks": 4,
     "task_runtime": 9,
     "task_suspension_points": 1,
     "throw": 1,
     "throws_callables": 2,
-    "total": 68,
+    "total": 120,
     "try": 2
   },
   "source_truth_paths": [
@@ -870,6 +875,227 @@
       "replay_key_field": "property_behaviors",
       "status": "PASS",
       "summary_field": "property_behavior_sites"
+    },
+    {
+      "id": "property_attribute_metadata",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P355",
+            "column": 20,
+            "line": 5
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+          "header_codes": [
+            "O3P355"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P355",
+              "column": 20,
+              "line": 5,
+              "message": "Objective-C @property behavior requires '=Name' payload"
+            },
+            {
+              "code": "O3S260",
+              "column": 1,
+              "line": 4,
+              "message": "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'BadBehavior' is missing a matching @implementation"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "@property (retain, nullable, direct, behavior=Observed": true,
+        "@property (unsafe_unretained, null_resettable, class, behavior=Observed": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 20,
+      "replay_key_field": "property_attrs",
+      "status": "PASS",
+      "summary_field": "property_attribute_sites"
+    },
+    {
+      "id": "property_accessor_metadata",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P355",
+            "column": 20,
+            "line": 5
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+          "header_codes": [
+            "O3P355"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P355",
+              "column": 20,
+              "line": 5,
+              "message": "Objective-C @property behavior requires '=Name' payload"
+            },
+            {
+              "code": "O3S260",
+              "column": 1,
+              "line": 4,
+              "message": "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'BadBehavior' is missing a matching @implementation"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "getter=currentValue": true,
+        "setter=setCurrentValue:": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 4,
+      "replay_key_field": "property_accessor_selectors",
+      "status": "PASS",
+      "summary_field": "property_accessor_selector_sites"
+    },
+    {
+      "id": "property_synthesis_metadata",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P355",
+            "column": 20,
+            "line": 5
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+          "header_codes": [
+            "O3P355"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P355",
+              "column": 20,
+              "line": 5,
+              "message": "Objective-C @property behavior requires '=Name' payload"
+            },
+            {
+              "code": "O3S260",
+              "column": 1,
+              "line": 4,
+              "message": "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'BadBehavior' is missing a matching @implementation"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "@implementation SyntaxBox": true,
+        "@property (retain, nullable, direct, behavior=Observed": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 4,
+      "replay_key_field": "property_synthesis_metadata",
+      "status": "PASS",
+      "summary_field": "property_synthesis_metadata_sites"
+    },
+    {
+      "id": "property_reflection_input",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P355",
+            "column": 20,
+            "line": 5
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+          "header_codes": [
+            "O3P355"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P355",
+              "column": 20,
+              "line": 5,
+              "message": "Objective-C @property behavior requires '=Name' payload"
+            },
+            {
+              "code": "O3S260",
+              "column": 1,
+              "line": 4,
+              "message": "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'BadBehavior' is missing a matching @implementation"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "behavior=Observed": true,
+        "getter=currentValue": true,
+        "setter=setCurrentValue:": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 16,
+      "replay_key_field": "property_reflection_inputs",
+      "status": "PASS",
+      "summary_field": "property_reflection_input_sites"
+    },
+    {
+      "id": "property_ownership_nullability",
+      "negative_results": [
+        {
+          "compiled_fail_closed": true,
+          "exit_code": 1,
+          "expected": {
+            "code": "O3P355",
+            "column": 20,
+            "line": 5
+          },
+          "expected_location_observed": true,
+          "fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_property_behavior_missing_value.objc3",
+          "header_codes": [
+            "O3P355"
+          ],
+          "header_matches_expected_code": true,
+          "observed_diagnostics": [
+            {
+              "code": "O3P355",
+              "column": 20,
+              "line": 5,
+              "message": "Objective-C @property behavior requires '=Name' payload"
+            },
+            {
+              "code": "O3S260",
+              "column": 1,
+              "line": 4,
+              "message": "runtime metadata export blocked: incomplete runtime metadata declarations are not exportable: interface 'BadBehavior' is missing a matching @implementation"
+            }
+          ]
+        }
+      ],
+      "positive_manifest_count_present": true,
+      "positive_tokens": {
+        "retain, nullable": true,
+        "unsafe_unretained, null_resettable": true
+      },
+      "positive_tokens_present": true,
+      "replay_key_count": 8,
+      "replay_key_field": "property_ownership_nullability",
+      "status": "PASS",
+      "summary_field": "property_ownership_nullability_sites"
     },
     {
       "id": "interop_attribute",

@@ -2199,6 +2199,11 @@ struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t macro_cache_key_sites = 0;
   std::size_t macro_sandbox_policy_sites = 0;
   std::size_t property_behavior_sites = 0;
+  std::size_t property_attribute_sites = 0;
+  std::size_t property_accessor_selector_sites = 0;
+  std::size_t property_synthesis_metadata_sites = 0;
+  std::size_t property_reflection_input_sites = 0;
+  std::size_t property_ownership_nullability_sites = 0;
   std::size_t interop_attribute_sites = 0;
   std::size_t interop_header_export_sites = 0;
   std::size_t interop_abi_alignment_sites = 0;
