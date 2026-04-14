@@ -1,0 +1,18 @@
+// Expected diagnostic code(s): O3S216.
+module NegativeTypeSemanticTypedObjectReceiverUnknownMessage;
+
+@interface Widget
+- (id) title;
+@end
+
+@implementation Widget
+- (id) title {
+  return nil;
+}
+@end
+
+fn consume(widget: Widget *?) -> i32 {
+  let ok = [widget? title];
+  let missing = [widget? missingTitle];
+  return 0;
+}

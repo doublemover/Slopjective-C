@@ -49,6 +49,7 @@
     "semantic_manifest_indexes_typ_8013_05": true,
     "semantic_manifest_indexes_typ_8013_06": true,
     "semantic_manifest_indexes_typ_8013_07": true,
+    "semantic_manifest_indexes_typ_8013_08": true,
     "semantic_readme_mentions_issue_8013": true,
     "semantic_readme_mentions_negative_fixture": true,
     "semantic_readme_mentions_nullability_negative_fixture": true,
@@ -56,11 +57,17 @@
     "semantic_readme_mentions_protocol_method_nullability_negative_fixture": true,
     "semantic_readme_mentions_protocol_property_nullability_negative_fixture": true,
     "semantic_readme_mentions_protocol_qualified_unknown_message_negative_fixture": true,
+    "semantic_readme_mentions_typed_object_receiver_unknown_message_negative_fixture": true,
     "semantic_readme_mentions_unknown_protocol_composition_negative_fixture": true,
     "static_artifact_json_fields_present": true,
     "static_sema_contract_fields_present": true,
     "static_semantic_pass_sources_present": true,
     "stress_manifest_compiles_positive_fixture": true,
+    "typed_object_receiver_unknown_message_diagnostic_observed": true,
+    "typed_object_receiver_unknown_message_negative_conformance_expects_o3s216_location": true,
+    "typed_object_receiver_unknown_message_negative_conformance_references_fixture": true,
+    "typed_object_receiver_unknown_message_negative_diagnostics_json_emitted": true,
+    "typed_object_receiver_unknown_message_negative_fixture_fails_closed": true,
     "unknown_protocol_composition_diagnostic_observed": true,
     "unknown_protocol_composition_negative_conformance_expects_o3s206_location": true,
     "unknown_protocol_composition_negative_conformance_references_fixture": true,
@@ -284,6 +291,7 @@
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_property_nullability_conflict.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3",
     "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
     "tests/conformance/semantic/TYP-8013-01.json",
     "tests/conformance/semantic/TYP-8013-02.json",
     "tests/conformance/semantic/TYP-8013-03.json",
@@ -291,6 +299,7 @@
     "tests/conformance/semantic/TYP-8013-05.json",
     "tests/conformance/semantic/TYP-8013-06.json",
     "tests/conformance/semantic/TYP-8013-07.json",
+    "tests/conformance/semantic/TYP-8013-08.json",
     "tests/conformance/semantic/manifest.json",
     "tests/conformance/semantic/README.md",
     "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
@@ -348,6 +357,7 @@
       "IsUnsafeNullableToNonnullFlow": true,
       "MakeSemanticTypeFromPropertyInfo": true,
       "ResolveProtocolQualifiedMessageRequirement": true,
+      "SupportsPointerParamTypeDeclarator": true,
       "ValidateProtocolCompositionIdentifierBindings": true,
       "bindings=": true,
       "canonical-generics=": true,
@@ -385,6 +395,7 @@
       "nullability_suffix_semantic_sites": true,
       "object-pointers=": true,
       "object_pointer_semantic_sites": true,
+      "object_pointer_type_name": true,
       "optional-sends=": true,
       "optional_methods_by_key": true,
       "param_canonical_types": true,
@@ -447,6 +458,27 @@
     "typed_keypath_root_legality_violation_sites": 0,
     "typed_keypath_self_root_sites": 0
   },
+  "typed_object_receiver_unknown_message_negative_compile": {
+    "diagnostics": [
+      {
+        "code": "O3S216",
+        "column": 18,
+        "line": 16,
+        "message": "selector resolution failed: typed receiver 'Widget' does not provide selector 'missingTitle'",
+        "raw": "error:16:18: selector resolution failed: typed receiver 'Widget' does not provide selector 'missingTitle' [O3S216]",
+        "severity": "error"
+      }
+    ],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-typed-object-receiver-unknown-message/module.diagnostics.json",
+    "exit_code": 1,
+    "llvm_ir_path": null,
+    "manifest_path": null,
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-typed-object-receiver-unknown-message",
+    "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "typed_object_receiver_unknown_message_negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
   "unknown_protocol_composition_negative_compile": {
     "diagnostics": [
       {

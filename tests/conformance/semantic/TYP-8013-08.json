@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-08",
+  "title": "Reject undeclared selectors on typed object-pointer receivers",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "references": [
+    "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "// Expected diagnostic code(s): O3S216.\nmodule NegativeTypeSemanticTypedObjectReceiverUnknownMessage;\n\n@interface Widget\n- (id) title;\n@end\n\n@implementation Widget\n- (id) title {\n  return nil;\n}\n@end\n\nfn consume(widget: Widget *?) -> i32 {\n  let ok = [widget? title];\n  let missing = [widget? missingTitle];\n  return 0;\n}\n",
+  "expect": {
+    "parse": "reject",
+    "diagnostics": [
+      {
+        "code": "O3S216",
+        "line": 16,
+        "column": 18
+      }
+    ]
+  }
+}

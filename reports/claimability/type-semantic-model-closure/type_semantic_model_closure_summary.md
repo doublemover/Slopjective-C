@@ -10,6 +10,7 @@
 - Protocol property nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_property_nullability_conflict.objc3`
 - Unknown protocol composition negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3`
 - Protocol-qualified unknown message negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3`
+- Typed object receiver unknown message negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3`
 
 ## Checks
 - `positive_fixture_compiles`: `PASS`
@@ -44,6 +45,9 @@
 - `protocol_qualified_unknown_message_negative_fixture_fails_closed`: `PASS`
 - `protocol_qualified_unknown_message_negative_diagnostics_json_emitted`: `PASS`
 - `protocol_qualified_unknown_message_diagnostic_observed`: `PASS`
+- `typed_object_receiver_unknown_message_negative_fixture_fails_closed`: `PASS`
+- `typed_object_receiver_unknown_message_negative_diagnostics_json_emitted`: `PASS`
+- `typed_object_receiver_unknown_message_diagnostic_observed`: `PASS`
 - `semantic_manifest_indexes_typ_8013_01`: `PASS`
 - `semantic_manifest_indexes_typ_8013_02`: `PASS`
 - `semantic_manifest_indexes_typ_8013_03`: `PASS`
@@ -51,6 +55,7 @@
 - `semantic_manifest_indexes_typ_8013_05`: `PASS`
 - `semantic_manifest_indexes_typ_8013_06`: `PASS`
 - `semantic_manifest_indexes_typ_8013_07`: `PASS`
+- `semantic_manifest_indexes_typ_8013_08`: `PASS`
 - `semantic_readme_mentions_issue_8013`: `PASS`
 - `semantic_readme_mentions_positive_fixture`: `PASS`
 - `semantic_readme_mentions_negative_fixture`: `PASS`
@@ -59,6 +64,7 @@
 - `semantic_readme_mentions_protocol_property_nullability_negative_fixture`: `PASS`
 - `semantic_readme_mentions_unknown_protocol_composition_negative_fixture`: `PASS`
 - `semantic_readme_mentions_protocol_qualified_unknown_message_negative_fixture`: `PASS`
+- `semantic_readme_mentions_typed_object_receiver_unknown_message_negative_fixture`: `PASS`
 - `positive_conformance_references_fixture`: `PASS`
 - `negative_conformance_references_fixture`: `PASS`
 - `nullability_negative_conformance_references_fixture`: `PASS`
@@ -66,12 +72,14 @@
 - `protocol_property_nullability_negative_conformance_references_fixture`: `PASS`
 - `unknown_protocol_composition_negative_conformance_references_fixture`: `PASS`
 - `protocol_qualified_unknown_message_negative_conformance_references_fixture`: `PASS`
+- `typed_object_receiver_unknown_message_negative_conformance_references_fixture`: `PASS`
 - `negative_conformance_expects_o3s206_location`: `PASS`
 - `nullability_negative_conformance_expects_o3s227_location`: `PASS`
 - `protocol_method_nullability_negative_conformance_expects_o3s218_location`: `PASS`
 - `protocol_property_nullability_negative_conformance_expects_o3s218_location`: `PASS`
 - `unknown_protocol_composition_negative_conformance_expects_o3s206_location`: `PASS`
 - `protocol_qualified_unknown_message_negative_conformance_expects_o3s216_location`: `PASS`
+- `typed_object_receiver_unknown_message_negative_conformance_expects_o3s216_location`: `PASS`
 - `stress_manifest_compiles_positive_fixture`: `PASS`
 - `no_tmp_source_truth`: `PASS`
 - `static_sema_contract_fields_present`: `PASS`

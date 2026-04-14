@@ -56,6 +56,7 @@ struct SemanticTypeInfo {
   SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
   bool has_nullability_suffix = false;
   bool is_refined_nonnull_reference = false;
+  std::string object_pointer_type_name;
 };
 
 using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
@@ -143,6 +144,9 @@ static SemanticTypeInfo MakeSemanticTypeFromParam(const FuncParam &param) {
   }
   SemanticTypeInfo info = MakeScalarSemanticType(param.type);
   info.canonical_type = BuildCanonicalSemanticTypeFromParam(param);
+  if (param.object_pointer_type_spelling) {
+    info.object_pointer_type_name = param.object_pointer_type_name;
+  }
   if (IsObjCReferenceAliasValueType(param.type)) {
     if (param.ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -162,6 +166,9 @@ static SemanticTypeInfo MakeSemanticTypeFromFunctionReturn(const FunctionDecl &f
   }
   SemanticTypeInfo info = MakeScalarSemanticType(fn.return_type);
   info.canonical_type = BuildCanonicalSemanticTypeFromFunctionReturn(fn);
+  if (fn.return_object_pointer_type_spelling) {
+    info.object_pointer_type_name = fn.return_object_pointer_type_name;
+  }
   if (IsObjCReferenceAliasValueType(fn.return_type)) {
     if (fn.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -181,6 +188,9 @@ static SemanticTypeInfo MakeSemanticTypeFromMethodReturn(const Objc3MethodDecl &
   }
   SemanticTypeInfo info = MakeScalarSemanticType(method.return_type);
   info.canonical_type = BuildCanonicalSemanticTypeFromMethodReturn(method);
+  if (method.return_object_pointer_type_spelling) {
+    info.object_pointer_type_name = method.return_object_pointer_type_name;
+  }
   if (IsObjCReferenceAliasValueType(method.return_type)) {
     if (method.return_ownership_is_weak_reference) {
       info.ownership_kind = SemanticOwnershipKind::Weak;
@@ -3999,6 +4009,11 @@ static bool TryResolveTypedKeyPathValidatedOwner(
 static Objc3ResolvedMessageSendMethod ResolveConcreteMessageSendMethod(
     const Expr &expr,
     const Objc3MessageSendResolutionContext &context);
+static Objc3ResolvedMessageSendMethod ResolveConcreteOwnerMethod(
+    const Objc3SemanticIntegrationSurface &surface,
+    const std::string &owner_name,
+    const std::string &selector,
+    bool is_class_method);
 static Expr::DispatchSurfaceKind ResolveNormalizedMessageSendDispatchSurfaceKind(
     const Expr &expr,
     const Objc3MessageSendResolutionContext &context);
@@ -4521,11 +4536,13 @@ static SemanticTypeInfo ScopeLookupType(const std::vector<SemanticScope> &scopes
 }
 
 static bool SupportsGenericParamTypeSuffix(const FuncParam &param) {
-  return param.id_spelling || param.class_spelling || param.instancetype_spelling;
+  return param.id_spelling || param.class_spelling ||
+         param.instancetype_spelling || param.object_pointer_type_spelling;
 }
 
 static bool SupportsNullabilityParamTypeSuffix(const FuncParam &param) {
-  return param.id_spelling || param.class_spelling || param.instancetype_spelling;
+  return param.id_spelling || param.class_spelling ||
+         param.instancetype_spelling || param.object_pointer_type_spelling;
 }
 
 static bool SupportsOwnershipQualifierParamTypeSuffix(const FuncParam &param) {
@@ -4537,29 +4554,29 @@ static bool SupportsPointerParamTypeDeclarator(const FuncParam &param) {
   if (param.id_spelling || param.class_spelling || param.instancetype_spelling) {
     return true;
   }
-  if (!param.object_pointer_type_spelling) {
-    return false;
-  }
-  std::string lowered_name = param.object_pointer_type_name;
-  std::transform(lowered_name.begin(), lowered_name.end(), lowered_name.begin(),
-                 [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
-  return lowered_name == "nserror";
+  return param.object_pointer_type_spelling;
 }
 
 static bool SupportsGenericReturnTypeSuffix(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
+  return fn.return_id_spelling || fn.return_class_spelling ||
+         fn.return_instancetype_spelling || fn.return_object_pointer_type_spelling;
 }
 
 static bool SupportsGenericReturnTypeSuffix(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
+  return method.return_id_spelling || method.return_class_spelling ||
+         method.return_instancetype_spelling ||
+         method.return_object_pointer_type_spelling;
 }
 
 static bool SupportsNullabilityReturnTypeSuffix(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
+  return fn.return_id_spelling || fn.return_class_spelling ||
+         fn.return_instancetype_spelling || fn.return_object_pointer_type_spelling;
 }
 
 static bool SupportsNullabilityReturnTypeSuffix(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
+  return method.return_id_spelling || method.return_class_spelling ||
+         method.return_instancetype_spelling ||
+         method.return_object_pointer_type_spelling;
 }
 
 static bool SupportsOwnershipQualifierReturnTypeSuffix(const FunctionDecl &fn) {
@@ -4573,19 +4590,24 @@ static bool SupportsOwnershipQualifierReturnTypeSuffix(const Objc3MethodDecl &me
 }
 
 static bool SupportsPointerReturnTypeDeclarator(const FunctionDecl &fn) {
-  return fn.return_id_spelling || fn.return_class_spelling || fn.return_instancetype_spelling;
+  return fn.return_id_spelling || fn.return_class_spelling ||
+         fn.return_instancetype_spelling || fn.return_object_pointer_type_spelling;
 }
 
 static bool SupportsPointerReturnTypeDeclarator(const Objc3MethodDecl &method) {
-  return method.return_id_spelling || method.return_class_spelling || method.return_instancetype_spelling;
+  return method.return_id_spelling || method.return_class_spelling ||
+         method.return_instancetype_spelling ||
+         method.return_object_pointer_type_spelling;
 }
 
 static bool SupportsGenericPropertyTypeSuffix(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+  return property.id_spelling || property.class_spelling ||
+         property.instancetype_spelling || property.object_pointer_type_spelling;
 }
 
 static bool SupportsNullabilityPropertyTypeSuffix(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+  return property.id_spelling || property.class_spelling ||
+         property.instancetype_spelling || property.object_pointer_type_spelling;
 }
 
 static bool SupportsOwnershipQualifierPropertyTypeSuffix(const Objc3PropertyDecl &property) {
@@ -4594,7 +4616,8 @@ static bool SupportsOwnershipQualifierPropertyTypeSuffix(const Objc3PropertyDecl
 }
 
 static bool SupportsPointerPropertyTypeDeclarator(const Objc3PropertyDecl &property) {
-  return property.id_spelling || property.class_spelling || property.instancetype_spelling;
+  return property.id_spelling || property.class_spelling ||
+         property.instancetype_spelling || property.object_pointer_type_spelling;
 }
 
 static bool IsObjCReferenceAnnotationSite(bool id_spelling,
@@ -7941,6 +7964,87 @@ static SemanticTypeInfo ValidateMessageSendExpr(const Expr *expr,
       }
     }
     return MakeSemanticTypeFromMethodInfoReturn(method);
+  }
+  if (!receiver_type.object_pointer_type_name.empty() &&
+      message_send_context.surface != nullptr) {
+    const Objc3ResolvedMessageSendMethod typed_receiver_resolution =
+        ResolveConcreteOwnerMethod(*message_send_context.surface,
+                                   receiver_type.object_pointer_type_name,
+                                   selector, false);
+    if (typed_receiver_resolution.status ==
+        Objc3ResolvedMessageSendMethod::Status::MissingConcreteSelector) {
+      const unsigned diag_line =
+          expr->receiver != nullptr ? expr->receiver->line : expr->line;
+      const unsigned diag_column =
+          expr->receiver != nullptr ? expr->receiver->column : expr->column;
+      diagnostics.push_back(MakeDiag(
+          diag_line, diag_column, "O3S216",
+          "selector resolution failed: typed receiver '" +
+              receiver_type.object_pointer_type_name +
+              "' does not provide selector '" + selector + "'"));
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+    if (typed_receiver_resolution.status ==
+        Objc3ResolvedMessageSendMethod::Status::AmbiguousConcreteSelector) {
+      const unsigned diag_line =
+          expr->receiver != nullptr ? expr->receiver->line : expr->line;
+      const unsigned diag_column =
+          expr->receiver != nullptr ? expr->receiver->column : expr->column;
+      const std::string detail =
+          typed_receiver_resolution.cycle_detected
+              ? "super-chain cycle detected during selector resolution"
+              : (typed_receiver_resolution.missing_base
+                     ? "super-chain lookup requires a missing base interface"
+                     : "incompatible declarations produce no unique concrete target");
+      diagnostics.push_back(MakeDiag(
+          diag_line, diag_column, "O3S217",
+          "selector resolution is ambiguous for typed receiver '" +
+              receiver_type.object_pointer_type_name + "' and selector '" +
+              selector + "': " + detail));
+      return MakeScalarSemanticType(ValueType::Unknown);
+    }
+    if (typed_receiver_resolution.status ==
+            Objc3ResolvedMessageSendMethod::Status::Resolved &&
+        typed_receiver_resolution.method != nullptr) {
+      const Objc3MethodInfo &method = *typed_receiver_resolution.method;
+      if (expr->args.size() != method.arity) {
+        diagnostics.push_back(MakeDiag(
+            expr->line, expr->column, "O3S216",
+            "selector resolution failed: selector '" + selector +
+                "' resolves to arity " + std::to_string(method.arity) +
+                " for typed receiver '" +
+                receiver_type.object_pointer_type_name + "'"));
+        return MakeScalarSemanticType(ValueType::Unknown);
+      }
+      for (std::size_t i = 0; i < expr->args.size(); ++i) {
+        const SemanticTypeInfo arg_type = ValidateExpr(
+            expr->args[i].get(), scopes, globals, functions, diagnostics,
+            max_message_send_args, message_send_context);
+        const SemanticTypeInfo expected =
+            MakeSemanticTypeFromMethodInfoParam(method, i);
+        const bool bool_coercion =
+            !expected.is_vector && expected.type == ValueType::Bool &&
+            !arg_type.is_vector && arg_type.type == ValueType::I32;
+        const bool i32_alias_coercion =
+            AreScalarI32AliasCompatible(expected, arg_type);
+        const bool objc_reference_coercion =
+            AreObjCReferenceTypesAssignmentCompatible(expected, arg_type);
+        if (!IsUnknownSemanticType(arg_type) &&
+            !IsUnknownSemanticType(expected) &&
+            !IsSameSemanticType(arg_type, expected) && !bool_coercion &&
+            !i32_alias_coercion && !objc_reference_coercion) {
+          diagnostics.push_back(MakeDiag(
+              expr->args[i]->line, expr->args[i]->column, "O3S206",
+              "type mismatch: selector '" + selector +
+                  "' on typed receiver '" +
+                  receiver_type.object_pointer_type_name + "' expects '" +
+                  SemanticTypeName(expected) + "' for argument " +
+                  std::to_string(i) + ", got '" + SemanticTypeName(arg_type) +
+                  "'"));
+        }
+      }
+      return MakeSemanticTypeFromMethodInfoReturn(method);
+    }
   }
   const Objc3ResolvedMessageSendMethod resolution =
       ResolveConcreteMessageSendMethod(*expr, message_send_context);
