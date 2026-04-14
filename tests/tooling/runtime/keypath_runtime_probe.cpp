@@ -1,26 +1,12 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdio>
 
 namespace {
 
-void PrintJsonStringOrNull(const char *value) {
-  if (value == nullptr) {
-    std::printf("null");
-    return;
-  }
-  std::printf("\"");
-  for (const unsigned char *cursor =
-           reinterpret_cast<const unsigned char *>(value);
-       *cursor != 0U; ++cursor) {
-    if (*cursor == '\\' || *cursor == '"') {
-      std::printf("\\%c", *cursor);
-    } else {
-      std::printf("%c", *cursor);
-    }
-  }
-  std::printf("\"");
-}
+using objc3c::runtime::probe::PrintJsonStringOrNull;
+
 
 }  // namespace
 

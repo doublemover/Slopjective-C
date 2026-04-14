@@ -1,64 +1,18 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdio>
 #include <string>
 
 namespace {
 
-std::string CopyJsonString(const char *value) {
-  return value == nullptr ? std::string() : std::string(value);
-}
+using objc3c::runtime::probe::CopyJsonString;
+using objc3c::runtime::probe::NullableCString;
+using objc3c::runtime::probe::PrintIntField;
+using objc3c::runtime::probe::PrintJsonStringOrNull;
+using objc3c::runtime::probe::PrintStringField;
+using objc3c::runtime::probe::PrintUint64Field;
 
-const char *NullableCString(const std::string &value) {
-  return value.empty() ? nullptr : value.c_str();
-}
-
-void PrintJsonStringOrNull(const char *value) {
-  if (value == nullptr) {
-    std::printf("null");
-    return;
-  }
-  std::printf("\"");
-  for (const unsigned char *cursor =
-           reinterpret_cast<const unsigned char *>(value);
-       *cursor != 0U; ++cursor) {
-    switch (*cursor) {
-      case '\\':
-        std::printf("\\\\");
-        break;
-      case '"':
-        std::printf("\\\"");
-        break;
-      case '\n':
-        std::printf("\\n");
-        break;
-      case '\r':
-        std::printf("\\r");
-        break;
-      case '\t':
-        std::printf("\\t");
-        break;
-      default:
-        std::printf("%c", static_cast<char>(*cursor));
-        break;
-    }
-  }
-  std::printf("\"");
-}
-
-void PrintUint64Field(const char *name, unsigned long long value) {
-  std::printf("\"%s\":%llu,", name, value);
-}
-
-void PrintIntField(const char *name, int value) {
-  std::printf("\"%s\":%d,", name, value);
-}
-
-void PrintStringField(const char *name, const char *value) {
-  std::printf("\"%s\":", name);
-  PrintJsonStringOrNull(value);
-  std::printf(",");
-}
 
 }  // namespace
 

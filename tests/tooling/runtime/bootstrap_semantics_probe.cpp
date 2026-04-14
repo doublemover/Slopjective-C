@@ -1,4 +1,5 @@
 #include "runtime/objc3_runtime.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdint>
 #include <cstdlib>
@@ -7,6 +8,8 @@
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::JsonEscape;
 
 bool ParseUInt64(const char *text, std::uint64_t &value) {
   if (text == nullptr || text[0] == '\0') {
@@ -21,35 +24,6 @@ bool ParseUInt64(const char *text, std::uint64_t &value) {
   return true;
 }
 
-std::string JsonEscape(const char *text) {
-  if (text == nullptr) {
-    return "";
-  }
-  std::string out;
-  for (const unsigned char c : std::string(text)) {
-    switch (c) {
-      case '\\':
-        out += "\\\\";
-        break;
-      case '"':
-        out += "\\\"";
-        break;
-      case '\n':
-        out += "\\n";
-        break;
-      case '\r':
-        out += "\\r";
-        break;
-      case '\t':
-        out += "\\t";
-        break;
-      default:
-        out.push_back(static_cast<char>(c));
-        break;
-    }
-  }
-  return out;
-}
 
 struct OwnedSnapshot {
   std::uint64_t registered_image_count = 0;

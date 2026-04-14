@@ -1,10 +1,13 @@
 #include "runtime/objc3_runtime.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <string>
 
 namespace {
+
+using objc3c::runtime::probe::PrintJsonStringOrNull;
 
 constexpr std::int64_t kDispatchModulus = 2147483629LL;
 
@@ -42,38 +45,6 @@ int ExpectedDispatch(int receiver, const char *selector, int a0, int a1, int a2,
   return static_cast<int>(value);
 }
 
-void PrintJsonStringOrNull(const char *value) {
-  if (value == nullptr) {
-    std::printf("null");
-    return;
-  }
-  std::printf("\"");
-  for (const unsigned char *cursor =
-           reinterpret_cast<const unsigned char *>(value);
-       *cursor != 0U; ++cursor) {
-    switch (*cursor) {
-      case '\\':
-        std::printf("\\\\");
-        break;
-      case '"':
-        std::printf("\\\"");
-        break;
-      case '\n':
-        std::printf("\\n");
-        break;
-      case '\r':
-        std::printf("\\r");
-        break;
-      case '\t':
-        std::printf("\\t");
-        break;
-      default:
-        std::printf("%c", static_cast<char>(*cursor));
-        break;
-    }
-  }
-  std::printf("\"");
-}
 
 }  // namespace
 

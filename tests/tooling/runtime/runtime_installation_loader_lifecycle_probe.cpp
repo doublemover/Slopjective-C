@@ -1,5 +1,6 @@
 #include "runtime/objc3_runtime.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdio>
 #include <string>
@@ -38,44 +39,14 @@
 
 namespace {
 
+using objc3c::runtime::probe::PrintJsonStringOrNull;
+
 template <std::size_t EntryCount>
 struct ProbeAggregate {
   std::uint64_t count;
   const void *entries[EntryCount];
 };
 
-void PrintJsonStringOrNull(const char *value) {
-  if (value == nullptr) {
-    std::printf("null");
-    return;
-  }
-  std::printf("\"");
-  for (const unsigned char *cursor =
-           reinterpret_cast<const unsigned char *>(value);
-       *cursor != 0U; ++cursor) {
-    switch (*cursor) {
-      case '\\':
-        std::printf("\\\\");
-        break;
-      case '"':
-        std::printf("\\\"");
-        break;
-      case '\n':
-        std::printf("\\n");
-        break;
-      case '\r':
-        std::printf("\\r");
-        break;
-      case '\t':
-        std::printf("\\t");
-        break;
-      default:
-        std::printf("%c", static_cast<char>(*cursor));
-        break;
-    }
-  }
-  std::printf("\"");
-}
 
 }  // namespace
 

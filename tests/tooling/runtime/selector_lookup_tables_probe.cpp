@@ -1,4 +1,5 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -6,38 +7,8 @@
 
 namespace {
 
-void PrintJsonStringOrNull(const char *value) {
-  if (value == nullptr) {
-    std::printf("null");
-    return;
-  }
-  std::printf("\"");
-  for (const unsigned char *cursor =
-           reinterpret_cast<const unsigned char *>(value);
-       *cursor != 0U; ++cursor) {
-    switch (*cursor) {
-      case '\\':
-        std::printf("\\\\");
-        break;
-      case '"':
-        std::printf("\\\"");
-        break;
-      case '\n':
-        std::printf("\\n");
-        break;
-      case '\r':
-        std::printf("\\r");
-        break;
-      case '\t':
-        std::printf("\\t");
-        break;
-      default:
-        std::printf("%c", static_cast<char>(*cursor));
-        break;
-    }
-  }
-  std::printf("\"");
-}
+using objc3c::runtime::probe::PrintJsonStringOrNull;
+
 
 void StabilizeNullableCString(const char *source, std::string &storage,
                               const char *&field) {

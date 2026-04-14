@@ -1,9 +1,12 @@
 #include "runtime/objc3_runtime.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "support/json_probe_writer.h"
 
 #include <cstdio>
 
 namespace {
+
+using objc3c::runtime::probe::PrintJsonStringOrNull;
 
 struct ProbeCaptureState {
   int base = 0;
@@ -42,36 +45,6 @@ extern "C" void ProbeDispose(void *storage) {
   ++block->capture->dispose_count;
 }
 
-void PrintJsonStringOrNull(const char *value) {
-  if (value == nullptr) {
-    std::printf("null");
-    return;
-  }
-  std::printf("\"");
-  for (const unsigned char *cursor =
-           reinterpret_cast<const unsigned char *>(value);
-       *cursor != '\0'; ++cursor) {
-    switch (*cursor) {
-      case '\\':
-      case '\"':
-        std::printf("\\%c", *cursor);
-        break;
-      case '\n':
-        std::printf("\\n");
-        break;
-      case '\r':
-        std::printf("\\r");
-        break;
-      case '\t':
-        std::printf("\\t");
-        break;
-      default:
-        std::printf("%c", *cursor);
-        break;
-    }
-  }
-  std::printf("\"");
-}
 
 }  // namespace
 

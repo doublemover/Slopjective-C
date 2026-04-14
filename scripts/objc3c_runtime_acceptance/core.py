@@ -5188,6 +5188,8 @@ def compile_probe_with_args(
         "-fms-runtime-lib=dll",
         "-I",
         str(ROOT / "native" / "objc3c" / "src"),
+        "-I",
+        str(ROOT / "tests" / "tooling" / "runtime"),
         *extra_args,
         str(probe),
         *[str(path) for path in extra_objects],
