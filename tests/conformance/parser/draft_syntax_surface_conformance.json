@@ -52,21 +52,35 @@
     {
       "id": "async_callable",
       "summary_field": "async_callable_sites",
-      "positive_tokens": ["async fn runTask()", "- (i32)load async", "- (i32)hop async"],
+      "positive_tokens": [
+        "async fn runTask()",
+        "async fn taskGroupEntry()",
+        "async fn detachedTaskEntry()",
+        "- (i32)load async",
+        "- (i32)hop async"
+      ],
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_duplicate_async.objc3",
       "expected_diagnostic": {"code": "O3P100", "line": 4, "column": 7}
     },
     {
       "id": "await_expression",
       "summary_field": "await_expression_sites",
-      "positive_tokens": ["return await produce();"],
+      "positive_tokens": [
+        "return await produce();",
+        "return await task_group_wait_next();"
+      ],
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_await_missing_operand.objc3",
       "expected_diagnostic": {"code": "O3P103", "line": 5, "column": 15}
     },
     {
       "id": "actor_interface",
       "summary_field": "actor_interface_sites",
-      "positive_tokens": ["actor class SyntaxActor", "@implementation SyntaxActor"],
+      "positive_tokens": [
+        "actor class SyntaxActor",
+        "@implementation SyntaxActor",
+        "objc_nonisolated",
+        "sendable_transfer_marker();"
+      ],
       "negative_fixture": "tests/tooling/fixtures/native/recovery/negative/negative_parser_draft_syntax_actor_missing_name.objc3",
       "expected_diagnostic": {"code": "O3P101", "line": 5, "column": 1}
     },

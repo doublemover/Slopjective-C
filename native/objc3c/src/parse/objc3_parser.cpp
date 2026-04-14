@@ -8945,6 +8945,17 @@ class Objc3Parser {
     if (decl.async_declared) {
       ++summary.async_callable_sites;
     }
+    if (decl.objc_nonisolated_declared) {
+      ++summary.actor_nonisolated_callable_sites;
+    }
+    summary.actor_isolation_marker_sites += decl.actor_isolation_decl_sites;
+    if (decl.objc_nonisolated_declared) {
+      ++summary.actor_isolation_marker_sites;
+    }
+    summary.actor_sendable_annotation_sites += decl.sendable_annotation_sites;
+    summary.task_runtime_construct_sites += decl.runtime_hook_sites;
+    summary.task_cancellation_check_sites += decl.cancellation_check_sites;
+    summary.task_suspension_point_sites += decl.suspension_point_sites;
     if (decl.objc_macro_declared) {
       ++summary.macro_attribute_sites;
     }
@@ -9007,6 +9018,12 @@ class Objc3Parser {
         << ";async_callables=" << summary.async_callable_sites
         << ";await=" << summary.await_expression_sites
         << ";actors=" << summary.actor_interface_sites
+        << ";actor_nonisolated=" << summary.actor_nonisolated_callable_sites
+        << ";actor_isolation_markers=" << summary.actor_isolation_marker_sites
+        << ";actor_sendable_markers=" << summary.actor_sendable_annotation_sites
+        << ";task_runtime=" << summary.task_runtime_construct_sites
+        << ";task_cancellation_checks=" << summary.task_cancellation_check_sites
+        << ";task_suspension_points=" << summary.task_suspension_point_sites
         << ";macro_attrs=" << summary.macro_attribute_sites
         << ";macro_packages=" << summary.macro_package_sites
         << ";macro_provenance=" << summary.macro_provenance_sites
@@ -9060,6 +9077,12 @@ class Objc3Parser {
         summary.throw_statement_sites + summary.do_catch_sites +
         summary.throws_callable_sites + summary.async_callable_sites +
         summary.await_expression_sites + summary.actor_interface_sites +
+        summary.actor_nonisolated_callable_sites +
+        summary.actor_isolation_marker_sites +
+        summary.actor_sendable_annotation_sites +
+        summary.task_runtime_construct_sites +
+        summary.task_cancellation_check_sites +
+        summary.task_suspension_point_sites +
         summary.macro_attribute_sites + summary.macro_package_sites +
         summary.macro_provenance_sites + summary.property_behavior_sites +
         summary.interop_attribute_sites + summary.interop_header_export_sites +
@@ -9071,6 +9094,10 @@ class Objc3Parser {
         summary.draft_syntax_surface_sites >= summary.block_literal_sites &&
         summary.block_explicit_capture_byref_sites <=
             summary.block_byref_capture_sites &&
+        summary.actor_nonisolated_callable_sites <=
+            summary.actor_isolation_marker_sites + summary.actor_interface_sites &&
+        summary.task_cancellation_check_sites <=
+            summary.task_runtime_construct_sites + summary.task_suspension_point_sites &&
         summary.draft_syntax_surface_sites >= summary.interop_attribute_sites;
     return summary;
   }

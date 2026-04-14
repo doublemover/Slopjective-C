@@ -12,6 +12,9 @@
     },
     "ast_fields": {
       "actor_interface_sites": true,
+      "actor_isolation_marker_sites": true,
+      "actor_nonisolated_callable_sites": true,
+      "actor_sendable_annotation_sites": true,
       "async_callable_sites": true,
       "await_expression_sites": true,
       "block_byref_capture_sites": true,
@@ -33,6 +36,9 @@
       "macro_provenance_sites": true,
       "property_behavior_sites": true,
       "struct Objc3DraftSyntaxSurfaceSummary": true,
+      "task_cancellation_check_sites": true,
+      "task_runtime_construct_sites": true,
+      "task_suspension_point_sites": true,
       "throw_statement_sites": true,
       "throws_callable_sites": true,
       "try_expression_sites": true
@@ -51,6 +57,7 @@
       "ParseObjcActorInterfaceDecl": true,
       "ParseOptionalAsyncClause": true,
       "ParseOptionalThrowsClause": true,
+      "actor_sendable_annotation_sites": true,
       "block_explicit_capture_byref_count": true,
       "block_storage_requires_byref_cells": true,
       "objc_abi_align": true,
@@ -60,9 +67,11 @@
       "objc_macro_package": true,
       "objc_macro_provenance": true,
       "objc_mixed_image": true,
+      "objc_nonisolated": true,
       "objc_package_entry": true,
       "objc_status_code": true,
-      "property_behavior_declared": true
+      "property_behavior_declared": true,
+      "task_runtime_construct_sites": true
     },
     "parser_contract": {
       "BuildObjc3DraftSyntaxSurfaceFingerprint": true,
@@ -75,7 +84,9 @@
       "@property (retain, nullable, direct, behavior=Observed": true,
       "@property (unsafe_unretained, null_resettable, class, behavior=Observed": true,
       "actor class SyntaxActor": true,
+      "async fn detachedTaskEntry()": true,
       "async fn runTask()": true,
+      "async fn taskGroupEntry()": true,
       "behavior=Observed": true,
       "catch (NSError* error)": true,
       "do {": true,
@@ -93,12 +104,21 @@
       "objc_macro_package(named(\"std.metaprogramming.trace\"))": true,
       "objc_macro_provenance(named(\"sha256:abc123\"))": true,
       "objc_mixed_image(named(\"ParserKitCore\"))": true,
+      "objc_nonisolated": true,
       "objc_package_entry(named(\"ParserKit.foreignEntry\"))": true,
       "objc_status_code(success: 0, error_type: NSError, mapping: mapStatus)": true,
       "return await produce();": true,
+      "return await task_group_wait_next();": true,
       "return seed + scratch;": true,
       "scratch = scratch + value;": true,
-      "throw 7;": true
+      "sendable_transfer_marker();": true,
+      "task_group_add_task();": true,
+      "task_group_cancel_all();": true,
+      "task_runtime_cancelled_value()": true,
+      "task_runtime_on_cancel();": true,
+      "task_spawn_child();": true,
+      "throw 7;": true,
+      "with_task_group_scope();": true
     },
     "readme": {
       "references_issue": true,

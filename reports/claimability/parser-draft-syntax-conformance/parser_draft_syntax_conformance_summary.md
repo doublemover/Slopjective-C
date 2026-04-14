@@ -24,8 +24,8 @@
 - `throw_statement`: `PASS`; replay `throw`=`1`; negative fixtures=`1`
 - `do_catch`: `PASS`; replay `do_catch`=`1`; negative fixtures=`1`
 - `throws_callable`: `PASS`; replay `throws_callables`=`2`; negative fixtures=`1`
-- `async_callable`: `PASS`; replay `async_callables`=`5`; negative fixtures=`1`
-- `await_expression`: `PASS`; replay `await`=`3`; negative fixtures=`1`
+- `async_callable`: `PASS`; replay `async_callables`=`7`; negative fixtures=`1`
+- `await_expression`: `PASS`; replay `await`=`5`; negative fixtures=`1`
 - `actor_interface`: `PASS`; replay `actors`=`1`; negative fixtures=`1`
 - `macro_attribute`: `PASS`; replay `macro_attrs`=`1`; negative fixtures=`1`
 - `macro_package`: `PASS`; replay `macro_packages`=`1`; negative fixtures=`1`

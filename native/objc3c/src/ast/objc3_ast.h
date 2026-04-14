@@ -2173,6 +2173,12 @@ struct Objc3DraftSyntaxSurfaceSummary {
   std::size_t async_callable_sites = 0;
   std::size_t await_expression_sites = 0;
   std::size_t actor_interface_sites = 0;
+  std::size_t actor_nonisolated_callable_sites = 0;
+  std::size_t actor_isolation_marker_sites = 0;
+  std::size_t actor_sendable_annotation_sites = 0;
+  std::size_t task_runtime_construct_sites = 0;
+  std::size_t task_cancellation_check_sites = 0;
+  std::size_t task_suspension_point_sites = 0;
   std::size_t macro_attribute_sites = 0;
   std::size_t macro_package_sites = 0;
   std::size_t macro_provenance_sites = 0;
