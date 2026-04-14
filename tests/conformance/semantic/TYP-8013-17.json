@@ -1,0 +1,22 @@
+{
+  "id": "TYP-8013-17",
+  "title": "Preserve generic contracts through runtime import surfaces",
+  "feature": "Objective-C 3.0 typed semantic model closure",
+  "bucket": "semantic",
+  "profile": "strict",
+  "issue": 8013,
+  "references": [
+    "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
+    "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
+    "reports/claimability/type-semantic-model-closure/type_semantic_model_closure_summary.json"
+  ],
+  "source": "provider: tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3\nconsumer: tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3\nconsumer flags: --objc3-import-runtime-surface <provider>/module.runtime-import-surface.json --objc3-bootstrap-registration-order-ordinal 2",
+  "expect": {
+    "parse": "accept",
+    "diagnostics": [],
+    "runtime_import_surface": "objc_type_system_generic_contract_preservation",
+    "manifest_surface": "frontend.pipeline.semantic_surface.objc_imported_runtime_metadata_semantic_rules.imported_type_system_generic_contract_module_count"
+  }
+}

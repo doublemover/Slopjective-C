@@ -13,6 +13,7 @@ struct Objc3ImportedRuntimeModuleSurface {
   std::vector<std::string> reused_module_names_lexicographic;
   bool uses_serialized_runtime_metadata_payload = false;
   bool type_system_optional_keypath_lowering_contract_present = false;
+  bool type_system_generic_contract_preservation_present = false;
   bool error_handling_result_and_bridging_artifact_replay_present = false;
   bool concurrency_actor_mailbox_runtime_import_present = false;
   bool interop_foreign_surface_interface_preservation_present = false;
@@ -31,6 +32,15 @@ struct Objc3ImportedRuntimeModuleSurface {
   bool type_system_typed_keypath_runtime_execution_helper_landed = false;
   std::string type_system_optional_keypath_lowering_replay_key;
   std::string type_system_optional_keypath_runtime_helper_replay_key;
+  bool type_system_generic_contract_ready = false;
+  bool type_system_generic_contract_deterministic = false;
+  std::size_t type_system_generic_interface_count = 0;
+  std::size_t type_system_generic_parameter_count = 0;
+  std::size_t type_system_generic_variance_annotation_count = 0;
+  std::size_t type_system_generic_argument_reference_count = 0;
+  std::size_t type_system_protocol_qualified_generic_argument_count = 0;
+  std::string type_system_generic_contract_replay_key;
+  std::string type_system_generic_type_semantic_replay_key;
   bool error_handling_binary_artifact_replay_ready = false;
   bool error_handling_runtime_import_artifact_ready = false;
   bool error_handling_separate_compilation_replay_ready = false;

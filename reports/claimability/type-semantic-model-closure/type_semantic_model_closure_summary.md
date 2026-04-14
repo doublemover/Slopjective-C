@@ -7,6 +7,8 @@
 - Nested generic positive fixture: `tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3`
 - Generic variance positive fixture: `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3`
 - Protocol generic positive fixture: `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3`
+- Cross-module generic provider fixture: `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3`
+- Cross-module generic consumer fixture: `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3`
 - Negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`
 - Nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3`
 - Protocol method nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3`
@@ -62,6 +64,20 @@
 - `protocol_generic_argument_metadata_preserves_concrete_argument`: `PASS`
 - `protocol_generic_argument_replay_key_preserves_id_protocol`: `PASS`
 - `protocol_generic_covariant_value_adopts_constraint_protocol`: `PASS`
+- `cross_module_provider_fixture_compiles`: `PASS`
+- `cross_module_provider_runtime_import_surface_emitted`: `PASS`
+- `cross_module_provider_generic_contract_preservation_emitted`: `PASS`
+- `cross_module_provider_generic_contract_ready`: `PASS`
+- `cross_module_provider_generic_contract_preserves_interface_count`: `PASS`
+- `cross_module_provider_generic_contract_preserves_parameter_variance`: `PASS`
+- `cross_module_provider_generic_contract_preserves_protocol_qualified_argument`: `PASS`
+- `cross_module_provider_generic_contract_preserves_interface_payload`: `PASS`
+- `cross_module_consumer_imports_generic_contract_surface`: `PASS`
+- `cross_module_consumer_imported_generic_counts_match_provider`: `PASS`
+- `cross_module_consumer_type_surface_landed`: `PASS`
+- `cross_module_consumer_replay_key_covers_imported_generic_contract`: `PASS`
+- `cross_module_generic_contract_drift_fails_closed`: `PASS`
+- `cross_module_generic_contract_drift_reports_variance_loss`: `PASS`
 - `negative_fixture_fails_closed`: `PASS`
 - `negative_diagnostics_json_emitted`: `PASS`
 - `negative_duplicate_protocol_diagnostic_observed`: `PASS`
@@ -114,6 +130,7 @@
 - `semantic_manifest_indexes_typ_8013_14`: `PASS`
 - `semantic_manifest_indexes_typ_8013_15`: `PASS`
 - `semantic_manifest_indexes_typ_8013_16`: `PASS`
+- `semantic_manifest_indexes_typ_8013_17`: `PASS`
 - `semantic_readme_mentions_issue_8013`: `PASS`
 - `semantic_readme_mentions_positive_fixture`: `PASS`
 - `semantic_readme_mentions_nested_generic_positive_fixture`: `PASS`
@@ -135,6 +152,9 @@
 - `nested_generic_positive_conformance_references_fixture`: `PASS`
 - `generic_variance_positive_conformance_references_fixture`: `PASS`
 - `protocol_generic_positive_conformance_references_fixture`: `PASS`
+- `cross_module_generic_positive_conformance_references_provider_fixture`: `PASS`
+- `cross_module_generic_positive_conformance_references_consumer_fixture`: `PASS`
+- `cross_module_generic_positive_conformance_references_runtime_import_surface`: `PASS`
 - `negative_conformance_references_fixture`: `PASS`
 - `nullability_negative_conformance_references_fixture`: `PASS`
 - `protocol_method_nullability_negative_conformance_references_fixture`: `PASS`
@@ -167,6 +187,7 @@
 - `static_sema_contract_fields_present`: `PASS`
 - `static_semantic_pass_sources_present`: `PASS`
 - `static_artifact_json_fields_present`: `PASS`
+- `static_runtime_import_surface_generic_contract_present`: `PASS`
 - `runtime_lowering_and_ir_source_refs_exist`: `PASS`
 
 ## Observed Positive Counts

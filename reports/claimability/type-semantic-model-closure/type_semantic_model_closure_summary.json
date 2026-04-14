@@ -4,6 +4,23 @@
     "canonical_function_metadata_publishes_replay_keys": true,
     "canonical_interface_property_metadata_publishes_replay_keys": true,
     "canonical_named_object_pointer_metadata_publishes_owner": true,
+    "cross_module_consumer_imported_generic_counts_match_provider": true,
+    "cross_module_consumer_imports_generic_contract_surface": true,
+    "cross_module_consumer_replay_key_covers_imported_generic_contract": true,
+    "cross_module_consumer_type_surface_landed": true,
+    "cross_module_generic_contract_drift_fails_closed": true,
+    "cross_module_generic_contract_drift_reports_variance_loss": true,
+    "cross_module_generic_positive_conformance_references_consumer_fixture": true,
+    "cross_module_generic_positive_conformance_references_provider_fixture": true,
+    "cross_module_generic_positive_conformance_references_runtime_import_surface": true,
+    "cross_module_provider_fixture_compiles": true,
+    "cross_module_provider_generic_contract_preservation_emitted": true,
+    "cross_module_provider_generic_contract_preserves_interface_count": true,
+    "cross_module_provider_generic_contract_preserves_interface_payload": true,
+    "cross_module_provider_generic_contract_preserves_parameter_variance": true,
+    "cross_module_provider_generic_contract_preserves_protocol_qualified_argument": true,
+    "cross_module_provider_generic_contract_ready": true,
+    "cross_module_provider_runtime_import_surface_emitted": true,
     "deterministic": true,
     "generic_constraint_violation_diagnostic_observed": true,
     "generic_constraint_violation_negative_conformance_expects_o3s206_location": true,
@@ -113,6 +130,7 @@
     "semantic_manifest_indexes_typ_8013_14": true,
     "semantic_manifest_indexes_typ_8013_15": true,
     "semantic_manifest_indexes_typ_8013_16": true,
+    "semantic_manifest_indexes_typ_8013_17": true,
     "semantic_readme_mentions_generic_constraint_violation_negative_fixture": true,
     "semantic_readme_mentions_generic_invariant_assignment_negative_fixture": true,
     "semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture": true,
@@ -131,6 +149,7 @@
     "semantic_readme_mentions_typed_object_receiver_unknown_message_negative_fixture": true,
     "semantic_readme_mentions_unknown_protocol_composition_negative_fixture": true,
     "static_artifact_json_fields_present": true,
+    "static_runtime_import_surface_generic_contract_present": true,
     "static_sema_contract_fields_present": true,
     "static_semantic_pass_sources_present": true,
     "stress_manifest_compiles_generic_variance_positive_fixture": true,
@@ -149,6 +168,41 @@
     "unknown_protocol_composition_negative_fixture_fails_closed": true
   },
   "contract_id": "objc3c.semantic.type-semantic-model-closure.v1",
+  "cross_module_generic_consumer_compile": {
+    "diagnostics": [],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-generic-consumer/module.diagnostics.json",
+    "exit_code": 0,
+    "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-generic-consumer/module.ll",
+    "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-generic-consumer/module.manifest.json",
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-generic-consumer",
+    "runtime_import_surface_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-cross-module-generic-consumer/module.runtime-import-surface.json",
+    "source": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "cross_module_generic_consumer_fixture": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+  "cross_module_generic_drift_compile": {
+    "diagnostics": [
+      {
+        "code": "O3S264",
+        "column": 1,
+        "line": 1,
+        "message": "imported runtime surface load failed: C:/Users/sneak/Development/Slopjective-C/tmp/artifacts/objc3c-native/type-semantic-model-closure/drifted-surfaces/generic-contract-drift.runtime-import-surface.json: type-system generic contract preservation dropped variance annotations",
+        "raw": "error:1:1: imported runtime surface load failed: C:/Users/sneak/Development/Slopjective-C/tmp/artifacts/objc3c-native/type-semantic-model-closure/drifted-surfaces/generic-contract-drift.runtime-import-surface.json: type-system generic contract preservation dropped variance annotations [O3S264]",
+        "severity": "error"
+      }
+    ],
+    "diagnostics_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-cross-module-generic-drift/module.diagnostics.json",
+    "exit_code": 1,
+    "llvm_ir_path": null,
+    "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-cross-module-generic-drift/module.manifest.json",
+    "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-cross-module-generic-drift",
+    "runtime_import_surface_path": null,
+    "source": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
+    "stderr": "",
+    "stdout": ""
+  },
+  "cross_module_generic_provider_fixture": "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
   "generic_constraint_violation_negative_compile": {
     "diagnostics": [
       {
@@ -165,6 +219,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-generic-constraint-violation",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_constraint_violation.objc3",
     "stderr": "",
     "stdout": ""
@@ -186,6 +241,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-generic-invariant-assignment",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3",
     "stderr": "",
     "stdout": ""
@@ -207,6 +263,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-generic-substitution-unknown-message",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3",
     "stderr": "",
     "stdout": ""
@@ -219,6 +276,7 @@
     "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance/module.ll",
     "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance/module.manifest.json",
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance",
+    "runtime_import_surface_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-generic-variance/module.runtime-import-surface.json",
     "source": "tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3",
     "stderr": "",
     "stdout": ""
@@ -241,6 +299,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-duplicate-protocol",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3",
     "stderr": "",
     "stdout": ""
@@ -262,6 +321,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-nested-generic-constraint-violation",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3",
     "stderr": "",
     "stdout": ""
@@ -274,6 +334,7 @@
     "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-nested-generic/module.ll",
     "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-nested-generic/module.manifest.json",
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-nested-generic",
+    "runtime_import_surface_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-nested-generic/module.runtime-import-surface.json",
     "source": "tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3",
     "stderr": "",
     "stdout": ""
@@ -295,6 +356,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-nullability-flow",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3",
     "stderr": "",
     "stdout": ""
@@ -307,6 +369,7 @@
     "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive/module.ll",
     "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive/module.manifest.json",
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive",
+    "runtime_import_surface_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive/module.runtime-import-surface.json",
     "source": "tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3",
     "stderr": "",
     "stdout": ""
@@ -343,6 +406,7 @@
     "llvm_ir_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-protocol-generic/module.ll",
     "manifest_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-protocol-generic/module.manifest.json",
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-protocol-generic",
+    "runtime_import_surface_path": "tmp/artifacts/objc3c-native/type-semantic-model-closure/positive-protocol-generic/module.runtime-import-surface.json",
     "source": "tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3",
     "stderr": "",
     "stdout": ""
@@ -364,6 +428,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-protocol-generic-unknown-protocol",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3",
     "stderr": "",
     "stdout": ""
@@ -385,6 +450,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-protocol-method-nullability",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3",
     "stderr": "",
     "stdout": ""
@@ -406,6 +472,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-protocol-property-nullability",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_property_nullability_conflict.objc3",
     "stderr": "",
     "stdout": ""
@@ -427,6 +494,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-protocol-qualified-unknown-message",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_qualified_unknown_message.objc3",
     "stderr": "",
     "stdout": ""
@@ -519,6 +587,7 @@
     "tests/conformance/semantic/TYP-8013-12.json",
     "tests/conformance/semantic/TYP-8013-13.json",
     "tests/conformance/semantic/TYP-8013-15.json",
+    "tests/conformance/semantic/TYP-8013-17.json",
     "tests/conformance/semantic/TYP-8013-02.json",
     "tests/conformance/semantic/TYP-8013-03.json",
     "tests/conformance/semantic/TYP-8013-04.json",
@@ -537,6 +606,8 @@
     "native/objc3c/src/sema/objc3_sema_contract.h",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
+    "native/objc3c/src/pipeline/objc3_runtime_import_surface.h",
     "native/objc3c/src/lower/objc3_lowering_contract.cpp",
     "native/objc3c/src/ir/objc3_ir_emitter.cpp"
   ],
@@ -568,6 +639,12 @@
     "lowering_contract_runtime_surface_present": {
       "Lowering": true,
       "runtime": true
+    },
+    "runtime_import_surface_generic_contract": {
+      "PopulateImportedTypeSystemGenericContractPreservation": true,
+      "objc_type_system_generic_contract_preservation": true,
+      "type_system_generic_contract_preservation_present": true,
+      "type_system_protocol_qualified_generic_argument_count": true
     },
     "sema_contract_fields": {
       "canonical_implicitly_unwrapped_entries": true,
@@ -717,6 +794,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-typed-object-receiver-unknown-message",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_typed_object_receiver_unknown_message.objc3",
     "stderr": "",
     "stdout": ""
@@ -738,6 +816,7 @@
     "llvm_ir_path": null,
     "manifest_path": null,
     "out_dir": "tmp/artifacts/objc3c-native/type-semantic-model-closure/negative-unknown-protocol-composition",
+    "runtime_import_surface_path": null,
     "source": "tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_unknown_protocol_composition.objc3",
     "stderr": "",
     "stdout": ""

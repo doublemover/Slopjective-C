@@ -1248,6 +1248,8 @@ inline constexpr const char *kObjc3TypeSystemTypeSemanticModelSurfacePath =
     "frontend.pipeline.semantic_surface.objc_type_system_type_semantic_model";
 inline constexpr const char *kObjc3TypeSystemTypeSemanticModelCoreRule =
     "optional-bindings-optional-sends-erased-generic-metadata-and-typed-keypath-shape-obey-one-fail-closed-sema-model-before-lowering";
+inline constexpr const char *kObjc3TypeSystemGenericContractPreservationContractId =
+    "objc3c.type_system.generic.contract.preservation.v1";
 
 struct Objc3FrontendTypeSystemTypeSourceClosureSummary {
   std::string contract_id = kObjc3TypeSystemTypeSourceClosureContractId;
@@ -3015,6 +3017,12 @@ struct Objc3ImportedRuntimeMetadataSemanticRulesSummary {
   std::size_t imported_type_system_optional_keypath_module_count = 0;
   std::size_t imported_optional_runtime_ready_module_count = 0;
   std::size_t imported_typed_keypath_runtime_ready_module_count = 0;
+  std::size_t imported_type_system_generic_contract_module_count = 0;
+  std::size_t imported_generic_interface_count = 0;
+  std::size_t imported_generic_parameter_count = 0;
+  std::size_t imported_generic_variance_annotation_count = 0;
+  std::size_t imported_generic_argument_reference_count = 0;
+  std::size_t imported_protocol_qualified_generic_argument_count = 0;
   bool fail_closed = false;
   bool source_semantic_preservation_contract_ready = false;
   bool semantic_surface_published = false;
@@ -3060,6 +3068,7 @@ inline bool IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(
          summary.imported_dispatch_traits_landed &&
          summary.imported_effect_traits_landed &&
          summary.imported_runtime_metadata_semantics_landed &&
+         summary.imported_type_system_type_surface_landed &&
          summary.ready_for_imported_metadata_semantic_rules &&
          summary.ready_for_cross_module_dispatch_equivalence &&
          !summary.replay_key.empty() && summary.failure_reason.empty();

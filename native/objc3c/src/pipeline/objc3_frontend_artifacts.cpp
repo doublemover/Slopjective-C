@@ -2251,6 +2251,163 @@ std::string BuildTypeSystemTypeSemanticModelSummaryJson(
   return out.str();
 }
 
+struct Objc3TypeSystemGenericContractInventory {
+  std::size_t interface_count = 0;
+  std::size_t generic_interface_count = 0;
+  std::size_t generic_parameter_count = 0;
+  std::size_t generic_variance_annotation_count = 0;
+  std::size_t generic_argument_reference_count = 0;
+  std::size_t protocol_qualified_generic_argument_count = 0;
+};
+
+bool IsProtocolQualifiedGenericArgumentSpelling(const std::string &argument) {
+  return argument.find("id<") != std::string::npos ||
+         argument.find("Class<") != std::string::npos;
+}
+
+void AccumulateGenericContractInventory(
+    const Objc3SemanticCanonicalType &type,
+    Objc3TypeSystemGenericContractInventory &inventory) {
+  inventory.generic_argument_reference_count +=
+      type.generic_arguments_source_order.size();
+  for (const std::string &argument : type.generic_arguments_source_order) {
+    if (IsProtocolQualifiedGenericArgumentSpelling(argument)) {
+      ++inventory.protocol_qualified_generic_argument_count;
+    }
+  }
+}
+
+Objc3TypeSystemGenericContractInventory BuildTypeSystemGenericContractInventory(
+    const Objc3SemanticTypeMetadataHandoff &handoff) {
+  Objc3TypeSystemGenericContractInventory inventory;
+  inventory.interface_count = handoff.interfaces_lexicographic.size();
+  for (const Objc3SemanticInterfaceTypeMetadata &interface_metadata :
+       handoff.interfaces_lexicographic) {
+    if (!interface_metadata.generic_parameter_names_source_order.empty()) {
+      ++inventory.generic_interface_count;
+    }
+    inventory.generic_parameter_count +=
+        interface_metadata.generic_parameter_names_source_order.size();
+    inventory.generic_variance_annotation_count +=
+        interface_metadata.generic_parameter_variance_source_order.size();
+    for (const Objc3SemanticPropertyTypeMetadata &property :
+         interface_metadata.properties_lexicographic) {
+      AccumulateGenericContractInventory(property.canonical_type, inventory);
+    }
+    for (const Objc3SemanticMethodTypeMetadata &method :
+         interface_metadata.methods_lexicographic) {
+      AccumulateGenericContractInventory(method.return_canonical_type,
+                                         inventory);
+      for (const Objc3SemanticCanonicalType &param :
+           method.param_canonical_types) {
+        AccumulateGenericContractInventory(param, inventory);
+      }
+    }
+  }
+  for (const Objc3SemanticFunctionTypeMetadata &function :
+       handoff.functions_lexicographic) {
+    AccumulateGenericContractInventory(function.return_canonical_type,
+                                       inventory);
+    for (const Objc3SemanticCanonicalType &param :
+         function.param_canonical_types) {
+      AccumulateGenericContractInventory(param, inventory);
+    }
+  }
+  for (const Objc3SemanticImplementationTypeMetadata &implementation :
+       handoff.implementations_lexicographic) {
+    for (const Objc3SemanticPropertyTypeMetadata &property :
+         implementation.properties_lexicographic) {
+      AccumulateGenericContractInventory(property.canonical_type, inventory);
+    }
+    for (const Objc3SemanticMethodTypeMetadata &method :
+         implementation.methods_lexicographic) {
+      AccumulateGenericContractInventory(method.return_canonical_type,
+                                         inventory);
+      for (const Objc3SemanticCanonicalType &param :
+           method.param_canonical_types) {
+        AccumulateGenericContractInventory(param, inventory);
+      }
+    }
+  }
+  return inventory;
+}
+
+std::string BuildTypeSystemGenericContractPreservationReplayKey(
+    const Objc3TypeSystemGenericContractInventory &inventory,
+    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+  std::ostringstream out;
+  out << kObjc3TypeSystemGenericContractPreservationContractId
+      << ";source_contract=" << kObjc3TypeSystemTypeSemanticModelContractId
+      << ";type_semantic_replay=" << semantic_summary.replay_key
+      << ";interfaces=" << inventory.interface_count
+      << ";generic_interfaces=" << inventory.generic_interface_count
+      << ";generic_parameters=" << inventory.generic_parameter_count
+      << ";variance_annotations="
+      << inventory.generic_variance_annotation_count
+      << ";generic_argument_refs="
+      << inventory.generic_argument_reference_count
+      << ";protocol_qualified_generic_arguments="
+      << inventory.protocol_qualified_generic_argument_count;
+  return out.str();
+}
+
+std::string BuildTypeSystemGenericContractPreservationJson(
+    const Objc3SemanticTypeMetadataHandoff &handoff,
+    const Objc3TypeSystemTypeSemanticModelSummary &semantic_summary) {
+  const Objc3TypeSystemGenericContractInventory inventory =
+      BuildTypeSystemGenericContractInventory(handoff);
+  const bool deterministic = IsDeterministicSemanticTypeMetadataHandoff(handoff);
+  const bool ready =
+      deterministic && semantic_summary.ready_for_lowering_and_runtime &&
+      semantic_summary.deterministic && !semantic_summary.replay_key.empty();
+  const std::string replay_key =
+      BuildTypeSystemGenericContractPreservationReplayKey(inventory,
+                                                          semantic_summary);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3TypeSystemGenericContractPreservationContractId)
+      << "\",\"source_contract_id\":\""
+      << EscapeJsonString(kObjc3TypeSystemTypeSemanticModelContractId)
+      << "\",\"preservation_model\":\"runtime-import-surface-preserves-interface-generic-parameter-variance-adoption-and-specialization-reference-facts\""
+      << ",\"interface_count\":" << inventory.interface_count
+      << ",\"generic_interface_count\":" << inventory.generic_interface_count
+      << ",\"generic_parameter_count\":" << inventory.generic_parameter_count
+      << ",\"generic_variance_annotation_count\":"
+      << inventory.generic_variance_annotation_count
+      << ",\"generic_argument_reference_count\":"
+      << inventory.generic_argument_reference_count
+      << ",\"protocol_qualified_generic_argument_count\":"
+      << inventory.protocol_qualified_generic_argument_count
+      << ",\"ready\":" << (ready ? "true" : "false")
+      << ",\"deterministic\":" << (deterministic ? "true" : "false")
+      << ",\"type_semantic_replay_key\":\""
+      << EscapeJsonString(semantic_summary.replay_key)
+      << "\",\"generic_contract_interfaces\":[";
+  for (std::size_t i = 0; i < handoff.interfaces_lexicographic.size(); ++i) {
+    const Objc3SemanticInterfaceTypeMetadata &interface_metadata =
+        handoff.interfaces_lexicographic[i];
+    if (i != 0u) {
+      out << ",";
+    }
+    out << "{\"name\":\"" << EscapeJsonString(interface_metadata.name)
+        << "\",\"super_name\":\""
+        << EscapeJsonString(interface_metadata.super_name)
+        << "\",\"generic_parameter_names_source_order\":"
+        << BuildStringArrayJson(
+               interface_metadata.generic_parameter_names_source_order)
+        << ",\"generic_parameter_variance_source_order\":"
+        << BuildStringArrayJson(
+               interface_metadata.generic_parameter_variance_source_order)
+        << ",\"adopted_protocols_lexicographic\":"
+        << BuildStringArrayJson(
+               interface_metadata.adopted_protocols_lexicographic)
+        << "}";
+  }
+  out << "],\"replay_key\":\"" << EscapeJsonString(replay_key) << "\"}";
+  return out.str();
+}
+
 std::string BuildEffectsOwnershipSemanticModelSummaryJson(
     const Objc3EffectsOwnershipSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -7002,6 +7159,18 @@ std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
       << summary.live_typed_keypath_artifact_site_count
       << ";imported_type_system_optional_keypath_module_count="
       << summary.imported_type_system_optional_keypath_module_count
+      << ";imported_type_system_generic_contract_module_count="
+      << summary.imported_type_system_generic_contract_module_count
+      << ";imported_generic_interface_count="
+      << summary.imported_generic_interface_count
+      << ";imported_generic_parameter_count="
+      << summary.imported_generic_parameter_count
+      << ";imported_generic_variance_annotation_count="
+      << summary.imported_generic_variance_annotation_count
+      << ";imported_generic_argument_reference_count="
+      << summary.imported_generic_argument_reference_count
+      << ";imported_protocol_qualified_generic_argument_count="
+      << summary.imported_protocol_qualified_generic_argument_count
       << ";modules=";
   for (std::size_t i = 0; i < summary.imported_module_names_lexicographic.size();
        ++i) {
@@ -7123,6 +7292,19 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
         ++summary.imported_typed_keypath_runtime_ready_module_count;
       }
     }
+    if (surface.type_system_generic_contract_preservation_present) {
+      ++summary.imported_type_system_generic_contract_module_count;
+      summary.imported_generic_interface_count +=
+          surface.type_system_generic_interface_count;
+      summary.imported_generic_parameter_count +=
+          surface.type_system_generic_parameter_count;
+      summary.imported_generic_variance_annotation_count +=
+          surface.type_system_generic_variance_annotation_count;
+      summary.imported_generic_argument_reference_count +=
+          surface.type_system_generic_argument_reference_count;
+      summary.imported_protocol_qualified_generic_argument_count +=
+          surface.type_system_protocol_qualified_generic_argument_count;
+    }
   }
 
   std::sort(summary.imported_module_names_lexicographic.begin(),
@@ -7139,11 +7321,16 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
       summary.source_semantic_preservation_contract_ready;
   summary.imported_runtime_metadata_semantics_landed =
       summary.source_semantic_preservation_contract_ready;
+  const bool imported_optional_keypath_landed =
+      summary.imported_type_system_optional_keypath_module_count == 0u ||
+      summary.imported_type_system_optional_keypath_module_count ==
+          summary.imported_optional_runtime_ready_module_count;
+  const bool imported_generic_contract_landed =
+      summary.imported_type_system_generic_contract_module_count == 0u ||
+      summary.imported_generic_variance_annotation_count >=
+          summary.imported_generic_parameter_count;
   summary.imported_type_system_type_surface_landed =
-      summary.imported_type_system_optional_keypath_module_count > 0u
-          ? summary.imported_type_system_optional_keypath_module_count ==
-                summary.imported_optional_runtime_ready_module_count
-          : true;
+      imported_optional_keypath_landed && imported_generic_contract_landed;
   summary.imported_optional_runtime_semantics_landed =
       summary.optional_send_site_count == 0u ||
       summary.imported_optional_runtime_ready_module_count > 0u;
@@ -7234,6 +7421,18 @@ std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
       << summary.imported_optional_runtime_ready_module_count
       << ",\"imported_typed_keypath_runtime_ready_module_count\":"
       << summary.imported_typed_keypath_runtime_ready_module_count
+      << ",\"imported_type_system_generic_contract_module_count\":"
+      << summary.imported_type_system_generic_contract_module_count
+      << ",\"imported_generic_interface_count\":"
+      << summary.imported_generic_interface_count
+      << ",\"imported_generic_parameter_count\":"
+      << summary.imported_generic_parameter_count
+      << ",\"imported_generic_variance_annotation_count\":"
+      << summary.imported_generic_variance_annotation_count
+      << ",\"imported_generic_argument_reference_count\":"
+      << summary.imported_generic_argument_reference_count
+      << ",\"imported_protocol_qualified_generic_argument_count\":"
+      << summary.imported_protocol_qualified_generic_argument_count
       << ",\"ready\":"
       << (IsReadyObjc3ImportedRuntimeMetadataSemanticRulesSummary(summary)
               ? "true"
@@ -8696,6 +8895,7 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records,
     const std::string &type_system_optional_keypath_lowering_contract_json,
     const std::string &type_system_optional_keypath_runtime_helper_contract_json,
+    const std::string &type_system_generic_contract_preservation_json,
     const std::string &error_handling_result_and_bridging_artifact_replay_json,
     const std::string &concurrency_actor_mailbox_runtime_import_json,
     const std::string &interop_foreign_surface_interface_preservation_json,
@@ -8786,6 +8986,8 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << type_system_optional_keypath_lowering_contract_json << ",\n"
       << "  \"objc_type_system_optional_keypath_runtime_helper_contract\": "
       << type_system_optional_keypath_runtime_helper_contract_json << ",\n"
+      << "  \"objc_type_system_generic_contract_preservation\": "
+      << type_system_generic_contract_preservation_json << ",\n"
       << "  \"objc_error_handling_result_and_bridging_artifact_replay\": "
       << error_handling_result_and_bridging_artifact_replay_json << ",\n"
       << "  \"objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface\": "
@@ -25296,6 +25498,8 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
                 type_system_optional_keypath_lowering_contract,
                 runtime_support_library_link_wiring,
                 type_system_optional_keypath_lowering_replay_key),
+            BuildTypeSystemGenericContractPreservationJson(
+                type_metadata_handoff, type_system_type_semantic_model_summary),
             BuildErrorHandlingResultAndBridgingArtifactReplaySummaryJson(
                 error_handling_result_and_bridging_artifact_replay_summary),
             BuildConcurrencyActorMailboxRuntimeImportSummaryJson(
