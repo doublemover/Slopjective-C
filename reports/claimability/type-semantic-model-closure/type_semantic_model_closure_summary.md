@@ -6,6 +6,7 @@
 - Positive fixture: `tests/tooling/fixtures/native/type_semantic_model_closure_positive.objc3`
 - Nested generic positive fixture: `tests/tooling/fixtures/native/type_semantic_nested_generic_positive.objc3`
 - Generic variance positive fixture: `tests/tooling/fixtures/native/type_semantic_generic_variance_positive.objc3`
+- Protocol generic positive fixture: `tests/tooling/fixtures/native/type_semantic_protocol_generic_positive.objc3`
 - Negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_duplicate_protocol_composition.objc3`
 - Nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nullable_to_nonnull_flow.objc3`
 - Protocol method nullability negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_method_nullability_conflict.objc3`
@@ -17,6 +18,7 @@
 - Generic substitution unknown message negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_substitution_unknown_message.objc3`
 - Nested generic constraint violation negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_nested_generic_constraint_violation.objc3`
 - Generic invariant assignment negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_generic_invariant_assignment.objc3`
+- Protocol generic unknown protocol negative fixture: `tests/tooling/fixtures/native/recovery/negative/negative_type_semantic_protocol_generic_unknown_protocol.objc3`
 
 ## Checks
 - `positive_fixture_compiles`: `PASS`
@@ -51,6 +53,15 @@
 - `generic_variance_interface_metadata_preserves_protocol_adoption`: `PASS`
 - `generic_variance_assignment_param_metadata_preserves_erased_target`: `PASS`
 - `generic_variance_assignment_param_metadata_preserves_concrete_value`: `PASS`
+- `protocol_generic_positive_fixture_compiles`: `PASS`
+- `protocol_generic_positive_manifest_emitted`: `PASS`
+- `protocol_generic_positive_llvm_ir_emitted`: `PASS`
+- `protocol_generic_positive_manifest_ready`: `PASS`
+- `protocol_generic_positive_contract_violations_zero`: `PASS`
+- `protocol_generic_argument_metadata_preserves_id_protocol`: `PASS`
+- `protocol_generic_argument_metadata_preserves_concrete_argument`: `PASS`
+- `protocol_generic_argument_replay_key_preserves_id_protocol`: `PASS`
+- `protocol_generic_covariant_value_adopts_constraint_protocol`: `PASS`
 - `negative_fixture_fails_closed`: `PASS`
 - `negative_diagnostics_json_emitted`: `PASS`
 - `negative_duplicate_protocol_diagnostic_observed`: `PASS`
@@ -84,6 +95,9 @@
 - `generic_invariant_assignment_negative_fixture_fails_closed`: `PASS`
 - `generic_invariant_assignment_negative_diagnostics_json_emitted`: `PASS`
 - `generic_invariant_assignment_diagnostic_observed`: `PASS`
+- `protocol_generic_unknown_protocol_negative_fixture_fails_closed`: `PASS`
+- `protocol_generic_unknown_protocol_negative_diagnostics_json_emitted`: `PASS`
+- `protocol_generic_unknown_protocol_diagnostic_observed`: `PASS`
 - `semantic_manifest_indexes_typ_8013_01`: `PASS`
 - `semantic_manifest_indexes_typ_8013_02`: `PASS`
 - `semantic_manifest_indexes_typ_8013_03`: `PASS`
@@ -98,10 +112,13 @@
 - `semantic_manifest_indexes_typ_8013_12`: `PASS`
 - `semantic_manifest_indexes_typ_8013_13`: `PASS`
 - `semantic_manifest_indexes_typ_8013_14`: `PASS`
+- `semantic_manifest_indexes_typ_8013_15`: `PASS`
+- `semantic_manifest_indexes_typ_8013_16`: `PASS`
 - `semantic_readme_mentions_issue_8013`: `PASS`
 - `semantic_readme_mentions_positive_fixture`: `PASS`
 - `semantic_readme_mentions_nested_generic_positive_fixture`: `PASS`
 - `semantic_readme_mentions_generic_variance_positive_fixture`: `PASS`
+- `semantic_readme_mentions_protocol_generic_positive_fixture`: `PASS`
 - `semantic_readme_mentions_negative_fixture`: `PASS`
 - `semantic_readme_mentions_nullability_negative_fixture`: `PASS`
 - `semantic_readme_mentions_protocol_method_nullability_negative_fixture`: `PASS`
@@ -113,9 +130,11 @@
 - `semantic_readme_mentions_generic_substitution_unknown_message_negative_fixture`: `PASS`
 - `semantic_readme_mentions_nested_generic_constraint_violation_negative_fixture`: `PASS`
 - `semantic_readme_mentions_generic_invariant_assignment_negative_fixture`: `PASS`
+- `semantic_readme_mentions_protocol_generic_unknown_protocol_negative_fixture`: `PASS`
 - `positive_conformance_references_fixture`: `PASS`
 - `nested_generic_positive_conformance_references_fixture`: `PASS`
 - `generic_variance_positive_conformance_references_fixture`: `PASS`
+- `protocol_generic_positive_conformance_references_fixture`: `PASS`
 - `negative_conformance_references_fixture`: `PASS`
 - `nullability_negative_conformance_references_fixture`: `PASS`
 - `protocol_method_nullability_negative_conformance_references_fixture`: `PASS`
@@ -127,6 +146,7 @@
 - `generic_substitution_unknown_message_negative_conformance_references_fixture`: `PASS`
 - `nested_generic_constraint_violation_negative_conformance_references_fixture`: `PASS`
 - `generic_invariant_assignment_negative_conformance_references_fixture`: `PASS`
+- `protocol_generic_unknown_protocol_negative_conformance_references_fixture`: `PASS`
 - `negative_conformance_expects_o3s206_location`: `PASS`
 - `nullability_negative_conformance_expects_o3s227_location`: `PASS`
 - `protocol_method_nullability_negative_conformance_expects_o3s218_location`: `PASS`
@@ -138,9 +158,11 @@
 - `generic_substitution_unknown_message_negative_conformance_expects_o3s216_location`: `PASS`
 - `nested_generic_constraint_violation_negative_conformance_expects_o3s206_location`: `PASS`
 - `generic_invariant_assignment_negative_conformance_expects_o3s206_location`: `PASS`
+- `protocol_generic_unknown_protocol_negative_conformance_expects_o3s206_location`: `PASS`
 - `stress_manifest_compiles_positive_fixture`: `PASS`
 - `stress_manifest_compiles_nested_generic_positive_fixture`: `PASS`
 - `stress_manifest_compiles_generic_variance_positive_fixture`: `PASS`
+- `stress_manifest_compiles_protocol_generic_positive_fixture`: `PASS`
 - `no_tmp_source_truth`: `PASS`
 - `static_sema_contract_fields_present`: `PASS`
 - `static_semantic_pass_sources_present`: `PASS`

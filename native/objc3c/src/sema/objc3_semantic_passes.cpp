@@ -7140,6 +7140,50 @@ static bool GenericArgumentSatisfiesProtocolConstraint(
   return false;
 }
 
+static bool IsProtocolQualifiedGenericArgument(const std::string &argument) {
+  const std::string trimmed = TrimAsciiWhitespace(argument);
+  return trimmed.rfind("id<", 0) == 0u;
+}
+
+static bool ValidateProtocolQualifiedGenericArgument(
+    const std::unordered_map<std::string, Objc3ProtocolSemanticDefinition>
+        &protocol_definitions,
+    const std::string &argument,
+    const std::string &object_pointer_type_name,
+    const std::string &parameter_name,
+    unsigned line,
+    unsigned column,
+    std::vector<std::string> &diagnostics) {
+  const std::string trimmed = TrimAsciiWhitespace(argument);
+  if (trimmed.rfind("id<", 0) != 0u) {
+    return true;
+  }
+  const ProtocolCompositionParseResult parsed =
+      ParseProtocolCompositionSuffixText(trimmed.substr(2));
+  if (!parsed.IsValid()) {
+    diagnostics.push_back(MakeDiag(
+        line, column, "O3S206",
+        "type mismatch: generic argument '" + argument +
+            "' for parameter '" + parameter_name + "' of interface '" +
+            object_pointer_type_name +
+            "' has an invalid protocol-qualified generic argument"));
+    return false;
+  }
+  bool valid = true;
+  for (const auto &protocol_name : parsed.names_lexicographic) {
+    if (protocol_definitions.find(protocol_name) == protocol_definitions.end()) {
+      diagnostics.push_back(MakeDiag(
+          line, column, "O3S206",
+          "type mismatch: generic argument '" + argument +
+              "' for parameter '" + parameter_name + "' of interface '" +
+              object_pointer_type_name +
+              "' references unknown protocol '" + protocol_name + "'"));
+      valid = false;
+    }
+  }
+  return valid;
+}
+
 static std::string NormalizeGenericArgumentTypeSpelling(
     const std::string &argument) {
   std::string normalized;
@@ -7401,26 +7445,34 @@ static void ValidateGenericSpecializationType(
   }
   for (std::size_t index = 0; index < arguments.size(); ++index) {
     const auto &param = definition.parameters[index];
-    std::string nested_object_name;
-    std::string nested_generic_suffix_text;
-    if (!ExtractGenericArgumentSpecialization(arguments[index],
-                                             nested_object_name,
-                                             nested_generic_suffix_text)) {
-      diagnostics.push_back(MakeDiag(
-          line, column, "O3S206",
-          "type mismatch: generic argument '" + arguments[index] +
-              "' for parameter '" + param.name + "' of interface '" +
-              object_pointer_type_name +
-              "' has an unterminated nested generic specialization"));
-    } else if (!nested_object_name.empty() &&
-               generic_definitions.find(nested_object_name) !=
-                   generic_definitions.end()) {
-      ValidateGenericSpecializationType(
-          ast, generic_definitions, protocol_definitions, nested_object_name,
-          !nested_generic_suffix_text.empty(), nested_generic_suffix_text,
-          line, column,
-          "nested generic argument '" + arguments[index] + "' in " + context,
-          diagnostics, recursion_depth + 1u);
+    if (IsProtocolQualifiedGenericArgument(arguments[index])) {
+      if (!ValidateProtocolQualifiedGenericArgument(
+              protocol_definitions, arguments[index], object_pointer_type_name,
+              param.name, line, column, diagnostics)) {
+        continue;
+      }
+    } else {
+      std::string nested_object_name;
+      std::string nested_generic_suffix_text;
+      if (!ExtractGenericArgumentSpecialization(arguments[index],
+                                               nested_object_name,
+                                               nested_generic_suffix_text)) {
+        diagnostics.push_back(MakeDiag(
+            line, column, "O3S206",
+            "type mismatch: generic argument '" + arguments[index] +
+                "' for parameter '" + param.name + "' of interface '" +
+                object_pointer_type_name +
+                "' has an unterminated nested generic specialization"));
+      } else if (!nested_object_name.empty() &&
+                 generic_definitions.find(nested_object_name) !=
+                     generic_definitions.end()) {
+        ValidateGenericSpecializationType(
+            ast, generic_definitions, protocol_definitions, nested_object_name,
+            !nested_generic_suffix_text.empty(), nested_generic_suffix_text,
+            line, column,
+            "nested generic argument '" + arguments[index] + "' in " + context,
+            diagnostics, recursion_depth + 1u);
+      }
     }
     for (const auto &required_protocol :
          param.constraint_protocols_lexicographic) {

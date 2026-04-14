@@ -1,0 +1,12 @@
+// Expected diagnostic code(s): O3S206.
+module NegativeTypeSemanticProtocolGenericUnknownProtocol;
+
+@interface SemanticEnvelope<__covariant T>
+@end
+
+@implementation SemanticEnvelope
+@end
+
+fn consume(box: SemanticEnvelope<id<MissingProtocol>> *?) -> i32 {
+  return 0;
+}

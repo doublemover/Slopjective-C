@@ -1,0 +1,25 @@
+module TypeSemanticProtocolGenericPositive;
+
+@protocol Persistable
+@end
+
+@interface SemanticBox <Persistable>
+@end
+
+@implementation SemanticBox
+@end
+
+@interface SemanticVault<__covariant T : id<Persistable>>
+- (T)peek;
+@end
+
+@implementation SemanticVault
+@end
+
+fn acceptProtocolVault(vault: SemanticVault<id<Persistable>> *?) -> i32 {
+  return 0;
+}
+
+fn consumeConcreteVault(vault: SemanticVault<SemanticBox *> *?) -> i32 {
+  return acceptProtocolVault(vault);
+}
