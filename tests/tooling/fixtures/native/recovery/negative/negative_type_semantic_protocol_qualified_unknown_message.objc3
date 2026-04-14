@@ -3,12 +3,16 @@ module NegativeTypeSemanticProtocolQualifiedUnknownMessage;
 
 @protocol Worker
 @required
+@property (readonly) id token;
 - (id) requiredValue;
 @optional
+@property (readonly) id optionalToken;
 - (id) optionalValue;
 @end
 
 fn consume(worker: id<Worker>*?) -> i32 {
+  let token = [worker? token];
+  let optionalToken = [worker? optionalToken];
   let required = [worker? requiredValue];
   let optional = [worker? optionalValue];
   let missing = [worker? missingValue];

@@ -194,9 +194,9 @@
       {
         "code": "O3S216",
         "column": 18,
-        "line": 14,
+        "line": 18,
         "message": "selector resolution failed: protocol-qualified receiver 'id<Worker>*' does not provide selector '-missingValue'",
-        "raw": "error:14:18: selector resolution failed: protocol-qualified receiver 'id<Worker>*' does not provide selector '-missingValue' [O3S216]",
+        "raw": "error:18:18: selector resolution failed: protocol-qualified receiver 'id<Worker>*' does not provide selector '-missingValue' [O3S216]",
         "severity": "error"
       }
     ],
@@ -346,6 +346,7 @@
       "BuildTypeSystemTypeSemanticModelSummary": true,
       "IsCompatibleCanonicalSemanticType": true,
       "IsUnsafeNullableToNonnullFlow": true,
+      "MakeSemanticTypeFromPropertyInfo": true,
       "ResolveProtocolQualifiedMessageRequirement": true,
       "ValidateProtocolCompositionIdentifierBindings": true,
       "bindings=": true,

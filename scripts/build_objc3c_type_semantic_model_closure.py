@@ -182,6 +182,7 @@ SEMANTIC_PASS_TOKENS = [
     "IsCompatibleCanonicalSemanticType",
     "ValidateProtocolCompositionIdentifierBindings",
     "ResolveProtocolQualifiedMessageRequirement",
+    "MakeSemanticTypeFromPropertyInfo",
     "optional_methods_by_key",
 ]
 
@@ -387,7 +388,7 @@ def build_summary() -> dict[str, Any]:
         "unknown_protocol_composition_diagnostic_observed": diagnostic_matches(unknown_protocol_composition_negative_run["diagnostics"], "O3S206", 4, 21),
         "protocol_qualified_unknown_message_negative_fixture_fails_closed": protocol_qualified_unknown_message_negative_run["exit_code"] != 0,
         "protocol_qualified_unknown_message_negative_diagnostics_json_emitted": protocol_qualified_unknown_message_negative_run["diagnostics_path"] is not None,
-        "protocol_qualified_unknown_message_diagnostic_observed": diagnostic_matches(protocol_qualified_unknown_message_negative_run["diagnostics"], "O3S216", 14, 18),
+        "protocol_qualified_unknown_message_diagnostic_observed": diagnostic_matches(protocol_qualified_unknown_message_negative_run["diagnostics"], "O3S216", 18, 18),
     }
 
     conformance_checks = {
@@ -418,7 +419,7 @@ def build_summary() -> dict[str, Any]:
         "protocol_method_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_method_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
         "protocol_property_nullability_negative_conformance_expects_o3s218_location": conformance_protocol_property_nullability_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S218", "line": 9, "column": 1}],
         "unknown_protocol_composition_negative_conformance_expects_o3s206_location": conformance_unknown_protocol_composition_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S206", "line": 4, "column": 21}],
-        "protocol_qualified_unknown_message_negative_conformance_expects_o3s216_location": conformance_protocol_qualified_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 14, "column": 18}],
+        "protocol_qualified_unknown_message_negative_conformance_expects_o3s216_location": conformance_protocol_qualified_unknown_message_negative.get("expect", {}).get("diagnostics") == [{"code": "O3S216", "line": 18, "column": 18}],
         "stress_manifest_compiles_positive_fixture": rel(POSITIVE_FIXTURE) in stress_manifest_text,
         "no_tmp_source_truth": no_tmp_source_truth,
     }
