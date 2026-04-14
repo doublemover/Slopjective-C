@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any
-from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.json_io import require_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -46,13 +46,6 @@ def find_pwsh() -> str:
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    expect(path.is_file(), f"missing required JSON artifact: {repo_display_path(path)}")
-    payload = load_json_object(path)
-    expect(isinstance(payload, dict), f"expected JSON object at {repo_display_path(path)}")
-    return payload
 
 
 def validate_compile_output(out_dir: Path) -> dict[str, Any]:

@@ -10,7 +10,7 @@ from typing import Any
 
 import check_objc3c_runtime_acceptance as runtime_acceptance
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object, write_json_file
+from objc3c_tooling.json_io import load_optional_json_object as load_json, write_json_file
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,16 +73,6 @@ REQUIRED_SURFACE_CONTRACTS = {
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
-
-
-
-def load_json(path: Path) -> dict[str, Any] | None:
-    if not path.is_file():
-        return None
-    payload = load_json_object(path)
-    expect(isinstance(payload, dict), f"JSON artifact at {repo_rel(path)} did not contain an object")
-    return payload
-
 
 def collect_live_results() -> tuple[list[runtime_acceptance.CaseResult], str]:
     fallback_root = ROOT / "tmp" / "reports" / "runtime" / "runnable-interop-conformance" / "live-case"

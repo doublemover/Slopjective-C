@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
-from objc3c_tooling.json_io import load_json_object, write_json_file
+from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.probe_output import parse_json_output
 from objc3c_tooling.public_workflow_output import extract_output_value
@@ -29,26 +29,6 @@ PACKAGE_CONTRACT_ID = "objc3c-runnable-build-install-run-package/runnable_suite-
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
-
-
-
-
-
-
-
-
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    expect(path.is_file(), f"expected JSON artifact was not published: {repo_rel(path)}")
-    payload = load_json_object(path)
-    expect(isinstance(payload, dict), f"JSON artifact at {repo_rel(path)} did not contain an object")
-    return payload
-
-
-
-
-
 
 def main() -> int:
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")

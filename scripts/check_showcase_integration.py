@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.json_io import require_json_object as load_json
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -30,16 +30,6 @@ EXPECTED_EXAMPLE_IDS = ["auroraBoard", "signalMesh", "patchKit"]
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
-
-
-
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    expect(path.is_file(), f"expected JSON artifact was not published: {repo_rel(path)}")
-    payload = load_json_object(path)
-    expect(isinstance(payload, dict), f"JSON artifact at {repo_rel(path)} did not contain an object")
-    return payload
 
 
 def main() -> int:

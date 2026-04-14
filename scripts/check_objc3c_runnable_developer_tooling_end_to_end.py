@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
-from objc3c_tooling.json_io import load_json_object, write_json_file
+from objc3c_tooling.json_io import require_json_object as load_json, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_output_value
 from objc3c_tooling.public_workflow_output import extract_report_paths
@@ -45,16 +45,6 @@ def extract_last_output_value(stdout: str, key: str) -> str | None:
         if line.startswith(prefix):
             value = line.split(":", 1)[1].strip()
     return value
-
-
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    expect(path.is_file(), f"expected JSON artifact was not published: {repo_rel(path)}")
-    payload = load_json_object(path)
-    expect(isinstance(payload, dict), f"JSON artifact at {repo_rel(path)} did not contain an object")
-    return payload
-
 
 def package_path(package_root: Path, relative_path: str) -> Path:
     return package_root / normalize_rel_path(relative_path)

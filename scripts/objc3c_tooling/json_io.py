@@ -21,6 +21,20 @@ def load_json_object(path: Path | str) -> dict[str, Any]:
     return payload
 
 
+def require_json_object(path: Path | str) -> dict[str, Any]:
+    source = Path(path)
+    if not source.is_file():
+        raise RuntimeError(f"expected JSON artifact was not published: {display_path(source)}")
+    return load_json_object(source)
+
+
+def load_optional_json_object(path: Path | str) -> dict[str, Any] | None:
+    source = Path(path)
+    if not source.is_file():
+        return None
+    return load_json_object(source)
+
+
 def load_json_array(path: Path | str) -> list[Any]:
     payload = load_json_any(path)
     if not isinstance(payload, list):
@@ -66,4 +80,3 @@ def write_json_file(
 
 def render_json(payload: Any, *, sort_keys: bool = False) -> str:
     return canonical_json(payload, sort_keys=sort_keys)
-

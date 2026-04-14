@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.json_io import require_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,13 +48,6 @@ REQUIRED_SCRIPTS = [
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
-
-
-def load_json(path: Path) -> dict[str, Any]:
-    payload = load_json_object(path)
-    expect(isinstance(payload, dict), f"JSON artifact at {path} did not contain an object")
-    return payload
-
 
 
 def ensure_workflow_report() -> dict[str, Any]:

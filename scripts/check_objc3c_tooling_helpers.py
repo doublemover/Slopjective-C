@@ -11,6 +11,8 @@ from objc3c_tooling.json_io import (
     canonical_json,
     load_json_array,
     load_json_object,
+    load_optional_json_object,
+    require_json_object,
     render_json,
     write_json_file,
     write_text_file,
@@ -55,10 +57,26 @@ def main(argv: Sequence[str] | None = None) -> int:
             "write_json_file should preserve JSON defaults, sort option, and trailing newline",
         )
         expect(load_json_object(object_path) == {"a": "\u00e9", "z": 1}, "load_json_object should load objects")
+        expect(require_json_object(object_path) == {"a": "\u00e9", "z": 1}, "require_json_object should load objects")
+        expect(
+            load_optional_json_object(object_path) == {"a": "\u00e9", "z": 1},
+            "load_optional_json_object should load present objects",
+        )
+        expect(
+            load_optional_json_object(tmp_dir / "missing.json") is None,
+            "load_optional_json_object should return None for missing paths",
+        )
         expect(load_json_array(array_path) == [1, 2, 3], "load_json_array should load arrays")
         expect(text_path.read_text(encoding="utf-8") == "hello\n", "write_text_file should use UTF-8 text")
         expect(canonical_json({"b": 2, "a": 1}) == json.dumps({"b": 2, "a": 1}, indent=2) + "\n", "canonical_json default drifted")
         expect(render_json({"b": 2, "a": 1}, sort_keys=True) == '{\n  "a": 1,\n  "b": 2\n}\n', "render_json sort output drifted")
+
+        try:
+            require_json_object(tmp_dir / "missing.json")
+        except RuntimeError as exc:
+            expect("expected JSON artifact was not published" in str(exc), "require_json_object missing diagnostic drifted")
+        else:
+            raise RuntimeError("require_json_object should reject missing paths")
 
         try:
             load_json_object(array_path)
