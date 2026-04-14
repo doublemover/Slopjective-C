@@ -8,7 +8,11 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, Sequence
-from objc3c_tooling.paths import display_path as repo_rel
+
+from objc3c_tooling.paths import repo_rel
+from objc3c_tooling.reports import expected_json_report
+from objc3c_tooling.reports import markdown_table
+from objc3c_tooling.reports import write_report_outputs
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SUPPORT_SUMMARY = (
@@ -391,7 +395,7 @@ def build_summary(support_summary_path: Path, root: Path) -> dict[str, Any]:
     return {
         "contract_id": SUMMARY_CONTRACT_ID,
         "status": status,
-        "support_summary_path": repo_rel(support_summary_path, root),
+        "support_summary_path": repo_rel(support_summary_path, root=root),
         "support_summary_contract_id": support_summary.get("contract_id"),
         "support_summary_sha256": stable_digest(support_summary_path),
         "scanned_surface_count": len(scan_paths),
@@ -411,12 +415,20 @@ def build_summary(support_summary_path: Path, root: Path) -> dict[str, Any]:
 def render_markdown(summary: dict[str, Any]) -> str:
     findings = summary["findings"]
     if findings:
-        finding_rows = "\n".join(
-            f"| {finding['kind']} | {finding['path']}:{finding['line']} | {finding.get('pattern_id', 'n/a')} |"
-            for finding in findings
+        finding_rows = markdown_table(
+            ["Kind", "Location", "Pattern"],
+            [
+                [
+                    finding["kind"],
+                    f"{finding['path']}:{finding['line']}",
+                    finding.get("pattern_id", "n/a"),
+                ]
+                for finding in findings
+            ],
         )
     else:
-        finding_rows = "| none | n/a | n/a |"
+        finding_rows = markdown_table(["Kind", "Location", "Pattern"], [["none", "n/a", "n/a"]])
+    finding_table = "\n".join(finding_rows)
     return (
         "# Objective-C 3.0 Public Claim Drift Summary\n\n"
         f"- Contract: `{summary['contract_id']}`\n"
@@ -428,17 +440,18 @@ def render_markdown(summary: dict[str, Any]) -> str:
         f"- Findings: `{summary['finding_count']}`\n"
         f"- Source truth excludes tmp: `{summary['checks']['source_truth_excludes_tmp']}`\n\n"
         "## Findings\n\n"
-        "| Kind | Location | Pattern |\n"
-        "| --- | --- | --- |\n"
-        f"{finding_rows}\n"
+        f"{finding_table}\n"
     )
 
 
 def write_outputs(summary: dict[str, Any], json_out: Path, md_out: Path) -> None:
-    json_out.parent.mkdir(parents=True, exist_ok=True)
-    md_out.parent.mkdir(parents=True, exist_ok=True)
-    json_out.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    md_out.write_text(render_markdown(summary), encoding="utf-8")
+    write_report_outputs(
+        summary=summary,
+        json_path=json_out,
+        markdown_path=md_out,
+        markdown=render_markdown(summary),
+        sort_keys=False,
+    )
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -471,14 +484,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"public claim drift error: {exc}", file=sys.stderr)
         return 1
 
-    next_json = json.dumps(summary, indent=2) + "\n"
+    next_json = expected_json_report(summary, sort_keys=False)
     next_md = render_markdown(summary)
     if args.check:
         mismatches = []
         if not json_out.is_file() or json_out.read_text(encoding="utf-8") != next_json:
-            mismatches.append(repo_rel(json_out, root))
+            mismatches.append(repo_rel(json_out, root=root))
         if not md_out.is_file() or md_out.read_text(encoding="utf-8") != next_md:
-            mismatches.append(repo_rel(md_out, root))
+            mismatches.append(repo_rel(md_out, root=root))
         if mismatches:
             print("public claim drift output drift: " + ", ".join(mismatches), file=sys.stderr)
             return 1
@@ -490,7 +503,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             status=summary["status"],
             mapped=summary["claim_mapping_count"],
             findings=summary["finding_count"],
-            report=repo_rel(json_out, root),
+            report=repo_rel(json_out, root=root),
         )
     )
     return 0 if summary["status"] == "PASS" else 1

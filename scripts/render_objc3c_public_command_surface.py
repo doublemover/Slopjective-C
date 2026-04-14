@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Sequence
 
+from objc3c_tooling.reports import markdown_table
+
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 DEFAULT_CONTRACT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
@@ -30,18 +32,20 @@ def load_contract(contract_path: Path) -> dict[str, object]:
 
 
 def render_rows(entries: list[dict[str, object]]) -> list[str]:
-    rows = [
-        '| Package script | Runner action | Tier | Guarantee owner | Extra args | Backend |',
-        '| --- | --- | --- | --- | --- | --- |',
-    ]
-    for entry in entries:
-        extra_args = 'pass-through' if entry['pass_through_args'] else 'fixed-shape'
-        tier = entry.get('validation_tier', '') or '-'
-        owner = entry.get('guarantee_owner', '') or '-'
-        rows.append(
-            f"| `{entry['package_script']}` | `{entry['action']}` | `{tier}` | `{owner}` | `{extra_args}` | `{entry['backend']}` |"
-        )
-    return rows
+    return markdown_table(
+        ['Package script', 'Runner action', 'Tier', 'Guarantee owner', 'Extra args', 'Backend'],
+        [
+            [
+                f"`{entry['package_script']}`",
+                f"`{entry['action']}`",
+                f"`{entry.get('validation_tier', '') or '-'}`",
+                f"`{entry.get('guarantee_owner', '') or '-'}`",
+                f"`{'pass-through' if entry['pass_through_args'] else 'fixed-shape'}`",
+                f"`{entry['backend']}`",
+            ]
+            for entry in entries
+        ],
+    )
 
 
 def render_markdown(contract_path: Path) -> str:

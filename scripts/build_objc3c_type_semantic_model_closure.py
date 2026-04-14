@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import argparse
-import json
 import shutil
 import subprocess
 from pathlib import Path
 from typing import Any
 
+from objc3c_tooling.reports import expected_json_report
+from objc3c_tooling.reports import write_report_outputs
 from objc3c_tooling.json_io import load_json_any as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -366,9 +367,12 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 
 def write_outputs(summary: dict[str, Any]) -> None:
-    REPORT_DIR.mkdir(parents=True, exist_ok=True)
-    JSON_OUT.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    MD_OUT.write_text(render_markdown(summary), encoding="utf-8")
+    write_report_outputs(
+        summary=summary,
+        json_path=JSON_OUT,
+        markdown_path=MD_OUT,
+        markdown=render_markdown(summary),
+    )
 
 
 def main() -> int:
@@ -376,7 +380,7 @@ def main() -> int:
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
     summary = build_summary()
-    expected_json = json.dumps(summary, indent=2, sort_keys=True) + "\n"
+    expected_json = expected_json_report(summary)
     expected_md = render_markdown(summary)
     if args.check:
         if not JSON_OUT.is_file() or JSON_OUT.read_text(encoding="utf-8") != expected_json:

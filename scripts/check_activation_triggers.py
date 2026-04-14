@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import display_path, resolve_repo_path
 from objc3c_tooling.public_workflow_output import normalize_newlines
+from objc3c_tooling.reports import markdown_table
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -369,32 +370,43 @@ def render_markdown(payload: dict[str, Any]) -> str:
         "",
         "## Snapshot Freshness",
         "",
-        "| Snapshot | Requested | Max age (s) | Generated at UTC | Age (s) | Fresh |",
-        "| --- | --- | --- | --- | --- | --- |",
-        (
-            f"| Issues | {freshness_cell(freshness['issues']['requested'])} | "
-            f"{freshness_cell(freshness['issues']['max_age_seconds'])} | "
-            f"{freshness_cell(freshness['issues']['generated_at_utc'])} | "
-            f"{freshness_cell(freshness['issues']['age_seconds'])} | "
-            f"{freshness_cell(freshness['issues']['fresh'])} |"
-        ),
-        (
-            f"| Milestones | {freshness_cell(freshness['milestones']['requested'])} | "
-            f"{freshness_cell(freshness['milestones']['max_age_seconds'])} | "
-            f"{freshness_cell(freshness['milestones']['generated_at_utc'])} | "
-            f"{freshness_cell(freshness['milestones']['age_seconds'])} | "
-            f"{freshness_cell(freshness['milestones']['fresh'])} |"
+        *markdown_table(
+            ["Snapshot", "Requested", "Max age (s)", "Generated at UTC", "Age (s)", "Fresh"],
+            [
+                [
+                    "Issues",
+                    freshness_cell(freshness["issues"]["requested"]),
+                    freshness_cell(freshness["issues"]["max_age_seconds"]),
+                    freshness_cell(freshness["issues"]["generated_at_utc"]),
+                    freshness_cell(freshness["issues"]["age_seconds"]),
+                    freshness_cell(freshness["issues"]["fresh"]),
+                ],
+                [
+                    "Milestones",
+                    freshness_cell(freshness["milestones"]["requested"]),
+                    freshness_cell(freshness["milestones"]["max_age_seconds"]),
+                    freshness_cell(freshness["milestones"]["generated_at_utc"]),
+                    freshness_cell(freshness["milestones"]["age_seconds"]),
+                    freshness_cell(freshness["milestones"]["fresh"]),
+                ],
+            ],
         ),
         "",
         "## Trigger Results",
         "",
-        "| Trigger ID | Fired | Count | Condition |",
-        "| --- | --- | --- | --- |",
+        *markdown_table(
+            ["Trigger ID", "Fired", "Count", "Condition"],
+            [
+                [
+                    f"`{entry['id']}`",
+                    f"`{bool_text(bool(entry['fired']))}`",
+                    entry["count"],
+                    entry["condition"],
+                ]
+                for entry in triggers
+            ],
+        ),
     ]
-    for entry in triggers:
-        lines.append(
-            f"| `{entry['id']}` | `{bool_text(bool(entry['fired']))}` | {entry['count']} | {entry['condition']} |"
-        )
     lines.append("")
     if active_trigger_ids:
         lines.append("- Active triggers: " + ", ".join(f"`{item}`" for item in active_trigger_ids))

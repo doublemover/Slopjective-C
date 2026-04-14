@@ -6,6 +6,9 @@ import json
 import sys
 from pathlib import Path
 from typing import Any, Sequence
+
+from objc3c_tooling.reports import expected_json_report
+from objc3c_tooling.reports import write_report_outputs
 from objc3c_tooling.paths import display_path as repo_rel
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -185,10 +188,13 @@ def render_markdown(summary: dict[str, Any]) -> str:
 
 
 def write_outputs(summary: dict[str, Any], json_out: Path, md_out: Path) -> None:
-    json_out.parent.mkdir(parents=True, exist_ok=True)
-    md_out.parent.mkdir(parents=True, exist_ok=True)
-    json_out.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    md_out.write_text(render_markdown(summary), encoding="utf-8")
+    write_report_outputs(
+        summary=summary,
+        json_path=json_out,
+        markdown_path=md_out,
+        markdown=render_markdown(summary),
+        sort_keys=False,
+    )
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -215,7 +221,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"dashboard release-blocker contract error: {exc}", file=sys.stderr)
         return 1
 
-    next_json = json.dumps(summary, indent=2) + "\n"
+    next_json = expected_json_report(summary, sort_keys=False)
     next_md = render_markdown(summary)
     if args.check:
         mismatches = []

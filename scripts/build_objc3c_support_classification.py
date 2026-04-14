@@ -2,14 +2,18 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
+import hashlib
 import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Sequence
-from objc3c_tooling.paths import display_path as repo_rel, resolve_repo_path
+
 from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.paths import display_path as repo_rel, resolve_repo_path
+from objc3c_tooling.reports import expected_json_report
+from objc3c_tooling.reports import markdown_table
+from objc3c_tooling.reports import write_report_outputs
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CONTRACT = (
@@ -333,15 +337,19 @@ def build_summary(contract_path: Path) -> dict[str, Any]:
 
 
 def render_markdown(summary: dict[str, Any]) -> str:
-    rows = "\n".join(
-        "| {surface} | {current_class} | {claim_class} | {evidence} |".format(
-            surface=row["surface"],
-            current_class=row["current_class"],
-            claim_class=row["claim_class"],
-            evidence=", ".join(row["required_evidence_families"]) or "none",
-        )
-        for row in summary["classifications"]
+    rows = markdown_table(
+        ["Surface", "Class", "Claim Class", "Required Evidence"],
+        [
+            [
+                row["surface"],
+                row["current_class"],
+                row["claim_class"],
+                ", ".join(row["required_evidence_families"]) or "none",
+            ]
+            for row in summary["classifications"]
+        ],
     )
+    classification_table = "\n".join(rows)
     return (
         "# Objective-C 3.0 Support Classification Summary\n\n"
         f"- Contract: `{summary['source_contract_id']}`\n"
@@ -356,17 +364,18 @@ def render_markdown(summary: dict[str, Any]) -> str:
         )
         + "\n\n"
         "## Surface Classifications\n\n"
-        "| Surface | Class | Claim Class | Required Evidence |\n"
-        "| --- | --- | --- | --- |\n"
-        f"{rows}\n"
+        f"{classification_table}\n"
     )
 
 
 def write_outputs(summary: dict[str, Any], json_out: Path, md_out: Path) -> None:
-    json_out.parent.mkdir(parents=True, exist_ok=True)
-    md_out.parent.mkdir(parents=True, exist_ok=True)
-    json_out.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    md_out.write_text(render_markdown(summary), encoding="utf-8")
+    write_report_outputs(
+        summary=summary,
+        json_path=json_out,
+        markdown_path=md_out,
+        markdown=render_markdown(summary),
+        sort_keys=False,
+    )
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -393,7 +402,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"support classification contract error: {exc}", file=sys.stderr)
         return 1
 
-    next_json = json.dumps(summary, indent=2) + "\n"
+    next_json = expected_json_report(summary, sort_keys=False)
     next_md = render_markdown(summary)
     if args.check:
         mismatches = []
