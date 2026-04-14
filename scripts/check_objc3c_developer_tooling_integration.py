@@ -7,6 +7,7 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from objc3c_tooling.json_io import write_json_file
 from objc3c_tooling.subprocesses import run_timed
 
 
@@ -151,7 +152,7 @@ def main() -> int:
         },
     }
     SUMMARY_OUT.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_OUT.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(SUMMARY_OUT, payload)
     print(f"summary_path: {SUMMARY_OUT.relative_to(ROOT).as_posix()}")
     if failures:
         print("developer-tooling-integration: FAIL", file=sys.stderr)

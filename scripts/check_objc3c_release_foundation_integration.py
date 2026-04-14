@@ -3,12 +3,11 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import load_json_object as load_json, write_json_file
 
 ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW_REPORT = ROOT / 'tmp' / 'reports' / 'objc3c-public-workflow' / 'validate-release-foundation.json'
@@ -70,7 +69,7 @@ def main() -> int:
         'published_sbom': publication_summary.get('sbom_path'),
         'published_attestation': publication_summary.get('attestation_path'),
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
+    write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print('objc3c-release-foundation-integration: PASS')
     return 0

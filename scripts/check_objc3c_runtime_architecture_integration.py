@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.json_io import load_json_object, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -452,7 +452,7 @@ def main() -> int:
         ],
     }
     INTEGRATION_SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    INTEGRATION_SUMMARY_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(INTEGRATION_SUMMARY_PATH, payload)
     print(f"summary_path: {repo_rel(INTEGRATION_SUMMARY_PATH)}")
     return 0
 

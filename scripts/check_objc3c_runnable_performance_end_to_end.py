@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import shutil
 import subprocess
@@ -12,7 +11,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 from objc3c_tooling.paths import normalize_rel_path, repo_rel
-from objc3c_tooling.json_io import load_json_object
+from objc3c_tooling.json_io import load_json_object, write_json_file
 from objc3c_tooling.subprocesses import run_capture
 
 
@@ -179,7 +178,7 @@ def main() -> int:
         ],
     }
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    write_json_file(REPORT_PATH, payload)
     print(f"summary_path: {repo_rel(REPORT_PATH)}")
     print("objc3c-runnable-performance: PASS")
     return 0

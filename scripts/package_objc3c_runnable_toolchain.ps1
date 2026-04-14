@@ -152,6 +152,21 @@ function Get-RepoRelativeNativeDocsFiles {
   )
 }
 
+function Get-RepoRelativePythonToolingFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $toolingRoot = Join-Path $RepoRoot "scripts/objc3c_tooling"
+  if (!(Test-Path -LiteralPath $toolingRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: missing Python tooling root $toolingRoot"
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $toolingRoot -Recurse -File -Filter "*.py" |
+      Sort-Object -Property FullName |
+      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
+  )
+}
+
 function Get-RepoRelativeRecoveryPositiveFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -472,11 +487,12 @@ $requiredRelativeFiles = @(
 
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
 $nativeDocsFiles = @(Get-RepoRelativeNativeDocsFiles -RepoRoot $repoRoot)
+$pythonToolingFiles = @(Get-RepoRelativePythonToolingFiles -RepoRoot $repoRoot)
 $recoveryPositiveFiles = @(Get-RepoRelativeRecoveryPositiveFiles -RepoRoot $repoRoot)
 $stdlibFiles = @(Get-RepoRelativeStdlibFiles -RepoRoot $repoRoot)
 $conformanceFiles = @(Get-RepoRelativeConformanceFiles -RepoRoot $repoRoot)
 $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
-foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $nativeDocsFiles + $recoveryPositiveFiles + $stdlibFiles + $conformanceFiles)) {
+foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $nativeDocsFiles + $pythonToolingFiles + $recoveryPositiveFiles + $stdlibFiles + $conformanceFiles)) {
   Copy-RepoRelativeFile -RepoRoot $repoRoot -PackageRoot $packageRoot -RelativePath $relativePath | Out-Null
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }
