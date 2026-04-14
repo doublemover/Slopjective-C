@@ -1,6 +1,7 @@
 #include "io/objc3_process.h"
 
 #include "io/objc3_manifest_artifacts.h"
+#include "io/objc3_json.h"
 #include "lower/objc3_lowering_contract.h"
 
 #if defined(_WIN32)
@@ -22,6 +23,8 @@
 #include <vector>
 
 namespace {
+
+using objc3::io::EscapeJsonString;
 #if !defined(_WIN32)
 extern char **environ;
 #endif
@@ -329,45 +332,6 @@ bool ExtractHexBoundaryTokenValue(const std::string &line,
     return false;
   }
   return DecodeHexString(encoded, value) && !value.empty();
-}
-
-std::string EscapeJsonString(const std::string &text) {
-  std::ostringstream out;
-  for (unsigned char c : text) {
-    switch (c) {
-      case '\\':
-        out << "\\\\";
-        break;
-      case '"':
-        out << "\\\"";
-        break;
-      case '\b':
-        out << "\\b";
-        break;
-      case '\f':
-        out << "\\f";
-        break;
-      case '\n':
-        out << "\\n";
-        break;
-      case '\r':
-        out << "\\r";
-        break;
-      case '\t':
-        out << "\\t";
-        break;
-      default:
-        if (c < 0x20) {
-          out << "\\u";
-          constexpr char kHex[] = "0123456789abcdef";
-          out << "00" << kHex[(c >> 4u) & 0x0f] << kHex[c & 0x0f];
-        } else {
-          out << static_cast<char>(c);
-        }
-        break;
-    }
-  }
-  return out.str();
 }
 
 std::string MakeIdentifierSafeSuffix(const std::string &text) {

@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "ir/objc3_ir_emitter.h"
+#include "io/objc3_json.h"
 #include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
 #include "pipeline/objc3_ir_emission_completeness_scaffold.h"
 #include "pipeline/objc3_lowering_runtime_diagnostics_surfacing_edge_case_compatibility_surface.h"
@@ -30,6 +31,8 @@
 #include "sema/objc3_semantic_passes.h"
 
 namespace {
+
+using objc3::io::EscapeJsonString;
 
 std::string MakeIdentifierSafeSuffix(const std::string &text);
 std::string BuildObjc3TranslationUnitIdentityKey(
@@ -312,45 +315,6 @@ const char *CompatibilityModeName(Objc3FrontendCompatibilityMode mode) {
 
 const char *ArcModeName(Objc3FrontendArcMode mode) {
   return mode == Objc3FrontendArcMode::kEnabled ? "enabled" : "disabled";
-}
-
-std::string EscapeJsonString(const std::string &value) {
-  std::ostringstream out;
-  for (const unsigned char c : value) {
-    switch (c) {
-      case '\\':
-        out << "\\\\";
-        break;
-      case '"':
-        out << "\\\"";
-        break;
-      case '\b':
-        out << "\\b";
-        break;
-      case '\f':
-        out << "\\f";
-        break;
-      case '\n':
-        out << "\\n";
-        break;
-      case '\r':
-        out << "\\r";
-        break;
-      case '\t':
-        out << "\\t";
-        break;
-      default:
-        if (c < 0x20u) {
-          out << "\\u00";
-          constexpr char kHex[] = "0123456789abcdef";
-          out << kHex[(c >> 4u) & 0x0fu] << kHex[c & 0x0fu];
-        } else {
-          out << static_cast<char>(c);
-        }
-        break;
-    }
-  }
-  return out.str();
 }
 
 std::string BuildStringArrayJson(const std::vector<std::string> &values) {

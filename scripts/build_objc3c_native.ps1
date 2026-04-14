@@ -2143,6 +2143,7 @@ $frontendModules = @(
       "native/objc3c/src/diag/objc3_diag_utils.cpp"
       "native/objc3c/src/io/objc3_diagnostics_artifacts.cpp"
       "native/objc3c/src/io/objc3_file_io.cpp"
+      "native/objc3c/src/io/objc3_json.cpp"
       "native/objc3c/src/io/objc3_manifest_artifacts.cpp"
       "native/objc3c/src/io/objc3_process.cpp"
     )

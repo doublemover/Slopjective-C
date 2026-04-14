@@ -19,12 +19,15 @@
 #include "io/objc3_cli_reporting_output_contract_edge_case_compatibility_surface.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_surface.h"
 #include "io/objc3_manifest_artifacts.h"
+#include "io/objc3_json.h"
 #include "io/objc3_cli_reporting_output_contract_recovery_determinism_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
 
 namespace fs = std::filesystem;
 
 namespace {
+
+using objc3::io::EscapeJsonString;
 
 constexpr std::size_t kMaxMessageSendArgs = 16;
 constexpr const char *kObjc3RuntimeArcDebugStateSnapshotSymbol =
@@ -180,49 +183,6 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
   }
 
   return true;
-}
-
-std::string EscapeJsonString(const std::string &value) {
-  std::ostringstream out;
-  for (unsigned char c : value) {
-    switch (c) {
-      case '"':
-        out << "\\\"";
-        break;
-      case '\\':
-        out << "\\\\";
-        break;
-      case '\b':
-        out << "\\b";
-        break;
-      case '\f':
-        out << "\\f";
-        break;
-      case '\n':
-        out << "\\n";
-        break;
-      case '\r':
-        out << "\\r";
-        break;
-      case '\t':
-        out << "\\t";
-        break;
-      default:
-        if (c < 0x20) {
-          std::ostringstream code;
-          code << std::hex << std::uppercase << static_cast<int>(c);
-          std::string hex = code.str();
-          while (hex.size() < 4) {
-            hex = "0" + hex;
-          }
-          out << "\\u" << hex;
-        } else {
-          out << static_cast<char>(c);
-        }
-        break;
-    }
-  }
-  return out.str();
 }
 
 std::string OptionalPath(const char *value) {

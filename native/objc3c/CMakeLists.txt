@@ -211,6 +211,12 @@ target_link_libraries(objc3c_ir PUBLIC
   objc3c_sema_type_system
 )
 
+add_library(objc3c_json STATIC
+  src/io/objc3_json.cpp
+)
+objc3c_apply_build_defaults(objc3c_json)
+objc3c_apply_llvm_direct_config(objc3c_json)
+
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
   src/pipeline/objc3_frontend_artifacts.cpp
@@ -226,6 +232,7 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_sema
   objc3c_lower
   objc3c_ir
+  objc3c_json
 )
 
 add_library(objc3c_io STATIC
@@ -252,7 +259,11 @@ add_library(objc3c_runtime_abi STATIC
 )
 objc3c_apply_build_defaults(objc3c_runtime_abi)
 objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
+target_link_libraries(objc3c_runtime_abi PUBLIC
+  objc3c_json
+)
 target_link_libraries(objc3c_io PUBLIC
+  objc3c_json
   objc3c_runtime_abi
 )
 
@@ -266,6 +277,7 @@ objc3c_apply_llvm_direct_config(objc3c_frontend)
 target_link_libraries(objc3c_frontend PUBLIC
   objc3c_pipeline
   objc3c_runtime_abi
+  objc3c_json
 )
 
 add_library(objc3c_driver STATIC
@@ -303,4 +315,5 @@ objc3c_apply_llvm_direct_config(objc3c-frontend-c-api-runner)
 objc3c_apply_runtime_output(objc3c-frontend-c-api-runner)
 target_link_libraries(objc3c-frontend-c-api-runner PRIVATE
   objc3c_driver
+  objc3c_json
 )

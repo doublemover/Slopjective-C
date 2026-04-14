@@ -17,9 +17,12 @@
 #include "ast/objc3_ast.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
+#include "io/objc3_json.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
+
+using objc3::io::EscapeJsonString;
 
 struct objc3c_frontend_context {
   std::string last_error;
@@ -178,49 +181,6 @@ static std::string ResolveEmitPrefix(const objc3c_frontend_compile_options_t &op
     return stem;
   }
   return DefaultEmitPrefix;
-}
-
-static std::string EscapeJsonString(const std::string &value) {
-  std::ostringstream out;
-  for (unsigned char c : value) {
-    switch (c) {
-      case '"':
-        out << "\\\"";
-        break;
-      case '\\':
-        out << "\\\\";
-        break;
-      case '\b':
-        out << "\\b";
-        break;
-      case '\f':
-        out << "\\f";
-        break;
-      case '\n':
-        out << "\\n";
-        break;
-      case '\r':
-        out << "\\r";
-        break;
-      case '\t':
-        out << "\\t";
-        break;
-      default:
-        if (c < 0x20) {
-          std::ostringstream code;
-          code << std::hex << std::uppercase << static_cast<int>(c);
-          std::string hex = code.str();
-          while (hex.size() < 4) {
-            hex = "0" + hex;
-          }
-          out << "\\u" << hex;
-        } else {
-          out << static_cast<char>(c);
-        }
-        break;
-    }
-  }
-  return out.str();
 }
 
 struct ParsedFrontendDiagnostic {
