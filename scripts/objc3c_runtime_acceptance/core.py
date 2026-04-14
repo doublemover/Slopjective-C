@@ -5341,8 +5341,12 @@ class CaseResult:
 
 RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
     "full": (),
+    "helpers": (
+        "runtime-probe-helper-support",
+    ),
     "fast": (
         "runtime-library",
+        "runtime-probe-helper-support",
         "compile-backend-parity",
         "artifact-registry-key-isolation",
         "installation-lifecycle",
@@ -9475,6 +9479,44 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
             "dispatch_expectations_drift_probe": (
                 "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
             ),
+        },
+    )
+
+
+def check_runtime_probe_helper_support_case(clangxx: str, run_dir: Path) -> CaseResult:
+    case_dir = run_dir / "runtime-probe-helper-support"
+    helper_probes = [
+        ROOT / "tests" / "tooling" / "runtime" / "json_probe_writer_support_test.cpp",
+        ROOT / "tests" / "tooling" / "runtime" / "runtime_snapshot_stabilizers_support_test.cpp",
+        ROOT / "tests" / "tooling" / "runtime" / "dispatch_expectations_support_test.cpp",
+        ROOT
+        / "tests"
+        / "tooling"
+        / "runtime"
+        / "runtime_probe_helper_output_equivalence_test.cpp",
+    ]
+    completed_probes: list[str] = []
+    for helper_probe in helper_probes:
+        helper_exe = case_dir / f"{helper_probe.stem}.exe"
+        compile_probe(clangxx, helper_probe, helper_exe, [])
+        run_probe(helper_exe)
+        completed_probes.append(repo_display_path(helper_probe))
+    return CaseResult(
+        case_id="runtime-probe-helper-support",
+        probe="tests/tooling/runtime/*_support_test.cpp",
+        fixture=None,
+        claim_class="runtime-probe-helper-tests",
+        passed=True,
+        summary={
+            "kind": "fast-runtime-probe-helper-tests",
+            "helper_probes": completed_probes,
+            "bounded_mismatch_diagnostics": True,
+            "representative_output_equivalence": [
+                "json-field-writer-comma-and-null-output",
+                "labeled-method-cache-state-output",
+                "labeled-fast-path-method-cache-state-output",
+                "labeled-dispatch-state-output",
+            ],
         },
     )
 
@@ -21244,6 +21286,10 @@ def main(argv: list[str] | None = None) -> int:
 
     case_factories: list[tuple[str, Callable[[], CaseResult]]] = [
         ("runtime-library", lambda: check_runtime_library_case(clangxx, run_dir)),
+        (
+            "runtime-probe-helper-support",
+            lambda: check_runtime_probe_helper_support_case(clangxx, run_dir),
+        ),
         ("compile-backend-parity", lambda: check_compile_backend_parity_case(run_dir)),
         ("artifact-registry-key-isolation", lambda: check_artifact_registry_key_isolation_case(run_dir)),
         ("installation-lifecycle", lambda: check_installation_lifecycle_case(clangxx, run_dir)),

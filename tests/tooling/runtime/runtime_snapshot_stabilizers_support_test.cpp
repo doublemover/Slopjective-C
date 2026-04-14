@@ -1,4 +1,5 @@
 #include "support/runtime_snapshot_stabilizers.h"
+#include "support/output_expectations.h"
 
 #include <string>
 
@@ -29,6 +30,8 @@ struct StablePropertyEntryForTest {
 }  // namespace
 
 int main() {
+  using objc3c::runtime::probe::ExpectTextEqual;
+  using objc3c::runtime::probe::ExpectTrue;
   using objc3c::runtime::probe::StabilizeNullableCString;
   using objc3c::runtime::probe::StabilizePropertyEntry;
   using objc3c::runtime::probe::StabilizeRegistrationState;
@@ -38,13 +41,17 @@ int main() {
   const char *field = source.c_str();
   StabilizeNullableCString(field, storage, field);
   source.assign("module-after-reset");
-  if (storage != "module-before-reset" || std::string(field) != storage) {
+  if (ExpectTextEqual(storage, "module-before-reset",
+                      "stabilized nullable CString storage", 1) != 0 ||
+      ExpectTextEqual(field, "module-before-reset",
+                      "stabilized nullable CString field", 1) != 0) {
     return 1;
   }
 
   field = "not-null";
   StabilizeNullableCString(nullptr, storage, field);
-  if (!storage.empty() || field != nullptr) {
+  if (ExpectTextEqual(storage, "", "null source clears storage", 2) != 0 ||
+      ExpectTrue(field == nullptr, "null source clears field", 2) != 0) {
     return 2;
   }
 
@@ -72,14 +79,17 @@ int main() {
   registered_identity.assign("mutated");
   rejected_module.assign("mutated");
   rejected_identity.assign("mutated");
-  if (std::string(registration.last_registered_module_name) !=
-          "registered-module" ||
-      std::string(registration.last_registered_translation_unit_identity_key) !=
-          "registered-identity" ||
-      std::string(registration.last_rejected_module_name) !=
-          "rejected-module" ||
-      std::string(registration.last_rejected_translation_unit_identity_key) !=
-          "rejected-identity") {
+  if (ExpectTextEqual(registration.last_registered_module_name,
+                      "registered-module", "registered module stable copy",
+                      3) != 0 ||
+      ExpectTextEqual(registration.last_registered_translation_unit_identity_key,
+                      "registered-identity", "registered identity stable copy",
+                      3) != 0 ||
+      ExpectTextEqual(registration.last_rejected_module_name, "rejected-module",
+                      "rejected module stable copy", 3) != 0 ||
+      ExpectTextEqual(registration.last_rejected_translation_unit_identity_key,
+                      "rejected-identity", "rejected identity stable copy",
+                      3) != 0) {
     return 3;
   }
 
@@ -94,9 +104,12 @@ int main() {
   property_name.assign("mutated");
   owner.assign("mutated");
   lifetime.assign("mutated");
-  if (std::string(entry.snapshot.property_name) != "count" ||
-      std::string(entry.snapshot.declaration_owner_identity) != "Widget" ||
-      std::string(entry.snapshot.ownership_lifetime_profile) != "strong") {
+  if (ExpectTextEqual(entry.snapshot.property_name, "count",
+                      "property entry name stable copy", 4) != 0 ||
+      ExpectTextEqual(entry.snapshot.declaration_owner_identity, "Widget",
+                      "property entry owner stable copy", 4) != 0 ||
+      ExpectTextEqual(entry.snapshot.ownership_lifetime_profile, "strong",
+                      "property entry lifetime stable copy", 4) != 0) {
     return 4;
   }
 

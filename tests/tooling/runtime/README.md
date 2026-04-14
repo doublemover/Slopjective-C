@@ -56,5 +56,15 @@ Representative live proof paths:
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.
 
+Fast helper-only checks:
+
+- `python scripts/check_objc3c_runtime_acceptance.py --case runtime-probe-helper-support`
+- `python scripts/check_objc3c_runtime_acceptance.py --suite helpers`
+- `python scripts/check_objc3c_runtime_acceptance.py --suite fast`
+
+The helper-only case compiles and runs the JSON writer, snapshot stabilizer,
+dispatch expectation, and representative helper-output equivalence tests. It is
+the preferred first check for changes under `tests/tooling/runtime/support/`.
+
 The runtime execution architecture published in `docs/objc3c-native.md` is the
 operator-facing boundary for what these probes may claim.
