@@ -397,7 +397,7 @@ NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
     const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program,
     const Objc3SemaLanguageProfile language_profile, bool &normalized) {
   normalized = false;
-  if (language_profile != Objc3SemaLanguageProfile::Legacy) {
+  if (language_profile == Objc3SemaLanguageProfile::Canonical) {
     return snapshot;
   }
   if (!IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(snapshot, program)) {

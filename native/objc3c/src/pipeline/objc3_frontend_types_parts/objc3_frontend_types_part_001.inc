@@ -22,7 +22,6 @@ inline constexpr std::uint8_t kObjc3DefaultLanguageVersion =
 
 enum class Objc3FrontendLanguageProfile : std::uint8_t {
   kCanonical = 0u,
-  kLegacy = 1u,
 };
 
 enum class Objc3FrontendArcMode : std::uint8_t {

@@ -71,10 +71,7 @@ BuildToolingMigrationCanonicalizationSourceCompletionSummary(
     const Objc3FrontendToolingDiagnosticsMigratorSourceInventorySummary
         &inventory_summary) {
   Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary summary;
-  summary.language_profile =
-      options.language_profile == Objc3FrontendLanguageProfile::kLegacy
-          ? "legacy"
-          : "canonical";
+  summary.language_profile = "canonical";
   summary.legacy_literal_diagnostics_enabled = options.legacy_literal_diagnostics;
   summary.legacy_yes_sites = migration_hints.legacy_yes_count;
   summary.legacy_no_sites = migration_hints.legacy_no_count;
@@ -336,9 +333,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
 
   Objc3LexerOptions lexer_options;
   lexer_options.language_version = options.language_version;
-  lexer_options.language_profile = options.language_profile == Objc3FrontendLanguageProfile::kLegacy
-                                         ? Objc3LexerLanguageProfile::kLegacy
-                                         : Objc3LexerLanguageProfile::kCanonical;
+  lexer_options.language_profile = Objc3LexerLanguageProfile::kCanonical;
   lexer_options.legacy_literal_diagnostics = options.legacy_literal_diagnostics;
   Objc3Lexer lexer(source, lexer_options);
   std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
@@ -521,9 +516,7 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     Objc3SemaPassManagerInput sema_input;
     sema_input.program = &result.program;
     sema_input.validation_options = semantic_options;
-    sema_input.language_profile = options.language_profile == Objc3FrontendLanguageProfile::kLegacy
-                                        ? Objc3SemaLanguageProfile::Legacy
-                                        : Objc3SemaLanguageProfile::Canonical;
+    sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;
     sema_input.legacy_literal_diagnostics = options.legacy_literal_diagnostics;
     sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;
     sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;

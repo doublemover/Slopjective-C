@@ -20,7 +20,6 @@ enum class Objc3SemaPassId {
 
 enum class Objc3SemaLanguageProfile : std::uint8_t {
   Canonical = 0,
-  Legacy = 1,
 };
 
 struct Objc3SemaMigrationHints {

@@ -62,7 +62,8 @@ inline std::string BuildObjc3ParseArtifactReplayKey(
 }
 
 inline const char *Objc3FrontendLanguageProfileName(const Objc3FrontendLanguageProfile mode) {
-  return mode == Objc3FrontendLanguageProfile::kLegacy ? "legacy" : "canonical";
+  (void)mode;
+  return "canonical";
 }
 
 inline bool IsObjc3LanguageVersionPragmaContractConsistent(

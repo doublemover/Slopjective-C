@@ -39,7 +39,7 @@ def test_frontend_types_header_is_used_by_pipeline_artifacts() -> None:
     assert "objc3c::config::kCanonicalLanguageVersion" in types_header
     assert "enum class Objc3FrontendLanguageProfile : std::uint8_t" in types_header
     assert "kCanonical = 0u," in types_header
-    assert "kLegacy = 1u," in types_header
+    assert "kLegacy" not in types_header
     assert "std::uint8_t language_version = kObjc3DefaultLanguageVersion;" in types_header
     assert "Objc3FrontendLanguageProfile language_profile = Objc3FrontendLanguageProfile::kCanonical;" in types_header
     assert "bool legacy_literal_diagnostics = false;" in types_header

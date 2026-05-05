@@ -338,7 +338,7 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "Objc3SemaParityContractSurface sema_parity_surface;" in pipeline_types
     assert "result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;" in pipeline_source
     assert "result.sema_parity_surface = sema_result.parity_surface;" in pipeline_source
-    assert "sema_input.language_profile = options.language_profile == Objc3FrontendLanguageProfile::kLegacy" in pipeline_source
+    assert "sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;" in pipeline_source
     assert "sema_input.legacy_literal_diagnostics = options.legacy_literal_diagnostics;" in pipeline_source
     assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline_source
     assert "sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;" in pipeline_source

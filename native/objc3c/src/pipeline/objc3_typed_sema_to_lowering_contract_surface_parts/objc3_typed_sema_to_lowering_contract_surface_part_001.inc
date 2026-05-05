@@ -68,7 +68,8 @@ inline bool IsObjc3TypedSemaToLoweringLanguageVersionPragmaCoordinateOrderConsis
 
 inline const char *Objc3TypedSemaToLoweringLanguageProfileName(
     const Objc3FrontendLanguageProfile mode) {
-  return mode == Objc3FrontendLanguageProfile::kLegacy ? "legacy" : "canonical";
+  (void)mode;
+  return "canonical";
 }
 
 inline std::string BuildObjc3TypedSemaToLoweringCompatibilityHandoffKey(

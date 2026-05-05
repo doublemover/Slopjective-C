@@ -21,7 +21,6 @@ inline constexpr std::uint8_t kFrontendDefaultLanguageVersion = 3u;
 
 enum class LanguageProfile : std::uint8_t {
   Canonical = 0,
-  Legacy = 1,
 };
 
 enum class StageId : std::uint8_t {

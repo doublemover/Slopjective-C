@@ -10,7 +10,6 @@
 
 enum class Objc3LexerLanguageProfile {
   kCanonical,
-  kLegacy,
 };
 
 struct Objc3LexerOptions {

@@ -454,8 +454,7 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
 
   const Objc3ParserContractSnapshot resolved_snapshot = ResolveObjc3ParserContractSnapshotForSemaHandoff(input);
   scaffold.parser_contract_compatibility_edge_case_detected =
-      input.language_profile == Objc3SemaLanguageProfile::Legacy &&
-      IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(resolved_snapshot, *input.program);
+      false;
   scaffold.parser_contract_snapshot = NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
       resolved_snapshot,
       *input.program,

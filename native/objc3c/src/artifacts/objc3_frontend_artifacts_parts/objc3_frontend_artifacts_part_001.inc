@@ -283,13 +283,8 @@ std::string BuildInteropBridgeParameterType(const FuncParam &param) {
 }
 
 const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
-  switch (mode) {
-    case Objc3FrontendLanguageProfile::kLegacy:
-      return "legacy";
-    case Objc3FrontendLanguageProfile::kCanonical:
-    default:
-      return "canonical";
-  }
+  (void)mode;
+  return "canonical";
 }
 
 const char *ArcModeName(Objc3FrontendArcMode mode) {
