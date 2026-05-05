@@ -3,7 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-API_HEADER = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "api.h"
+FRONTEND_HEADER = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "objc3c_frontend.h"
+OPTIONS_HEADER = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "objc3c_frontend_options.h"
 ANCHOR_CPP = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "frontend_anchor.cpp"
 CLI_HEADER = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "objc3_cli_frontend.h"
 CLI_CPP = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "objc3_cli_frontend.cpp"
@@ -95,11 +96,12 @@ def test_cli_frontend_exports_reusable_pipeline_compile_product() -> None:
 
 
 def test_public_api_documents_pipeline_backed_compile_behavior() -> None:
-    api_header = _read(API_HEADER)
+    frontend_header = _read(FRONTEND_HEADER)
+    options_header = _read(OPTIONS_HEADER)
 
-    assert "Pipeline-backed behavior:" in api_header
-    assert "Runs lexer/parser/sema/lower/emit through the extracted frontend pipeline." in api_header
-    assert "Current implementation status: scaffolded" not in api_header
-    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in api_header
-    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in api_header
-    assert "uint8_t language_version;" in api_header
+    assert "Pipeline-backed behavior:" in frontend_header
+    assert "Runs lexer/parser/sema/lower/emit through the extracted frontend pipeline." in frontend_header
+    assert "Current implementation status: scaffolded" not in frontend_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in options_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in options_header
+    assert "uint8_t language_version;" in options_header

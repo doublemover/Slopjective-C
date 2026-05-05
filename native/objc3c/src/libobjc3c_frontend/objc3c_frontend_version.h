@@ -1,7 +1,33 @@
-#ifndef OBJC3C_LIBOBJC3C_FRONTEND_VERSION_H_
-#define OBJC3C_LIBOBJC3C_FRONTEND_VERSION_H_
+#ifndef OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_VERSION_H_
+#define OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_VERSION_H_
 
 #include <stdint.h>
+
+#ifndef OBJC3C_FRONTEND_API
+#if defined(_WIN32)
+#if defined(OBJC3C_FRONTEND_BUILD_DLL)
+#define OBJC3C_FRONTEND_API __declspec(dllexport)
+#elif defined(OBJC3C_FRONTEND_USE_DLL)
+#define OBJC3C_FRONTEND_API __declspec(dllimport)
+#else
+#define OBJC3C_FRONTEND_API
+#endif
+#elif defined(__GNUC__) || defined(__clang__)
+#define OBJC3C_FRONTEND_API __attribute__((visibility("default")))
+#else
+#define OBJC3C_FRONTEND_API
+#endif
+#endif
+
+#ifndef OBJC3C_FRONTEND_DEPRECATED
+#if defined(__GNUC__) || defined(__clang__)
+#define OBJC3C_FRONTEND_DEPRECATED(msg) __attribute__((deprecated(msg)))
+#elif defined(_MSC_VER)
+#define OBJC3C_FRONTEND_DEPRECATED(msg) __declspec(deprecated(msg))
+#else
+#define OBJC3C_FRONTEND_DEPRECATED(msg)
+#endif
+#endif
 
 #define OBJC3C_FRONTEND_VERSION_MAJOR 0u
 #define OBJC3C_FRONTEND_VERSION_MINOR 1u
@@ -41,4 +67,17 @@ typedef struct objc3c_frontend_version {
     (uint32_t)OBJC3C_FRONTEND_ABI_VERSION          \
   }
 
-#endif  // OBJC3C_LIBOBJC3C_FRONTEND_VERSION_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+OBJC3C_FRONTEND_API uint8_t objc3c_frontend_is_abi_compatible(uint32_t requested_abi_version);
+OBJC3C_FRONTEND_API uint32_t objc3c_frontend_abi_version(void);
+OBJC3C_FRONTEND_API objc3c_frontend_version_t objc3c_frontend_version(void);
+OBJC3C_FRONTEND_API const char *objc3c_frontend_version_string(void);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
+#endif  // OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_VERSION_H_

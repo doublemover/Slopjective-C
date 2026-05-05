@@ -1,4 +1,4 @@
-#include "libobjc3c_frontend/api.h"
+#include "libobjc3c_frontend/objc3c_frontend.h"
 
 #include <algorithm>
 #include <cctype>

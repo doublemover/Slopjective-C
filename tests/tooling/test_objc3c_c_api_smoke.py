@@ -8,7 +8,15 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 SRC_ROOT = ROOT / "native" / "objc3c" / "src"
-API_H = SRC_ROOT / "libobjc3c_frontend" / "api.h"
+FRONTEND_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend.h"
+VERSION_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_version.h"
+OPTIONS_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_options.h"
+RESULT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_result.h"
+DIAGNOSTIC_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_diagnostic.h"
+CONTEXT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_context.h"
+ERROR_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_error.h"
+ARTIFACT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_artifact.h"
+STRING_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_string.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
 C_API_CPP = SRC_ROOT / "libobjc3c_frontend" / "c_api.cpp"
 
@@ -27,17 +35,19 @@ def _find_compiler(candidates: list[str]) -> str | None:
 
 def test_c_api_header_exposes_wrapper_surface() -> None:
     header = _read(C_API_H)
-    api_header = _read(API_H)
+    frontend_header = _read(FRONTEND_H)
+    options_header = _read(OPTIONS_H)
 
-    assert "#include \"api.h\"" in header
-    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in api_header
-    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in api_header
-    assert "OBJC3C_FRONTEND_COMPATIBILITY_MODE" not in api_header
-    assert "uint8_t language_version;" in api_header
-    assert "uint8_t compatibility_mode;" not in api_header
-    assert "uint8_t migration_assist;" not in api_header
-    assert "uint8_t reserved1;" in api_header
-    assert "uint8_t reserved2;" in api_header
+    assert "#include \"objc3c_frontend.h\"" in header
+    assert "#include \"objc3c_frontend_options.h\"" in frontend_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in options_header
+    assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in options_header
+    assert "OBJC3C_FRONTEND_COMPATIBILITY_MODE" not in options_header
+    assert "uint8_t language_version;" in options_header
+    assert "uint8_t compatibility_mode;" not in options_header
+    assert "uint8_t migration_assist;" not in options_header
+    assert "uint8_t reserved1;" in options_header
+    assert "uint8_t reserved2;" in options_header
     assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u" in header
     assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
     assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header
@@ -48,6 +58,27 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(" in header
     assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(" in header
     assert "size_t objc3c_frontend_c_copy_last_error(" in header
+
+
+def test_frontend_public_headers_are_domain_owned() -> None:
+    old_api_header = SRC_ROOT / "libobjc3c_frontend" / "api.h"
+    old_version_header = SRC_ROOT / "libobjc3c_frontend" / "version.h"
+
+    assert not old_api_header.exists()
+    assert not old_version_header.exists()
+
+    for header in [
+        FRONTEND_H,
+        VERSION_H,
+        CONTEXT_H,
+        OPTIONS_H,
+        RESULT_H,
+        DIAGNOSTIC_H,
+        STRING_H,
+        ARTIFACT_H,
+        ERROR_H,
+    ]:
+        assert header.exists(), header
 
 
 def test_c_api_cpp_delegates_to_core_frontend_api() -> None:

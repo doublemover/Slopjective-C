@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "api.h"
+#include "objc3c_frontend.h"
 
 #define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u
 
