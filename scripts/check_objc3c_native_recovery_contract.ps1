@@ -92,7 +92,7 @@ function Assert-Objc3ManifestPipelineSurface {
 
   try {
     if ($PSVersionTable.PSVersion.Major -ge 6) {
-      $manifest = $ManifestText | ConvertFrom-Json -Depth 8
+      $manifest = $ManifestText | ConvertFrom-Json -Depth 64
     } else {
       $manifest = $ManifestText | ConvertFrom-Json
     }
