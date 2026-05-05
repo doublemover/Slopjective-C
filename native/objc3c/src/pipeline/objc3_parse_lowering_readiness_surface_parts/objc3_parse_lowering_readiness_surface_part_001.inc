@@ -115,7 +115,6 @@ inline std::string BuildObjc3CompatibilityHandoffKey(
     bool compatibility_handoff_consistent) {
   return "language_profile=" +
          std::string(Objc3FrontendLanguageProfileName(options.language_profile)) +
-         ";legacy_literal_diagnostics=" + (options.legacy_literal_diagnostics ? "true" : "false") +
          ";legacy_literals=" + std::to_string(migration_hints.legacy_yes_count) + ":" +
          std::to_string(migration_hints.legacy_no_count) + ":" +
          std::to_string(migration_hints.legacy_null_count) +

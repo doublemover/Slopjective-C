@@ -410,9 +410,7 @@
            << (pipeline_result.sema_pass_flow_summary.language_profile == Objc3SemaLanguageProfile::Canonical
                    ? "canonical"
                    : "legacy")
-           << "\",\"pass_flow_legacy_literal_diagnostics_enabled\":"
-           << (pipeline_result.sema_pass_flow_summary.legacy_literal_diagnostics_enabled ? "true" : "false")
-           << ",\"pass_flow_migration_legacy_literal_total\":"
+           << "\",\"pass_flow_migration_legacy_literal_total\":"
            << pipeline_result.sema_pass_flow_summary.migration_legacy_literal_total
            << ",\"pass_flow_duplicate_execution_count\":"
            << pipeline_result.sema_pass_flow_summary.duplicate_pass_execution_count

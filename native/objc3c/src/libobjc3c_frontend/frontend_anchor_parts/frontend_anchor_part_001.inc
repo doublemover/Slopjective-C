@@ -388,7 +388,6 @@ static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_o
   Objc3FrontendOptions frontend_options;
   frontend_options.language_version = NormalizeLanguageVersion(options.language_version);
   frontend_options.language_profile = Objc3FrontendLanguageProfile::kCanonical;
-  frontend_options.legacy_literal_diagnostics = false;
   frontend_options.emit_manifest = options.emit_manifest != 0;
   frontend_options.emit_ir = options.emit_ir != 0;
   frontend_options.emit_object = options.emit_object != 0;
@@ -649,7 +648,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                  .rejected_profile_ids =
                      BuildObjc3RejectedConformanceProfileIds(),
                  .effective_language_profile = "canonical",
-                 .legacy_literal_diagnostics_enabled = false,
+                 .canonical_literal_rejection_diagnostics_enabled = false,
                  .publication_model =
                      "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
                  .publication_surface_kind = "frontend-c-api",

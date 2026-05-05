@@ -670,8 +670,8 @@ struct Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary {
       kObjc3SourceOnlyFeatureClaimAdvancedMigrationAssistFlow,
   };
   std::string language_profile = "canonical";
-  bool legacy_literal_diagnostics_enabled = false;
-  bool legacy_literal_diagnostics_required = true;
+  bool canonical_literal_rejection_diagnostics_enabled = false;
+  bool canonical_literal_rejection_diagnostics_required = true;
   std::size_t legacy_yes_sites = 0;
   std::size_t legacy_no_sites = 0;
   std::size_t legacy_null_sites = 0;
@@ -767,14 +767,14 @@ struct Objc3ToolingLegacyCanonicalMigrationSemanticsSummary {
   std::string language_profile_model =
       kObjc3ToolingLegacyCanonicalMigrationSemanticsLanguageProfileModel;
   std::string effective_language_profile = "canonical";
-  bool legacy_literal_diagnostics_enabled = false;
+  bool canonical_literal_rejection_diagnostics_enabled = false;
   std::size_t current_run_legacy_literal_sites = 0;
   std::size_t current_run_canonicalization_candidate_sites = 0;
   std::size_t fixit_family_count = 0;
   bool fail_closed = false;
   bool selected_configuration_valid = false;
   bool language_profile_semantics_landed = false;
-  bool legacy_literal_diagnostics_semantics_landed = false;
+  bool canonical_literal_rejection_semantics_landed = false;
   std::string canonical_mode_rejection_code =
       kObjc3ToolingLegacyCanonicalMigrationDiagnosticCode;
   bool canonical_mode_rejection_ready = false;

@@ -42,13 +42,11 @@ def test_frontend_types_header_is_used_by_pipeline_artifacts() -> None:
     assert "kLegacy" not in types_header
     assert "std::uint8_t language_version = kObjc3DefaultLanguageVersion;" in types_header
     assert "Objc3FrontendLanguageProfile language_profile = Objc3FrontendLanguageProfile::kCanonical;" in types_header
-    assert "bool legacy_literal_diagnostics = false;" in types_header
     _assert_in_order(
         types_header,
         [
             "std::uint8_t language_version = kObjc3DefaultLanguageVersion;",
             "Objc3FrontendLanguageProfile language_profile = Objc3FrontendLanguageProfile::kCanonical;",
-            "bool legacy_literal_diagnostics = false;",
             "Objc3LoweringContract lowering;",
         ],
     )

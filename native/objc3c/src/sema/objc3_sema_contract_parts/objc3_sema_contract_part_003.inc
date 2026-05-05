@@ -732,7 +732,6 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
       kObjc3CompatibilityStrictnessClaimCanonicalInterfacePayloadMode;
   std::string effective_language_profile = "canonical";
   std::vector<std::string> suppressed_macro_claim_ids;
-  bool legacy_literal_diagnostics_enabled = false;
   std::size_t valid_language_profile_count = 0;
   std::size_t live_selection_surface_count = 0;
   std::size_t valid_selection_combination_count = 0;
@@ -752,7 +751,7 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
   std::size_t arc_source_rejection_site_count = 0;
   bool fail_closed = false;
   bool language_profile_semantics_landed = false;
-  bool legacy_literal_diagnostics_semantics_landed = false;
+  bool canonical_literal_rejection_semantics_landed = false;
   bool source_only_claim_downgrade_semantics_landed = false;
   bool unsupported_feature_claim_rejection_semantics_landed = false;
   bool live_unsupported_feature_source_rejection_landed = false;
@@ -822,7 +821,7 @@ inline bool IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
          summary.suppressed_macro_claim_count ==
              kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount &&
          summary.language_profile_semantics_landed &&
-         summary.legacy_literal_diagnostics_semantics_landed &&
+         summary.canonical_literal_rejection_semantics_landed &&
          summary.source_only_claim_downgrade_semantics_landed &&
          summary.unsupported_feature_claim_rejection_semantics_landed &&
          summary.live_unsupported_feature_source_rejection_landed &&

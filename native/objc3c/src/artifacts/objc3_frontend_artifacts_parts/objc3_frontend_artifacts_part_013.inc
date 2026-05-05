@@ -1257,10 +1257,10 @@
   manifest << "    \"language_profile\":\"" << LanguageProfileName(options.language_profile) << "\",\n";
   manifest << "    \"arc_mode\":\"" << ArcModeName(options.arc_mode) << "\",\n";
   manifest << "    \"default_language_profile\":\"canonical\",\n";
-  manifest << "    \"legacy_literal_diagnostics\":" << (options.legacy_literal_diagnostics ? "true" : "false") << ",\n";
+  manifest << "    \"canonical_literal_rejection_diagnostics\":true,\n";
   manifest << "    \"language_version_selection_supported\":true,\n";
   manifest << "    \"compatibility_selection_supported\":true,\n";
-  manifest << "    \"legacy_literal_diagnostics_selection_supported\":true,\n";
+  manifest << "    \"canonical_literal_rejection_diagnostics_hard_error\":true,\n";
   manifest << "    \"strictness_selection_supported\":false,\n";
   manifest << "    \"strict_concurrency_selection_supported\":false,\n";
   manifest << "    \"feature_macro_surface_supported\":false,\n";

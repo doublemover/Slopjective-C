@@ -14,7 +14,7 @@ std::string BuildToolingLegacyCanonicalMigrationSemanticsReplayKey(
   std::ostringstream out;
   out << "mode=" << summary.effective_language_profile
       << ";canonical-rejection-diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";legacy-sites=" << summary.current_run_legacy_literal_sites
       << ";candidates=" << summary.current_run_canonicalization_candidate_sites
       << ";families=" << summary.fixit_family_count
@@ -33,8 +33,8 @@ BuildToolingLegacyCanonicalMigrationSemanticsSummary(
   Objc3ToolingLegacyCanonicalMigrationSemanticsSummary summary;
   summary.effective_language_profile =
       compatibility_summary.effective_language_profile;
-  summary.legacy_literal_diagnostics_enabled =
-      compatibility_summary.legacy_literal_diagnostics_enabled;
+  summary.canonical_literal_rejection_diagnostics_enabled =
+      compatibility_summary.canonical_literal_rejection_diagnostics_enabled;
   summary.current_run_legacy_literal_sites =
       fixit_summary.migration_fixit_candidate_sites;
   summary.current_run_canonicalization_candidate_sites =
@@ -45,12 +45,12 @@ BuildToolingLegacyCanonicalMigrationSemanticsSummary(
       compatibility_summary.selected_configuration_valid;
   summary.language_profile_semantics_landed =
       compatibility_summary.language_profile_semantics_landed;
-  summary.legacy_literal_diagnostics_semantics_landed =
-      compatibility_summary.legacy_literal_diagnostics_semantics_landed;
+  summary.canonical_literal_rejection_semantics_landed =
+      compatibility_summary.canonical_literal_rejection_semantics_landed;
   summary.canonical_mode_rejection_ready =
       compatibility_summary.fail_closed &&
       compatibility_summary.language_profile_semantics_landed &&
-      compatibility_summary.legacy_literal_diagnostics_semantics_landed &&
+      compatibility_summary.canonical_literal_rejection_semantics_landed &&
       summary.canonical_mode_rejection_code ==
           kObjc3ToolingLegacyCanonicalMigrationDiagnosticCode;
   summary.feature_specific_fixit_surface_ready =
@@ -94,8 +94,8 @@ std::string BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson(
       << EscapeJsonString(summary.language_profile_model)
       << "\",\"effective_language_profile\":\""
       << EscapeJsonString(summary.effective_language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ",\"current_run_legacy_literal_sites\":"
       << summary.current_run_legacy_literal_sites
       << ",\"current_run_canonicalization_candidate_sites\":"
@@ -106,8 +106,8 @@ std::string BuildToolingLegacyCanonicalMigrationSemanticsSummaryJson(
       << (summary.selected_configuration_valid ? "true" : "false")
       << ",\"language_profile_semantics_landed\":"
       << (summary.language_profile_semantics_landed ? "true" : "false")
-      << ",\"legacy_literal_diagnostics_semantics_landed\":"
-      << (summary.legacy_literal_diagnostics_semantics_landed ? "true" : "false")
+      << ",\"canonical_literal_rejection_semantics_landed\":"
+      << (summary.canonical_literal_rejection_semantics_landed ? "true" : "false")
       << ",\"canonical_mode_rejection_code\":\""
       << EscapeJsonString(summary.canonical_mode_rejection_code)
       << "\",\"canonical_mode_rejection_ready\":"

@@ -339,7 +339,6 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;" in pipeline_source
     assert "result.sema_parity_surface = sema_result.parity_surface;" in pipeline_source
     assert "sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;" in pipeline_source
-    assert "sema_input.legacy_literal_diagnostics = options.legacy_literal_diagnostics;" in pipeline_source
     assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline_source
     assert "sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;" in pipeline_source
     assert "sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;" in pipeline_source
@@ -351,7 +350,7 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "bundle.diagnostics = FlattenStageDiagnostics(bundle.stage_diagnostics);" in artifacts_source
     assert '\\"language_version\\":' in artifacts_source
     assert '\\"language_profile\\":\\"' in artifacts_source
-    assert '\\"legacy_literal_diagnostics\\":' in artifacts_source
+    assert '\\"canonical_literal_rejection_diagnostics\\":' in artifacts_source
     assert "LanguageProfileName(options.language_profile)" in artifacts_source
     _assert_in_order(
         artifacts_source,
@@ -359,7 +358,7 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
             'manifest << "  \\"frontend\\": {\\n";',
             'manifest << "    \\"language_version\\":"',
             'manifest << "    \\"language_profile\\":\\""',
-            'manifest << "    \\"legacy_literal_diagnostics\\":"',
+            'manifest << "    \\"canonical_literal_rejection_diagnostics\\":true,',
             'manifest << "    \\"max_message_send_args\\":"',
         ],
     )

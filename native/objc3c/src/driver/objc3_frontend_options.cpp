@@ -10,7 +10,6 @@ Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_option
   options.arc_mode = cli_options.arc_mode == Objc3ArcMode::kEnabled
                          ? Objc3FrontendArcMode::kEnabled
                          : Objc3FrontendArcMode::kDisabled;
-  options.legacy_literal_diagnostics = false;
   options.emit_manifest = true;
   options.emit_ir = true;
   options.emit_object = true;

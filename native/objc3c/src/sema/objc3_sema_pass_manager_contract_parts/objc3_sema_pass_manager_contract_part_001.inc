@@ -51,7 +51,6 @@ struct Objc3SemaPassFlowSummary {
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
   std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
-  bool legacy_literal_diagnostics_enabled = false;
   std::size_t migration_legacy_literal_total = 0;
   std::size_t configured_pass_count = kObjc3SemaPassOrder.size();
   std::size_t executed_pass_count = 0;
@@ -155,7 +154,6 @@ struct Objc3SemaPassManagerInput {
   const Objc3ParserContractSnapshot *parser_contract_snapshot = nullptr;
   Objc3SemanticValidationOptions validation_options;
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
-  bool legacy_literal_diagnostics = false;
   Objc3SemaMigrationHints migration_hints;
   Objc3SemaDiagnosticsBus diagnostics_bus;
 };

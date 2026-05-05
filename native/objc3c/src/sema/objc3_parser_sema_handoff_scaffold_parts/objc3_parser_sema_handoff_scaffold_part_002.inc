@@ -407,7 +407,6 @@ struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
   Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
-  bool legacy_literal_diagnostics = false;
   Objc3SemaMigrationHints migration_hints;
   Objc3SemaDiagnosticsBus diagnostics_bus;
   Objc3ParserContractSnapshot parser_contract_snapshot;
@@ -445,7 +444,6 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   scaffold.program = input.program;
   scaffold.validation_options = input.validation_options;
   scaffold.language_profile = input.language_profile;
-  scaffold.legacy_literal_diagnostics = input.legacy_literal_diagnostics;
   scaffold.migration_hints = input.migration_hints;
   scaffold.diagnostics_bus = input.diagnostics_bus;
   if (input.program == nullptr) {

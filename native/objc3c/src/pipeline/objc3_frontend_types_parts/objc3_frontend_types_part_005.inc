@@ -60,7 +60,7 @@ inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
          summary.suppressed_macro_claim_count ==
              kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount &&
          summary.language_profile_semantics_landed &&
-         summary.legacy_literal_diagnostics_semantics_landed &&
+         summary.canonical_literal_rejection_semantics_landed &&
          summary.source_only_claim_downgrade_semantics_landed &&
          summary.unsupported_feature_claim_rejection_semantics_landed &&
          summary.live_unsupported_feature_source_rejection_landed &&
@@ -240,7 +240,7 @@ struct Objc3VersionedConformanceReportLoweringSummary {
   bool canonical_interface_truthful = false;
   bool feature_macro_truthful = false;
   bool ready_for_runtime_conformance_publication = false;
-  bool legacy_literal_diagnostics_enabled = false;
+  bool canonical_literal_rejection_diagnostics_enabled = false;
   std::size_t runnable_feature_claim_count = 0;
   std::size_t source_only_feature_claim_count = 0;
   std::size_t unsupported_feature_claim_count = 0;
@@ -303,7 +303,7 @@ struct Objc3ToolingFeatureAwareConformanceReportEmissionSummary {
   std::string authority_model =
       kObjc3ToolingFeatureAwareConformanceReportEmissionAuthorityModel;
   std::string effective_language_profile = "canonical";
-  bool legacy_literal_diagnostics_enabled = false;
+  bool canonical_literal_rejection_diagnostics_enabled = false;
   std::vector<std::string> fixit_family_ids;
   std::size_t fixit_family_count = 0;
   std::size_t current_run_legacy_literal_sites = 0;
@@ -355,7 +355,7 @@ struct Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary {
   std::string report_artifact_suffix =
       kObjc3VersionedConformanceReportLoweringArtifactSuffix;
   std::string effective_language_profile = "canonical";
-  bool legacy_literal_diagnostics_enabled = false;
+  bool canonical_literal_rejection_diagnostics_enabled = false;
   bool feature_report_payload_emitted = false;
   bool deterministic_handoff = false;
   bool ready_for_release_evidence_packaging = false;

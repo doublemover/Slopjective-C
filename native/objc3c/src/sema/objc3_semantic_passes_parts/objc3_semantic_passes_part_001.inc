@@ -729,8 +729,6 @@ static std::string BuildCompatibilityStrictnessClaimSemanticsReplayKey(
       << ";canonical_interface_payload_mode="
       << summary.canonical_interface_payload_mode
       << ";language_profile=" << summary.effective_language_profile
-      << ";legacy_literal_diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
       << ";valid_language_profiles="
       << summary.valid_language_profile_count
       << ";live_selection_surfaces=" << summary.live_selection_surface_count
@@ -841,13 +839,11 @@ static Objc3CompatibilityStrictnessClaimSemanticsSummary
 BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface,
     bool legacy_language_profile,
-    bool legacy_literal_diagnostics_enabled,
     const Objc3UnsupportedFeatureClaimEnforcementStats
         &unsupported_feature_enforcement) {
   Objc3CompatibilityStrictnessClaimSemanticsSummary summary;
   summary.effective_language_profile =
       legacy_language_profile ? "legacy" : "canonical";
-  summary.legacy_literal_diagnostics_enabled = legacy_literal_diagnostics_enabled;
   summary.valid_language_profile_count =
       kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount;
   summary.live_selection_surface_count =
@@ -883,7 +879,7 @@ BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
   };
   summary.fail_closed = true;
   summary.language_profile_semantics_landed = true;
-  summary.legacy_literal_diagnostics_semantics_landed = true;
+  summary.canonical_literal_rejection_semantics_landed = true;
   summary.source_only_claim_downgrade_semantics_landed = true;
   summary.unsupported_feature_claim_rejection_semantics_landed = true;
   summary.live_unsupported_feature_source_rejection_landed = true;

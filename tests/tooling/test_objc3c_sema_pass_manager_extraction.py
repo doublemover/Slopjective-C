@@ -49,7 +49,6 @@ def test_pass_manager_contract_exposes_pass_order_and_diagnostics_bus() -> None:
     assert "PublishBatch(const std::vector<std::string> &batch) const" in contract
     assert "std::size_t Count() const" in contract
     assert "Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;" in contract
-    assert "bool legacy_literal_diagnostics = false;" in contract
     assert "Objc3SemaMigrationHints migration_hints;" in contract
     assert "std::vector<std::string> diagnostics;" in contract
     assert "std::array<std::size_t, 3> diagnostics_emitted_by_pass = {0, 0, 0};" in contract
@@ -87,11 +86,10 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
     assert "RunObjc3SemaPassManager(const Objc3SemaPassManagerInput &input)" in source
     assert "BuildSemanticIntegrationSurface(" in source
     assert "*input.program," in source
-    assert "false,\n              input.legacy_literal_diagnostics," in source
     assert "ValidateSemanticBodies(*input.program, result.integration_surface, input.validation_options, pass_diagnostics);" in source
     assert "ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);" in source
-    assert "AppendMigrationAssistDiagnostics(input, pass_diagnostics);" in source
-    assert "O3S216" in source
+    assert "AppendMigrationAssistDiagnostics" not in source
+    assert "O3S216" not in source
     assert "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());" in source
     assert "input.diagnostics_bus.PublishBatch(pass_diagnostics);" in source
     assert "result.diagnostics_after_pass[static_cast<std::size_t>(pass)] = result.diagnostics.size();" in source
@@ -113,7 +111,6 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
         [
             "for (const Objc3SemaPassId pass : kObjc3SemaPassOrder) {",
             "ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);",
-            "AppendMigrationAssistDiagnostics(input, pass_diagnostics);",
             "CanonicalizePassDiagnostics(pass_diagnostics);",
             "result.diagnostics.insert(result.diagnostics.end(), pass_diagnostics.begin(), pass_diagnostics.end());",
             "input.diagnostics_bus.PublishBatch(pass_diagnostics);",
@@ -128,22 +125,11 @@ def test_pass_manager_module_exists_and_orchestrates_semantic_passes() -> None:
         ],
     )
 
-    _assert_in_order(
-        source,
-        [
-            "append_for_literal(input.migration_hints.legacy_yes_count, 1u, \"YES\", \"true\");",
-            "append_for_literal(input.migration_hints.legacy_no_count, 2u, \"NO\", \"false\");",
-            "append_for_literal(input.migration_hints.legacy_null_count, 3u, \"NULL\", \"nil\");",
-        ],
-    )
-
-
 def test_pipeline_uses_pass_manager_and_diagnostics_bus() -> None:
     pipeline = _read(PIPELINE_SOURCE)
     assert '#include "sema/objc3_sema_pass_manager.h"' in pipeline
     assert "Objc3SemaPassManagerInput sema_input;" in pipeline
     assert "sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;" in pipeline
-    assert "sema_input.legacy_literal_diagnostics = options.legacy_literal_diagnostics;" in pipeline
     assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline
     assert "sema_input.diagnostics_bus.diagnostics = &result.stage_diagnostics.semantic;" in pipeline
     assert "RunObjc3SemaPassManager(sema_input)" in pipeline

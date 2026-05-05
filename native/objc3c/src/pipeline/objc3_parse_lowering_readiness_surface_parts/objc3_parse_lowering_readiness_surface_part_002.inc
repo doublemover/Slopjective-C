@@ -467,7 +467,7 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
               pipeline_result.migration_hints.legacy_no_count +
               pipeline_result.migration_hints.legacy_null_count &&
       legacy_literal_total <= surface.parser_token_count &&
-      (options.legacy_literal_diagnostics || legacy_literal_total == 0);
+      legacy_literal_total == 0;
   const bool language_version_pragma_contract_consistent =
       IsObjc3LanguageVersionPragmaContractConsistent(
           pipeline_result.language_version_pragma_contract);

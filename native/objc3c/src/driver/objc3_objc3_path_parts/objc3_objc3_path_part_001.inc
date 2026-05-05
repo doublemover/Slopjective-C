@@ -479,7 +479,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
              .supported_profile_ids = BuildObjc3ClaimedConformanceProfileIds(),
              .rejected_profile_ids = BuildObjc3RejectedConformanceProfileIds(),
              .effective_language_profile = "canonical",
-             .legacy_literal_diagnostics_enabled = false,
+             .canonical_literal_rejection_diagnostics_enabled = false,
              .publication_model =
                  "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
              .publication_surface_kind = "native-cli",

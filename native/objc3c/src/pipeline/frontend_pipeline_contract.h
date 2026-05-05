@@ -101,7 +101,6 @@ struct FrontendPipelineInput {
   std::string clang_path = "clang";
   std::uint8_t language_version = kFrontendDefaultLanguageVersion;
   LanguageProfile language_profile = LanguageProfile::Canonical;
-  bool legacy_literal_diagnostics = false;
   std::size_t max_message_send_args = kRuntimeDispatchDefaultArgs;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
 };

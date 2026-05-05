@@ -1031,7 +1031,6 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
       << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
       << ";language_version=" << static_cast<unsigned>(options.language_version)
       << ";language_profile=" << LanguageProfileName(options.language_profile)
-      << ";legacy_literal_diagnostics=" << (options.legacy_literal_diagnostics ? "true" : "false")
       << ";supported_selection_surfaces=3"
       << ";unsupported_selection_surfaces=2"
       << ";suppressed_macro_claims=3"
@@ -1065,13 +1064,13 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
       << ",\"effective_language_profile\":\""
       << LanguageProfileName(options.language_profile)
       << "\",\"default_language_profile\":\"canonical\""
-      << ",\"legacy_literal_diagnostics_enabled\":"
-      << (options.legacy_literal_diagnostics ? "true" : "false")
+      << ",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << "true"
       << ",\"driver_surface_model\":\""
       << kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel
       << "\",\"language_version_selection_supported\":true"
       << ",\"compatibility_selection_supported\":true"
-      << ",\"legacy_literal_diagnostics_selection_supported\":true"
+      << ",\"canonical_literal_rejection_diagnostics_hard_error\":true"
       << ",\"strictness_selection_supported\":false"
       << ",\"strict_concurrency_selection_supported\":false"
       << ",\"feature_macro_surface_supported\":false"
@@ -1116,8 +1115,8 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsReplayKey(
       << ";canonical_interface_payload_mode="
       << summary.canonical_interface_payload_mode
       << ";language_profile=" << summary.effective_language_profile
-      << ";legacy_literal_diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << ";canonical_literal_rejection_diagnostics="
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";live_unsupported_feature_families="
       << summary.live_unsupported_feature_family_count
       << ";live_unsupported_feature_sites="
@@ -1154,8 +1153,7 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
   if (summary.semantic_boundary_ready) {
     summary.effective_language_profile =
         semantic_boundary.effective_language_profile;
-    summary.legacy_literal_diagnostics_enabled =
-        semantic_boundary.legacy_literal_diagnostics_enabled;
+    summary.canonical_literal_rejection_diagnostics_enabled = true;
     summary.valid_language_profile_count =
         semantic_boundary.valid_language_profile_count;
     summary.live_selection_surface_count =
@@ -1198,8 +1196,8 @@ BuildFrontendCompatibilityStrictnessClaimSemanticsSummary(
     summary.fail_closed = semantic_boundary.fail_closed;
     summary.language_profile_semantics_landed =
         semantic_boundary.language_profile_semantics_landed;
-    summary.legacy_literal_diagnostics_semantics_landed =
-        semantic_boundary.legacy_literal_diagnostics_semantics_landed;
+    summary.canonical_literal_rejection_semantics_landed =
+        semantic_boundary.canonical_literal_rejection_semantics_landed;
     summary.source_only_claim_downgrade_semantics_landed =
         semantic_boundary.source_only_claim_downgrade_semantics_landed;
     summary.unsupported_feature_claim_rejection_semantics_landed =
@@ -1259,8 +1257,8 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << EscapeJsonString(summary.canonical_interface_payload_mode)
       << "\",\"effective_language_profile\":\""
       << EscapeJsonString(summary.effective_language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ",\"valid_language_profile_count\":"
       << summary.valid_language_profile_count
       << ",\"live_selection_surface_count\":"
@@ -1297,8 +1295,8 @@ std::string BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
       << (summary.semantic_boundary_ready ? "true" : "false")
       << ",\"language_profile_semantics_landed\":"
       << (summary.language_profile_semantics_landed ? "true" : "false")
-      << ",\"legacy_literal_diagnostics_semantics_landed\":"
-      << (summary.legacy_literal_diagnostics_semantics_landed ? "true" : "false")
+      << ",\"canonical_literal_rejection_semantics_landed\":"
+      << (summary.canonical_literal_rejection_semantics_landed ? "true" : "false")
       << ",\"source_only_claim_downgrade_semantics_landed\":"
       << (summary.source_only_claim_downgrade_semantics_landed ? "true"
                                                                : "false")

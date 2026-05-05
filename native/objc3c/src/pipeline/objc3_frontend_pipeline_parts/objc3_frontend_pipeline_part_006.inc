@@ -72,7 +72,6 @@ BuildToolingMigrationCanonicalizationSourceCompletionSummary(
         &inventory_summary) {
   Objc3FrontendToolingMigrationCanonicalizationSourceCompletionSummary summary;
   summary.language_profile = "canonical";
-  summary.legacy_literal_diagnostics_enabled = options.legacy_literal_diagnostics;
   summary.legacy_yes_sites = migration_hints.legacy_yes_count;
   summary.legacy_no_sites = migration_hints.legacy_no_count;
   summary.legacy_null_sites = migration_hints.legacy_null_count;
@@ -86,8 +85,7 @@ BuildToolingMigrationCanonicalizationSourceCompletionSummary(
   summary.dependency_inventory_ready =
       inventory_summary.ready_for_semantic_expansion;
   summary.canonicalization_surface_supported = summary.dependency_inventory_ready;
-  summary.fixit_migration_surface_supported =
-      summary.dependency_inventory_ready && summary.legacy_literal_diagnostics_enabled;
+  summary.fixit_migration_surface_supported = false;
   const bool counts_consistent =
       summary.legacy_total_sites ==
           summary.legacy_yes_sites + summary.legacy_no_sites +
@@ -516,7 +514,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
     sema_input.program = &result.program;
     sema_input.validation_options = semantic_options;
     sema_input.language_profile = Objc3SemaLanguageProfile::Canonical;
-    sema_input.legacy_literal_diagnostics = options.legacy_literal_diagnostics;
     sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;
     sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;
     sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;

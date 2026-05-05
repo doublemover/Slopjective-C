@@ -442,8 +442,8 @@ std::string BuildVersionedConformanceReportLoweringReplayKey(
       << ";artifact_schema_id=" << summary.artifact_schema_id
       << ";effective_language_profile="
       << summary.effective_language_profile
-      << ";legacy_literal_diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << ";canonical_literal_rejection_diagnostics="
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";runnable_claim_count=" << summary.runnable_feature_claim_count
       << ";source_only_claim_count=" << summary.source_only_feature_claim_count
       << ";unsupported_claim_count="
@@ -474,7 +474,7 @@ BuildVersionedConformanceReportLoweringSummary(
   Objc3VersionedConformanceReportLoweringSummary summary;
   summary.effective_language_profile =
       semantic_summary.effective_language_profile;
-  summary.legacy_literal_diagnostics_enabled = options.legacy_literal_diagnostics;
+  summary.canonical_literal_rejection_diagnostics_enabled = true;
   summary.runnable_feature_claim_ids = BuildRunnableFeatureClaimIds();
   summary.source_only_feature_claim_ids = BuildSourceOnlyFeatureClaimIds();
   summary.unsupported_feature_claim_ids = BuildUnsupportedFeatureClaimIds();
@@ -562,8 +562,8 @@ std::string BuildVersionedConformanceReportLoweringSummaryJson(
       << EscapeJsonString(summary.publication_model)
       << "\",\"effective_language_profile\":\""
       << EscapeJsonString(summary.effective_language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ",\"runnable_feature_claim_count\":"
       << summary.runnable_feature_claim_count
       << ",\"source_only_feature_claim_count\":"
@@ -787,7 +787,7 @@ std::string BuildToolingFeatureAwareConformanceReportEmissionReplayKey(
   std::ostringstream out;
   out << "mode=" << summary.effective_language_profile
       << ";canonical-rejection-diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";families=" << summary.fixit_family_count
       << ";legacy-sites=" << summary.current_run_legacy_literal_sites
       << ";ready="
@@ -805,8 +805,8 @@ BuildToolingFeatureAwareConformanceReportEmissionSummary(
   Objc3ToolingFeatureAwareConformanceReportEmissionSummary summary;
   summary.effective_language_profile =
       migration_summary.effective_language_profile;
-  summary.legacy_literal_diagnostics_enabled =
-      migration_summary.legacy_literal_diagnostics_enabled;
+  summary.canonical_literal_rejection_diagnostics_enabled =
+      migration_summary.canonical_literal_rejection_diagnostics_enabled;
   summary.fixit_family_ids = fixit_summary.fixit_family_ids;
   summary.fixit_family_count = fixit_summary.fixit_family_count;
   summary.current_run_legacy_literal_sites =
@@ -851,8 +851,8 @@ std::string BuildToolingFeatureAwareConformanceReportEmissionSummaryJson(
       << EscapeJsonString(summary.authority_model)
       << "\",\"effective_language_profile\":\""
       << EscapeJsonString(summary.effective_language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ",\"fixit_family_ids\":"
       << BuildStringArrayJson(summary.fixit_family_ids)
       << ",\"fixit_family_count\":" << summary.fixit_family_count
@@ -882,7 +882,7 @@ std::string BuildToolingCorpusShardingReleaseEvidencePackagingReplayKey(
   std::ostringstream out;
   out << "mode=" << summary.effective_language_profile
       << ";canonical-rejection-diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";profiles=" << summary.targeted_profile_count
       << ";corpus-shards=" << summary.corpus_shard_count
       << ";release-artifacts=" << summary.release_evidence_artifact_count
@@ -898,8 +898,8 @@ BuildToolingCorpusShardingReleaseEvidencePackagingSummary(
   Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary summary;
   summary.effective_language_profile =
       feature_summary.effective_language_profile;
-  summary.legacy_literal_diagnostics_enabled =
-      feature_summary.legacy_literal_diagnostics_enabled;
+  summary.canonical_literal_rejection_diagnostics_enabled =
+      feature_summary.canonical_literal_rejection_diagnostics_enabled;
   summary.feature_report_payload_emitted =
       feature_summary.report_payload_emitted;
   summary.deterministic_handoff =
@@ -959,8 +959,8 @@ std::string BuildToolingCorpusShardingReleaseEvidencePackagingSummaryJson(
       << EscapeJsonString(summary.report_artifact_suffix)
       << "\",\"effective_language_profile\":\""
       << EscapeJsonString(summary.effective_language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ",\"feature_report_payload_emitted\":"
       << (summary.feature_report_payload_emitted ? "true" : "false")
       << ",\"deterministic_handoff\":"
@@ -1090,8 +1090,8 @@ std::string BuildPublicConformanceReportJson(
       << EscapeJsonString(kObjc3RuntimeCapabilityConcurrencyMode)
       << "\",\"compatibility\":\""
       << EscapeJsonString(summary.effective_language_profile)
-      << "\",\"legacy_literal_diagnostics\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << "},\"profiles\":"
       << BuildPublicConformanceProfilesJson()
       << ",\"optional_features\":"
@@ -1147,8 +1147,8 @@ std::string BuildVersionedConformanceReportArtifactJson(
       << static_cast<unsigned>(options.language_version) << ",\n"
       << "  \"effective_language_profile\": \""
       << EscapeJsonString(summary.effective_language_profile) << "\",\n"
-      << "  \"legacy_literal_diagnostics_enabled\": "
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false") << ",\n"
+      << "  \"canonical_literal_rejection_diagnostics_enabled\": "
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false") << ",\n"
       << "  \"runnable_feature_claim_ids\": "
       << BuildStringArrayJson(summary.runnable_feature_claim_ids) << ",\n"
       << "  \"source_only_feature_claim_ids\": "

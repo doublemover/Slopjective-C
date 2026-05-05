@@ -931,8 +931,8 @@ bool TryBuildObjc3ConformanceReportPublicationArtifact(
       << ",\n"
       << "  \"effective_language_profile\": \""
       << EscapeJsonString(inputs.effective_language_profile) << "\",\n"
-      << "  \"legacy_literal_diagnostics_enabled\": "
-      << (inputs.legacy_literal_diagnostics_enabled ? "true" : "false") << ",\n"
+      << "  \"canonical_literal_rejection_diagnostics_enabled\": "
+      << (inputs.canonical_literal_rejection_diagnostics_enabled ? "true" : "false") << ",\n"
       << "  \"publication_model\": \""
       << EscapeJsonString(inputs.publication_model) << "\",\n"
       << "  \"publication_surface_kind\": \""
@@ -991,7 +991,7 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
   std::string effective_language_profile;
   std::string runtime_capability_contract_id;
   std::string public_conformance_schema_id;
-  bool legacy_literal_diagnostics_enabled = false;
+  bool canonical_literal_rejection_diagnostics_enabled = false;
   std::string publication_schema_id;
   std::string publication_contract_id;
   std::string selected_profile;
@@ -1029,9 +1029,9 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
     error = "missing effective_language_profile in conformance report";
     return false;
   }
-  if (!TryExtractJsonBoolField(report_json, "legacy_literal_diagnostics_enabled",
-                               legacy_literal_diagnostics_enabled)) {
-    error = "missing legacy_literal_diagnostics_enabled in conformance report";
+  if (!TryExtractJsonBoolField(report_json, "canonical_literal_rejection_diagnostics_enabled",
+                               canonical_literal_rejection_diagnostics_enabled)) {
+    error = "missing canonical_literal_rejection_diagnostics_enabled in conformance report";
     return false;
   }
   if (report_json.find("\"runtime_capability_report\"") == std::string::npos ||
@@ -1228,8 +1228,8 @@ bool TryBuildObjc3ConformanceClaimValidationArtifact(
       << BuildIndentedStringArrayJson(rejected_profile_ids, "    ") << ",\n"
       << "  \"effective_language_profile\": \""
       << EscapeJsonString(effective_language_profile) << "\",\n"
-      << "  \"legacy_literal_diagnostics_enabled\": "
-      << (legacy_literal_diagnostics_enabled ? "true" : "false") << ",\n"
+      << "  \"canonical_literal_rejection_diagnostics_enabled\": "
+      << (canonical_literal_rejection_diagnostics_enabled ? "true" : "false") << ",\n"
       << "  \"publication_surface_kind\": \""
       << EscapeJsonString(publication_surface_kind) << "\",\n"
       << "  \"ready\": true\n"

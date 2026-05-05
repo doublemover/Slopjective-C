@@ -825,7 +825,6 @@
   ir_frontend_metadata.arc_mode = ArcModeName(options.arc_mode);
   ir_frontend_metadata.arc_mode_enabled =
       options.arc_mode == Objc3FrontendArcMode::kEnabled;
-  ir_frontend_metadata.legacy_literal_diagnostics = options.legacy_literal_diagnostics;
   ir_frontend_metadata.versioned_conformance_report_lowering_ready =
       IsReadyObjc3VersionedConformanceReportLoweringSummary(
           versioned_conformance_report_lowering);

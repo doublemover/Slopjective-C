@@ -33,34 +33,6 @@ bool IsDiagnosticLess(const std::string &lhs, const std::string &rhs) {
   return lhs_key.raw < rhs_key.raw;
 }
 
-void AppendMigrationAssistDiagnostics(const Objc3SemaPassManagerInput &input, std::vector<std::string> &diagnostics) {
-  // runnable-core compatibility guard anchor: legacy literal diagnostics only
-  // becomes a live fail-closed diagnostic surface in canonical mode.
-  if (!input.legacy_literal_diagnostics || input.language_profile != Objc3SemaLanguageProfile::Canonical) {
-    return;
-  }
-
-  const auto append_for_literal = [&diagnostics](std::size_t count,
-                                                 unsigned column,
-                                                 const char *legacy_literal,
-                                                 const char *canonical_literal) {
-    if (count == 0) {
-      return;
-    }
-    diagnostics.push_back(
-        MakeDiag(1u,
-                 column,
-                 "O3S216",
-                 "legacy literal diagnostics requires canonical literal '" + std::string(canonical_literal) +
-                     "' instead of legacy '" + legacy_literal + "' (" + std::to_string(count) +
-                     " occurrence(s))"));
-  };
-
-  append_for_literal(input.migration_hints.legacy_yes_count, 1u, "YES", "true");
-  append_for_literal(input.migration_hints.legacy_no_count, 2u, "NO", "false");
-  append_for_literal(input.migration_hints.legacy_null_count, 3u, "NULL", "nil");
-}
-
 void CanonicalizePassDiagnostics(std::vector<std::string> &diagnostics) {
   std::stable_sort(diagnostics.begin(), diagnostics.end(), IsDiagnosticLess);
 }
@@ -866,7 +838,6 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
 
   result.executed = true;
   result.sema_pass_flow_summary.language_profile = input.language_profile;
-  result.sema_pass_flow_summary.legacy_literal_diagnostics_enabled = input.legacy_literal_diagnostics;
   result.sema_pass_flow_summary.migration_legacy_literal_total = input.migration_hints.legacy_total();
   bool deterministic_semantic_diagnostics = handoff.deterministic;
   bool diagnostics_canonicalized = true;
@@ -946,7 +917,6 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           BuildSemanticIntegrationSurface(
               *input.program,
               false,
-              input.legacy_literal_diagnostics,
               input.validation_options.allow_source_only_block_literals,
               input.validation_options.allow_source_only_defer_statements,
               input.validation_options.allow_source_only_error_runtime_surface,
@@ -958,7 +928,6 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
                                                            result.integration_surface);
     } else {
       ValidatePureContractSemanticDiagnostics(*input.program, result.integration_surface.functions, pass_diagnostics);
-      AppendMigrationAssistDiagnostics(input, pass_diagnostics);
     }
     CanonicalizePassDiagnostics(pass_diagnostics);
     const bool pass_diagnostics_canonical = IsCanonicalPassDiagnostics(pass_diagnostics);

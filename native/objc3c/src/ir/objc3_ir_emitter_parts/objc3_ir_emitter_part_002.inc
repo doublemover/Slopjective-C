@@ -106,7 +106,6 @@
     out << "; frontend_profile = language_version=" << static_cast<unsigned>(frontend_metadata_.language_version)
         << ", language_profile=" << frontend_metadata_.language_profile
         << ", arc_mode=" << frontend_metadata_.arc_mode
-        << ", legacy_literal_diagnostics=" << (frontend_metadata_.legacy_literal_diagnostics ? "true" : "false")
         << ", migration_legacy_total=" << frontend_metadata_.migration_legacy_total() << "\n";
     out << "; frontend_objc_interface_implementation_profile = declared_interfaces="
         << frontend_metadata_.declared_interfaces

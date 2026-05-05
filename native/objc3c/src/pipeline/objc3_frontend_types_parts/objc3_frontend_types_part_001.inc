@@ -33,7 +33,6 @@ struct Objc3FrontendOptions {
   std::uint8_t language_version = kObjc3DefaultLanguageVersion;
   Objc3FrontendLanguageProfile language_profile = Objc3FrontendLanguageProfile::kCanonical;
   Objc3FrontendArcMode arc_mode = Objc3FrontendArcMode::kDisabled;
-  bool legacy_literal_diagnostics = false;
   bool emit_manifest = true;
   bool emit_ir = true;
   bool emit_object = true;

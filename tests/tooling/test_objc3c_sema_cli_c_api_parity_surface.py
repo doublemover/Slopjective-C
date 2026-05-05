@@ -55,14 +55,14 @@ def test_manifest_emits_sema_parity_contract_fields() -> None:
 
     assert "language_version" in artifacts
     assert "language_profile" in artifacts
-    assert "legacy_literal_diagnostics" in artifacts
+    assert "canonical_literal_rejection_diagnostics" in artifacts
     _assert_in_order(
         artifacts,
         [
             'manifest << "  \\"frontend\\": {\\n";',
             'manifest << "    \\"language_version\\":"',
             'manifest << "    \\"language_profile\\":\\""',
-            'manifest << "    \\"legacy_literal_diagnostics\\":"',
+            'manifest << "    \\"canonical_literal_rejection_diagnostics\\":true,',
             'manifest << "    \\"max_message_send_args\\":"',
         ],
     )

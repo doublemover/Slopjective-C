@@ -1161,8 +1161,7 @@
     out << "!objc3.objc_async_continuation_lowering = !{!43}\n";
     out << "!objc3.objc_error_diagnostics_recovery_lowering = !{!44}\n";
     out << "!0 = !{i32 " << static_cast<unsigned>(frontend_metadata_.language_version) << ", !\""
-        << EscapeCStringLiteral(frontend_metadata_.language_profile) << "\", i1 "
-        << (frontend_metadata_.legacy_literal_diagnostics ? 1 : 0) << ", i64 "
+        << EscapeCStringLiteral(frontend_metadata_.language_profile) << "\", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_yes) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_no) << ", i64 "
         << static_cast<unsigned long long>(frontend_metadata_.migration_legacy_null) << ", i64 "

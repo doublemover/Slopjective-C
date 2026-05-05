@@ -283,7 +283,6 @@
       BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
           surface,
           legacy_language_profile,
-          legacy_literal_diagnostics_enabled,
           unsupported_feature_enforcement);
   surface.built = true;
   return surface;

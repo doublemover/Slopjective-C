@@ -52,7 +52,6 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
     assert "unsupported compile_options.compatibility_mode:" not in source
     assert "Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);" in source
     assert "frontend_options.language_profile = Objc3FrontendLanguageProfile::kCanonical;" in source
-    assert "frontend_options.legacy_literal_diagnostics = false;" in source
     assert "OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY" not in source
     assert "Objc3FrontendCompileProduct product = CompileObjc3SourceWithPipeline(input_path, source_text, frontend_options);" in source
     assert "std::vector<std::string> emit_diagnostics = product.artifact_bundle.post_pipeline_diagnostics;" in source

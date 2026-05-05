@@ -175,7 +175,6 @@ struct Objc3IRFrontendMetadata {
   std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
   bool arc_mode_enabled = false;
-  bool legacy_literal_diagnostics = false;
   bool versioned_conformance_report_lowering_ready = false;
   std::string versioned_conformance_report_lowering_replay_key;
   std::size_t migration_legacy_yes = 0;

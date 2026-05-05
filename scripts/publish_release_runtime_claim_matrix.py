@@ -206,7 +206,7 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
             {"id": "canonical", "status": "supported"},
             {"id": "legacy", "status": "supported"},
         ],
-        "legacy_literal_diagnostics": {"status": "supported"},
+        "canonical_literal_rejection_diagnostics": {"status": "supported"},
         "macro_claim_surface": {"status": "suppressed"},
         "operator_formats": [
             {"format": "json", "emit_status": "supported", "validate_status": "supported"},

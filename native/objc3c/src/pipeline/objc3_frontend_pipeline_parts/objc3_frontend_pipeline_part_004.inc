@@ -687,7 +687,7 @@ std::string BuildToolingMigrationCanonicalizationSourceCompletionReplayKey(
   std::ostringstream out;
   out << "compat=" << summary.language_profile
       << ";canonical-rejection-diagnostics="
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
       << ";legacy=" << summary.legacy_yes_sites << ":" << summary.legacy_no_sites
       << ":" << summary.legacy_null_sites << ":" << summary.legacy_total_sites
       << ";canonical=" << summary.canonical_true_rewrite_sites << ":"

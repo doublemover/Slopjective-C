@@ -79,7 +79,6 @@ inline std::string BuildObjc3TypedSemaToLoweringCompatibilityHandoffKey(
     bool compatibility_handoff_consistent) {
   return "language_profile=" +
          std::string(Objc3TypedSemaToLoweringLanguageProfileName(options.language_profile)) +
-         ";legacy_literal_diagnostics=" + (options.legacy_literal_diagnostics ? "true" : "false") +
          ";legacy_literals=" + std::to_string(migration_hints.legacy_yes_count) + ":" +
          std::to_string(migration_hints.legacy_no_count) + ":" +
          std::to_string(migration_hints.legacy_null_count) +
@@ -723,7 +722,7 @@ inline Objc3TypedSemaToLoweringContractSurface BuildObjc3TypedSemaToLoweringCont
               pipeline_result.migration_hints.legacy_no_count +
               pipeline_result.migration_hints.legacy_null_count &&
       legacy_literal_total <= parser_snapshot.token_count &&
-      (options.legacy_literal_diagnostics || legacy_literal_total == 0);
+      legacy_literal_total == 0;
   const bool language_version_pragma_contract_consistent =
       IsObjc3TypedSemaToLoweringLanguageVersionPragmaContractConsistent(
           pipeline_result.language_version_pragma_contract);

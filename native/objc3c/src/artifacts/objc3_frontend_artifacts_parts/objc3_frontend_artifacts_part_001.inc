@@ -537,7 +537,6 @@ std::string BuildRunnableFeatureClaimInventoryReplayKey(
       << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
       << ";language_version=" << static_cast<unsigned>(options.language_version)
       << ";language_profile=" << LanguageProfileName(options.language_profile)
-      << ";legacy_literal_diagnostics=" << (options.legacy_literal_diagnostics ? "true" : "false")
       << ";truth_model=" << kObjc3RunnableFeatureClaimTruthModel
       << ";declared_globals=" << pipeline_result.program.ast.globals.size()
       << ";declared_functions=" << pipeline_result.program.ast.functions.size()
@@ -568,8 +567,8 @@ std::string BuildRunnableFeatureClaimInventoryJson(
       << static_cast<unsigned>(options.language_version)
       << ",\"effective_language_profile\":\""
       << LanguageProfileName(options.language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (options.legacy_literal_diagnostics ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << "true"
       << ",\"strictness_selection_supported\":false"
       << ",\"strict_concurrency_mode_supported\":false"
       << ",\"mode_truth_fail_closed\":true"
@@ -1279,10 +1278,10 @@ std::string BuildToolingMigrationCanonicalizationSourceCompletionSummaryJson(
       << BuildStringArrayJson(summary.source_only_claim_ids)
       << ",\"language_profile\":\""
       << EscapeJsonString(summary.language_profile)
-      << "\",\"legacy_literal_diagnostics_enabled\":"
-      << (summary.legacy_literal_diagnostics_enabled ? "true" : "false")
-      << ",\"legacy_literal_diagnostics_required\":"
-      << (summary.legacy_literal_diagnostics_required ? "true" : "false")
+      << "\",\"canonical_literal_rejection_diagnostics_enabled\":"
+      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false")
+      << ",\"canonical_literal_rejection_diagnostics_required\":"
+      << (summary.canonical_literal_rejection_diagnostics_required ? "true" : "false")
       << ",\"legacy_yes_sites\":" << summary.legacy_yes_sites
       << ",\"legacy_no_sites\":" << summary.legacy_no_sites
       << ",\"legacy_null_sites\":" << summary.legacy_null_sites
