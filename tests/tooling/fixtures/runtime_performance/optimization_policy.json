@@ -24,7 +24,7 @@
   ],
   "disallowed_optimization_moves": [
     "no alternate dispatch entrypoint",
-    "no benchmark-only runtime shim",
+    "no benchmark-only runtime adapter",
     "no widening native/objc3c/src/runtime/objc3_runtime.h for performance counters alone",
     "no sidecar-only timing report without a coupled runtime probe result",
     "no cache-fast-path claim without matching runtime snapshot proof"

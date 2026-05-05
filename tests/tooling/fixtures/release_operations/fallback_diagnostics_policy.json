@@ -11,7 +11,7 @@
     {
       "diagnostic_id": "runtime-metadata-fallback",
       "severity": "warn",
-      "trigger": "candidate or preview channel requires runtime compatibility shim behavior",
+      "trigger": "candidate or preview channel requires legacy runtime behavior",
       "required_action": "publish runtime-fallback-required warning and rollback guidance"
     },
     {

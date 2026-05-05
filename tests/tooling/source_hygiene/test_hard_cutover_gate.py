@@ -104,6 +104,18 @@ def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: P
     assert report["active_findings"][0]["pattern_id"] == "canonical-rejection-diagnostics-surface"
 
 
+def test_hard_cutover_gate_rejects_fallback_behavior_wording(tmp_path: Path) -> None:
+    write(
+        tmp_path / "docs/runbooks/runtime.md",
+        "Allowed fallback behavior:\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "deterministic-fallback-wording"
+
+
 def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:
     report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
     json_path = tmp_path / "tmp/reports/source_hygiene/hard-cutover/report.json"

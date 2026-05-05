@@ -35,7 +35,7 @@
     "tmp/pkg/objc3c-native-runnable-toolchain"
   ],
   "explicit_non_goals": [
-    "no milestone-local runtime shim",
+    "no milestone-local runtime adapter",
     "no sidecar-only performance claim surface",
     "no hidden optimization toggle outside checked-in code",
     "no second public runtime ABI for measurements"

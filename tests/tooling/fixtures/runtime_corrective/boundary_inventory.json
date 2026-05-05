@@ -66,7 +66,7 @@
   "current_corrective_gaps": [
     {
       "gap_id": "dispatch-fallback-after-slow-path-miss",
-      "summary": "Unresolved sends still retain one deterministic arithmetic fallback path after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
+      "summary": "Unresolved sends still retain one strict dispatch error path after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
       "evidence_references": [
         "docs/objc3c-native.md",
         "native/objc3c/src/runtime/objc3_runtime.cpp"
@@ -164,7 +164,7 @@
       "kind": "documentation-search",
       "path": "docs/objc3c-native.md",
       "patterns": [
-        "unresolved dispatch still has one deterministic fallback path after slow-path miss",
+        "unresolved dispatch still has one strict dispatch error path after slow-path miss",
         "synthesized accessor IR still carries transitional lowering residue",
         "native-output truth requires the emitted object and linked probe to stay coupled end to end"
       ]

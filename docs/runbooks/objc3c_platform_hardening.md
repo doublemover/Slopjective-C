@@ -186,7 +186,7 @@ Hard-fail classes:
 - update or compatibility publication that implies support outside the checked-in
   matrix
 
-Allowed fallback behavior:
+Allowed fail-closed behavior:
 
 - capability inspection and docs-only policy checks may still run on an
   unsupported host when they do not widen support claims

@@ -1,7 +1,7 @@
 {
   "id": "MTC-73-GATE-01",
   "title": "Require macro-gated fallback and reject unguarded match when match feature is disabled",
-  "feature": "match provisional gating and feature-macro fallback behavior",
+  "feature": "match provisional gating and feature-macro fail-closed behavior",
   "bucket": "semantic",
   "profile": "core",
   "references": [

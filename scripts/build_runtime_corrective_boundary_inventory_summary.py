@@ -15,6 +15,10 @@ DOC_PATH = ROOT / "docs/objc3c-native.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 IR_PATH = ROOT / "native/objc3c/src/ir/objc3_ir_emitter.cpp"
 LOWERING_CONTRACT_PATH = ROOT / "native/objc3c/src/lower/objc3_lowering_contract.h"
+RUNTIME_SOURCE_ROOT = ROOT / "native/objc3c/src/runtime"
+IR_SOURCE_ROOT = ROOT / "native/objc3c/src/ir"
+LOWERING_SOURCE_ROOT = ROOT / "native/objc3c/src/lower"
+SOURCE_SUFFIXES = {".cpp", ".h", ".inc"}
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -25,12 +29,32 @@ def count_literal(path: Path, needle: str) -> int:
     return path.read_text(encoding="utf-8").count(needle)
 
 
+def read_source_surface(paths: list[Path]) -> str:
+    seen: set[Path] = set()
+    chunks: list[str] = []
+    for path in paths:
+        candidates = [path]
+        if path.is_dir():
+            candidates = sorted(
+                candidate
+                for candidate in path.rglob("*")
+                if candidate.is_file() and candidate.suffix in SOURCE_SUFFIXES
+            )
+        for candidate in candidates:
+            resolved = candidate.resolve()
+            if resolved in seen or not candidate.is_file():
+                continue
+            seen.add(resolved)
+            chunks.append(candidate.read_text(encoding="utf-8"))
+    return "\n".join(chunks)
+
+
 def main() -> int:
     contract = read_json(CONTRACT_PATH)
-    runtime_text = RUNTIME_PATH.read_text(encoding="utf-8")
+    runtime_text = read_source_surface([RUNTIME_SOURCE_ROOT])
     doc_text = DOC_PATH.read_text(encoding="utf-8")
-    ir_text = IR_PATH.read_text(encoding="utf-8")
-    lowering_contract_text = LOWERING_CONTRACT_PATH.read_text(encoding="utf-8")
+    ir_text = read_source_surface([IR_SOURCE_ROOT])
+    lowering_contract_text = read_source_surface([LOWERING_SOURCE_ROOT])
 
     probe_paths = [ROOT / path for path in contract["authoritative_probe_paths"]]
     fixture_paths = [ROOT / path for path in contract["authoritative_fixture_paths"]]
@@ -67,7 +91,7 @@ def main() -> int:
                 "objc3_runtime_exchange_current_property_i32",
             )
         ),
-        "successor_map_starts_after_corrective_tranche": contract["successor_map"][0]["description"].startswith("governance ratchet"),
+        "successor_map_starts_after_corrective_tranche": contract["successor_map"][0]["reason"].startswith("governance ratchet"),
         "non_goals_keep_full_closure_out_of_scope": "no-full-object-model-closure" in contract["explicit_non_goals"],
     }
 
@@ -81,10 +105,10 @@ def main() -> int:
         "current_gap_count": len(contract["current_corrective_gaps"]),
         "explicit_non_goal_count": len(contract["explicit_non_goals"]),
         "successor_milestone_count": len(contract["successor_map"]),
-        "runtime_dispatch_symbol_occurrences": count_literal(RUNTIME_PATH, "objc3_runtime_dispatch_i32"),
-        "property_context_binding_occurrences": count_literal(RUNTIME_PATH, "objc3_runtime_bind_current_property_context_for_testing"),
-        "weak_current_property_helper_occurrences": count_literal(RUNTIME_PATH, "weak_current_property"),
-        "current_property_helper_occurrences": count_literal(RUNTIME_PATH, "current_property"),
+        "runtime_dispatch_symbol_occurrences": runtime_text.count("objc3_runtime_dispatch_i32"),
+        "property_context_binding_occurrences": runtime_text.count("objc3_runtime_bind_current_property_context_for_testing"),
+        "weak_current_property_helper_occurrences": runtime_text.count("weak_current_property"),
+        "current_property_helper_occurrences": runtime_text.count("current_property"),
         "corrective_gap_claim_occurrences_in_docs": sum(
             count_literal(DOC_PATH, needle)
             for needle in (

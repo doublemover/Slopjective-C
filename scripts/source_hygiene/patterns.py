@@ -82,7 +82,7 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "deterministic-fallback-wording",
         "Fallback wording is not allowed as active behavior documentation.",
-        r"\bdeterministic\s+fallback\b|\bfallback\s+path\b|\bfallback\s+dispatch\b",
+        r"\bdeterministic\s+fallback\b|\bfallback\s+path\b|\bfallback\s+dispatch\b|\bfallback\s+behavior\b",
     ),
     ForbiddenPattern(
         "shim-wording",
