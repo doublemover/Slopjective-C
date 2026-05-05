@@ -10,7 +10,18 @@ CLI_CPP = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "objc3_cli
 
 
 def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    expanded: list[str] = []
+    for line in text.splitlines():
+        expanded.append(line)
+        stripped = line.strip()
+        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+            continue
+        include_path = stripped.split('"', 2)[1]
+        target = ROOT / "native" / "objc3c" / "src" / include_path
+        if target.exists():
+            expanded.append(target.read_text(encoding="utf-8"))
+    return "\n".join(expanded)
 
 
 def _assert_in_order(text: str, snippets: list[str]) -> None:

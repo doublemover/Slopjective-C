@@ -30,6 +30,7 @@ DEFAULT_EXCLUDES: tuple[str, ...] = (
     "scripts/check_source_hygiene_hard_cutover.py",
     "schemas/source-hygiene-hard-cutover-report-v1.schema.json",
     "tests/tooling/source_hygiene/**",
+    "native/objc3c/src/config/**",
     "native/objc3c/src/diagnostics/modes/**",
 )
 

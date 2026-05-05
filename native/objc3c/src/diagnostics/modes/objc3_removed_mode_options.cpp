@@ -1,16 +1,14 @@
 #include "diagnostics/modes/objc3_removed_mode_options.h"
 
+#include "config/objc3_language_profile.h"
+
 namespace objc3c::diagnostics::modes {
 
 bool BuildRemovedModeOptionDiagnostic(const std::string &flag, std::string &diagnostic) {
-  if (flag == "--objc3-compat-mode") {
+  if (const auto *option = objc3c::config::FindRemovedCommandOption(flag)) {
     diagnostic =
-        "unsupported hard-cutover option: --objc3-compat-mode was removed; Objective-C 3.0 is canonical-only";
-    return true;
-  }
-  if (flag == "--objc3-canonical-rejection-diagnostics") {
-    diagnostic =
-        "unsupported hard-cutover option: --objc3-canonical-rejection-diagnostics was removed; legacy literal diagnostics is not an active compiler mode";
+        "unsupported hard-cutover option: " + flag + " was removed; " +
+        option->summary;
     return true;
   }
   return false;

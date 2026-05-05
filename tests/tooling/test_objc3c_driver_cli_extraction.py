@@ -13,7 +13,18 @@ CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
 
 def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    expanded: list[str] = []
+    for line in text.splitlines():
+        expanded.append(line)
+        stripped = line.strip()
+        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+            continue
+        include_path = stripped.split('"', 2)[1]
+        target = ROOT / "native" / "objc3c" / "src" / include_path
+        if target.exists():
+            expanded.append(target.read_text(encoding="utf-8"))
+    return "\n".join(expanded)
 
 
 def test_driver_cli_module_exists_and_main_calls_it() -> None:
@@ -71,7 +82,7 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     assert "enum class Objc3IrObjectBackend" in header
     assert "enum class Objc3CompatMode" not in header
     assert "Objc3IrObjectBackend::kLLVMDirect" in header
-    assert "std::uint32_t language_version = 3;" in header
+    assert "std::uint32_t language_version = objc3c::config::kCanonicalLanguageVersion;" in header
     assert "migration_assist" not in header
     assert "kLLVMDirect" in header
 
@@ -90,7 +101,7 @@ def test_cli_exposes_ir_object_backend_flag_and_enum() -> None:
     assert '#include "diagnostics/modes/objc3_removed_mode_options.h"' in source
     assert "BuildRemovedModeOptionDiagnostic(flag, error)" in source
     assert "options.migration_assist = true;" not in source
-    assert "unsupported Objective-C language version for native frontend (expected 3): " in source
+    assert "objc3c::config::UnsupportedLanguageVersionDiagnostic(" in source
     assert "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " in source
     assert "options.route_backend_from_capabilities = true;" in source
     assert "options.llvm_capabilities_summary = argv[++i];" in source

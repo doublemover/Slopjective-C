@@ -9,6 +9,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "config/objc3_language_profile.h"
 #include "lower/objc3_lowering_contract.h"
 #include "parse/objc3_diagnostics_bus.h"
 #include "parse/objc3_parser_contract.h"
@@ -16,7 +17,8 @@
 #include "sema/objc3_sema_pass_manager_contract.h"
 #include "token/objc3_token_contract.h"
 
-inline constexpr std::uint8_t kObjc3DefaultLanguageVersion = 3u;
+inline constexpr std::uint8_t kObjc3DefaultLanguageVersion =
+    objc3c::config::kCanonicalLanguageVersion;
 
 enum class Objc3FrontendLanguageProfile : std::uint8_t {
   kCanonical = 0u,

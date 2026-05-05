@@ -69,3 +69,15 @@ def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:
     assert isinstance(payload["active_findings"], list)
     assert payload["stats"]["active_finding_count"] == 0
     assert text_path.read_text(encoding="utf-8").startswith("schema_version:")
+
+
+def test_hard_cutover_gate_excludes_canonical_config_registry(tmp_path: Path) -> None:
+    write(
+        tmp_path / "native/objc3c/src/config/objc3_language_profile.h",
+        'const char *removed = "--objc3-compat-mode";\n',
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",))
+
+    assert report["ok"] is True
+    assert report["stats"]["active_finding_count"] == 0

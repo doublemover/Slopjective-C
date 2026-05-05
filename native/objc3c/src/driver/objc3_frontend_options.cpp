@@ -1,8 +1,11 @@
 #include "driver/objc3_frontend_options.h"
 
+#include "config/objc3_language_profile.h"
+
 Objc3FrontendOptions BuildObjc3FrontendOptions(const Objc3CliOptions &cli_options) {
   Objc3FrontendOptions options;
-  options.language_version = static_cast<std::uint8_t>(cli_options.language_version);
+  options.language_version =
+      static_cast<std::uint8_t>(objc3c::config::kCanonicalLanguageVersion);
   options.language_profile = Objc3FrontendLanguageProfile::kCanonical;
   options.arc_mode = cli_options.arc_mode == Objc3ArcMode::kEnabled
                          ? Objc3FrontendArcMode::kEnabled

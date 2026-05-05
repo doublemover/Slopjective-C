@@ -114,6 +114,11 @@ function(objc3c_apply_archive_output target_name)
   endif()
 endfunction()
 
+add_library(objc3c_config INTERFACE)
+target_link_libraries(objc3c_config INTERFACE
+  objc3c_build_defaults
+)
+
 set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
 set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime)
 set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/objc3_runtime.h)
@@ -149,6 +154,7 @@ objc3c_apply_build_defaults(objc3c_diag)
 objc3c_apply_llvm_direct_config(objc3c_diag)
 
 target_link_libraries(objc3c_lex PUBLIC
+  objc3c_config
   objc3c_diag
 )
 
@@ -297,6 +303,7 @@ add_library(objc3c_driver STATIC
 objc3c_apply_build_defaults(objc3c_driver)
 objc3c_apply_llvm_direct_config(objc3c_driver)
 target_link_libraries(objc3c_driver PUBLIC
+  objc3c_config
   objc3c_diag
   objc3c_diagnostics_modes
   objc3c_frontend

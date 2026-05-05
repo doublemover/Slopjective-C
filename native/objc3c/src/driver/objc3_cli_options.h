@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "config/objc3_language_profile.h"
+
 enum class Objc3IrObjectBackend {
   kClang,
   kLLVMDirect,
@@ -40,7 +42,7 @@ struct Objc3CliOptions {
   bool clang_path_explicit = false;
   bool llc_path_explicit = false;
   Objc3IrObjectBackend ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
-  std::uint32_t language_version = 3;
+  std::uint32_t language_version = objc3c::config::kCanonicalLanguageVersion;
   Objc3ArcMode arc_mode = Objc3ArcMode::kDisabled;
   Objc3ConformanceProfile conformance_profile =
       Objc3ConformanceProfile::kCore;

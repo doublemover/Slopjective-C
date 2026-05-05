@@ -6,6 +6,7 @@
 #include <limits>
 #include <string>
 
+#include "config/objc3_language_profile.h"
 #include "diagnostics/modes/objc3_removed_mode_options.h"
 #include "support/objc3_ir_object_backend_token.h"
 #include "support/objc3_runtime_dispatch_symbol.h"
@@ -297,9 +298,9 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
   }
 
   if (options.command_mode == Objc3CliCommandMode::kCompile &&
-      options.language_version != 3) {
-    error = "unsupported Objective-C language version for native frontend (expected 3): " +
-            std::to_string(options.language_version);
+      !objc3c::config::IsCanonicalLanguageVersion(options.language_version)) {
+    error = objc3c::config::UnsupportedLanguageVersionDiagnostic(
+        options.language_version);
     return false;
   }
 
