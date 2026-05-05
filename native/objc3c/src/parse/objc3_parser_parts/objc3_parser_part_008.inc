@@ -1044,6 +1044,8 @@
     } else if (Match(TokenKind::KwInstancetype)) {
       fn.return_type = ValueType::ObjCInstancetype;
       fn.return_instancetype_spelling = true;
+    } else if (AtRemovedOptionalTemplateAlias()) {
+      return RejectRemovedOptionalTemplateAlias(Peek());
     } else {
       if (At(TokenKind::Identifier)) {
         const Token type_token = Advance();

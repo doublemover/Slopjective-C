@@ -383,8 +383,8 @@ To avoid blocking a future value optional design:
 Per [D-013](DECISIONS_LOG.md#decisions-d-013), any future value-optional feature shall use
 `Optional<T>` as the canonical source spelling.
 
-- `optional<T>` remains reserved in v1 and shall not be treated as canonical.
-- If a future implementation mode offers `optional<T>` as a compatibility alias, conforming modes shall still diagnose it and provide a fix-it to `Optional<T>`.
+- `optional<T>` is not canonical and shall not be treated as an alias.
+- Canonical mode rejects `optional<T>` with `O3C004` and may provide a fix-it to `Optional<T>`.
 - Canonical textual interface emission for future value-optionals shall use `Optional<T>`.
 
 ---
@@ -768,8 +768,7 @@ Required diagnostics:
 - applying optional type sugar (`?`/`!`) to a type outside [§3.2.2](#part-3-2-2),
 - applying optional type sugar (`?`/`!`) when nullability is already explicitly spelled on the same type position,
 - in v1 mode, parsing value-optional constructor spellings (`optional<...>`, `Optional<...>`) in type positions emits `OPT-SPELL-RESERVED-V1`,
-- in future value-optional compatibility mode, parsing lowercase `optional<...>` emits `OPT-SPELL-NONCANON`,
-- in future value-optional canonical-only mode, parsing lowercase `optional<...>` emits `OPT-SPELL-NONCANON-UNSUPPORTED`,
+- in canonical mode, parsing lowercase `optional<...>` emits `O3C004`,
 - when a required optional-spelling fix-it cannot be applied because the token originates in non-rewritable macro expansion text, emit companion note `OPT-SPELL-NOFIX-MACRO`,
 - declaring unescaped identifiers that occupy reserved spellings `Optional`, `optional`, `some`, or `none` in ObjC 3.0 mode,
 - optional member access used on scalar members,
@@ -777,7 +776,7 @@ Required diagnostics:
 
 Required optional-spelling fix-it behavior (`optional<T>` -> `Optional<T>`):
 
-1. For `OPT-SPELL-NONCANON` and `OPT-SPELL-NONCANON-UNSUPPORTED`, rewrite only the identifier token `optional` to `Optional`.
+1. For `O3C004`, rewrite only the identifier token `optional` to `Optional`.
 2. Preserve generic argument text and punctuation exactly (`<...>` unchanged).
 3. Preserve leading/trailing trivia around the rewritten identifier token.
 4. Emit one fix-it per noncanonical occurrence, including nested occurrences.
@@ -785,12 +784,11 @@ Required optional-spelling fix-it behavior (`optional<T>` -> `Optional<T>`):
 
 Profile severity behavior for optional-spelling diagnostics:
 
-| Validation condition                                                      | Core                                                                                 | Strict                          | Strict Concurrency              | Strict System                   |
-| ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- | ------------------------------- | ------------------------------- |
-| `OPT-SPELL-NONCANON` (future mode, compatibility alias accepted)          | Warning with required fix-it in migration mode; error with required fix-it otherwise | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
-| `OPT-SPELL-NONCANON-UNSUPPORTED` (future mode, canonical-only acceptance) | Error with required fix-it                                                           | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
-| `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail)                        | Error                                                                                | Error                           | Error                           | Error                           |
-| `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable           | Note (paired with owning warning/error)                                              | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
+| Validation condition                                            | Core                                    | Strict                          | Strict Concurrency              | Strict System                   |
+| --------------------------------------------------------------- | --------------------------------------- | ------------------------------- | ------------------------------- | ------------------------------- |
+| `O3C004` (canonical mode lowercase alias)                       | Error with required fix-it              | Error with required fix-it      | Error with required fix-it      | Error with required fix-it      |
+| `OPT-SPELL-RESERVED-V1` (v1 reservation guardrail)              | Error                                   | Error                           | Error                           | Error                           |
+| `OPT-SPELL-NOFIX-MACRO` companion note when rewrite unavailable | Note (paired with owning warning/error) | Note (paired with owning error) | Note (paired with owning error) | Note (paired with owning error) |
 
 Conforming interface emission for future value-optionals shall print canonical `Optional<...>` spellings only.
 
@@ -867,10 +865,10 @@ Conforming suites should include reserved-spelling occupancy and migration-path 
 - `VO-03`: Parsing `Optional<int>` or `optional<int>` in a type position produces a reserved-for-future-extension diagnostic in v1.
 - `VO-04`: Module import of APIs that used escaped raw identifiers for reserved spellings preserves identity without enabling unescaped spellings.
 - `VO-05`: Future value-optional-enabled mode parses canonical `Optional<int>` and accepts with no optional-spelling diagnostic.
-- `VO-06`: Future compatibility mode accepts `optional<int>` and emits `OPT-SPELL-NONCANON` with severity per [§3.7.2](#part-3-7-2), plus one-step fix-it to `Optional<int>`.
-- `VO-07`: Future canonical-only mode parsing `optional<int>` emits `OPT-SPELL-NONCANON-UNSUPPORTED` as a hard error with one-step fix-it to `Optional<int>`.
+- `VO-06`: Canonical mode rejects `optional<int>` with `O3C004`, plus one-step fix-it to `Optional<int>`.
+- `VO-07`: Canonical mode rejects nested lowercase optional aliases before type admission.
 - `VO-08`: v1 mode parsing `Optional<int>` or `optional<int>` emits `OPT-SPELL-RESERVED-V1` with reserved-for-future wording (severity per [§3.7.2](#part-3-7-2)).
-- `VO-09`: Interface/module emission after parsing noncanonical source in compatibility mode serializes canonical `Optional<...>` only.
+- `VO-09`: Interface/module emission is not reached after noncanonical lowercase optional source.
 - `VO-10`: Noncanonical spelling originating in non-rewritable macro expansion emits the owning spelling diagnostic plus `OPT-SPELL-NOFIX-MACRO`, and no invalid edit.
 - `VO-11`: Batch migrator over source files containing `optional<...>` rewrites occurrences to `Optional<...>` with no semantic delta and no unrelated token changes.
 

@@ -3,6 +3,8 @@
       instancetype_spelling = true;
     } else if (Match(TokenKind::KwNSInteger) || Match(TokenKind::KwNSUInteger)) {
       type = ValueType::I32;
+    } else if (AtRemovedOptionalTemplateAlias()) {
+      return RejectRemovedOptionalTemplateAlias(Peek());
     } else if (At(TokenKind::Identifier) && parse_builtin_type(Peek().text)) {
       Advance();
     } else if (At(TokenKind::Identifier)) {
@@ -22,7 +24,7 @@
 
     if (pointer_depth > 0u) {
       if (type == ValueType::Void) {
-        // Compatibility mode accepts void* as an opaque object-pointer boundary.
+        // C-style declarations use void* as an opaque object-pointer boundary.
         type = ValueType::ObjCObjectPtr;
         object_pointer_spelling = true;
         if (object_pointer_name.empty()) {

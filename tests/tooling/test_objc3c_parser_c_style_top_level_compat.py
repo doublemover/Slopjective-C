@@ -43,3 +43,39 @@ def test_c_style_top_level_function_fixture_compiles_without_unsupported_stateme
     )
     assert "unsupported Objective-C 3 statement" not in diagnostics_text
     assert (out_dir / "module.ll").exists()
+
+
+def test_removed_optional_template_alias_is_a_canonical_diagnostic(tmp_path: Path) -> None:
+    assert NATIVE_EXE.exists(), "native compiler binary must exist before running parser canonical test"
+
+    source_path = tmp_path / "negative_optional_template_alias.objc3"
+    out_dir = tmp_path / "out"
+    source_path.write_text(
+        "module NegativeOptionalTemplateAlias;\n\n"
+        "fn main(value: optional<int>) -> i32 {\n"
+        "  return value;\n"
+        "}\n",
+        encoding="utf-8",
+    )
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    completed = subprocess.run(
+        [
+            str(NATIVE_EXE),
+            str(source_path),
+            "--out-dir",
+            str(out_dir),
+            "--emit-prefix",
+            "module",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    diagnostics_path = out_dir / "module.diagnostics.txt"
+    diagnostics_text = diagnostics_path.read_text(encoding="utf-8") if diagnostics_path.exists() else ""
+
+    assert completed.returncode != 0
+    assert "O3C004" in diagnostics_text
+    assert "optional<T> aliases are rejected; use canonical Optional<T> spelling" in diagnostics_text

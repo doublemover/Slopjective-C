@@ -23,6 +23,8 @@
     } else if (Match(TokenKind::KwInstancetype)) {
       param.type = ValueType::ObjCInstancetype;
       param.instancetype_spelling = true;
+    } else if (AtRemovedOptionalTemplateAlias()) {
+      return RejectRemovedOptionalTemplateAlias(Peek());
     } else if (At(TokenKind::Identifier)) {
       const Token type_token = Advance();
       ValueType vector_type = ValueType::Unknown;

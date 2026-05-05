@@ -1259,6 +1259,9 @@ class Objc3Parser {
       } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync) ||
                  At(TokenKind::KwFn)) {
         ParseTopLevelFunctionDecl(program);
+      } else if (AtRemovedOptionalTemplateAlias()) {
+        RejectRemovedOptionalTemplateAlias(Peek());
+        SynchronizeTopLevel();
       } else if (AtCStyleTopLevelFunctionDeclStart()) {
         ParseTopLevelCompatFunctionDecl(program);
       } else {
@@ -1295,6 +1298,19 @@ class Objc3Parser {
       Advance();
       return true;
     }
+    return false;
+  }
+
+  bool AtRemovedOptionalTemplateAlias() const {
+    return At(TokenKind::Identifier) && Peek().text == "optional" &&
+           index_ + 1 < tokens_.size() &&
+           tokens_[index_ + 1].kind == TokenKind::Less;
+  }
+
+  bool RejectRemovedOptionalTemplateAlias(const Token &token) {
+    diagnostics_.push_back(
+        MakeDiag(token.line, token.column, "O3C004",
+                 "optional<T> aliases are rejected; use canonical Optional<T> spelling"));
     return false;
   }
 
