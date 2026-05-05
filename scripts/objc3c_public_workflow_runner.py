@@ -1124,7 +1124,7 @@ def action_publish_release_operations(_: list[str]) -> int:
 
 
 def action_validate_release_operations(_: list[str]) -> int:
-    return run_composite_validation(
+    rc = run_composite_validation(
         "validate-release-operations",
         [
             ("validate-packaging-channels", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-packaging-channels"]),
@@ -1134,6 +1134,9 @@ def action_validate_release_operations(_: list[str]) -> int:
             ("publish-release-operations", [sys.executable, str(RELEASE_OPERATIONS_PUBLICATION_PY)]),
         ],
     )
+    if rc != 0:
+        return rc
+    return run([sys.executable, str(RELEASE_OPERATIONS_END_TO_END_PY), "--skip-upstream"])
 
 
 def action_validate_release_operations_end_to_end(_: list[str]) -> int:

@@ -29,11 +29,7 @@ def expect(condition: bool, message: str) -> None:
         raise RuntimeError(message)
 
 
-def main() -> int:
-    result = run_capture([sys.executable, str(RUNNER), "validate-release-operations"], capture_output=False)
-    if result.returncode != 0:
-        raise RuntimeError("validate-release-operations failed")
-
+def write_summary() -> None:
     update_manifest = load_json(UPDATE_MANIFEST)
     compatibility_report = load_json(COMPATIBILITY_REPORT)
 
@@ -59,6 +55,22 @@ def main() -> int:
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    skip_upstream = False
+    if args == ["--skip-upstream"]:
+        skip_upstream = True
+    elif args:
+        raise RuntimeError(f"unexpected arguments: {args}")
+
+    if not skip_upstream:
+        result = run_capture([sys.executable, str(RUNNER), "validate-release-operations"], capture_output=False)
+        if result.returncode != 0:
+            raise RuntimeError("validate-release-operations failed")
+
+    write_summary()
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-release-operations-end-to-end: PASS")
     return 0
