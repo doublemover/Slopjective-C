@@ -172,7 +172,7 @@
       return direct_value;
     }
 
-    if (RequiresFailClosedObjc3RuntimeDispatchFallback(
+    if (RequiresFailClosedObjc3RuntimeDispatchError(
             lowered.dispatch_surface_family)) {
       return EmitUnsupportedI32Value(
           "direct dispatch lowering remains unsupported on the live runtime path");
@@ -614,9 +614,9 @@
   }
 
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
-    if (!fail_open_fallback_triggered_) {
-      fail_open_fallback_triggered_ = true;
-      fail_open_fallback_reason_ = reason;
+    if (!unsupported_fail_closed_path_triggered_) {
+      unsupported_fail_closed_path_triggered_ = true;
+      unsupported_fail_closed_path_reason_ = reason;
     }
     return "poison";
   }

@@ -193,7 +193,7 @@ bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
          dispatch_surface_family == kObjc3DispatchSurfaceDynamicFamily;
 }
 
-bool RequiresFailClosedObjc3RuntimeDispatchFallback(
+bool RequiresFailClosedObjc3RuntimeDispatchError(
     const std::string &dispatch_surface_family) {
   return dispatch_surface_family == kObjc3DispatchSurfaceDirectFamily;
 }

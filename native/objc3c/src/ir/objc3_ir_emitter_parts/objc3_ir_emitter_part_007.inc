@@ -364,9 +364,9 @@
         }
       }
       if (!executable_method_binding_error.empty()) {
-        if (!fail_open_fallback_triggered_) {
-          fail_open_fallback_triggered_ = true;
-          fail_open_fallback_reason_ = executable_method_binding_error;
+        if (!unsupported_fail_closed_path_triggered_) {
+          unsupported_fail_closed_path_triggered_ = true;
+          unsupported_fail_closed_path_reason_ = executable_method_binding_error;
         }
         return;
       }

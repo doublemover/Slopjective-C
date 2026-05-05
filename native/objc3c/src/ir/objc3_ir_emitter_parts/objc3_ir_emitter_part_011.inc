@@ -651,8 +651,8 @@
   mutable std::size_t retain_helper_call_count_ = 0;
   mutable std::size_t release_helper_call_count_ = 0;
   mutable std::size_t autorelease_helper_call_count_ = 0;
-  mutable bool fail_open_fallback_triggered_ = false;
-  mutable std::string fail_open_fallback_reason_;
+  mutable bool unsupported_fail_closed_path_triggered_ = false;
+  mutable std::string unsupported_fail_closed_path_reason_;
 };
 
 bool EmitObjc3IRText(const Objc3Program &program,

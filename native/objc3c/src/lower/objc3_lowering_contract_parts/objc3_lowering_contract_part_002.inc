@@ -1350,7 +1350,7 @@ bool TryBuildObjc3LoweringIRBoundary(const Objc3LoweringContract &input,
 std::string Objc3LoweringIRBoundaryReplayKey(const Objc3LoweringIRBoundary &boundary);
 bool UsesCanonicalObjc3RuntimeDispatchEntrypoint(
     const std::string &dispatch_surface_family);
-bool RequiresFailClosedObjc3RuntimeDispatchFallback(
+bool RequiresFailClosedObjc3RuntimeDispatchError(
     const std::string &dispatch_surface_family);
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family);

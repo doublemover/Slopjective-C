@@ -471,9 +471,9 @@
            family.kind == kObjc3RuntimeMetadataLayoutPolicyProtocolFamily ||
            family.kind == kObjc3RuntimeMetadataLayoutPolicyCategoryFamily)) {
         if (!emit_method_list_bundles_for_family(family)) {
-          if (!fail_open_fallback_triggered_) {
-            fail_open_fallback_triggered_ = true;
-            fail_open_fallback_reason_ =
+          if (!unsupported_fail_closed_path_triggered_) {
+            unsupported_fail_closed_path_triggered_ = true;
+            unsupported_fail_closed_path_reason_ =
                 executable_method_binding_error.empty()
                     ? "runtime metadata method-body binding failed"
                     : executable_method_binding_error;
@@ -536,9 +536,9 @@
         if (root_it == runtime_string_pool_globals_.end() ||
             component_it == runtime_string_pool_globals_.end() ||
             profile_it == runtime_string_pool_globals_.end()) {
-          if (!fail_open_fallback_triggered_) {
-            fail_open_fallback_triggered_ = true;
-            fail_open_fallback_reason_ =
+          if (!unsupported_fail_closed_path_triggered_) {
+            unsupported_fail_closed_path_triggered_ = true;
+            unsupported_fail_closed_path_reason_ =
                 "typed key-path artifact string-pool registration failed";
           }
           return;

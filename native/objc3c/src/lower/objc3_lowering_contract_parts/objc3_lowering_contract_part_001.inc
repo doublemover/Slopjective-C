@@ -32,7 +32,7 @@ inline constexpr const char *kObjc3SelectorResolutionImplementationContractId =
     "objc3c.selector.resolution.ambiguity.v1";
 inline constexpr const char *kObjc3SelectorResolutionConcreteReceiverPolicy =
     "self-super-known-class-receivers-resolve-concretely";
-inline constexpr const char *kObjc3SelectorResolutionDynamicFallbackPolicy =
+inline constexpr const char *kObjc3SelectorResolutionDynamicRuntimePolicy =
     "non-concrete-receivers-remain-runtime-dynamic";
 inline constexpr const char *kObjc3SelectorResolutionOverloadPolicy =
     "no-overload-recovery-exact-signature-or-fail-closed";
@@ -111,7 +111,7 @@ inline constexpr const char
     *kObjc3RuntimeDispatchSuperNilDeferredLoweringModel =
         "direct-dispatch-remains-fail-closed-until-supported-surface-materializes";
 inline constexpr const char
-    *kObjc3RuntimeDispatchSuperNilUnsupportedFallbackModel =
+    *kObjc3RuntimeDispatchSuperNilUnsupportedModel =
         "direct-dispatch-fails-closed-until-supported-surface-materializes";
 // live-dispatch cutover anchor: lane-C routes normalized dynamic sends through
 // the canonical runtime entrypoint too, while keeping the compatibility symbol
@@ -151,7 +151,7 @@ inline constexpr const char
 inline constexpr const char *kObjc3RuntimeLookupDispatchLanguageProfileModel =
     "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
 inline constexpr const char *kObjc3RuntimeLookupDispatchFailureModel =
-    "only-unresolved-or-invalid-runtime-resolution-falls-back-deterministically";
+    "only-unresolved-or-invalid-runtime-resolution-publishes-strict-dispatch-error";
 // selector lookup table anchor: lane-D now materializes the selector
 // table from emitted registration-table selector pools while preserving the
 // frozen D001 public runtime entrypoints. Method-cache / slow-path resolution
@@ -166,7 +166,7 @@ inline constexpr const char
     *kObjc3RuntimeSelectorLookupTablesMergeModel =
         "per-image-selector-pools-deduplicated-and-merged-across-registration-order";
 inline constexpr const char
-    *kObjc3RuntimeSelectorLookupTablesFallbackModel =
+    *kObjc3RuntimeSelectorLookupTablesDynamicMissModel =
         "unknown-selector-lookups-remain-dynamic-until-next-runtime-phase";
 inline constexpr const char
     *kObjc3RuntimeSelectorLookupTablesReplayModel =
@@ -191,8 +191,8 @@ inline constexpr const char
     *kObjc3RuntimeMethodCacheSlowPathCacheModel =
         "normalized-receiver-plus-selector-stable-id-positive-and-negative-cache";
 inline constexpr const char
-    *kObjc3RuntimeMethodCacheSlowPathFallbackModel =
-        "only-unresolved-or-ambiguous-runtime-resolution-falls-back-to-deterministic-dispatch-formula";
+    *kObjc3RuntimeMethodCacheSlowPathStrictErrorModel =
+        "only-unresolved-or-ambiguous-runtime-resolution-publishes-typed-strict-dispatch-error";
 // protocol/category-aware resolution anchor: lane-D extends the live
 // runtime slow path to consume emitted category method tables plus adopted and
 // inherited protocol metadata while preserving the frozen D001 public runtime
@@ -207,8 +207,8 @@ inline constexpr const char
     *kObjc3RuntimeProtocolCategoryMethodResolutionProtocolModel =
         "adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution";
 inline constexpr const char
-    *kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel =
-        "only-unresolved-conflicting-category-or-protocol-resolution-falls-back-deterministically";
+    *kObjc3RuntimeProtocolCategoryMethodResolutionStrictErrorModel =
+        "only-unresolved-conflicting-category-or-protocol-resolution-publishes-typed-strict-dispatch-error";
 // live-dispatch gate anchor: lane-E now freezes one fail-closed
 // evidence boundary proving supported message sends execute through the live
 // runtime path rather than the non-authoritative test surface. The upstream gate chain

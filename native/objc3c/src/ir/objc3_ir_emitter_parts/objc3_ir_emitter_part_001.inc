@@ -386,8 +386,8 @@ class Objc3IREmitter {
     release_helper_call_count_ = 0;
     autorelease_helper_call_count_ = 0;
     runtime_dispatch_symbols_used_.clear();
-    fail_open_fallback_triggered_ = false;
-    fail_open_fallback_reason_.clear();
+    unsupported_fail_closed_path_triggered_ = false;
+    unsupported_fail_closed_path_reason_.clear();
     block_function_definitions_.clear();
     emitted_block_invoke_symbols_.clear();
     emitted_block_copy_helper_symbols_.clear();
@@ -461,8 +461,8 @@ class Objc3IREmitter {
     EmitEntryPoint(body);
     EmitRuntimeDispatchDeclarations(body);
 
-    if (fail_open_fallback_triggered_) {
-      error = "lowering encountered unsupported fail-closed path: " + fail_open_fallback_reason_;
+    if (unsupported_fail_closed_path_triggered_) {
+      error = "lowering encountered unsupported fail-closed path: " + unsupported_fail_closed_path_reason_;
       return false;
     }
 
@@ -712,8 +712,8 @@ class Objc3IREmitter {
         << kObjc3RuntimeSelectorLookupTablesInterningModel
         << ", merge_model="
         << kObjc3RuntimeSelectorLookupTablesMergeModel
-        << ", fallback_model="
-        << kObjc3RuntimeSelectorLookupTablesFallbackModel << "\n";
+        << ", dynamic_miss_model="
+        << kObjc3RuntimeSelectorLookupTablesDynamicMissModel << "\n";
     out << "; runtime_method_cache_slow_path_lookup = contract="
         << kObjc3RuntimeMethodCacheSlowPathContractId
         << ", receiver_normalization_model="
@@ -722,16 +722,16 @@ class Objc3IREmitter {
         << kObjc3RuntimeMethodCacheSlowPathResolutionModel
         << ", cache_model="
         << kObjc3RuntimeMethodCacheSlowPathCacheModel
-        << ", fallback_model="
-        << kObjc3RuntimeMethodCacheSlowPathFallbackModel << "\n";
+        << ", strict_error_model="
+        << kObjc3RuntimeMethodCacheSlowPathStrictErrorModel << "\n";
     out << "; runtime_protocol_category_method_resolution = contract="
         << kObjc3RuntimeProtocolCategoryMethodResolutionContractId
         << ", category_model="
         << kObjc3RuntimeProtocolCategoryMethodResolutionCategoryModel
         << ", protocol_model="
         << kObjc3RuntimeProtocolCategoryMethodResolutionProtocolModel
-        << ", fallback_model="
-        << kObjc3RuntimeProtocolCategoryMethodResolutionFallbackModel << "\n";
+        << ", strict_error_model="
+        << kObjc3RuntimeProtocolCategoryMethodResolutionStrictErrorModel << "\n";
     if (!frontend_metadata_
              .executable_metadata_debug_projection_contract_id.empty()) {
       out << "; executable_metadata_debug_projection = "

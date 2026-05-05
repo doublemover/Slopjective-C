@@ -902,9 +902,9 @@ bool ResolveReceiverClassNameUnlocked(const RuntimeState &state,
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name) {
   std::vector<const EmittedClassBundle *> implementation_bundles;
-  std::vector<const EmittedClassBundle *> fallback_bundles;
+  std::vector<const EmittedClassBundle *> candidate_bundles;
   implementation_bundles.reserve(static_cast<std::size_t>(record.class_descriptor_count));
-  fallback_bundles.reserve(static_cast<std::size_t>(record.class_descriptor_count));
+  candidate_bundles.reserve(static_cast<std::size_t>(record.class_descriptor_count));
   for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
     const auto *bundle = static_cast<const EmittedClassBundle *>(
         AggregateEntry(record.class_descriptor_root, index));
@@ -918,10 +918,10 @@ std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     if (implementation_backed) {
       implementation_bundles.push_back(bundle);
     } else {
-      fallback_bundles.push_back(bundle);
+      candidate_bundles.push_back(bundle);
     }
   }
-  return implementation_bundles.empty() ? fallback_bundles
+  return implementation_bundles.empty() ? candidate_bundles
                                         : implementation_bundles;
 }
 
