@@ -2,7 +2,7 @@
   "contract_id": "objc3c.application.architecture.testing.first_party_testing_semantics.v1",
   "boundary_contract": "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
   "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
-  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
+  "workflow_runner": "scripts.objc3c_workflow",
   "public_actions": [
     "validate-showcase",
     "validate-runnable-showcase",
@@ -50,9 +50,9 @@
       "id": "workspace_and_integration",
       "owner": "public workflow integration checks",
       "entrypoints": [
-        "npm run test:showcase",
-        "npm run test:stdlib:program",
-        "npm run test:objc3c:developer-tooling"
+        "npm run objc3c -- validate-showcase",
+        "npm run objc3c -- validate-stdlib-program",
+        "npm run objc3c -- validate-developer-tooling"
       ],
       "claim": "example workspaces, stdlib program surfaces, and developer-tooling drills agree on the user-visible workflow"
     },
@@ -60,9 +60,9 @@
       "id": "packaged_and_runnable",
       "owner": "runnable package and end-to-end validation",
       "entrypoints": [
-        "npm run test:showcase:e2e",
-        "npm run test:stdlib:program:e2e",
-        "npm run test:objc3c:runnable-developer-tooling"
+        "npm run objc3c -- validate-runnable-showcase",
+        "npm run objc3c -- validate-runnable-stdlib-program",
+        "npm run objc3c -- validate-runnable-developer-tooling"
       ],
       "claim": "the same user-facing path remains truthful after packaging and installation-style replay"
     }

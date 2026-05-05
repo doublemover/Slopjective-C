@@ -16,7 +16,7 @@ RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_error_runtime_closure.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 SEMA_PATH = ROOT / "native/objc3c/src/sema/objc3_semantic_passes.cpp"
 IR_PATH = ROOT / "native/objc3c/src/ir/objc3_ir_emitter.cpp"
-WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
+WORKFLOW_PATH = ROOT / "scripts/objc3c_workflow/runner.py"
 CONFORMANCE_PATH = ROOT / "scripts/check_objc3c_runnable_error_conformance.py"
 E2E_PATH = ROOT / "scripts/check_objc3c_runnable_error_end_to_end.py"
 

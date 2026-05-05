@@ -15,7 +15,7 @@ DOC_PATH = ROOT / "docs/objc3c-native.md"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_concurrency_runtime_closure.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 PACKAGE_PATH = ROOT / "package.json"
-WORKFLOW_RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
+WORKFLOW_RUNNER_PATH = ROOT / "scripts/objc3c_workflow/runner.py"
 
 
 def read_json(path: Path) -> dict[str, Any]:

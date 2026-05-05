@@ -15,7 +15,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 TRUST_REPORT_JSON = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.json"
 TRUST_REPORT_MD = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "report" / "objc3c-distribution-trust-report.md"
 DASHBOARD_JSON = ROOT / "tmp" / "artifacts" / "distribution-credibility" / "dashboard" / "distribution-credibility-dashboard.json"

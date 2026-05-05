@@ -1049,9 +1049,9 @@ def build_summary() -> dict[str, Any]:
         "validation_commands": [
             "python scripts/build_objc3c_type_semantic_model_closure.py --check",
             "python -m pytest tests/tooling/test_build_objc3c_type_semantic_model_closure.py",
-            "npm run test:objc3c:execution-replay-proof",
-            "npm run test:objc3c:lowering-runtime-stress",
-            "npm run test:objc3c:full",
+            "npm run objc3c -- test-execution-replay",
+            "npm run objc3c -- test-lowering-runtime-stress",
+            "npm run objc3c -- test-full",
         ],
     }
 

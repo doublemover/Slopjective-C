@@ -24,7 +24,7 @@
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
     "scripts/check_objc3c_security_hardening_integration.py",
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "package.json"
   ],
   "machine_owned_output_roots": [

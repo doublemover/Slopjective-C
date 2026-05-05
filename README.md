@@ -102,7 +102,7 @@ Use the shortest path that matches what you are trying to do.
 | inspect conformance, fuzz, and reporting work                   | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                      |
 | inspect package, installer, and release flows                   | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                |
 | contribute a normal repo change                                 | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use the mapped package scripts                                          |
-| inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run compile:objc3c -- ...` or the showcase surface check                              |
+| inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                       |
 | inspect implementation boundaries                               | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                      |
 | run exact package-script workflows                              | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing                                                     |
 | follow old spec links or archived anchors                       | [legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files)                 | use this only for compatibility lookups                                                                         |
@@ -228,7 +228,7 @@ $env:LLVM_ROOT = 'D:\path\to\LLVM'
 Build the native compiler and runtime archive:
 
 ```powershell
-npm run build:objc3c-native
+npm run objc3c -- build-native-binaries
 ```
 
 Expected artifacts:
@@ -244,49 +244,49 @@ If the goal is simply to prove the repo is alive, use this order:
 1. Build the native compiler:
 
 ```powershell
-npm run build:objc3c-native
+npm run objc3c -- build-native-binaries
 ```
 
 2. Build the public site overview:
 
 ```powershell
-npm run build:site
+npm run objc3c -- build-site
 ```
 
 Optional generated-doc refreshes:
 
 ```powershell
-npm run build:docs:native
-npm run build:docs:commands
+npm run objc3c -- build-native-docs
+npm run objc3c -- build-public-command-surface
 ```
 
 3. Compile the canonical hello fixture:
 
 ```powershell
-npm run compile:objc3c -- tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module
+npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3 --out-dir tmp/artifacts/compilation/objc3c-native/readme-hello --emit-prefix module
 ```
 
 4. Run the bounded default validation:
 
 ```powershell
-npm run test:fast
+npm run objc3c -- test-fast
 ```
 
 5. If you need execution smoke, set `llc.exe` only when it is not already on `PATH`:
 
 ```powershell
 $env:OBJC3C_NATIVE_EXECUTION_LLC_PATH = 'C:\Program Files\LLVM\bin\llc.exe'
-npm run test:objc3c:execution-smoke
+npm run objc3c -- test-execution-smoke
 ```
 
 ## Native Build Surface
 
 Use these entrypoints:
 
-- `npm run build:objc3c-native`
-- `npm run build:objc3c-native:contracts`
-- `npm run build:objc3c-native:full`
-- `npm run build:objc3c-native:reconfigure`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- build-native-contracts`
+- `npm run objc3c -- build-native-full`
+- `npm run objc3c -- build-native-reconfigure`
 
 Operational facts:
 
@@ -307,43 +307,43 @@ purpose-specific, so use the generated appendix for the full map.
 Common entrypoints by job:
 
 - bootstrap and native compile:
-  - `npm run build:objc3c-native`
-  - `npm run compile:objc3c -- ...`
-  - `npm run test:fast`
-  - `npm run test:smoke`
-  - `npm run test:ci`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c ...`
+  - `npm run objc3c -- test-fast`
+  - `npm run objc3c -- test-smoke`
+  - `npm run objc3c -- test-ci`
 - docs, tutorials, showcase, and stdlib:
-  - `npm run build:site`
-  - `npm run build:docs:native`
-  - `npm run build:docs:commands`
-  - `npm run test:getting-started`
-  - `npm run test:showcase`
-  - `npm run test:stdlib`
-  - `npm run test:stdlib:advanced`
-  - `npm run test:stdlib:program`
+  - `npm run objc3c -- build-site`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
+  - `npm run objc3c -- validate-getting-started`
+  - `npm run objc3c -- validate-showcase`
+  - `npm run objc3c -- validate-stdlib-foundation`
+  - `npm run objc3c -- validate-stdlib-advanced`
+  - `npm run objc3c -- validate-stdlib-program`
 - performance and diagnostics:
-  - `npm run inspect:objc3c:runtime-performance`
-  - `npm run inspect:objc3c:compiler-throughput`
-  - `npm run test:objc3c:performance`
-  - `npm run test:objc3c:performance-governance`
-  - `npm run test:objc3c:developer-tooling`
+  - `npm run objc3c -- benchmark-runtime-performance`
+  - `npm run objc3c -- benchmark-compiler-throughput`
+  - `npm run objc3c -- validate-performance-foundation`
+  - `npm run objc3c -- validate-performance-governance`
+  - `npm run objc3c -- validate-developer-tooling`
 - conformance, stress, and public evidence:
-  - `npm run test:objc3c:conformance-corpus`
-  - `npm run test:objc3c:stress`
-  - `npm run test:objc3c:external-validation`
-  - `npm run test:objc3c:public-conformance`
+  - `npm run objc3c -- validate-conformance-corpus`
+  - `npm run objc3c -- validate-stress`
+  - `npm run objc3c -- validate-external-validation`
+  - `npm run objc3c -- validate-public-conformance-reporting`
 - packaging, release, and distribution:
-  - `npm run package:objc3c-native:runnable-toolchain`
-  - `npm run package:objc3c:channels`
-  - `npm run test:objc3c:release-foundation`
-  - `npm run test:objc3c:packaging-channels`
-  - `npm run test:objc3c:release-operations`
-  - `npm run test:objc3c:distribution-credibility`
+  - `npm run objc3c -- package-runnable-toolchain`
+  - `npm run objc3c -- build-package-channels`
+  - `npm run objc3c -- validate-release-foundation`
+  - `npm run objc3c -- validate-packaging-channels`
+  - `npm run objc3c -- validate-release-operations`
+  - `npm run objc3c -- validate-distribution-credibility`
 
 Rules:
 
 - prefer the public `npm run ...` surface over direct Python or PowerShell when a wrapper already exists,
-- use `python scripts/objc3c_public_workflow_runner.py <internal-action>` only for maintainer-only command-surface upkeep that intentionally does not consume public package-script budget, specifically `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
+- use `python -m scripts.objc3c_workflow <internal-action>` only for maintainer-only command-surface upkeep that intentionally does not consume public package-script budget, specifically `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
 - treat `native/objc3c/` as the only supported compiler implementation root,
 - treat `stdlib/` as the canonical checked-in standard-library root instead of inventing parallel helper trees,
 - use `docs/runbooks/objc3c_public_command_surface.md` for the synchronized command/action/backend reference,

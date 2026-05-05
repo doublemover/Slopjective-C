@@ -33,7 +33,7 @@ def main() -> None:
             'trace',
         ],
         'runner_first_rules': [
-            'Normal operator flows should route through package.json scripts that delegate to scripts/objc3c_public_workflow_runner.py where a workflow action exists.',
+            'Normal operator flows should route through package.json scripts that delegate to scripts.objc3c_workflow where a workflow action exists.',
             'Internal workflow actions may remain without public aliases when they are composition helpers or implementation details.',
             'Lint, formatter, dependency-boundary, llvm-capability, and task-hygiene commands may remain direct scripts when they are tool wrappers rather than workflow families.',
             'Generated command appendix and package.json must remain synchronized; public commands should not bypass that surface.'

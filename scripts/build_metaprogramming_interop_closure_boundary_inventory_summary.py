@@ -27,7 +27,7 @@ def main() -> int:
     interop_report = read_json(INTEROP_REPORT)
     runtime_text = (ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp").read_text(encoding="utf-8")
     package_text = (ROOT / "package.json").read_text(encoding="utf-8")
-    workflow_text = (ROOT / "scripts/objc3c_public_workflow_runner.py").read_text(encoding="utf-8")
+    workflow_text = (ROOT / "scripts/objc3c_workflow/runner.py").read_text(encoding="utf-8")
 
     checks = {
         "summary_script_link_matches": contract["summary_script"] == "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",

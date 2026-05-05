@@ -8,13 +8,12 @@ SCRIPT_ROOT = Path(__file__).resolve().parents[1]
 if str(SCRIPT_ROOT) not in sys.path:
     sys.path.insert(0, str(SCRIPT_ROOT))
 
-from scripts import objc3c_public_workflow_runner
+from scripts.objc3c_workflow import runner
 
 
 def main(argv: list[str] | None = None) -> int:
-    return objc3c_public_workflow_runner.main(sys.argv[1:] if argv is None else argv)
+    return runner.main(sys.argv[1:] if argv is None else argv)
 
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

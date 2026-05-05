@@ -12,7 +12,7 @@
     },
     {
       "check_id": "repo-superclean",
-      "command": "npm run check:repo:surface",
+      "command": "npm run objc3c -- check-repo-superclean-surface",
       "owner_surface": "scripts/check_repo_superclean_surface.py"
     },
     {

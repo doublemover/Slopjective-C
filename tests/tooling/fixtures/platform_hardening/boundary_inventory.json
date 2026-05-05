@@ -17,7 +17,7 @@
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py"
+    "scripts.objc3c_workflow"
   ],
   "policy_contract_paths": [
     "tests/tooling/fixtures/packaging_channels/supported_platforms.json",

@@ -116,7 +116,7 @@ def main() -> int:
     for script in contract["public_scripts"]:
         expect(script in public_scripts, f"package manifest missing developer tooling public script: {script}")
 
-    packaged_runner = package_root / "scripts" / "objc3c_public_workflow_runner.py"
+    packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
     hello_source = package_path(package_root, str(manifest["developer_tooling_example_source"]))
     format_source = package_path(package_root, str(manifest["developer_tooling_formatter_source"]))
     expected_formatted_source = package_path(package_root, str(manifest["developer_tooling_expected_formatted_source"]))

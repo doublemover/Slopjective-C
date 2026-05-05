@@ -54,11 +54,11 @@ def main() -> int:
     conformance_surface = manifest.get("conformance_corpus_surface", {})
     expect(isinstance(conformance_surface, dict), "package manifest missing conformance_corpus_surface")
     expect(
-        command_surfaces.get("conformance_corpus") == "npm run test:objc3c:conformance-corpus",
+        command_surfaces.get("conformance_corpus") == "npm run objc3c -- validate-conformance-corpus",
         "package manifest missing conformance_corpus command surface",
     )
     expect(
-        command_surfaces.get("conformance_corpus_e2e") == "npm run test:objc3c:runnable-conformance-corpus",
+        command_surfaces.get("conformance_corpus_e2e") == "npm run objc3c -- validate-runnable-conformance-corpus",
         "package manifest missing conformance_corpus_e2e command surface",
     )
 

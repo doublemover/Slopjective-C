@@ -48,7 +48,7 @@ def test_benchmark_writes_compile_and_runtime_packets(tmp_path: Path, monkeypatc
     )
 
     monkeypatch.setattr(benchmark, "ROOT", root)
-    monkeypatch.setattr(benchmark, "PUBLIC_RUNNER", root / "scripts" / "objc3c_public_workflow_runner.py")
+    monkeypatch.setattr(benchmark, "PUBLIC_RUNNER", root / "scripts" / "objc3c_workflow" / "runner.py")
     monkeypatch.setattr(benchmark, "PORTFOLIO_PATH", portfolio_path)
     monkeypatch.setattr(benchmark, "MEASUREMENT_POLICY_PATH", policy_path)
     monkeypatch.setattr(benchmark, "BENCHMARK_PARAMETERS_PATH", parameters_path)

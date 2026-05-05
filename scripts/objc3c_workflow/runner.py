@@ -15,11 +15,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 from typing import Callable, Sequence
+
+SCRIPT_ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
+
 from objc3c_tooling.json_io import load_json_object as load_json
 from objc3c_tooling.subprocesses import run_capture, run_completed
 from objc3c_tooling.public_workflow_output import extract_public_workflow_report_paths as extract_report_paths
 
-ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
 MARKDOWN_GLOBS = [
@@ -195,6 +200,10 @@ PLAYGROUND_WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"
 REPO_SUPERCLEAN_SOURCE_OF_TRUTH = ROOT / "tmp" / "artifacts" / "objc3c-native" / "repo_superclean_source_of_truth.json"
 SHOWCASE_PORTFOLIO_JSON = ROOT / "showcase" / "portfolio.json"
 SHOWCASE_TUTORIAL_WALKTHROUGH_JSON = ROOT / "showcase" / "tutorial_walkthrough.json"
+WORKFLOW_MODULE = "scripts.objc3c_workflow"
+WORKFLOW_COMMAND_TEXT = f"python -m {WORKFLOW_MODULE}"
+WORKFLOW_RUNNER_SURFACE = WORKFLOW_MODULE
+WORKFLOW_RUNNER_MODE = "objc3c-workflow-action-registry-v1"
 
 
 @dataclass(frozen=True)
@@ -224,6 +233,10 @@ MAINTAINER_ONLY_PUBLIC_SCRIPTS = {
 
 def run(command: Sequence[str]) -> int:
     return run_completed(command, cwd=ROOT, capture_output=False).returncode
+
+
+def workflow_command(action: str, *args: str) -> list[str]:
+    return [sys.executable, "-m", WORKFLOW_MODULE, action, *args]
 
 
 
@@ -669,8 +682,8 @@ def _run_playground_workspace(
     formatter_payload = editor_surface_payload.get("formatter", {})
     debug_payload = editor_surface_payload.get("debug", {})
     workspace_drill_commands = {
-        "inspect_editor_tooling": f"python scripts/objc3c_public_workflow_runner.py inspect-editor-tooling {source_display}",
-        "format_preview": f"python scripts/objc3c_public_workflow_runner.py format-objc3c {source_display}",
+        "inspect_editor_tooling": f"{WORKFLOW_COMMAND_TEXT} inspect-editor-tooling {source_display}",
+        "format_preview": f"{WORKFLOW_COMMAND_TEXT} format-objc3c {source_display}",
         "object_symbol_inventory": str(debug_payload.get("object_symbol_inventory_command", "")),
     }
 
@@ -1056,8 +1069,8 @@ def action_validate_release_foundation(_: list[str]) -> int:
     return run_composite_validation(
         "validate-release-foundation",
         [
-            ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
-            ("validate-runnable-release-candidate", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-runnable-release-candidate"]),
+            ("validate-performance-governance", workflow_command("validate-performance-governance")),
+            ("validate-runnable-release-candidate", workflow_command("validate-runnable-release-candidate")),
             ("check-release-evidence", [sys.executable, str(ROOT / "scripts" / "check_release_evidence.py")]),
             ("check-release-foundation-surface", [sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)]),
             ("check-release-foundation-schema-surface", [sys.executable, str(RELEASE_FOUNDATION_SCHEMA_SURFACE_PY)]),
@@ -1087,7 +1100,7 @@ def action_validate_packaging_channels(_: list[str]) -> int:
     return run_composite_validation(
         "validate-packaging-channels",
         [
-            ("validate-release-foundation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-foundation"]),
+            ("validate-release-foundation", workflow_command("validate-release-foundation")),
             ("check-packaging-channels-surface", [sys.executable, str(PACKAGING_CHANNELS_SOURCE_SURFACE_PY)]),
             ("check-packaging-channels-schema-surface", [sys.executable, str(PACKAGING_CHANNELS_SCHEMA_SURFACE_PY)]),
             ("build-package-channels", [sys.executable, str(PACKAGE_CHANNELS_BUILD_PY)]),
@@ -1127,7 +1140,7 @@ def action_validate_release_operations(_: list[str]) -> int:
     rc = run_composite_validation(
         "validate-release-operations",
         [
-            ("validate-packaging-channels", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-packaging-channels"]),
+            ("validate-packaging-channels", workflow_command("validate-packaging-channels")),
             ("check-release-operations-surface", [sys.executable, str(RELEASE_OPERATIONS_SOURCE_SURFACE_PY)]),
             ("check-release-operations-schema-surface", [sys.executable, str(RELEASE_OPERATIONS_SCHEMA_SURFACE_PY)]),
             ("build-update-manifest", [sys.executable, str(UPDATE_MANIFEST_PY)]),
@@ -1163,7 +1176,7 @@ def action_validate_distribution_credibility(_: list[str]) -> int:
     return run_composite_validation(
         "validate-distribution-credibility",
         [
-            ("validate-release-operations", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-operations"]),
+            ("validate-release-operations", workflow_command("validate-release-operations")),
             ("check-distribution-credibility-surface", [sys.executable, str(DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY)]),
             ("check-distribution-credibility-schema-surface", [sys.executable, str(DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY)]),
             ("build-distribution-credibility-dashboard", [sys.executable, str(DISTRIBUTION_CREDIBILITY_DASHBOARD_PY)]),
@@ -1610,7 +1623,7 @@ def write_composite_validation_report(
         "action": action,
         "status": effective_status,
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "runner_path": "scripts/objc3c_public_workflow_runner.py",
+        "runner_path": WORKFLOW_RUNNER_SURFACE,
         "timing": {
             "step_count": len(steps),
             "total_step_duration_seconds": round(
@@ -2095,7 +2108,7 @@ def action_test_ci(_: list[str]) -> int:
             ("validate-stdlib-foundation", [sys.executable, str(STDLIB_FOUNDATION_INTEGRATION_PY)]),
             ("validate-stdlib-advanced", [sys.executable, str(STDLIB_ADVANCED_INTEGRATION_PY)]),
             ("validate-stdlib-program", [sys.executable, str(STDLIB_PROGRAM_INTEGRATION_PY)]),
-            ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
+            ("validate-performance-governance", workflow_command("validate-performance-governance")),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1)]),
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
@@ -2431,9 +2444,9 @@ def select_validation_profiles(paths: Sequence[str]) -> dict[str, object]:
         "changed_paths": list(paths),
         "profiles": matched_profiles,
         "manual_override": {
-            "fast": "python scripts/objc3c_public_workflow_runner.py test-fast",
-            "full": "python scripts/objc3c_public_workflow_runner.py test-full",
-            "nightly": "python scripts/objc3c_public_workflow_runner.py test-nightly",
+            "fast": f"{WORKFLOW_COMMAND_TEXT} test-fast",
+            "full": f"{WORKFLOW_COMMAND_TEXT} test-full",
+            "nightly": f"{WORKFLOW_COMMAND_TEXT} test-nightly",
         },
     }
 
@@ -2571,7 +2584,7 @@ def action_inspect_validation_timing(_: list[str]) -> int:
     payload = {
         "contract_id": "objc3c.validation.speed.dashboard.v1",
         "generated_at_utc": datetime.now(timezone.utc).isoformat(),
-        "runner_path": "scripts/objc3c_public_workflow_runner.py",
+        "runner_path": WORKFLOW_RUNNER_SURFACE,
         "reports": reports,
         "budgets": validation_speed_budgets(
             runtime_report if runtime_report.get("status") != "MISSING" else None,
@@ -2617,14 +2630,14 @@ def action_test_nightly(_: list[str]) -> int:
             ("test-runtime-acceptance", [sys.executable, str(RUNTIME_ACCEPTANCE_PY)]),
             ("test-execution-replay", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1)]),
             ("validate-conformance-corpus", [sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)]),
-            ("validate-stress", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-stress"]),
-            ("validate-external-validation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-external-validation"]),
-            ("validate-public-conformance-reporting", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-public-conformance-reporting"]),
-            ("validate-performance-governance", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-performance-governance"]),
-            ("validate-release-foundation", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-foundation"]),
-            ("validate-packaging-channels", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-packaging-channels"]),
-            ("validate-release-operations", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-release-operations"]),
-            ("validate-distribution-credibility", [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "validate-distribution-credibility"]),
+            ("validate-stress", workflow_command("validate-stress")),
+            ("validate-external-validation", workflow_command("validate-external-validation")),
+            ("validate-public-conformance-reporting", workflow_command("validate-public-conformance-reporting")),
+            ("validate-performance-governance", workflow_command("validate-performance-governance")),
+            ("validate-release-foundation", workflow_command("validate-release-foundation")),
+            ("validate-packaging-channels", workflow_command("validate-packaging-channels")),
+            ("validate-release-operations", workflow_command("validate-release-operations")),
+            ("validate-distribution-credibility", workflow_command("validate-distribution-credibility")),
             ("test-recovery", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(RECOVERY_PS1)]),
             ("test-fixture-matrix", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(MATRIX_PS1)]),
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
@@ -3048,8 +3061,8 @@ def public_script_to_action_map() -> dict[str, str]:
 
 def enrich_action_payload(spec: ActionSpec) -> dict[str, object]:
     payload = asdict(spec)
-    payload["mode"] = "public_runner-parameterized-task-runner-v2"
-    payload["runner_path"] = "scripts/objc3c_public_workflow_runner.py"
+    payload["mode"] = WORKFLOW_RUNNER_MODE
+    payload["runner_path"] = WORKFLOW_RUNNER_SURFACE
     payload["audience"] = audience_for_spec(spec)
     payload["category"] = category_for_public_script(spec.public_scripts[0]) if spec.public_scripts else "internal"
     return payload
@@ -3060,8 +3073,8 @@ def list_actions_payload() -> dict[str, object]:
     internal_action_count = len(ACTION_SPECS) - len(public_actions)
     public_script_count = len(public_script_to_action_map())
     return {
-        "mode": "public_runner-parameterized-task-runner-v2",
-        "runner_path": "scripts/objc3c_public_workflow_runner.py",
+        "mode": WORKFLOW_RUNNER_MODE,
+        "runner_path": WORKFLOW_RUNNER_SURFACE,
         "action_count": len(ACTION_SPECS),
         "public_action_count": len(public_actions),
         "internal_action_count": internal_action_count,
@@ -3086,8 +3099,8 @@ def describe_package_script_payload(script_name: str) -> dict[str, object]:
             "validation_tier": "repo",
             "guarantee_owner": "GitHub Actions and local npm users route workflow actions through one package bridge",
             "pass_through_args": True,
-            "mode": "public_runner-parameterized-task-runner-v2",
-            "runner_path": "scripts/objc3c_workflow",
+            "mode": WORKFLOW_RUNNER_MODE,
+            "runner_path": WORKFLOW_RUNNER_SURFACE,
         }
     mapping = public_script_to_action_map()
     action_name = mapping[script_name]
@@ -3111,10 +3124,10 @@ def execute_registered_action(action: str, rest: list[str]) -> int:
 def main(argv: Sequence[str]) -> int:
     if not argv:
         print(
-            "usage: objc3c_public_workflow_runner.py <action> [args...]\n"
-            "       objc3c_public_workflow_runner.py --list-json\n"
-            "       objc3c_public_workflow_runner.py --describe <action>\n"
-            "       objc3c_public_workflow_runner.py --describe-script <package-script>",
+            f"usage: {WORKFLOW_COMMAND_TEXT} <action> [args...]\n"
+            f"       {WORKFLOW_COMMAND_TEXT} --list-json\n"
+            f"       {WORKFLOW_COMMAND_TEXT} --describe <action>\n"
+            f"       {WORKFLOW_COMMAND_TEXT} --describe-script <package-script>",
             file=sys.stderr,
         )
         return 2
@@ -3124,7 +3137,7 @@ def main(argv: Sequence[str]) -> int:
         return emit_json(list_actions_payload())
     if action == "--describe":
         if len(rest) != 1:
-            print("usage: objc3c_public_workflow_runner.py --describe <action>", file=sys.stderr)
+            print(f"usage: {WORKFLOW_COMMAND_TEXT} --describe <action>", file=sys.stderr)
             return 2
         describe_action = rest[0]
         if describe_action not in ACTION_SPECS:
@@ -3133,7 +3146,7 @@ def main(argv: Sequence[str]) -> int:
         return emit_json(describe_action_payload(describe_action))
     if action == "--describe-script":
         if len(rest) != 1:
-            print("usage: objc3c_public_workflow_runner.py --describe-script <package-script>", file=sys.stderr)
+            print(f"usage: {WORKFLOW_COMMAND_TEXT} --describe-script <package-script>", file=sys.stderr)
             return 2
         describe_script = rest[0]
         mapping = public_script_to_action_map()

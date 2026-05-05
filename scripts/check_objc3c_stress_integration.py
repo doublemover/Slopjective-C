@@ -13,7 +13,7 @@ from objc3c_tooling.json_io import require_json_object as load_json, write_json_
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 VALIDATE_STRESS_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-stress.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "stress" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stress.integration.summary.v1"

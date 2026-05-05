@@ -82,10 +82,10 @@
     }
   ],
   "exact_live_commands": [
-    "python scripts/objc3c_public_workflow_runner.py build-native-binaries",
-    "python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance",
-    "python scripts/objc3c_public_workflow_runner.py validate-runtime-performance",
-    "python scripts/objc3c_public_workflow_runner.py validate-runnable-runtime-performance"
+    "python -m scripts.objc3c_workflow build-native-binaries",
+    "python -m scripts.objc3c_workflow benchmark-runtime-performance",
+    "python -m scripts.objc3c_workflow validate-runtime-performance",
+    "python -m scripts.objc3c_workflow validate-runnable-runtime-performance"
   ],
   "exact_live_paths_for_downstream_work": [
     "docs/runbooks/objc3c_runtime_performance.md",

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-alias-retirement'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
+RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 A001_INVENTORY_PATH = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-surface-inventory' / 'command_surface_inventory.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'alias_retirement_report.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'alias_retirement_report.md'
@@ -22,7 +22,7 @@ PLAN_MD_PATH = PLAN_DIR / 'workflow_alias_retirement.md'
 def load_runner() -> Any:
     return load_public_workflow_runner(
         runner_path=RUNNER_PATH,
-        module_name='objc3c_public_workflow_runner_m314_b002',
+        module_name='objc3c_workflow_runner_m314_b002',
     )
 
 

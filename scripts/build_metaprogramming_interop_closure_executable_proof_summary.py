@@ -9,7 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/metaprogramming_interop_closure/executable_proof_abi_contract.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_metaprogramming_interop_closure.md"
-WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
+WORKFLOW_PATH = ROOT / "scripts/objc3c_workflow/runner.py"
 RUNTIME_HEADER_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
 RUNTIME_CPP_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 OUT_DIR = ROOT / "tmp/reports/metaprogramming-interop-closure/executable-proof"

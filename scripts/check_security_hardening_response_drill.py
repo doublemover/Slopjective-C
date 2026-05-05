@@ -14,7 +14,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "response_drill_contract.json"
 RESPONSE_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "security_response_disclosure_policy.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"

@@ -48,7 +48,7 @@ of inventing a second examples tree inside `stdlib/`.
   be presented as runnable-now stories
 - not-yet-runnable capabilities must be framed as actor-shaped comparison or
   migration guidance rather than runnable parity claims
-- `package.json` and `scripts/objc3c_public_workflow_runner.py` remain the
+- `package.json` and `scripts.objc3c_workflow` remain the
   authoritative command truth
 - `tmp/` artifacts and legacy redirects may not become the primary onboarding
   route
@@ -61,7 +61,7 @@ of inventing a second examples tree inside `stdlib/`.
 - `scripts/check_showcase_surface.py`
 - `scripts/check_showcase_integration.py`
 - `scripts/check_getting_started_integration.py`
-- `scripts/objc3c_public_workflow_runner.py`
+- `scripts.objc3c_workflow`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 - `package.json`
 - `showcase/portfolio.json`
@@ -123,24 +123,24 @@ full program surface.
 
 Top-level workflow entrypoints:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
-- `npm run test:stdlib:program`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
-- `npm run test:stdlib:program:e2e`
+- `python -m scripts.objc3c_workflow validate-stdlib-program`
+- `npm run objc3c -- validate-stdlib-program`
+- `python -m scripts.objc3c_workflow validate-runnable-stdlib-program`
+- `npm run objc3c -- validate-runnable-stdlib-program`
 
 Integration flow:
 
-- `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
-- `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
-- `python scripts/objc3c_public_workflow_runner.py validate-showcase`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
-- `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
+- `python -m scripts.objc3c_workflow check-documentation-surface`
+- `python -m scripts.objc3c_workflow validate-getting-started`
+- `python -m scripts.objc3c_workflow validate-showcase`
+- `python -m scripts.objc3c_workflow validate-stdlib-foundation`
+- `python -m scripts.objc3c_workflow inspect-capability-explorer`
 
 Release-facing flow:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
+- `python -m scripts.objc3c_workflow validate-runnable-showcase`
+- `python -m scripts.objc3c_workflow validate-runnable-stdlib-foundation`
+- `python -m scripts.objc3c_workflow package-runnable-toolchain`
 
 Report roots:
 
@@ -150,24 +150,24 @@ Report roots:
 
 ## Exact Live Commands
 
-- `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
-- `npm run check:docs:surface`
-- `python scripts/objc3c_public_workflow_runner.py check-showcase-surface`
-- `npm run check:showcase:surface`
-- `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
-- `npm run test:getting-started`
-- `python scripts/objc3c_public_workflow_runner.py validate-showcase`
-- `npm run test:showcase`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
-- `npm run test:showcase:e2e`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
-- `npm run test:stdlib:program`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
-- `npm run test:stdlib:program:e2e`
-- `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
-- `npm run inspect:objc3c:capabilities`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-- `npm run package:objc3c-native:runnable-toolchain`
+- `python -m scripts.objc3c_workflow check-documentation-surface`
+- `npm run objc3c -- check-documentation-surface`
+- `python -m scripts.objc3c_workflow check-showcase-surface`
+- `npm run objc3c -- check-showcase-surface`
+- `python -m scripts.objc3c_workflow validate-getting-started`
+- `npm run objc3c -- validate-getting-started`
+- `python -m scripts.objc3c_workflow validate-showcase`
+- `npm run objc3c -- validate-showcase`
+- `python -m scripts.objc3c_workflow validate-runnable-showcase`
+- `npm run objc3c -- validate-runnable-showcase`
+- `python -m scripts.objc3c_workflow validate-stdlib-program`
+- `npm run objc3c -- validate-stdlib-program`
+- `python -m scripts.objc3c_workflow validate-runnable-stdlib-program`
+- `npm run objc3c -- validate-runnable-stdlib-program`
+- `python -m scripts.objc3c_workflow inspect-capability-explorer`
+- `npm run objc3c -- inspect-capability-explorer`
+- `python -m scripts.objc3c_workflow package-runnable-toolchain`
+- `npm run objc3c -- package-runnable-toolchain`
 
 ## Working Rules For Downstream Issues
 

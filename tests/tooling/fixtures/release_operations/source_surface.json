@@ -28,7 +28,7 @@
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "scripts/build_objc3c_native.ps1",
     "package.json",
     "tests/tooling/fixtures/release_operations/workflow_surface.json"

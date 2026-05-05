@@ -593,11 +593,11 @@ def main() -> int:
     ]:
         return fail("advanced helper package surface staged_manifest_fields drifted")
     if advanced_helper_package_surface.get("advanced_helper_command_surfaces") != {
-        "check_stdlib_surface": "npm run check:stdlib:surface",
-        "build_stdlib": "npm run build:objc3c:stdlib",
-        "validate_stdlib_advanced": "npm run test:stdlib:advanced",
-        "validate_runnable_stdlib_advanced": "npm run test:stdlib:advanced:e2e",
-        "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
+        "check_stdlib_surface": "npm run objc3c -- check-stdlib-surface",
+        "build_stdlib": "npm run objc3c -- materialize-stdlib-workspace",
+        "validate_stdlib_advanced": "npm run objc3c -- validate-stdlib-advanced",
+        "validate_runnable_stdlib_advanced": "npm run objc3c -- validate-runnable-stdlib-advanced",
+        "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain",
     }:
         return fail("advanced helper package surface command surfaces drifted")
     if advanced_helper_package_surface.get("public_actions") != [
@@ -702,17 +702,17 @@ def main() -> int:
     ]:
         return fail("program surface public_actions drifted")
     if program_surface.get("command_surfaces") != {
-        "check_documentation_surface": "npm run check:docs:surface",
-        "check_showcase_surface": "npm run check:showcase:surface",
-        "validate_getting_started": "npm run test:getting-started",
-        "validate_showcase": "npm run test:showcase",
-        "validate_runnable_showcase": "npm run test:showcase:e2e",
-        "validate_stdlib_foundation": "npm run test:stdlib",
-        "validate_runnable_stdlib_foundation": "npm run test:stdlib:e2e",
-        "validate_stdlib_program": "npm run test:stdlib:program",
-        "validate_runnable_stdlib_program": "npm run test:stdlib:program:e2e",
-        "inspect_capability_explorer": "npm run inspect:objc3c:capabilities",
-        "package_runnable_toolchain": "npm run package:objc3c-native:runnable-toolchain",
+        "check_documentation_surface": "npm run objc3c -- check-documentation-surface",
+        "check_showcase_surface": "npm run objc3c -- check-showcase-surface",
+        "validate_getting_started": "npm run objc3c -- validate-getting-started",
+        "validate_showcase": "npm run objc3c -- validate-showcase",
+        "validate_runnable_showcase": "npm run objc3c -- validate-runnable-showcase",
+        "validate_stdlib_foundation": "npm run objc3c -- validate-stdlib-foundation",
+        "validate_runnable_stdlib_foundation": "npm run objc3c -- validate-runnable-stdlib-foundation",
+        "validate_stdlib_program": "npm run objc3c -- validate-stdlib-program",
+        "validate_runnable_stdlib_program": "npm run objc3c -- validate-runnable-stdlib-program",
+        "inspect_capability_explorer": "npm run objc3c -- inspect-capability-explorer",
+        "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain",
     }:
         return fail("program surface command_surfaces drifted")
     if program_surface.get("onboarding_policy") != {
@@ -724,7 +724,7 @@ def main() -> int:
         ],
         "runnable_claim_rule": "only capabilities backed by checked-in compile and shared validation flows may be presented as runnable-now stories",
         "comparison_claim_rule": "not-yet-runnable capabilities must be framed as actor-shaped comparison or migration guidance rather than runnable parity claims",
-        "command_truth_rule": "package.json and scripts/objc3c_public_workflow_runner.py define the authoritative public commands",
+        "command_truth_rule": "package.json and scripts.objc3c_workflow define the authoritative public commands",
         "machine_noise_rule": "tmp artifacts and legacy redirect material may not appear as the primary onboarding route",
     }:
         return fail("program surface onboarding_policy drifted")

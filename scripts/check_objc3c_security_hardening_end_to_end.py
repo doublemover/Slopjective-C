@@ -13,7 +13,7 @@ from objc3c_tooling.json_io import require_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-security-hardening.json"
 WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "security_hardening" / "workflow_surface.json"
 SOURCE_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "source-surface-summary.json"

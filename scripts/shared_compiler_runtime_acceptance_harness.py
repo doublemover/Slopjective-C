@@ -620,20 +620,20 @@ SUITES: tuple[SuiteEntry, ...] = (
         suite_id="public-test-fast",
         summary="composite fast public workflow carrying runtime acceptance surfaces forward",
         execution_kind="composite-executable-suite",
-        command=(sys.executable, "scripts/objc3c_public_workflow_runner.py", "test-fast"),
+        command=(sys.executable, "-m", "scripts.objc3c_workflow", "test-fast"),
         report_path="tmp/reports/objc3c-public-workflow/test-fast.json",
         guarantee_owner="bounded smoke, runtime acceptance, and replay through the public entrypoint",
-        validation_owner="scripts/objc3c_public_workflow_runner.py",
+        validation_owner="scripts.objc3c_workflow",
         required_surfaces=COMMON_SURFACES,
     ),
     SuiteEntry(
         suite_id="public-test-full",
         summary="composite full developer workflow carrying runtime acceptance surfaces forward",
         execution_kind="composite-executable-suite",
-        command=(sys.executable, "scripts/objc3c_public_workflow_runner.py", "test-full"),
+        command=(sys.executable, "-m", "scripts.objc3c_workflow", "test-full"),
         report_path="tmp/reports/objc3c-public-workflow/test-full.json",
         guarantee_owner="full developer validation without recovery fan-out",
-        validation_owner="scripts/objc3c_public_workflow_runner.py",
+        validation_owner="scripts.objc3c_workflow",
         required_surfaces=COMMON_SURFACES,
     ),
 )
@@ -706,7 +706,7 @@ def validate_suite_report(entry: SuiteEntry, report: dict[str, Any]) -> dict[str
         if acceptance_suite_surface.get("report_path") != entry.report_path:
             raise RuntimeError("runtime acceptance suite surface drifted from the expected report path")
     else:
-        if report.get("runner_path") != "scripts/objc3c_public_workflow_runner.py":
+        if report.get("runner_path") != "scripts.objc3c_workflow":
             raise RuntimeError("composite suite report drifted from the public workflow runner path")
         steps = report.get("steps")
         if not isinstance(steps, list) or not steps:

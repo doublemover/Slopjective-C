@@ -30,7 +30,7 @@ def main() -> None:
             'canonical_actions': family['actions'],
             'package_scripts': family['package_scripts'],
             'tiers': family['tiers'],
-            'suite_owner': 'scripts/objc3c_public_workflow_runner.py',
+            'suite_owner': 'scripts.objc3c_workflow',
         })
 
     payload = {

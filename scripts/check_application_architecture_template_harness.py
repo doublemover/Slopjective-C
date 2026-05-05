@@ -14,7 +14,7 @@ from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "application_architecture_testing" / "project_template_workspace_semantics.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "application-architecture-testing" / "template-harness-summary.json"
 DEFAULT_EXAMPLE = "auroraBoard"

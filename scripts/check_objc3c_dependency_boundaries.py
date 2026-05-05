@@ -41,7 +41,7 @@ REQUIRED_RUNTIME_ARCH_PATH_TOKENS = (
     "`native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`",
     "`scripts/check_objc3c_runtime_acceptance.py`",
     "`scripts/check_objc3c_execution_replay_proof.ps1`",
-    "`scripts/objc3c_public_workflow_runner.py`",
+    "`scripts.objc3c_workflow`",
 )
 
 SOURCE_EXTENSIONS = (".h", ".hpp", ".hh", ".c", ".cc", ".cpp")

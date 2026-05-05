@@ -48,7 +48,7 @@
       ],
       "validation_commands": [
         "python scripts/spec_lint.py",
-        "npm run check:task-hygiene",
+        "npm run objc3c -- check-task-hygiene",
         "python scripts/check_release_evidence.py"
       ],
       "shard": "release-evidence-checklist",
@@ -102,7 +102,7 @@
       ],
       "validation_commands": [
         "python scripts/spec_lint.py",
-        "npm run check:task-hygiene"
+        "npm run objc3c -- check-task-hygiene"
       ],
       "shard": "conformance-profile-checklist",
       "execution_status": "open"
@@ -155,7 +155,7 @@
       ],
       "validation_commands": [
         "python scripts/spec_lint.py",
-        "npm run check:task-hygiene"
+        "npm run objc3c -- check-task-hygiene"
       ],
       "shard": "conformance-profile-checklist",
       "execution_status": "open"

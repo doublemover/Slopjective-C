@@ -71,7 +71,7 @@ def test_benchmark_writes_reproducible_summary(tmp_path: Path, monkeypatch) -> N
     object_path.write_bytes(b"OBJC3")
 
     monkeypatch.setattr(benchmark, "ROOT", root)
-    monkeypatch.setattr(benchmark, "PUBLIC_RUNNER", root / "scripts" / "objc3c_public_workflow_runner.py")
+    monkeypatch.setattr(benchmark, "PUBLIC_RUNNER", root / "scripts" / "objc3c_workflow" / "runner.py")
     monkeypatch.setattr(benchmark, "DEFAULT_SOURCE", root / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3")
     monkeypatch.setattr(benchmark, "SUMMARY_OUT", summary_out)
 

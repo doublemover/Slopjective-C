@@ -94,7 +94,7 @@ Authoritative live surfaces:
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_runnable_block_arc_conformance.py`
   - `scripts/check_objc3c_runnable_block_arc_end_to_end.py`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
 - public claims:
   - `README.md`
   - `docs/objc3c-native.md`

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-command-surface-inventory'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
+RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 OUTPUT_JSON_PATH = REPORT_DIR / 'command_surface_inventory.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'command_surface_inventory.md'
 
@@ -19,7 +19,7 @@ OUTPUT_MD_PATH = REPORT_DIR / 'command_surface_inventory.md'
 def load_runner() -> Any:
     return load_public_workflow_runner(
         runner_path=RUNNER_PATH,
-        module_name='objc3c_public_workflow_runner_inventory',
+        module_name='objc3c_workflow_runner_inventory',
     )
 
 
@@ -55,7 +55,7 @@ def main() -> None:
         'orphan_public_script_count': len(orphan_public_scripts),
         'category_counts': dict(sorted(category_counts.items())),
         'orchestration_model': {
-            'public_entrypoint_owner': 'package.json -> scripts/objc3c_public_workflow_runner.py',
+            'public_entrypoint_owner': 'package.json -> python -m scripts.objc3c_workflow',
             'internal_action_owner': 'ACTION_SPECS actions without public_scripts aliases',
             'appendix_generator': 'scripts/render_objc3c_public_command_surface.py',
         },

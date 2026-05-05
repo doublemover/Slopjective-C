@@ -15,7 +15,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PUBLIC_COMMAND_SURFACE_PY = ROOT / "scripts" / "render_objc3c_public_command_surface.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "performance-governance" / "integration-summary.json"

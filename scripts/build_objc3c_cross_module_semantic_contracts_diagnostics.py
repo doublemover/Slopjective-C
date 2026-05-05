@@ -264,10 +264,10 @@ def build_summary() -> dict[str, Any]:
         "validation_commands": [
             "python scripts/build_objc3c_cross_module_semantic_contracts_diagnostics.py --check",
             "python -m pytest tests/tooling/test_build_objc3c_cross_module_semantic_contracts_diagnostics.py",
-            "npm run test:objc3c:negative-expectations",
-            "npm run test:objc3c:execution-replay-proof",
-            "npm run test:objc3c:lowering-runtime-stress",
-            "npm run test:objc3c:full",
+            "npm run objc3c -- test-negative-expectations",
+            "npm run objc3c -- test-execution-replay",
+            "npm run objc3c -- test-lowering-runtime-stress",
+            "npm run objc3c -- test-full",
         ],
     }
 

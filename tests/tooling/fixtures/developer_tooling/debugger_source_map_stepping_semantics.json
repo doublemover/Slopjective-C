@@ -6,7 +6,7 @@
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
   "summary_script": "scripts/build_developer_tooling_debug_semantics_summary.py",
   "authoritative_code_paths": [
-    "scripts/objc3c_public_workflow_runner.py",
+    "scripts.objc3c_workflow",
     "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
     "native/objc3c/src/runtime/objc3_runtime.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"

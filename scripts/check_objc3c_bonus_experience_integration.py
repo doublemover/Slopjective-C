@@ -15,7 +15,7 @@ from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 BONUS_INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "bonus-tool-integration.json"
 SHOWCASE_INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "showcase" / "integration-summary.json"
 GETTING_STARTED_INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "tutorials" / "getting-started-integration-summary.json"

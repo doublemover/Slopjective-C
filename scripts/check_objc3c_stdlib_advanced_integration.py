@@ -15,7 +15,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 SMOKE_RUNNER = ROOT / "scripts" / "run_objc3c_stdlib_workspace_smoke.py"
 ADVANCED_HELPER_PACKAGE_SURFACE_PATH = ROOT / "stdlib" / "advanced_helper_package_surface.json"
 SURFACE_SUMMARY_PATH = ROOT / "tmp" / "reports" / "stdlib" / "surface-summary.json"

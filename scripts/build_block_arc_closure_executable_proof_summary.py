@@ -9,7 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json"
 PACKAGE_PATH = ROOT / "package.json"
-RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
+RUNNER_PATH = ROOT / "scripts/objc3c_workflow/runner.py"
 OUT_DIR = ROOT / "tmp/reports/block-arc-closure/executable-proof-abi"
 JSON_OUT = OUT_DIR / "block_arc_closure_executable_proof_summary.json"
 MD_OUT = OUT_DIR / "block_arc_closure_executable_proof_summary.md"

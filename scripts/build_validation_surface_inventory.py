@@ -15,7 +15,7 @@ REPORT_DIR = ROOT / "tmp" / "reports" / "m313" / "validation-surface-inventory"
 JSON_OUT = REPORT_DIR / "validation_surface_inventory.json"
 MD_OUT = REPORT_DIR / "validation_surface_inventory.md"
 PACKAGE_JSON = ROOT / "package.json"
-WORKFLOW_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+WORKFLOW_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 TASK_HYGIENE_GATE = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 ACCEPTANCE_HARNESS = ROOT / "scripts" / "shared_compiler_runtime_acceptance_harness.py"
 CHECK_ROOTS = [ROOT / "scripts", ROOT / "tests", ROOT / "native", ROOT / "docs", ROOT / "showcase", ROOT / "stdlib"]
@@ -253,7 +253,7 @@ def main() -> int:
     migration_map = {
         "acceptance_first_truth": [
             "scripts/shared_compiler_runtime_acceptance_harness.py",
-            "scripts/objc3c_public_workflow_runner.py validate-* and test-* actions",
+            "scripts.objc3c_workflow validate-* and test-* actions",
             "scripts/check_objc3c_*_integration.py and scripts/check_objc3c_runnable_*_end_to_end.py executable flows",
             "PowerShell runtime suites such as scripts/check_objc3c_native_execution_smoke.ps1, scripts/check_objc3c_execution_replay_proof.ps1, and scripts/check_objc3c_native_recovery_contract.ps1",
         ],

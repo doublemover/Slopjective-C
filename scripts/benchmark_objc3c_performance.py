@@ -21,7 +21,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PORTFOLIO_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_portfolio.json"
 MEASUREMENT_POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "measurement_policy.json"
 BENCHMARK_PARAMETERS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "performance" / "benchmark_parameters.json"

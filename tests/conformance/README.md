@@ -48,9 +48,9 @@ Machine-readable indexes:
 
 Live validation entrypoints:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
-- `python scripts/objc3c_public_workflow_runner.py test-nightly`
+- `python -m scripts.objc3c_workflow validate-conformance-corpus`
+- `python -m scripts.objc3c_workflow validate-runnable-conformance-corpus`
+- `python -m scripts.objc3c_workflow test-nightly`
 
 ## Cross-module preservation requirements
 

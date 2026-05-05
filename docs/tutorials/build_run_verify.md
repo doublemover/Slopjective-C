@@ -18,7 +18,7 @@ The tutorial workflow must stay on the normal public compiler and showcase surfa
 Build the native toolchain first:
 
 ```sh
-npm run build:objc3c-native
+npm run objc3c -- build-native-binaries
 ```
 
 That is the canonical tutorial build step. Do not add a tutorial-only build wrapper.
@@ -28,7 +28,7 @@ That is the canonical tutorial build step. Do not add a tutorial-only build wrap
 Compile one checked-in example directly:
 
 ```sh
-npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
 ```
 
 Use `auroraBoard` for the first compile because it stays closest to the current object-model and runtime-acceptance shape.
@@ -38,15 +38,15 @@ Use `auroraBoard` for the first compile because it stays closest to the current 
 After one direct compile, verify the full checked-in portfolio:
 
 ```sh
-npm run check:showcase:surface
-npm run test:showcase
+npm run objc3c -- check-showcase-surface
+npm run objc3c -- validate-showcase
 ```
 
 Use the packaged surface only when you need the staged runnable bundle:
 
 ```sh
-npm run test:showcase:e2e
-npm run test:objc3c:runnable-developer-tooling
+npm run objc3c -- validate-runnable-showcase
+npm run objc3c -- validate-runnable-developer-tooling
 ```
 
 If you want the ordered example sequence after these commands are clear, continue to `docs/tutorials/guided_walkthrough.md`.
@@ -54,7 +54,7 @@ If you want the ordered example sequence after these commands are clear, continu
 ## Validation Surface
 
 The bounded getting-started validation contract is implemented in `scripts/check_getting_started_surface.py`.
-The public integrated entrypoint for the same tutorial and onboarding flow is `npm run test:getting-started`.
+The public integrated entrypoint for the same tutorial and onboarding flow is `npm run objc3c -- validate-getting-started`.
 
 That surface proves:
 
@@ -102,7 +102,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - command truth:
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
 - bounded tutorial validation:
   - `scripts/check_getting_started_surface.py`
   - `scripts/check_getting_started_integration.py`

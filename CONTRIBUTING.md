@@ -63,10 +63,10 @@ archived redirect material as primary contributor guidance.
 Run these before committing:
 
 ```sh
-npm run build:site
-npm run lint
-npm run check:md
-npm run test:fast
+npm run objc3c -- build-site
+npm run objc3c -- lint-default
+npm run objc3c -- check-markdown
+npm run objc3c -- test-fast
 ```
 
 ## Core Maintainer Checks
@@ -74,7 +74,7 @@ npm run test:fast
 - dependency boundaries: `python scripts/check_objc3c_dependency_boundaries.py --strict`
 - task hygiene: `python scripts/ci/check_task_hygiene.py`
 - docs drift: `python scripts/build_objc3c_native_docs.py --check`
-- repo superclean surface: `npm run check:repo:surface`
+- repo superclean surface: `npm run objc3c -- check-repo-superclean-surface`
 
 When a change widens package scripts, runbooks, schemas, checker surfaces, or
 publication helpers, also refresh the governance summaries:

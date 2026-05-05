@@ -12,7 +12,7 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-security-hardening.json"
 RESPONSE_DRILL_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "response-drill-summary.json"
 RUNTIME_HARDENING_SUMMARY = ROOT / "tmp" / "reports" / "security-hardening" / "runtime-hardening-summary.json"

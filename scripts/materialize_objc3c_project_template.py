@@ -19,7 +19,7 @@ from objc3c_tooling.public_workflow_output import extract_line_value
 
 ROOT = Path(__file__).resolve().parents[1]
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 TEMPLATE_ARTIFACT_ROOT = ROOT / "tmp" / "artifacts" / "project-template"
 TEMPLATE_REPORT_ROOT = ROOT / "tmp" / "reports" / "project-template"
 TEMPLATE_CONTRACT_ID = "objc3c.project.template.surface.v1"
@@ -111,10 +111,10 @@ def main() -> int:
                 f"- source example: `{example_record['source']}`",
                 f"- generated source: `{display_path(template_source)}`",
                 "- live commands:",
-                f"  - `python scripts/objc3c_public_workflow_runner.py materialize-project-template --example {args.example}`",
-                f"  - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace {display_path(template_source)}`",
-                f"  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector {display_path(template_source)}`",
-                "  - `python scripts/objc3c_public_workflow_runner.py inspect-bonus-tool-integration`",
+                f"  - `python -m scripts.objc3c_workflow materialize-project-template --example {args.example}`",
+                f"  - `python -m scripts.objc3c_workflow materialize-playground-workspace {display_path(template_source)}`",
+                f"  - `python -m scripts.objc3c_workflow benchmark-runtime-inspector {display_path(template_source)}`",
+                "  - `python -m scripts.objc3c_workflow inspect-bonus-tool-integration`",
             ]
         )
         + "\n",

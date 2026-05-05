@@ -11,7 +11,7 @@ from objc3c_tooling.public_runner import load_public_workflow_runner
 ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-integration'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
+RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 DEFAULT_CONTRACT_PATH = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 MAINTAINER_RUNBOOK_PATH = ROOT / 'docs' / 'runbooks' / 'objc3c_maintainer_workflows.md'
@@ -26,7 +26,7 @@ REPORT_MD_PATH = REPORT_DIR / 'workflow_integration_report.md'
 def load_runner() -> Any:
     return load_public_workflow_runner(
         runner_path=RUNNER_PATH,
-        module_name='objc3c_public_workflow_runner_m314_d001',
+        module_name='objc3c_workflow_runner_m314_d001',
     )
 
 
@@ -53,12 +53,12 @@ def main() -> None:
     }
 
     doc_assertions = {
-        'maintainer_runbook_mentions_build_public_command_contract': 'python scripts/objc3c_public_workflow_runner.py build-public-command-contract' in maintainer_runbook,
-        'maintainer_runbook_mentions_check_public_command_contract': 'python scripts/objc3c_public_workflow_runner.py check-public-command-contract' in maintainer_runbook,
-        'maintainer_runbook_mentions_check_public_command_budget': 'python scripts/objc3c_public_workflow_runner.py check-public-command-budget' in maintainer_runbook,
-        'maintainer_runbook_uses_wrapper_for_dependency_boundaries': 'npm run check:objc3c:boundaries' in maintainer_runbook,
-        'maintainer_runbook_uses_wrapper_for_task_hygiene': 'npm run check:task-hygiene' in maintainer_runbook,
-        'maintainer_runbook_uses_wrapper_for_external_validation_surface': 'npm run check:external-validation:surface' in maintainer_runbook,
+        'maintainer_runbook_mentions_build_public_command_contract': 'python -m scripts.objc3c_workflow build-public-command-contract' in maintainer_runbook,
+        'maintainer_runbook_mentions_check_public_command_contract': 'python -m scripts.objc3c_workflow check-public-command-contract' in maintainer_runbook,
+        'maintainer_runbook_mentions_check_public_command_budget': 'python -m scripts.objc3c_workflow check-public-command-budget' in maintainer_runbook,
+        'maintainer_runbook_uses_wrapper_for_dependency_boundaries': 'npm run objc3c -- check-dependency-boundaries' in maintainer_runbook,
+        'maintainer_runbook_uses_wrapper_for_task_hygiene': 'npm run objc3c -- check-task-hygiene' in maintainer_runbook,
+        'maintainer_runbook_uses_wrapper_for_external_validation_surface': 'npm run objc3c -- check-external-validation-surface' in maintainer_runbook,
         'readme_mentions_internal_maintainer_actions': 'check-public-command-budget' in readme and 'build-public-command-contract' in readme,
     }
 

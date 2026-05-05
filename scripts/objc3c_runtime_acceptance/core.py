@@ -346,7 +346,7 @@ REALIZATION_LOOKUP_REFLECTION_RUNTIME_PROBE = (
 )
 RUNTIME_ACCEPTANCE_COMMAND = "python scripts/check_objc3c_runtime_acceptance.py"
 VALIDATE_RUNTIME_ARCHITECTURE_COMMAND = (
-    "python scripts/objc3c_public_workflow_runner.py validate-runtime-architecture"
+    "python -m scripts.objc3c_workflow validate-runtime-architecture"
 )
 PUBLIC_RUNTIME_ABI_BOUNDARY = [
     "objc3_runtime_register_image",
@@ -21704,6 +21704,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-
-
-

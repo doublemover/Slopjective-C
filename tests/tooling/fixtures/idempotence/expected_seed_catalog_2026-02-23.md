@@ -44,7 +44,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - Lane-level dependency: execute under Lane D governance (Program Control & Release).
 - Validation commands:
   - `python scripts/spec_lint.py`
-  - `npm run check:task-hygiene`
+  - `npm run objc3c -- check-task-hygiene`
   - `python scripts/check_release_evidence.py`
 
 ### SPT-0002 - [SPT-0002][Lane B] [CORE] Validate parser accepts let bindings in strict mode
@@ -75,7 +75,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
   - `python scripts/spec_lint.py`
-  - `npm run check:task-hygiene`
+  - `npm run objc3c -- check-task-hygiene`
 
 ### SPT-0003 - [SPT-0003][Lane B] [OPT-CXX] Confirm interop marker appears in emitted metadata
 
@@ -105,7 +105,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
   - `python scripts/spec_lint.py`
-  - `npm run check:task-hygiene`
+  - `npm run objc3c -- check-task-hygiene`
 
 ### SPT-0004 - [SPT-0004][Lane B] Document kickoff decision record for lane batching in artifact tracker
 
@@ -163,4 +163,3 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
   - `python scripts/spec_lint.py`
-

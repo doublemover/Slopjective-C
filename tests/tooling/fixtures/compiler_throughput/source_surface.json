@@ -4,7 +4,7 @@
   "runbook": "docs/runbooks/objc3c_compiler_throughput.md",
   "compile_wrapper": "scripts/objc3c_native_compile.ps1",
   "native_build_wrapper": "scripts/build_objc3c_native.ps1",
-  "public_runner": "scripts/objc3c_public_workflow_runner.py",
+  "public_runner": "scripts.objc3c_workflow",
   "heavy_validation_suites": [
     "scripts/check_objc3c_native_execution_smoke.ps1",
     "scripts/check_objc3c_native_recovery_contract.ps1",

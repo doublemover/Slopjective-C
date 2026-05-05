@@ -13,7 +13,7 @@ from objc3c_tooling.subprocesses import run_completed
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PORTFOLIO = ROOT / "showcase" / "portfolio.json"
 GUIDED_WALKTHROUGH = ROOT / "showcase" / "tutorial_walkthrough.json"
 WORKSPACE_CONTRACT_ID = "objc3c.showcase.example.workspace.v1"

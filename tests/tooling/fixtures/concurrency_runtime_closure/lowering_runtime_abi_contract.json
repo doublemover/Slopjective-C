@@ -36,7 +36,7 @@
     "scripts/check_objc3c_runtime_architecture_integration.py",
     "scripts/check_objc3c_runnable_concurrency_conformance.py",
     "scripts/check_objc3c_runnable_concurrency_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py"
+    "scripts.objc3c_workflow"
   ],
   "required_public_workflow_actions": [
     "action_validate_concurrency_conformance",

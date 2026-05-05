@@ -59,7 +59,7 @@ def main() -> int:
     expect(publication.get("contract_id") == "objc3c.adoption_legibility.evidence.v1", "publication artifact contract_id drifted", failures)
     expect(evidence_summary.get("status") == "PASS", "evidence summary did not report PASS", failures)
     expect(
-        scripts.get("test:objc3c:adoption-legibility") == "python scripts/objc3c_public_workflow_runner.py validate-adoption-legibility",
+        scripts.get("test:objc3c:adoption-legibility") == "python -m scripts.objc3c_workflow validate-adoption-legibility",
         "public package script missing or drifted",
         failures,
     )

@@ -39,7 +39,7 @@ def test_materializer_writes_template_and_harness(tmp_path: Path, monkeypatch) -
 
     monkeypatch.setattr(materializer, "ROOT", root)
     monkeypatch.setattr(materializer, "PORTFOLIO", portfolio_path)
-    monkeypatch.setattr(materializer, "PUBLIC_RUNNER", root / "scripts" / "objc3c_public_workflow_runner.py")
+    monkeypatch.setattr(materializer, "PUBLIC_RUNNER", root / "scripts" / "objc3c_workflow" / "runner.py")
     monkeypatch.setattr(materializer, "TEMPLATE_ARTIFACT_ROOT", root / "tmp" / "artifacts" / "project-template")
     monkeypatch.setattr(materializer, "TEMPLATE_REPORT_ROOT", root / "tmp" / "reports" / "project-template")
 

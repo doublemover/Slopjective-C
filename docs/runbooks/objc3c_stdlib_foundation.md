@@ -30,7 +30,7 @@ Authoritative inputs:
 - `docs/runbooks/objc3c_stdlib_core.md`
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
-- `scripts/objc3c_public_workflow_runner.py`
+- `scripts.objc3c_workflow`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
 
 ## Non-goals
@@ -76,7 +76,7 @@ and identifier-safe implementation module declarations.
 - `scripts/check_objc3c_stdlib_foundation_integration.py`
 - `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/objc3c_public_workflow_runner.py`
+- `scripts.objc3c_workflow`
 - `stdlib/advanced_architecture.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`
@@ -95,20 +95,20 @@ and identifier-safe implementation module declarations.
 
 ## Exact Live Commands
 
-- `python scripts/objc3c_public_workflow_runner.py check-stdlib-surface`
-- `npm run check:stdlib:surface`
-- `python scripts/objc3c_public_workflow_runner.py materialize-stdlib-workspace`
-- `npm run build:objc3c:stdlib`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-foundation`
-- `npm run test:stdlib`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
-- `npm run test:stdlib:e2e`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-- `npm run package:objc3c-native:runnable-toolchain`
+- `python -m scripts.objc3c_workflow check-stdlib-surface`
+- `npm run objc3c -- check-stdlib-surface`
+- `python -m scripts.objc3c_workflow materialize-stdlib-workspace`
+- `npm run objc3c -- materialize-stdlib-workspace`
+- `python -m scripts.objc3c_workflow validate-stdlib-foundation`
+- `npm run objc3c -- validate-stdlib-foundation`
+- `python -m scripts.objc3c_workflow validate-runnable-stdlib-foundation`
+- `npm run objc3c -- validate-runnable-stdlib-foundation`
+- `python -m scripts.objc3c_workflow package-runnable-toolchain`
+- `npm run objc3c -- package-runnable-toolchain`
 
 ## Public actions
 
-- `npm run check:stdlib:surface`
-- `npm run build:objc3c:stdlib`
-- `npm run test:stdlib`
-- `npm run test:stdlib:e2e`
+- `npm run objc3c -- check-stdlib-surface`
+- `npm run objc3c -- materialize-stdlib-workspace`
+- `npm run objc3c -- validate-stdlib-foundation`
+- `npm run objc3c -- validate-runnable-stdlib-foundation`

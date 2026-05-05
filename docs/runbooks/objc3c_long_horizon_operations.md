@@ -184,14 +184,14 @@ and scripts remain the source of truth.
 
 The repo-scope long-horizon workflow is:
 
-- `npm run test:objc3c:long-horizon-operations`
-- `npm run publish:objc3c:long-horizon-operations`
+- `npm run objc3c -- validate-long-horizon-operations`
+- `npm run objc3c -- publish-long-horizon-operations`
 
 It maps to:
 
-- `python scripts/objc3c_public_workflow_runner.py validate-long-horizon-operations`
+- `python -m scripts.objc3c_workflow validate-long-horizon-operations`
 - `python scripts/check_objc3c_long_horizon_operations_integration.py`
-- `python scripts/objc3c_public_workflow_runner.py publish-long-horizon-operations`
+- `python -m scripts.objc3c_workflow publish-long-horizon-operations`
 - `python scripts/publish_objc3c_long_horizon_operations_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, claim

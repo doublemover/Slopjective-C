@@ -65,15 +65,15 @@ def main() -> int:
     runbook = package_root / normalize_rel_path(str(runtime_surface["runbook"]))
 
     expect(
-        command_surfaces.get("inspect_runtime_performance") == "npm run inspect:objc3c:runtime-performance",
+        command_surfaces.get("inspect_runtime_performance") == "npm run objc3c -- benchmark-runtime-performance",
         "package manifest missing inspect_runtime_performance command surface",
     )
     expect(
-        command_surfaces.get("runtime_performance") == "npm run test:objc3c:runtime-performance",
+        command_surfaces.get("runtime_performance") == "npm run objc3c -- validate-runtime-performance",
         "package manifest missing runtime_performance command surface",
     )
     expect(
-        command_surfaces.get("runtime_performance_e2e") == "npm run test:objc3c:runnable-runtime-performance",
+        command_surfaces.get("runtime_performance_e2e") == "npm run objc3c -- validate-runnable-runtime-performance",
         "package manifest missing runtime_performance_e2e command surface",
     )
 

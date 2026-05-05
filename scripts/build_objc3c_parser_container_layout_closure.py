@@ -114,9 +114,9 @@ def build_summary() -> dict:
         "positive_fixture": rel(POSITIVE_FIXTURE),
         "negative_fixture": rel(NEGATIVE_FIXTURE),
         "validation_commands": [
-            "npm run test:objc3c:fixture-matrix",
-            "npm run test:objc3c:negative-expectations",
-            "npm run test:objc3c:execution-replay-proof",
+            "npm run objc3c -- test-fixture-matrix",
+            "npm run objc3c -- test-negative-expectations",
+            "npm run objc3c -- test-execution-replay",
         ],
     }
 

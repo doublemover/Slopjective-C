@@ -9,7 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_PATH = ROOT / "tests/tooling/fixtures/developer_tooling/editor_protocol_debug_artifact_contract.json"
 RUNBOOK_PATH = ROOT / "docs/runbooks/objc3c_developer_tooling.md"
-RUNNER_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
+RUNNER_PATH = ROOT / "scripts/objc3c_workflow/runner.py"
 PACKAGE_JSON = ROOT / "package.json"
 OUT_DIR = ROOT / "tmp/reports/developer-tooling/artifact-contract"
 JSON_OUT = OUT_DIR / "editor_protocol_debug_artifact_contract_summary.json"
@@ -36,7 +36,7 @@ def main() -> int:
         "runbook_mentions_tmp_report_family": "tmp/reports/developer-tooling/" in runbook_text,
         "runbook_mentions_public_runner_entrypoint": "inspect-editor-tooling" in runbook_text and "format-objc3c" in runbook_text,
         "runner_can_be_extended_at_declared_spine": "validate-developer-tooling" in runner_text,
-        "package_retains_developer_tooling_script": scripts.get("test:objc3c:developer-tooling") == "python scripts/objc3c_public_workflow_runner.py validate-developer-tooling",
+        "package_retains_developer_tooling_script": scripts.get("test:objc3c:developer-tooling") == "python -m scripts.objc3c_workflow validate-developer-tooling",
     }
 
     summary = {

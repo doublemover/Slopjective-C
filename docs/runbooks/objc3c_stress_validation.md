@@ -63,7 +63,7 @@ Downstream work must preserve these rules:
 ## Exact Live Implementation Paths
 
 - public command and package surface:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native build and compile roots:
@@ -123,8 +123,8 @@ Downstream work must preserve these rules:
 ## Exact Live Commands
 
 - build the native toolchain before stress validation:
-  - `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
-  - `npm run build:objc3c-native`
+  - `python -m scripts.objc3c_workflow build-native-binaries`
+  - `npm run objc3c -- build-native-binaries`
 - run the current parser/sema malformed-input gate:
   - `python scripts/run_objc3c_fuzz_safety.py`
 - run the bounded lowering/runtime stress harness:
@@ -138,14 +138,14 @@ Downstream work must preserve these rules:
 - validate the checked-in stress source contract:
   - `python scripts/check_stress_source_surface.py`
 - run the current executable smoke and replay evidence paths:
-  - `python scripts/objc3c_public_workflow_runner.py test-execution-smoke`
-  - `python scripts/objc3c_public_workflow_runner.py test-execution-replay`
+  - `python -m scripts.objc3c_workflow test-execution-smoke`
+  - `python -m scripts.objc3c_workflow test-execution-replay`
 - run the current conformance-corpus integration paths:
-  - `python scripts/objc3c_public_workflow_runner.py validate-conformance-corpus`
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-conformance-corpus`
+  - `python -m scripts.objc3c_workflow validate-conformance-corpus`
+  - `python -m scripts.objc3c_workflow validate-runnable-conformance-corpus`
 - stage the runnable package before packaged stress validation:
-  - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-  - `npm run package:objc3c-native:runnable-toolchain`
+  - `python -m scripts.objc3c_workflow package-runnable-toolchain`
+  - `npm run objc3c -- package-runnable-toolchain`
 
 ## Exact Live Paths For Downstream Work
 
@@ -166,7 +166,7 @@ Downstream work must preserve these rules:
   - `scripts/objc3c_native_compile.ps1`
   - `scripts/check_objc3c_native_execution_smoke.ps1`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
 
 ## Explicit Non-Goals

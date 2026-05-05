@@ -14,7 +14,7 @@ from objc3c_tooling.json_io import require_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 INTEGRATION_REPORT = ROOT / "tmp" / "reports" / "stress" / "integration-summary.json"
 COMMAND_SURFACE = ROOT / "docs" / "runbooks" / "objc3c_public_command_surface.md"
 PACKAGE_JSON = ROOT / "package.json"

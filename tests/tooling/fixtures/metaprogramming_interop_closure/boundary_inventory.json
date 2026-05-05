@@ -42,7 +42,7 @@
     "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py",
     "scripts/check_objc3c_runnable_interop_conformance.py",
     "scripts/check_objc3c_runnable_interop_end_to_end.py",
-    "scripts/objc3c_public_workflow_runner.py"
+    "scripts.objc3c_workflow"
   ],
   "authoritative_probe_paths": [
     "tests/tooling/runtime/expansion_host_runtime_boundary_probe.cpp",

@@ -5,28 +5,28 @@
 From repo root:
 
 ```powershell
-npm run test:fast
-npm run test:objc3c
-npm run test:objc3c:execution-smoke
-npm run test:objc3c:execution-replay-proof
-npm run test:objc3c:runtime-acceptance
-npm run test:objc3c:full
-npm run test:objc3c:nightly
-npm run test:ci
-npm run test:objc3c:runtime-architecture
-npm run proof:objc3c
-npm run check:task-hygiene
-npm run check:objc3c:boundaries
+npm run objc3c -- test-fast
+npm run objc3c -- test-recovery
+npm run objc3c -- test-execution-smoke
+npm run objc3c -- test-execution-replay
+npm run objc3c -- test-runtime-acceptance
+npm run objc3c -- test-full
+npm run objc3c -- test-nightly
+npm run objc3c -- test-ci
+npm run objc3c -- validate-runtime-architecture
+npm run objc3c -- proof-objc3c
+npm run objc3c -- check-task-hygiene
+npm run objc3c -- check-dependency-boundaries
 ```
 
 Targeted entrypoints accept bounded selectors when you need signal without the full corpus:
 
 ```powershell
-npm run test:objc3c:execution-smoke -- -Limit 12
-npm run test:objc3c -- -Limit 24
-npm run test:objc3c:fixture-matrix -- -ShardIndex 0 -ShardCount 4
-npm run test:objc3c:negative-expectations -- -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
-npm run test:objc3c:execution-replay-proof -- -CaseId synthesized-accessor
+npm run objc3c -- test-execution-smoke -Limit 12
+npm run objc3c -- test-execution-smoke -Limit 24
+npm run objc3c -- test-fixture-matrix -ShardIndex 0 -ShardCount 4
+npm run objc3c -- test-negative-expectations -FixtureGlob "tests/tooling/fixtures/native/recovery/negative/negative_assignment_*"
+npm run objc3c -- test-execution-replay -CaseId synthesized-accessor
 ```
 
 Composite runner entrypoints also write one integrated report to `tmp/reports/objc3c-public-workflow/<action>.json`, with the exact child-suite summary paths captured from the live smoke, runtime-acceptance, replay, recovery, and matrix scripts.

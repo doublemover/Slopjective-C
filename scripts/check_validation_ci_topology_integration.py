@@ -13,7 +13,7 @@ REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology-integra
 TOPOLOGY_PATH = PLAN_DIR / 'validation_ci_topology.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_ci_topology_integration.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
-WORKFLOW_RUNNER = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
+WORKFLOW_RUNNER = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 ACTION_MAP = {
     'test:fast': 'test-fast',

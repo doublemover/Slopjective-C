@@ -14,7 +14,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PERFORMANCE_SUMMARY = ROOT / "tmp" / "reports" / "performance" / "benchmark-summary.json"
 COMPARATIVE_SUMMARY = ROOT / "tmp" / "reports" / "performance" / "comparative-baselines-summary.json"
 RUNNABLE_SUMMARY = ROOT / "tmp" / "reports" / "performance" / "runnable-end-to-end-summary.json"

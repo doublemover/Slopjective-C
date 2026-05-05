@@ -4,7 +4,7 @@
   "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
   "template_materializer": "scripts/materialize_objc3c_project_template.py",
   "playground_materializer_action": "materialize-playground-workspace",
-  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
+  "workflow_runner": "scripts.objc3c_workflow",
   "template_contract_id": "objc3c.project.template.surface.v1",
   "template_harness_contract_id": "objc3c.project.template.demo.harness.v1",
   "playground_workspace_contract_id": "objc3c.playground.workspace.v1",

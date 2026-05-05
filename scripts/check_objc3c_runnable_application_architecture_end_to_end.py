@@ -79,17 +79,17 @@ def main() -> int:
         failures,
     )
     expect(
-        command_surfaces.get("build_application_workspace") == "npm run build:objc3c:application-workspace",
+        command_surfaces.get("build_application_workspace") == "npm run objc3c -- materialize-canonical-application-workspace",
         "package manifest missing build_application_workspace command surface",
         failures,
     )
     expect(
-        command_surfaces.get("application_architecture") == "npm run test:objc3c:application-architecture",
+        command_surfaces.get("application_architecture") == "npm run objc3c -- validate-application-architecture",
         "package manifest missing application_architecture command surface",
         failures,
     )
     expect(
-        command_surfaces.get("application_architecture_e2e") == "npm run test:objc3c:application-architecture:e2e",
+        command_surfaces.get("application_architecture_e2e") == "npm run objc3c -- validate-runnable-application-architecture",
         "package manifest missing application_architecture_e2e command surface",
         failures,
     )

@@ -15,7 +15,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 REPORT_PATH = ROOT / "tmp" / "reports" / "stdlib" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.stdlib.foundation.integration.summary.v1"
 WORKSPACE_CONTRACT_PATH = ROOT / "stdlib" / "workspace.json"

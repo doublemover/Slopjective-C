@@ -50,8 +50,8 @@ def main() -> int:
 
     steps: list[dict[str, Any]] = []
     command_map = {
-        "build-native-binaries": [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "build-native-binaries"],
-        "package-runnable-toolchain": [sys.executable, str(ROOT / "scripts" / "objc3c_public_workflow_runner.py"), "package-runnable-toolchain"],
+        "build-native-binaries": [sys.executable, str(ROOT / "scripts" / "objc3c_workflow" / "runner.py"), "build-native-binaries"],
+        "package-runnable-toolchain": [sys.executable, str(ROOT / "scripts" / "objc3c_workflow" / "runner.py"), "package-runnable-toolchain"],
         "build-package-channels": [sys.executable, str(ROOT / "scripts" / "build_objc3c_package_channels.py")],
         "check-packaging-channels-end-to-end": [sys.executable, str(ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py")],
     }

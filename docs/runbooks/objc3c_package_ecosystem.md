@@ -193,11 +193,11 @@ local registry index, and publication metadata under
 
 The repo-scope package ecosystem workflow is:
 
-- `npm run build:objc3c:package-lock`
-- `npm run test:objc3c:package-authoring`
-- `npm run test:objc3c:package-mirror`
-- `npm run test:objc3c:package-ecosystem`
-- `npm run test:objc3c:package-ecosystem:e2e`
+- `npm run objc3c -- build-package-lock`
+- `npm run objc3c -- validate-package-authoring`
+- `npm run objc3c -- validate-package-mirror`
+- `npm run objc3c -- validate-package-ecosystem`
+- `npm run objc3c -- validate-runnable-package-ecosystem`
 
 `test:objc3c:package-ecosystem` composes the local package authoring workflow
 with the canonical application architecture and stdlib program integration

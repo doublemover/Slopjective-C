@@ -53,7 +53,7 @@ Replayable generators and validators:
   - `scripts/check_objc3c_release_operations_integration.py`
   - `scripts/check_objc3c_release_operations_end_to_end.py`
 - public command and workflow surface:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
@@ -201,7 +201,7 @@ No unsupported host may be described as:
 
 ## Working Rules For Downstream Issues
 
-- treat `scripts/objc3c_public_workflow_runner.py` as the only public command
+- treat `scripts.objc3c_workflow` as the only public command
   routing surface
 - keep support-tier and compatibility publication machine-owned
 - keep transient package/install reports and matrix captures under `tmp/`
@@ -237,11 +237,11 @@ inventing a second matrix format.
 The live build/package validation path for this milestone must stay on the same
 public build/package surfaces users run:
 
-- `python scripts/objc3c_public_workflow_runner.py build-platform-support-matrix`
-- `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
-- `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-- `python scripts/objc3c_public_workflow_runner.py validate-platform-hardening`
-- `python scripts/objc3c_public_workflow_runner.py validate-platform-hardening-end-to-end`
+- `python -m scripts.objc3c_workflow build-platform-support-matrix`
+- `python -m scripts.objc3c_workflow build-native-binaries`
+- `python -m scripts.objc3c_workflow package-runnable-toolchain`
+- `python -m scripts.objc3c_workflow validate-platform-hardening`
+- `python -m scripts.objc3c_workflow validate-platform-hardening-end-to-end`
 - `python scripts/build_objc3c_package_channels.py`
 - `python scripts/check_objc3c_packaging_channels_integration.py`
 - `python scripts/check_objc3c_packaging_channels_end_to_end.py`
@@ -306,9 +306,9 @@ The tiered support matrix must now be visible on the public workflow and
 release/update metadata surfaces:
 
 - public commands:
-  - `npm run inspect:objc3c:platform-matrix`
-  - `npm run test:objc3c:platform-hardening`
-  - `npm run test:objc3c:platform-hardening:e2e`
+  - `npm run objc3c -- build-platform-support-matrix`
+  - `npm run objc3c -- validate-platform-hardening`
+  - `npm run objc3c -- validate-platform-hardening-end-to-end`
 - update metadata:
   - `tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json`
 - compatibility publication:

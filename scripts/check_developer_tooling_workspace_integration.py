@@ -11,7 +11,7 @@ from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 CONTRACT_PATH = ROOT / "tests" / "tooling" / "fixtures" / "developer_tooling" / "workspace_editor_debug_integration_contract.json"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "developer-tooling" / "workspace-integration-summary.json"
 

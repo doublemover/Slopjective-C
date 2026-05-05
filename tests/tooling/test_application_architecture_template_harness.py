@@ -99,7 +99,7 @@ def test_template_harness_check_writes_summary(tmp_path: Path, monkeypatch) -> N
     )
 
     monkeypatch.setattr(checker, "ROOT", root)
-    monkeypatch.setattr(checker, "PUBLIC_RUNNER", root / "scripts" / "objc3c_public_workflow_runner.py")
+    monkeypatch.setattr(checker, "PUBLIC_RUNNER", root / "scripts" / "objc3c_workflow" / "runner.py")
     monkeypatch.setattr(checker, "CONTRACT_PATH", contract_path)
     monkeypatch.setattr(
         checker,

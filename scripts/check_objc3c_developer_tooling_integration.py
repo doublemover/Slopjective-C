@@ -12,7 +12,7 @@ from objc3c_tooling.subprocesses import run_timed
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 FORMATTER_DEBUG_SURFACE_PY = ROOT / "scripts" / "check_developer_tooling_formatter_debug_surface.py"
 WORKSPACE_INTEGRATION_PY = ROOT / "scripts" / "check_developer_tooling_workspace_integration.py"
 PUBLIC_WORKFLOW_REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-public-workflow"

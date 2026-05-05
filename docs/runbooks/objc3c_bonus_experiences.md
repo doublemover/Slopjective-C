@@ -35,7 +35,7 @@ real implementation exists.
 ## Exact Live Implementation Paths
 
 - public command and package surface:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime tooling entrypoints:
@@ -113,49 +113,49 @@ real implementation exists.
 ## Exact Live Commands
 
 - compile one checked-in source through the public compiler path:
-  - `python scripts/objc3c_public_workflow_runner.py compile-objc3c showcase/auroraBoard/main.objc3`
-  - `npm run compile:objc3c -- showcase/auroraBoard/main.objc3`
+  - `python -m scripts.objc3c_workflow compile-objc3c showcase/auroraBoard/main.objc3`
+  - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
 - materialize a machine-owned playground workspace for one source:
-  - `python scripts/objc3c_public_workflow_runner.py materialize-playground-workspace showcase/auroraBoard/main.objc3`
-  - `npm run build:objc3c:playground -- showcase/auroraBoard/main.objc3`
+  - `python -m scripts.objc3c_workflow materialize-playground-workspace showcase/auroraBoard/main.objc3`
+  - `npm run objc3c -- materialize-playground-workspace showcase/auroraBoard/main.objc3`
 - materialize a machine-owned project template and demo harness from one showcase example:
-  - `python scripts/objc3c_public_workflow_runner.py materialize-project-template --example auroraBoard`
-  - `npm run build:objc3c:template -- --example auroraBoard`
+  - `python -m scripts.objc3c_workflow materialize-project-template --example auroraBoard`
+  - `npm run objc3c -- materialize-project-template --example auroraBoard`
 - stage the runnable toolchain and package manifest surface:
-  - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
-  - `npm run package:objc3c-native:runnable-toolchain`
+  - `python -m scripts.objc3c_workflow package-runnable-toolchain`
+  - `npm run objc3c -- package-runnable-toolchain`
 - inspect the live integrated bonus-tool surface:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-bonus-tool-integration`
-  - `npm run inspect:objc3c:bonus-tools`
+  - `python -m scripts.objc3c_workflow inspect-bonus-tool-integration`
+  - `npm run objc3c -- inspect-bonus-tool-integration`
 - dump the live playground and repro payload:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-playground-repro`
-  - `npm run inspect:objc3c:playground`
+  - `python -m scripts.objc3c_workflow inspect-playground-repro`
+  - `npm run objc3c -- inspect-playground-repro`
 - dump the current playground/repro observability payload:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-compile-observability`
-  - `npm run inspect:objc3c:observability`
+  - `python -m scripts.objc3c_workflow inspect-compile-observability`
+  - `npm run objc3c -- inspect-compile-observability`
 - dump the current runtime-inspector payload:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
-  - `npm run inspect:objc3c:runtime`
+  - `python -m scripts.objc3c_workflow inspect-runtime-inspector`
+  - `npm run objc3c -- inspect-runtime-inspector`
 - dump the current capability-explorer payload:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
-  - `npm run inspect:objc3c:capabilities`
+  - `python -m scripts.objc3c_workflow inspect-capability-explorer`
+  - `npm run objc3c -- inspect-capability-explorer`
 - benchmark the runtime-inspector and capability-explorer workflow:
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-inspector`
-  - `npm run inspect:objc3c:benchmark`
+  - `python -m scripts.objc3c_workflow benchmark-runtime-inspector`
+  - `npm run objc3c -- benchmark-runtime-inspector`
 - dump the current stage-trace payload:
-  - `python scripts/objc3c_public_workflow_runner.py trace-compile-stages`
-  - `npm run trace:objc3c:stages`
+  - `python -m scripts.objc3c_workflow trace-compile-stages`
+  - `npm run objc3c -- trace-compile-stages`
 - validate the current developer-tooling integration surface:
-  - `python scripts/objc3c_public_workflow_runner.py validate-developer-tooling`
-  - `npm run test:objc3c:developer-tooling`
+  - `python -m scripts.objc3c_workflow validate-developer-tooling`
+  - `npm run objc3c -- validate-developer-tooling`
 - validate showcase/tutorial-backed bonus experience flows:
-  - `python scripts/objc3c_public_workflow_runner.py validate-bonus-experiences`
-  - `npm run test:bonus-experiences`
-  - `python scripts/objc3c_public_workflow_runner.py validate-showcase`
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
-  - `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-bonus-experiences`
-  - `npm run test:bonus-experiences:e2e`
+  - `python -m scripts.objc3c_workflow validate-bonus-experiences`
+  - `npm run objc3c -- validate-bonus-experiences`
+  - `python -m scripts.objc3c_workflow validate-showcase`
+  - `python -m scripts.objc3c_workflow validate-runnable-showcase`
+  - `python -m scripts.objc3c_workflow validate-getting-started`
+  - `python -m scripts.objc3c_workflow validate-runnable-bonus-experiences`
+  - `npm run objc3c -- validate-runnable-bonus-experiences`
 
 ## Feasibility And Working Model
 
@@ -174,7 +174,7 @@ mock JSON, or hand-written walkthrough output as authoritative.
 
 ## Working Rules For Downstream Issues
 
-- keep public command routing in `scripts/objc3c_public_workflow_runner.py`
+- keep public command routing in `scripts.objc3c_workflow`
   and `package.json`
 - keep checked-in bonus-experience guidance in `docs/runbooks/`
 - keep runnable example sources under `showcase/` or existing tutorial/example

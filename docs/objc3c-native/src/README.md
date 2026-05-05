@@ -46,14 +46,14 @@ adding sidecar scaffolding:
   - `CONTRIBUTING.md`
   - `site/index.md`
 - doc build/check path:
-  - `npm run build:docs:native`
-  - `npm run check:docs:native`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- check-native-docs`
 - site index build path:
-  - `npm run build:site`
-  - `npm run check:site`
+  - `npm run objc3c -- build-site`
+  - `npm run objc3c -- check-site`
 - public command surface build/check path:
-  - `npm run build:docs:commands`
-  - `npm run check:docs:commands`
+  - `npm run objc3c -- build-public-command-surface`
+  - `npm run objc3c -- check-public-command-surface`
 
 ## Canonical Naming And Path Rules
 
@@ -61,12 +61,12 @@ Use these naming rules when downstream cleanup work renames or consolidates
 repo surfaces:
 
 - user-facing package entrypoints come from `package.json` and map directly to
-  `scripts/objc3c_public_workflow_runner.py`
+  `scripts.objc3c_workflow`
 - checked-in generated docs keep one source root each:
   - `site/index.md` <= `site/src/`
   - `docs/objc3c-native.md` <= `docs/objc3c-native/src/`
   - `docs/runbooks/objc3c_public_command_surface.md` <= `package.json` +
-    `scripts/objc3c_public_workflow_runner.py`
+    `scripts.objc3c_workflow`
 - implementation paths stay under `native/objc3c/`, `scripts/`, and `tests/`
 - transient outputs stay under `tmp/`
 - published binaries and libraries stay under `artifacts/`
@@ -92,8 +92,8 @@ These surfaces are generated and must stay tied to their canonical inputs:
   - generator: `python scripts/build_site_index.py`
 - machine-facing generated operator appendix:
   - output: `docs/runbooks/objc3c_public_command_surface.md`
-  - sources: `package.json`, `scripts/objc3c_public_workflow_runner.py`, `scripts/build_objc3c_public_command_contract.py`
-  - build/check: `npm run build:docs:commands` / `npm run check:docs:commands`
+  - sources: `package.json`, `scripts.objc3c_workflow`, `scripts/build_objc3c_public_command_contract.py`
+  - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
 
 Generated proof and report outputs under `tmp/` are evidence, not canonical
 documentation sources.

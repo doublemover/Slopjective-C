@@ -17,32 +17,32 @@ This walkthrough stays on the same live command and showcase surfaces as the res
 1. Build the native toolchain:
 
    ```sh
-   npm run build:objc3c-native
+   npm run objc3c -- build-native-binaries
    ```
 
 2. Compile `auroraBoard` to see the familiar object-model shape:
 
    ```sh
-   npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+   npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
    ```
 
 3. Compile `signalMesh` to see the async and executor-facing surface:
 
    ```sh
-   npm run compile:objc3c -- showcase/signalMesh/main.objc3
+   npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3
    ```
 
 4. Compile `patchKit` to see the imported-hook and macro-backed interop edge:
 
    ```sh
-   npm run compile:objc3c -- showcase/patchKit/main.objc3
+   npm run objc3c -- compile-objc3c showcase/patchKit/main.objc3
    ```
 
 5. Check the full showcase surface and integrated validation:
 
    ```sh
-   npm run check:showcase:surface
-   npm run test:showcase
+   npm run objc3c -- check-showcase-surface
+   npm run objc3c -- validate-showcase
    ```
 
 ## Why This Order
@@ -65,7 +65,7 @@ That manifest is part of the live showcase surface and should stay aligned with:
 
 The bounded validation surface for this walkthrough is `scripts/check_getting_started_surface.py`.
 The live smoke integration for the same walkthrough is `scripts/check_getting_started_integration.py`.
-Use `npm run test:getting-started` when you want the public integrated entrypoint for that same flow.
+Use `npm run objc3c -- validate-getting-started` when you want the public integrated entrypoint for that same flow.
 
 ## Canonical Inputs
 

@@ -103,8 +103,8 @@ Replayable governance enforcement:
 - `python scripts/publish_objc3c_governance_sustainability_metadata.py`
 - `python scripts/check_governance_sustainability_budget_enforcement.py`
 - `python scripts/ci/run_task_hygiene_gate.py`
-- public package command: `npm run test:objc3c:governance-sustainability`
-- public package command: `npm run publish:objc3c:governance-sustainability`
+- public package command: `npm run objc3c -- validate-governance-sustainability`
+- public package command: `npm run objc3c -- publish-governance-sustainability`
 - canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
 - canonical integration summary: `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
 - canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
@@ -130,7 +130,7 @@ Current governance entry surfaces:
 - `scripts/check_objc3c_dependency_boundaries.py`
 - `docs/runbooks/objc3c_maintainer_workflows.md`
 - `docs/runbooks/objc3c_public_command_surface.md`
-- `scripts/objc3c_public_workflow_runner.py`
+- `scripts.objc3c_workflow`
 
 Current budget surfaces measured by the governance inventory summary:
 

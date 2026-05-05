@@ -56,10 +56,10 @@ def main() -> int:
     stdlib_program_surface = manifest.get("stdlib_program_surface", {})
     stdlib_modules = manifest.get("stdlib_modules", [])
 
-    expect(command_surfaces.get("build_stdlib") == "npm run build:objc3c:stdlib", "package manifest missing build_stdlib command surface")
-    expect(command_surfaces.get("check_stdlib_surface") == "npm run check:stdlib:surface", "package manifest missing check_stdlib_surface command surface")
-    expect(command_surfaces.get("stdlib") == "npm run test:stdlib", "package manifest missing stdlib command surface")
-    expect(command_surfaces.get("stdlib_e2e") == "npm run test:stdlib:e2e", "package manifest missing stdlib_e2e command surface")
+    expect(command_surfaces.get("build_stdlib") == "npm run objc3c -- materialize-stdlib-workspace", "package manifest missing build_stdlib command surface")
+    expect(command_surfaces.get("check_stdlib_surface") == "npm run objc3c -- check-stdlib-surface", "package manifest missing check_stdlib_surface command surface")
+    expect(command_surfaces.get("stdlib") == "npm run objc3c -- validate-stdlib-foundation", "package manifest missing stdlib command surface")
+    expect(command_surfaces.get("stdlib_e2e") == "npm run objc3c -- validate-runnable-stdlib-foundation", "package manifest missing stdlib_e2e command surface")
     expect(isinstance(stdlib_surface, dict), "package manifest missing stdlib_foundation_surface")
     expect(isinstance(stdlib_program_surface, dict), "package manifest missing stdlib_program_surface")
     expect(

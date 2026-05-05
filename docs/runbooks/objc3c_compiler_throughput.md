@@ -52,7 +52,7 @@ The current audit inventory is:
   - `scripts/objc3c_native_compile.ps1`
   - `artifacts/bin/objc3c-native.exe`
   - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
 - incremental build and invalidation:
   - wrapper `--use-cache`
   - `tmp/artifacts/objc3c-native/cache/`
@@ -169,7 +169,7 @@ Disallowed optimization moves:
 - compile/build wrappers:
   - `scripts/objc3c_native_compile.ps1`
   - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `scripts/check_objc3c_native_perf_budget.ps1`
   - `scripts/check_objc3c_compiler_throughput_integration.py`
 - heavyweight validation suites:
@@ -204,11 +204,11 @@ Disallowed optimization moves:
 ## Exact Live Commands
 
 - benchmark the live direct-compile throughput and wrapper cache surface:
-  - `npm run inspect:objc3c:compiler-throughput`
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-compiler-throughput`
+  - `npm run objc3c -- benchmark-compiler-throughput`
+  - `python -m scripts.objc3c_workflow benchmark-compiler-throughput`
 - build the compile-coupled docs generators used by this milestone:
-  - `npm run build:docs:native`
-  - `npm run build:docs:commands`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
 
 ## Explicit Non-Goals
 

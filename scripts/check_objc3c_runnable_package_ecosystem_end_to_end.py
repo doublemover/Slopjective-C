@@ -60,7 +60,7 @@ def main() -> int:
     for script in ("build:objc3c:package-lock", "test:objc3c:package-authoring", "test:objc3c:package-mirror", "test:objc3c:package-ecosystem:e2e"):
         expect(script in public_scripts, f"package manifest missing public script {script}", failures)
 
-    packaged_runner = package_root / "scripts" / "objc3c_public_workflow_runner.py"
+    packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
     packaged_authoring = run_capture(
         [sys.executable, str(packaged_runner), "validate-package-authoring"],
         cwd=package_root,

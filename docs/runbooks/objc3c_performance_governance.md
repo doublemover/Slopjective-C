@@ -150,7 +150,7 @@ The performance program assumes one checked-in lab contract:
   - `scripts/check_objc3c_compiler_throughput_integration.py`
   - `scripts/check_objc3c_runtime_performance_integration.py`
 - package and workflow surfaces:
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `package.json`
   - `scripts/build_objc3c_native.ps1`
   - `scripts/package_objc3c_runnable_toolchain.ps1`

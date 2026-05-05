@@ -14,7 +14,7 @@ from objc3c_tooling.subprocesses import run_capture
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "compiler_throughput" / "artifact_surface.json"
 SUMMARY = ROOT / "tmp" / "reports" / "compiler-throughput" / "benchmark-summary.json"
 REPORT = ROOT / "tmp" / "reports" / "compiler-throughput" / "integration-summary.json"

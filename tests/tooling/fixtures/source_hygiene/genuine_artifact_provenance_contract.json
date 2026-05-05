@@ -23,7 +23,7 @@
     "python scripts/build_objc3c_native_docs.py",
     "python scripts/render_objc3c_public_command_surface.py",
     "python scripts/generate_conformance_evidence_index.py",
-    "python scripts/objc3c_public_workflow_runner.py",
+    "python -m scripts.objc3c_workflow",
     "pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/build_objc3c_native.ps1"
   ],
   "notes": [

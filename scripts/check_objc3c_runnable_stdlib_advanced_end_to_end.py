@@ -52,8 +52,8 @@ def main() -> int:
     expect(manifest.get("contract_id") == PACKAGE_CONTRACT_ID, "unexpected package contract id")
 
     command_surfaces = manifest.get("command_surfaces", {})
-    expect(command_surfaces.get("stdlib_advanced") == "npm run test:stdlib:advanced", "package manifest missing stdlib_advanced command surface")
-    expect(command_surfaces.get("stdlib_advanced_e2e") == "npm run test:stdlib:advanced:e2e", "package manifest missing stdlib_advanced_e2e command surface")
+    expect(command_surfaces.get("stdlib_advanced") == "npm run objc3c -- validate-stdlib-advanced", "package manifest missing stdlib_advanced command surface")
+    expect(command_surfaces.get("stdlib_advanced_e2e") == "npm run objc3c -- validate-runnable-stdlib-advanced", "package manifest missing stdlib_advanced_e2e command surface")
 
     compile_wrapper = package_root / normalize_rel_path(str(manifest["compile_wrapper"]))
     runtime_library = package_root / normalize_rel_path(str(manifest["runtime_library"]))

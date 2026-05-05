@@ -36,7 +36,7 @@ Exact live implementation paths for downstream work:
 - `scripts/run_objc3c_stdlib_workspace_smoke.py`
 - `scripts/check_objc3c_stdlib_advanced_integration.py`
 - `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/objc3c_public_workflow_runner.py`
+- `scripts.objc3c_workflow`
 
 ## Advanced family split
 
@@ -186,10 +186,10 @@ This milestone does not justify:
 The advanced-helper slice now owns a dedicated public validation action instead
 of hiding behind the generic stdlib label:
 
-- `npm run test:stdlib:advanced`
-- `npm run test:stdlib:advanced:e2e`
-- `python scripts/objc3c_public_workflow_runner.py validate-stdlib-advanced`
-- `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-advanced`
+- `npm run objc3c -- validate-stdlib-advanced`
+- `npm run objc3c -- validate-runnable-stdlib-advanced`
+- `python -m scripts.objc3c_workflow validate-stdlib-advanced`
+- `python -m scripts.objc3c_workflow validate-runnable-stdlib-advanced`
 
 That workflow must continue to:
 

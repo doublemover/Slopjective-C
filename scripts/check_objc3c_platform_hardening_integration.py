@@ -12,7 +12,7 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 from objc3c_tooling.subprocesses import run_completed
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 PACKAGE_MANIFEST = ROOT / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
 PACKAGED_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "platform_hardening" / "packaged_smoke_integration_contract.json"
 BUILD_PACKAGE_VALIDATION_PY = ROOT / "scripts" / "check_platform_hardening_build_package_validation.py"

@@ -99,7 +99,7 @@ def main() -> int:
     for script in contract["public_scripts"]:
         expect(script in public_scripts, f"package manifest missing platform-hardening public script: {script}")
 
-    packaged_runner = package_root / "scripts" / "objc3c_public_workflow_runner.py"
+    packaged_runner = package_root / "scripts" / "objc3c_workflow" / "runner.py"
 
     matrix_exit_code = run_step(
         [sys.executable, str(packaged_runner), "build-platform-support-matrix"],

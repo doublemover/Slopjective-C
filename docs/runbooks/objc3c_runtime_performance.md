@@ -107,7 +107,7 @@ Disallowed optimization moves:
   - `scripts/check_objc3c_runtime_performance_integration.py`
   - `scripts/check_objc3c_runnable_runtime_performance_end_to_end.py`
   - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/objc3c_public_workflow_runner.py`
+  - `scripts.objc3c_workflow`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
 - authoritative live runtime probes:
   - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
@@ -137,20 +137,20 @@ Disallowed optimization moves:
 ## Exact Live Commands
 
 - build the native runtime surface before measuring:
-  - `python scripts/objc3c_public_workflow_runner.py build-native-binaries`
-  - `npm run build:objc3c-native`
+  - `python -m scripts.objc3c_workflow build-native-binaries`
+  - `npm run objc3c -- build-native-binaries`
 - inspect the live runtime boundary already used by developer tooling:
-  - `python scripts/objc3c_public_workflow_runner.py inspect-runtime-inspector`
-  - `npm run inspect:objc3c:runtime`
+  - `python -m scripts.objc3c_workflow inspect-runtime-inspector`
+  - `npm run objc3c -- inspect-runtime-inspector`
 - benchmark the runtime hot-path surface:
-  - `python scripts/objc3c_public_workflow_runner.py benchmark-runtime-performance`
-  - `npm run inspect:objc3c:runtime-performance`
+  - `python -m scripts.objc3c_workflow benchmark-runtime-performance`
+  - `npm run objc3c -- benchmark-runtime-performance`
 - validate the integrated runtime-performance surface:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runtime-performance`
-  - `npm run test:objc3c:runtime-performance`
+  - `python -m scripts.objc3c_workflow validate-runtime-performance`
+  - `npm run objc3c -- validate-runtime-performance`
 - validate the staged runnable runtime-performance surface:
-  - `python scripts/objc3c_public_workflow_runner.py validate-runnable-runtime-performance`
-  - `npm run test:objc3c:runnable-runtime-performance`
+  - `python -m scripts.objc3c_workflow validate-runnable-runtime-performance`
+  - `npm run objc3c -- validate-runnable-runtime-performance`
 
 ## Explicit Non-Goals
 

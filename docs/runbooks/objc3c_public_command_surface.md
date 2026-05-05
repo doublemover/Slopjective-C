@@ -6,7 +6,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Current package script count: `1`
 - Operator command count: `1`
 - Maintainer command count: `0`
-- Runner path: `scripts/objc3c_public_workflow_runner.py`
+- Runner path: `scripts.objc3c_workflow`
 - Contract builder: `scripts/build_objc3c_public_command_contract.py`
 - Contract artifact: `tmp/artifacts/public-command-surface/objc3c-public-command-contract.json`
 
@@ -26,7 +26,7 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Use the operator commands above for normal public workflows.
 - Treat this file as a generated machine-facing appendix for exact command mapping, not as the reader-facing project introduction.
 - Maintainer commands are intentionally narrower wrappers for repo hygiene, markdown upkeep, release-evidence checks, and dependency/capability audits.
-- Canonical user-facing command names come from `package.json` and map directly to `scripts/objc3c_public_workflow_runner.py` action names.
+- Canonical user-facing command names come from `package.json` and map directly to `python -m scripts.objc3c_workflow` action names.
 - Canonical checked-in doc outputs are `site/index.md`, `docs/objc3c-native.md`, and `docs/runbooks/objc3c_public_command_surface.md`; edit their source roots instead of the generated files.
 - `native/objc3c/`, `scripts/`, and `tests/` are the live implementation roots; `tmp/` and `artifacts/` are output roots, not naming roots.
 - Composite validation entrypoints write an integrated runner summary to `tmp/reports/objc3c-public-workflow/<action>.json`.

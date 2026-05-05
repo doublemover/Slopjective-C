@@ -34,7 +34,7 @@ Use `showcase/auroraBoard/main.objc3` as the first migration example:
 Compile it through the normal surface:
 
 ```sh
-npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
 ```
 
 What to keep from ObjC2 habits:
@@ -77,7 +77,7 @@ Use `signalMesh` and `patchKit` for Swift-facing expectations.
 Compile it with:
 
 ```sh
-npm run compile:objc3c -- showcase/signalMesh/main.objc3
+npm run objc3c -- compile-objc3c showcase/signalMesh/main.objc3
 ```
 
 `showcase/patchKit/main.objc3` shows the current imported-module and macro-backed interop edge:
@@ -89,7 +89,7 @@ npm run compile:objc3c -- showcase/signalMesh/main.objc3
 Compile it with:
 
 ```sh
-npm run compile:objc3c -- showcase/patchKit/main.objc3
+npm run objc3c -- compile-objc3c showcase/patchKit/main.objc3
 ```
 
 ## Step 4 Use The Showcase Validation Surface Before You Claim Migration Success
@@ -99,8 +99,8 @@ Do not stop after a single compile.
 Run the checked-in portfolio surface:
 
 ```sh
-npm run check:showcase:surface
-npm run test:showcase
+npm run objc3c -- check-showcase-surface
+npm run objc3c -- validate-showcase
 ```
 
 That keeps migration teaching tied to the same examples the repo already compiles and runs.

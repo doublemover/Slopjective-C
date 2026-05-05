@@ -13,7 +13,7 @@ from objc3c_tooling.json_io import require_json_object as load_json, write_json_
 
 
 ROOT = Path(__file__).resolve().parents[1]
-RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 VALIDATE_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validate-external-validation.json"
 REPORT_PATH = ROOT / "tmp" / "reports" / "external-validation" / "integration-summary.json"
 SUMMARY_CONTRACT_ID = "objc3c.external_validation.integration.summary.v1"

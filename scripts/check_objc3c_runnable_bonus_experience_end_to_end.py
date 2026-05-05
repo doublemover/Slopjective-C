@@ -100,11 +100,11 @@ def main() -> int:
         "materialize-project-template" in bonus_tool_integration_surface.get("public_actions", []),
         "package manifest bonus-tool integration surface did not publish materialize-project-template",
     )
-    expect(command_surfaces.get("build_template") == "npm run build:objc3c:template", "package manifest missing build_template command surface")
-    expect(command_surfaces.get("bonus_experiences") == "npm run test:bonus-experiences", "package manifest missing bonus_experiences command surface")
-    expect(command_surfaces.get("bonus_experiences_e2e") == "npm run test:bonus-experiences:e2e", "package manifest missing bonus_experiences_e2e command surface")
-    expect(command_surfaces.get("inspect_bonus_tools") == "npm run inspect:objc3c:bonus-tools", "package manifest missing inspect_bonus_tools command surface")
-    expect(command_surfaces.get("inspect_benchmark") == "npm run inspect:objc3c:benchmark", "package manifest missing inspect_benchmark command surface")
+    expect(command_surfaces.get("build_template") == "npm run objc3c -- materialize-project-template", "package manifest missing build_template command surface")
+    expect(command_surfaces.get("bonus_experiences") == "npm run objc3c -- validate-bonus-experiences", "package manifest missing bonus_experiences command surface")
+    expect(command_surfaces.get("bonus_experiences_e2e") == "npm run objc3c -- validate-runnable-bonus-experiences", "package manifest missing bonus_experiences_e2e command surface")
+    expect(command_surfaces.get("inspect_bonus_tools") == "npm run objc3c -- inspect-bonus-tool-integration", "package manifest missing inspect_bonus_tools command surface")
+    expect(command_surfaces.get("inspect_benchmark") == "npm run objc3c -- benchmark-runtime-inspector", "package manifest missing inspect_benchmark command surface")
 
     capability_report.parent.mkdir(parents=True, exist_ok=True)
     capability_probe_result = run_capture(

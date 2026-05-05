@@ -105,7 +105,7 @@ def main() -> int:
         "package_script_budget": int(re.search(r"PACKAGE_SCRIPT_BUDGET = (\d+)", task_hygiene_text).group(1)),
         "package_script_category_count": len(script_categories),
         "package_script_categories": script_categories,
-        "public_workflow_action_count": count_action_definitions(ROOT / "scripts" / "objc3c_public_workflow_runner.py"),
+        "public_workflow_action_count": count_action_definitions(ROOT / "scripts" / "objc3c_workflow" / "runner.py"),
         "runbook_count": len(list((ROOT / "docs" / "runbooks").glob("*.md"))),
         "schema_count": len(list((ROOT / "schemas").glob("*.json"))),
         "live_check_script_count": len(list((ROOT / "scripts").rglob("check_*.py"))),

@@ -727,7 +727,7 @@ def build_dependencies(
 def build_validation_commands(bucket: str) -> list[str]:
     cmds = ["python scripts/spec_lint.py"]
     if bucket in {"conformance-checklist", "release-evidence"}:
-        cmds.append("npm run check:task-hygiene")
+        cmds.append("npm run objc3c -- check-task-hygiene")
     if bucket == "release-evidence":
         cmds.append("python scripts/check_release_evidence.py")
     return cmds

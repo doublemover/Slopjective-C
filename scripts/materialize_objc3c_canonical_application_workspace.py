@@ -100,11 +100,11 @@ def main() -> int:
                 "Replay commands:",
                 "- `python scripts/materialize_objc3c_canonical_application_workspace.py`",
                 "- `python scripts/check_application_architecture_template_harness.py`",
-                "- `npm run test:showcase`",
-                "- `npm run test:showcase:e2e`",
-                "- `npm run test:stdlib:program`",
-                "- `npm run test:stdlib:program:e2e`",
-                "- `npm run package:objc3c-native:runnable-toolchain`",
+                "- `npm run objc3c -- validate-showcase`",
+                "- `npm run objc3c -- validate-runnable-showcase`",
+                "- `npm run objc3c -- validate-stdlib-program`",
+                "- `npm run objc3c -- validate-runnable-stdlib-program`",
+                "- `npm run objc3c -- package-runnable-toolchain`",
             ]
         )
         + "\n",

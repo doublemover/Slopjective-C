@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-public-command-contract'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_public_workflow_runner.py'
+RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-public-command-contract-v1.schema.json'
 PLAN_JSON_PATH = PLAN_DIR / 'public_command_contract.json'
 PLAN_MD_PATH = PLAN_DIR / 'public_command_contract.md'
@@ -22,7 +22,7 @@ REPORT_MD_PATH = REPORT_DIR / 'public_command_contract.md'
 def load_runner() -> Any:
     return load_public_workflow_runner(
         runner_path=RUNNER_PATH,
-        module_name='objc3c_public_workflow_runner_m314_c001',
+        module_name='objc3c_workflow_runner_m314_c001',
     )
 
 

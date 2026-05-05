@@ -316,9 +316,9 @@ def build_summary() -> dict[str, Any]:
         "validation_commands": [
             "python scripts/build_objc3c_parser_draft_syntax_conformance.py --check",
             "python -m pytest tests/tooling/test_build_objc3c_parser_draft_syntax_conformance.py",
-            "npm run test:objc3c:fixture-matrix",
-            "npm run test:objc3c:negative-expectations",
-            "npm run test:objc3c:execution-replay-proof",
+            "npm run objc3c -- test-fixture-matrix",
+            "npm run objc3c -- test-negative-expectations",
+            "npm run objc3c -- test-execution-replay",
         ],
     }
 

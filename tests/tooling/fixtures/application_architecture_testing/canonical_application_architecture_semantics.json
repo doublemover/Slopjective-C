@@ -4,7 +4,7 @@
   "runbook": "docs/runbooks/objc3c_application_architecture_testing.md",
   "portfolio_manifest": "showcase/portfolio.json",
   "stdlib_program_surface": "stdlib/program_surface.json",
-  "workflow_runner": "scripts/objc3c_public_workflow_runner.py",
+  "workflow_runner": "scripts.objc3c_workflow",
   "canonical_application_kind": "medium-sized runnable workspace assembled from checked-in example, stdlib, and packageable validation surfaces",
   "required_evidence_actions": [
     "validate-showcase",

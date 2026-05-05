@@ -33,8 +33,8 @@ Teach from checked-in runnable sources first.
 Run the normal repo checks before you trust any tutorial claim:
 
 ```sh
-npm run build:objc3c-native
-npm run test:fast
+npm run objc3c -- build-native-binaries
+npm run objc3c -- test-fast
 ```
 
 If those fail, stop there and fix the repo state first.
@@ -44,7 +44,7 @@ If those fail, stop there and fix the repo state first.
 Use the smallest example-first compile path:
 
 ```sh
-npm run compile:objc3c -- showcase/auroraBoard/main.objc3
+npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3
 ```
 
 Why `auroraBoard` first:
@@ -57,8 +57,8 @@ Why `auroraBoard` first:
 Once one example compiles, move to the checked-in showcase surface:
 
 ```sh
-npm run check:showcase:surface
-npm run test:showcase
+npm run objc3c -- check-showcase-surface
+npm run objc3c -- validate-showcase
 ```
 
 Use `showcase/README.md` and `showcase/portfolio.json` as the example map:

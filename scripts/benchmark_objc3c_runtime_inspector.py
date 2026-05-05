@@ -16,7 +16,7 @@ from objc3c_tooling.public_workflow_output import extract_line_value
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_public_workflow_runner.py"
+PUBLIC_RUNNER = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
 DEFAULT_SOURCE = ROOT / "tests" / "tooling" / "fixtures" / "native" / "hello.objc3"
 SUMMARY_OUT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "runtime-inspector-benchmark.json"
 WORKSPACE_CONTRACT_ID = "objc3c.playground.workspace.v1"

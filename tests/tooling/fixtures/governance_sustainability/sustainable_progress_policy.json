@@ -15,7 +15,7 @@
     },
     {
       "surface_id": "public-workflow-action-surface",
-      "owner_surface": "scripts/objc3c_public_workflow_runner.py",
+      "owner_surface": "scripts.objc3c_workflow",
       "default_disposition": "review-before-widening",
       "budget_change_requires_measured_delta": true,
       "allows_time_bounded_waiver": false

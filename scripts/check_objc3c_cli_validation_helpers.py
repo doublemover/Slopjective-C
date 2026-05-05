@@ -25,7 +25,7 @@ def test_add_check_argument() -> None:
 
 
 def test_public_runner_loads() -> None:
-    runner = load_public_workflow_runner(module_name="objc3c_public_workflow_runner_helper_test")
+    runner = load_public_workflow_runner(module_name="objc3c_workflow_runner_helper_test")
     assert hasattr(runner, "ACTION_SPECS")
     assert callable(runner.list_actions_payload)
 
@@ -40,4 +40,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
-

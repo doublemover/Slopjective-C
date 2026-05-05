@@ -61,7 +61,7 @@ Canonical checked-in inputs:
 Shared live tooling:
 
 - `package.json`
-- `scripts/objc3c_public_workflow_runner.py`
+- `scripts.objc3c_workflow`
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
 - `scripts/objc3c_native_compile.ps1`
@@ -94,11 +94,11 @@ roots and public command surface.
 
 Selection model:
 
-- compile the full portfolio with `npm run check:showcase:surface`
+- compile the full portfolio with `npm run objc3c -- check-showcase-surface`
 - compile one named example with
-  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --example auroraBoard`
+  `python -m scripts.objc3c_workflow check-showcase-surface --example auroraBoard`
 - compile by story capability with
-  `python scripts/objc3c_public_workflow_runner.py check-showcase-surface --capability actor-shaped-messaging`
+  `python -m scripts.objc3c_workflow check-showcase-surface --capability actor-shaped-messaging`
 
 ## Build Run Package Surface
 
@@ -112,17 +112,17 @@ The tutorial-facing command and artifact map for this same surface lives in
 
 Build and artifact entrypoints:
 
-- `npm run build:objc3c-native`
-- `npm run check:showcase:surface`
-- `npm run test:showcase`
-- `npm run test:showcase:e2e`
-- `npm run package:objc3c-native:runnable-toolchain`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- check-showcase-surface`
+- `npm run objc3c -- validate-showcase`
+- `npm run objc3c -- validate-runnable-showcase`
+- `npm run objc3c -- package-runnable-toolchain`
 
 Runtime-backed shared commands used by the showcase surface:
 
-- `npm run test:objc3c:execution-smoke`
-- `npm run test:objc3c:execution-replay-proof`
-- `python scripts/objc3c_public_workflow_runner.py validate-showcase-runtime`
+- `npm run objc3c -- test-execution-smoke`
+- `npm run objc3c -- test-execution-replay`
+- `python -m scripts.objc3c_workflow validate-showcase-runtime`
 
 The live compile path emits object and manifest artifacts under
 `tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.

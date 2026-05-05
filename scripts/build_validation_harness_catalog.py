@@ -20,7 +20,7 @@ CATALOG_MD_PATH = PLAN_DIR / 'validation_harness_catalog.md'
 SUMMARY_JSON_PATH = REPORT_DIR / 'validation_harness_catalog.json'
 SUMMARY_MD_PATH = REPORT_DIR / 'validation_harness_catalog.md'
 HARNESS_LIST_COMMAND = ['python', 'scripts/shared_compiler_runtime_acceptance_harness.py', '--list-suites']
-WORKFLOW_PREFIX = 'python scripts/objc3c_public_workflow_runner.py '
+WORKFLOW_PREFIX = 'python -m scripts.objc3c_workflow '
 
 
 
@@ -162,7 +162,7 @@ def main() -> None:
         'retained_static_guard_classes': policy['retained_static_guard_classes'],
         'migration_targets': {
             'primary_shared_harness': 'scripts/shared_compiler_runtime_acceptance_harness.py',
-            'primary_public_runner': 'scripts/objc3c_public_workflow_runner.py',
+            'primary_public_runner': 'scripts.objc3c_workflow',
             'legacy_namespace_work': 'validation-legacy-surface-map',
             'artifact_contract_work': 'validation-acceptance-artifact-index',
         },
