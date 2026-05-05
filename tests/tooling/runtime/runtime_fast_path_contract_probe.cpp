@@ -13,7 +13,7 @@ namespace {
 
 using objc3c::runtime::probe::WriteLabeledMethodCacheState;
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 
 } // namespace
 
@@ -62,7 +62,7 @@ int main() {
 
   const char *const fallback_selector = "missingDispatch:";
   const int fallback_expected =
-      ComputeFallbackDispatch(1024, fallback_selector, 4, 5, 6, 7);
+      ExpectedStrictDispatchErrorValue(1024, fallback_selector, 4, 5, 6, 7);
   const int fallback_first =
       objc3_runtime_dispatch_i32(1024, fallback_selector, 4, 5, 6, 7);
   std::cout << "stage=fallback_first_call" << std::endl;

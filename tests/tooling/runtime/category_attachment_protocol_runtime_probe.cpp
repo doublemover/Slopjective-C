@@ -9,7 +9,7 @@
 
 namespace {
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 
 using objc3c::runtime::probe::PrintConformanceQueryProtocolCategory;
 using objc3c::runtime::probe::PrintGraphStateProtocolCategory;
@@ -34,7 +34,7 @@ int main() {
   const int protocol_fallback =
       objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
   const int protocol_fallback_expected =
-      ComputeFallbackDispatch(1042, "ignoredValue", 0, 0, 0, 0);
+      ExpectedStrictDispatchErrorValue(1042, "ignoredValue", 0, 0, 0, 0);
 
   objc3_runtime_realized_class_graph_state_snapshot graph_state{};
   objc3_runtime_realized_class_entry_snapshot widget_entry{};

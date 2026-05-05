@@ -9,7 +9,7 @@
 
 namespace {
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 
 using objc3c::runtime::probe::PrintConformanceQueryProtocolCategory;
 using objc3c::runtime::probe::PrintGraphStateProtocolCategory;
@@ -104,7 +104,7 @@ int main() {
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &ignored_cached_state);
   const int ignored_expected =
-      ComputeFallbackDispatch(init_value, "ignoredValue", 0, 0, 0, 0);
+      ExpectedStrictDispatchErrorValue(init_value, "ignoredValue", 0, 0, 0, 0);
 
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
       "Widget", "Worker", &worker_query);

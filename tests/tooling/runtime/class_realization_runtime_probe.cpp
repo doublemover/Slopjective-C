@@ -9,7 +9,7 @@
 
 namespace {
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 
 using objc3c::runtime::probe::PrintMethodCacheEntryWithProbeCounts;
 using objc3c::runtime::probe::PrintMethodCacheStateFull;
@@ -119,7 +119,7 @@ int main() {
                             protocol_fallback_cached_owner_storage);
 
   const int protocol_fallback_expected =
-      ComputeFallbackDispatch(1042, "ignoredValue", 0, 0, 0, 0);
+      ExpectedStrictDispatchErrorValue(1042, "ignoredValue", 0, 0, 0, 0);
 
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
       1042, "inheritedValue", &inherited_entry);

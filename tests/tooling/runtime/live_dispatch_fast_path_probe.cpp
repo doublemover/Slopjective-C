@@ -13,7 +13,7 @@ namespace {
 
 using objc3c::runtime::probe::WriteLabeledFastPathMethodCacheState;
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 
 using objc3c::runtime::probe::WriteLabeledDispatchState;
 
@@ -195,7 +195,7 @@ int main() {
 
   const char *const fallback_selector = "missingDispatch:";
   const int fallback_expected =
-      ComputeFallbackDispatch(1024, fallback_selector, 4, 5, 6, 7);
+      ExpectedStrictDispatchErrorValue(1024, fallback_selector, 4, 5, 6, 7);
   const int fallback_first =
       objc3_runtime_dispatch_i32(1024, fallback_selector, 4, 5, 6, 7);
   const int fallback_first_status =

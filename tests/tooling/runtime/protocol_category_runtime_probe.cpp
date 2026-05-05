@@ -9,7 +9,7 @@
 
 namespace {
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 
 using objc3c::runtime::probe::PrintMethodCacheEntryWithProbeCounts;
 using objc3c::runtime::probe::PrintMethodCacheStateProtocolCategory;
@@ -106,7 +106,7 @@ int main() {
   const int fallback_first =
       objc3_runtime_dispatch_i32(1025, fallback_selector, 0, 0, 0, 0);
   const int fallback_expected =
-      ComputeFallbackDispatch(1025, fallback_selector, 0, 0, 0, 0);
+      ExpectedStrictDispatchErrorValue(1025, fallback_selector, 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &fallback_first_state);
   StabilizeMethodCacheState(

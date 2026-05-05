@@ -3,7 +3,7 @@
 
 namespace objc3c::runtime::probe {
 
-inline constexpr int kStrictDispatchErrorI32 = 0;
+inline constexpr int kStrictDispatchErrorValueI32 = 0;
 
 inline int ExpectedStrictDispatchErrorValue(int receiver, const char *selector,
                                             int a0, int a1, int a2, int a3) {
@@ -13,12 +13,7 @@ inline int ExpectedStrictDispatchErrorValue(int receiver, const char *selector,
   (void)a1;
   (void)a2;
   (void)a3;
-  return kStrictDispatchErrorI32;
-}
-
-inline int ComputeFallbackDispatch(int receiver, const char *selector, int a0,
-                                   int a1, int a2, int a3) {
-  return ExpectedStrictDispatchErrorValue(receiver, selector, a0, a1, a2, a3);
+  return kStrictDispatchErrorValueI32;
 }
 
 inline int ExpectedDispatch(int receiver, const char *selector, int a0, int a1,

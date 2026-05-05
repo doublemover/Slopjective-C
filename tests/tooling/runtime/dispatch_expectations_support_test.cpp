@@ -2,14 +2,14 @@
 #include "support/dispatch_expectations.h"
 #include "support/output_expectations.h"
 
-using objc3c::runtime::probe::ComputeFallbackDispatch;
+using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 using objc3c::runtime::probe::ExpectTrue;
 using objc3c::runtime::probe::ExpectValueEqual;
 using objc3c::runtime::probe::ExpectedDispatch;
-using objc3c::runtime::probe::kStrictDispatchErrorI32;
+using objc3c::runtime::probe::kStrictDispatchErrorValueI32;
 
 int main() {
-  if (ExpectValueEqual(kStrictDispatchErrorI32, 0, "strict dispatch error i32",
+  if (ExpectValueEqual(kStrictDispatchErrorValueI32, 0, "strict dispatch error i32",
                        10) != 0) {
     return 10;
   }
@@ -27,9 +27,9 @@ int main() {
                        "nil receiver expected dispatch", 12) != 0) {
     return 12;
   }
-  if (ExpectTrue(ComputeFallbackDispatch(123, "missingDispatch:", 4, 5, 6, 7) ==
+  if (ExpectTrue(ExpectedStrictDispatchErrorValue(123, "missingDispatch:", 4, 5, 6, 7) ==
                      ExpectedDispatch(123, "missingDispatch:", 4, 5, 6, 7),
-                 "legacy helper name remains strict-error compatible",
+                 "strict dispatch error helper matches expected dispatch value",
                  13) != 0) {
     return 13;
   }
