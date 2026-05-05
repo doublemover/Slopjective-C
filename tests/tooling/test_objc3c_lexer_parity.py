@@ -8,7 +8,18 @@ CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
 
 def read_text(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    expanded: list[str] = []
+    for line in text.splitlines():
+        expanded.append(line)
+        stripped = line.strip()
+        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+            continue
+        include_path = stripped.split('"', 2)[1]
+        target = ROOT / "native" / "objc3c" / "src" / include_path
+        if target.exists():
+            expanded.append(target.read_text(encoding="utf-8"))
+    return "\n".join(expanded)
 
 
 def test_lexer_module_exists_and_pipeline_consumes_it() -> None:
@@ -37,13 +48,17 @@ def test_lexer_consumes_language_version_pragmas_with_deterministic_diagnostics(
         "const Objc3LexerLanguageVersionPragmaContract &LanguageVersionPragmaContract() const;"
         in lexer_header
     )
-    assert "ConsumeLanguageVersionPragmas(diagnostics);" in lexer_source
-    assert "ConsumeLanguageVersionPragmaDirective(diagnostics, LanguageVersionPragmaPlacement::kNonLeading, false)" in lexer_source
+    assert "ConsumePreludePragmas(diagnostics);" in lexer_source
+    assert "ConsumeLanguageVersionPragmaDirective(" in lexer_source
+    assert "LanguageVersionPragmaPlacement::kNonLeading" in lexer_source
     assert "MatchLiteral(\"objc_language_version\")" in lexer_source
-    assert "if (options_.migration_assist) {" in lexer_source
     assert "migration_hints_.legacy_yes_count" in lexer_source
     assert "migration_hints_.legacy_no_count" in lexer_source
     assert "migration_hints_.legacy_null_count" in lexer_source
+    assert 'MakeDiag(token_line, token_column, "O3C002"' in lexer_source
+    assert "legacy literal alias 'YES' is rejected; use canonical 'true'" in lexer_source
+    assert "legacy literal alias 'NO' is rejected; use canonical 'false'" in lexer_source
+    assert "legacy literal alias 'NULL' is rejected; use canonical 'nil'" in lexer_source
     assert "directive_count > 1" in lexer_source
     assert "language_version_pragma_contract_.non_leading = true;" in lexer_source
     assert "version != std::to_string(options_.language_version)" in lexer_source
@@ -69,7 +84,7 @@ def test_lexer_consumes_language_version_pragmas_with_deterministic_diagnostics(
 def test_pipeline_consumes_lexer_migration_hints_surface() -> None:
     pipeline_cpp = read_text(PIPELINE_CPP)
     assert "Objc3LexerOptions lexer_options;" in pipeline_cpp
-    assert "lexer_options.migration_assist = options.migration_assist;" in pipeline_cpp
+    assert "lexer_options.legacy_literal_diagnostics = options.legacy_literal_diagnostics;" in pipeline_cpp
     assert "result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;" in pipeline_cpp
     assert "lexer.LanguageVersionPragmaContract()" in pipeline_cpp
     assert "result.language_version_pragma_contract.directive_count = pragma_contract.directive_count;" in pipeline_cpp

@@ -315,20 +315,17 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
       } else if (ident == "nil") {
         kind = TokenKind::KwNil;
       } else if (ident == "YES") {
-        kind = TokenKind::KwTrue;
-        if (options_.legacy_literal_diagnostics) {
-          ++migration_hints_.legacy_yes_count;
-        }
+        ++migration_hints_.legacy_yes_count;
+        diagnostics.push_back(MakeDiag(token_line, token_column, "O3C002",
+                                       "legacy literal alias 'YES' is rejected; use canonical 'true'"));
       } else if (ident == "NO") {
-        kind = TokenKind::KwFalse;
-        if (options_.legacy_literal_diagnostics) {
-          ++migration_hints_.legacy_no_count;
-        }
+        ++migration_hints_.legacy_no_count;
+        diagnostics.push_back(MakeDiag(token_line, token_column, "O3C002",
+                                       "legacy literal alias 'NO' is rejected; use canonical 'false'"));
       } else if (ident == "NULL") {
-        kind = TokenKind::KwNil;
-        if (options_.legacy_literal_diagnostics) {
-          ++migration_hints_.legacy_null_count;
-        }
+        ++migration_hints_.legacy_null_count;
+        diagnostics.push_back(MakeDiag(token_line, token_column, "O3C002",
+                                       "legacy literal alias 'NULL' is rejected; use canonical 'nil'"));
       }
       tokens.push_back(Token{kind, ident, token_line, token_column});
       continue;

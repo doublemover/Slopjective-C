@@ -1,4 +1,4 @@
-// Expected diagnostic code(s): O3P103.
+// Expected diagnostic code(s): O3C002.
 module NegativeObjcLiteralAliasesParserMissingRhs;
 
 let value = YES + NO + NULL + ;

@@ -4,8 +4,8 @@
   "expect_failure": {
     "stage": "compile",
     "required_diagnostic_tokens": [
-      "O3S210",
-      "global initializer must be constant expression"
+      "O3C002",
+      "legacy literal alias 'NULL' is rejected"
     ]
   },
   "execution": {

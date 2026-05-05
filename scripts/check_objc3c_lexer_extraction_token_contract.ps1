@@ -89,7 +89,23 @@ function Read-NormalizedText {
   $text = Get-Content -LiteralPath $Path -Raw
   $text = $text -replace "`r`n", "`n"
   $text = $text -replace "`r", "`n"
-  return $text
+  $expanded = [System.Text.StringBuilder]::new()
+  foreach ($line in ($text -split "`n")) {
+    [void]$expanded.AppendLine($line)
+    $match = [regex]::Match($line, '^\s*#include\s+"([^"]*_parts/[^"]+)"')
+    if (-not $match.Success) {
+      continue
+    }
+    $includePath = $match.Groups[1].Value
+    $includeFullPath = Join-Path $repoRoot ("native/objc3c/src/{0}" -f $includePath)
+    if (Test-Path -LiteralPath $includeFullPath -PathType Leaf) {
+      $includeText = Get-Content -LiteralPath $includeFullPath -Raw
+      $includeText = $includeText -replace "`r`n", "`n"
+      $includeText = $includeText -replace "`r", "`n"
+      [void]$expanded.AppendLine($includeText)
+    }
+  }
+  return $expanded.ToString()
 }
 
 function Get-FileSha256Hex {
@@ -227,28 +243,28 @@ try {
     -PassMessage "token compatibility header preserves backward-compatible aliases"
 
   Assert-Contract `
-    -Condition (Assert-TokensPresent -Text $lexerSourceText -RequiredTokens @("O3L001", "O3L002", "O3L003", "O3L004")) `
+    -Condition (Assert-TokensPresent -Text $lexerSourceText -RequiredTokens @("O3L001", "O3L002", "O3L003", "O3L004", "O3C002")) `
     -Id "contract.lexer_diagnostics.codes" `
-    -FailureMessage "lexer source missing one or more lexical diagnostic codes (O3L001-004)" `
-    -PassMessage "lexer source contains lexical diagnostic contract codes O3L001-004"
+    -FailureMessage "lexer source missing one or more lexical/canonical diagnostic codes (O3L001-004, O3C002)" `
+    -PassMessage "lexer source contains lexical and canonical rejection diagnostic contract codes"
 
-  $aliasPatterns = @(
-    '(?s)ident\s*==\s*"YES".+?TokenKind::KwTrue',
-    '(?s)ident\s*==\s*"NO".+?TokenKind::KwFalse',
-    '(?s)ident\s*==\s*"NULL".+?TokenKind::KwNil'
+  $removedAliasPatterns = @(
+    '(?s)ident\s*==\s*"YES".+?migration_hints_\.legacy_yes_count.+?MakeDiag\(token_line,\s*token_column,\s*"O3C002"',
+    '(?s)ident\s*==\s*"NO".+?migration_hints_\.legacy_no_count.+?MakeDiag\(token_line,\s*token_column,\s*"O3C002"',
+    '(?s)ident\s*==\s*"NULL".+?migration_hints_\.legacy_null_count.+?MakeDiag\(token_line,\s*token_column,\s*"O3C002"'
   )
-  $missingAliases = New-Object 'System.Collections.Generic.List[string]'
-  foreach ($pattern in $aliasPatterns) {
+  $missingRemovedAliasPatterns = New-Object 'System.Collections.Generic.List[string]'
+  foreach ($pattern in $removedAliasPatterns) {
     if (-not [regex]::IsMatch($lexerSourceText, $pattern)) {
-      $missingAliases.Add($pattern) | Out-Null
+      $missingRemovedAliasPatterns.Add($pattern) | Out-Null
     }
   }
   Assert-Contract `
-    -Condition ($missingAliases.Count -eq 0) `
-    -Id "contract.lexer_keyword_aliases" `
-    -FailureMessage "lexer source missing one or more keyword alias contracts (YES/NO/NULL)" `
-    -PassMessage "lexer source preserves YES/NO/NULL token alias contracts" `
-    -Evidence @{ missing_patterns = $missingAliases }
+    -Condition ($missingRemovedAliasPatterns.Count -eq 0) `
+    -Id "contract.lexer_removed_literal_aliases" `
+    -FailureMessage "lexer source missing one or more removed literal alias rejection contracts (YES/NO/NULL)" `
+    -PassMessage "lexer source rejects YES/NO/NULL with canonical diagnostics" `
+    -Evidence @{ missing_patterns = $missingRemovedAliasPatterns }
 
   $pipelineUsesLexer = (
     $pipelineSourceText.IndexOf('#include "lex/objc3_lexer.h"', [System.StringComparison]::Ordinal) -ge 0 -and
