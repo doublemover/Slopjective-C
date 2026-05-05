@@ -369,9 +369,8 @@ inline constexpr const char *kObjc3ControlFlowFailClosedConstructGuardedPatterns
 inline constexpr const char *kObjc3ControlFlowFailClosedConstructMatchTypeTestPatterns =
     "control_flow-fail-closed:match-type-test-patterns";
 
-// runnable-core compatibility guard anchor: later advanced surfaces
-// remain explicitly non-runnable claim families until dedicated runtime-backed
-// support lands.
+// runnable-core guard anchor: later advanced surfaces remain explicitly
+// non-runnable claim families until dedicated runtime-backed support lands.
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictness =
     "unsupported:strictness-selection";
 inline constexpr const char *kObjc3UnsupportedFeatureClaimStrictConcurrency =
@@ -392,8 +391,8 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageProfile =
-    "selection:compatibility-mode";
-inline constexpr const char *kObjc3SupportedSelectionSurfaceMigrationAssist =
+    "selection:language-profile";
+inline constexpr const char *kObjc3RejectedSelectionSurfaceCanonicalRejectionDiagnostics =
     "selection:canonical-rejection-diagnostics";
 inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictness =
     "selection:strictness";

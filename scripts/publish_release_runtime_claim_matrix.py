@@ -270,8 +270,8 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
 | Surface | Current state |
 | --- | --- |
 | Claimed profile | `core` |
-| Compatibility modes | `canonical`, `legacy` |
-| Migration assist | supported |
+| Language profile | canonical only |
+| Removed mode options | rejected with canonical diagnostics |
 | Strict / strict-concurrency / strict-system | fail-closed and not claimed |
 | Feature-macro publication | suppressed |
 | Emit/validate format | `json` only |

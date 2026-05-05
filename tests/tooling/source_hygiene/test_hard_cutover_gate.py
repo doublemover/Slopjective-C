@@ -68,6 +68,18 @@ def test_hard_cutover_gate_rejects_legacy_language_profile_enum_values(tmp_path:
     assert report["active_findings"][0]["pattern_id"] == "legacy-language-profile-enum"
 
 
+def test_hard_cutover_gate_rejects_plain_compatibility_mode_wording(tmp_path: Path) -> None:
+    write(
+        tmp_path / "native/objc3c/src/driver/options.cpp",
+        "const char *claim = \"compatibility mode is supported\";\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "public-compatibility-mode"
+
+
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:
     write(
         tmp_path / "native/objc3c/src/pipeline/options.h",

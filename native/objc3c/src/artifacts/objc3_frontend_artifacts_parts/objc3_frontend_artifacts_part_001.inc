@@ -510,7 +510,6 @@ std::vector<std::string> BuildSupportedSelectionSurfaceIds() {
   return {
       kObjc3SupportedSelectionSurfaceLanguageVersion,
       kObjc3SupportedSelectionSurfaceLanguageProfile,
-      kObjc3SupportedSelectionSurfaceMigrationAssist,
   };
 }
 
@@ -518,6 +517,7 @@ std::vector<std::string> BuildUnsupportedSelectionSurfaceIds() {
   return {
       kObjc3UnsupportedSelectionSurfaceStrictness,
       kObjc3UnsupportedSelectionSurfaceStrictConcurrency,
+      kObjc3RejectedSelectionSurfaceCanonicalRejectionDiagnostics,
   };
 }
 

@@ -42,7 +42,7 @@ inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticsSurfaceP
 // truthful split between live selections, source-only downgraded claims, and
 // fail-closed unsupported advanced surfaces around the runnable core.
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimSemanticModel =
-    "live-compatibility-and-migration-selection-source-only-downgrade-unsupported-fail-closed";
+    "canonical-language-profile-source-only-downgrade-unsupported-fail-closed";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimDowngradeModel =
     "source-only-claims-remain-recognized-but-never-promote-to-runnable";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimRejectionModel =
@@ -53,13 +53,13 @@ inline constexpr const char *kObjc3CompatibilityStrictnessClaimSeparateCompilati
     "suppressed-feature-macro-claims-remain-unpublished-across-manifest-interface-and-conformance-surfaces-until-executable";
 inline constexpr const char *kObjc3CompatibilityStrictnessClaimCanonicalInterfacePayloadMode =
     "no-standalone-interface-payload-yet";
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount = 2u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount = 3u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 4u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount = 1u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimLiveSelectionSurfaceCount = 2u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimValidSelectionCombinationCount = 1u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRunnableFeatureCount = 7u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSourceOnlyFeatureCount = 6u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedFeatureCount = 7u;
-inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 2u;
+inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimRejectedSelectionSurfaceCount = 3u;
 inline constexpr std::size_t kObjc3CompatibilityStrictnessClaimSuppressedMacroClaimCount = 3u;
 
 inline bool IsObjc3CanonicalReferenceTypeForm(ValueType type) {

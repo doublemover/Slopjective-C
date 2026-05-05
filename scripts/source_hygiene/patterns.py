@@ -67,7 +67,7 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "public-compatibility-mode",
         "Compatibility-mode surfaces are removed in the canonical-only cutover.",
-        r"\bcompatibility_mode\b|--objc3-compat-mode|\bObjc3\w*CompatibilityMode\b|OBJC3C_FRONTEND_COMPATIBILITY_MODE",
+        r"\bcompatibility_mode\b|\bcompatibility[-\s]+mode\b|--objc3-compat-mode|\bObjc3\w*CompatibilityMode\b|OBJC3C_FRONTEND_COMPATIBILITY_MODE",
     ),
     ForbiddenPattern(
         "legacy-language-profile-enum",

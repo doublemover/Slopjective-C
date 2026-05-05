@@ -1259,7 +1259,8 @@
   manifest << "    \"default_language_profile\":\"canonical\",\n";
   manifest << "    \"canonical_literal_rejection_diagnostics\":true,\n";
   manifest << "    \"language_version_selection_supported\":true,\n";
-  manifest << "    \"compatibility_selection_supported\":true,\n";
+  manifest << "    \"language_profile_selection_supported\":true,\n";
+  manifest << "    \"canonical_rejection_diagnostics_selection_supported\":false,\n";
   manifest << "    \"canonical_literal_rejection_diagnostics_hard_error\":true,\n";
   manifest << "    \"strictness_selection_supported\":false,\n";
   manifest << "    \"strict_concurrency_selection_supported\":false,\n";

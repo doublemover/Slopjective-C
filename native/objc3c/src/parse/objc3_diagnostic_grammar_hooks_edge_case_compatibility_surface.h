@@ -114,7 +114,7 @@ BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface(
 
   if (!surface.language_profile_supported) {
     surface.failure_reason =
-        "parser diagnostic grammar hooks compatibility mode is not supported";
+        "parser diagnostic grammar hooks require the canonical language profile";
   } else if (!surface.core_feature_expansion_ready) {
     surface.failure_reason =
         "parser diagnostic grammar hooks core feature expansion is not ready";

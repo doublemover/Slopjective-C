@@ -1031,8 +1031,8 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
       << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
       << ";language_version=" << static_cast<unsigned>(options.language_version)
       << ";language_profile=" << LanguageProfileName(options.language_profile)
-      << ";supported_selection_surfaces=3"
-      << ";unsupported_selection_surfaces=2"
+      << ";supported_selection_surfaces=2"
+      << ";unsupported_selection_surfaces=3"
       << ";suppressed_macro_claims=3"
       << ";parser_declared_protocols=" << pipeline_result.program.ast.protocols.size()
       << ";parser_declared_interfaces=" << pipeline_result.program.ast.interfaces.size()
@@ -1068,7 +1068,8 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
       << ",\"driver_surface_model\":\""
       << kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel
       << "\",\"language_version_selection_supported\":true"
-      << ",\"compatibility_selection_supported\":true"
+      << ",\"language_profile_selection_supported\":true"
+      << ",\"canonical_rejection_diagnostics_selection_supported\":false"
       << ",\"canonical_literal_rejection_diagnostics_hard_error\":true"
       << ",\"strictness_selection_supported\":false"
       << ",\"strict_concurrency_selection_supported\":false"

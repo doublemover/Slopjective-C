@@ -19580,15 +19580,18 @@ def check_strict_profile_feature_claim_source_surface_case(
         feature_claim_truth_surface.get("supported_selection_surface_ids")
         == [
             "selection:language-version",
-            "selection:compatibility-mode",
-            "selection:canonical-rejection-diagnostics",
+            "selection:language-profile",
         ],
         "expected feature-claim truth surface to preserve the live supported selection set",
     )
     expect(
         feature_claim_truth_surface.get("unsupported_selection_surface_ids")
-        == ["selection:strictness", "selection:strict-concurrency"],
-        "expected feature-claim truth surface to preserve the fail-closed strictness selection set",
+        == [
+            "selection:strictness",
+            "selection:strict-concurrency",
+            "selection:canonical-rejection-diagnostics",
+        ],
+        "expected feature-claim truth surface to preserve the fail-closed selection set",
     )
     expect(
         feature_claim_truth_surface.get("strictness_selection_supported") is False

@@ -38,7 +38,7 @@ constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimOperationsContractId =
     "objc3c.toolchain.conformance.claim.operations.v1";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimSelectionModel =
-    "compatibility-mode-plus-canonical-rejection-diagnostics-drive-current-publication-surface";
+    "canonical-language-profile-drives-current-publication-surface";
 [[maybe_unused]] constexpr const char *kObjc3ConformanceClaimFailureModel =
     "strictness-and-strict-concurrency-remain-fail-closed-and-unclaimed";
 [[maybe_unused]] constexpr const char
