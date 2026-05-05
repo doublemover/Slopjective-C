@@ -56,6 +56,18 @@ def test_hard_cutover_gate_allows_temporary_tmp_allowlist(tmp_path: Path) -> Non
     assert report["stats"]["active_finding_count"] == 0
 
 
+def test_hard_cutover_gate_rejects_legacy_language_profile_enum_values(tmp_path: Path) -> None:
+    write(
+        tmp_path / "native/objc3c/src/pipeline/options.h",
+        "enum class Objc3FrontendLanguageProfile { kCanonical = 0u, kLegacy = 1u };\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "legacy-language-profile-enum"
+
+
 def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:
     report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
     json_path = tmp_path / "tmp/reports/source_hygiene/hard-cutover/report.json"
