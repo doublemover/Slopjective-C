@@ -1,0 +1,20 @@
+// Expected diagnostic code(s): O3S218.
+module NegativeTypeSemanticProtocolOptionalRequiredConflict;
+
+@protocol RequiredWorker
+@required
+- (id!) value;
+@end
+
+@protocol OptionalWorker
+@optional
+- (id?) value;
+@end
+
+@protocol ConflictingWorker <RequiredWorker, OptionalWorker>
+@end
+
+fn consume(worker: id<ConflictingWorker>*?) -> i32 {
+  let value = [worker? value];
+  return 0;
+}
