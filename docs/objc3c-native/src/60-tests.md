@@ -55,6 +55,6 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 
 ## Current Corrective Gaps Under Test
 
-- unresolved dispatch still has one deterministic fallback path after slow-path miss
+- unresolved dispatch still has one strict dispatch error path after slow-path miss
 - synthesized accessor IR still carries transitional lowering residue even though live getter/setter execution is already runtime-backed
 - native-output truth requires the emitted object and linked probe to stay coupled end to end

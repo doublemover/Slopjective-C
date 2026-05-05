@@ -22,6 +22,16 @@ from objc3c_tooling.public_workflow_output import extract_public_workflow_report
 ROOT = Path(__file__).resolve().parents[1]
 PWSH = shutil.which("pwsh") or "pwsh"
 NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
+MARKDOWN_GLOBS = [
+    "README.md",
+    "CONTRIBUTING.md",
+    "docs/**/*.md",
+    "site/**/*.md",
+    "spec/**/*.md",
+    "showcase/**/*.md",
+    "stdlib/**/*.md",
+    "templates/**/*.md",
+]
 
 BUILD_PS1 = ROOT / "scripts" / "build_objc3c_native.ps1"
 COMPILE_PS1 = ROOT / "scripts" / "objc3c_native_compile.ps1"
@@ -151,6 +161,7 @@ LLVM_CAPABILITIES_PROBE_PY = ROOT / "scripts" / "probe_objc3c_llvm_capabilities.
 DEPENDENCY_BOUNDARIES_PY = ROOT / "scripts" / "check_objc3c_dependency_boundaries.py"
 RELEASE_EVIDENCE_PY = ROOT / "scripts" / "check_release_evidence.py"
 SOURCE_HYGIENE_AUTHENTICITY_PY = ROOT / "scripts" / "check_source_hygiene_authenticity.py"
+SOURCE_HYGIENE_HARD_CUTOVER_PY = ROOT / "scripts" / "check_source_hygiene_hard_cutover.py"
 RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
@@ -302,15 +313,15 @@ def action_check_documentation_surface(_: list[str]) -> int:
 
 
 def action_check_markdown(_: list[str]) -> int:
-    return run([NPX, "prettier", "--check", "**/*.md"])
+    return run([NPX, "prettier", "--check", *MARKDOWN_GLOBS])
 
 
 def action_format_markdown(_: list[str]) -> int:
-    return run([NPX, "prettier", "--write", "**/*.md"])
+    return run([NPX, "prettier", "--write", *MARKDOWN_GLOBS])
 
 
 def action_lint_markdown(_: list[str]) -> int:
-    return run([NPX, "markdownlint-cli2", "**/*.md"])
+    return run([NPX, "markdownlint-cli2", *MARKDOWN_GLOBS])
 
 
 def action_check_dependency_boundaries(_: list[str]) -> int:
@@ -334,6 +345,10 @@ def action_check_release_evidence(_: list[str]) -> int:
 
 def action_check_source_hygiene_authenticity(_: list[str]) -> int:
     return run([sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)])
+
+
+def action_check_source_hygiene_hard_cutover(_: list[str]) -> int:
+    return run([sys.executable, str(SOURCE_HYGIENE_HARD_CUTOVER_PY)])
 
 
 def action_check_task_hygiene(_: list[str]) -> int:
@@ -1245,7 +1260,7 @@ def action_lint_spec(_: list[str]) -> int:
 
 
 def action_lint_default(_: list[str]) -> int:
-    return run_steps(["check-task-hygiene", "build-site", "check-markdown"])
+    return run_steps(["check-source-hygiene-hard-cutover", "check-task-hygiene", "build-site", "check-markdown"])
 
 
 def action_test_default(_: list[str]) -> int:
@@ -2638,14 +2653,15 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-public-command-contract": ActionSpec("check-public-command-contract", "check the canonical public command contract artifact for drift", "python:scripts/build_objc3c_public_command_contract.py --check", ()),
     "check-public-command-budget": ActionSpec("check-public-command-budget", "check the public command budget and appendix sync against the canonical command contract", "python:scripts/check_objc3c_public_command_budget.py", ()),
     "check-documentation-surface": ActionSpec("check-documentation-surface", "check the reader-facing documentation structure and machine-appendix boundary", "python:scripts/check_documentation_surface.py", ("check:docs:surface",), validation_tier="docs", guarantee_owner="reader-facing onboarding, site structure, and machine-appendix boundary stay accessible and explicit"),
-    "check-markdown": ActionSpec("check-markdown", "check markdown formatting drift across the repo", "npx prettier --check **/*.md", ("check:md",)),
-    "format-markdown": ActionSpec("format-markdown", "rewrite markdown formatting across the repo", "npx prettier --write **/*.md", ("format:md",)),
-    "lint-markdown": ActionSpec("lint-markdown", "run markdownlint across the repo markdown surface", "npx markdownlint-cli2 **/*.md", ("lint:md",)),
+    "check-markdown": ActionSpec("check-markdown", "check markdown formatting drift across checked-in docs", "npx prettier --check <checked-in-md-globs>", ("check:md",)),
+    "format-markdown": ActionSpec("format-markdown", "rewrite markdown formatting across checked-in docs", "npx prettier --write <checked-in-md-globs>", ("format:md",)),
+    "lint-markdown": ActionSpec("lint-markdown", "run markdownlint across checked-in docs", "npx markdownlint-cli2 <checked-in-md-globs>", ("lint:md",)),
     "lint-default": ActionSpec("lint-default", "run the canonical maintainer lint workflow", "runner-internal + task hygiene + site build + markdown format check", ("lint",)),
     "check-dependency-boundaries": ActionSpec("check-dependency-boundaries", "check strict objc3c dependency boundaries", "python:scripts/check_objc3c_dependency_boundaries.py --strict", ("check:objc3c:boundaries",), validation_tier="repo", guarantee_owner="repo dependency boundaries stay explicit and strict"),
     "check-llvm-capabilities": ActionSpec("check-llvm-capabilities", "probe llvm capability availability and write the summary artifact", "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json", ("check:objc3c:llvm-capabilities",), validation_tier="repo", guarantee_owner="llvm capability probe output stays tied to the live toolchain environment"),
-    "check-release-evidence": ActionSpec("check-release-evidence", "check the checked-in release evidence surface", "python:scripts/check_release_evidence.py", ("check:release-evidence",), validation_tier="repo", guarantee_owner="release evidence packets stay coherent and replayable from the checked-in repo surface"),
+    "check-release-evidence": ActionSpec("check-release-evidence", "check the generated-only release evidence surface", "python:scripts/check_release_evidence.py", ("check:release-evidence",), validation_tier="repo", guarantee_owner="release evidence indexes stay coherent and replayable from schemas plus generated tmp artifacts"),
     "check-source-hygiene-authenticity": ActionSpec("check-source-hygiene-authenticity", "check source-hygiene residue removal, authenticity labeling, and genuine-output provenance against the live enforcement contract", "python:scripts/check_source_hygiene_authenticity.py", ("check:objc3c:source-hygiene",), validation_tier="repo", guarantee_owner="product truth surfaces, synthetic fixtures, and genuine generated outputs stay mechanically distinguished and fail closed when provenance drifts"),
+    "check-source-hygiene-hard-cutover": ActionSpec("check-source-hygiene-hard-cutover", "scan active source roots for hard-cutover forbidden compatibility, shim, fallback, and generated-report residue", "python -m scripts.source_hygiene", (), validation_tier="repo", guarantee_owner="hard-cutover forbidden strings and tracked generated reports stay visible until the temporary allowlist is removed"),
     "check-task-hygiene": ActionSpec("check-task-hygiene", "run the task-hygiene gate over package scripts and checked-in roots", "python:scripts/ci/run_task_hygiene_gate.py", ("check:task-hygiene",), validation_tier="repo", guarantee_owner="task hygiene gate remains executable over the live repo script and path surface"),
     "check-showcase-surface": ActionSpec("check-showcase-surface", "check the live showcase portfolio and compile its example sources through the public compiler path", "python:scripts/check_showcase_surface.py", ("check:showcase:surface",), validation_tier="repo", guarantee_owner="showcase examples stay compile-coupled, checked in, and tied to the public compiler path", pass_through_args=True),
     "check-stdlib-surface": ActionSpec("check-stdlib-surface", "check the checked-in stdlib boundary contracts, canonical module inventory, package alias mapping, and lowering/import artifact contract", "python:scripts/check_stdlib_surface.py", ("check:stdlib:surface",), validation_tier="repo", guarantee_owner="stdlib roots, canonical module inventory, package alias mapping, and lowering/import artifact contract stay checked in and coherent"),
@@ -2657,7 +2673,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", ("test:docs",), validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", ("test:repo",), validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", ("compile:objc3c",), pass_through_args=True),
-    "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared proof-only buckets", pass_through_args=True),
+    "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", ("build:objc3c:playground",), validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared evidence-only buckets", pass_through_args=True),
     "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace and lowering/import contracts into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", ("build:objc3c:stdlib",), validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface", pass_through_args=True),
     "materialize-canonical-application-workspace": ActionSpec("materialize-canonical-application-workspace", "materialize the canonical application workspace from the checked-in showcase and stdlib surfaces", "python:scripts/materialize_objc3c_canonical_application_workspace.py", ("build:objc3c:application-workspace",), validation_tier="repo", guarantee_owner="canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts", pass_through_args=True),
     "validate-stdlib-foundation": ActionSpec("validate-stdlib-foundation", "run the integrated stdlib boundary and smoke validation flow", "python:scripts/check_objc3c_stdlib_foundation_integration.py", ("test:stdlib",), validation_tier="repo", guarantee_owner="stdlib boundary contracts, lowering/import artifact expectations, workspace materialization, and smoke compilation stay executable on the live public workflow"),
@@ -2783,8 +2799,8 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "test-runtime-acceptance-cross-module": ActionSpec("test-runtime-acceptance-cross-module", "cross-module runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite cross-module", ("test:objc3c:runtime-acceptance:cross-module",), validation_tier="fast", guarantee_owner="cross-module import, replay, package, and link-plan runtime acceptance surfaces"),
     "test-runtime-acceptance-block-arc": ActionSpec("test-runtime-acceptance-block-arc", "Block/ARC runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite block-arc", ("test:objc3c:runtime-acceptance:block-arc",), validation_tier="fast", guarantee_owner="Block, byref, ownership transfer, and ARC runtime acceptance surfaces"),
     "test-runtime-acceptance-concurrency": ActionSpec("test-runtime-acceptance-concurrency", "concurrency runtime acceptance suite", "python:scripts/check_objc3c_runtime_acceptance.py --suite concurrency", ("test:objc3c:runtime-acceptance:concurrency",), validation_tier="fast", guarantee_owner="async/task/actor runtime acceptance surfaces"),
-    "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture proof packet", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py", ("proof:objc3c:runtime-architecture",)),
-    "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and proof packet", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture proof packet alignment"),
+    "proof-runtime-architecture": ActionSpec("proof-runtime-architecture", "emit the integrated runtime architecture evidence bundle", "python:scripts/check_objc3c_runtime_architecture_proof_packet.py", ("proof:objc3c:runtime-architecture",)),
+    "validate-runtime-architecture": ActionSpec("validate-runtime-architecture", "validate runtime architecture across the full public workflow and evidence bundle", "python:scripts/check_objc3c_runtime_architecture_integration.py", ("test:objc3c:runtime-architecture",), validation_tier="full", guarantee_owner="full public workflow and runtime architecture evidence bundle alignment"),
     "validate-runnable-bootstrap": ActionSpec("validate-runnable-bootstrap", "validate the staged runnable toolchain end to end from the package root", "python:scripts/check_objc3c_runnable_bootstrap_end_to_end.py", ("test:objc3c:runnable-bootstrap",), validation_tier="full", guarantee_owner="packaged compile, smoke, and replay from the staged runnable toolchain bundle"),
     "validate-block-arc-conformance": ActionSpec("validate-block-arc-conformance", "validate runnable block/ARC conformance across the integrated live workflow", "python:scripts/check_objc3c_runnable_block_arc_conformance.py", ("test:objc3c:block-arc-conformance",), validation_tier="full", guarantee_owner="integrated block/ARC conformance over the live runtime architecture workflow"),
     "validate-runnable-block-arc": ActionSpec("validate-runnable-block-arc", "validate runnable block/ARC execution end to end from the package root", "python:scripts/check_objc3c_runnable_block_arc_end_to_end.py", ("test:objc3c:runnable-block-arc",), validation_tier="full", guarantee_owner="packaged compile, block/ARC probe execution, smoke, and replay from the staged runnable toolchain bundle"),
@@ -2835,6 +2851,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-llvm-capabilities": action_check_llvm_capabilities,
     "check-release-evidence": action_check_release_evidence,
     "check-source-hygiene-authenticity": action_check_source_hygiene_authenticity,
+    "check-source-hygiene-hard-cutover": action_check_source_hygiene_hard_cutover,
     "check-task-hygiene": action_check_task_hygiene,
     "check-showcase-surface": action_check_showcase_surface,
     "check-stdlib-surface": action_check_stdlib_surface,
@@ -3055,6 +3072,20 @@ def describe_action_payload(action: str) -> dict[str, object]:
 
 
 def describe_package_script_payload(script_name: str) -> dict[str, object]:
+    if script_name == "objc3c":
+        return {
+            "package_script": "objc3c",
+            "action": "<action>",
+            "summary": "canonical npm bridge for the objc3c workflow action registry",
+            "audience": "operator",
+            "category": "bridge",
+            "backend": "python -m scripts.objc3c_workflow",
+            "validation_tier": "repo",
+            "guarantee_owner": "GitHub Actions and local npm users route workflow actions through one package bridge",
+            "pass_through_args": True,
+            "mode": "public_runner-parameterized-task-runner-v2",
+            "runner_path": "scripts/objc3c_workflow",
+        }
     mapping = public_script_to_action_map()
     action_name = mapping[script_name]
     payload = describe_action_payload(action_name)
@@ -3103,7 +3134,7 @@ def main(argv: Sequence[str]) -> int:
             return 2
         describe_script = rest[0]
         mapping = public_script_to_action_map()
-        if describe_script not in mapping:
+        if describe_script != "objc3c" and describe_script not in mapping:
             print(f"unknown package script: {describe_script}", file=sys.stderr)
             return 2
         return emit_json(describe_package_script_payload(describe_script))

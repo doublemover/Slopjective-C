@@ -397,9 +397,9 @@ inline bool IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(
 inline Objc3ParserContractSnapshot
 NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
     const Objc3ParserContractSnapshot &snapshot, const Objc3ParsedProgram &program,
-    const Objc3SemaCompatibilityMode compatibility_mode, bool &normalized) {
+    const Objc3SemaLanguageProfile language_profile, bool &normalized) {
   normalized = false;
-  if (compatibility_mode != Objc3SemaCompatibilityMode::Legacy) {
+  if (language_profile != Objc3SemaLanguageProfile::Legacy) {
     return snapshot;
   }
   if (!IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(snapshot, program)) {
@@ -1308,8 +1308,8 @@ BuildObjc3ParserSemaIntegrationCloseoutSignoff(
 struct Objc3ParserSemaHandoffScaffold {
   const Objc3ParsedProgram *program = nullptr;
   Objc3SemanticValidationOptions validation_options;
-  Objc3SemaCompatibilityMode compatibility_mode = Objc3SemaCompatibilityMode::Canonical;
-  bool migration_assist = false;
+  Objc3SemaLanguageProfile language_profile = Objc3SemaLanguageProfile::Canonical;
+  bool legacy_literal_diagnostics = false;
   Objc3SemaMigrationHints migration_hints;
   Objc3SemaDiagnosticsBus diagnostics_bus;
   Objc3ParserContractSnapshot parser_contract_snapshot;
@@ -1346,8 +1346,8 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
   Objc3ParserSemaHandoffScaffold scaffold;
   scaffold.program = input.program;
   scaffold.validation_options = input.validation_options;
-  scaffold.compatibility_mode = input.compatibility_mode;
-  scaffold.migration_assist = input.migration_assist;
+  scaffold.language_profile = input.language_profile;
+  scaffold.legacy_literal_diagnostics = input.legacy_literal_diagnostics;
   scaffold.migration_hints = input.migration_hints;
   scaffold.diagnostics_bus = input.diagnostics_bus;
   if (input.program == nullptr) {
@@ -1356,12 +1356,12 @@ inline Objc3ParserSemaHandoffScaffold BuildObjc3ParserSemaHandoffScaffold(const 
 
   const Objc3ParserContractSnapshot resolved_snapshot = ResolveObjc3ParserContractSnapshotForSemaHandoff(input);
   scaffold.parser_contract_compatibility_edge_case_detected =
-      input.compatibility_mode == Objc3SemaCompatibilityMode::Legacy &&
+      input.language_profile == Objc3SemaLanguageProfile::Legacy &&
       IsObjc3ParserContractCompatibilityEdgeCaseSnapshot(resolved_snapshot, *input.program);
   scaffold.parser_contract_snapshot = NormalizeObjc3ParserContractSnapshotForCompatibilityEdgeCases(
       resolved_snapshot,
       *input.program,
-      input.compatibility_mode,
+      input.language_profile,
       scaffold.parser_contract_snapshot_compatibility_normalized);
   scaffold.expected_ast_shape_fingerprint = BuildObjc3ParsedProgramAstShapeFingerprint(*input.program);
   scaffold.parser_contract_ast_shape_fingerprint_matches =

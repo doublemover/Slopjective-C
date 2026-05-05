@@ -504,8 +504,9 @@ int main() {
       fallback_first_state.last_dispatch_fell_back == 1 &&
       fallback_first_last_selector == "missingDispatch:" &&
       fallback_first_last_fast_path_reason.empty() &&
-      fallback_first_dispatch_last_path == "slow-path-fallback" &&
-      fallback_first_dispatch_last_implementation_kind == "fallback-formula" &&
+      fallback_first_dispatch_last_path == "slow-path-error" &&
+      fallback_first_dispatch_last_implementation_kind ==
+          "strict-dispatch-error" &&
       fallback_first_dispatch_state.last_effective_direct_dispatch == 0 &&
       fallback_first_dispatch_state.last_used_builtin == 0 &&
       fallback_first_dispatch_state.last_resolved_parameter_count == 0 &&
@@ -522,8 +523,9 @@ int main() {
       fallback_second_state.last_dispatch_fell_back == 1 &&
       fallback_second_last_selector == "missingDispatch:" &&
       fallback_second_last_fast_path_reason.empty() &&
-      fallback_second_dispatch_last_path == "cache-hit-fallback" &&
-      fallback_second_dispatch_last_implementation_kind == "fallback-formula" &&
+      fallback_second_dispatch_last_path == "cache-hit-error" &&
+      fallback_second_dispatch_last_implementation_kind ==
+          "strict-dispatch-error" &&
       fallback_second_dispatch_state.last_effective_direct_dispatch == 0 &&
       fallback_second_dispatch_state.last_used_builtin == 0 &&
       fallback_second_dispatch_state.last_resolved_parameter_count == 0 &&

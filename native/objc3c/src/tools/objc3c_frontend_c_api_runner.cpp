@@ -11,6 +11,7 @@
 #include <system_error>
 
 #include "ast/objc3_ast.h"
+#include "diagnostics/modes/objc3_removed_mode_options.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_corpus_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_conformance_matrix_implementation_surface.h"
@@ -41,8 +42,6 @@ struct RunnerOptions {
   fs::path clang_path = fs::path("clang");
   fs::path llc_path = fs::path("llc");
   objc3c_frontend_c_ir_object_backend_t ir_object_backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
-  std::uint8_t compatibility_mode = OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL;
-  bool migration_assist = false;
   std::uint32_t max_message_send_args = 0;
   std::string runtime_dispatch_symbol;
   bool emit_manifest = true;
@@ -61,9 +60,9 @@ std::string Usage() {
   return "usage: objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] "
          "[--clang <path>] [--llc <path>] [--summary-out <path>] [--objc3-max-message-args <0-" +
          std::to_string(kMaxMessageSendArgs) +
-         ">] [--objc3-runtime-dispatch-symbol <symbol>] [--objc3-compat-mode <canonical|legacy>] "
+         ">] [--objc3-runtime-dispatch-symbol <symbol>] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
-         "[--objc3-migration-assist] [--objc3-ir-object-backend <clang|llvm-direct>] "
+         "[--objc3-ir-object-backend <clang|llvm-direct>] "
          "[--no-emit-manifest] [--no-emit-ir] [--no-emit-object] "
          "[--dump-summary-json] [--dump-observability-json] [--dump-playground-repro-json] "
          "[--dump-runtime-inspector-json] [--dump-stage-trace-json]";
@@ -80,18 +79,6 @@ bool ParseFrontendRunnerIrObjectBackend(const std::string &value, objc3c_fronten
   }
   backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
   return true;
-}
-
-bool ParseCompatibilityMode(const std::string &value, std::uint8_t &mode) {
-  if (value == "canonical") {
-    mode = OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL;
-    return true;
-  }
-  if (value == "legacy") {
-    mode = OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY;
-    return true;
-  }
-  return false;
 }
 
 bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &error) {
@@ -145,14 +132,8 @@ bool ParseOptions(int argc, char **argv, RunnerOptions &options, std::string &er
       }
       options.translation_unit_registration_order_ordinal =
           static_cast<std::uint64_t>(parsed);
-    } else if (arg == "--objc3-compat-mode" && i + 1 < argc) {
-      const std::string mode_text = argv[++i];
-      if (!ParseCompatibilityMode(mode_text, options.compatibility_mode)) {
-        error = "invalid --objc3-compat-mode (expected canonical|legacy): " + mode_text;
-        return false;
-      }
-    } else if (arg == "--objc3-migration-assist") {
-      options.migration_assist = true;
+    } else if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(arg, error)) {
+      return false;
     } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
       if (!ParseFrontendRunnerIrObjectBackend(backend, options.ir_object_backend)) {
@@ -363,14 +344,6 @@ std::string BuildFrontendRunnerReproCommand(const RunnerOptions &options,
                                         OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
                                     ? "llvm-direct"
                                     : "clang");
-  command << " --objc3-compat-mode "
-          << QuotePowerShellArg(options.compatibility_mode ==
-                                        OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY
-                                    ? "legacy"
-                                    : "canonical");
-  if (options.migration_assist) {
-    command << " --objc3-migration-assist";
-  }
   if (options.max_message_send_args != 0) {
     command << " --objc3-max-message-args "
             << std::to_string(options.max_message_send_args);
@@ -658,10 +631,6 @@ void WritePlaygroundReproJson(
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
           ? "llvm-direct"
           : "clang";
-  const char *compatibility_mode_name =
-      options.compatibility_mode == OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY
-          ? "legacy"
-          : "canonical";
   const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
   const std::string manifest_path_text = OptionalPath(result.manifest_path);
   const std::string ir_path_text = OptionalPath(result.ir_path);
@@ -693,10 +662,6 @@ void WritePlaygroundReproJson(
   out << child_indent << "\"compile_profile\": {\n";
   out << grandchild_indent << "\"ir_object_backend\": \""
       << backend_name << "\",\n";
-  out << grandchild_indent << "\"compatibility_mode\": \""
-      << compatibility_mode_name << "\",\n";
-  out << grandchild_indent << "\"migration_assist\": "
-      << (options.migration_assist ? "true" : "false") << ",\n";
   out << grandchild_indent << "\"max_message_send_args\": "
       << options.max_message_send_args << ",\n";
   out << grandchild_indent << "\"runtime_dispatch_symbol\": \""
@@ -787,8 +752,6 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                                  &output_contract_conformance_corpus_surface) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
-  const char *compatibility_mode_name =
-      options.compatibility_mode == OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY ? "legacy" : "canonical";
   const fs::path runtime_metadata_binary_path =
       BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
   const std::string summary_path_text = summary_path.generic_string();
@@ -807,8 +770,6 @@ std::string BuildSummaryJson(const RunnerOptions &options,
   out << "  \"out_dir\": \"" << EscapeJsonString(options.out_dir.generic_string()) << "\",\n";
   out << "  \"emit_prefix\": \"" << EscapeJsonString(options.emit_prefix) << "\",\n";
   out << "  \"ir_object_backend\": \"" << backend_name << "\",\n";
-  out << "  \"compatibility_mode\": \"" << compatibility_mode_name << "\",\n";
-  out << "  \"migration_assist\": " << (options.migration_assist ? "true" : "false") << ",\n";
   out << "  \"status\": " << static_cast<unsigned>(status) << ",\n";
   out << "  \"process_exit_code\": " << result.process_exit_code << ",\n";
   out << "  \"success\": " << (result.success != 0 ? "true" : "false") << ",\n";
@@ -1129,8 +1090,6 @@ int main(int argc, char **argv) {
           : nullptr;
   compile_options.runtime_dispatch_symbol = runtime_symbol;
   compile_options.max_message_send_args = options.max_message_send_args;
-  compile_options.compatibility_mode = options.compatibility_mode;
-  compile_options.migration_assist = options.migration_assist ? 1u : 0u;
   compile_options.translation_unit_registration_order_ordinal =
       options.translation_unit_registration_order_ordinal;
   compile_options.emit_manifest = options.emit_manifest ? 1u : 0u;

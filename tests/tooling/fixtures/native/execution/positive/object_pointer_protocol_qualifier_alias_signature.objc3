@@ -1,20 +1,23 @@
 module ObjectPointerProtocolQualifierAliasSignature;
 
-fn chooseId(flag: bool, when_true: id<NSObject>*?, when_false: id<NSObject>*!) -> id<NSObject>*? {
+@protocol ClassProtocolFixture
+@end
+
+fn chooseId(flag: bool, when_true: id<ClassProtocolFixture>*?, when_false: id<ClassProtocolFixture>*!) -> id<ClassProtocolFixture>*? {
   if (flag) {
     return when_true;
   }
   return when_false;
 }
 
-fn chooseClass(flag: bool, when_true: Class<NSObject>*, when_false: Class<NSObject>*) -> Class<NSObject>* {
+fn chooseClass(flag: bool, when_true: Class<ClassProtocolFixture>*, when_false: Class<ClassProtocolFixture>*) -> Class<ClassProtocolFixture>* {
   if (flag) {
     return when_true;
   }
   return when_false;
 }
 
-fn chooseInstancetype(flag: bool, when_true: instancetype<NSObject>*, when_false: instancetype<NSObject>*) -> instancetype<NSObject>* {
+fn chooseInstancetype(flag: bool, when_true: instancetype<ClassProtocolFixture>*, when_false: instancetype<ClassProtocolFixture>*) -> instancetype<ClassProtocolFixture>* {
   if (flag) {
     return when_true;
   }

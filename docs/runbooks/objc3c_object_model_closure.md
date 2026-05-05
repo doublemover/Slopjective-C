@@ -35,16 +35,16 @@ Current closure scope:
 
 Current closure constraints:
 
-- unresolved sends still retain one deterministic miss fallback path, so object-model closure claims must stay tied to realized runtime-owned behavior instead of universal selector success
+- unresolved sends still retain one deterministic miss strict error path, so object-model closure claims must stay tied to realized runtime-owned behavior instead of universal selector success
 - reflection visibility remains on the private runtime-owned query surface and must not be repackaged as public ABI
-- milestone proof must stay compile-coupled to the live runtime/registration path and not fork into milestone-local scaffolding
+- milestone proof must stay compile-coupled to the live runtime/registration path and not fork into release-scope scaffolding
 
 Explicit non-goals:
 
 - public runtime ABI widening beyond registration, selector lookup, dispatch, and reset
 - claims that unresolved dispatch miss fallback is part of the supported object-model closure
 - probe-local or source-only reflection truth that bypasses runtime-owned query state
-- milestone-local runtime or packaging scaffolds parallel to the shipped acceptance path
+- release-scope runtime or packaging scaffolds parallel to the shipped acceptance path
 
 Follow-on tracks:
 

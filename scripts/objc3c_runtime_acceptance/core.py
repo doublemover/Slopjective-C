@@ -20,6 +20,7 @@ from objc3c_tooling.probe_output import parse_json_output
 from objc3c_tooling.probe_output import parse_key_value_output
 from objc3c_tooling.probe_compile import compile_probe as compile_runtime_probe
 from objc3c_tooling.probe_compile import find_clangxx
+from objc3c_tooling.probe_compile import normal_user_manifest_link_args
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -958,7 +959,7 @@ def compile_output_truthfulness(compile_dir: Path, emit_prefix: str = "module") 
         )
     if runtime_dispatch_symbol == "":
         runtime_dispatch_symbol = str(
-            manifest.get("runtime_shim_host_link_runtime_dispatch_symbol", "")
+            manifest.get("runtime_link_host_link_runtime_dispatch_symbol", "")
         )
     if runtime_dispatch_symbol == "":
         raise RuntimeError(
@@ -1310,8 +1311,13 @@ def run_fixture_compile(
 
 
 def ensure_native_binaries() -> None:
-    if NATIVE_EXE.is_file() and RUNTIME_LIB.is_file():
-        return
+    native_source_entrypoint = ROOT / "native" / "objc3c" / "src" / "main.cpp"
+    if not native_source_entrypoint.is_file():
+        if NATIVE_EXE.is_file() and RUNTIME_LIB.is_file():
+            return
+        raise RuntimeError(
+            "native source tree is not packaged and required runtime executable/library artifacts are missing"
+        )
     result = run(
         [
             PWSH,
@@ -5194,6 +5200,7 @@ def link_fixture_executable(clangxx: str, obj_path: Path, exe_path: Path) -> Non
         clangxx,
         "-std=c++20",
         "-fms-runtime-lib=dll",
+        *normal_user_manifest_link_args(),
         str(obj_path),
         str(RUNTIME_LIB),
         "-o",
@@ -5649,7 +5656,7 @@ def build_claim_boundary() -> dict[str, Any]:
         "non_authoritative_inputs": [
             "hand-authored llvm ir without matching compile output",
             "sidecar-only manifests or reports with no coupled object/probe path",
-            "compatibility shims without a coupled emitted object and runtime probe",
+            "non-authoritative test surfaces without a coupled emitted object and runtime probe",
             "comment-only or placeholder-only capability claims",
         ],
         "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
@@ -6986,7 +6993,7 @@ def build_runtime_mixed_image_compatibility_interop_semantics_surface(
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
         ],
-        "compatibility_model": (
+        "language_profile_model": (
             "mixed-image-provider-and-consumer-compiles-share-one-fail-closed-registration-order-and-interop-bridge-compatibility-boundary-through-runtime-import-surfaces-and-cross-module-link-plans"
         ),
         "diagnostic_model": (
@@ -7082,7 +7089,7 @@ def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
             "<emit-prefix>.interop-bridge.modulemap",
             "<emit-prefix>.interop-bridge.json",
         ],
-        "compatibility_model": (
+        "language_profile_model": (
             "c-cpp-and-swift-facing-interop-annotations-survive-provider-emission-consumer-import-and-cross-module-link-planning-without-bridge-shape-drift"
         ),
         "authoritative_case_ids": authoritative_case_ids,
@@ -7637,7 +7644,7 @@ def build_runtime_claim_publication_dashboard_schema_surface(
         "dashboard_artifact_path": "<emit-prefix>.objc3-dashboard-status.json",
         "dashboard_schema_path": "schemas/objc3-conformance-dashboard-status-v1.schema.json",
         "explicit_non_goals": [
-            "no-dashboard-built-from-milestone-local-notes",
+            "no-dashboard-built-from-release-scope-notes",
             "no-schema-drift-hidden-behind-ad-hoc-dashboard-fields",
         ],
         "requires_conformance_validation_artifact": True,
@@ -14533,29 +14540,18 @@ def check_imported_runtime_packaging_replay_case(
     local_consumer_class_value = payload.get("local_consumer_class_value")
     expect(
         isinstance(imported_provider_class_value, int)
-        and imported_provider_class_value != 0,
-        "expected imported provider class dispatch to succeed",
+        and imported_provider_class_value == 0,
+        "expected imported provider class metadata-only dispatch to return the strict dispatch error value",
     )
     expect(
         isinstance(imported_provider_protocol_value, int)
-        and imported_provider_protocol_value != 0,
-        "expected imported provider protocol dispatch to succeed",
+        and imported_provider_protocol_value == 0,
+        "expected imported provider protocol metadata-only dispatch to return the strict dispatch error value",
     )
     expect(
         isinstance(local_consumer_class_value, int)
-        and local_consumer_class_value != 0,
-        "expected local consumer class dispatch to succeed",
-    )
-    expect(
-        len(
-            {
-                imported_provider_class_value,
-                imported_provider_protocol_value,
-                local_consumer_class_value,
-            }
-        )
-        == 3,
-        "expected imported and local selector dispatch results to remain distinct",
+        and local_consumer_class_value == 0,
+        "expected local consumer class metadata-only dispatch to return the strict dispatch error value",
     )
     expect(payload.get("selector_table_status") == 0, "expected imported-runtime startup selector-table snapshot copy to succeed")
     expect(payload.get("selector_table_entry_count") == 3, "expected imported-runtime startup to publish three selector entries")
@@ -14579,10 +14575,10 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("method_cache_state_status") == 0, "expected imported-runtime startup method-cache snapshot copy to succeed")
     expect(payload.get("method_cache_entry_count") == 3, "expected imported-runtime startup to publish three method-cache entries")
     expect(payload.get("method_cache_live_dispatch_count") == 0, "expected imported-runtime startup to avoid live dispatch fast-path entries")
-    expect(payload.get("method_cache_fallback_dispatch_count") == 3, "expected imported-runtime startup to publish three metadata-backed fallback dispatches")
+    expect(payload.get("method_cache_fallback_dispatch_count") == 3, "expected imported-runtime startup to publish three metadata-backed strict dispatch errors")
     expect(payload.get("method_cache_last_selector") == "localClassValue", "expected imported-runtime startup to publish the last resolved selector")
-    expect(payload.get("method_cache_last_resolved_class_name") is None, "expected imported-runtime startup to keep the method-cache class name unset for metadata-backed fallback dispatch")
-    expect(payload.get("method_cache_last_resolved_owner_identity") is None, "expected imported-runtime startup to keep the method-cache owner identity unset for metadata-backed fallback dispatch")
+    expect(payload.get("method_cache_last_resolved_class_name") is None, "expected imported-runtime startup to keep the method-cache class name unset for metadata-backed strict dispatch error")
+    expect(payload.get("method_cache_last_resolved_owner_identity") is None, "expected imported-runtime startup to keep the method-cache owner identity unset for metadata-backed strict dispatch error")
     expect(payload.get("provider_method_status") == 0 and payload.get("provider_method_found") == 1 and payload.get("provider_method_resolved") == 0, "expected provider class method metadata to remain an unresolved fallback entry at startup")
     expect(payload.get("provider_method_owner_identity") is None, "expected provider class fallback method metadata to avoid a resolved owner identity at startup")
     expect(payload.get("imported_protocol_method_status") == 0 and payload.get("imported_protocol_method_found") == 1 and payload.get("imported_protocol_method_resolved") == 0, "expected imported protocol method metadata to remain an unresolved fallback entry at startup")
@@ -14624,18 +14620,21 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("post_replay_local_translation_unit_identity_key") == consumer_identity, "expected replay to preserve the consumer translation unit identity key")
     expect(
         payload.get("post_replay_imported_provider_class_value")
-        == imported_provider_class_value,
-        "expected imported provider class dispatch to survive replay",
+        == imported_provider_class_value
+        == 0,
+        "expected imported provider class strict dispatch error value to survive replay",
     )
     expect(
         payload.get("post_replay_imported_provider_protocol_value")
-        == imported_provider_protocol_value,
-        "expected imported provider protocol dispatch to survive replay",
+        == imported_provider_protocol_value
+        == 0,
+        "expected imported provider protocol strict dispatch error value to survive replay",
     )
     expect(
         payload.get("post_replay_local_consumer_class_value")
-        == local_consumer_class_value,
-        "expected local consumer class dispatch to survive replay",
+        == local_consumer_class_value
+        == 0,
+        "expected local consumer class strict dispatch error value to survive replay",
     )
     expect(payload.get("post_replay_selector_table_status") == 0, "expected replay selector-table snapshot copy to succeed")
     expect(payload.get("post_replay_selector_table_entry_count") == 3, "expected replay to restore three selector entries")
@@ -14645,11 +14644,11 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("post_replay_local_selector_status") == 0 and payload.get("post_replay_local_selector_found") == 1, "expected local selector metadata to survive replay")
     expect(payload.get("post_replay_method_cache_state_status") == 0, "expected replay method-cache snapshot copy to succeed")
     expect(payload.get("post_replay_method_cache_entry_count") == 3, "expected replay to restore three method-cache entries")
-    expect(payload.get("post_replay_method_cache_live_dispatch_count") == 0, "expected replay to keep method-cache entries on the fallback path")
-    expect(payload.get("post_replay_method_cache_fallback_dispatch_count") == 3, "expected replay to restore three metadata-backed fallback dispatches")
+    expect(payload.get("post_replay_method_cache_live_dispatch_count") == 0, "expected replay to keep method-cache entries on the strict error path")
+    expect(payload.get("post_replay_method_cache_fallback_dispatch_count") == 3, "expected replay to restore three metadata-backed strict dispatch errors")
     expect(payload.get("post_replay_method_cache_last_selector") == "localClassValue", "expected replay to preserve the last resolved selector")
-    expect(payload.get("post_replay_method_cache_last_resolved_class_name") is None, "expected replay to keep the method-cache class name unset for metadata-backed fallback dispatch")
-    expect(payload.get("post_replay_method_cache_last_resolved_owner_identity") is None, "expected replay to keep the method-cache owner identity unset for metadata-backed fallback dispatch")
+    expect(payload.get("post_replay_method_cache_last_resolved_class_name") is None, "expected replay to keep the method-cache class name unset for metadata-backed strict dispatch error")
+    expect(payload.get("post_replay_method_cache_last_resolved_owner_identity") is None, "expected replay to keep the method-cache owner identity unset for metadata-backed strict dispatch error")
     expect(payload.get("post_replay_provider_method_status") == 0 and payload.get("post_replay_provider_method_found") == 1 and payload.get("post_replay_provider_method_resolved") == 0, "expected provider class fallback metadata to survive replay")
     expect(payload.get("post_replay_provider_method_owner_identity") is None, "expected provider class fallback metadata to avoid a resolved owner identity after replay")
     expect(payload.get("post_replay_imported_protocol_method_status") == 0 and payload.get("post_replay_imported_protocol_method_found") == 1 and payload.get("post_replay_imported_protocol_method_resolved") == 0, "expected imported protocol fallback metadata to survive replay")
@@ -14696,9 +14695,9 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     expect(payload.get("init_value") == payload.get("alloc_value"), "expected init to preserve the allocated receiver")
     expect(payload.get("new_value", 0) != 0, "expected new dispatch to materialize an instance receiver")
     expect(payload.get("ignored_value") == payload.get("ignored_expected"),
-           "expected unresolved selector dispatch to return the deterministic fallback value")
+           "expected unresolved selector dispatch to return the strict dispatch error value")
     expect(payload.get("ignored_cached_value") == payload.get("ignored_expected"),
-           "expected cached unresolved selector dispatch to preserve the deterministic fallback value")
+           "expected cached unresolved selector dispatch to preserve the strict dispatch error value")
 
     worker_query = payload.get("worker_query", {})
     tracer_query = payload.get("tracer_query", {})
@@ -15386,7 +15385,7 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
     expect(payload.get("mixed_first") == 12 and payload.get("mixed_second") == 12,
            "expected mixed dispatch fixture to execute through the live runtime")
     expect(payload.get("fallback_first") == payload.get("fallback_expected") == payload.get("fallback_second"),
-           "expected fallback dispatch to stay deterministic across cache miss/hit")
+           "expected strict dispatch error to stay deterministic across cache miss/hit")
     expect(payload.get("baseline_cache_entry_count") == 4,
            "expected realized dispatch runtime to seed four method-cache entries")
     expect(payload.get("baseline_fast_path_seed_count") == 4,
@@ -15453,22 +15452,22 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected first missingDispatch: call to fall back")
     expect(payload.get("fallback_first_dispatch_state_status") == 0,
            "expected first missingDispatch: call to publish dispatch state")
-    expect(payload.get("fallback_first_dispatch_state_last_dispatch_path") == "slow-path-fallback",
-           "expected first missingDispatch: call to report slow-path fallback dispatch")
-    expect(payload.get("fallback_first_dispatch_state_last_implementation_kind") == "fallback-formula",
-           "expected first missingDispatch: call to execute deterministic fallback formula")
+    expect(payload.get("fallback_first_dispatch_state_last_dispatch_path") == "slow-path-error",
+           "expected first missingDispatch: call to report slow-path strict dispatch error")
+    expect(payload.get("fallback_first_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
+           "expected first missingDispatch: call to report strict dispatch error status")
     expect(payload.get("fallback_second_state_last_dispatch_used_cache") == 1,
            "expected repeated missingDispatch: call to hit the fallback cache entry")
     expect(payload.get("fallback_second_state_last_dispatch_used_fast_path") == 0,
            "expected repeated missingDispatch: call to stay off the fast path")
     expect(payload.get("fallback_second_state_last_dispatch_fell_back") == 1,
-           "expected repeated missingDispatch: call to remain a fallback dispatch")
+           "expected repeated missingDispatch: call to remain a strict dispatch error")
     expect(payload.get("fallback_second_dispatch_state_status") == 0,
            "expected repeated missingDispatch: call to publish dispatch state")
-    expect(payload.get("fallback_second_dispatch_state_last_dispatch_path") == "cache-hit-fallback",
-           "expected repeated missingDispatch: call to report cached fallback dispatch")
-    expect(payload.get("fallback_second_dispatch_state_last_implementation_kind") == "fallback-formula",
-           "expected repeated missingDispatch: call to execute deterministic fallback formula")
+    expect(payload.get("fallback_second_dispatch_state_last_dispatch_path") == "cache-hit-error",
+           "expected repeated missingDispatch: call to report cached strict dispatch error")
+    expect(payload.get("fallback_second_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
+           "expected repeated missingDispatch: call to report cached strict dispatch error status")
     expect(
         "; method_dispatch_and_selector_thunk_lowering_surface = "
         "contract_id=objc3c.method.dispatch.selector.thunk.lowering.v1"
@@ -17288,7 +17287,7 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         "current_value_property": {
             "property_name": "currentValue",
             "slot_index": 0,
-            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=0;strong=1;weak=0;unowned=0;assign=0;attributes=nonatomic,strong",
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=0;retain=0;strong=1;weak=0;unowned=0;unsafe_unretained=0;assign=0;nullable=0;nonnull=0;null_resettable=0;class=0;direct=0;attributes=nonatomic,strong",
             "ownership_lifetime_profile": "strong-owned",
             "ownership_runtime_hook_profile": None,
             "accessor_ownership_profile": "getter=currentValue;setter_available=1;setter=setCurrentValue:;ownership_lifetime=strong-owned;runtime_hook=",
@@ -17298,7 +17297,7 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         "copied_value_property": {
             "property_name": "copiedValue",
             "slot_index": 1,
-            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=1;strong=0;weak=0;unowned=0;assign=0;attributes=copy,nonatomic",
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=1;retain=0;strong=0;weak=0;unowned=0;unsafe_unretained=0;assign=0;nullable=0;nonnull=0;null_resettable=0;class=0;direct=0;attributes=copy,nonatomic",
             "ownership_lifetime_profile": "strong-owned",
             "ownership_runtime_hook_profile": None,
             "accessor_ownership_profile": "getter=copiedValue;setter_available=1;setter=setCopiedValue:;ownership_lifetime=strong-owned;runtime_hook=",
@@ -17308,7 +17307,7 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         "weak_value_property": {
             "property_name": "weakValue",
             "slot_index": 2,
-            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=0;strong=0;weak=1;unowned=0;assign=0;attributes=nonatomic,weak",
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=1;copy=0;retain=0;strong=0;weak=1;unowned=0;unsafe_unretained=0;assign=0;nullable=0;nonnull=0;null_resettable=0;class=0;direct=0;attributes=nonatomic,weak",
             "ownership_lifetime_profile": "weak",
             "ownership_runtime_hook_profile": "objc-weak-side-table",
             "accessor_ownership_profile": "getter=weakValue;setter_available=1;setter=setWeakValue:;ownership_lifetime=weak;runtime_hook=objc-weak-side-table",
@@ -17318,7 +17317,7 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         "borrowed_value_property": {
             "property_name": "borrowedValue",
             "slot_index": 3,
-            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=0;copy=0;strong=0;weak=0;unowned=0;assign=1;attributes=assign",
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=0;copy=0;retain=0;strong=0;weak=0;unowned=0;unsafe_unretained=0;assign=1;nullable=0;nonnull=0;null_resettable=0;class=0;direct=0;attributes=assign",
             "ownership_lifetime_profile": "unowned-unsafe",
             "ownership_runtime_hook_profile": "objc-unowned-unsafe-direct",
             "accessor_ownership_profile": "getter=borrowedValue;setter_available=1;setter=setBorrowedValue:;ownership_lifetime=unowned-unsafe;runtime_hook=objc-unowned-unsafe-direct",
@@ -17328,7 +17327,7 @@ def check_storage_ownership_reflection_case(clangxx: str, run_dir: Path) -> Case
         "guarded_value_property": {
             "property_name": "guardedValue",
             "slot_index": 4,
-            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=0;copy=0;strong=0;weak=0;unowned=1;assign=0;attributes=unowned",
+            "property_attribute_profile": "readonly=0;readwrite=0;atomic=0;nonatomic=0;copy=0;retain=0;strong=0;weak=0;unowned=1;unsafe_unretained=0;assign=0;nullable=0;nonnull=0;null_resettable=0;class=0;direct=0;attributes=unowned",
             "ownership_lifetime_profile": "unowned-safe",
             "ownership_runtime_hook_profile": "objc-unowned-safe-guard",
             "accessor_ownership_profile": "getter=guardedValue;setter_available=1;setter=setGuardedValue:;ownership_lifetime=unowned-safe;runtime_hook=objc-unowned-safe-guard",
@@ -19582,7 +19581,7 @@ def check_strict_profile_feature_claim_source_surface_case(
         == [
             "selection:language-version",
             "selection:compatibility-mode",
-            "selection:migration-assist",
+            "selection:canonical-rejection-diagnostics",
         ],
         "expected feature-claim truth surface to preserve the live supported selection set",
     )

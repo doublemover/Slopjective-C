@@ -1,0 +1,877 @@
+bool IsValidObjc3ErrorDiagnosticsRecoveryLoweringContract(
+    const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract) {
+  if (contract.parser_diagnostic_sites > contract.error_diagnostic_sites ||
+      contract.semantic_diagnostic_sites > contract.error_diagnostic_sites ||
+      contract.fixit_hint_sites > contract.error_diagnostic_sites ||
+      contract.recovery_candidate_sites > contract.error_diagnostic_sites ||
+      contract.recovery_applied_sites > contract.recovery_candidate_sites ||
+      contract.normalized_sites > contract.error_diagnostic_sites ||
+      contract.guard_blocked_sites > contract.error_diagnostic_sites ||
+      contract.contract_violation_sites > contract.error_diagnostic_sites) {
+    return false;
+  }
+  if (contract.parser_diagnostic_sites + contract.semantic_diagnostic_sites >
+      contract.error_diagnostic_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.guard_blocked_sites !=
+      contract.error_diagnostic_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ErrorDiagnosticsRecoveryLoweringReplayKey(
+    const Objc3ErrorDiagnosticsRecoveryLoweringContract &contract) {
+  return std::string("error_diagnostic_sites=") +
+             std::to_string(contract.error_diagnostic_sites) +
+         ";parser_diagnostic_sites=" +
+         std::to_string(contract.parser_diagnostic_sites) +
+         ";semantic_diagnostic_sites=" +
+         std::to_string(contract.semantic_diagnostic_sites) +
+         ";fixit_hint_sites=" + std::to_string(contract.fixit_hint_sites) +
+         ";recovery_candidate_sites=" +
+         std::to_string(contract.recovery_candidate_sites) +
+         ";recovery_applied_sites=" +
+         std::to_string(contract.recovery_applied_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";guard_blocked_sites=" + std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3ErrorDiagnosticsRecoveryLoweringLaneContract;
+}
+
+bool IsValidObjc3AsyncContinuationLoweringContract(
+    const Objc3AsyncContinuationLoweringContract &contract) {
+  if (contract.async_keyword_sites > contract.async_continuation_sites ||
+      contract.async_function_sites > contract.async_continuation_sites ||
+      contract.continuation_allocation_sites > contract.async_continuation_sites ||
+      contract.continuation_resume_sites > contract.async_continuation_sites ||
+      contract.continuation_suspend_sites > contract.async_continuation_sites ||
+      contract.async_state_machine_sites > contract.async_continuation_sites ||
+      contract.normalized_sites > contract.async_continuation_sites ||
+      contract.gate_blocked_sites > contract.async_continuation_sites ||
+      contract.contract_violation_sites > contract.async_continuation_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.gate_blocked_sites !=
+      contract.async_continuation_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3AsyncContinuationLoweringReplayKey(
+    const Objc3AsyncContinuationLoweringContract &contract) {
+  return std::string("async_continuation_sites=") +
+             std::to_string(contract.async_continuation_sites) +
+         ";async_keyword_sites=" + std::to_string(contract.async_keyword_sites) +
+         ";async_function_sites=" + std::to_string(contract.async_function_sites) +
+         ";continuation_allocation_sites=" +
+         std::to_string(contract.continuation_allocation_sites) +
+         ";continuation_resume_sites=" +
+         std::to_string(contract.continuation_resume_sites) +
+         ";continuation_suspend_sites=" +
+         std::to_string(contract.continuation_suspend_sites) +
+         ";async_state_machine_sites=" +
+         std::to_string(contract.async_state_machine_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";gate_blocked_sites=" + std::to_string(contract.gate_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3AsyncContinuationLoweringLaneContract;
+}
+
+bool IsValidObjc3AwaitLoweringSuspensionStateLoweringContract(
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract) {
+  if (contract.await_keyword_sites > contract.await_suspension_sites ||
+      contract.await_suspension_point_sites > contract.await_suspension_sites ||
+      contract.await_resume_sites > contract.await_suspension_point_sites ||
+      contract.await_state_machine_sites > contract.await_suspension_point_sites ||
+      contract.await_continuation_sites >
+          contract.await_suspension_point_sites ||
+      contract.normalized_sites > contract.await_suspension_sites ||
+      contract.gate_blocked_sites > contract.await_suspension_sites ||
+      contract.contract_violation_sites > contract.await_suspension_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.gate_blocked_sites !=
+      contract.await_suspension_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3AwaitLoweringSuspensionStateLoweringReplayKey(
+    const Objc3AwaitLoweringSuspensionStateLoweringContract &contract) {
+  return std::string("await_suspension_sites=") +
+             std::to_string(contract.await_suspension_sites) +
+         ";await_keyword_sites=" + std::to_string(contract.await_keyword_sites) +
+         ";await_suspension_point_sites=" +
+         std::to_string(contract.await_suspension_point_sites) +
+         ";await_resume_sites=" + std::to_string(contract.await_resume_sites) +
+         ";await_state_machine_sites=" +
+         std::to_string(contract.await_state_machine_sites) +
+         ";await_continuation_sites=" +
+         std::to_string(contract.await_continuation_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";gate_blocked_sites=" + std::to_string(contract.gate_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3AwaitLoweringSuspensionStateLoweringLaneContract;
+}
+
+bool IsValidObjc3ActorIsolationSendabilityLoweringContract(
+    const Objc3ActorIsolationSendabilityLoweringContract &contract) {
+  if (contract.sendability_check_sites > contract.actor_isolation_sites ||
+      contract.cross_actor_hop_sites > contract.actor_isolation_sites ||
+      contract.non_sendable_capture_sites > contract.sendability_check_sites ||
+      contract.sendable_transfer_sites > contract.sendability_check_sites ||
+      contract.isolation_boundary_sites > contract.actor_isolation_sites ||
+      contract.guard_blocked_sites > contract.actor_isolation_sites ||
+      contract.contract_violation_sites > contract.actor_isolation_sites) {
+    return false;
+  }
+  if (contract.isolation_boundary_sites + contract.guard_blocked_sites !=
+      contract.actor_isolation_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ActorIsolationSendabilityLoweringReplayKey(
+    const Objc3ActorIsolationSendabilityLoweringContract &contract) {
+  return std::string("actor_isolation_sites=") +
+             std::to_string(contract.actor_isolation_sites) +
+         ";sendability_check_sites=" +
+         std::to_string(contract.sendability_check_sites) +
+         ";cross_actor_hop_sites=" +
+         std::to_string(contract.cross_actor_hop_sites) +
+         ";non_sendable_capture_sites=" +
+         std::to_string(contract.non_sendable_capture_sites) +
+         ";sendable_transfer_sites=" +
+         std::to_string(contract.sendable_transfer_sites) +
+         ";isolation_boundary_sites=" +
+         std::to_string(contract.isolation_boundary_sites) +
+         ";guard_blocked_sites=" + std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+          ";lane_contract=" +
+          kObjc3ActorIsolationSendabilityLoweringLaneContract;
+}
+
+bool IsValidObjc3ActorLoweringMetadataContract(
+    const Objc3ActorLoweringMetadataContract &contract) {
+  if (contract.actor_method_sites < contract.nonisolated_entry_sites ||
+      contract.actor_method_sites < contract.executor_affinity_sites ||
+      contract.actor_method_sites < contract.actor_hop_artifact_sites ||
+      contract.actor_method_sites < contract.actor_isolation_thunk_sites ||
+      contract.actor_method_sites < contract.guard_blocked_sites ||
+      contract.actor_method_sites < contract.contract_violation_sites ||
+      contract.actor_metadata_record_sites < contract.actor_interface_sites ||
+      contract.task_handoff_sites < contract.actor_hop_artifact_sites ||
+      contract.task_handoff_sites < contract.actor_isolation_thunk_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ActorLoweringMetadataReplayKey(
+    const Objc3ActorLoweringMetadataContract &contract) {
+  return std::string("actor_interface_sites=") +
+             std::to_string(contract.actor_interface_sites) +
+         ";actor_method_sites=" + std::to_string(contract.actor_method_sites) +
+         ";actor_metadata_record_sites=" +
+             std::to_string(contract.actor_metadata_record_sites) +
+         ";nonisolated_entry_sites=" +
+             std::to_string(contract.nonisolated_entry_sites) +
+         ";executor_affinity_sites=" +
+             std::to_string(contract.executor_affinity_sites) +
+         ";actor_hop_artifact_sites=" +
+             std::to_string(contract.actor_hop_artifact_sites) +
+         ";actor_isolation_thunk_sites=" +
+             std::to_string(contract.actor_isolation_thunk_sites) +
+         ";replay_proof_dependency_sites=" +
+             std::to_string(contract.replay_proof_dependency_sites) +
+         ";race_guard_dependency_sites=" +
+             std::to_string(contract.race_guard_dependency_sites) +
+         ";task_handoff_sites=" + std::to_string(contract.task_handoff_sites) +
+         ";guard_blocked_sites=" +
+             std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+             std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+          ";lane_contract=" + kObjc3ConcurrencyActorLoweringMetadataLaneContract;
+}
+
+bool IsValidObjc3OwnershipSystemExtensionLoweringContract(
+    const Objc3OwnershipSystemExtensionLoweringContract &contract) {
+  if (contract.cleanup_hook_sites > contract.cleanup_owned_local_sites ||
+      contract.resource_local_sites > contract.cleanup_owned_local_sites ||
+      contract.resource_move_capture_sites > contract.cleanup_owned_local_sites ||
+      contract.retainable_family_operation_callable_sites >
+          contract.retainable_family_callable_sites ||
+      contract.retainable_family_alias_callable_sites >
+          contract.retainable_family_callable_sites ||
+      contract.contract_violation_sites >
+          contract.cleanup_owned_local_sites +
+              contract.borrowed_escape_candidate_sites +
+              contract.retainable_family_callable_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3OwnershipSystemExtensionLoweringReplayKey(
+    const Objc3OwnershipSystemExtensionLoweringContract &contract) {
+  return std::string("cleanup_hook_sites=") +
+             std::to_string(contract.cleanup_hook_sites) +
+         ";resource_local_sites=" +
+         std::to_string(contract.resource_local_sites) +
+         ";cleanup_owned_local_sites=" +
+         std::to_string(contract.cleanup_owned_local_sites) +
+         ";resource_move_capture_sites=" +
+         std::to_string(contract.resource_move_capture_sites) +
+         ";borrowed_parameter_sites=" +
+         std::to_string(contract.borrowed_parameter_sites) +
+         ";borrowed_return_callable_sites=" +
+         std::to_string(contract.borrowed_return_callable_sites) +
+         ";borrowed_escape_candidate_sites=" +
+         std::to_string(contract.borrowed_escape_candidate_sites) +
+         ";explicit_capture_item_sites=" +
+         std::to_string(contract.explicit_capture_item_sites) +
+         ";retainable_family_callable_sites=" +
+         std::to_string(contract.retainable_family_callable_sites) +
+         ";retainable_family_operation_callable_sites=" +
+         std::to_string(contract.retainable_family_operation_callable_sites) +
+         ";retainable_family_alias_callable_sites=" +
+         std::to_string(contract.retainable_family_alias_callable_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3OwnershipSystemExtensionLoweringLaneContract;
+}
+
+bool IsValidObjc3DispatchDispatchControlLoweringContract(
+    const Objc3DispatchDispatchControlLoweringContract &contract) {
+  if (contract.direct_members_defaulted_sites >
+          contract.direct_call_candidate_sites ||
+      contract.dynamic_opt_out_sites >
+          contract.metadata_preserved_callable_sites ||
+      contract.final_container_sites >
+          contract.metadata_preserved_container_sites ||
+      contract.sealed_container_sites >
+          contract.metadata_preserved_container_sites ||
+      contract.override_legality_sites >
+          contract.direct_call_candidate_sites +
+              contract.metadata_preserved_container_sites ||
+      contract.guard_blocked_sites >
+          contract.metadata_preserved_callable_sites +
+              contract.metadata_preserved_container_sites ||
+      contract.contract_violation_sites >
+          contract.metadata_preserved_callable_sites +
+              contract.metadata_preserved_container_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3DispatchDispatchControlLoweringReplayKey(
+    const Objc3DispatchDispatchControlLoweringContract &contract) {
+  return std::string("direct_call_candidate_sites=") +
+             std::to_string(contract.direct_call_candidate_sites) +
+         ";direct_members_defaulted_sites=" +
+         std::to_string(contract.direct_members_defaulted_sites) +
+         ";dynamic_opt_out_sites=" +
+         std::to_string(contract.dynamic_opt_out_sites) +
+         ";final_container_sites=" +
+         std::to_string(contract.final_container_sites) +
+         ";sealed_container_sites=" +
+         std::to_string(contract.sealed_container_sites) +
+         ";override_legality_sites=" +
+         std::to_string(contract.override_legality_sites) +
+         ";metadata_preserved_callable_sites=" +
+         std::to_string(contract.metadata_preserved_callable_sites) +
+         ";metadata_preserved_container_sites=" +
+         std::to_string(contract.metadata_preserved_container_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3DispatchDispatchControlLoweringLaneContract;
+}
+
+bool IsValidObjc3MetaprogrammingExpansionLoweringContract(
+    const Objc3MetaprogrammingExpansionLoweringContract &contract) {
+  if (contract.derived_selector_artifact_sites > contract.derive_inventory_sites ||
+      contract.synthesized_binding_sites > contract.property_behavior_sites ||
+      contract.synthesized_getter_sites > contract.property_behavior_sites ||
+      contract.synthesized_setter_sites > contract.property_behavior_sites) {
+    return false;
+  }
+  const std::size_t required_replay_visible_sites =
+      contract.derived_selector_artifact_sites +
+      contract.macro_replay_visible_sites + contract.property_behavior_sites +
+      contract.synthesized_binding_sites + contract.synthesized_getter_sites +
+      contract.synthesized_setter_sites;
+  if (contract.replay_visible_metadata_sites != required_replay_visible_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3MetaprogrammingExpansionLoweringReplayKey(
+    const Objc3MetaprogrammingExpansionLoweringContract &contract) {
+  return std::string("derive_inventory_sites=") +
+             std::to_string(contract.derive_inventory_sites) +
+         ";derived_selector_artifact_sites=" +
+         std::to_string(contract.derived_selector_artifact_sites) +
+         ";macro_replay_visible_sites=" +
+         std::to_string(contract.macro_replay_visible_sites) +
+         ";property_behavior_sites=" +
+         std::to_string(contract.property_behavior_sites) +
+         ";synthesized_binding_sites=" +
+         std::to_string(contract.synthesized_binding_sites) +
+         ";synthesized_getter_sites=" +
+         std::to_string(contract.synthesized_getter_sites) +
+         ";synthesized_setter_sites=" +
+         std::to_string(contract.synthesized_setter_sites) +
+         ";replay_visible_metadata_sites=" +
+         std::to_string(contract.replay_visible_metadata_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3MetaprogrammingExpansionLoweringLaneContract;
+}
+
+bool IsValidObjc3InteropInteropLoweringContract(
+    const Objc3InteropInteropLoweringContract &contract) {
+  if (contract.c_foreign_callable_sites > contract.foreign_callable_sites ||
+      contract.objc_runtime_parity_callable_sites >
+          contract.foreign_callable_sites ||
+      contract.interface_preserved_foreign_callable_sites <
+          contract.foreign_callable_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3InteropInteropLoweringReplayKey(
+    const Objc3InteropInteropLoweringContract &contract) {
+  return std::string("foreign_callable_sites=") +
+             std::to_string(contract.foreign_callable_sites) +
+         ";c_foreign_callable_sites=" +
+         std::to_string(contract.c_foreign_callable_sites) +
+         ";objc_runtime_parity_callable_sites=" +
+         std::to_string(contract.objc_runtime_parity_callable_sites) +
+         ";ownership_bridge_callable_sites=" +
+         std::to_string(contract.ownership_bridge_callable_sites) +
+         ";error_surface_sites=" +
+         std::to_string(contract.error_surface_sites) +
+         ";async_boundary_sites=" +
+         std::to_string(contract.async_boundary_sites) +
+         ";swift_concurrency_metadata_sites=" +
+         std::to_string(contract.swift_concurrency_metadata_sites) +
+         ";interface_preserved_foreign_callable_sites=" +
+         std::to_string(contract.interface_preserved_foreign_callable_sites) +
+         ";interface_preserved_metadata_annotation_sites=" +
+         std::to_string(contract.interface_preserved_metadata_annotation_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3InteropInteropLoweringLaneContract;
+}
+
+bool IsValidObjc3InteropForeignCallLifetimeLoweringContract(
+    const Objc3InteropForeignCallLifetimeLoweringContract &contract) {
+  if (contract.c_foreign_callable_sites > contract.foreign_callable_sites ||
+      contract.objc_runtime_parity_callable_sites >
+          contract.foreign_callable_sites) {
+    return false;
+  }
+  if (contract.ownership_bridge_sites > contract.metadata_preservation_sites ||
+      contract.lifetime_bridge_sites > contract.metadata_preservation_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3InteropForeignCallLifetimeLoweringReplayKey(
+    const Objc3InteropForeignCallLifetimeLoweringContract &contract) {
+  return std::string("foreign_callable_sites=") +
+             std::to_string(contract.foreign_callable_sites) +
+         ";c_foreign_callable_sites=" +
+         std::to_string(contract.c_foreign_callable_sites) +
+         ";objc_runtime_parity_callable_sites=" +
+         std::to_string(contract.objc_runtime_parity_callable_sites) +
+         ";ownership_bridge_sites=" +
+         std::to_string(contract.ownership_bridge_sites) +
+         ";lifetime_bridge_sites=" +
+         std::to_string(contract.lifetime_bridge_sites) +
+         ";metadata_preservation_sites=" +
+         std::to_string(contract.metadata_preservation_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";dependency_contract=" +
+         kObjc3InteropForeignCallLifetimeLoweringDependencyContractId;
+}
+
+bool IsValidObjc3InteropFfiMetadataInterfacePreservationContract(
+    const Objc3InteropFfiMetadataInterfacePreservationContract &contract) {
+  if (contract.imported_module_count == 0 &&
+      (contract.imported_foreign_callable_count != 0 ||
+       contract.imported_metadata_preservation_sites != 0 ||
+       contract.imported_interface_annotation_sites != 0)) {
+    return false;
+  }
+  if (contract.separate_compilation_preservation_ready &&
+      !contract.runtime_import_artifact_ready) {
+    return false;
+  }
+  if (contract.separate_compilation_preservation_ready &&
+      !contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3InteropFfiMetadataInterfacePreservationReplayKey(
+    const Objc3InteropFfiMetadataInterfacePreservationContract &contract) {
+  return std::string("local_foreign_callable_count=") +
+             std::to_string(contract.local_foreign_callable_count) +
+         ";local_metadata_preservation_sites=" +
+         std::to_string(contract.local_metadata_preservation_sites) +
+         ";local_interface_annotation_sites=" +
+         std::to_string(contract.local_interface_annotation_sites) +
+         ";imported_module_count=" +
+         std::to_string(contract.imported_module_count) +
+         ";imported_foreign_callable_count=" +
+         std::to_string(contract.imported_foreign_callable_count) +
+         ";imported_metadata_preservation_sites=" +
+         std::to_string(contract.imported_metadata_preservation_sites) +
+         ";imported_interface_annotation_sites=" +
+         std::to_string(contract.imported_interface_annotation_sites) +
+         ";runtime_import_artifact_ready=" +
+         BoolToken(contract.runtime_import_artifact_ready) +
+         ";separate_compilation_preservation_ready=" +
+         BoolToken(contract.separate_compilation_preservation_ready) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";source_contract=" +
+         kObjc3InteropFfiMetadataInterfacePreservationSourceContractId;
+}
+
+std::string Objc3InteropBridgePackagingToolchainSummary() {
+  std::ostringstream out;
+  // packaging/toolchain anchor: lane-D freezes one truthful Part 11
+  // packaging boundary over the already-landed runtime-import-surface and
+  // cross-module link-plan topology without claiming live header/module/bridge
+  // generation yet.
+  out << "contract=" << kObjc3InteropBridgePackagingToolchainContractId
+      << ";source_contract="
+      << kObjc3InteropBridgePackagingToolchainSourceContractId
+      << ";preservation_contract="
+      << kObjc3InteropBridgePackagingToolchainPreservationContractId
+      << ";packaging_model="
+      << kObjc3InteropBridgePackagingToolchainPackagingModel
+      << ";operator_evidence_model="
+      << kObjc3InteropBridgePackagingToolchainEvidenceModel
+      << ";fail_closed_model="
+      << kObjc3InteropBridgePackagingToolchainFailClosedModel
+      << ";packaging_topology_ready=true"
+      << ";operator_visible_evidence_ready=true"
+      << ";header_generation_ready=false"
+      << ";module_generation_ready=false"
+      << ";bridge_generation_ready=false"
+      << ";deterministic=true"
+      << ";follow_on_surface=objc3c.interop.bridgegeneration.runtime.v1";
+  return out.str();
+}
+
+std::string Objc3InteropHeaderModuleBridgeGenerationBoundarySummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringContractId
+      << ";source_contract="
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringSourceContractId
+      << ";preservation_contract="
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringPreservationContractId
+      << ";packaging_model="
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringPackagingModel
+      << ";fail_closed_model="
+      << kObjc3InteropHeaderModuleBridgeGenerationLoweringFailClosedModel
+      << ";header_generation_ready=true"
+      << ";module_generation_ready=true"
+      << ";bridge_generation_ready=true"
+      << ";cross_module_packaging_ready=true"
+      << ";deterministic=true";
+  return out.str();
+}
+
+bool IsValidObjc3MetaprogrammingSynthesizedArtifactEmissionContract(
+    const Objc3MetaprogrammingSynthesizedArtifactEmissionContract &contract) {
+  if (contract.emitted_derive_method_sites > contract.derive_inventory_sites) {
+    return false;
+  }
+  if (contract.emitted_global_artifact_sites <
+      contract.emitted_macro_artifact_sites +
+          contract.emitted_property_behavior_artifact_sites) {
+    return false;
+  }
+  if (contract.emitted_runtime_method_list_sites <
+      contract.emitted_derive_method_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > contract.guard_blocked_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3MetaprogrammingSynthesizedArtifactEmissionReplayKey(
+    const Objc3MetaprogrammingSynthesizedArtifactEmissionContract &contract) {
+  return std::string("derive_inventory_sites=") +
+             std::to_string(contract.derive_inventory_sites) +
+         ";emitted_derive_method_sites=" +
+         std::to_string(contract.emitted_derive_method_sites) +
+         ";emitted_macro_artifact_sites=" +
+         std::to_string(contract.emitted_macro_artifact_sites) +
+         ";emitted_property_behavior_artifact_sites=" +
+         std::to_string(contract.emitted_property_behavior_artifact_sites) +
+         ";emitted_global_artifact_sites=" +
+         std::to_string(contract.emitted_global_artifact_sites) +
+         ";emitted_runtime_method_list_sites=" +
+         std::to_string(contract.emitted_runtime_method_list_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3MetaprogrammingSynthesizedArtifactEmissionLaneContract;
+}
+
+std::string Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationContractId
+      << ";source_contract="
+      << kObjc3MetaprogrammingSynthesizedArtifactEmissionContractId
+      << ";surface_path="
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationSurfacePath
+      << ";artifact_member="
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationImportArtifactMemberName
+      << ";source_model="
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationSourceModel
+      << ";preservation_model="
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationModel
+      << ";fail_closed_model="
+      << kObjc3MetaprogrammingModuleInterfaceReplayPreservationFailClosedModel
+      << ";follow_on_surface=objc3c.metaprogramming.moduleinterface.replaypreservation.v1";
+  return out.str();
+}
+
+std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary() {
+  std::ostringstream out;
+  // host/runtime-boundary anchor: lane-D freezes one truthful Part 10
+  // boundary over the already-landed synthesized/property runtime slice without
+  // claiming live macro host execution or runtime package loading.
+  out << "contract=" << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryContractId
+      << ";source_contract="
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundarySourceContractId
+      << ";host_model=" << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryHostModel
+      << ";property_runtime_model="
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPropertyRuntimeModel
+      << ";packaging_model="
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryPackagingModel
+      << ";fail_closed_model="
+      << kObjc3MetaprogrammingExpansionHostRuntimeBoundaryFailClosedModel
+      << ";property_runtime_ready=true"
+      << ";macro_host_execution_ready=false"
+      << ";macro_host_process_launch_ready=false"
+      << ";runtime_package_loader_ready=false"
+      << ";deterministic=true"
+      << ";follow_on_surface=objc3c.metaprogramming.runtimepackage.loader.v1";
+  return out.str();
+}
+
+std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary() {
+  std::ostringstream out;
+  out << "contract="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationContractId
+      << ";source_contract="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSourceContractId
+      << ";surface_path="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfacePath
+      << ";artifact_member="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationImportArtifactMemberName
+      << ";host_executable_relative_path="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostExecutableRelativePath
+      << ";cache_root_relative_path="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheRootRelativePath
+      << ";host_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationHostModel
+      << ";toolchain_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationToolchainModel
+      << ";cache_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationCacheModel
+      << ";fail_closed_model="
+      << kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel
+      << ";macro_host_execution_ready=true"
+      << ";macro_host_process_launch_ready=true"
+      << ";runtime_package_loader_ready=false"
+      << ";deterministic=true"
+      << ";follow_on_surface=objc3c.metaprogramming.crossmodule.packaging.v1";
+  return out.str();
+}
+
+std::string Objc3DispatchDispatchMetadataInterfacePreservationSummary() {
+  std::ostringstream out;
+  // preservation anchor: lane-C extends the local C002 lowering win
+  // by preserving direct/final/sealed intent through runtime metadata source
+  // records, emitted runtime-import-surface artifacts, and imported replay
+  // summaries before lane-D runtime boundary work begins.
+  out << "contract="
+      << kObjc3DispatchDispatchMetadataInterfacePreservationContractId
+      << ";source_contract=" << kObjc3DispatchDispatchControlLoweringContractId
+      << ";surface_path="
+      << kObjc3DispatchDispatchMetadataInterfacePreservationSurfacePath
+      << ";artifact_member="
+      << kObjc3DispatchDispatchMetadataInterfacePreservationImportArtifactMemberName
+      << ";source_model="
+      << kObjc3DispatchDispatchMetadataInterfacePreservationSourceModel
+      << ";preservation_model="
+      << kObjc3DispatchDispatchMetadataInterfacePreservationModel
+      << ";fail_closed_model="
+      << kObjc3DispatchDispatchMetadataInterfacePreservationFailClosedModel
+      << ";follow_on_surface=objc3c.dispatch.metadata.interfacepreservation.v1";
+  return out.str();
+}
+
+bool IsValidObjc3TaskRuntimeInteropCancellationLoweringContract(
+    const Objc3TaskRuntimeInteropCancellationLoweringContract &contract) {
+  if (contract.task_runtime_interop_sites > contract.task_runtime_sites ||
+      contract.cancellation_probe_sites > contract.task_runtime_sites ||
+      contract.cancellation_handler_sites > contract.task_runtime_sites ||
+      contract.runtime_resume_sites > contract.task_runtime_sites ||
+      contract.runtime_cancel_sites > contract.task_runtime_sites ||
+      contract.normalized_sites > contract.task_runtime_sites ||
+      contract.guard_blocked_sites > contract.task_runtime_sites ||
+      contract.contract_violation_sites > contract.task_runtime_sites) {
+    return false;
+  }
+  if (contract.runtime_resume_sites + contract.runtime_cancel_sites >
+      contract.task_runtime_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.guard_blocked_sites !=
+      contract.task_runtime_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3TaskRuntimeInteropCancellationLoweringReplayKey(
+    const Objc3TaskRuntimeInteropCancellationLoweringContract &contract) {
+  return std::string("task_runtime_sites=") +
+             std::to_string(contract.task_runtime_sites) +
+         ";task_runtime_interop_sites=" +
+         std::to_string(contract.task_runtime_interop_sites) +
+         ";cancellation_probe_sites=" +
+         std::to_string(contract.cancellation_probe_sites) +
+         ";cancellation_handler_sites=" +
+         std::to_string(contract.cancellation_handler_sites) +
+         ";runtime_resume_sites=" +
+         std::to_string(contract.runtime_resume_sites) +
+         ";runtime_cancel_sites=" +
+         std::to_string(contract.runtime_cancel_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";guard_blocked_sites=" + std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3TaskRuntimeInteropCancellationLoweringLaneContract;
+}
+
+bool IsValidObjc3ConcurrencyReplayRaceGuardLoweringContract(
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract) {
+  if (contract.replay_proof_sites > contract.concurrency_replay_sites ||
+      contract.race_guard_sites > contract.concurrency_replay_sites ||
+      contract.task_handoff_sites > contract.concurrency_replay_sites ||
+      contract.actor_isolation_sites > contract.concurrency_replay_sites ||
+      contract.deterministic_schedule_sites > contract.concurrency_replay_sites ||
+      contract.guard_blocked_sites > contract.concurrency_replay_sites ||
+      contract.contract_violation_sites > contract.concurrency_replay_sites) {
+    return false;
+  }
+  if (contract.deterministic_schedule_sites + contract.guard_blocked_sites !=
+      contract.concurrency_replay_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ConcurrencyReplayRaceGuardLoweringReplayKey(
+    const Objc3ConcurrencyReplayRaceGuardLoweringContract &contract) {
+  return std::string("concurrency_replay_sites=") +
+             std::to_string(contract.concurrency_replay_sites) +
+         ";replay_proof_sites=" + std::to_string(contract.replay_proof_sites) +
+         ";race_guard_sites=" + std::to_string(contract.race_guard_sites) +
+         ";task_handoff_sites=" + std::to_string(contract.task_handoff_sites) +
+         ";actor_isolation_sites=" +
+         std::to_string(contract.actor_isolation_sites) +
+         ";deterministic_schedule_sites=" +
+         std::to_string(contract.deterministic_schedule_sites) +
+         ";guard_blocked_sites=" +
+         std::to_string(contract.guard_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3ConcurrencyReplayRaceGuardLoweringLaneContract;
+}
+
+bool IsValidObjc3UnsafePointerExtensionLoweringContract(
+    const Objc3UnsafePointerExtensionLoweringContract &contract) {
+  if (contract.unsafe_keyword_sites > contract.unsafe_pointer_extension_sites ||
+      contract.pointer_arithmetic_sites >
+          contract.unsafe_pointer_extension_sites ||
+      contract.raw_pointer_type_sites > contract.unsafe_pointer_extension_sites ||
+      contract.unsafe_operation_sites > contract.unsafe_pointer_extension_sites ||
+      contract.normalized_sites > contract.unsafe_pointer_extension_sites ||
+      contract.gate_blocked_sites > contract.unsafe_pointer_extension_sites ||
+      contract.contract_violation_sites > contract.unsafe_pointer_extension_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.gate_blocked_sites !=
+      contract.unsafe_pointer_extension_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3UnsafePointerExtensionLoweringReplayKey(
+    const Objc3UnsafePointerExtensionLoweringContract &contract) {
+  return std::string("unsafe_pointer_extension_sites=") +
+             std::to_string(contract.unsafe_pointer_extension_sites) +
+         ";unsafe_keyword_sites=" +
+         std::to_string(contract.unsafe_keyword_sites) +
+         ";pointer_arithmetic_sites=" +
+         std::to_string(contract.pointer_arithmetic_sites) +
+         ";raw_pointer_type_sites=" +
+         std::to_string(contract.raw_pointer_type_sites) +
+         ";unsafe_operation_sites=" +
+         std::to_string(contract.unsafe_operation_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";gate_blocked_sites=" + std::to_string(contract.gate_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3UnsafePointerExtensionLoweringLaneContract;
+}
+
+bool IsValidObjc3InlineAsmIntrinsicGovernanceLoweringContract(
+    const Objc3InlineAsmIntrinsicGovernanceLoweringContract &contract) {
+  if (contract.inline_asm_sites > contract.inline_asm_intrinsic_sites ||
+      contract.intrinsic_sites > contract.inline_asm_intrinsic_sites ||
+      contract.governed_intrinsic_sites > contract.intrinsic_sites ||
+      contract.privileged_intrinsic_sites > contract.governed_intrinsic_sites ||
+      contract.normalized_sites > contract.inline_asm_intrinsic_sites ||
+      contract.gate_blocked_sites > contract.inline_asm_intrinsic_sites ||
+      contract.contract_violation_sites > contract.inline_asm_intrinsic_sites) {
+    return false;
+  }
+  if (contract.normalized_sites + contract.gate_blocked_sites !=
+      contract.inline_asm_intrinsic_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3InlineAsmIntrinsicGovernanceLoweringReplayKey(
+    const Objc3InlineAsmIntrinsicGovernanceLoweringContract &contract) {
+  return std::string("inline_asm_intrinsic_sites=") +
+             std::to_string(contract.inline_asm_intrinsic_sites) +
+         ";inline_asm_sites=" + std::to_string(contract.inline_asm_sites) +
+         ";intrinsic_sites=" + std::to_string(contract.intrinsic_sites) +
+         ";governed_intrinsic_sites=" +
+         std::to_string(contract.governed_intrinsic_sites) +
+         ";privileged_intrinsic_sites=" +
+         std::to_string(contract.privileged_intrinsic_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";gate_blocked_sites=" + std::to_string(contract.gate_blocked_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract;
+}

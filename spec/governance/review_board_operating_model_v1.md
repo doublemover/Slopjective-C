@@ -7,16 +7,16 @@ and escalation windows for v0.13 governance operations.
 
 ## 0. Reseed metadata binding
 
-| Field                    | Value                                                                  |
-| ------------------------ | ---------------------------------------------------------------------- |
-| `issue`                  | `#791`                                                                 |
-| `seed_id`                | `V013-GOV-03`                                                          |
-| `wave_id`                | `W1`                                                                   |
-| `batch_id`               | `BATCH-20260223-11S`                                                   |
-| `milestone_id`           | `#32`                                                                  |
-| `acceptance_gate_id`     | `AC-V013-GOV-03`                                                       |
+| Field                    | Value                                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------- |
+| `issue`                  | `#791`                                                                                                    |
+| `seed_id`                | `V013-GOV-03`                                                                                             |
+| `wave_id`                | `W1`                                                                                                      |
+| `batch_id`               | `BATCH-20260223-11S`                                                                                      |
+| `milestone_id`           | `#32`                                                                                                     |
+| `acceptance_gate_id`     | `AC-V013-GOV-03`                                                                                          |
 | `package_artifact`       | `docs/reference/legacy_spec_anchor_index.md#planning-v013-review-board-cadence-quorum-package`            |
-| `calendar_artifact`      | `reports/reviews/v013_review_board_calendar.md`                        |
+| `calendar_artifact`      | `reports/reviews/v013_review_board_calendar.md`                                                           |
 | `lane_evidence_artifact` | `docs/reference/legacy_spec_anchor_index.md#planning-evidence-lane-c-v013-seed-gov03-validation-20260223` |
 
 ## 1. Scope and authority
@@ -160,13 +160,13 @@ Every formal session must publish:
 
 ### 9.1 Contract binding for lane A issue `#854`
 
-| Field                        | Value                                                                                          |
-| ---------------------------- | ---------------------------------------------------------------------------------------------- |
-| `issue`                      | `#854`                                                                                         |
-| `milestone_slice`            | `[v0.14][M07][lane:A]`                                                                         |
-| `objective`                  | Preserve operating-model normative enforcement as annualization W1 baseline authority.         |
-| `acceptance_matrix_artifact` | `docs/reference/legacy_spec_anchor_index.md`                 |
-| `lane_validation_artifact`   | `docs/reference/legacy_spec_anchor_index.md` |
+| Field                        | Value                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------- |
+| `issue`                      | `#854`                                                                                 |
+| `milestone_slice`            | `[v0.14][M07][lane:A]`                                                                 |
+| `objective`                  | Preserve operating-model normative enforcement as annualization W1 baseline authority. |
+| `acceptance_matrix_artifact` | `docs/reference/legacy_spec_anchor_index.md`                                           |
+| `lane_validation_artifact`   | `docs/reference/legacy_spec_anchor_index.md`                                           |
 
 ### 9.2 Dependency rows
 

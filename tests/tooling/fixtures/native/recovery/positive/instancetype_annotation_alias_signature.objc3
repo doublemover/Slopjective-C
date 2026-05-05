@@ -1,6 +1,9 @@
 module InstancetypeAnnotationAliasSignature;
 
-fn choose(flag: bool, when_true: instancetype?, when_false: instancetype<Protocol>) -> instancetype! {
+@protocol InstancetypeAnnotationProtocol
+@end
+
+fn choose(flag: bool, when_true: instancetype, when_false: instancetype<InstancetypeAnnotationProtocol>) -> instancetype {
   if (flag) {
     return when_true;
   }

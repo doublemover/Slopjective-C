@@ -29,7 +29,7 @@ closure work must extend this path, not bypass it.
   - `<prefix>.runtime-registration-manifest.json`
   - `<prefix>.runtime-registration-descriptor.json`
   - `<prefix>.compile-provenance.json`
-- validation-owned proof path:
+- validation-owned evidence path:
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
   - `scripts/check_objc3c_native_execution_smoke.ps1`
@@ -157,7 +157,7 @@ constructor-root to loader-table edge.
   - `objc_runtime_bootstrap_reset_contract`
   - `objc_runtime_bootstrap_registrar_contract`
   - `objc_runtime_bootstrap_archive_static_link_replay_corpus`
-- authoritative live proof path:
+- authoritative live evidence path:
   - fixture: `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
   - probe: `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
   - acceptance command: `python scripts/check_objc3c_runtime_acceptance.py`
@@ -195,7 +195,7 @@ truth from scattered semantic and runtime-side reports.
   - `native/objc3c/src/token/objc3_token_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
 
@@ -220,7 +220,7 @@ source packet instead of inferring scope from stale checklist text.
   - `native/objc3c/src/token/objc3_token_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_behavior_source_completion_positive.objc3`
@@ -253,7 +253,7 @@ packet instead of inventing a second package/provenance inventory.
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_behavior_semantic_model_positive.objc3`
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
@@ -301,7 +301,7 @@ assumptions.
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/synthesized_ast_ir_macro_positive.objc3`
@@ -315,7 +315,7 @@ metaprogramming expansion. It freezes the emitted lowering contract,
 synthesized AST/IR packet, cross-module replay packet, and deterministic
 host-cache import artifact as one live surface so executable expansion work
 extends the real compiler outputs instead of re-deriving lowering truth from
-sidecars or milestone-local summaries.
+sidecars or release-scope summaries.
 
 ## Cross-Module Metaprogramming Artifact Preservation Surface
 
@@ -328,7 +328,7 @@ sidecars or milestone-local summaries.
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/preservation_provider.objc3`
     - `tests/tooling/fixtures/native/preservation_consumer.objc3`
@@ -360,7 +360,7 @@ being reconstructed from local-only manifest state.
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_host_runtime_boundary_positive.objc3`
     - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
@@ -389,7 +389,7 @@ surface instead of inventing a second host/cache model from local probe notes.
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/macro_host_process_provider.objc3`
     - `tests/tooling/fixtures/native/macro_host_process_consumer.objc3`
@@ -401,7 +401,7 @@ host-cache integration. It freezes the real cache-materialization artifact
 fields, the runtime-import consumer link-plan coupling, and the private runtime
 snapshot that reports host-process readiness so runnable metaprogramming
 validation extends one live miss-to-hit cache path instead of relying on
-proof-only summaries or milestone-local cache assumptions.
+evidence-only summaries or release-scope cache assumptions.
 
 ## Unified Concurrency Runtime Source Surface
 
@@ -422,7 +422,7 @@ proof-only summaries or milestone-local cache assumptions.
   - `native/objc3c/src/runtime/objc3_runtime.h`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/async_await_executor_source_closure_positive.objc3`
     - `tests/tooling/fixtures/native/actor_member_isolation_surface_positive.objc3`
@@ -465,7 +465,7 @@ stale milestone notes, or probe-local assumptions.
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/async_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/actor_isolation_sendable_semantic_model_positive.objc3`
@@ -498,7 +498,7 @@ execution has already landed.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/async_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/task_runtime_async_entry_lowering_positive.objc3`
@@ -526,7 +526,7 @@ instead of reconstructing lowering state from sidecars or probe-local notes.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/error_source_closure_positive.objc3`
     - `tests/tooling/fixtures/native/try_expression_fail_closed_negative.objc3`
@@ -553,7 +553,7 @@ packets.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3`
     - `tests/tooling/fixtures/native/bridge_legality_positive.objc3`
@@ -580,7 +580,7 @@ source forms are valid or try-eligible.
   - `native/objc3c/src/sema/objc3_semantic_passes.h`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/error_source_closure_positive.objc3`
     - `tests/tooling/fixtures/native/error_bridge_marker_surface_positive.objc3`
@@ -604,7 +604,7 @@ of hand-waving over what is already enforced in the compiler.
   - `native/objc3c/src/sema/objc3_semantic_passes.h`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/bridge_legality_positive.objc3`
     - `tests/tooling/fixtures/native/bridge_legality_native_fail_closed.objc3`
@@ -638,7 +638,7 @@ compiler contract.
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/error_out_abi_positive.objc3`
     - `tests/tooling/fixtures/native/error_runtime_bridge_helper_positive.objc3`
@@ -683,7 +683,7 @@ the public runtime header unchanged until a wider ABI commitment is warranted.
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/live_error_runtime_integration_positive.objc3`
   - probes:
@@ -715,7 +715,7 @@ surfaces.
     - `objc3_runtime_copy_realized_class_graph_state_for_testing`
     - `objc3_runtime_copy_realized_class_entry_for_testing`
     - `objc3_runtime_copy_protocol_conformance_query_for_testing`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -759,7 +759,7 @@ sidecars, stale milestone notes, or synthetic probes.
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/block_source_model_completion_positive.objc3`
     - `tests/tooling/fixtures/native/block_source_storage_annotations_positive.objc3`
@@ -789,7 +789,7 @@ block invocation, byref forwarding, owned capture preservation, and ARC debug
 snapshots as one coupled compile artifact.
 Downstream block lowering, byref forwarding, ownership transfer, and ARC
 automation work must extend this emitted surface instead of reconstructing
-truth from sidecar-only notes, probe-local assumptions, or milestone-local
+truth from sidecar-only notes, probe-local assumptions, or release-scope
 scaffolding.
 
 The coupled source surface also carries the private runtime snapshot
@@ -814,7 +814,7 @@ symbol inventories from ad hoc probes.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/owned_object_capture_helper_positive.objc3`
     - `tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3`
@@ -839,7 +839,7 @@ modes, retainable-family legality, and the normalized owned/weak/unowned block
 capture profile before lowering or runtime lifetime expansion. Downstream
 semantic, lowering, and runtime work must extend this emitted surface instead
 of reinterpreting capture-family truth from ad hoc lowering state or
-milestone-local notes.
+release-scope notes.
 
 ## Block/ARC Lowering And Helper Surface
 
@@ -881,7 +881,7 @@ milestone-local notes.
   - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/owned_object_capture_runtime_positive.objc3`
@@ -908,7 +908,7 @@ helper summaries, and private runtime hook symbols that together describe the
 current executable block/ARC lowering story, including escaping byref and owned
 capture lowering through the native runtime path. Cross-module preservation and
 runtime-ABI widening work must extend this emitted surface instead of inferring
-boundary truth from one-off probes, sidecar notes, or milestone-local scaffolds.
+boundary truth from one-off probes, sidecar notes, or release-scope scaffolds.
 
 ## Block/ARC Runtime ABI Surface
 
@@ -941,7 +941,7 @@ boundary truth from one-off probes, sidecar notes, or milestone-local scaffolds.
   - `objc3_runtime_store_weak_current_property_i32`
   - `objc3_runtime_copy_arc_debug_state_for_testing`
   - `objc3_runtime_copy_block_arc_runtime_abi_snapshot_for_testing`
-- authoritative proof path:
+- authoritative evidence path:
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
 
 This is the authoritative live runtime ABI boundary for `objc3c.runtime.blockarc.runtimeabisurface.v1`. It
@@ -977,7 +977,7 @@ hoc runtime inspection.
   - byref-layout symbolized-site counts
   - runtime-support-library link-wiring readiness
   - deterministic replay key
-- authoritative proof path:
+- authoritative evidence path:
   - fixtures:
     - `tests/tooling/fixtures/native/byref_cell_copy_dispose_runtime_positive.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -987,7 +987,7 @@ hoc runtime inspection.
 
 This is the authoritative cross-module block-ownership preservation boundary.
 It freezes the fact that emitted runtime-import surfaces and the emitted
-cross-module link plan, not milestone-local notes or ad hoc LLVM inspection,
+cross-module link plan, not release-scope notes or ad hoc LLVM inspection,
 carry the preserved invoke-thunk, byref-helper, copy/dispose, escape, and
 runtime-link facts for imported block-heavy modules.
 
@@ -1020,7 +1020,7 @@ runtime-link facts for imported block-heavy modules.
   - `Objc3PropertyDecl.executable_ivar_layout_slot_index`
   - `Objc3PropertyDecl.executable_ivar_layout_size_bytes`
   - `Objc3PropertyDecl.executable_ivar_layout_alignment_bytes`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1066,7 +1066,7 @@ non-goals.
   - `Objc3PropertyDecl.has_atomicity_conflict`
   - `Objc3PropertyDecl.property_attribute_profile`
   - `objc3_runtime_property_entry_snapshot.property_attribute_profile`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/property_atomic_ownership_negative.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1110,7 +1110,7 @@ non-goals.
     - `runtime-metadata-and-executable-graph-property-records-publish-synthesized-accessor-lowering-helper-selection-through-the-live-compiler-path`
   - helper selection:
     - `plain-accessors-use-current-property-read-write-helpers-strong-owned-setters-use-exchange-and-weak-accessors-use-weak-current-property-helpers`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
@@ -1161,7 +1161,7 @@ or ad hoc IR inspection.
     - `ivar-descriptor-bundles-carry-sema-approved-layout-symbol-slot-size-alignment-records`
   - accessor binding:
     - `effective-accessor-selectors-and-synthesized-binding-identities-pass-through-lowering-without-body-synthesis`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
@@ -1206,7 +1206,7 @@ body or layout truth outside the live lowering path.
     - `one-retained-i64-offset-global-per-emitted-ivar-binding`
   - layout tables:
     - `declaration-owner-layout-tables-order-ivars-by-slot-and-publish-instance-size`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_ivar_source_model_completion_positive.objc3`
@@ -1248,7 +1248,7 @@ runtime or in sidecars.
     - `synthesized-getter-setter-bodies-lower-directly-to-runtime-current-property-helper-calls-without-storage-globals`
   - property descriptor model:
     - `property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3`
     - `tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3`
@@ -1301,7 +1301,7 @@ and descriptor inventories rather than being inferred from source-only proof.
     - `compile-manifest-registration-descriptor-object-and-llvm-ir-co-publish-realization-lowering-and-reflection-artifacts`
   - reflection artifact handoff:
     - `property-metadata-and-ownership-artifacts-remain-coupled-to-lowered-dispatch-accessor-and-executable-realization-record-outputs`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
@@ -1321,7 +1321,7 @@ descriptor, object, LLVM IR, and provenance artifacts for lowered realization
 records and reflection metadata, and that those artifacts stay coupled to the
 same dispatch/accessor lowering path consumed by live executable probes.
 Downstream work must extend this emitted surface instead of inferring lowering
-truth from ad hoc IR inspection, source-only manifests, or milestone-local
+truth from ad hoc IR inspection, source-only manifests, or release-scope
 notes.
 
 ## Dispatch-Table And Reflection-Record Lowering Surface
@@ -1355,7 +1355,7 @@ notes.
     - `selector-pool-backed-dispatch-thunks-and-runtime-dispatch-sites-co-publish-stable-selector-table-roots-in-llvm-ir-and-manifest-artifacts`
   - reflection-record lowering:
     - `realization-records-and-runtime-metadata-section-aggregates-co-publish-class-protocol-category-property-and-ivar-record-roots-in-emitted-artifacts`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
@@ -1373,7 +1373,7 @@ roots, runtime dispatch-thunk lowering, executable realization records, and
 metadata aggregate roots through the same manifest, object, and LLVM IR
 artifacts consumed by live executable probes. Downstream work must extend this
 emitted surface instead of rediscovering selector-table or reflection-record
-truth from ad hoc IR inspection or milestone-local notes.
+truth from ad hoc IR inspection or release-scope notes.
 
 ## Reflection Query Surface
 
@@ -1392,7 +1392,7 @@ truth from ad hoc IR inspection or milestone-local notes.
   - `objc3_runtime_copy_property_registry_state_for_testing`
   - `objc3_runtime_copy_property_entry_for_testing`
   - `objc3_runtime_copy_protocol_conformance_query_for_testing`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1436,7 +1436,7 @@ from source-side manifests alone.
     - `metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup`
   - unresolved selector behavior:
     - `negative-cache-entry-preserved-and-deterministic-fallback-returned`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
@@ -1476,7 +1476,7 @@ payloads or stale planning notes.
     - `realized-class-entries-publish-stable-class-metaclass-superclass-and-super-metaclass-owner-identities`
   - protocol conformance:
     - `realized-class-entries-and-runtime-conformance-queries-publish-direct-and-attached-protocol-conformance`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1519,7 +1519,7 @@ milestone notes, or synthetic summaries.
     - `attached-category-implementations-override-base-class-instance-lookup-before-superclass-and-protocol-fallback`
   - attached protocol visibility:
     - `attached-categories-publish-owner-and-name-through-realized-class-entries-and-protocol-conformance-queries`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1567,7 +1567,7 @@ planning notes.
     - `missing-class-and-property-lookups-publish-found-zero-without-mutating-property-registry-or-realized-class-state`
   - runtime coherence diagnostics:
     - `reflected-property-selectors-owner-identities-slot-layout-and-ownership-profiles-must-match-live-dispatch-realized-class-and-attached-protocol-state`
-- authoritative proof paths:
+- authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
     - `tests/tooling/fixtures/native/property_metadata_reflection_positive.objc3`
@@ -1586,7 +1586,7 @@ without mutating runtime state, and that reflected selector/owner/layout/
 ownership metadata must remain coherent with live dispatch and attached-protocol
 results. Downstream work must extend this emitted surface instead of
 reconstructing coherence from source-only manifests, ad hoc probe payloads, or
-milestone-local notes.
+release-scope notes.
 
 ## Cross-Module Realized-Metadata Replay Preservation
 
@@ -1611,7 +1611,7 @@ milestone-local notes.
   - translation-unit identity keys
   - registration ordinals
   - replay/reset readiness and bootstrap replay symbols
-- authoritative proof path:
+- authoritative evidence path:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1619,7 +1619,7 @@ milestone-local notes.
     - `tests/tooling/runtime/import_module_execution_matrix_probe.cpp`
 
 This is the authoritative cross-module realized-metadata replay boundary. It
-freezes the fact that the emitted cross-module link plan, not milestone-local
+freezes the fact that the emitted cross-module link plan, not release-scope
 notes or ad hoc probe interpretation, carries the preserved descriptor-count,
 identity, registration-order, and replay-readiness facts for imported and local
 runtime images. Downstream work must consume that emitted artifact and its
@@ -1656,7 +1656,7 @@ text or sidecar-only summaries.
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
   - `objc3_runtime_copy_dispatch_state_for_testing`
-- authoritative proof path:
+- authoritative evidence path:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_packaging_provider.objc3`
     - `tests/tooling/fixtures/native/runtime_packaging_consumer.objc3`
@@ -1680,7 +1680,7 @@ the fact that the public runtime header stays at registration, selector lookup,
 dispatch, and reset, while object-model lookup/reflection proof remains on the
 private testing snapshot boundary used by the live runtime probes. Downstream
 work must consume this emitted surface instead of widening the public ABI or
-reconstructing query truth from milestone-local probe assumptions.
+reconstructing query truth from release-scope probe assumptions.
 
 ## Realization Lookup And Reflection Implementation
 
@@ -1705,7 +1705,7 @@ reconstructing query truth from milestone-local probe assumptions.
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
   - `objc3_runtime_copy_dispatch_state_for_testing`
-- authoritative proof path:
+- authoritative evidence path:
   - fixture:
     - `tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3`
   - probes:
@@ -1782,7 +1782,7 @@ reports to publish the runtime claim boundary, runtime state publication
 surface, and acceptance suite surface contracts, and then writes a shared
 summary that points back to those child executable reports.
 
-## Integrated Proof Packet
+## Integrated Evidence Bundle
 
 - runner:
   - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
@@ -1791,7 +1791,7 @@ summary that points back to those child executable reports.
 - packet path:
   - `tmp/reports/runtime/architecture-proof/summary.json`
 
-The integrated runtime architecture proof packet is a generic integration
+The integrated runtime architecture evidence bundle is a generic integration
 artifact over the shared harness, the public workflow report, and the direct
 runtime acceptance report. It only passes when all three agree on the runtime
 claim boundary, runtime state publication surface, acceptance suite surface,
@@ -1808,10 +1808,10 @@ runtime installation ABI surface, and runtime loader lifecycle surface.
 
 The integrated runtime architecture validation path runs the shared harness over
 `public-test-full`, then requires the resulting full public-workflow report to
-stay aligned with the runtime architecture proof packet and the direct runtime
+stay aligned with the runtime architecture evidence bundle and the direct runtime
 acceptance report. It fails closed if the full workflow drops the smoke,
 runtime-acceptance, or replay child steps, or if any published runtime
-architecture surface drifts between the full workflow and the proof packet.
+architecture surface drifts between the full workflow and the evidence bundle.
 
 ## Claim Boundary
 
@@ -1824,13 +1824,13 @@ architecture surface drifts between the full workflow and the proof packet.
 - claim-only until later closure work lands:
   - any surface described only by comments, sidecars, or private placeholders
   - synthetic `.ll` or hand-authored artifacts with no matching compile output
-  - proof that depends on compatibility shims without a coupled emitted object
+  - proof that depends on non-authoritative test surfaces without a coupled emitted object
   - future runtime capability that would require widening
     `native/objc3c/src/runtime/objc3_runtime.h`
 
 ## Explicit Non-Goals
 
-- no milestone-specific compile wrappers, proof packets, or closeout sidecars
+- no milestone-specific compile wrappers, evidence bundles, or closeout sidecars
 - no parallel dispatch or installation ABI outside the current runtime header
 - no authoritative proof from replay text alone without emitted object and probe
 - no widening of public runtime claims beyond what the live acceptance and probe

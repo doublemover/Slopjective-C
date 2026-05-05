@@ -48,7 +48,7 @@ def main() -> int:
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
         "runbook_mentions_shared_acceptance_truth": "the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`" in runbook_text,
-        "runbook_forbids_parallel_milestone_local_manifest_truth": "milestone-local checks must consume those emitted surfaces instead of creating parallel manifest truth" in runbook_text,
+        "runbook_forbids_parallel_milestone_local_manifest_truth": "release-scope checks must consume those emitted surfaces instead of creating parallel manifest truth" in runbook_text,
         "acceptance_builds_metaprogramming_surfaces": all(
             builder in acceptance_text
             for builder in (

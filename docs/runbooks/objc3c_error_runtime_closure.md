@@ -40,7 +40,7 @@ Current closure constraints:
 Error propagation, unwind ordering, and cleanup semantic model:
 
 - throw/catch and cleanup semantics are only supported as runtime-backed behavior when they align with the emitted lowering and live bridge-state probes
-- unwind ordering, cleanup execution, and catch filtering are one coupled runtime story and must not drift into separate proof-only contracts
+- unwind ordering, cleanup execution, and catch filtering are one coupled runtime story and must not drift into separate evidence-only contracts
 - milestone claims stay narrower than the shared acceptance, runtime-probe, and packaged-e2e evidence and do not widen the public ABI
 
 Bridged error and cross-module compatibility policy:
@@ -59,7 +59,7 @@ Lowering and runtime artifact contract:
 
 - the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
 - the canonical error surfaces for this milestone are `runtime_error_execution_cleanup_source_surface`, `runtime_catch_filter_finalization_source_surface`, `runtime_error_propagation_cleanup_semantics_surface`, `runtime_bridging_filter_unwind_diagnostics_surface`, `runtime_error_lowering_unwind_bridge_helper_surface`, `runtime_error_runtime_abi_cleanup_surface`, and `runtime_error_propagation_catch_cleanup_runtime_implementation_surface`
-- milestone-local checks must consume those emitted surfaces instead of recreating parallel manifest truth
+- release-scope checks must consume those emitted surfaces instead of recreating parallel manifest truth
 
 Executable proof and ABI contract:
 
@@ -71,7 +71,7 @@ Explicit non-goals:
 
 - public runtime ABI widening for thrown-error storage, bridge helpers, or catch matching
 - claims that ARC, async, or broader interop interaction is complete beyond the currently published error-runtime evidence
-- milestone-local error runtime scaffolding parallel to the shared runtime acceptance and runnable package path
+- release-scope error runtime scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims that cross-module propagation is complete beyond the current manifest/runtime-registration/replay proof
 
 Follow-on tracks:
@@ -100,4 +100,3 @@ Authoritative live surfaces:
   - `docs/objc3c-native.md`
   - `tests/tooling/runtime/README.md`
   - `docs/runbooks/objc3c_public_command_surface.md`
-

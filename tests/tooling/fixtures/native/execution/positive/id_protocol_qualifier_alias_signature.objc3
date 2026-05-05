@@ -1,6 +1,9 @@
 module IdProtocolQualifierAliasSignature;
 
-fn choose(flag: bool, when_true: id<NSObject>, when_false: id<NSObject>) -> id {
+@protocol ClassProtocolFixture
+@end
+
+fn choose(flag: bool, when_true: id<ClassProtocolFixture>, when_false: id<ClassProtocolFixture>) -> id {
   if (flag) {
     return when_true;
   }

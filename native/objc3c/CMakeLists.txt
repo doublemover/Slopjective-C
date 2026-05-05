@@ -1,30 +1,12 @@
 cmake_minimum_required(VERSION 3.20)
 project(objc3c_native LANGUAGES CXX)
 
-# M276-A001 incremental-build-parity anchor:
-# This target graph is the reserved future candidate backend for the incremental
-# native build surface, but it is not yet the authoritative default path.
-# Later M276 issues must prove parity with scripts/build_objc3c_native.ps1 for:
-# - source coverage
-# - include/define/link behavior
-# - final publication to artifacts/bin and artifacts/lib
-# - truthful separation of binary builds from packet generation
-#
-# M276-A002 incremental-build-parity anchor:
-# - compile database emission at `tmp/build-objc3c-native/compile_commands.json`
-# - wrapper-owned `LLVM_ROOT` / `libclang` discovery before the default command flips
-#
-# M276-C001 native-binary-backend anchor:
-# - this target graph now acts as the persistent native binary backend under
-#   `tmp/build-objc3c-native`
-# - canonical executables publish to `artifacts/bin`
-# - canonical runtime archives publish to `artifacts/lib`
-#
-# M276-C001 persistent-cmake-ninja-incremental-backend anchor:
-# - this file now carries the live persistent native build graph used by
-#   scripts/build_objc3c_native.ps1
-# - canonical final executable/archive outputs still publish under
-#   `artifacts/bin` and `artifacts/lib`
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+include(Objc3CompilerOptions)
+include(Objc3Module)
+include(Objc3Platform)
+include(Objc3Sanitizers)
+include(Objc3SourceSizeGate)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -42,12 +24,21 @@ option(OBJC3C_ENABLE_WARNING_PARITY
   "Apply the warning-level parity flags used by scripts/build_objc3c_native.ps1."
   ON
 )
+option(OBJC3C_ENFORCE_SOURCE_SIZE_GATE
+  "Fail CMake configure when native source files exceed the hard-cutover line budget."
+  ON
+)
 
 set(OBJC3C_LLVM_ROOT "" CACHE PATH "Authoritative LLVM root propagated from the PowerShell wrapper.")
 set(OBJC3C_LLVM_INCLUDE_DIR "" CACHE PATH "LLVM include directory resolved by the PowerShell wrapper.")
 set(OBJC3C_LIBCLANG_LIBRARY "" CACHE FILEPATH "Path to libclang/clang import library resolved by the PowerShell wrapper.")
 set(OBJC3C_RUNTIME_OUTPUT_DIR "" CACHE PATH "Canonical final runtime output directory for objc3c-native executables.")
 set(OBJC3C_LIBRARY_OUTPUT_DIR "" CACHE PATH "Canonical final archive output directory for objc3_runtime.lib.")
+set(OBJC3C_MAX_NATIVE_SOURCE_LINES "1500" CACHE STRING "Maximum line count for native source files.")
+
+if (OBJC3C_ENFORCE_SOURCE_SIZE_GATE)
+  objc3c_enforce_source_size("${CMAKE_CURRENT_SOURCE_DIR}/src" ${OBJC3C_MAX_NATIVE_SOURCE_LINES})
+endif()
 
 if (NOT OBJC3C_LLVM_INCLUDE_DIR AND OBJC3C_LLVM_ROOT)
   set(OBJC3C_LLVM_INCLUDE_DIR "${OBJC3C_LLVM_ROOT}/include")
@@ -63,11 +54,17 @@ if (OBJC3C_LLVM_INCLUDE_DIR)
   )
 endif()
 if (OBJC3C_ENABLE_WARNING_PARITY)
-  target_compile_options(objc3c_build_defaults INTERFACE
-    -Wall
-    -Wextra
-    -pedantic
-  )
+  if (MSVC)
+    target_compile_options(objc3c_build_defaults INTERFACE
+      /W4
+    )
+  else()
+    target_compile_options(objc3c_build_defaults INTERFACE
+      -Wall
+      -Wextra
+      -pedantic
+    )
+  endif()
 endif()
 
 add_library(objc3c_llvm_direct_config INTERFACE)
@@ -121,20 +118,9 @@ set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
 # target/header/source-root surface before M251-D002 lands the actual library
 # skeleton and M251-D003 wires the driver/link path to consume it.
 
-# M132-A002 target decomposition contract.
-# Current state: monolithic `src/main.cpp`.
-# Planned steady-state split:
-#   objc3c_lex      -> lex/*
-#   objc3c_parse    -> parse/* (depends on objc3c_lex)
-#   objc3c_sema     -> sema/* (depends on objc3c_parse)
-#   objc3c_lower    -> lower/* (depends on objc3c_sema)
-#   objc3c_ir       -> ir/* (depends on objc3c_lower)
-#   objc3c_pipeline -> pipeline/* (depends on stage libs)
-#   objc3c_frontend -> libobjc3c_frontend/* (depends on objc3c_pipeline)
-#   objc3c_driver   -> driver/* + io/* + frontend API
-#
 # Dependency-direction authority is defined in `src/ARCHITECTURE.md` and checked
-# by `scripts/check_objc3c_dependency_boundaries.py`.
+# by `scripts/check_objc3c_dependency_boundaries.py`. The hard-cutover graph uses
+# concrete stage targets below while module extraction continues.
 
 add_executable(objc3c-native
   src/main.cpp
@@ -274,6 +260,12 @@ target_link_libraries(objc3c_io PUBLIC
   objc3c_runtime_abi
 )
 
+add_library(objc3c_diagnostics_modes STATIC
+  src/diagnostics/modes/objc3_removed_mode_options.cpp
+)
+objc3c_apply_build_defaults(objc3c_diagnostics_modes)
+objc3c_apply_llvm_direct_config(objc3c_diagnostics_modes)
+
 add_library(objc3c_frontend STATIC
   src/libobjc3c_frontend/c_api.cpp
   src/libobjc3c_frontend/frontend_anchor.cpp
@@ -301,6 +293,7 @@ objc3c_apply_build_defaults(objc3c_driver)
 objc3c_apply_llvm_direct_config(objc3c_driver)
 target_link_libraries(objc3c_driver PUBLIC
   objc3c_diag
+  objc3c_diagnostics_modes
   objc3c_frontend
   objc3c_io
 )
@@ -322,5 +315,6 @@ objc3c_apply_llvm_direct_config(objc3c-frontend-c-api-runner)
 objc3c_apply_runtime_output(objc3c-frontend-c-api-runner)
 target_link_libraries(objc3c-frontend-c-api-runner PRIVATE
   objc3c_driver
+  objc3c_diagnostics_modes
   objc3c_json
 )

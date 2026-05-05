@@ -15,7 +15,7 @@ Use it when changing:
 
 Downstream stress-validation work must stay on the existing compiler, conformance,
 execution-smoke, package, and public workflow surfaces listed here. Do not add
-a sidecar fuzz harness app, hidden fixture root, or milestone-local reducer
+a sidecar fuzz harness app, hidden fixture root, or release-scope reducer
 wrapper outside the checked-in repo paths named below.
 
 ## Current Truthful Architecture
@@ -137,7 +137,7 @@ Downstream work must preserve these rules:
   - `python scripts/run_objc3c_stress_crash_triage.py`
 - validate the checked-in stress source contract:
   - `python scripts/check_stress_source_surface.py`
-- run the current executable smoke and replay proof paths:
+- run the current executable smoke and replay evidence paths:
   - `python scripts/objc3c_public_workflow_runner.py test-execution-smoke`
   - `python scripts/objc3c_public_workflow_runner.py test-execution-replay`
 - run the current conformance-corpus integration paths:
@@ -173,6 +173,6 @@ Downstream work must preserve these rules:
 
 - no second fuzz corpus outside checked-in fixture and conformance roots
 - no hidden random-input generator without checked-in seed or reducer rules
-- no milestone-local wrapper that bypasses the public compile or runtime path
+- no release-scope wrapper that bypasses the public compile or runtime path
 - no publishable safety or coverage claim backed only by prose
 - no GUI or separate service for crash triage, replay, or reducer execution

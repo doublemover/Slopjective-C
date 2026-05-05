@@ -19,7 +19,7 @@ inline constexpr const char *kRuntimeDispatchDefaultSymbol =
     "objc3_runtime_dispatch_i32";
 inline constexpr std::uint8_t kFrontendDefaultLanguageVersion = 3u;
 
-enum class CompatibilityMode : std::uint8_t {
+enum class LanguageProfile : std::uint8_t {
   Canonical = 0,
   Legacy = 1,
 };
@@ -101,8 +101,8 @@ struct FrontendPipelineInput {
   std::string output_dir = "tmp/artifacts/compilation/objc3c-native";
   std::string clang_path = "clang";
   std::uint8_t language_version = kFrontendDefaultLanguageVersion;
-  CompatibilityMode compatibility_mode = CompatibilityMode::Canonical;
-  bool migration_assist = false;
+  LanguageProfile language_profile = LanguageProfile::Canonical;
+  bool legacy_literal_diagnostics = false;
   std::size_t max_message_send_args = kRuntimeDispatchDefaultArgs;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
 };

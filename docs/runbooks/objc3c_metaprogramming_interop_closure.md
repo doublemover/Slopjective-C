@@ -64,7 +64,7 @@ Current closure constraints:
 - the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
 - the canonical metaprogramming surfaces for this milestone are the published `runtime_metaprogramming_*` and `runtime_cross_module_metaprogramming_artifact_preservation_surface` packets
 - the canonical interop surfaces for this milestone are the published `runtime_*interop*` and package-loader bridge surfaces
-- milestone-local checks must consume those emitted surfaces instead of creating parallel manifest truth
+- release-scope checks must consume those emitted surfaces instead of creating parallel manifest truth
 
 ## Executable Proof and ABI Surface
 
@@ -76,7 +76,7 @@ Explicit non-goals:
 
 - public runtime ABI widening for macro host execution, property-behavior runtime helpers, package loader helpers, or foreign bridge helpers
 - claims that full ARC/error/async interoperability is complete beyond the currently published metaprogramming and interop runtime evidence
-- milestone-local scaffolding parallel to the shared runtime acceptance, conformance, and packaged e2e paths
+- release-scope scaffolding parallel to the shared runtime acceptance, conformance, and packaged e2e paths
 - claims that unsupported macro execution topologies, unsupported property-behavior combinations, or unsupported foreign loader topologies are live
 
 Follow-on tracks:

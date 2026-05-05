@@ -69,11 +69,11 @@ Treat these as authoritative only when they come from a real compiler invocation
 Do not treat these as authoritative proof:
 
 - hand-written `.ll` files
-- compatibility shims by themselves
+- non-authoritative test surfaces by themselves
 - sidecars that are not tied to a reproducible compile and probe path
 
 ## Current Corrective Gaps
 
-- unresolved sends still have one deterministic arithmetic fallback path in `native/objc3c/src/runtime/objc3_runtime.cpp`
+- unresolved sends still have one deterministic arithmetic strict error path in `native/objc3c/src/runtime/objc3_runtime.cpp`
 - synthesized accessor IR still carries transitional lowering residue in `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - native proof remains invalid unless the emitted object, manifest, and linked runtime probe all come from the same reproducible compile path

@@ -152,7 +152,7 @@ def main() -> int:
 
     result = run_capture([sys.executable, str(PROOF_PACKET_SCRIPT)])
     if result.returncode != 0:
-        raise RuntimeError("runtime architecture proof packet validation failed")
+        raise RuntimeError("runtime architecture evidence bundle validation failed")
 
     harness_summary = load_json(FULL_HARNESS_SUMMARY_PATH)
     expect(
@@ -188,14 +188,14 @@ def main() -> int:
     proof_packet = load_json(PROOF_PACKET_PATH)
     expect(
         proof_packet.get("contract_id") == PROOF_PACKET_CONTRACT_ID,
-        "unexpected runtime architecture proof packet contract id",
+        "unexpected runtime architecture evidence bundle contract id",
     )
-    expect(proof_packet.get("status") == "PASS", "runtime architecture proof packet did not pass")
+    expect(proof_packet.get("status") == "PASS", "runtime architecture evidence bundle did not pass")
     proof_packet_surface = proof_packet.get("proof_packet_surface")
-    expect(isinstance(proof_packet_surface, dict), "proof packet did not publish proof_packet_surface")
+    expect(isinstance(proof_packet_surface, dict), "evidence bundle did not publish proof_packet_surface")
     expect(
         proof_packet_surface.get("requires_compile_coupled_child_reports") is True,
-        "proof packet no longer requires compile-coupled child reports",
+        "evidence bundle no longer requires compile-coupled child reports",
     )
 
     suite_claim_boundary = suite_summary.get("claim_boundary")
@@ -206,18 +206,18 @@ def main() -> int:
     expect(isinstance(suite_claim_boundary, dict), "shared harness suite summary did not publish claim_boundary")
     expect(isinstance(public_claim_boundary, dict), "public workflow report did not publish claim_boundary")
     expect(isinstance(runtime_claim_boundary, dict), "runtime acceptance report did not publish claim_boundary")
-    expect(isinstance(proof_claim_boundary, dict), "proof packet did not publish composite_claim_boundary")
+    expect(isinstance(proof_claim_boundary, dict), "evidence bundle did not publish composite_claim_boundary")
     expect(
         isinstance(proof_runtime_claim_boundary, dict),
-        "proof packet did not publish runtime_acceptance_claim_boundary",
+        "evidence bundle did not publish runtime_acceptance_claim_boundary",
     )
     expect(
         suite_claim_boundary == public_claim_boundary == proof_claim_boundary,
-        "public full workflow claim boundary drifted from the integrated architecture proof packet",
+        "public full workflow claim boundary drifted from the integrated architecture evidence bundle",
     )
     expect(
         runtime_claim_boundary == proof_runtime_claim_boundary,
-        "runtime acceptance claim boundary drifted from the integrated architecture proof packet",
+        "runtime acceptance claim boundary drifted from the integrated architecture evidence bundle",
     )
     expect(
         public_claim_boundary.get("contract_id") == CLAIM_BOUNDARY_CONTRACT_ID,
@@ -242,7 +242,7 @@ def main() -> int:
         expect(isinstance(suite_surface, dict), f"shared harness suite summary did not publish {surface_key}")
         expect(isinstance(public_surface, dict), f"public workflow report did not publish {surface_key}")
         expect(isinstance(runtime_surface, dict), f"runtime acceptance report did not publish {surface_key}")
-        expect(isinstance(proof_surface, dict), f"proof packet did not publish {surface_key}")
+        expect(isinstance(proof_surface, dict), f"evidence bundle did not publish {surface_key}")
         expect(
             suite_surface == public_surface == runtime_surface == proof_surface,
             f"runtime architecture surface drift detected for {surface_key}",
@@ -256,7 +256,7 @@ def main() -> int:
     proof_child_report_paths = proof_packet_surface.get("child_step_report_paths", [])
     expect(
         isinstance(proof_child_report_paths, list),
-        "proof packet did not publish child_step_report_paths",
+        "evidence bundle did not publish child_step_report_paths",
     )
 
     payload = {

@@ -11,11 +11,6 @@ enum class Objc3IrObjectBackend {
   kLLVMDirect,
 };
 
-enum class Objc3CompatMode {
-  kCanonical,
-  kLegacy,
-};
-
 enum class Objc3ArcMode {
   kDisabled,
   kEnabled,
@@ -46,14 +41,12 @@ struct Objc3CliOptions {
   bool llc_path_explicit = false;
   Objc3IrObjectBackend ir_object_backend = Objc3IrObjectBackend::kLLVMDirect;
   std::uint32_t language_version = 3;
-  Objc3CompatMode compat_mode = Objc3CompatMode::kCanonical;
   Objc3ArcMode arc_mode = Objc3ArcMode::kDisabled;
   Objc3ConformanceProfile conformance_profile =
       Objc3ConformanceProfile::kCore;
   bool emit_objc3_conformance = false;
   std::string emit_objc3_conformance_format = "json";
   std::filesystem::path validate_conformance_report_path;
-  bool migration_assist = false;
   std::uint64_t bootstrap_registration_order_ordinal = 1;
   std::filesystem::path metaprogramming_cache_root;
   std::vector<std::filesystem::path> imported_runtime_surface_paths;

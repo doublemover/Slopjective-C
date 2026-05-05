@@ -1,0 +1,1400 @@
+      param.borrowed_pointer_qualified = true;
+    }
+
+    if (Match(TokenKind::KwI32)) {
+      param.type = ValueType::I32;
+    } else if (Match(TokenKind::KwBool)) {
+      param.type = ValueType::Bool;
+    } else if (Match(TokenKind::KwBOOL)) {
+      param.type = ValueType::Bool;
+    } else if (Match(TokenKind::KwNSInteger) || Match(TokenKind::KwNSUInteger)) {
+      param.type = ValueType::I32;
+    } else if (Match(TokenKind::KwId)) {
+      param.type = ValueType::ObjCId;
+      param.id_spelling = true;
+    } else if (Match(TokenKind::KwClass)) {
+      param.type = ValueType::ObjCClass;
+      param.class_spelling = true;
+    } else if (Match(TokenKind::KwSEL)) {
+      param.type = ValueType::ObjCSel;
+      param.sel_spelling = true;
+    } else if (Match(TokenKind::KwProtocol)) {
+      param.type = ValueType::ObjCProtocol;
+    } else if (Match(TokenKind::KwInstancetype)) {
+      param.type = ValueType::ObjCInstancetype;
+      param.instancetype_spelling = true;
+    } else if (At(TokenKind::Identifier)) {
+      const Token type_token = Advance();
+      ValueType vector_type = ValueType::Unknown;
+      std::string vector_base_spelling;
+      unsigned vector_lane_count = 1;
+      if (TryParseVectorTypeSpelling(type_token, vector_type, vector_base_spelling, vector_lane_count)) {
+        param.type = vector_type;
+        param.vector_spelling = true;
+        param.vector_base_spelling = vector_base_spelling;
+        param.vector_lane_count = vector_lane_count;
+        ParseParameterTypeSuffix(param);
+        if (!param.generic_suffix_terminated) {
+          return false;
+        }
+        param.cross_module_conformance_profile =
+            BuildCrossModuleConformanceProfile(
+                param.object_pointer_type_spelling,
+                param.has_generic_suffix,
+                param.generic_suffix_terminated,
+                param.has_pointer_declarator,
+                param.generic_suffix_text,
+                param.object_pointer_type_name);
+        param.cross_module_conformance_profile_is_normalized =
+            IsCrossModuleConformanceProfileNormalized(
+                param.object_pointer_type_spelling,
+                param.has_generic_suffix,
+                param.generic_suffix_terminated,
+                param.has_pointer_declarator,
+                param.generic_suffix_text,
+                param.object_pointer_type_name);
+        return true;
+      }
+      param.type = ValueType::ObjCObjectPtr;
+      param.object_pointer_type_spelling = true;
+      param.object_pointer_type_name = type_token.text;
+    } else {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P108",
+                                      "expected parameter type 'i32', 'bool', 'BOOL', 'NSInteger', 'NSUInteger', or "
+                                      "'id', 'Class', 'SEL', 'Protocol', 'instancetype', object pointer spelling, "
+                                      "ownership qualifiers '__strong/__weak/__autoreleasing/__unsafe_unretained', "
+                                      "or vector forms "
+                                      "'i32x2/i32x4/i32x8/i32x16' and 'boolx2/boolx4/boolx8/boolx16'"));
+      return false;
+    }
+
+    param.typecheck_family_symbol = BuildObjcTypecheckParamFamilySymbol(param);
+
+    ParseParameterTypeSuffix(param);
+    if (!param.generic_suffix_terminated) {
+      return false;
+    }
+
+    param.ownership_qualifier_symbol = BuildOwnershipQualifierSymbol(param.ownership_qualifier_spelling, false);
+    const Objc3OwnershipOperationProfile param_ownership_profile =
+        BuildParamOwnershipOperationProfile(param.ownership_qualifier_spelling);
+    param.ownership_insert_retain = param_ownership_profile.insert_retain;
+    param.ownership_insert_release = param_ownership_profile.insert_release;
+    param.ownership_insert_autorelease = param_ownership_profile.insert_autorelease;
+    param.ownership_operation_profile = param_ownership_profile.profile;
+    const Objc3WeakUnownedLifetimeProfile param_lifetime_profile =
+        BuildWeakUnownedLifetimeProfile(param.ownership_qualifier_spelling, false);
+    param.ownership_is_weak_reference = param_lifetime_profile.is_weak_reference;
+    param.ownership_is_unowned_reference = param_lifetime_profile.is_unowned_reference;
+    param.ownership_is_unowned_safe_reference = param_lifetime_profile.is_unowned_safe_reference;
+    param.ownership_lifetime_profile = param_lifetime_profile.lifetime_profile;
+    param.ownership_runtime_hook_profile = param_lifetime_profile.runtime_hook_profile;
+    const Objc3ArcDiagnosticFixitProfile param_arc_diagnostic_profile =
+        BuildArcDiagnosticFixitProfile(param.ownership_qualifier_spelling, false, false, false);
+    param.ownership_arc_diagnostic_candidate = param_arc_diagnostic_profile.diagnostic_candidate;
+    param.ownership_arc_fixit_available = param_arc_diagnostic_profile.fixit_available;
+    param.ownership_arc_diagnostic_profile = param_arc_diagnostic_profile.diagnostic_profile;
+    param.ownership_arc_fixit_hint = param_arc_diagnostic_profile.fixit_hint;
+    param.lightweight_generic_constraint_profile =
+        BuildLightweightGenericConstraintProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text);
+    param.lightweight_generic_constraint_profile_is_normalized =
+        IsLightweightGenericConstraintProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated);
+    param.nullability_flow_profile =
+        BuildNullabilityFlowProfile(
+            param.object_pointer_type_spelling,
+            param.nullability_suffix_tokens.size(),
+            param.has_pointer_declarator,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated);
+    param.nullability_flow_profile_is_normalized =
+        IsNullabilityFlowProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.nullability_suffix_tokens.size());
+    param.protocol_qualified_object_type_profile =
+        BuildProtocolQualifiedObjectTypeProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text);
+    param.protocol_qualified_object_type_profile_is_normalized =
+        IsProtocolQualifiedObjectTypeProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated);
+    param.variance_bridge_cast_profile =
+        BuildVarianceBridgeCastProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.ownership_qualifier_spelling);
+    param.variance_bridge_cast_profile_is_normalized =
+        IsVarianceBridgeCastProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.ownership_qualifier_spelling);
+    param.generic_metadata_abi_profile =
+        BuildGenericMetadataAbiProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.ownership_qualifier_spelling);
+    param.generic_metadata_abi_profile_is_normalized =
+        IsGenericMetadataAbiProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text);
+    param.module_import_graph_profile =
+        BuildModuleImportGraphProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.module_import_graph_profile_is_normalized =
+        IsModuleImportGraphProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text);
+    param.namespace_collision_shadowing_profile =
+        BuildNamespaceCollisionShadowingProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.namespace_collision_shadowing_profile_is_normalized =
+        IsNamespaceCollisionShadowingProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.public_private_api_partition_profile =
+        BuildPublicPrivateApiPartitionProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.public_private_api_partition_profile_is_normalized =
+        IsPublicPrivateApiPartitionProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.incremental_module_cache_invalidation_profile =
+        BuildIncrementalModuleCacheInvalidationProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.incremental_module_cache_invalidation_profile_is_normalized =
+        IsIncrementalModuleCacheInvalidationProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.cross_module_conformance_profile =
+        BuildCrossModuleConformanceProfile(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.cross_module_conformance_profile_is_normalized =
+        IsCrossModuleConformanceProfileNormalized(
+            param.object_pointer_type_spelling,
+            param.has_generic_suffix,
+            param.generic_suffix_terminated,
+            param.has_pointer_declarator,
+            param.generic_suffix_text,
+            param.object_pointer_type_name);
+    param.borrowed_pointer_profile = std::string("borrowed-pointer:qualified=") +
+                                     (param.borrowed_pointer_qualified ? "true" : "false") +
+                                     ";pointer=" + (param.has_pointer_declarator ? "true" : "false");
+
+    return true;
+  }
+
+  void ParseParameterTypeSuffix(FuncParam &param) {
+    bool parsed_generic_suffix = false;
+    while (true) {
+      if (At(TokenKind::Less) && !parsed_generic_suffix) {
+        Match(TokenKind::Less);
+        const Token &open = Previous();
+        param.has_generic_suffix = true;
+        param.generic_suffix_terminated = false;
+        param.generic_line = open.line;
+        param.generic_column = open.column;
+        param.generic_suffix_text = "<";
+        int depth = 1;
+        while (depth > 0 && !At(TokenKind::Eof)) {
+          if (Match(TokenKind::Less)) {
+            param.generic_suffix_text += "<";
+            ++depth;
+            continue;
+          }
+          if (Match(TokenKind::Greater)) {
+            param.generic_suffix_text += ">";
+            --depth;
+            if (depth == 0) {
+              param.generic_suffix_terminated = true;
+            }
+            continue;
+          }
+          if (Match(TokenKind::GreaterGreater)) {
+            if (depth >= 2) {
+              param.generic_suffix_text += ">>";
+              depth -= 2;
+              if (depth == 0) {
+                param.generic_suffix_terminated = true;
+              }
+              continue;
+            }
+            param.generic_suffix_text += ">>";
+            depth = -1;
+            break;
+          }
+          param.generic_suffix_text += Advance().text;
+        }
+        if (!param.generic_suffix_terminated) {
+          diagnostics_.push_back(MakeDiag(open.line, open.column, "O3P108",
+                                          "unterminated generic parameter type suffix"));
+          return;
+        }
+        parsed_generic_suffix = true;
+        continue;
+      }
+
+      if (Match(TokenKind::Star)) {
+        param.has_pointer_declarator = true;
+        param.pointer_declarator_depth += 1;
+        param.pointer_declarator_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::PointerDeclarator, Previous()));
+        continue;
+      }
+
+      if (At(TokenKind::Question) || At(TokenKind::Bang)) {
+        param.nullability_suffix_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::NullabilitySuffix, Advance()));
+        continue;
+      }
+
+      if (At(TokenKind::Identifier) && IsOwnershipQualifierSpelling(Peek().text)) {
+        const Token qualifier = Advance();
+        param.has_ownership_qualifier = true;
+        param.ownership_qualifier_spelling = qualifier.text;
+        param.ownership_qualifier_tokens.push_back(
+            MakeSemaTokenMetadata(Objc3SemaTokenKind::OwnershipQualifier, qualifier));
+        continue;
+      }
+
+      break;
+    }
+  }
+
+  std::vector<std::unique_ptr<Stmt>> ParseBlock() {
+    std::vector<std::unique_ptr<Stmt>> body;
+    if (!Match(TokenKind::LBrace)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "missing '{' to start block"));
+      block_failed_ = true;
+      return {};
+    }
+
+    while (!At(TokenKind::RBrace) && !At(TokenKind::Eof)) {
+      auto stmt = ParseStatement();
+      if (stmt != nullptr) {
+        body.push_back(std::move(stmt));
+      } else {
+        SynchronizeStatement();
+      }
+    }
+
+    if (!Match(TokenKind::RBrace)) {
+      const Token &token = Peek();
+      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '}' to end block"));
+      block_failed_ = true;
+      return {};
+    }
+
+    return body;
+  }
+
+  std::vector<std::unique_ptr<Stmt>> ParseControlBody() {
+    if (At(TokenKind::LBrace)) {
+      return ParseBlock();
+    }
+    std::vector<std::unique_ptr<Stmt>> body;
+    auto stmt = ParseStatement();
+    if (stmt == nullptr) {
+      block_failed_ = true;
+      return {};
+    }
+    body.push_back(std::move(stmt));
+    return body;
+  }
+
+  static const char *TryOperatorKindSpelling(Expr::TryOperatorKind kind) {
+    switch (kind) {
+    case Expr::TryOperatorKind::Propagate:
+      return "try";
+    case Expr::TryOperatorKind::Optional:
+      return "try?";
+    case Expr::TryOperatorKind::Forced:
+      return "try!";
+    case Expr::TryOperatorKind::None:
+    default:
+      return "none";
+    }
+  }
+
+  std::string BuildTryExpressionProfile(const Expr &expr) {
+    std::ostringstream out;
+    out << "try-expression:kind="
+        << TryOperatorKindSpelling(expr.try_operator_kind)
+        << ";requires_throwing_context="
+        << (expr.try_expression_requires_throwing_context ? "true" : "false")
+        << ";normalized=" << (expr.try_expression_is_normalized ? "true" : "false");
+    return out.str();
+  }
+
+  std::string BuildThrowStatementProfile(const Expr &expr) {
+    std::ostringstream out;
+    out << "throw-statement:normalized="
+        << (expr.throw_statement_is_normalized ? "true" : "false");
+    return out.str();
+  }
+
+  std::string BuildDoCatchProfile(const BlockStmt &block) {
+    std::ostringstream out;
+    out << "do-catch:clauses=" << block.catch_clauses.size()
+        << ";catch_all_sites=";
+    std::size_t catch_all_sites = 0;
+    for (const auto &clause : block.catch_clauses) {
+      if (clause.catch_all) {
+        ++catch_all_sites;
+      }
+    }
+    out << catch_all_sites
+        << ";normalized=" << (block.do_catch_is_normalized ? "true" : "false");
+    return out.str();
+  }
+
+  bool ParseCatchClause(BlockStmt::CatchClause &clause) {
+    const Token catch_token = Previous();
+    clause.line = catch_token.line;
+    clause.column = catch_token.column;
+    if (Match(TokenKind::LParen)) {
+      std::vector<std::string> pattern_tokens;
+      while (!At(TokenKind::RParen) && !At(TokenKind::Eof)) {
+        pattern_tokens.push_back(Advance().text);
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109",
+                                        "missing ')' after catch pattern"));
+        return false;
+      }
+      if (pattern_tokens.empty()) {
+        diagnostics_.push_back(MakeDiag(catch_token.line, catch_token.column,
+                                        "O3P103",
+                                        "empty catch pattern is not allowed"));
+        return false;
+      }
+      clause.catch_all = false;
+      clause.has_binding = true;
+      clause.binding_name = pattern_tokens.back();
+      if (pattern_tokens.size() > 1u) {
+        std::ostringstream type_out;
+        for (std::size_t index = 0; index + 1u < pattern_tokens.size(); ++index) {
+          if (index != 0u) {
+            type_out << ' ';
+          }
+          type_out << pattern_tokens[index];
+        }
+        clause.binding_type_spelling = type_out.str();
+      }
+    }
+    clause.body = ParseControlBody();
+    if (block_failed_) {
+      block_failed_ = false;
+      return false;
+    }
+    return true;
+  }
+
+  void SynchronizeTopLevel() {
+    while (!At(TokenKind::Eof)) {
+      if (Match(TokenKind::Semicolon)) {
+        return;
+      }
+      if (At(TokenKind::KwModule) || At(TokenKind::KwLet) || At(TokenKind::KwFn) || At(TokenKind::KwPure) ||
+          At(TokenKind::KwExtern) || At(TokenKind::KwAsync) || At(TokenKind::KwAtInterface) || At(TokenKind::KwAtImplementation) ||
+          At(TokenKind::KwAtProtocol) || At(TokenKind::KwAtProperty)) {
+        return;
+      }
+      Advance();
+    }
+  }
+
+  void SynchronizeFunctionTail() {
+    if (At(TokenKind::LBrace)) {
+      int depth = 0;
+      while (!At(TokenKind::Eof)) {
+        if (Match(TokenKind::LBrace)) {
+          ++depth;
+          continue;
+        }
+        if (Match(TokenKind::RBrace)) {
+          --depth;
+          if (depth <= 0) {
+            return;
+          }
+          continue;
+        }
+        Advance();
+      }
+      return;
+    }
+    SynchronizeTopLevel();
+  }
+
+  void SynchronizeStatement() {
+    while (!At(TokenKind::Eof)) {
+      if (Match(TokenKind::Semicolon)) {
+        return;
+      }
+      if (At(TokenKind::KwLet) || At(TokenKind::KwReturn) || At(TokenKind::KwIf) || At(TokenKind::KwGuard) ||
+          At(TokenKind::KwDefer) || At(TokenKind::KwDo) || At(TokenKind::KwMatch) ||
+          At(TokenKind::KwFor) || At(TokenKind::KwSwitch) || At(TokenKind::KwWhile) || At(TokenKind::KwBreak) ||
+          At(TokenKind::KwContinue) || At(TokenKind::KwAtAutoreleasePool) || AtIdentifierAssignment() ||
+          AtIdentifierUpdate() || AtPrefixUpdate() || At(TokenKind::RBrace)) {
+        return;
+      }
+      Advance();
+    }
+  }
+
+  std::unique_ptr<Stmt> ParseStatement() {
+    if (At(TokenKind::LBrace)) {
+      const Token open = Peek();
+      auto body = ParseBlock();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Block;
+      stmt->line = open.line;
+      stmt->column = open.column;
+      stmt->block_stmt = std::make_unique<BlockStmt>();
+      stmt->block_stmt->line = open.line;
+      stmt->block_stmt->column = open.column;
+      stmt->block_stmt->body = std::move(body);
+      return stmt;
+    }
+
+    if (Match(TokenKind::Semicolon)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Empty;
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      return stmt;
+    }
+
+    if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
+      const Token qualifier = Advance();
+      const std::string message =
+          qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in statement position"
+          : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in statement position"
+                                                  : "unexpected qualifier 'async' in statement position";
+      diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
+      return nullptr;
+    }
+
+    if (Match(TokenKind::KwAtAutoreleasePool)) {
+      const Token marker = Previous();
+      const unsigned scope_depth = autoreleasepool_scope_depth_ + 1u;
+      ++autoreleasepool_scope_depth_;
+      const unsigned scope_serial = ++autoreleasepool_scope_serial_;
+      auto body = ParseBlock();
+      --autoreleasepool_scope_depth_;
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Block;
+      stmt->line = marker.line;
+      stmt->column = marker.column;
+      stmt->block_stmt = std::make_unique<BlockStmt>();
+      stmt->block_stmt->line = marker.line;
+      stmt->block_stmt->column = marker.column;
+      stmt->block_stmt->body = std::move(body);
+      stmt->block_stmt->is_autoreleasepool_scope = true;
+      stmt->block_stmt->autoreleasepool_scope_depth = scope_depth;
+      stmt->block_stmt->autoreleasepool_scope_symbol =
+          BuildAutoreleasePoolScopeSymbol(scope_serial, scope_depth);
+      return stmt;
+    }
+
+    bool saw_local_storage_annotation = false;
+    LetStmt local_storage_annotation;
+    if (AtIdentifierText("__attribute__")) {
+      Advance();
+      if (!ParseLocalStorageAttribute(local_storage_annotation)) {
+        return nullptr;
+      }
+      saw_local_storage_annotation = true;
+    } else if (At(TokenKind::KwAtCleanup) || At(TokenKind::KwAtResource)) {
+      if (!ParseLocalStorageSugar(local_storage_annotation)) {
+        return nullptr;
+      }
+      saw_local_storage_annotation = true;
+    }
+
+    if (Match(TokenKind::KwLet)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Let;
+      stmt->let_stmt = std::make_unique<LetStmt>();
+      const Token &name_token = Peek();
+      if (!Match(TokenKind::Identifier)) {
+        diagnostics_.push_back(MakeDiag(name_token.line, name_token.column, "O3P101",
+                                        "invalid declaration identifier"));
+        return nullptr;
+      }
+      stmt->let_stmt->name = Previous().text;
+      stmt->let_stmt->line = Previous().line;
+      stmt->let_stmt->column = Previous().column;
+      if (saw_local_storage_annotation) {
+        stmt->let_stmt->cleanup_attribute_declared =
+            local_storage_annotation.cleanup_attribute_declared;
+        stmt->let_stmt->cleanup_sugar_declared =
+            local_storage_annotation.cleanup_sugar_declared;
+        stmt->let_stmt->cleanup_function_symbol =
+            local_storage_annotation.cleanup_function_symbol;
+        stmt->let_stmt->cleanup_profile_is_normalized =
+            local_storage_annotation.cleanup_profile_is_normalized;
+        stmt->let_stmt->cleanup_profile =
+            local_storage_annotation.cleanup_profile;
+        stmt->let_stmt->resource_attribute_declared =
+            local_storage_annotation.resource_attribute_declared;
+        stmt->let_stmt->resource_sugar_declared =
+            local_storage_annotation.resource_sugar_declared;
+        stmt->let_stmt->resource_close_symbol =
+            local_storage_annotation.resource_close_symbol;
+        stmt->let_stmt->resource_invalid_expression =
+            local_storage_annotation.resource_invalid_expression;
+        stmt->let_stmt->resource_profile_is_normalized =
+            local_storage_annotation.resource_profile_is_normalized;
+        stmt->let_stmt->resource_profile =
+            local_storage_annotation.resource_profile;
+      }
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+
+      if (!Match(TokenKind::Equal)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P102", "missing '='"));
+        return nullptr;
+      }
+
+      stmt->let_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::LocalBindingInitializer);
+      if (stmt->let_stmt->value == nullptr) {
+        return nullptr;
+      }
+
+      if (!Match(TokenKind::Semicolon)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104",
+                                        "missing ';' after declaration"));
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwReturn)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Return;
+      stmt->return_stmt = std::make_unique<ReturnStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->return_stmt->line = Previous().line;
+      stmt->return_stmt->column = Previous().column;
+      if (Match(TokenKind::Semicolon)) {
+        return stmt;
+      }
+      stmt->return_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ReturnValue);
+      if (stmt->return_stmt->value == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::Semicolon)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after return"));
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwIf)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::If;
+      stmt->if_stmt = std::make_unique<IfStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->if_stmt->line = Previous().line;
+      stmt->if_stmt->column = Previous().column;
+
+      if (At(TokenKind::KwLet) || At(TokenKind::KwVar)) {
+        auto clauses = ParseOptionalBindingClauses();
+        if (clauses.empty()) {
+          return nullptr;
+        }
+        stmt->if_stmt->optional_binding_surface_enabled = true;
+        stmt->if_stmt->optional_binding_clause_count = clauses.size();
+        stmt->if_stmt->condition = std::make_unique<Expr>();
+        stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
+        stmt->if_stmt->condition->bool_value = true;
+        stmt->if_stmt->condition->line = stmt->line;
+        stmt->if_stmt->condition->column = stmt->column;
+        auto user_then_body = ParseControlBody();
+        if (block_failed_) {
+          block_failed_ = false;
+          return nullptr;
+        }
+        for (auto &clause : clauses) {
+          auto synthetic = std::make_unique<Stmt>();
+          synthetic->kind = Stmt::Kind::Let;
+          synthetic->line = clause.line;
+          synthetic->column = clause.column;
+          synthetic->let_stmt = std::make_unique<LetStmt>();
+          synthetic->let_stmt->name = clause.name;
+          synthetic->let_stmt->line = clause.line;
+          synthetic->let_stmt->column = clause.column;
+          synthetic->let_stmt->value = std::move(clause.value);
+          stmt->if_stmt->then_body.push_back(std::move(synthetic));
+        }
+        for (auto &nested : user_then_body) {
+          stmt->if_stmt->then_body.push_back(std::move(nested));
+        }
+        if (Match(TokenKind::KwElse)) {
+          stmt->if_stmt->else_body = ParseControlBody();
+          if (block_failed_) {
+            block_failed_ = false;
+            return nullptr;
+          }
+        }
+        return stmt;
+      }
+
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after if"));
+        return nullptr;
+      }
+      stmt->if_stmt->condition = ParseExpression();
+      if (stmt->if_stmt->condition == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after if condition"));
+        return nullptr;
+      }
+
+      stmt->if_stmt->then_body = ParseControlBody();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      if (Match(TokenKind::KwElse)) {
+        stmt->if_stmt->else_body = ParseControlBody();
+        if (block_failed_) {
+          block_failed_ = false;
+          return nullptr;
+        }
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwGuard)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::If;
+      stmt->if_stmt = std::make_unique<IfStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->if_stmt->line = Previous().line;
+      stmt->if_stmt->column = Previous().column;
+      auto clauses = ParseGuardConditionClauses();
+      if (clauses.empty()) {
+        return nullptr;
+      }
+      stmt->if_stmt->guard_condition_list_surface_enabled = true;
+      stmt->if_stmt->condition = std::make_unique<Expr>();
+      stmt->if_stmt->condition->kind = Expr::Kind::BoolLiteral;
+      stmt->if_stmt->condition->bool_value = false;
+      stmt->if_stmt->condition->line = stmt->line;
+      stmt->if_stmt->condition->column = stmt->column;
+      for (auto &clause : clauses) {
+        if (clause.kind == ParsedGuardConditionClause::Kind::OptionalBinding) {
+          stmt->if_stmt->optional_binding_surface_enabled = true;
+          stmt->if_stmt->guard_binding_surface_enabled = true;
+          ++stmt->if_stmt->optional_binding_clause_count;
+          auto synthetic = std::make_unique<Stmt>();
+          synthetic->kind = Stmt::Kind::Let;
+          synthetic->line = clause.binding.line;
+          synthetic->column = clause.binding.column;
+          synthetic->let_stmt = std::make_unique<LetStmt>();
+          synthetic->let_stmt->name = clause.binding.name;
+          synthetic->let_stmt->line = clause.binding.line;
+          synthetic->let_stmt->column = clause.binding.column;
+          synthetic->let_stmt->value = std::move(clause.binding.value);
+          stmt->if_stmt->then_body.push_back(std::move(synthetic));
+        } else {
+          ++stmt->if_stmt->guard_boolean_condition_clause_count;
+          stmt->if_stmt->guard_condition_exprs.push_back(std::move(clause.condition));
+        }
+      }
+      if (!Match(TokenKind::KwElse)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100", "missing 'else' after guard condition list"));
+        return nullptr;
+      }
+      stmt->if_stmt->else_body = ParseControlBody();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwDefer)) {
+      const Token &token = Previous();
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Defer;
+      stmt->block_stmt = std::make_unique<BlockStmt>();
+      stmt->line = token.line;
+      stmt->column = token.column;
+      stmt->block_stmt->line = token.line;
+      stmt->block_stmt->column = token.column;
+      if (Peek().kind != TokenKind::LBrace) {
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P110", "defer requires braced body"));
+        return nullptr;
+      }
+      stmt->block_stmt->body = ParseBlock();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwThrow)) {
+      const Token &token = Previous();
+      auto payload = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (payload == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::Semicolon)) {
+        const Token &semicolon_token = Peek();
+        diagnostics_.push_back(MakeDiag(semicolon_token.line,
+                                        semicolon_token.column, "O3P104",
+                                        "missing ';' after throw statement"));
+        return nullptr;
+      }
+      auto call = std::make_unique<Expr>();
+      call->kind = Expr::Kind::Call;
+      call->ident = "__objc3_throw_stmt";
+      call->line = token.line;
+      call->column = token.column;
+      call->throw_statement_enabled = true;
+      call->throw_statement_is_normalized = true;
+      call->args.push_back(std::move(payload));
+      call->throw_statement_profile = BuildThrowStatementProfile(*call);
+
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Expr;
+      stmt->line = token.line;
+      stmt->column = token.column;
+      stmt->expr_stmt = std::make_unique<ExprStmt>();
+      stmt->expr_stmt->line = token.line;
+      stmt->expr_stmt->column = token.column;
+      stmt->expr_stmt->value = std::move(call);
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwDo)) {
+      const Token do_token = Previous();
+      auto body = ParseControlBody();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+
+      if (Match(TokenKind::KwCatch)) {
+        auto stmt = std::make_unique<Stmt>();
+        stmt->kind = Stmt::Kind::Block;
+        stmt->block_stmt = std::make_unique<BlockStmt>();
+        stmt->line = do_token.line;
+        stmt->column = do_token.column;
+        stmt->block_stmt->line = do_token.line;
+        stmt->block_stmt->column = do_token.column;
+        stmt->block_stmt->is_do_catch_scope = true;
+        stmt->block_stmt->body = std::move(body);
+        do {
+          BlockStmt::CatchClause clause;
+          if (!ParseCatchClause(clause)) {
+            return nullptr;
+          }
+          stmt->block_stmt->catch_clauses.push_back(std::move(clause));
+        } while (Match(TokenKind::KwCatch));
+        stmt->block_stmt->do_catch_is_normalized =
+            !stmt->block_stmt->catch_clauses.empty();
+        stmt->block_stmt->do_catch_profile =
+            BuildDoCatchProfile(*stmt->block_stmt);
+        return stmt;
+      }
+
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::DoWhile;
+      stmt->do_while_stmt = std::make_unique<DoWhileStmt>();
+      stmt->line = do_token.line;
+      stmt->column = do_token.column;
+      stmt->do_while_stmt->line = do_token.line;
+      stmt->do_while_stmt->column = do_token.column;
+      stmt->do_while_stmt->body = std::move(body);
+
+      if (!Match(TokenKind::KwWhile)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P100", "missing 'while' after do block"));
+        return nullptr;
+      }
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after while"));
+        return nullptr;
+      }
+      stmt->do_while_stmt->condition = ParseExpression();
+      if (stmt->do_while_stmt->condition == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after do-while condition"));
+        return nullptr;
+      }
+      if (!Match(TokenKind::Semicolon)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after do-while"));
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwFor)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::For;
+      stmt->for_stmt = std::make_unique<ForStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->for_stmt->line = Previous().line;
+      stmt->for_stmt->column = Previous().column;
+
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after for"));
+        return nullptr;
+      }
+
+      if (Match(TokenKind::Semicolon)) {
+        stmt->for_stmt->init.kind = ForClause::Kind::None;
+      } else {
+        if (Match(TokenKind::KwLet)) {
+          stmt->for_stmt->init.kind = ForClause::Kind::Let;
+          const Token &name_token = Peek();
+          if (!Match(TokenKind::Identifier)) {
+            diagnostics_.push_back(MakeDiag(name_token.line, name_token.column, "O3P101",
+                                            "invalid declaration identifier"));
+            return nullptr;
+          }
+          stmt->for_stmt->init.name = Previous().text;
+          stmt->for_stmt->init.line = Previous().line;
+          stmt->for_stmt->init.column = Previous().column;
+
+          if (!Match(TokenKind::Equal)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P102", "missing '='"));
+            return nullptr;
+          }
+
+          stmt->for_stmt->init.value = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::ExpressionSite);
+          if (stmt->for_stmt->init.value == nullptr) {
+            return nullptr;
+          }
+        } else if (AtIdentifierAssignment() || AtIdentifierUpdate()) {
+          stmt->for_stmt->init.kind = ForClause::Kind::Assign;
+          const Token name = Advance();
+          std::string op = "=";
+          if (!MatchAssignmentOperator(op)) {
+            (void)MatchUpdateOperator(op);
+          }
+          stmt->for_stmt->init.name = name.text;
+          stmt->for_stmt->init.op = op;
+          stmt->for_stmt->init.line = name.line;
+          stmt->for_stmt->init.column = name.column;
+          if (op == "++" || op == "--") {
+            stmt->for_stmt->init.value = nullptr;
+          } else {
+            stmt->for_stmt->init.value = ParseExpressionWithBlockLiteralSourceUse(
+                BlockLiteralSourceUseKind::AssignmentValue);
+            if (stmt->for_stmt->init.value == nullptr) {
+              return nullptr;
+            }
+          }
+        } else if (AtPrefixUpdate()) {
+          stmt->for_stmt->init.kind = ForClause::Kind::Assign;
+          std::string op = "++";
+          (void)MatchUpdateOperator(op);
+          const Token name = Peek();
+          if (!Match(TokenKind::Identifier)) {
+            diagnostics_.push_back(MakeDiag(name.line, name.column, "O3P101",
+                                            "invalid assignment target"));
+            return nullptr;
+          }
+          stmt->for_stmt->init.name = name.text;
+          stmt->for_stmt->init.op = op;
+          stmt->for_stmt->init.line = name.line;
+          stmt->for_stmt->init.column = name.column;
+          stmt->for_stmt->init.value = nullptr;
+        } else {
+          stmt->for_stmt->init.kind = ForClause::Kind::Expr;
+          stmt->for_stmt->init.line = Peek().line;
+          stmt->for_stmt->init.column = Peek().column;
+          stmt->for_stmt->init.value = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::ExpressionSite);
+          if (stmt->for_stmt->init.value == nullptr) {
+            return nullptr;
+          }
+        }
+        if (!Match(TokenKind::Semicolon)) {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after for init"));
+          return nullptr;
+        }
+      }
+
+      if (Match(TokenKind::Semicolon)) {
+        stmt->for_stmt->condition = nullptr;
+      } else {
+        stmt->for_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+            BlockLiteralSourceUseKind::ExpressionSite);
+        if (stmt->for_stmt->condition == nullptr) {
+          return nullptr;
+        }
+        if (!Match(TokenKind::Semicolon)) {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after for condition"));
+          return nullptr;
+        }
+      }
+
+      if (Match(TokenKind::RParen)) {
+        stmt->for_stmt->step.kind = ForClause::Kind::None;
+      } else {
+        if (AtIdentifierAssignment() || AtIdentifierUpdate()) {
+          stmt->for_stmt->step.kind = ForClause::Kind::Assign;
+          const Token name = Advance();
+          std::string op = "=";
+          if (!MatchAssignmentOperator(op)) {
+            (void)MatchUpdateOperator(op);
+          }
+          stmt->for_stmt->step.name = name.text;
+          stmt->for_stmt->step.op = op;
+          stmt->for_stmt->step.line = name.line;
+          stmt->for_stmt->step.column = name.column;
+          if (op == "++" || op == "--") {
+            stmt->for_stmt->step.value = nullptr;
+          } else {
+            stmt->for_stmt->step.value = ParseExpressionWithBlockLiteralSourceUse(
+                BlockLiteralSourceUseKind::AssignmentValue);
+            if (stmt->for_stmt->step.value == nullptr) {
+              return nullptr;
+            }
+          }
+        } else if (AtPrefixUpdate()) {
+          stmt->for_stmt->step.kind = ForClause::Kind::Assign;
+          std::string op = "++";
+          (void)MatchUpdateOperator(op);
+          const Token name = Peek();
+          if (!Match(TokenKind::Identifier)) {
+            diagnostics_.push_back(MakeDiag(name.line, name.column, "O3P101",
+                                            "invalid assignment target"));
+            return nullptr;
+          }
+          stmt->for_stmt->step.name = name.text;
+          stmt->for_stmt->step.op = op;
+          stmt->for_stmt->step.line = name.line;
+          stmt->for_stmt->step.column = name.column;
+          stmt->for_stmt->step.value = nullptr;
+        } else {
+          stmt->for_stmt->step.kind = ForClause::Kind::Expr;
+          stmt->for_stmt->step.line = Peek().line;
+          stmt->for_stmt->step.column = Peek().column;
+          stmt->for_stmt->step.value = ParseExpressionWithBlockLiteralSourceUse(
+              BlockLiteralSourceUseKind::ExpressionSite);
+          if (stmt->for_stmt->step.value == nullptr) {
+            return nullptr;
+          }
+        }
+        if (!Match(TokenKind::RParen)) {
+          const Token &token = Peek();
+          diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after for clauses"));
+          return nullptr;
+        }
+      }
+
+      stmt->for_stmt->body = ParseControlBody();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwMatch)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Switch;
+      stmt->switch_stmt = std::make_unique<SwitchStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->switch_stmt->line = Previous().line;
+      stmt->switch_stmt->column = Previous().column;
+      stmt->switch_stmt->match_surface_enabled = true;
+
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after match"));
+        return nullptr;
+      }
+      stmt->switch_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (stmt->switch_stmt->condition == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after match scrutinee"));
+        return nullptr;
+      }
+      if (!Match(TokenKind::LBrace)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "missing '{' for match body"));
+        return nullptr;
+      }
+
+      while (!At(TokenKind::RBrace) && !At(TokenKind::Eof)) {
+        if (Match(TokenKind::KwCase)) {
+          SwitchCase case_stmt;
+          case_stmt.line = Previous().line;
+          case_stmt.column = Previous().column;
+          case_stmt.is_default = false;
+          if (!ParseMatchPattern(case_stmt)) {
+            return nullptr;
+          }
+          if (At(TokenKind::Identifier) && Peek().text == "where") {
+            const Token token = Advance();
+            diagnostics_.push_back(
+                MakeDiag(token.line, token.column, "O3P157", "unsupported guarded match pattern"));
+            return nullptr;
+          }
+          if (At(TokenKind::Equal) && index_ + 1 < tokens_.size() &&
+              tokens_[index_ + 1].kind == TokenKind::Greater) {
+            const Token token = Peek();
+            diagnostics_.push_back(
+                MakeDiag(token.line, token.column, "O3P156", "reserved expression-form 'match' arm"));
+            return nullptr;
+          }
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P107", "missing ':' after match pattern"));
+            return nullptr;
+          }
+          if (!At(TokenKind::LBrace)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "match case requires braced body"));
+            return nullptr;
+          }
+          case_stmt.body = ParseBlock();
+          if (block_failed_) {
+            block_failed_ = false;
+            return nullptr;
+          }
+          stmt->switch_stmt->cases.push_back(std::move(case_stmt));
+          continue;
+        }
+
+        if (Match(TokenKind::KwDefault)) {
+          SwitchCase default_stmt;
+          default_stmt.line = Previous().line;
+          default_stmt.column = Previous().column;
+          default_stmt.is_default = true;
+          default_stmt.match_pattern_enabled = true;
+          default_stmt.match_pattern_kind = MatchPatternKind::Wildcard;
+          if (At(TokenKind::Equal) && index_ + 1 < tokens_.size() &&
+              tokens_[index_ + 1].kind == TokenKind::Greater) {
+            const Token token = Peek();
+            diagnostics_.push_back(
+                MakeDiag(token.line, token.column, "O3P156", "reserved expression-form 'match' arm"));
+            return nullptr;
+          }
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P107", "missing ':' after default label"));
+            return nullptr;
+          }
+          if (!At(TokenKind::LBrace)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "match default requires braced body"));
+            return nullptr;
+          }
+          default_stmt.body = ParseBlock();
+          if (block_failed_) {
+            block_failed_ = false;
+            return nullptr;
+          }
+          stmt->switch_stmt->cases.push_back(std::move(default_stmt));
+          continue;
+        }
+
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P103", "expected 'case' or 'default' in match body"));
+        return nullptr;
+      }
+
+      if (!Match(TokenKind::RBrace)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '}' after match body"));
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwSwitch)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Switch;
+      stmt->switch_stmt = std::make_unique<SwitchStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->switch_stmt->line = Previous().line;
+      stmt->switch_stmt->column = Previous().column;
+
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after switch"));
+        return nullptr;
+      }
+      stmt->switch_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (stmt->switch_stmt->condition == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after switch condition"));
+        return nullptr;
+      }
+      if (!Match(TokenKind::LBrace)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P110", "missing '{' for switch body"));
+        return nullptr;
+      }
+
+      while (!At(TokenKind::RBrace) && !At(TokenKind::Eof)) {
+        if (Match(TokenKind::KwCase)) {
+          SwitchCase case_stmt;
+          case_stmt.line = Previous().line;
+          case_stmt.column = Previous().column;
+          case_stmt.is_default = false;
+
+          if (Match(TokenKind::Number)) {
+            case_stmt.value_line = Previous().line;
+            case_stmt.value_column = Previous().column;
+            case_stmt.value = std::atoi(Previous().text.c_str());
+          } else if (Match(TokenKind::Minus) || Match(TokenKind::Plus)) {
+            const Token sign = Previous();
+            if (!Match(TokenKind::Number)) {
+              diagnostics_.push_back(MakeDiag(sign.line, sign.column, "O3P103", "invalid case label expression"));
+              return nullptr;
+            }
+            case_stmt.value_line = sign.line;
+            case_stmt.value_column = sign.column;
+            const int magnitude = std::atoi(Previous().text.c_str());
+            case_stmt.value = sign.kind == TokenKind::Minus ? -magnitude : magnitude;
+          } else if (Match(TokenKind::KwTrue) || Match(TokenKind::KwFalse)) {
+            case_stmt.value_line = Previous().line;
+            case_stmt.value_column = Previous().column;
+            case_stmt.value = Previous().kind == TokenKind::KwTrue ? 1 : 0;
+          } else if (At(TokenKind::KwPure) || At(TokenKind::KwExtern) || At(TokenKind::KwAsync)) {
+            const Token qualifier = Advance();
+            const std::string message =
+                qualifier.kind == TokenKind::KwPure ? "unexpected qualifier 'pure' in case label expression"
+                : qualifier.kind == TokenKind::KwExtern ? "unexpected qualifier 'extern' in case label expression"
+                                                        : "unexpected qualifier 'async' in case label expression";
+            diagnostics_.push_back(MakeDiag(qualifier.line, qualifier.column, "O3P100", message));
+            return nullptr;
+          } else {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P103", "invalid case label expression"));
+            return nullptr;
+          }
+
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P107", "missing ':' after case label"));
+            return nullptr;
+          }
+
+          while (!At(TokenKind::KwCase) && !At(TokenKind::KwDefault) && !At(TokenKind::RBrace) &&
+                 !At(TokenKind::Eof)) {
+            std::unique_ptr<Stmt> body_stmt = ParseStatement();
+            if (body_stmt != nullptr) {
+              case_stmt.body.push_back(std::move(body_stmt));
+              continue;
+            }
+            SynchronizeStatement();
+            if (At(TokenKind::Eof)) {
+              break;
+            }
+          }
+          stmt->switch_stmt->cases.push_back(std::move(case_stmt));
+          continue;
+        }
+
+        if (Match(TokenKind::KwDefault)) {
+          SwitchCase default_stmt;
+          default_stmt.line = Previous().line;
+          default_stmt.column = Previous().column;
+          default_stmt.is_default = true;
+          default_stmt.value = 0;
+          default_stmt.value_line = Previous().line;
+          default_stmt.value_column = Previous().column;
+
+          if (!Match(TokenKind::Colon)) {
+            const Token &token = Peek();
+            diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P107", "missing ':' after default"));
+            return nullptr;
+          }
+
+          while (!At(TokenKind::KwCase) && !At(TokenKind::KwDefault) && !At(TokenKind::RBrace) &&
+                 !At(TokenKind::Eof)) {
+            std::unique_ptr<Stmt> body_stmt = ParseStatement();
+            if (body_stmt != nullptr) {
+              default_stmt.body.push_back(std::move(body_stmt));
+              continue;
+            }
+            SynchronizeStatement();
+            if (At(TokenKind::Eof)) {
+              break;
+            }
+          }
+          stmt->switch_stmt->cases.push_back(std::move(default_stmt));
+          continue;
+        }
+
+        const Token &token = Peek();
+        diagnostics_.push_back(
+            MakeDiag(token.line, token.column, "O3P100", "expected 'case' or 'default' in switch body"));
+        Advance();
+      }
+
+      if (!Match(TokenKind::RBrace)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P111", "missing '}' after switch body"));
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwWhile)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::While;
+      stmt->while_stmt = std::make_unique<WhileStmt>();
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      stmt->while_stmt->line = Previous().line;
+      stmt->while_stmt->column = Previous().column;
+
+      if (!Match(TokenKind::LParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P106", "missing '(' after while"));
+        return nullptr;
+      }
+      stmt->while_stmt->condition = ParseExpressionWithBlockLiteralSourceUse(
+          BlockLiteralSourceUseKind::ExpressionSite);
+      if (stmt->while_stmt->condition == nullptr) {
+        return nullptr;
+      }
+      if (!Match(TokenKind::RParen)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P109", "missing ')' after while condition"));
+        return nullptr;
+      }
+
+      stmt->while_stmt->body = ParseControlBody();
+      if (block_failed_) {
+        block_failed_ = false;
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwBreak)) {
+      auto stmt = std::make_unique<Stmt>();
+      stmt->kind = Stmt::Kind::Break;
+      stmt->line = Previous().line;
+      stmt->column = Previous().column;
+      if (!Match(TokenKind::Semicolon)) {
+        const Token &token = Peek();
+        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after break"));
+        return nullptr;
+      }
+      return stmt;
+    }
+
+    if (Match(TokenKind::KwContinue)) {

@@ -37,7 +37,7 @@ Current corrective scope:
 
 Current corrective gaps:
 
-- unresolved dispatch still retains one deterministic fallback path after slow-path miss
+- unresolved dispatch still retains one strict dispatch error path after slow-path miss
 - live synthesized accessor execution and reflection coherence still need one integrated proof surface
 - native-output proof is only trustworthy when the emitted object and linked probe stay coupled to compile provenance and the runtime registration manifest
 

@@ -14,8 +14,8 @@ Use it when changing:
 
 Downstream runtime-performance work must stay on the existing runtime library, runtime
 acceptance helpers, public workflow runner, and runnable toolchain package
-surfaces listed here. Do not add a milestone-local runtime benchmark harness,
-standalone spreadsheet flow, or synthetic performance proof path.
+surfaces listed here. Do not add a release-scope runtime benchmark harness,
+standalone spreadsheet flow, or synthetic performance evidence path.
 
 ## Runtime Hot-Path Taxonomy
 
@@ -26,7 +26,7 @@ The current truthful runtime-performance workload families are:
     replay behavior through the live runtime bootstrap path
 - `dispatch-cache`
   - objective: measure selector lookup, method-cache seeding, cache-hit
-    dispatch, and deterministic fallback dispatch through
+    dispatch, and strict dispatch error through
     `objc3_runtime_dispatch_i32`
 - `reflection-query`
   - objective: measure realized class/property/protocol reflection queries
@@ -158,5 +158,5 @@ Disallowed optimization moves:
 - no sidecar-only performance claim without a coupled runtime probe or snapshot
 - no hidden optimization toggle that bypasses the checked-in runtime path
 - no second public runtime ABI just for performance measurement
-- no milestone-local probe copies when an existing runtime probe already covers
+- no release-scope probe copies when an existing runtime probe already covers
   the workload

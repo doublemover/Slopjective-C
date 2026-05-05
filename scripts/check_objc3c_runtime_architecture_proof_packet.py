@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit an integrated proof packet for the live objc3 runtime architecture."""
+"""Emit an integrated evidence bundle for the live objc3 runtime architecture."""
 
 from __future__ import annotations
 

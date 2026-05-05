@@ -575,7 +575,7 @@ try {
       non_authoritative_inputs = @(
         "hand-authored llvm ir without the emitted object",
         "sidecar-only reports or manifests without coupled compile output",
-        "compatibility shims without the emitted object and runtime-backed probe path",
+        "non-authoritative test surfaces without the emitted object and runtime-backed probe path",
         "replay text alone without compile provenance and registration-manifest coupling"
       )
     }

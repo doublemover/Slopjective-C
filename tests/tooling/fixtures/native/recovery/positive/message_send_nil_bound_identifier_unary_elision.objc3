@@ -1,8 +1,8 @@
-// Positive fixture: immutable nil-bound identifier receiver message-send is compile-time elided.
+// Positive fixture: immutable nil-bound identifier receiver message-send uses optional send.
 module MessageSendNilBoundIdentifierUnaryElision;
 
 fn main() {
   let receiver = nil;
-  let sent = [receiver ping];
+  let sent = [receiver? ping];
   return sent + 12;
 }

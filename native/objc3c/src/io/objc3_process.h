@@ -443,8 +443,8 @@ struct Objc3ConformanceReportPublicationArtifactInputs {
   bool selected_profile_supported = false;
   std::vector<std::string> supported_profile_ids;
   std::vector<std::string> rejected_profile_ids;
-  std::string effective_compatibility_mode;
-  bool migration_assist_enabled = false;
+  std::string effective_language_profile;
+  bool legacy_literal_diagnostics_enabled = false;
   std::string publication_model;
   std::string publication_surface_kind;
   std::string fail_closed_diagnostic_model;

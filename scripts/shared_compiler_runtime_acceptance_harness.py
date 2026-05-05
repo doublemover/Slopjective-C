@@ -427,7 +427,7 @@ COMMON_SURFACES = (
         RUNTIME_MIXED_IMAGE_COMPATIBILITY_INTEROP_SEMANTICS_SURFACE_CONTRACT_ID,
         (
             "source_contract_ids",
-            "compatibility_model",
+            "language_profile_model",
             "authoritative_case_ids",
         ),
     ),
@@ -445,7 +445,7 @@ COMMON_SURFACES = (
         RUNTIME_C_CPP_SWIFT_BRIDGE_COMPATIBILITY_SEMANTICS_SURFACE_CONTRACT_ID,
         (
             "source_contract_ids",
-            "compatibility_model",
+            "language_profile_model",
             "authoritative_case_ids",
         ),
     ),

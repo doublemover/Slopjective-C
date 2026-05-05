@@ -316,17 +316,17 @@ std::vector<Objc3LexToken> Objc3Lexer::Run(std::vector<std::string> &diagnostics
         kind = TokenKind::KwNil;
       } else if (ident == "YES") {
         kind = TokenKind::KwTrue;
-        if (options_.migration_assist) {
+        if (options_.legacy_literal_diagnostics) {
           ++migration_hints_.legacy_yes_count;
         }
       } else if (ident == "NO") {
         kind = TokenKind::KwFalse;
-        if (options_.migration_assist) {
+        if (options_.legacy_literal_diagnostics) {
           ++migration_hints_.legacy_no_count;
         }
       } else if (ident == "NULL") {
         kind = TokenKind::KwNil;
-        if (options_.migration_assist) {
+        if (options_.legacy_literal_diagnostics) {
           ++migration_hints_.legacy_null_count;
         }
       }

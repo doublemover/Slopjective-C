@@ -122,12 +122,14 @@ existing public actions, with dedicated top-level wrappers now exposed for the
 full program surface.
 
 Top-level workflow entrypoints:
+
 - `python scripts/objc3c_public_workflow_runner.py validate-stdlib-program`
 - `npm run test:stdlib:program`
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-program`
 - `npm run test:stdlib:program:e2e`
 
 Integration flow:
+
 - `python scripts/objc3c_public_workflow_runner.py check-documentation-surface`
 - `python scripts/objc3c_public_workflow_runner.py validate-getting-started`
 - `python scripts/objc3c_public_workflow_runner.py validate-showcase`
@@ -135,11 +137,13 @@ Integration flow:
 - `python scripts/objc3c_public_workflow_runner.py inspect-capability-explorer`
 
 Release-facing flow:
+
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-showcase`
 - `python scripts/objc3c_public_workflow_runner.py validate-runnable-stdlib-foundation`
 - `python scripts/objc3c_public_workflow_runner.py package-runnable-toolchain`
 
 Report roots:
+
 - `tmp/reports/stdlib/`
 - `tmp/reports/showcase/`
 - `tmp/reports/tutorials/`
@@ -169,7 +173,7 @@ Report roots:
 
 - edit the live docs, site, and onboarding files directly
 - keep capability demos rooted in checked-in showcase examples
-- reuse shared validation and packaging paths instead of adding milestone-local
+- reuse shared validation and packaging paths instead of adding release-scope
   wrappers
 - keep machine-owned artifacts under `tmp/` and out of the reader-facing tree
 - treat the tutorial and comparison guides as user-facing narrative sources, not
@@ -180,4 +184,4 @@ Report roots:
 - a second stdlib tutorial tree inside `stdlib/`
 - a duplicate example portfolio outside `showcase/`
 - screenshot-only capability demos without checked-in source
-- milestone-local publish wrappers or sidecar doc indexes
+- release-scope publish wrappers or sidecar doc indexes

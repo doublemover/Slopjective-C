@@ -14,13 +14,13 @@ Use it for reader-facing material that teaches someone how to:
 
 Choose the shortest route that matches the question you actually have:
 
-| If you want to... | Start here | Runnable proof to keep open |
-| --- | --- | --- |
-| prove the toolchain is alive | `docs/tutorials/getting_started.md` | `showcase/auroraBoard/main.objc3` |
-| understand the full example map | `showcase/README.md` | `showcase/portfolio.json` |
-| migrate familiar ObjC2 habits | `docs/tutorials/objc2_to_objc3_migration.md` | `showcase/auroraBoard/main.objc3` |
+| If you want to...                               | Start here                                     | Runnable proof to keep open                                         |
+| ----------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------- |
+| prove the toolchain is alive                    | `docs/tutorials/getting_started.md`            | `showcase/auroraBoard/main.objc3`                                   |
+| understand the full example map                 | `showcase/README.md`                           | `showcase/portfolio.json`                                           |
+| migrate familiar ObjC2 habits                   | `docs/tutorials/objc2_to_objc3_migration.md`   | `showcase/auroraBoard/main.objc3`                                   |
 | compare ObjC3 against Swift or C++ expectations | `docs/tutorials/objc2_swift_cpp_comparison.md` | `showcase/signalMesh/main.objc3` and `showcase/patchKit/main.objc3` |
-| follow the exact compile run verify flow | `docs/tutorials/build_run_verify.md` | `showcase/tutorial_walkthrough.json` |
+| follow the exact compile run verify flow        | `docs/tutorials/build_run_verify.md`           | `showcase/tutorial_walkthrough.json`                                |
 
 ## Capability-Backed Routes
 
@@ -116,7 +116,7 @@ text that explains that example.
 
 ## Explicit Non-Goals
 
-- no milestone-local tutorial wrappers or sidecar indexes
+- no release-scope tutorial wrappers or sidecar indexes
 - no machine-owned paths such as `tmp/` or `artifacts/` treated as tutorials
 - no screenshots or slide-deck-only teaching material with no checked-in source
 - no historical redirect material used as the primary learning path

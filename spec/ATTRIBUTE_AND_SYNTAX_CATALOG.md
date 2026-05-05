@@ -1063,7 +1063,7 @@ Current implementation status (`M267-D001`):
   - status-code bridge normalization
   - `NSError` bridge normalization
   - catch-kind matching
-  through private runtime helpers instead of raw local-slot traffic
+    through private runtime helpers instead of raw local-slot traffic
 - emitted IR now carries:
   - `; part6_error_runtime_bridge_helper = ...`
   - `!objc3.objc_part6_error_runtime_bridge_helper = !{!89}`
@@ -1078,7 +1078,7 @@ Current implementation status (`M267-D002`):
   - thrown-error store/load
   - status-code bridge normalization
   - `catch (NSError* error)` dispatch
-  through the private runtime helper cluster
+    through the private runtime helper cluster
 - emitted IR now carries:
   - `; part6_live_error_runtime_integration = ...`
   - `!objc3.objc_part6_live_error_runtime_integration = !{!90}`
@@ -1099,7 +1099,6 @@ Current implementation status (`M267-D003`):
 - mixed-module native builds now fail closed if an imported Part 6 replay
   surface is incomplete or drifted from the canonical runnable replay contract
 - the runtime helper ABI remains unchanged in this tranche
-
 
 ## M265 imported Part 3 packets
 
@@ -1554,6 +1553,7 @@ Current implementation status (`M273-D002`):
   - `M273-E001`
 - next milestone issue:
   - `M274-A001`
+
 ## M274 foreign declaration and import source closure (A001)
 
 Current implementation status (`M274-A001`):

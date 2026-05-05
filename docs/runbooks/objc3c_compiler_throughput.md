@@ -15,7 +15,7 @@ Use it when changing:
 Downstream compiler-throughput work must stay on the existing native compiler executable,
 compile wrapper, public workflow runner, native build wrapper, and validation
 scripts listed here. Do not add a second benchmark harness, spreadsheet-only
-measurement flow, or milestone-local validation packet.
+measurement flow, or release-scope validation packet.
 
 ## Throughput Taxonomy
 

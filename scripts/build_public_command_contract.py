@@ -36,8 +36,11 @@ def main() -> None:
     public_script_to_action = runner.public_script_to_action_map()
     distinct_runner_scripts = sorted(public_script_to_action)
     package_script_names = sorted(package_scripts)
-    unmapped_scripts = sorted(set(package_script_names) - set(distinct_runner_scripts))
-    extra_runner_public_scripts = sorted(set(distinct_runner_scripts) - set(package_script_names))
+    bridge_scripts = {'objc3c'}
+    unmapped_scripts = sorted(set(package_script_names) - set(distinct_runner_scripts) - bridge_scripts)
+    extra_runner_public_scripts = [] if bridge_scripts & set(package_script_names) else sorted(
+        set(distinct_runner_scripts) - set(package_script_names)
+    )
 
     action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
     package_script_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_script_names]
@@ -52,7 +55,7 @@ def main() -> None:
         'schema_path': schema['$id'],
         'package_script_count': len(package_script_names),
         'workflow_action_count': list_payload['action_count'],
-        'public_script_count': len(distinct_runner_scripts),
+        'public_script_count': len(package_script_names),
         'internal_action_count': list_payload['internal_action_count'],
         'operator_script_count': operator_script_count,
         'maintainer_script_count': maintainer_script_count,

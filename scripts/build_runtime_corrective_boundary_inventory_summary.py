@@ -56,7 +56,7 @@ def main() -> int:
                 "objc3_runtime_store_weak_current_property_i32",
             )
         ),
-        "docs_publish_dispatch_fallback_gap": "unresolved dispatch still has one deterministic fallback path after slow-path miss" in doc_text,
+        "docs_publish_dispatch_fallback_gap": "unresolved dispatch still has one strict dispatch error path after slow-path miss" in doc_text,
         "docs_publish_synthesized_accessor_gap": "synthesized accessor IR still carries transitional lowering residue" in doc_text,
         "docs_publish_native_output_gap": "native-output truth requires the emitted object and linked probe to stay coupled end to end" in doc_text,
         "lowering_contract_contains_current_property_helper_symbols": all(
@@ -88,7 +88,7 @@ def main() -> int:
         "corrective_gap_claim_occurrences_in_docs": sum(
             count_literal(DOC_PATH, needle)
             for needle in (
-                "unresolved dispatch still has one deterministic fallback path after slow-path miss",
+                "unresolved dispatch still has one strict dispatch error path after slow-path miss",
                 "synthesized accessor IR still carries transitional lowering residue",
                 "native-output truth requires the emitted object and linked probe to stay coupled end to end",
             )

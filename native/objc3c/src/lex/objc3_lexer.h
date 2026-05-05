@@ -7,15 +7,15 @@
 
 #include "token/objc3_token_contract.h"
 
-enum class Objc3LexerCompatibilityMode {
+enum class Objc3LexerLanguageProfile {
   kCanonical,
   kLegacy,
 };
 
 struct Objc3LexerOptions {
   std::uint8_t language_version = 3u;
-  Objc3LexerCompatibilityMode compatibility_mode = Objc3LexerCompatibilityMode::kCanonical;
-  bool migration_assist = false;
+  Objc3LexerLanguageProfile language_profile = Objc3LexerLanguageProfile::kCanonical;
+  bool legacy_literal_diagnostics = false;
 };
 
 struct Objc3LexerMigrationHints {

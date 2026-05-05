@@ -14,7 +14,7 @@ Use it when changing:
 - starter-template and project-generator flows
 
 Downstream bonus-experience work must stay on the existing implementation paths below
-instead of inventing a sidecar app, milestone-local launcher, or proof-only
+instead of inventing a sidecar app, release-scope launcher, or evidence-only
 demo surface.
 
 ## Current Truthful Portfolio
@@ -185,7 +185,7 @@ mock JSON, or hand-written walkthrough output as authoritative.
 
 ## Explicit Non-Goals
 
-- no milestone-local playground shell
+- no release-scope playground shell
 - no sidecar web service or hidden local daemon
 - no synthetic runtime-inspector payloads treated as source of truth
 - no duplicate example/template inventory outside checked-in showcase/tutorial

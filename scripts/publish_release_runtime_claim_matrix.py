@@ -202,11 +202,11 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
             {"id": "strict-concurrency", "claim_status": "not-claimed", "selection_status": "fail-closed", "runtime_status": "unsupported"},
             {"id": "strict-system", "claim_status": "not-claimed", "selection_status": "fail-closed", "runtime_status": "unsupported"},
         ],
-        "compatibility_modes": [
+        "language_profiles": [
             {"id": "canonical", "status": "supported"},
             {"id": "legacy", "status": "supported"},
         ],
-        "migration_assist": {"status": "supported"},
+        "legacy_literal_diagnostics": {"status": "supported"},
         "macro_claim_surface": {"status": "suppressed"},
         "operator_formats": [
             {"format": "json", "emit_status": "supported", "validate_status": "supported"},

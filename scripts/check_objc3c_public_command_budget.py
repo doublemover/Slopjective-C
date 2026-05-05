@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 COMMAND_SURFACE_PY = ROOT / 'scripts' / 'render_objc3c_public_command_surface.py'
 DEFAULT_CONTRACT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
-CANONICAL_CATEGORIES = ['build', 'check', 'compile', 'format', 'inspect', 'package', 'proof', 'publish', 'test', 'trace']
+CANONICAL_CATEGORIES = ['bridge']
 MAX_MAINTAINER_SCRIPTS = 9
 
 

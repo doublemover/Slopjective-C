@@ -11,7 +11,7 @@ struct Objc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface {
   std::size_t parser_diagnostic_count = 0;
   std::size_t parser_snapshot_diagnostic_count = 0;
   std::size_t parser_token_count = 0;
-  bool compatibility_mode_supported = false;
+  bool language_profile_supported = false;
   bool core_feature_expansion_ready = false;
   bool parser_snapshot_accounting_consistent = false;
   bool parser_diagnostic_token_budget_consistent = false;
@@ -48,8 +48,8 @@ inline std::string BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilityKey(
       << "parser_diagnostic_count=" << surface.parser_diagnostic_count
       << ";parser_snapshot_diagnostic_count=" << surface.parser_snapshot_diagnostic_count
       << ";parser_token_count=" << surface.parser_token_count
-      << ";compatibility_mode_supported="
-      << (surface.compatibility_mode_supported ? "true" : "false")
+      << ";language_profile_supported="
+      << (surface.language_profile_supported ? "true" : "false")
       << ";core_feature_expansion_ready="
       << (surface.core_feature_expansion_ready ? "true" : "false")
       << ";parser_snapshot_accounting_consistent="
@@ -82,9 +82,9 @@ BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface(
   surface.parser_diagnostic_count = parser_diagnostic_count;
   surface.parser_snapshot_diagnostic_count = parser_snapshot_diagnostic_count;
   surface.parser_token_count = parser_token_count;
-  surface.compatibility_mode_supported =
-      options.compatibility_mode == Objc3FrontendCompatibilityMode::kCanonical ||
-      options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy;
+  surface.language_profile_supported =
+      options.language_profile == Objc3FrontendLanguageProfile::kCanonical ||
+      options.language_profile == Objc3FrontendLanguageProfile::kLegacy;
   surface.core_feature_expansion_ready =
       IsObjc3DiagnosticGrammarHooksCoreFeatureExpansionReady(
           core_feature_expansion_surface);
@@ -96,7 +96,7 @@ BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface(
       IsObjc3DiagnosticGrammarHooksPragmaCoordinateOrderConsistent(pragma_contract);
   surface.compatibility_handoff_consistent = compatibility_handoff_consistent;
   surface.edge_case_compatibility_consistent =
-      surface.compatibility_mode_supported &&
+      surface.language_profile_supported &&
       surface.core_feature_expansion_ready &&
       surface.parser_snapshot_accounting_consistent &&
       surface.parser_diagnostic_token_budget_consistent &&
@@ -113,7 +113,7 @@ BuildObjc3DiagnosticGrammarHooksEdgeCaseCompatibilitySurface(
     return surface;
   }
 
-  if (!surface.compatibility_mode_supported) {
+  if (!surface.language_profile_supported) {
     surface.failure_reason =
         "parser diagnostic grammar hooks compatibility mode is not supported";
   } else if (!surface.core_feature_expansion_ready) {

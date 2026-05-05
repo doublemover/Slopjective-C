@@ -14,7 +14,7 @@ Use it when changing:
 
 Downstream benchmark-surface work must stay on the existing compiler, showcase,
 packaging, and public workflow surfaces listed here. Do not add a sidecar
-benchmark app, synthetic spreadsheet workflow, or milestone-local measurement
+benchmark app, synthetic spreadsheet workflow, or release-scope measurement
 wrapper.
 
 ## Benchmark Taxonomy And Claim Classes
@@ -133,6 +133,6 @@ The only current claim classes allowed from this surface are:
 
 - no benchmark claims derived from screenshots or copied spreadsheet values
 - no hidden hardware-normalization constants outside checked-in code
-- no milestone-local benchmark wrappers or duplicate package surfaces
+- no release-scope benchmark wrappers or duplicate package surfaces
 - no cross-machine universal claims without raw sample packets
 - no silent dropping of unavailable baseline toolchains

@@ -9,7 +9,7 @@ Use it when changing developer ergonomics, explainability, runtime inspection,
 or debug-reporting behavior.
 
 Downstream developer-tooling work must stay on the existing implementation paths below
-instead of introducing sidecar drivers, milestone-local wrappers, or proof-only
+instead of introducing sidecar drivers, release-scope wrappers, or evidence-only
 inspection flows.
 
 Canonical checked-in boundary and contract surfaces:
@@ -310,7 +310,7 @@ The npm entrypoints must route to the same action family once implemented:
 
 ## Explicit Non-Goals
 
-- no milestone-local debug launcher
+- no release-scope debug launcher
 - no ad hoc LLVM-only inspection path treated as source of truth
 - no duplicate command surface outside `package.json` and
   `scripts/objc3c_public_workflow_runner.py`

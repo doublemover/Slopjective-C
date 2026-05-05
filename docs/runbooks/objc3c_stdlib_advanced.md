@@ -148,7 +148,7 @@ the checked-in architecture contract.
 - `objc3_concurrency_executor_hop_token` returns the target executor when one
   is provided and otherwise preserves the current executor token
 - `objc3_concurrency_actor_mailbox_token` returns `actor_seed +
-  pending_messages` for nonnegative message counts and otherwise preserves the
+pending_messages` for nonnegative message counts and otherwise preserves the
   actor seed
 - `objc3_concurrency_cancellation_checkpoint` returns `1` only when the
   provided cancellation flag is nonzero
@@ -179,7 +179,7 @@ This milestone does not justify:
 - a duplicate advanced-helper tree outside `stdlib/`
 - public reflection or executor ABI claims without checked-in helper exports
 - moving strict-system hooks into always-on core imports
-- adding a second stdlib packaging flow or milestone-local wrapper scripts
+- adding a second stdlib packaging flow or release-scope wrapper scripts
 
 ## Live workflow surface
 

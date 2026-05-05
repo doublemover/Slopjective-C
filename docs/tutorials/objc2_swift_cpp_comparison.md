@@ -22,11 +22,11 @@ Start with `docs/tutorials/objc2_to_objc3_migration.md` when you need the actual
 Do not start with abstract parity claims. Start with the checked-in example that
 matches the capability in question:
 
-| Question | Checked-in example | Then read |
-| --- | --- | --- |
-| How do familiar ObjC2 categories and object-model habits map forward? | `showcase/auroraBoard/main.objc3` | `docs/tutorials/objc2_to_objc3_migration.md` |
-| What does current ObjC3 messaging and actor-shaped workflow look like next to Swift expectations? | `showcase/signalMesh/main.objc3` | this file |
-| What is the current macro derive property-behavior and interop story next to Swift and C++ expectations? | `showcase/patchKit/main.objc3` | this file |
+| Question                                                                                                 | Checked-in example                | Then read                                    |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------------- |
+| How do familiar ObjC2 categories and object-model habits map forward?                                    | `showcase/auroraBoard/main.objc3` | `docs/tutorials/objc2_to_objc3_migration.md` |
+| What does current ObjC3 messaging and actor-shaped workflow look like next to Swift expectations?        | `showcase/signalMesh/main.objc3`  | this file                                    |
+| What is the current macro derive property-behavior and interop story next to Swift and C++ expectations? | `showcase/patchKit/main.objc3`    | this file                                    |
 
 The comparison text should explain the current runnable and compile-coupled
 surface, not an imagined future language.

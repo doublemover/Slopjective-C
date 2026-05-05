@@ -21,7 +21,7 @@ Current dispatch path:
 2. the runtime interns or resolves the selector through `objc3_runtime_lookup_selector`
 3. dispatch probes the method cache and then the realized class/category/protocol slow path
 4. resolved methods execute either live emitted method bodies or runtime builtins such as `alloc`, `init`, and synthesized property accessors
-5. unresolved sends still fall back to the deterministic arithmetic path in `ComputeDispatchResult`
+5. unresolved sends are recorded as strict dispatch errors; the legacy int ABI returns zero until the typed dispatch result API lands
 
 Installation lifecycle:
 
@@ -103,7 +103,7 @@ Property/ivar/storage/accessor source surface:
   - later storage legality, synthesis, lowering, runtime realization, and
     property/reflection conformance work must consume the AST/sema-approved
     source boundary instead of re-deriving semantics from sidecars or
-    milestone-local notes
+    release-scope notes
   - lowering may serialize these fields into emitted artifacts but must not
     invent property storage, accessor selectors, or ownership semantics beyond
     the frozen source model

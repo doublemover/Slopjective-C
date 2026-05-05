@@ -47,7 +47,7 @@ def main() -> int:
         "realized_class_snapshot_present": "int objc3_runtime_copy_realized_class_entry_for_testing(" in runtime_text,
         "protocol_query_snapshot_present": "int objc3_runtime_copy_protocol_conformance_query_for_testing(" in runtime_text,
         "runtime_contains_all_dispatch_path_labels": all(label in runtime_text for label in contract["dispatch_path_labels"]),
-        "docs_still_publish_dispatch_fallback_gap": "unresolved dispatch still has one deterministic fallback path after slow-path miss" in doc_text,
+        "docs_still_publish_dispatch_fallback_gap": "unresolved dispatch still has one strict dispatch error path after slow-path miss" in doc_text,
         "acceptance_script_uses_same_lookup_resolution_model": contract["lookup_resolution_order_model"] in acceptance_text,
         "acceptance_script_uses_same_unresolved_behavior_model": contract["unresolved_selector_behavior_model"] in acceptance_text,
         "runbook_mentions_realized_dispatch_contract": "realized_dispatch_semantic_model.json" in runbook_text,

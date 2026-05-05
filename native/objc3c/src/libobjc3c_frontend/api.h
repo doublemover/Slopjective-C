@@ -34,9 +34,6 @@
 
 #define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u
 #define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3
-#define OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL 0u
-#define OBJC3C_FRONTEND_COMPATIBILITY_MODE_LEGACY 1u
-#define OBJC3C_FRONTEND_COMPATIBILITY_MODE_DEFAULT OBJC3C_FRONTEND_COMPATIBILITY_MODE_CANONICAL
 
 #ifdef __cplusplus
 extern "C" {
@@ -150,8 +147,6 @@ typedef struct objc3c_frontend_stage_summary {
  * - input_path is used by file-backed workflows.
  * - source_text is used by in-memory workflows.
  * - language_version uses Objective-C version 3 by default when set to 0.
- * - compatibility_mode values: canonical (0), legacy (1). Default: canonical.
- * - migration_assist toggles migration guidance paths when non-zero.
  * - Set unused pointers to NULL and reserved fields to 0.
  */
 typedef struct objc3c_frontend_compile_options {
@@ -168,9 +163,9 @@ typedef struct objc3c_frontend_compile_options {
   uint8_t emit_object;
   uint8_t ir_object_backend;
   uint8_t language_version;
-  uint8_t compatibility_mode;
-  uint8_t migration_assist;
   uint8_t reserved0;
+  uint8_t reserved1;
+  uint8_t reserved2;
   uint64_t translation_unit_registration_order_ordinal;
 } objc3c_frontend_compile_options_t;
 

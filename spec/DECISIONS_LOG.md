@@ -782,4 +782,3 @@ That means the Part 9 conformance gate remains tied to the published D002 runtim
 `M272-E002` keeps the milestone closeout truthful by replaying the existing `M272-A002` through `M272-E001` proof chain and freezing one explicit runnable matrix rather than inventing a new runtime or publication boundary.
 
 That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic fallback caching on top of the same `M272-D002` evidence surface.
-

@@ -242,7 +242,7 @@ inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedMigratorInvento
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedCanonicalizationInventory =
     "source-only:advanced-canonicalization-inventory";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimAdvancedMigrationAssistFlow =
-    "source-only:advanced-migration-assist-flow";
+    "source-only:advanced-canonical-rejection-diagnostics-flow";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMethodAnnotations =
     "source-only:direct-method-annotations";
 inline constexpr const char *kObjc3SourceOnlyFeatureClaimDirectMembersClassAnnotations =
@@ -391,10 +391,10 @@ inline constexpr const char *kObjc3UnsupportedFeatureClaimOptionalMemberAccess =
 
 inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageVersion =
     "selection:language-version";
-inline constexpr const char *kObjc3SupportedSelectionSurfaceCompatibilityMode =
+inline constexpr const char *kObjc3SupportedSelectionSurfaceLanguageProfile =
     "selection:compatibility-mode";
 inline constexpr const char *kObjc3SupportedSelectionSurfaceMigrationAssist =
-    "selection:migration-assist";
+    "selection:canonical-rejection-diagnostics";
 inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictness =
     "selection:strictness";
 inline constexpr const char *kObjc3UnsupportedSelectionSurfaceStrictConcurrency =

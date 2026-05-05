@@ -1,7 +1,7 @@
-// Positive fixture: direct nil receiver keyword message-send is compile-time elided to zero without runtime dispatch.
+// Positive fixture: direct optional nil receiver keyword message-send is compile-time elided to zero.
 module MessageSendDirectNilReceiverKeywordElision;
 
 fn main() {
-  let sent = [nil ping: 4 pong: 5];
+  let sent = [nil? ping: 4 pong: 5];
   return sent + 7;
 }

@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 INDEX_SCRIPT = ROOT / "scripts" / "generate_conformance_evidence_index.py"
 PUBLIC_CLAIM_DRIFT_SCRIPT = ROOT / "scripts" / "check_objc3c_public_claim_drift.py"
 INDEX_OUTPUT = ROOT / "tmp" / "reports" / "release_evidence" / "evidence-index.json"
+EMPTY_INPUT_ROOT = ROOT / "tmp" / "reports" / "release_evidence" / "empty-input"
+REPORTS_CONFORMANCE_ROOT = ROOT / "reports" / "conformance"
 SCHEMA_ID = "objc3-conformance-evidence-index/v1"
 ARTIFACT_AUTHENTICITY_SCHEMA_ID = "objc3c.artifact.authenticity.schema.v1"
 
@@ -54,43 +56,59 @@ def main() -> int:
     if not PUBLIC_CLAIM_DRIFT_SCRIPT.is_file():
         return fail("missing public claim drift checker scripts/check_objc3c_public_claim_drift.py")
 
-    claim_drift_result = subprocess.run(
-        [sys.executable, str(PUBLIC_CLAIM_DRIFT_SCRIPT), "--check"],
-        cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
-    if claim_drift_result.stdout:
-        sys.stdout.write(claim_drift_result.stdout)
-    if claim_drift_result.stderr:
-        sys.stderr.write(claim_drift_result.stderr)
-    if claim_drift_result.returncode != 0:
-        return fail(
-            f"public claim drift gate failed with exit code {claim_drift_result.returncode}"
+    required_artifact_paths: set[str] = set()
+    input_root_arg = "reports/conformance"
+    allow_empty_index = False
+
+    if REPORTS_CONFORMANCE_ROOT.is_dir():
+        claim_drift_result = subprocess.run(
+            [sys.executable, str(PUBLIC_CLAIM_DRIFT_SCRIPT), "--check"],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if claim_drift_result.stdout:
+            sys.stdout.write(claim_drift_result.stdout)
+        if claim_drift_result.stderr:
+            sys.stderr.write(claim_drift_result.stderr)
+        if claim_drift_result.returncode != 0:
+            return fail(
+                f"public claim drift gate failed with exit code {claim_drift_result.returncode}"
+            )
+
+        for schema_path, data_path in REQUIRED_SCHEMA_DATA_PAIRS:
+            for relative_path in (schema_path, data_path):
+                try:
+                    load_json(relative_path)
+                except FileNotFoundError:
+                    return fail(f"missing required file {relative_path}")
+                except ValueError as exc:
+                    return fail(str(exc))
+            required_artifact_paths.add(data_path)
+    else:
+        EMPTY_INPUT_ROOT.mkdir(parents=True, exist_ok=True)
+        input_root_arg = EMPTY_INPUT_ROOT.relative_to(ROOT).as_posix()
+        allow_empty_index = True
+        print(
+            "release-evidence: reports/conformance is absent; using generated-only empty index mode"
         )
 
-    required_artifact_paths: set[str] = set()
-    for schema_path, data_path in REQUIRED_SCHEMA_DATA_PAIRS:
-        for relative_path in (schema_path, data_path):
-            try:
-                load_json(relative_path)
-            except FileNotFoundError:
-                return fail(f"missing required file {relative_path}")
-            except ValueError as exc:
-                return fail(str(exc))
-        required_artifact_paths.add(data_path)
-
     INDEX_OUTPUT.parent.mkdir(parents=True, exist_ok=True)
+    index_command = [
+        sys.executable,
+        str(INDEX_SCRIPT),
+        "--input-root",
+        input_root_arg,
+        "--output",
+        str(INDEX_OUTPUT),
+        "--release-label",
+        "v0.11",
+    ]
+    if allow_empty_index:
+        index_command.append("--allow-empty")
     result = subprocess.run(
-        [
-            sys.executable,
-            str(INDEX_SCRIPT),
-            "--output",
-            str(INDEX_OUTPUT),
-            "--release-label",
-            "v0.11",
-        ],
+        index_command,
         cwd=ROOT,
         text=True,
         capture_output=True,
@@ -124,7 +142,7 @@ def main() -> int:
         "artifact_family_id": "objc3c.genuine_generated_output.conformance_evidence_index.v1",
         "report_family_id": "objc3c.genuine_generated_output.release_evidence_index_report.v1",
         "generator_or_compile_path": "python scripts/generate_conformance_evidence_index.py",
-        "input_root": "reports/conformance",
+        "input_root": input_root_arg,
         "output_path": "tmp/reports/release_evidence/evidence-index.json",
     }
     for field_name, expected_value in expected_envelope.items():

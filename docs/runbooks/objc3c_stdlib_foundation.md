@@ -4,7 +4,7 @@ This runbook defines the live Objective-C 3 standard-library foundation surface.
 
 It is the working source of truth for `objc3c.stdlib.foundation.v1` and the stdlib bootstrap path.
 Downstream issues must stay on the exact repo-owned roots defined here instead of
-inventing sidecar trees or milestone-local scaffolding.
+inventing sidecar trees or release-scope scaffolding.
 
 ## Working boundary
 

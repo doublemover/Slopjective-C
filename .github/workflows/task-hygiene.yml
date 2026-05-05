@@ -50,10 +50,10 @@ jobs:
         run: python -m pip install --upgrade pytest
 
       - name: Build native objc3c artifacts
-        run: npm run build:objc3c-native
+        run: npm run objc3c -- build-native-binaries
 
       - name: Refresh binary-derived frontend contract artifacts
-        run: npm run build:objc3c-native:contracts
+        run: npm run objc3c -- build-native-contracts
 
       - name: Probe hosted-runner LLVM capabilities
         shell: pwsh
@@ -106,4 +106,4 @@ jobs:
             Write-Host "Skipping execution smoke: hosted runner does not provide llc --filetype=obj capability."
             exit 0
           }
-          npm run test:objc3c:execution-smoke
+          npm run objc3c -- test-execution-smoke

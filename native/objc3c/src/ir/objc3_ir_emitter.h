@@ -174,10 +174,10 @@ struct Objc3IRMetaprogrammingPropertyBehaviorArtifactBundle {
 
 struct Objc3IRFrontendMetadata {
   std::uint8_t language_version = 3u;
-  std::string compatibility_mode = "canonical";
+  std::string language_profile = "canonical";
   std::string arc_mode = "disabled";
   bool arc_mode_enabled = false;
-  bool migration_assist = false;
+  bool legacy_literal_diagnostics = false;
   bool versioned_conformance_report_lowering_ready = false;
   std::string versioned_conformance_report_lowering_replay_key;
   std::size_t migration_legacy_yes = 0;
@@ -237,7 +237,7 @@ struct Objc3IRFrontendMetadata {
   bool runtime_metadata_source_records_ready_for_lowering = false;
   bool native_runtime_library_present = false;
   bool runtime_metadata_source_boundary_fail_closed = false;
-  bool runtime_shim_test_only = true;
+  bool runtime_link_test_only = true;
   bool deterministic_runtime_metadata_source_schema = false;
   std::string runtime_export_legality_contract_id;
   bool runtime_export_semantic_boundary_frozen = false;
@@ -590,16 +590,16 @@ struct Objc3IRFrontendMetadata {
   std::size_t super_dispatch_method_family_returns_related_result_sites = 0;
   std::size_t super_dispatch_method_family_contract_violation_sites = 0;
   bool deterministic_super_dispatch_method_family_handoff = false;
-  std::string lowering_runtime_shim_host_link_replay_key;
-  std::size_t runtime_shim_host_link_message_send_sites = 0;
-  std::size_t runtime_shim_host_link_required_sites = 0;
-  std::size_t runtime_shim_host_link_elided_sites = 0;
-  std::size_t runtime_shim_host_link_runtime_dispatch_arg_slots = 0;
-  std::size_t runtime_shim_host_link_runtime_dispatch_declaration_parameter_count = 0;
-  std::size_t runtime_shim_host_link_contract_violation_sites = 0;
-  std::string runtime_shim_host_link_runtime_dispatch_symbol;
-  bool runtime_shim_host_link_default_runtime_dispatch_symbol_binding = true;
-  bool deterministic_runtime_shim_host_link_handoff = false;
+  std::string lowering_runtime_link_host_link_replay_key;
+  std::size_t runtime_link_host_link_message_send_sites = 0;
+  std::size_t runtime_link_host_link_required_sites = 0;
+  std::size_t runtime_link_host_link_elided_sites = 0;
+  std::size_t runtime_link_host_link_runtime_dispatch_arg_slots = 0;
+  std::size_t runtime_link_host_link_runtime_dispatch_declaration_parameter_count = 0;
+  std::size_t runtime_link_host_link_contract_violation_sites = 0;
+  std::string runtime_link_host_link_runtime_dispatch_symbol;
+  bool runtime_link_host_link_default_runtime_dispatch_symbol_binding = true;
+  bool deterministic_runtime_link_host_link_handoff = false;
   std::string lowering_ownership_qualifier_replay_key;
   std::size_t ownership_qualifier_lowering_ownership_qualifier_sites = 0;
   std::size_t ownership_qualifier_lowering_invalid_ownership_qualifier_sites = 0;

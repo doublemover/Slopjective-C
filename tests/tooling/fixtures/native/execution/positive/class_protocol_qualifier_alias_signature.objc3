@@ -1,6 +1,9 @@
 module ClassProtocolQualifierAliasSignature;
 
-fn choose(flag: bool, when_true: Class<NSObject>, when_false: Class<NSObject>) -> Class {
+@protocol ClassProtocolFixture
+@end
+
+fn choose(flag: bool, when_true: Class<ClassProtocolFixture>, when_false: Class<ClassProtocolFixture>) -> Class {
   if (flag) {
     return when_true;
   }

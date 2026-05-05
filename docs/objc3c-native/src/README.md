@@ -29,7 +29,7 @@ They describe the live native frontend, not historical milestone closeouts.
 - `docs/reference/legacy_spec_anchor_index.md`
   - compatibility redirects only, not primary onboarding
 
-Do not move machine-owned packet inventories, `tmp/` proof paths, or archived
+Do not move machine-owned packet inventories, `tmp/` evidence paths, or archived
 milestone closeout material into these fragments.
 
 ## Live Code Paths For Documentation Work

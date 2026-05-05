@@ -390,8 +390,8 @@ function Get-PositiveExpectation {
         }
       }
     }
-    if ($null -ne $metaSpec.execution -and $metaSpec.execution.PSObject.Properties.Name -contains "requires_runtime_shim") {
-      $requiresLiveRuntimeDispatch = [bool]$metaSpec.execution.requires_runtime_shim
+    if ($null -ne $metaSpec.execution -and $metaSpec.execution.PSObject.Properties.Name -contains "requires_runtime_link") {
+      $requiresLiveRuntimeDispatch = [bool]$metaSpec.execution.requires_runtime_link
       $requiresLiveRuntimeDispatchExplicit = $true
     }
     if ($null -ne $metaSpec.execution -and $metaSpec.execution.PSObject.Properties.Name -contains "requires_live_runtime_dispatch") {
@@ -459,8 +459,8 @@ function Get-NegativeExpectation {
 
   $requiresLiveRuntimeDispatch = $false
   $requiresLiveRuntimeDispatchExplicit = $false
-  if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "requires_runtime_shim") {
-    $requiresLiveRuntimeDispatch = [bool]$spec.execution.requires_runtime_shim
+  if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "requires_runtime_link") {
+    $requiresLiveRuntimeDispatch = [bool]$spec.execution.requires_runtime_link
     $requiresLiveRuntimeDispatchExplicit = $true
   }
 

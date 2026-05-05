@@ -68,7 +68,7 @@ Lowering and runtime artifact contract:
 
 - the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
 - the canonical concurrency surfaces for this milestone are `runtime_unified_concurrency_source_surface`, `runtime_async_task_actor_normalization_completion_surface`, `runtime_unified_concurrency_lowering_metadata_surface`, and `runtime_unified_concurrency_runtime_abi_surface`
-- milestone-local checks must consume those emitted surfaces instead of recreating parallel concurrency manifest truth
+- release-scope checks must consume those emitted surfaces instead of recreating parallel concurrency manifest truth
 
 Executable proof and ABI contract:
 
@@ -80,7 +80,7 @@ Explicit non-goals:
 
 - public runtime ABI widening for continuation, task, executor, actor, mailbox, or sendability helpers
 - claims that ARC, thrown-error cleanup, or broader interop interaction is complete beyond the currently published concurrency-runtime evidence
-- milestone-local concurrency runtime scaffolding parallel to the shared runtime acceptance and runnable package path
+- release-scope concurrency runtime scaffolding parallel to the shared runtime acceptance and runnable package path
 - claims that scheduler fairness, distributed actor transport, or external executor integration are complete beyond the current manifest/runtime-registration/replay proof
 
 Follow-on tracks:

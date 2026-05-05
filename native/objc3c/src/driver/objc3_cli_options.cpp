@@ -6,6 +6,7 @@
 #include <limits>
 #include <string>
 
+#include "diagnostics/modes/objc3_removed_mode_options.h"
 #include "support/objc3_ir_object_backend_token.h"
 #include "support/objc3_runtime_dispatch_symbol.h"
 
@@ -24,18 +25,6 @@ bool ParseObjc3CliIrObjectBackend(const std::string &value, Objc3IrObjectBackend
   }
   backend = Objc3IrObjectBackend::kLLVMDirect;
   return true;
-}
-
-bool ParseCompatMode(const std::string &value, Objc3CompatMode &mode) {
-  if (value == "canonical") {
-    mode = Objc3CompatMode::kCanonical;
-    return true;
-  }
-  if (value == "legacy") {
-    mode = Objc3CompatMode::kLegacy;
-    return true;
-  }
-  return false;
 }
 
 bool ParseConformanceProfile(const std::string &value,
@@ -128,11 +117,9 @@ std::string Objc3CliUsage() {
          "[--llc <path>] [--objc3-import-runtime-surface <path>]... "
          "[-fobjc-version=<N>] [--objc3-language-version <N>] "
          "[-fobjc-arc] [-fno-objc-arc] "
-         "[--objc3-compat-mode <canonical|legacy>] "
          "[--objc3-conformance-profile <core|strict|strict-concurrency|strict-system>] "
          "[--emit-objc3-conformance] [--emit-objc3-conformance-format <json|yaml>] "
          "[--validate-objc3-conformance <report.json>] "
-         "[--objc3-migration-assist] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-metaprogramming-cache-root <dir>] "
          "[--objc3-ir-object-backend <clang|llvm-direct>] "
@@ -209,12 +196,8 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
         return false;
       }
       options.language_version = parsed_version;
-    } else if (flag == "--objc3-compat-mode" && i + 1 < argc) {
-      const std::string mode_text = argv[++i];
-      if (!ParseCompatMode(mode_text, options.compat_mode)) {
-        error = "invalid --objc3-compat-mode (expected canonical|legacy): " + mode_text;
-        return false;
-      }
+    } else if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(flag, error)) {
+      return false;
     } else if (flag == "--objc3-conformance-profile" && i + 1 < argc) {
       const std::string profile_text = argv[++i];
       if (!ParseConformanceProfile(profile_text, options.conformance_profile)) {
@@ -230,8 +213,6 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
     } else if (flag == "--validate-objc3-conformance" && i + 1 < argc) {
       options.command_mode = Objc3CliCommandMode::kValidateConformance;
       options.validate_conformance_report_path = argv[++i];
-    } else if (flag == "--objc3-migration-assist") {
-      options.migration_assist = true;
     } else if (flag == "--objc3-bootstrap-registration-order-ordinal" &&
                i + 1 < argc) {
       const std::string ordinal_text = argv[++i];

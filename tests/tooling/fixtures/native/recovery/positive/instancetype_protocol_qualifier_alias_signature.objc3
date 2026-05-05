@@ -1,6 +1,9 @@
 module InstancetypeProtocolQualifierAliasSignature;
 
-fn choose(flag: bool, when_true: instancetype<NSObject>, when_false: instancetype<NSObject>) -> instancetype {
+@protocol ClassProtocolFixture
+@end
+
+fn choose(flag: bool, when_true: instancetype<ClassProtocolFixture>, when_false: instancetype<ClassProtocolFixture>) -> instancetype {
   if (flag) {
     return when_true;
   }

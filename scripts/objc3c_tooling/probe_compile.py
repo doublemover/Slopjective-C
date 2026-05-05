@@ -10,6 +10,18 @@ from objc3c_tooling.paths import ROOT, repo_rel
 from objc3c_tooling.subprocesses import failure_snippet, run_capture
 
 
+def normal_user_manifest_link_args() -> list[str]:
+    if os.name != "nt":
+        return []
+    return [
+        "-fuse-ld=lld",
+        "-Xlinker",
+        "/MANIFEST:EMBED",
+        "-Xlinker",
+        "/MANIFESTUAC:level='asInvoker' uiAccess='false'",
+    ]
+
+
 def find_clangxx(*, llvm_root: str | None = None) -> str:
     configured_root = llvm_root if llvm_root is not None else os.environ.get("LLVM_ROOT")
     if configured_root:
@@ -40,6 +52,7 @@ def probe_compile_command(
         clangxx,
         "-std=c++20",
         "-fms-runtime-lib=dll",
+        *normal_user_manifest_link_args(),
         "-I",
         str(native_include.resolve()),
         "-I",

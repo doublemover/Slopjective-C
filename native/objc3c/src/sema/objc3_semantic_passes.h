@@ -20,8 +20,8 @@ struct Objc3FrontendInteropForeignImportSourceClosureSummary;
 struct Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary;
 
 Objc3SemanticIntegrationSurface BuildSemanticIntegrationSurface(const Objc3ParsedProgram &program,
-                                                                bool legacy_compatibility_mode,
-                                                                bool migration_assist_enabled,
+                                                                bool legacy_language_profile,
+                                                                bool legacy_literal_diagnostics_enabled,
                                                                 bool allow_source_only_block_literals,
                                                                 bool allow_source_only_defer_statements,
                                                                 bool allow_source_only_error_runtime_surface,

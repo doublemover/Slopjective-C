@@ -113,7 +113,7 @@ typedef struct objc3_runtime_keypath_entry_snapshot {
 // runtime-fast-path-integration anchor: Part 9 freezes the
 // existing private method-cache snapshot and entry-query helpers as the
 // truthful runtime proof surface for mixed direct-call bypass, dynamic opt-out,
-// and deterministic fallback dispatch behavior. D002 widens that same private
+// and strict dispatch error behavior. D002 widens that same private
 // runtime proof surface with one dedicated realized-dispatch snapshot rather
 // than opening a second public dispatch ABI.
 // live-dispatch-fast-path anchor: Part 9 now widens the same private

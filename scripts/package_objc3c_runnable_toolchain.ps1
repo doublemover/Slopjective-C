@@ -167,6 +167,21 @@ function Get-RepoRelativePythonToolingFiles {
   )
 }
 
+function Get-RepoRelativeRuntimeAcceptanceFiles {
+  param([Parameter(Mandatory = $true)][string]$RepoRoot)
+
+  $acceptanceRoot = Join-Path $RepoRoot "scripts/objc3c_runtime_acceptance"
+  if (!(Test-Path -LiteralPath $acceptanceRoot -PathType Container)) {
+    throw "runnable toolchain package FAIL: missing runtime acceptance package root $acceptanceRoot"
+  }
+
+  return @(
+    Get-ChildItem -LiteralPath $acceptanceRoot -Recurse -File -Filter "*.py" |
+      Sort-Object -Property FullName |
+      ForEach-Object { Get-RepoRelativePathCompat -RootPath $RepoRoot -TargetPath $_.FullName }
+  )
+}
+
 function Get-RepoRelativeRecoveryPositiveFiles {
   param([Parameter(Mandatory = $true)][string]$RepoRoot)
 
@@ -488,11 +503,12 @@ $requiredRelativeFiles = @(
 $executionFixtureFiles = @(Get-RepoRelativeExecutionFixtureFiles -RepoRoot $repoRoot)
 $nativeDocsFiles = @(Get-RepoRelativeNativeDocsFiles -RepoRoot $repoRoot)
 $pythonToolingFiles = @(Get-RepoRelativePythonToolingFiles -RepoRoot $repoRoot)
+$runtimeAcceptanceFiles = @(Get-RepoRelativeRuntimeAcceptanceFiles -RepoRoot $repoRoot)
 $recoveryPositiveFiles = @(Get-RepoRelativeRecoveryPositiveFiles -RepoRoot $repoRoot)
 $stdlibFiles = @(Get-RepoRelativeStdlibFiles -RepoRoot $repoRoot)
 $conformanceFiles = @(Get-RepoRelativeConformanceFiles -RepoRoot $repoRoot)
 $copiedRelativePaths = New-Object System.Collections.Generic.List[string]
-foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $nativeDocsFiles + $pythonToolingFiles + $recoveryPositiveFiles + $stdlibFiles + $conformanceFiles)) {
+foreach ($relativePath in @($requiredRelativeFiles + $executionFixtureFiles + $nativeDocsFiles + $pythonToolingFiles + $runtimeAcceptanceFiles + $recoveryPositiveFiles + $stdlibFiles + $conformanceFiles)) {
   Copy-RepoRelativeFile -RepoRoot $repoRoot -PackageRoot $packageRoot -RelativePath $relativePath | Out-Null
   $copiedRelativePaths.Add($relativePath.Replace('\\', '/')) | Out-Null
 }

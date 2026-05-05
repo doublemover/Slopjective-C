@@ -8,7 +8,11 @@ import tempfile
 from pathlib import Path
 from typing import Sequence
 
-from objc3c_tooling.probe_compile import find_clangxx, probe_compile_command
+from objc3c_tooling.probe_compile import (
+    find_clangxx,
+    normal_user_manifest_link_args,
+    probe_compile_command,
+)
 
 
 def expect(condition: bool, message: str) -> None:
@@ -49,6 +53,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         joined = " ".join(command)
         expect("-std=c++20" in command, "compile command should set C++ standard")
         expect("-fms-runtime-lib=dll" in command, "compile command should preserve MSVC runtime flag")
+        manifest_args = normal_user_manifest_link_args()
+        if os.name == "nt":
+            expect("-fuse-ld=lld" in command, "Windows probe links should use lld for embedded manifests")
+            expect("/MANIFEST:EMBED" in command, "Windows probe links should embed a manifest")
+            expect(
+                "/MANIFESTUAC:level='asInvoker' uiAccess='false'" in command,
+                "Windows probe links should force normal-user launch semantics",
+            )
+        else:
+            expect(not manifest_args, "non-Windows probe links should not request Windows manifests")
         expect("native\\objc3c\\src" in joined or "native/objc3c/src" in joined, "compile command should include native source root")
         expect("tests\\tooling\\runtime" in joined or "tests/tooling/runtime" in joined, "compile command should include runtime support root")
         expect("-DTEST=1" in command, "compile command should preserve extra args")

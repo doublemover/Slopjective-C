@@ -13,9 +13,9 @@ extern "C" {
 #endif
 
 /*
- * Optional C ABI shim for non-C++ embedding environments.
- * This wrapper preserves the underlying objc3c_frontend ABI data structures
- * and forwards to the primary libobjc3c_frontend entrypoints.
+ * C ABI wrapper for non-C++ embedding environments. It preserves the
+ * underlying objc3c_frontend ABI data structures and forwards to the primary
+ * libobjc3c_frontend entrypoints.
  */
 typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;
 typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;

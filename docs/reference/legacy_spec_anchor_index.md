@@ -787,4 +787,3 @@ Use topic-specific docs when they exist. Use this page only as a compatibility r
 
 - archived source file(s): `docs/reference/legacy_spec_anchor_index.md`
 - redirect intent: preserve compatibility for existing references while removing active dependencies on the archived `spec/` files.
-

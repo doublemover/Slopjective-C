@@ -298,7 +298,7 @@ function Get-CompileOutputTruthfulness {
     $runtimeDispatchSymbol = [string]$manifest["runtime_support_library_link_wiring_runtime_dispatch_symbol"]
   }
   if ([string]::IsNullOrWhiteSpace($runtimeDispatchSymbol)) {
-    $runtimeDispatchSymbol = [string]$manifest["runtime_shim_host_link_runtime_dispatch_symbol"]
+    $runtimeDispatchSymbol = [string]$manifest["runtime_link_host_link_runtime_dispatch_symbol"]
   }
   if ([string]::IsNullOrWhiteSpace($runtimeDispatchSymbol)) {
     throw "compile output truthfulness check could not resolve the runtime dispatch symbol from the compile manifest"
