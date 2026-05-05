@@ -24,13 +24,13 @@ Optional meta sidecar schema:
 
 Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. Unknown selectors produce the strict dispatch zero result on the execution-smoke path instead of fabricated success values.
 
-For `message_send_runtime_shim.objc3`:
+For `message_send_runtime_dispatch.objc3`:
 
 - Selector: `sum:with:`
 - Strict runtime dispatch value: `0`
 - Fixture return expression: `0`
 
-So `message_send_runtime_shim.exitcode.txt` is `0`.
+So `message_send_runtime_dispatch.exitcode.txt` is `0`.
 
 For `message_send_nil_receiver_short_circuit.objc3`:
 

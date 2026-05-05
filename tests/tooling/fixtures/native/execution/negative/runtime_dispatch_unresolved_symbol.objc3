@@ -1,4 +1,4 @@
-// Negative execution fixture: message-send lowering requires runtime dispatch shim at link time.
+// Negative execution fixture: message-send lowering requires runtime dispatch at link time.
 module RuntimeDispatchUnresolvedSymbol;
 
 fn main() -> i32 {

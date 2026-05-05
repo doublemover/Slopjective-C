@@ -3,5 +3,5 @@
     "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
     "requires_live_runtime_dispatch": true
   },
-  "fixture": "message_send_runtime_shim.objc3"
+  "fixture": "message_send_runtime_dispatch.objc3"
 }

@@ -1,5 +1,5 @@
 // Positive execution fixture: message-send path uses strict runtime dispatch at link time.
-module MessageSendRuntimeShim;
+module MessageSendRuntimeDispatch;
 
 fn main() -> i32 {
   let receiver = 9;
