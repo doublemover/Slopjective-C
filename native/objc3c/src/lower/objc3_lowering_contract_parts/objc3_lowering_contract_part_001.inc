@@ -214,19 +214,19 @@ inline constexpr const char
 // runtime path rather than the non-authoritative test surface. The upstream gate chain
 // stays rooted on A002/B003/C004/D004, the non-authoritative test surface remains
 // exported only as evidence/test surface, and E002 is the next issue allowed
-// to replace shim-based smoke/closeout assumptions with the integrated gate.
+// to replace non-authoritative smoke/closeout assumptions with the integrated gate.
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateContractId =
     "objc3c.runtime.live.dispatch.gate.v1";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateEvidenceModel =
     "source-sema-lowering-runtime-abi-summary-chain";
-inline constexpr const char *kObjc3RuntimeLiveDispatchGateShimBoundaryModel =
-    "live-runtime-dispatch-required-compatibility-shim-evidence-only";
+inline constexpr const char *kObjc3RuntimeLiveDispatchGateTestSurfaceBoundaryModel =
+    "live-runtime-dispatch-required-test-surface-evidence-only";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
     "fail-closed-on-live-dispatch-evidence-drift";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
     "objc3c.runtime.livedispatch.closeout.v1";
 // live-dispatch smoke/replay closeout anchor: lane-E now replaces
-// the last shim-era smoke/replay assumptions with canonical live runtime
+// the last non-authoritative smoke/replay assumptions with canonical live runtime
 // dispatch evidence. Execution smoke and replay must publish
 // requires_live_runtime_dispatch, the canonical runtime library path, the
 // non-authoritative test surface as non-authoritative evidence only, and the canonical
@@ -234,7 +234,7 @@ inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
 inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutContractId =
     "objc3c.runtime.live.dispatch.smoke.replay.closeout.v1";
 inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutModel =
-    "live-runtime-dispatch-smoke-and-replay-authoritative-shim-evidence-non-authoritative";
+    "live-runtime-dispatch-smoke-and-replay-authoritative-test-surface-non-authoritative";
 // emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info

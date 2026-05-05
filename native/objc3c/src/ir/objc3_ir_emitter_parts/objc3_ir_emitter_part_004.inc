@@ -108,7 +108,8 @@
                 ? 1
                 : 0)
         << ", i1 "
-        << (frontend_metadata_.runtime_support_library_shim_remains_test_only
+        << (frontend_metadata_
+                    .runtime_support_library_test_dispatch_surface_remains_non_authoritative
                 ? 1
                 : 0)
         << ", i1 "
@@ -199,7 +200,7 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_core_feature_dispatch_formula_matches_test_shim
+                    .runtime_support_library_core_feature_dispatch_formula_matches_runtime_test_helper
                 ? 1
                 : 0)
         << ", i1 "
@@ -209,7 +210,7 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_core_feature_shim_remains_test_only
+                    .runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative
                 ? 1
                 : 0)
         << ", i1 "
@@ -306,7 +307,7 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_link_wiring_shim_remains_test_only
+                    .runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative
                 ? 1
                 : 0)
         << ", i1 "

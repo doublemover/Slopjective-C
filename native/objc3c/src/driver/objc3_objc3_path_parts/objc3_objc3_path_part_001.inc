@@ -349,7 +349,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
       // freeze: manifest emission also publishes the reserved native
       // runtime support-library surface (target/header/entrypoints/link mode)
       // so D002/D003 must preserve one canonical runtime-library contract while
-      // the deterministic test shim remains non-canonical evidence only.
+      // the deterministic test surface remains non-canonical evidence only.
       // core feature: manifest emission also publishes the live
       // native runtime-library skeleton/build contract so the real in-tree
       // archive/header/source/probe surface stays synchronized with emitted IR

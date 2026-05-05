@@ -92,7 +92,7 @@ inline constexpr const char *kObjc3NilReceiverSemanticsFoldabilityLaneContract =
 inline constexpr const char *kObjc3SuperDispatchMethodFamilyLaneContract =
     "objc3c.super.dispatch.method.family.v1";
 inline constexpr const char *kObjc3RuntimeLinkHostLinkLaneContract =
-    "objc3c.runtime.shim.host.link.v1";
+    "objc3c.runtime.dispatch.host.link.v1";
 inline constexpr const char *kObjc3OwnershipQualifierLoweringLaneContract =
     "objc3c.ownership.qualifier.lowering.v1";
 inline constexpr const char *kObjc3RetainReleaseOperationLoweringLaneContract =

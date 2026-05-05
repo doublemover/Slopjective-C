@@ -7602,7 +7602,7 @@ def build_runtime_scaffold_retirement_deprecated_sidecar_compatibility_diagnosti
         "deprecated_sidecar_filenames": DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
         "explicit_non_goals": [
             "no-silent-compatibility-with-retired-sidecars",
-            "no-separate-migration-shim-for-deprecated-claim-artifacts",
+            "no-separate-migration-path-for-deprecated-claim-artifacts",
         ],
         "requires_conformance_validation_artifact": True,
         "requires_real_compile_output": True,
@@ -19063,7 +19063,7 @@ def check_synthesized_accessor_codegen_case(run_dir: Path) -> CaseResult:
     expect(lowering_surface.get("runtime_dispatch_symbol") == "objc3_runtime_dispatch_i32",
            "expected lowering surface to publish canonical runtime dispatch symbol")
     expect(lowering_surface.get("runtime_dispatch_symbol_matches_lowering") is True,
-           "expected lowering surface to bind lowering, shim, and runtime library dispatch symbols together")
+           "expected lowering surface to bind lowering and runtime library dispatch symbols together")
     expect(lowering_surface.get("property_synthesis_sites") == 3,
            "expected lowering surface to publish three synthesized properties")
     expect(lowering_surface.get("property_synthesis_default_ivar_bindings") == 3,

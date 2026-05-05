@@ -227,7 +227,7 @@
       // live-dispatch gate anchor: supported live sends must
       // continue to emit only objc3_runtime_dispatch_i32 calls here. The
       // non-authoritative test surface remains exported only as evidence/test surface, and
-      // E002 is the first issue allowed to replace shim-based smoke/closeout
+      // E002 is the first issue allowed to replace non-authoritative smoke/closeout
       // assumptions with the integrated live-dispatch gate.
       // live-dispatch smoke/replay closeout anchor: smoke and replay
       // now treat canonical runtime dispatch evidence as authoritative, so

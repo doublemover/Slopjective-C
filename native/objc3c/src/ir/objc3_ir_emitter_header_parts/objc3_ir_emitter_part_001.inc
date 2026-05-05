@@ -455,7 +455,8 @@ struct Objc3IRFrontendMetadata {
   bool runtime_support_library_exported_entrypoints_frozen = false;
   bool runtime_support_library_ownership_boundaries_frozen = false;
   bool runtime_support_library_build_constraints_frozen = false;
-  bool runtime_support_library_shim_remains_test_only = false;
+  bool runtime_support_library_test_dispatch_surface_remains_non_authoritative =
+      false;
   bool runtime_support_library_native_library_present = false;
   bool runtime_support_library_driver_link_wiring_pending = false;
   bool runtime_support_library_ready_for_skeleton = false;
@@ -480,10 +481,11 @@ struct Objc3IRFrontendMetadata {
   bool runtime_support_library_core_feature_archive_build_enabled = false;
   bool runtime_support_library_core_feature_entrypoints_implemented = false;
   bool runtime_support_library_core_feature_selector_lookup_stateful = false;
-  bool runtime_support_library_core_feature_dispatch_formula_matches_test_shim =
+  bool runtime_support_library_core_feature_dispatch_formula_matches_runtime_test_helper =
       false;
   bool runtime_support_library_core_feature_reset_for_testing_supported = false;
-  bool runtime_support_library_core_feature_shim_remains_test_only = false;
+  bool runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative =
+      false;
   bool runtime_support_library_core_feature_driver_link_wiring_pending = false;
   bool runtime_support_library_core_feature_ready_for_driver_link_wiring = false;
   std::string runtime_support_library_core_feature_target_name;
@@ -509,7 +511,8 @@ struct Objc3IRFrontendMetadata {
       false;
   bool runtime_support_library_link_wiring_execution_smoke_consumes_runtime_library =
       false;
-  bool runtime_support_library_link_wiring_shim_remains_test_only = false;
+  bool runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative =
+      false;
   bool runtime_support_library_link_wiring_ready_for_runtime_library_consumption =
       false;
   std::string runtime_support_library_link_wiring_archive_relative_path;

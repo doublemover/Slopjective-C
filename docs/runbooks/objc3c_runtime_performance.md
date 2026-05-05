@@ -86,7 +86,7 @@ Allowed optimization moves:
 
 Disallowed optimization moves:
 
-- no alternate dispatch entrypoint, benchmark-only runtime shim, or synthetic
+- no alternate dispatch entrypoint, benchmark-only runtime adapter, or synthetic
   property/reflection path
 - no widening of `native/objc3c/src/runtime/objc3_runtime.h` just to expose
   performance counters
@@ -154,7 +154,7 @@ Disallowed optimization moves:
 
 ## Explicit Non-Goals
 
-- no benchmark-only runtime shim or alternate dispatch entrypoint
+- no benchmark-only runtime adapter or alternate dispatch entrypoint
 - no sidecar-only performance claim without a coupled runtime probe or snapshot
 - no hidden optimization toggle that bypasses the checked-in runtime path
 - no second public runtime ABI just for performance measurement

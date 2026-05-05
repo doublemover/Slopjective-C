@@ -2062,7 +2062,7 @@ This document describes the live embedding surface exposed by `native/objc3c/src
 
 - primary header: `native/objc3c/src/libobjc3c_frontend/api.h`
 - version header: `native/objc3c/src/libobjc3c_frontend/version.h`
-- optional C shim header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
+- optional C API header: `native/objc3c/src/libobjc3c_frontend/c_api.h`
 
 `api.h` exposes a C ABI with an opaque frontend context type.
 

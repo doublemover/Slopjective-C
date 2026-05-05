@@ -167,7 +167,7 @@ Runtime-performance entrypoint:
   snapshots, and runnable runtime-performance validation
 - runtime-performance work must stay on the existing runtime library, runtime
   acceptance probes, public workflow runner, and runnable package surfaces
-  instead of inventing a benchmark-only runtime shim or sidecar report flow
+  instead of inventing a benchmark-only runtime adapter or sidecar report flow
 - use that runbook before widening runtime hot-path claims, counter fields, or
   packaged runtime-performance validation
 

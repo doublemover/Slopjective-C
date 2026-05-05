@@ -1104,9 +1104,11 @@
            << ",\"runtime_support_library_build_constraints_frozen\":"
            << (runtime_support_library.build_constraints_frozen ? "true"
                                                                 : "false")
-           << ",\"runtime_support_library_shim_remains_test_only\":"
-           << (runtime_support_library.shim_remains_test_only ? "true"
-                                                              : "false")
+           << ",\"runtime_support_library_test_dispatch_surface_remains_non_authoritative\":"
+           << (runtime_support_library
+                           .test_dispatch_surface_remains_non_authoritative
+                   ? "true"
+                   : "false")
            << ",\"runtime_support_library_native_library_present\":"
            << (runtime_support_library.native_runtime_library_present ? "true"
                                                                       : "false")
@@ -1176,17 +1178,18 @@
            << (runtime_support_library_core_feature.selector_lookup_stateful
                    ? "true"
                    : "false")
-           << ",\"runtime_support_library_core_feature_dispatch_formula_matches_test_shim\":"
+           << ",\"runtime_support_library_core_feature_dispatch_formula_matches_runtime_test_helper\":"
            << (runtime_support_library_core_feature
-                           .deterministic_dispatch_formula_matches_test_shim
+                           .deterministic_dispatch_formula_matches_runtime_test_helper
                    ? "true"
                    : "false")
            << ",\"runtime_support_library_core_feature_reset_for_testing_supported\":"
            << (runtime_support_library_core_feature.reset_for_testing_supported
                    ? "true"
                    : "false")
-           << ",\"runtime_support_library_core_feature_shim_remains_test_only\":"
-           << (runtime_support_library_core_feature.shim_remains_test_only
+           << ",\"runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative\":"
+           << (runtime_support_library_core_feature
+                           .test_dispatch_surface_remains_non_authoritative
                    ? "true"
                    : "false")
            << ",\"runtime_support_library_core_feature_driver_link_wiring_pending\":"
@@ -1251,8 +1254,9 @@
                        .execution_smoke_consumes_runtime_library
                    ? "true"
                    : "false")
-           << ",\"runtime_support_library_link_wiring_shim_remains_test_only\":"
-           << (runtime_support_library_link_wiring.shim_remains_test_only
+           << ",\"runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative\":"
+           << (runtime_support_library_link_wiring
+                           .test_dispatch_surface_remains_non_authoritative
                    ? "true"
                    : "false")
            << ",\"runtime_support_library_link_wiring_ready_for_runtime_library_consumption\":"

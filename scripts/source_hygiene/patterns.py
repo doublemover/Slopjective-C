@@ -62,7 +62,7 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "runtime-shim-token",
         "Runtime shim terminology is not allowed on the authoritative surface.",
-        r"\bruntime[_-]?shim\b",
+        r"\bruntime[._\s-]?shim\b",
     ),
     ForbiddenPattern(
         "public-compatibility-mode",
@@ -87,7 +87,7 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "shim-wording",
         "Shim wording is not allowed on authoritative active paths.",
-        r"\bcompatibility\s+shim\b|\boptional\s+C\s+ABI\s+shim\b|\bshim\s+fixture\b|\bshim\s+case\b",
+        r"\bshim\b",
     ),
     ForbiddenPattern(
         "stale-monolithic-cmake",

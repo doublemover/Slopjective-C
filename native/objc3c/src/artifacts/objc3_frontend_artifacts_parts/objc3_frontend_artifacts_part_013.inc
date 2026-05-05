@@ -582,13 +582,14 @@
           nil_receiver_semantics_foldability_contract,
           options);
   if (!IsValidObjc3RuntimeLinkHostLinkContract(runtime_link_host_link_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid runtime shim/host-link contract");
+    record_post_pipeline_failure("O3L300",
+                                 "LLVM IR emission failed: invalid runtime dispatch host-link contract");
   }
   const std::string runtime_link_host_link_replay_key =
       Objc3RuntimeLinkHostLinkReplayKey(runtime_link_host_link_contract);
   // dispatch lowering ABI freeze anchor: lane-C now publishes the
   // canonical runtime-dispatch cutover boundary separately from the historical
-  // shim-host-link packet so C002 can swap call emission over without
+  // dispatch-host-link packet so C002 can swap call emission over without
   // redefining the selector lookup/handle or argument-slot ABI ad hoc.
   const Objc3RuntimeDispatchLoweringAbiContract
       runtime_dispatch_lowering_abi_contract =

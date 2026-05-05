@@ -24,6 +24,18 @@ def test_hard_cutover_gate_fails_on_active_forbidden_pattern(tmp_path: Path) -> 
     assert report["active_findings"][0]["pattern_id"] == "runtime-dispatch-pseudo-success"
 
 
+def test_hard_cutover_gate_rejects_dotted_runtime_shim_tokens(tmp_path: Path) -> None:
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "const char *contract = \"objc3c.runtime.shim.host.link.v1\";\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "runtime-shim-token"
+
+
 def test_hard_cutover_gate_allows_temporary_tmp_allowlist(tmp_path: Path) -> None:
     write(
         tmp_path / "native/objc3c/src/driver/options.cpp",
