@@ -43,7 +43,7 @@ Replayable generators and validators:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - runtime/debug ABI and contract emitters:
   - `native/objc3c/src/lower/objc3_lowering_contract.cpp`
   - `native/objc3c/src/lower/objc3_lowering_contract.h`

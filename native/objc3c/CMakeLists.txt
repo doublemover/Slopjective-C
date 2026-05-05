@@ -221,7 +221,6 @@ objc3c_apply_llvm_direct_config(objc3c_json)
 
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
-  src/pipeline/objc3_frontend_artifacts.cpp
   src/pipeline/objc3_runtime_import_surface.cpp
   src/pipeline/objc3_ir_emission_completeness_scaffold.cpp
   src/pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp
@@ -235,6 +234,16 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_lower
   objc3c_ir
   objc3c_diag
+  objc3c_json
+)
+
+add_library(objc3c_artifacts STATIC
+  src/artifacts/objc3_frontend_artifacts.cpp
+)
+objc3c_apply_build_defaults(objc3c_artifacts)
+objc3c_apply_llvm_direct_config(objc3c_artifacts)
+target_link_libraries(objc3c_artifacts PUBLIC
+  objc3c_pipeline
   objc3c_json
 )
 
@@ -285,6 +294,7 @@ add_library(objc3c_frontend STATIC
 objc3c_apply_build_defaults(objc3c_frontend)
 objc3c_apply_llvm_direct_config(objc3c_frontend)
 target_link_libraries(objc3c_frontend PUBLIC
+  objc3c_artifacts
   objc3c_pipeline
   objc3c_runtime_abi
   objc3c_json

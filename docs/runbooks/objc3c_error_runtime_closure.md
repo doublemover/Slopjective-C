@@ -88,7 +88,7 @@ Authoritative live surfaces:
 - sema and lowering:
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - acceptance and public workflow:
   - `scripts/check_objc3c_runtime_acceptance.py`

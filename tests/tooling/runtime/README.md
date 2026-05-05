@@ -37,7 +37,7 @@ Representative live proof paths:
 - compile and artifact publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - IR emission:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - runtime probes:

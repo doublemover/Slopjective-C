@@ -1004,7 +1004,7 @@
            << kObjc3AccessorStorageLoweringHelperSelectionModel
            << "\",\"lowering_contract_source_path\":\"native/objc3c/src/lower/objc3_lowering_contract.h\""
            << ",\"ir_emitter_source_path\":\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
-           << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp\""
+           << ",\"frontend_artifacts_source_path\":\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""
            << ",\"runtime_source_path\":\"native/objc3c/src/runtime/objc3_runtime.cpp\""
            << ",\"authoritative_fixture_paths\":[\"tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3\""
            << ",\"tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3\""

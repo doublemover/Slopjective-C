@@ -3,11 +3,22 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_ANCHOR = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "frontend_anchor.cpp"
 DIAG_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_diagnostics_artifacts.cpp"
-PIPELINE_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.cpp"
+PIPELINE_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
 
 
 def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    expanded: list[str] = []
+    for line in text.splitlines():
+        expanded.append(line)
+        stripped = line.strip()
+        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+            continue
+        include_path = stripped.split('"', 2)[1]
+        target = ROOT / "native" / "objc3c" / "src" / include_path
+        if target.exists():
+            expanded.append(target.read_text(encoding="utf-8"))
+    return "\n".join(expanded)
 
 
 def _assert_in_order(text: str, snippets: list[str]) -> None:
@@ -43,15 +54,15 @@ def test_manifest_emits_sema_parity_contract_fields() -> None:
     artifacts = _read(PIPELINE_ARTIFACTS)
 
     assert "language_version" in artifacts
-    assert "compatibility_mode" in artifacts
-    assert "migration_assist" in artifacts
+    assert "language_profile" in artifacts
+    assert "legacy_literal_diagnostics" in artifacts
     _assert_in_order(
         artifacts,
         [
             'manifest << "  \\"frontend\\": {\\n";',
             'manifest << "    \\"language_version\\":"',
-            'manifest << "    \\"compatibility_mode\\":\\""',
-            'manifest << "    \\"migration_assist\\":"',
+            'manifest << "    \\"language_profile\\":\\""',
+            'manifest << "    \\"legacy_literal_diagnostics\\":"',
             'manifest << "    \\"max_message_send_args\\":"',
         ],
     )

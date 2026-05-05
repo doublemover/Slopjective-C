@@ -17,7 +17,7 @@ INTEGRATION_PATH = ROOT / "scripts/check_objc3c_runtime_architecture_integration
 CONFORMANCE_PATH = ROOT / "scripts/check_objc3c_runnable_metaprogramming_conformance.py"
 E2E_PATH = ROOT / "scripts/check_objc3c_runnable_metaprogramming_end_to_end.py"
 WORKFLOW_PATH = ROOT / "scripts/objc3c_public_workflow_runner.py"
-FRONTEND_ARTIFACTS_PATH = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+FRONTEND_ARTIFACTS_PATH = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
 RUNTIME_IMPORT_PATH = ROOT / "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
 RUNTIME_CPP_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 

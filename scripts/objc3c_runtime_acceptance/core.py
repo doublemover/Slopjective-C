@@ -2108,7 +2108,7 @@ def compile_fixture_with_args(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
             "native/objc3c/src/runtime/objc3_runtime.h",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
@@ -2230,7 +2230,7 @@ def compile_fixture_with_args(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
@@ -2325,7 +2325,7 @@ def compile_fixture_with_args(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         ],
         "authoritative_surface_fields": [
@@ -2522,7 +2522,7 @@ def compile_fixture_with_args(
         ),
         "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         "frontend_artifacts_source_path": (
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
         ),
         "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
     }
@@ -2642,7 +2642,7 @@ def compile_fixture_with_args(
         ),
         "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         "frontend_artifacts_source_path": (
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
         ),
     }
     for field, expected_value in (
@@ -2748,7 +2748,7 @@ def compile_fixture_with_args(
         ),
         "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         "frontend_artifacts_source_path": (
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
         ),
     }
     for field, expected_value in (
@@ -2840,7 +2840,7 @@ def compile_fixture_with_args(
         ),
         "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         "frontend_artifacts_source_path": (
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
         ),
         "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
     }
@@ -3028,7 +3028,7 @@ def compile_fixture_with_args(
         ),
         "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         "frontend_artifacts_source_path": (
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
         ),
         "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",
     }
@@ -3186,7 +3186,7 @@ def compile_fixture_with_args(
         "native/objc3c/src/ast/objc3_ast.h",
         "native/objc3c/src/sema/objc3_semantic_passes.cpp",
         "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-        "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
         "native/objc3c/src/runtime/objc3_runtime.cpp",
     ]
@@ -3382,7 +3382,7 @@ def compile_fixture_with_args(
     expected_ownership_transfer_capture_family_code_paths = [
         "native/objc3c/src/ast/objc3_ast.h",
         "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-        "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         "native/objc3c/src/ir/objc3_ir_emitter.cpp",
     ]
     if (
@@ -3593,7 +3593,7 @@ def compile_fixture_with_args(
     expected_block_arc_lowering_helper_code_paths = [
         "native/objc3c/src/ast/objc3_ast.h",
         "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-        "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
         "native/objc3c/src/runtime/objc3_runtime.cpp",
     ]
@@ -3810,7 +3810,7 @@ def compile_fixture_with_args(
         "sema_pass_manager_source_path": "native/objc3c/src/sema/objc3_sema_pass_manager.cpp",
         "frontend_pipeline_source_path": "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
         "frontend_artifacts_source_path": (
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
         ),
         "runtime_internal_header_path": (
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
@@ -5880,7 +5880,7 @@ def build_runtime_error_execution_cleanup_source_surface(
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/parse/objc3_parser.cpp",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
         ],
         "authoritative_case_ids": authoritative_case_ids,
@@ -5925,7 +5925,7 @@ def build_runtime_catch_filter_finalization_source_surface(
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/parse/objc3_parser.cpp",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
         ],
         "authoritative_case_ids": authoritative_case_ids,
@@ -5971,7 +5971,7 @@ def build_runtime_error_propagation_cleanup_semantics_surface(
             "native/objc3c/src/sema/objc3_sema_contract.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/sema/objc3_semantic_passes.h",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
         ],
         "authoritative_case_ids": authoritative_case_ids,
@@ -6014,7 +6014,7 @@ def build_runtime_bridging_filter_unwind_diagnostics_surface(
             "native/objc3c/src/sema/objc3_sema_contract.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/sema/objc3_semantic_passes.h",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
         ],
         "authoritative_case_ids": authoritative_case_ids,
@@ -6067,7 +6067,7 @@ def build_runtime_error_lowering_unwind_bridge_helper_surface(
             "native/objc3c/src/lower/objc3_lowering_contract.h",
             "native/objc3c/src/ir/objc3_ir_emitter.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "authoritative_case_ids": authoritative_case_ids,
@@ -6158,7 +6158,7 @@ def build_runtime_error_propagation_catch_cleanup_runtime_implementation_surface
         "private_error_runtime_abi_boundary": PRIVATE_ERROR_RUNTIME_ABI_BOUNDARY,
         "authoritative_code_paths": [
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
@@ -6213,7 +6213,7 @@ def build_runtime_unified_concurrency_source_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
             "native/objc3c/src/runtime/objc3_runtime.h",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
@@ -6312,7 +6312,7 @@ def build_runtime_async_task_actor_normalization_completion_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
@@ -6390,7 +6390,7 @@ def build_runtime_unified_concurrency_lowering_metadata_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         ],
         "authoritative_surface_fields": [
@@ -6501,7 +6501,7 @@ def build_runtime_metaprogramming_source_surface(
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/token/objc3_token_contract.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         ],
         "authoritative_source_fields": [
             "Objc3InterfaceDecl.objc_derive_declared",
@@ -6553,7 +6553,7 @@ def build_runtime_metaprogramming_package_provenance_source_surface(
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/token/objc3_token_contract.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         ],
         "authoritative_source_fields": [
             "Objc3FunctionDecl.objc_macro_package_declared",
@@ -6616,7 +6616,7 @@ def build_runtime_metaprogramming_semantics_surface(
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "semantic_surface_model": (
@@ -6696,7 +6696,7 @@ def build_runtime_metaprogramming_lowering_host_cache_surface(
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "authoritative_fixture_paths": [
@@ -6748,7 +6748,7 @@ def build_runtime_cross_module_metaprogramming_artifact_preservation_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "authoritative_fixture_paths": [
@@ -6896,7 +6896,7 @@ def build_runtime_cross_module_package_interop_source_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/lower/objc3_lowering_contract.h",
             "native/objc3c/src/pipeline/objc3_frontend_types.h",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "authoritative_source_fields": [
@@ -6946,7 +6946,7 @@ def build_runtime_textual_binary_interface_parity_source_surface(
         ],
         "authoritative_code_paths": [
             "native/objc3c/src/pipeline/objc3_frontend_types.h",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "authoritative_source_fields": [
@@ -7095,7 +7095,7 @@ def build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
         "authoritative_case_ids": authoritative_case_ids,
         "authoritative_code_paths": [
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp",
         ],
         "authoritative_fixture_paths": [
@@ -7223,7 +7223,7 @@ def build_runtime_mixed_image_package_lowering_bridge_emission_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
             "native/objc3c/src/lower/objc3_lowering_contract.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         ],
         "authoritative_fixture_paths": [
             INTEROP_HEADER_MODULE_PROVIDER_FIXTURE,
@@ -7378,7 +7378,7 @@ def build_runtime_claimable_surface_residual_non_claimable_gaps_source_surface(
             "native/objc3c/src/driver/objc3_objc3_path.cpp",
             "native/objc3c/src/io/objc3_manifest_artifacts.cpp",
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "scripts/publish_release_runtime_claim_matrix.py",
         ],
         "authoritative_source_fields": [
@@ -7444,7 +7444,7 @@ def build_runtime_strict_profile_feature_claim_source_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/driver/objc3_objc3_path.cpp",
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "scripts/publish_release_runtime_claim_matrix.py",
         ],
         "authoritative_source_fields": [
@@ -7549,7 +7549,7 @@ def build_runtime_strict_profile_claim_implementation_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/driver/objc3_objc3_path.cpp",
             "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         ],
         "claim_implementation_model": (
             "strict-strict-concurrency-and-strict-system-compile-publish-and-validate-through-the-same-native-cli-claim-surface-as-core"
@@ -7908,7 +7908,7 @@ def build_runtime_property_ivar_storage_accessor_source_surface(
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
         "authoritative_source_fields": [
@@ -8023,7 +8023,7 @@ def build_runtime_block_arc_unified_source_surface(results: list[CaseResult]) ->
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
@@ -8149,7 +8149,7 @@ def build_runtime_ownership_transfer_capture_family_source_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
         ],
         "authoritative_fixture_paths": [
@@ -8257,7 +8257,7 @@ def build_runtime_block_arc_lowering_helper_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/ast/objc3_ast.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
@@ -8373,7 +8373,7 @@ def build_runtime_property_atomicity_synthesis_reflection_source_surface(
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/sema/objc3_sema_pass_manager.cpp",
             "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
@@ -8455,7 +8455,7 @@ def build_dispatch_and_synthesized_accessor_lowering_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/lower/objc3_lowering_contract.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
         "lowering_metadata_model": (
@@ -8526,7 +8526,7 @@ def build_executable_property_accessor_layout_lowering_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/lower/objc3_lowering_contract.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         ],
         "property_table_model": (
             "property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records"
@@ -8594,7 +8594,7 @@ def build_executable_ivar_layout_emission_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/lower/objc3_lowering_contract.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         ],
         "descriptor_model": (
             "ivar-descriptor-records-carry-layout-symbol-replay-key-offset-global-slot-offset-size-alignment-padding-inheritance-owner-size-ordering"
@@ -8664,7 +8664,7 @@ def build_executable_synthesized_accessor_property_lowering_surface(
         "authoritative_code_paths": [
             "native/objc3c/src/lower/objc3_lowering_contract.h",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+            "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
         "source_model": (
@@ -18230,7 +18230,7 @@ def check_accessor_storage_lowering_metadata_surface_case(
     )
     expect(
         synthesized_lowering_surface.get("frontend_artifacts_source_path")
-        == "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp",
+        == "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
         "expected lowering surface to publish the frontend artifacts source path",
     )
     expect(

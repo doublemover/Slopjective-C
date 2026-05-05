@@ -1,4 +1,4 @@
-#include "pipeline/objc3_frontend_artifacts.h"
+#include "artifacts/objc3_frontend_artifacts.h"
 
 #include <algorithm>
 #include <cctype>

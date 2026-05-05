@@ -15,7 +15,7 @@ Owned code paths:
 - compile publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - installation and registration:
   - `native/objc3c/src/runtime/objc3_runtime.h`
@@ -27,7 +27,7 @@ Owned code paths:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - property, storage, and ownership execution:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - acceptance and replay reporting:
   - `scripts/check_objc3c_runtime_acceptance.py`

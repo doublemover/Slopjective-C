@@ -22,7 +22,7 @@ PARSER = ROOT / "native/objc3c/src/parse/objc3_parser.cpp"
 SEMA = ROOT / "native/objc3c/src/sema/objc3_sema_contract.h"
 PIPELINE_TYPES = ROOT / "native/objc3c/src/pipeline/objc3_frontend_types.h"
 PIPELINE = ROOT / "native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp"
-ARTIFACTS = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+ARTIFACTS = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
 IMPORT_SURFACE = ROOT / "native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp"
 
 REQUIRED_LAYOUT_FIELDS = [

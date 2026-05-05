@@ -90,7 +90,7 @@ Authoritative live surfaces:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - acceptance and public workflow:
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_runnable_metaprogramming_conformance.py`

@@ -77,7 +77,7 @@ Property/ivar/storage/accessor source surface:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
   - `Objc3PropertyDecl.ivar_binding_symbol`
@@ -123,7 +123,7 @@ Property atomicity/synthesis/reflection source surface:
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
@@ -388,7 +388,7 @@ Authoritative code paths for the current tranche:
 - compile and artifact publication:
   - `native/objc3c/src/driver/objc3_compilation_driver.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - runtime/lowering boundary comments:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
 - published architecture map:

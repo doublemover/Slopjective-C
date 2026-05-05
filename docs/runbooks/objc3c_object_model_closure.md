@@ -61,7 +61,7 @@ Authoritative live surfaces:
 - lowering and manifests:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - acceptance and public workflow:
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_runnable_object_model_conformance.py`

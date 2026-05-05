@@ -3,7 +3,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 PIPELINE_HEADER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.h"
 PIPELINE_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_pipeline.cpp"
-ARTIFACTS_SOURCE = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_artifacts.cpp"
+ARTIFACTS_SOURCE = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
 CLI_FRONTEND_SOURCE = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "objc3_cli_frontend.cpp"
 CMAKE_FILE = ROOT / "native" / "objc3c" / "CMakeLists.txt"
 
@@ -27,5 +27,7 @@ def test_cmake_registers_pipeline_target() -> None:
     cmake = _read(CMAKE_FILE)
     assert "add_library(objc3c_pipeline STATIC" in cmake
     assert "src/pipeline/objc3_frontend_pipeline.cpp" in cmake
-    assert "src/pipeline/objc3_frontend_artifacts.cpp" in cmake
+    assert "add_library(objc3c_artifacts STATIC" in cmake
+    assert "src/artifacts/objc3_frontend_artifacts.cpp" in cmake
+    assert "target_link_libraries(objc3c_artifacts PUBLIC" in cmake
     assert "objc3c_pipeline" in cmake

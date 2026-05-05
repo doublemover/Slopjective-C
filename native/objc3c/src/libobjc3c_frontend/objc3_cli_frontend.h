@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <string>
 
-#include "pipeline/objc3_frontend_artifacts.h"
+#include "artifacts/objc3_frontend_artifacts.h"
 #include "pipeline/objc3_frontend_pipeline.h"
 
 struct Objc3FrontendCompileProduct {

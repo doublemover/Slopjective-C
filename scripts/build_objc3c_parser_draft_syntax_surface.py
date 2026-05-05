@@ -22,7 +22,7 @@ PARSER = ROOT / "native/objc3c/src/parse/objc3_parser.cpp"
 AST_BUILDER_HEADER = ROOT / "native/objc3c/src/parse/objc3_ast_builder.h"
 AST_BUILDER_SOURCE = ROOT / "native/objc3c/src/parse/objc3_ast_builder.cpp"
 PARSER_CONTRACT = ROOT / "native/objc3c/src/parse/objc3_parser_contract.h"
-ARTIFACTS = ROOT / "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+ARTIFACTS = ROOT / "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
 
 REQUIRED_AST_FIELDS = [
     "struct Objc3DraftSyntaxSurfaceSummary",

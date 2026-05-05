@@ -1011,7 +1011,7 @@ function Get-NativeCompilerBuildInputPaths {
     (Join-Path $RepoRoot "native/objc3c/src/support/objc3_string_predicates.h")
     (Join-Path $RepoRoot "native/objc3c/src/support/objc3_value_type_names.h")
     (Join-Path $RepoRoot "native/objc3c/src/pipeline/objc3_frontend_types.h")
-    (Join-Path $RepoRoot "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp")
+    (Join-Path $RepoRoot "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp")
     (Join-Path $RepoRoot "native/objc3c/src/io/objc3_json.h")
     (Join-Path $RepoRoot "native/objc3c/src/io/objc3_json.cpp")
     (Join-Path $RepoRoot "native/objc3c/src/io/objc3_process.h")

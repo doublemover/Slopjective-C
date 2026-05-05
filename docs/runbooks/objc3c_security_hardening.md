@@ -82,7 +82,7 @@ Macro trust currently terminates in the checked-in compiler and runtime surfaces
 
 - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
 - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+- `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - `native/objc3c/src/io/objc3_process.cpp`
 - `scripts/check_objc3c_runtime_acceptance.py`
 - `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3`

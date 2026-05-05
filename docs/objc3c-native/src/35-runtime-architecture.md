@@ -17,7 +17,7 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - runtime-owned installation and execution path:
   - `native/objc3c/src/runtime/objc3_runtime.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
@@ -194,7 +194,7 @@ truth from scattered semantic and runtime-side reports.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/token/objc3_token_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
@@ -219,7 +219,7 @@ source packet instead of inferring scope from stale checklist text.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/token/objc3_token_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/expansion_lowering_positive.objc3`
@@ -251,7 +251,7 @@ packet instead of inventing a second package/provenance inventory.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -299,7 +299,7 @@ assumptions.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -326,7 +326,7 @@ sidecars or release-scope summaries.
   - `objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1`
 - authoritative live code paths:
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -417,7 +417,7 @@ evidence-only summaries or release-scope cache assumptions.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.h`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
@@ -461,7 +461,7 @@ stale milestone notes, or probe-local assumptions.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
@@ -496,7 +496,7 @@ execution has already landed.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -524,7 +524,7 @@ instead of reconstructing lowering state from sidecars or probe-local notes.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/parse/objc3_parser.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -551,7 +551,7 @@ packets.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/parse/objc3_parser.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -578,7 +578,7 @@ source forms are valid or try-eligible.
   - `native/objc3c/src/sema/objc3_sema_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -602,7 +602,7 @@ of hand-waving over what is already enforced in the compiler.
   - `native/objc3c/src/sema/objc3_sema_contract.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_semantic_passes.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -636,7 +636,7 @@ compiler contract.
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -680,7 +680,7 @@ the public runtime header unchanged until a wider ABI commitment is warranted.
   - `runtime_error_lowering_unwind_bridge_helper_surface`
 - authoritative live code paths:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative evidence paths:
@@ -756,7 +756,7 @@ sidecars, stale milestone notes, or synthetic probes.
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative evidence paths:
@@ -812,7 +812,7 @@ symbol inventories from ad hoc probes.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - authoritative evidence paths:
   - fixtures:
@@ -878,7 +878,7 @@ release-scope notes.
 - authoritative live code paths:
   - `native/objc3c/src/ast/objc3_ast.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative evidence paths:
@@ -1005,7 +1005,7 @@ runtime-link facts for imported block-heavy modules.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
   - `Objc3PropertyDecl.ivar_binding_symbol`
@@ -1057,7 +1057,7 @@ non-goals.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/sema/objc3_sema_pass_manager.cpp`
   - `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative source fields:
@@ -1103,7 +1103,7 @@ non-goals.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - frozen semantic models:
   - lowering metadata:
@@ -1153,7 +1153,7 @@ or ad hoc IR inspection.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - frozen semantic models:
   - property table:
     - `property-descriptor-bundles-carry-sema-approved-attribute-accessor-binding-and-layout-records`
@@ -1198,7 +1198,7 @@ body or layout truth outside the live lowering path.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - frozen semantic models:
   - descriptor model:
     - `ivar-descriptor-records-carry-layout-symbol-offset-global-slot-offset-size-alignment`
@@ -1239,7 +1239,7 @@ runtime or in sidecars.
 - authoritative lowering code paths:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - frozen semantic models:
   - source model:

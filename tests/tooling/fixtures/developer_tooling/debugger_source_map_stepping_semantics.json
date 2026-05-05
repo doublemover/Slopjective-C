@@ -9,7 +9,7 @@
     "scripts/objc3c_public_workflow_runner.py",
     "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
     "native/objc3c/src/runtime/objc3_runtime.cpp",
-    "native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp"
+    "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp"
   ],
   "authoritative_probe_paths": [
     "tests/tooling/runtime/arc_debug_instrumentation_probe.cpp",

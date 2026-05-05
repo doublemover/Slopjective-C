@@ -42,7 +42,7 @@ real implementation exists.
   - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
-  - `native/objc3c/src/pipeline/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - native build and package wiring:
   - `scripts/build_objc3c_native.ps1`
   - `scripts/package_objc3c_runnable_toolchain.ps1`
