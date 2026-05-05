@@ -84,7 +84,7 @@ def test_lexer_consumes_language_version_pragmas_with_deterministic_diagnostics(
 def test_pipeline_consumes_lexer_migration_hints_surface() -> None:
     pipeline_cpp = read_text(PIPELINE_CPP)
     assert "Objc3LexerOptions lexer_options;" in pipeline_cpp
-    assert "lexer_options.legacy_literal_diagnostics = options.legacy_literal_diagnostics;" in pipeline_cpp
+    assert "lexer_options.legacy_literal_diagnostics" not in pipeline_cpp
     assert "result.migration_hints.legacy_yes_count = lexer_hints.legacy_yes_count;" in pipeline_cpp
     assert "lexer.LanguageVersionPragmaContract()" in pipeline_cpp
     assert "result.language_version_pragma_contract.directive_count = pragma_contract.directive_count;" in pipeline_cpp

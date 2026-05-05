@@ -15,7 +15,6 @@ enum class Objc3LexerLanguageProfile {
 struct Objc3LexerOptions {
   std::uint8_t language_version = objc3c::config::kCanonicalLanguageVersion;
   Objc3LexerLanguageProfile language_profile = Objc3LexerLanguageProfile::kCanonical;
-  bool legacy_literal_diagnostics = false;
 };
 
 struct Objc3LexerMigrationHints {

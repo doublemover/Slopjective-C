@@ -334,7 +334,6 @@ Objc3FrontendPipelineResult RunObjc3FrontendPipeline(const std::string &source,
   Objc3LexerOptions lexer_options;
   lexer_options.language_version = options.language_version;
   lexer_options.language_profile = Objc3LexerLanguageProfile::kCanonical;
-  lexer_options.legacy_literal_diagnostics = options.legacy_literal_diagnostics;
   Objc3Lexer lexer(source, lexer_options);
   std::vector<Objc3LexToken> tokens = lexer.Run(result.stage_diagnostics.lexer);
   const Objc3LexerMigrationHints &lexer_hints = lexer.MigrationHints();
