@@ -9,7 +9,7 @@
       "escalation_target": "license-review",
       "disclosure_compatibility": "internal-only",
       "reason": "replayable normalization exists, but the upstream licensing and redistribution terms are not yet clear enough for public publication",
-      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_runtime_shim_host_link_contract/replay_run_1/module.manifest.json",
+      "normalized_contract_path": "tests/tooling/fixtures/objc3c/validation_runtime_dispatch_host_link_contract/replay_run_1/module.manifest.json",
       "replay_script": "scripts/check_objc3c_execution_replay_proof.ps1"
     },
     {

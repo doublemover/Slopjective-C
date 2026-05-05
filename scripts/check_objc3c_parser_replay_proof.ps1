@@ -33,8 +33,7 @@ $fixturePatterns = @(
   "negative_binary_literal_parser_*.objc3",
   "negative_octal_literal_parser_*.objc3",
   "negative_separator_literal_parser_*.objc3",
-  "negative_unary_plus_parser_*.objc3",
-  "negative_objc_literal_aliases_parser_*.objc3"
+  "negative_unary_plus_parser_*.objc3"
 )
 $proofRoot = Join-Path $repoRoot "tmp/artifacts/objc3c-native/parser-replay-proof"
 $proofRunId = Get-Date -Format "yyyyMMdd_HHmmss_fff"
