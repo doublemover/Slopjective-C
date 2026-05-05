@@ -35,9 +35,14 @@ set(OBJC3C_LIBCLANG_LIBRARY "" CACHE FILEPATH "Path to libclang/clang import lib
 set(OBJC3C_RUNTIME_OUTPUT_DIR "" CACHE PATH "Canonical final runtime output directory for objc3c-native executables.")
 set(OBJC3C_LIBRARY_OUTPUT_DIR "" CACHE PATH "Canonical final archive output directory for objc3_runtime.lib.")
 set(OBJC3C_MAX_NATIVE_SOURCE_LINES "1500" CACHE STRING "Maximum line count for native source files.")
+set(OBJC3C_MAX_NATIVE_HEADER_LINES "1000" CACHE STRING "Maximum line count for native model and public headers.")
 
 if (OBJC3C_ENFORCE_SOURCE_SIZE_GATE)
-  objc3c_enforce_source_size("${CMAKE_CURRENT_SOURCE_DIR}/src" ${OBJC3C_MAX_NATIVE_SOURCE_LINES})
+  objc3c_enforce_source_size(
+    "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    ${OBJC3C_MAX_NATIVE_SOURCE_LINES}
+    ${OBJC3C_MAX_NATIVE_HEADER_LINES}
+  )
 endif()
 
 if (NOT OBJC3C_LLVM_INCLUDE_DIR AND OBJC3C_LLVM_ROOT)

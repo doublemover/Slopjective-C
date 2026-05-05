@@ -19,7 +19,18 @@ BUILD_SCRIPT = ROOT / "scripts" / "build_objc3c_native.ps1"
 
 
 def _read(path: Path) -> str:
-    return path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8")
+    expanded: list[str] = []
+    for line in text.splitlines():
+        expanded.append(line)
+        stripped = line.strip()
+        if not stripped.startswith('#include "') or "_parts/" not in stripped:
+            continue
+        include_path = stripped.split('"', 2)[1]
+        target = ROOT / "native" / "objc3c" / "src" / include_path
+        if target.exists():
+            expanded.append(target.read_text(encoding="utf-8"))
+    return "\n".join(expanded)
 
 
 def _assert_in_order(text: str, snippets: list[str]) -> None:
@@ -327,8 +338,8 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "Objc3SemaParityContractSurface sema_parity_surface;" in pipeline_types
     assert "result.sema_diagnostics_after_pass = sema_result.diagnostics_after_pass;" in pipeline_source
     assert "result.sema_parity_surface = sema_result.parity_surface;" in pipeline_source
-    assert "sema_input.compatibility_mode = options.compatibility_mode == Objc3FrontendCompatibilityMode::kLegacy" in pipeline_source
-    assert "sema_input.migration_assist = options.migration_assist;" in pipeline_source
+    assert "sema_input.language_profile = options.language_profile == Objc3FrontendLanguageProfile::kLegacy" in pipeline_source
+    assert "sema_input.legacy_literal_diagnostics = options.legacy_literal_diagnostics;" in pipeline_source
     assert "sema_input.migration_hints.legacy_yes_count = result.migration_hints.legacy_yes_count;" in pipeline_source
     assert "sema_input.migration_hints.legacy_no_count = result.migration_hints.legacy_no_count;" in pipeline_source
     assert "sema_input.migration_hints.legacy_null_count = result.migration_hints.legacy_null_count;" in pipeline_source
@@ -339,16 +350,16 @@ def test_frontend_pipeline_artifact_boundary_uses_diagnostics_bus_contract() -> 
     assert "bundle.stage_diagnostics = pipeline_result.stage_diagnostics;" in artifacts_source
     assert "bundle.diagnostics = FlattenStageDiagnostics(bundle.stage_diagnostics);" in artifacts_source
     assert '\\"language_version\\":' in artifacts_source
-    assert '\\"compatibility_mode\\":\\"' in artifacts_source
-    assert '\\"migration_assist\\":' in artifacts_source
-    assert "CompatibilityModeName(options.compatibility_mode)" in artifacts_source
+    assert '\\"language_profile\\":\\"' in artifacts_source
+    assert '\\"legacy_literal_diagnostics\\":' in artifacts_source
+    assert "LanguageProfileName(options.language_profile)" in artifacts_source
     _assert_in_order(
         artifacts_source,
         [
             'manifest << "  \\"frontend\\": {\\n";',
             'manifest << "    \\"language_version\\":"',
-            'manifest << "    \\"compatibility_mode\\":\\""',
-            'manifest << "    \\"migration_assist\\":"',
+            'manifest << "    \\"language_profile\\":\\""',
+            'manifest << "    \\"legacy_literal_diagnostics\\":"',
             'manifest << "    \\"max_message_send_args\\":"',
         ],
     )
