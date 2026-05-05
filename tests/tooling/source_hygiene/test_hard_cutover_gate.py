@@ -92,6 +92,30 @@ def test_hard_cutover_gate_rejects_plain_compatibility_mode_wording(tmp_path: Pa
     assert report["active_findings"][0]["pattern_id"] == "public-compatibility-mode"
 
 
+def test_hard_cutover_gate_rejects_retired_public_workflow_runner_path(tmp_path: Path) -> None:
+    write(
+        tmp_path / "docs/runbooks/commands.md",
+        "Run python scripts/objc3c_public_workflow_runner.py test-fast.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "retired-public-workflow-runner"
+
+
+def test_hard_cutover_gate_rejects_retired_npm_workflow_aliases(tmp_path: Path) -> None:
+    write(
+        tmp_path / "docs/runbooks/commands.md",
+        "Run npm run test:fast.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "retired-npm-workflow-alias"
+
+
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:
     write(
         tmp_path / "native/objc3c/src/pipeline/options.h",

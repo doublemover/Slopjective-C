@@ -70,6 +70,16 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bcompatibility_mode\b|\bcompatibility[-\s]+mode\b|--objc3-compat-mode|\bObjc3\w*CompatibilityMode\b|OBJC3C_FRONTEND_COMPATIBILITY_MODE",
     ),
     ForbiddenPattern(
+        "retired-public-workflow-runner",
+        "The public workflow runner file was replaced by the canonical scripts.objc3c_workflow module.",
+        r"\bobjc3c_public_workflow_runner\.py\b",
+    ),
+    ForbiddenPattern(
+        "retired-npm-workflow-alias",
+        "Workflow actions must route through npm run objc3c -- <action>, not retired colon-style npm aliases.",
+        r"\bnpm\s+run\s+(?!objc3c\b)[a-z0-9][a-z0-9:_-]*:",
+    ),
+    ForbiddenPattern(
         "legacy-language-profile-enum",
         "Language profile enums are canonical-only and must not retain legacy values.",
         r"\bkLegacy\b|\bLegacy\s*=\s*1\b|\bObjc3\w*LanguageProfile::k?Legacy\b",
