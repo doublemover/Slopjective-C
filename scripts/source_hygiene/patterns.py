@@ -77,7 +77,7 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "canonical-rejection-diagnostics-surface",
         "Migration-assist surfaces are removed in the hard cutover.",
-        r"\bmigration[_-]?assist\b|--objc3-canonical-rejection-diagnostics",
+        r"\bmigration[_-]?assist\b|--objc3-canonical-rejection-diagnostics|\blegacy_literal_diagnostics\b",
     ),
     ForbiddenPattern(
         "deterministic-fallback-wording",
