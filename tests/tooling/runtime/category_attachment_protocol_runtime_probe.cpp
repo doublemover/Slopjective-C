@@ -31,9 +31,9 @@ int main() {
       objc3_runtime_dispatch_i32(1042, "tracedValue", 0, 0, 0, 0);
   const int class_value =
       objc3_runtime_dispatch_i32(1043, "classValue", 0, 0, 0, 0);
-  const int protocol_fallback =
+  const int protocol_strict_error =
       objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
-  const int protocol_fallback_expected =
+  const int protocol_strict_error_expected =
       ExpectedStrictDispatchErrorValue(1042, "ignoredValue", 0, 0, 0, 0);
 
   objc3_runtime_realized_class_graph_state_snapshot graph_state{};
@@ -128,8 +128,8 @@ int main() {
   std::printf("{");
   std::printf("\"category_value\":%d,", category_value);
   std::printf("\"class_value\":%d,", class_value);
-  std::printf("\"protocol_fallback\":%d,", protocol_fallback);
-  std::printf("\"protocol_fallback_expected\":%d,", protocol_fallback_expected);
+  std::printf("\"protocol_strict_error\":%d,", protocol_strict_error);
+  std::printf("\"protocol_strict_error_expected\":%d,", protocol_strict_error_expected);
   std::printf("\"graph_state\":");
   PrintGraphStateProtocolCategory(graph_state);
   std::printf(",\"widget_entry\":");

@@ -14579,12 +14579,12 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("method_cache_last_selector") == "localClassValue", "expected imported-runtime startup to publish the last resolved selector")
     expect(payload.get("method_cache_last_resolved_class_name") is None, "expected imported-runtime startup to keep the method-cache class name unset for metadata-backed strict dispatch error")
     expect(payload.get("method_cache_last_resolved_owner_identity") is None, "expected imported-runtime startup to keep the method-cache owner identity unset for metadata-backed strict dispatch error")
-    expect(payload.get("provider_method_status") == 0 and payload.get("provider_method_found") == 1 and payload.get("provider_method_resolved") == 0, "expected provider class method metadata to remain an unresolved fallback entry at startup")
-    expect(payload.get("provider_method_owner_identity") is None, "expected provider class fallback method metadata to avoid a resolved owner identity at startup")
-    expect(payload.get("imported_protocol_method_status") == 0 and payload.get("imported_protocol_method_found") == 1 and payload.get("imported_protocol_method_resolved") == 0, "expected imported protocol method metadata to remain an unresolved fallback entry at startup")
-    expect(payload.get("imported_protocol_method_owner_identity") is None, "expected imported protocol fallback metadata to avoid a resolved owner identity at startup")
-    expect(payload.get("local_method_status") == 0 and payload.get("local_method_found") == 1 and payload.get("local_method_resolved") == 0, "expected local class method metadata to remain an unresolved fallback entry at startup")
-    expect(payload.get("local_method_owner_identity") is None, "expected local class fallback metadata to avoid a resolved owner identity at startup")
+    expect(payload.get("provider_method_status") == 0 and payload.get("provider_method_found") == 1 and payload.get("provider_method_resolved") == 0, "expected provider class method metadata to remain an unresolved strict error entry at startup")
+    expect(payload.get("provider_method_owner_identity") is None, "expected provider class strict error method metadata to avoid a resolved owner identity at startup")
+    expect(payload.get("imported_protocol_method_status") == 0 and payload.get("imported_protocol_method_found") == 1 and payload.get("imported_protocol_method_resolved") == 0, "expected imported protocol method metadata to remain an unresolved strict error entry at startup")
+    expect(payload.get("imported_protocol_method_owner_identity") is None, "expected imported protocol strict error metadata to avoid a resolved owner identity at startup")
+    expect(payload.get("local_method_status") == 0 and payload.get("local_method_found") == 1 and payload.get("local_method_resolved") == 0, "expected local class method metadata to remain an unresolved strict error entry at startup")
+    expect(payload.get("local_method_owner_identity") is None, "expected local class strict error metadata to avoid a resolved owner identity at startup")
     expect(payload.get("protocol_query_status") == 0, "expected imported-runtime startup protocol-conformance query snapshot copy to succeed")
     expect(payload.get("protocol_query_class_found") == 1 and payload.get("protocol_query_protocol_found") == 1 and payload.get("protocol_query_conforms") == 1, "expected imported provider protocol conformance to survive cross-module startup")
     expect(payload.get("protocol_query_visited_protocol_count") == 1, "expected imported-runtime startup to visit one protocol during conformance evaluation")
@@ -14649,12 +14649,12 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("post_replay_method_cache_last_selector") == "localClassValue", "expected replay to preserve the last resolved selector")
     expect(payload.get("post_replay_method_cache_last_resolved_class_name") is None, "expected replay to keep the method-cache class name unset for metadata-backed strict dispatch error")
     expect(payload.get("post_replay_method_cache_last_resolved_owner_identity") is None, "expected replay to keep the method-cache owner identity unset for metadata-backed strict dispatch error")
-    expect(payload.get("post_replay_provider_method_status") == 0 and payload.get("post_replay_provider_method_found") == 1 and payload.get("post_replay_provider_method_resolved") == 0, "expected provider class fallback metadata to survive replay")
-    expect(payload.get("post_replay_provider_method_owner_identity") is None, "expected provider class fallback metadata to avoid a resolved owner identity after replay")
-    expect(payload.get("post_replay_imported_protocol_method_status") == 0 and payload.get("post_replay_imported_protocol_method_found") == 1 and payload.get("post_replay_imported_protocol_method_resolved") == 0, "expected imported protocol fallback metadata to survive replay")
-    expect(payload.get("post_replay_imported_protocol_method_owner_identity") is None, "expected imported protocol fallback metadata to avoid a resolved owner identity after replay")
-    expect(payload.get("post_replay_local_method_status") == 0 and payload.get("post_replay_local_method_found") == 1 and payload.get("post_replay_local_method_resolved") == 0, "expected local class fallback metadata to survive replay")
-    expect(payload.get("post_replay_local_method_owner_identity") is None, "expected local class fallback metadata to avoid a resolved owner identity after replay")
+    expect(payload.get("post_replay_provider_method_status") == 0 and payload.get("post_replay_provider_method_found") == 1 and payload.get("post_replay_provider_method_resolved") == 0, "expected provider class strict error metadata to survive replay")
+    expect(payload.get("post_replay_provider_method_owner_identity") is None, "expected provider class strict error metadata to avoid a resolved owner identity after replay")
+    expect(payload.get("post_replay_imported_protocol_method_status") == 0 and payload.get("post_replay_imported_protocol_method_found") == 1 and payload.get("post_replay_imported_protocol_method_resolved") == 0, "expected imported protocol strict error metadata to survive replay")
+    expect(payload.get("post_replay_imported_protocol_method_owner_identity") is None, "expected imported protocol strict error metadata to avoid a resolved owner identity after replay")
+    expect(payload.get("post_replay_local_method_status") == 0 and payload.get("post_replay_local_method_found") == 1 and payload.get("post_replay_local_method_resolved") == 0, "expected local class strict error metadata to survive replay")
+    expect(payload.get("post_replay_local_method_owner_identity") is None, "expected local class strict error metadata to avoid a resolved owner identity after replay")
 
     return CaseResult(
         case_id="imported-runtime-packaging-replay",
@@ -14761,7 +14761,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
         "expected Tracer conformance to resolve through the attached Widget(Tracing) category",
     )
     expect(method_state.get("live_dispatch_count", 0) >= 6, "expected live dispatch count to cover alloc/init/new/traced/inherited/class")
-    expect(method_state.get("strict_dispatch_error_count", 0) == 2, "expected canonical dispatch workload to publish both unresolved fallback calls")
+    expect(method_state.get("strict_dispatch_error_count", 0) == 2, "expected canonical dispatch workload to publish both unresolved strict error calls")
     expect(method_state.get("last_selector_stable_id", 0) == ignored_entry.get("selector_stable_id", 0),
            "expected last dispatch selector stable id to match the negative-cache ignoredValue selector")
     expect(selector_handles.get("alloc", 0) != 0 and selector_handles.get("tracedValue", 0) != 0,
@@ -14786,7 +14786,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
     expect(selector_table_state.get("dynamic_selector_count", 0) >= 1,
            "expected unresolved selector dispatch to intern a dynamic selector entry")
     expect(selector_table_state.get("last_materialized_selector") == "ignoredValue",
-           "expected ignoredValue to be the last materialized selector after the fallback probe")
+           "expected ignoredValue to be the last materialized selector after the strict error probe")
     expect(selector_table_state.get("last_materialized_from_metadata") == 0,
            "expected ignoredValue to be recorded as a dynamic selector lookup")
     expect(
@@ -14831,7 +14831,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
         and traced_state.get("last_normalized_receiver_identity") == 1042
         and traced_state.get("last_category_probe_count") == 1
         and traced_state.get("last_protocol_probe_count") == 0,
-        "expected tracedValue to resolve live through the attached category without protocol fallback probes",
+        "expected tracedValue to resolve live through the attached category without protocol strict error probes",
     )
     expect(
         class_state.get("last_dispatch_used_cache") == 0
@@ -14921,7 +14921,7 @@ def check_canonical_dispatch_case(clangxx: str, run_dir: Path) -> CaseResult:
             "class_value": payload["class_value"],
             "live_dispatch_count": method_state["live_dispatch_count"],
             "attached_category_count": payload.get("graph_state", {}).get("attached_category_count"),
-            "ignored_fallback": payload["ignored_expected"],
+            "ignored_strict_error": payload["ignored_expected"],
         },
     )
 
@@ -15379,12 +15379,12 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
     expect(payload.get("baseline_status") == 0, "expected baseline method-cache snapshot to succeed")
     expect(payload.get("dynamic_entry_status") == 0, "expected dynamic fast-path entry lookup to succeed")
     expect(payload.get("explicit_entry_status") == 0, "expected explicit fast-path entry lookup to succeed")
-    expect(payload.get("fallback_entry_status") == 0, "expected fallback method-cache entry lookup to succeed")
+    expect(payload.get("strict_error_entry_status") == 0, "expected strict error method-cache entry lookup to succeed")
     expect(payload.get("implicit_value") == 3, "expected implicit direct call to remain direct")
     expect(payload.get("explicit_value") == 5, "expected explicit direct call to remain direct")
     expect(payload.get("mixed_first") == 12 and payload.get("mixed_second") == 12,
            "expected mixed dispatch fixture to execute through the live runtime")
-    expect(payload.get("fallback_first") == payload.get("fallback_expected") == payload.get("fallback_second"),
+    expect(payload.get("strict_error_first") == payload.get("strict_error_expected") == payload.get("strict_error_second"),
            "expected strict dispatch error to stay deterministic across cache miss/hit")
     expect(payload.get("baseline_cache_entry_count") == 4,
            "expected realized dispatch runtime to seed four method-cache entries")
@@ -15442,31 +15442,31 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
            "expected repeated mixed dispatch runtime call to remain runtime-dispatched")
     expect(payload.get("mixed_second_dispatch_state_last_used_builtin") == 0,
            "expected repeated mixed dispatch runtime call to avoid builtin dispatch")
-    expect(payload.get("fallback_first_state_last_dispatch_used_cache") == 0,
+    expect(payload.get("strict_error_first_state_last_dispatch_used_cache") == 0,
            "expected first missingDispatch: call to miss the cache")
-    expect(payload.get("fallback_first_state_last_dispatch_used_fast_path") == 0,
+    expect(payload.get("strict_error_first_state_last_dispatch_used_fast_path") == 0,
            "expected first missingDispatch: call to avoid the fast path")
-    expect(payload.get("fallback_first_state_last_dispatch_resolved_live_method") == 0,
+    expect(payload.get("strict_error_first_state_last_dispatch_resolved_live_method") == 0,
            "did not expect first missingDispatch: call to resolve live")
-    expect(payload.get("fallback_first_state_last_dispatch_strict_error") == 1,
+    expect(payload.get("strict_error_first_state_last_dispatch_strict_error") == 1,
            "expected first missingDispatch: call to fall back")
-    expect(payload.get("fallback_first_dispatch_state_status") == 0,
+    expect(payload.get("strict_error_first_dispatch_state_status") == 0,
            "expected first missingDispatch: call to publish dispatch state")
-    expect(payload.get("fallback_first_dispatch_state_last_dispatch_path") == "slow-path-error",
+    expect(payload.get("strict_error_first_dispatch_state_last_dispatch_path") == "slow-path-error",
            "expected first missingDispatch: call to report slow-path strict dispatch error")
-    expect(payload.get("fallback_first_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
+    expect(payload.get("strict_error_first_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
            "expected first missingDispatch: call to report strict dispatch error status")
-    expect(payload.get("fallback_second_state_last_dispatch_used_cache") == 1,
-           "expected repeated missingDispatch: call to hit the fallback cache entry")
-    expect(payload.get("fallback_second_state_last_dispatch_used_fast_path") == 0,
+    expect(payload.get("strict_error_second_state_last_dispatch_used_cache") == 1,
+           "expected repeated missingDispatch: call to hit the strict error cache entry")
+    expect(payload.get("strict_error_second_state_last_dispatch_used_fast_path") == 0,
            "expected repeated missingDispatch: call to stay off the fast path")
-    expect(payload.get("fallback_second_state_last_dispatch_strict_error") == 1,
+    expect(payload.get("strict_error_second_state_last_dispatch_strict_error") == 1,
            "expected repeated missingDispatch: call to remain a strict dispatch error")
-    expect(payload.get("fallback_second_dispatch_state_status") == 0,
+    expect(payload.get("strict_error_second_dispatch_state_status") == 0,
            "expected repeated missingDispatch: call to publish dispatch state")
-    expect(payload.get("fallback_second_dispatch_state_last_dispatch_path") == "cache-hit-error",
+    expect(payload.get("strict_error_second_dispatch_state_last_dispatch_path") == "cache-hit-error",
            "expected repeated missingDispatch: call to report cached strict dispatch error")
-    expect(payload.get("fallback_second_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
+    expect(payload.get("strict_error_second_dispatch_state_last_implementation_kind") == "strict-dispatch-error",
            "expected repeated missingDispatch: call to report cached strict dispatch error status")
     expect(
         "; method_dispatch_and_selector_thunk_lowering_surface = "
@@ -15600,14 +15600,14 @@ def check_live_dispatch_fast_path_case(clangxx: str, run_dir: Path) -> CaseResul
             "mixed_first_implementation_kind": payload.get("mixed_first_dispatch_state_last_implementation_kind"),
             "mixed_second_dispatch_path": payload.get("mixed_second_dispatch_state_last_dispatch_path"),
             "mixed_second_implementation_kind": payload.get("mixed_second_dispatch_state_last_implementation_kind"),
-            "fallback_first_dispatch_path": payload.get("fallback_first_dispatch_state_last_dispatch_path"),
-            "fallback_first_implementation_kind": payload.get("fallback_first_dispatch_state_last_implementation_kind"),
-            "fallback_second_dispatch_path": payload.get("fallback_second_dispatch_state_last_dispatch_path"),
-            "fallback_second_implementation_kind": payload.get("fallback_second_dispatch_state_last_implementation_kind"),
+            "strict_error_first_dispatch_path": payload.get("strict_error_first_dispatch_state_last_dispatch_path"),
+            "strict_error_first_implementation_kind": payload.get("strict_error_first_dispatch_state_last_implementation_kind"),
+            "strict_error_second_dispatch_path": payload.get("strict_error_second_dispatch_state_last_dispatch_path"),
+            "strict_error_second_implementation_kind": payload.get("strict_error_second_dispatch_state_last_implementation_kind"),
             "mixed_first_live_dispatch_count": payload.get("mixed_first_state_live_dispatch_count"),
             "mixed_second_live_dispatch_count": payload.get("mixed_second_state_live_dispatch_count"),
-            "fallback_first_strict_dispatch_error_count": payload.get("fallback_first_state_strict_dispatch_error_count"),
-            "fallback_second_strict_dispatch_error_count": payload.get("fallback_second_state_strict_dispatch_error_count"),
+            "strict_error_first_strict_dispatch_error_count": payload.get("strict_error_first_state_strict_dispatch_error_count"),
+            "strict_error_second_strict_dispatch_error_count": payload.get("strict_error_second_state_strict_dispatch_error_count"),
         },
     )
 

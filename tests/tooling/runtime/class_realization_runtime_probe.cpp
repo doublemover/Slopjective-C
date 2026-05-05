@@ -33,12 +33,12 @@ int main() {
   objc3_runtime_method_cache_state_snapshot category_state{};
   objc3_runtime_method_cache_state_snapshot class_state{};
   objc3_runtime_method_cache_state_snapshot known_class_state{};
-  objc3_runtime_method_cache_state_snapshot protocol_fallback_state{};
-  objc3_runtime_method_cache_state_snapshot protocol_fallback_cached_state{};
+  objc3_runtime_method_cache_state_snapshot protocol_strict_error_state{};
+  objc3_runtime_method_cache_state_snapshot protocol_strict_error_cached_state{};
   objc3_runtime_method_cache_entry_snapshot inherited_entry{};
   objc3_runtime_method_cache_entry_snapshot category_entry{};
   objc3_runtime_method_cache_entry_snapshot known_class_entry{};
-  objc3_runtime_method_cache_entry_snapshot protocol_fallback_entry{};
+  objc3_runtime_method_cache_entry_snapshot protocol_strict_error_entry{};
 
   std::string registration_module_storage;
   std::string registration_identity_storage;
@@ -57,12 +57,12 @@ int main() {
   std::string known_class_selector_storage;
   std::string known_class_class_storage;
   std::string known_class_owner_storage;
-  std::string protocol_fallback_selector_storage;
-  std::string protocol_fallback_class_storage;
-  std::string protocol_fallback_owner_storage;
-  std::string protocol_fallback_cached_selector_storage;
-  std::string protocol_fallback_cached_class_storage;
-  std::string protocol_fallback_cached_owner_storage;
+  std::string protocol_strict_error_selector_storage;
+  std::string protocol_strict_error_class_storage;
+  std::string protocol_strict_error_owner_storage;
+  std::string protocol_strict_error_cached_selector_storage;
+  std::string protocol_strict_error_cached_class_storage;
+  std::string protocol_strict_error_cached_owner_storage;
   std::string inherited_entry_selector_storage;
   std::string inherited_entry_class_storage;
   std::string inherited_entry_owner_storage;
@@ -72,9 +72,9 @@ int main() {
   std::string known_class_entry_selector_storage;
   std::string known_class_entry_class_storage;
   std::string known_class_entry_owner_storage;
-  std::string protocol_fallback_entry_selector_storage;
-  std::string protocol_fallback_entry_class_storage;
-  std::string protocol_fallback_entry_owner_storage;
+  std::string protocol_strict_error_entry_selector_storage;
+  std::string protocol_strict_error_entry_class_storage;
+  std::string protocol_strict_error_entry_owner_storage;
 
   const int inherited_value =
       objc3_runtime_dispatch_i32(1042, "inheritedValue", 0, 0, 0, 0);
@@ -101,24 +101,24 @@ int main() {
                             known_class_class_storage,
                             known_class_owner_storage);
 
-  const int protocol_fallback =
+  const int protocol_strict_error =
       objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
-      &protocol_fallback_state);
+      &protocol_strict_error_state);
   StabilizeMethodCacheState(
-      protocol_fallback_state, protocol_fallback_selector_storage,
-      protocol_fallback_class_storage, protocol_fallback_owner_storage);
+      protocol_strict_error_state, protocol_strict_error_selector_storage,
+      protocol_strict_error_class_storage, protocol_strict_error_owner_storage);
 
-  const int protocol_fallback_cached =
+  const int protocol_strict_error_cached =
       objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
-      &protocol_fallback_cached_state);
-  StabilizeMethodCacheState(protocol_fallback_cached_state,
-                            protocol_fallback_cached_selector_storage,
-                            protocol_fallback_cached_class_storage,
-                            protocol_fallback_cached_owner_storage);
+      &protocol_strict_error_cached_state);
+  StabilizeMethodCacheState(protocol_strict_error_cached_state,
+                            protocol_strict_error_cached_selector_storage,
+                            protocol_strict_error_cached_class_storage,
+                            protocol_strict_error_cached_owner_storage);
 
-  const int protocol_fallback_expected =
+  const int protocol_strict_error_expected =
       ExpectedStrictDispatchErrorValue(1042, "ignoredValue", 0, 0, 0, 0);
 
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
@@ -140,11 +140,11 @@ int main() {
       known_class_entry_class_storage, known_class_entry_owner_storage);
 
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
-      1042, "ignoredValue", &protocol_fallback_entry);
-  StabilizeMethodCacheEntry(protocol_fallback_entry,
-                            protocol_fallback_entry_selector_storage,
-                            protocol_fallback_entry_class_storage,
-                            protocol_fallback_entry_owner_storage);
+      1042, "ignoredValue", &protocol_strict_error_entry);
+  StabilizeMethodCacheEntry(protocol_strict_error_entry,
+                            protocol_strict_error_entry_selector_storage,
+                            protocol_strict_error_entry_class_storage,
+                            protocol_strict_error_entry_owner_storage);
 
   (void)objc3_runtime_copy_registration_state_for_testing(&registration_state);
   (void)objc3_runtime_copy_selector_lookup_table_state_for_testing(
@@ -161,9 +161,9 @@ int main() {
   std::printf("\"category_value\":%d,", category_value);
   std::printf("\"class_value\":%d,", class_value);
   std::printf("\"known_class_value\":%d,", known_class_value);
-  std::printf("\"protocol_fallback\":%d,", protocol_fallback);
-  std::printf("\"protocol_fallback_cached\":%d,", protocol_fallback_cached);
-  std::printf("\"protocol_fallback_expected\":%d,", protocol_fallback_expected);
+  std::printf("\"protocol_strict_error\":%d,", protocol_strict_error);
+  std::printf("\"protocol_strict_error_cached\":%d,", protocol_strict_error_cached);
+  std::printf("\"protocol_strict_error_expected\":%d,", protocol_strict_error_expected);
   std::printf("\"registration_state\":");
   PrintRegistrationStateFull(registration_state);
   std::printf(",\"selector_table_state\":");
@@ -176,18 +176,18 @@ int main() {
   PrintMethodCacheStateFull(class_state);
   std::printf(",\"known_class_state\":");
   PrintMethodCacheStateFull(known_class_state);
-  std::printf(",\"protocol_fallback_state\":");
-  PrintMethodCacheStateFull(protocol_fallback_state);
-  std::printf(",\"protocol_fallback_cached_state\":");
-  PrintMethodCacheStateFull(protocol_fallback_cached_state);
+  std::printf(",\"protocol_strict_error_state\":");
+  PrintMethodCacheStateFull(protocol_strict_error_state);
+  std::printf(",\"protocol_strict_error_cached_state\":");
+  PrintMethodCacheStateFull(protocol_strict_error_cached_state);
   std::printf(",\"inherited_entry\":");
   PrintMethodCacheEntryWithProbeCounts(inherited_entry);
   std::printf(",\"category_entry\":");
   PrintMethodCacheEntryWithProbeCounts(category_entry);
   std::printf(",\"known_class_entry\":");
   PrintMethodCacheEntryWithProbeCounts(known_class_entry);
-  std::printf(",\"protocol_fallback_entry\":");
-  PrintMethodCacheEntryWithProbeCounts(protocol_fallback_entry);
+  std::printf(",\"protocol_strict_error_entry\":");
+  PrintMethodCacheEntryWithProbeCounts(protocol_strict_error_entry);
   std::printf("}\n");
   return 0;
 }

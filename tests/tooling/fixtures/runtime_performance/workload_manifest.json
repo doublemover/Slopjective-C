@@ -37,8 +37,8 @@
         "baseline_fast_path_seed_count",
         "mixed_first_dispatch_path",
         "mixed_second_dispatch_path",
-        "fallback_first_dispatch_path",
-        "fallback_second_dispatch_path"
+        "strict_error_first_dispatch_path",
+        "strict_error_second_dispatch_path"
       ]
     },
     {

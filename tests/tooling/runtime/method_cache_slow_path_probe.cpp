@@ -37,11 +37,11 @@ int main() {
   objc3_runtime_method_cache_state_snapshot instance_second_state{};
   objc3_runtime_method_cache_state_snapshot class_self_state{};
   objc3_runtime_method_cache_state_snapshot known_class_state{};
-  objc3_runtime_method_cache_state_snapshot fallback_first_state{};
-  objc3_runtime_method_cache_state_snapshot fallback_second_state{};
+  objc3_runtime_method_cache_state_snapshot strict_error_first_state{};
+  objc3_runtime_method_cache_state_snapshot strict_error_second_state{};
   objc3_runtime_method_cache_entry_snapshot instance_entry{};
   objc3_runtime_method_cache_entry_snapshot class_entry{};
-  objc3_runtime_method_cache_entry_snapshot fallback_entry{};
+  objc3_runtime_method_cache_entry_snapshot strict_error_entry{};
 
   (void)objc3_runtime_copy_registration_state_for_testing(&registration_state);
   (void)objc3_runtime_copy_selector_lookup_table_state_for_testing(
@@ -61,21 +61,21 @@ int main() {
   std::string known_class_selector_storage;
   std::string known_class_class_storage;
   std::string known_class_owner_storage;
-  std::string fallback_first_selector_storage;
-  std::string fallback_first_class_storage;
-  std::string fallback_first_owner_storage;
-  std::string fallback_second_selector_storage;
-  std::string fallback_second_class_storage;
-  std::string fallback_second_owner_storage;
+  std::string strict_error_first_selector_storage;
+  std::string strict_error_first_class_storage;
+  std::string strict_error_first_owner_storage;
+  std::string strict_error_second_selector_storage;
+  std::string strict_error_second_class_storage;
+  std::string strict_error_second_owner_storage;
   std::string instance_entry_selector_storage;
   std::string instance_entry_class_storage;
   std::string instance_entry_owner_storage;
   std::string class_entry_selector_storage;
   std::string class_entry_class_storage;
   std::string class_entry_owner_storage;
-  std::string fallback_entry_selector_storage;
-  std::string fallback_entry_class_storage;
-  std::string fallback_entry_owner_storage;
+  std::string strict_error_entry_selector_storage;
+  std::string strict_error_entry_class_storage;
+  std::string strict_error_entry_owner_storage;
 
   StabilizeRegistrationState(registration_state, registration_module_storage,
                              registration_identity_storage);
@@ -102,23 +102,23 @@ int main() {
   StabilizeMethodCacheState(known_class_state, known_class_selector_storage,
                             known_class_class_storage,
                             known_class_owner_storage);
-  const char *const fallback_selector = "missingRuntimeSelector:";
-  const int fallback_first =
-      objc3_runtime_dispatch_i32(1025, fallback_selector, 4, 5, 6, 7);
-  const int fallback_expected =
-      ExpectedStrictDispatchErrorValue(1025, fallback_selector, 4, 5, 6, 7);
+  const char *const strict_error_selector = "missingRuntimeSelector:";
+  const int strict_error_first =
+      objc3_runtime_dispatch_i32(1025, strict_error_selector, 4, 5, 6, 7);
+  const int strict_error_expected =
+      ExpectedStrictDispatchErrorValue(1025, strict_error_selector, 4, 5, 6, 7);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
-      &fallback_first_state);
+      &strict_error_first_state);
   StabilizeMethodCacheState(
-      fallback_first_state, fallback_first_selector_storage,
-      fallback_first_class_storage, fallback_first_owner_storage);
-  const int fallback_second =
-      objc3_runtime_dispatch_i32(1025, fallback_selector, 4, 5, 6, 7);
+      strict_error_first_state, strict_error_first_selector_storage,
+      strict_error_first_class_storage, strict_error_first_owner_storage);
+  const int strict_error_second =
+      objc3_runtime_dispatch_i32(1025, strict_error_selector, 4, 5, 6, 7);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
-      &fallback_second_state);
+      &strict_error_second_state);
   StabilizeMethodCacheState(
-      fallback_second_state, fallback_second_selector_storage,
-      fallback_second_class_storage, fallback_second_owner_storage);
+      strict_error_second_state, strict_error_second_selector_storage,
+      strict_error_second_class_storage, strict_error_second_owner_storage);
 
   (void)objc3_runtime_copy_method_cache_entry_for_testing(1025, "currentValue",
                                                           &instance_entry);
@@ -131,10 +131,10 @@ int main() {
                             class_entry_class_storage,
                             class_entry_owner_storage);
   (void)objc3_runtime_copy_method_cache_entry_for_testing(
-      1025, fallback_selector, &fallback_entry);
-  StabilizeMethodCacheEntry(fallback_entry, fallback_entry_selector_storage,
-                            fallback_entry_class_storage,
-                            fallback_entry_owner_storage);
+      1025, strict_error_selector, &strict_error_entry);
+  StabilizeMethodCacheEntry(strict_error_entry, strict_error_entry_selector_storage,
+                            strict_error_entry_class_storage,
+                            strict_error_entry_owner_storage);
 
   std::printf("{");
   std::printf("\"registration_state\":");
@@ -145,9 +145,9 @@ int main() {
   std::printf("\"instance_second\":%d,", instance_second);
   std::printf("\"class_self\":%d,", class_self);
   std::printf("\"known_class\":%d,", known_class);
-  std::printf("\"fallback_first\":%d,", fallback_first);
-  std::printf("\"fallback_second\":%d,", fallback_second);
-  std::printf("\"fallback_expected\":%d,", fallback_expected);
+  std::printf("\"strict_error_first\":%d,", strict_error_first);
+  std::printf("\"strict_error_second\":%d,", strict_error_second);
+  std::printf("\"strict_error_expected\":%d,", strict_error_expected);
   std::printf("\"instance_first_state\":");
   PrintMethodCacheStateSlowPath(instance_first_state);
   std::printf(",\"instance_second_state\":");
@@ -156,16 +156,16 @@ int main() {
   PrintMethodCacheStateSlowPath(class_self_state);
   std::printf(",\"known_class_state\":");
   PrintMethodCacheStateSlowPath(known_class_state);
-  std::printf(",\"fallback_first_state\":");
-  PrintMethodCacheStateSlowPath(fallback_first_state);
-  std::printf(",\"fallback_second_state\":");
-  PrintMethodCacheStateSlowPath(fallback_second_state);
+  std::printf(",\"strict_error_first_state\":");
+  PrintMethodCacheStateSlowPath(strict_error_first_state);
+  std::printf(",\"strict_error_second_state\":");
+  PrintMethodCacheStateSlowPath(strict_error_second_state);
   std::printf(",\"instance_entry\":");
   PrintMethodCacheEntryBasic(instance_entry);
   std::printf(",\"class_entry\":");
   PrintMethodCacheEntryBasic(class_entry);
-  std::printf(",\"fallback_entry\":");
-  PrintMethodCacheEntryBasic(fallback_entry);
+  std::printf(",\"strict_error_entry\":");
+  PrintMethodCacheEntryBasic(strict_error_entry);
   std::printf("}\n");
   return 0;
 }

@@ -20,13 +20,13 @@ int main() {
   JsonFieldSeparator fields;
   json << '{';
   WriteJsonStringField(json, fields, "selector", "copy");
-  WriteJsonIntField(json, fields, "fallback", 22535);
+  WriteJsonIntField(json, fields, "strict_error", 22535);
   WriteJsonBoolField(json, fields, "cache_hit", true);
   WriteJsonStringField(json, fields, "missing", nullptr);
   json << '}';
   if (ExpectTextEqual(
           json.str(),
-          "{\"selector\":\"copy\",\"fallback\":22535,\"cache_hit\":true,"
+          "{\"selector\":\"copy\",\"strict_error\":22535,\"cache_hit\":true,"
           "\"missing\":null}",
           "representative JSON helper output", 1) != 0) {
     return 1;
