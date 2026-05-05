@@ -355,17 +355,17 @@ int main() {
             << (fallback_first_state.slow_path_lookup_count -
                 mixed_second_state.slow_path_lookup_count)
             << "\n";
-  std::cout << "fallback_first_delta_fallback_dispatch_count="
-            << (fallback_first_state.fallback_dispatch_count -
-                mixed_second_state.fallback_dispatch_count)
+  std::cout << "fallback_first_delta_strict_dispatch_error_count="
+            << (fallback_first_state.strict_dispatch_error_count -
+                mixed_second_state.strict_dispatch_error_count)
             << "\n";
   std::cout << "fallback_second_delta_cache_hit_count="
             << (fallback_second_state.cache_hit_count -
                 fallback_first_state.cache_hit_count)
             << "\n";
-  std::cout << "fallback_second_delta_fallback_dispatch_count="
-            << (fallback_second_state.fallback_dispatch_count -
-                fallback_first_state.fallback_dispatch_count)
+  std::cout << "fallback_second_delta_strict_dispatch_error_count="
+            << (fallback_second_state.strict_dispatch_error_count -
+                fallback_first_state.strict_dispatch_error_count)
             << "\n";
 
   PrintEntry("dynamic_entry", dynamic_entry, dynamic_entry_selector,
@@ -461,7 +461,7 @@ int main() {
       mixed_first_state.last_dispatch_used_cache == 1 &&
       mixed_first_state.last_dispatch_used_fast_path == 1 &&
       mixed_first_state.last_dispatch_resolved_live_method == 1 &&
-      mixed_first_state.last_dispatch_fell_back == 0 &&
+      mixed_first_state.last_dispatch_strict_error == 0 &&
       mixed_first_last_selector == "dynamicEscape" &&
       mixed_first_last_fast_path_reason == "class-final" &&
       mixed_first_dispatch_last_path == "cache-hit-fast-path" &&
@@ -496,12 +496,12 @@ int main() {
           mixed_second_state.cache_miss_count + 1 &&
       fallback_first_state.slow_path_lookup_count ==
           mixed_second_state.slow_path_lookup_count + 1 &&
-      fallback_first_state.fallback_dispatch_count ==
-          mixed_second_state.fallback_dispatch_count + 1 &&
+      fallback_first_state.strict_dispatch_error_count ==
+          mixed_second_state.strict_dispatch_error_count + 1 &&
       fallback_first_state.last_dispatch_used_cache == 0 &&
       fallback_first_state.last_dispatch_used_fast_path == 0 &&
       fallback_first_state.last_dispatch_resolved_live_method == 0 &&
-      fallback_first_state.last_dispatch_fell_back == 1 &&
+      fallback_first_state.last_dispatch_strict_error == 1 &&
       fallback_first_last_selector == "missingDispatch:" &&
       fallback_first_last_fast_path_reason.empty() &&
       fallback_first_dispatch_last_path == "slow-path-error" &&
@@ -515,12 +515,12 @@ int main() {
           fallback_first_state.cache_entry_count &&
       fallback_second_state.cache_hit_count ==
           fallback_first_state.cache_hit_count + 1 &&
-      fallback_second_state.fallback_dispatch_count ==
-          fallback_first_state.fallback_dispatch_count + 1 &&
+      fallback_second_state.strict_dispatch_error_count ==
+          fallback_first_state.strict_dispatch_error_count + 1 &&
       fallback_second_state.last_dispatch_used_cache == 1 &&
       fallback_second_state.last_dispatch_used_fast_path == 0 &&
       fallback_second_state.last_dispatch_resolved_live_method == 0 &&
-      fallback_second_state.last_dispatch_fell_back == 1 &&
+      fallback_second_state.last_dispatch_strict_error == 1 &&
       fallback_second_last_selector == "missingDispatch:" &&
       fallback_second_last_fast_path_reason.empty() &&
       fallback_second_dispatch_last_path == "cache-hit-error" &&

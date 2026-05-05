@@ -38,10 +38,10 @@ int main() {
   cache.cache_miss_count = 2;
   cache.slow_path_lookup_count = 2;
   cache.live_dispatch_count = 7;
-  cache.fallback_dispatch_count = 1;
+  cache.strict_dispatch_error_count = 1;
   cache.last_dispatch_used_cache = 1;
   cache.last_dispatch_resolved_live_method = 1;
-  cache.last_dispatch_fell_back = 0;
+  cache.last_dispatch_strict_error = 0;
 
   std::ostringstream method_cache;
   WriteLabeledMethodCacheState(method_cache, "direct", cache, "copy");
@@ -51,10 +51,10 @@ int main() {
                       "direct_cache_miss_count=2\n"
                       "direct_slow_path_lookup_count=2\n"
                       "direct_live_dispatch_count=7\n"
-                      "direct_fallback_dispatch_count=1\n"
+                      "direct_strict_dispatch_error_count=1\n"
                       "direct_last_dispatch_used_cache=1\n"
                       "direct_last_dispatch_resolved_live_method=1\n"
-                      "direct_last_dispatch_fell_back=0\n"
+                      "direct_last_dispatch_strict_error=0\n"
                       "direct_last_selector=copy\n",
                       "labeled method cache state output", 2) != 0) {
     return 2;
@@ -72,13 +72,13 @@ int main() {
                       "fast_cache_miss_count=2\n"
                       "fast_slow_path_lookup_count=2\n"
                       "fast_live_dispatch_count=7\n"
-                      "fast_fallback_dispatch_count=1\n"
+                      "fast_strict_dispatch_error_count=1\n"
                       "fast_fast_path_seed_count=4\n"
                       "fast_fast_path_hit_count=6\n"
                       "fast_last_dispatch_used_cache=1\n"
                       "fast_last_dispatch_used_fast_path=1\n"
                       "fast_last_dispatch_resolved_live_method=1\n"
-                      "fast_last_dispatch_fell_back=0\n"
+                      "fast_last_dispatch_strict_error=0\n"
                       "fast_last_selector=copy\n"
                       "fast_last_fast_path_reason=selector-table-hit\n",
                       "labeled fast-path cache state output", 3) != 0) {
@@ -90,12 +90,12 @@ int main() {
   dispatch.fast_path_seed_count = 9;
   dispatch.fast_path_hit_count = 10;
   dispatch.live_dispatch_count = 11;
-  dispatch.fallback_dispatch_count = 12;
+  dispatch.strict_dispatch_error_count = 12;
   dispatch.last_resolved_parameter_count = 4;
   dispatch.last_dispatch_used_cache = 1;
   dispatch.last_dispatch_used_fast_path = 1;
   dispatch.last_dispatch_resolved_live_method = 1;
-  dispatch.last_dispatch_fell_back = 0;
+  dispatch.last_dispatch_strict_error = 0;
   dispatch.last_effective_direct_dispatch = 1;
   dispatch.last_used_builtin = 0;
   std::ostringstream dispatch_state;
@@ -107,12 +107,12 @@ int main() {
                       "mixed_fast_path_seed_count=9\n"
                       "mixed_fast_path_hit_count=10\n"
                       "mixed_live_dispatch_count=11\n"
-                      "mixed_fallback_dispatch_count=12\n"
+                      "mixed_strict_dispatch_error_count=12\n"
                       "mixed_last_resolved_parameter_count=4\n"
                       "mixed_last_dispatch_used_cache=1\n"
                       "mixed_last_dispatch_used_fast_path=1\n"
                       "mixed_last_dispatch_resolved_live_method=1\n"
-                      "mixed_last_dispatch_fell_back=0\n"
+                      "mixed_last_dispatch_strict_error=0\n"
                       "mixed_last_effective_direct_dispatch=1\n"
                       "mixed_last_used_builtin=0\n"
                       "mixed_last_selector=copy\n"

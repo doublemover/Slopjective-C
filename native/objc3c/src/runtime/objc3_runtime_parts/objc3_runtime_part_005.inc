@@ -505,7 +505,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     state.last_dispatch_used_cache = false;
     state.last_dispatch_used_fast_path = false;
     state.last_dispatch_resolved_live_method = false;
-    state.last_dispatch_fell_back = false;
+    state.last_dispatch_strict_error = false;
     state.last_dispatch_effective_direct_dispatch = false;
     state.last_dispatch_used_builtin = false;
     state.last_fast_path_reason.clear();
@@ -536,7 +536,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
           state.last_dispatch_used_cache = true;
           state.last_dispatch_used_fast_path = entry.fast_path_seeded;
           state.last_dispatch_resolved_live_method = entry.resolved;
-          state.last_dispatch_fell_back = !entry.resolved;
+          state.last_dispatch_strict_error = !entry.resolved;
           state.last_dispatch_effective_direct_dispatch =
               entry.effective_direct_dispatch;
           state.last_category_probe_count = entry.category_probe_count;
@@ -584,7 +584,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
             dispatch_status =
                 OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
-            ++state.fallback_dispatch_count;
+            ++state.strict_dispatch_error_count;
           }
         } else {
           ++state.method_cache_miss_count;
@@ -617,7 +617,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
               resolution.runtime_property_accessor;
           state.method_cache.emplace(cache_key, std::move(cache_entry));
           state.last_dispatch_resolved_live_method = resolution.resolved;
-          state.last_dispatch_fell_back = !resolution.resolved;
+          state.last_dispatch_strict_error = !resolution.resolved;
           state.last_dispatch_effective_direct_dispatch =
               resolution.effective_direct_dispatch;
           state.last_category_probe_count = resolution.category_probe_count;
@@ -665,12 +665,12 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
                 resolution.ambiguous
                     ? OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT
                     : OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
-            ++state.fallback_dispatch_count;
+            ++state.strict_dispatch_error_count;
           }
         }
       } else {
-        ++state.fallback_dispatch_count;
-        state.last_dispatch_fell_back = true;
+        ++state.strict_dispatch_error_count;
+        state.last_dispatch_strict_error = true;
         state.last_dispatch_path = "invalid-receiver-error";
         state.last_dispatch_implementation_kind = "strict-dispatch-error";
         dispatch_status =

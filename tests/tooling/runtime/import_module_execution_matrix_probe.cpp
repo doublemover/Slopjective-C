@@ -294,8 +294,8 @@ int main() {
                    method_cache_state.cache_entry_count);
   PrintUint64Field("method_cache_live_dispatch_count",
                    method_cache_state.live_dispatch_count);
-  PrintUint64Field("method_cache_fallback_dispatch_count",
-                   method_cache_state.fallback_dispatch_count);
+  PrintUint64Field("method_cache_strict_dispatch_error_count",
+                   method_cache_state.strict_dispatch_error_count);
   PrintStringField("method_cache_last_selector",
                    method_cache_state.last_selector);
   PrintStringField("method_cache_last_resolved_class_name",
@@ -408,8 +408,8 @@ int main() {
                    post_replay_method_cache_state.cache_entry_count);
   PrintUint64Field("post_replay_method_cache_live_dispatch_count",
                    post_replay_method_cache_state.live_dispatch_count);
-  PrintUint64Field("post_replay_method_cache_fallback_dispatch_count",
-                   post_replay_method_cache_state.fallback_dispatch_count);
+  PrintUint64Field("post_replay_method_cache_strict_dispatch_error_count",
+                   post_replay_method_cache_state.strict_dispatch_error_count);
   PrintStringField("post_replay_method_cache_last_selector",
                    post_replay_method_cache_state.last_selector);
   PrintStringField("post_replay_method_cache_last_resolved_class_name",

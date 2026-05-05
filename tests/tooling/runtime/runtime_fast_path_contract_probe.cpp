@@ -154,17 +154,17 @@ int main() {
             << (fallback_first_state.slow_path_lookup_count -
                 mixed_second_state.slow_path_lookup_count)
             << "\n";
-  std::cout << "fallback_first_delta_fallback_dispatch_count="
-            << (fallback_first_state.fallback_dispatch_count -
-                mixed_second_state.fallback_dispatch_count)
+  std::cout << "fallback_first_delta_strict_dispatch_error_count="
+            << (fallback_first_state.strict_dispatch_error_count -
+                mixed_second_state.strict_dispatch_error_count)
             << "\n";
   std::cout << "fallback_second_delta_cache_hit_count="
             << (fallback_second_state.cache_hit_count -
                 fallback_first_state.cache_hit_count)
             << "\n";
-  std::cout << "fallback_second_delta_fallback_dispatch_count="
-            << (fallback_second_state.fallback_dispatch_count -
-                fallback_first_state.fallback_dispatch_count)
+  std::cout << "fallback_second_delta_strict_dispatch_error_count="
+            << (fallback_second_state.strict_dispatch_error_count -
+                fallback_first_state.strict_dispatch_error_count)
             << "\n";
   WriteLabeledMethodCacheState(std::cout, "baseline", baseline,
                                baseline_last_selector);
@@ -191,8 +191,8 @@ int main() {
       direct_state.cache_miss_count == baseline.cache_miss_count &&
       direct_state.slow_path_lookup_count == baseline.slow_path_lookup_count &&
       direct_state.live_dispatch_count == baseline.live_dispatch_count &&
-      direct_state.fallback_dispatch_count ==
-          baseline.fallback_dispatch_count &&
+      direct_state.strict_dispatch_error_count ==
+          baseline.strict_dispatch_error_count &&
       mixed_first_state.cache_entry_count == direct_state.cache_entry_count &&
       mixed_first_state.cache_hit_count == direct_state.cache_hit_count + 1 &&
       mixed_first_state.cache_miss_count == direct_state.cache_miss_count &&
@@ -200,11 +200,11 @@ int main() {
           direct_state.slow_path_lookup_count &&
       mixed_first_state.live_dispatch_count ==
           direct_state.live_dispatch_count + 1 &&
-      mixed_first_state.fallback_dispatch_count ==
-          direct_state.fallback_dispatch_count &&
+      mixed_first_state.strict_dispatch_error_count ==
+          direct_state.strict_dispatch_error_count &&
       mixed_first_state.last_dispatch_used_cache == 1 &&
       mixed_first_state.last_dispatch_resolved_live_method == 1 &&
-      mixed_first_state.last_dispatch_fell_back == 0 &&
+      mixed_first_state.last_dispatch_strict_error == 0 &&
       mixed_second_state.cache_entry_count ==
           mixed_first_state.cache_entry_count &&
       mixed_second_state.cache_hit_count ==
@@ -215,7 +215,7 @@ int main() {
           mixed_first_state.live_dispatch_count + 1 &&
       mixed_second_state.last_dispatch_used_cache == 1 &&
       mixed_second_state.last_dispatch_resolved_live_method == 1 &&
-      mixed_second_state.last_dispatch_fell_back == 0 &&
+      mixed_second_state.last_dispatch_strict_error == 0 &&
       fallback_first == fallback_expected &&
       fallback_second == fallback_expected &&
       fallback_first_state.cache_entry_count ==
@@ -224,22 +224,22 @@ int main() {
           mixed_second_state.cache_miss_count + 1 &&
       fallback_first_state.slow_path_lookup_count ==
           mixed_second_state.slow_path_lookup_count + 1 &&
-      fallback_first_state.fallback_dispatch_count ==
-          mixed_second_state.fallback_dispatch_count + 1 &&
+      fallback_first_state.strict_dispatch_error_count ==
+          mixed_second_state.strict_dispatch_error_count + 1 &&
       fallback_first_state.last_dispatch_used_cache == 0 &&
       fallback_first_state.last_dispatch_resolved_live_method == 0 &&
-      fallback_first_state.last_dispatch_fell_back == 1 &&
+      fallback_first_state.last_dispatch_strict_error == 1 &&
       fallback_second_state.cache_entry_count ==
           fallback_first_state.cache_entry_count &&
       fallback_second_state.cache_hit_count ==
           fallback_first_state.cache_hit_count + 1 &&
       fallback_second_state.cache_miss_count ==
           fallback_first_state.cache_miss_count &&
-      fallback_second_state.fallback_dispatch_count ==
-          fallback_first_state.fallback_dispatch_count + 1 &&
+      fallback_second_state.strict_dispatch_error_count ==
+          fallback_first_state.strict_dispatch_error_count + 1 &&
       fallback_second_state.last_dispatch_used_cache == 1 &&
       fallback_second_state.last_dispatch_resolved_live_method == 0 &&
-      fallback_second_state.last_dispatch_fell_back == 1 &&
+      fallback_second_state.last_dispatch_strict_error == 1 &&
       dynamic_entry_status == 0 && dynamic_entry.found == 1 &&
       dynamic_entry.resolved == 1 && fallback_entry_status == 0 &&
       fallback_entry.found == 1 && fallback_entry.resolved == 0;

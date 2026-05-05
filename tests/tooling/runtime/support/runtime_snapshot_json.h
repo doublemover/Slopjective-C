@@ -305,8 +305,8 @@ inline void PrintMethodCacheStateCategoryAttachment(
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
-      "\"fallback_dispatch_count\":%llu,",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "\"strict_dispatch_error_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   std::printf(
       "\"last_category_probe_count\":%llu,",
       static_cast<unsigned long long>(snapshot.last_category_probe_count));
@@ -317,8 +317,8 @@ inline void PrintMethodCacheStateCategoryAttachment(
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
               snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_dispatch_strict_error\":%d,",
+              snapshot.last_dispatch_strict_error);
   std::printf("\"last_selector\":");
   PrintJsonStringOrNull(snapshot.last_selector);
   std::printf(",\"last_resolved_class_name\":");
@@ -342,8 +342,8 @@ inline void PrintMethodCacheStateFull(
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
-      "\"fallback_dispatch_count\":%llu,",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "\"strict_dispatch_error_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   std::printf(
       "\"last_selector_stable_id\":%llu,",
       static_cast<unsigned long long>(snapshot.last_selector_stable_id));
@@ -360,8 +360,8 @@ inline void PrintMethodCacheStateFull(
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
               snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_dispatch_strict_error\":%d,",
+              snapshot.last_dispatch_strict_error);
   std::printf("\"last_selector\":");
   PrintJsonStringOrNull(snapshot.last_selector);
   std::printf(",\"last_resolved_class_name\":");
@@ -385,8 +385,8 @@ inline void PrintMethodCacheStateMetaclass(
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
-      "\"fallback_dispatch_count\":%llu,",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "\"strict_dispatch_error_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   std::printf("\"last_normalized_receiver_identity\":%llu,",
               static_cast<unsigned long long>(
                   snapshot.last_normalized_receiver_identity));
@@ -394,8 +394,8 @@ inline void PrintMethodCacheStateMetaclass(
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
               snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_dispatch_strict_error\":%d,",
+              snapshot.last_dispatch_strict_error);
   std::printf("\"last_selector\":");
   PrintJsonStringOrNull(snapshot.last_selector);
   std::printf(",\"last_resolved_class_name\":");
@@ -419,8 +419,8 @@ inline void PrintMethodCacheStateMethodBinding(
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
-      "\"fallback_dispatch_count\":%llu,",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "\"strict_dispatch_error_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   std::printf("\"last_selector\":");
   PrintJsonStringOrNull(snapshot.last_selector);
   std::printf(",\"last_normalized_receiver_identity\":%llu,",
@@ -430,8 +430,8 @@ inline void PrintMethodCacheStateMethodBinding(
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
               snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_dispatch_strict_error\":%d,",
+              snapshot.last_dispatch_strict_error);
   std::printf("\"last_resolved_class_name\":");
   PrintJsonStringOrNull(snapshot.last_resolved_class_name);
   std::printf(",\"last_resolved_owner_identity\":");
@@ -453,8 +453,8 @@ inline void PrintMethodCacheStateSlowPath(
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
-      "\"fallback_dispatch_count\":%llu,",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "\"strict_dispatch_error_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   std::printf("\"last_selector\":");
   PrintJsonStringOrNull(snapshot.last_selector);
   std::printf(
@@ -467,8 +467,8 @@ inline void PrintMethodCacheStateSlowPath(
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
               snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_dispatch_strict_error\":%d,",
+              snapshot.last_dispatch_strict_error);
   std::printf("\"last_resolved_class_name\":");
   PrintJsonStringOrNull(snapshot.last_resolved_class_name);
   std::printf(",\"last_resolved_owner_identity\":");
@@ -490,8 +490,8 @@ inline void PrintMethodCacheStateProtocolCategory(
   std::printf("\"live_dispatch_count\":%llu,",
               static_cast<unsigned long long>(snapshot.live_dispatch_count));
   std::printf(
-      "\"fallback_dispatch_count\":%llu,",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "\"strict_dispatch_error_count\":%llu,",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   std::printf("\"last_selector\":");
   PrintJsonStringOrNull(snapshot.last_selector);
   std::printf(
@@ -510,8 +510,8 @@ inline void PrintMethodCacheStateProtocolCategory(
               snapshot.last_dispatch_used_cache);
   std::printf("\"last_dispatch_resolved_live_method\":%d,",
               snapshot.last_dispatch_resolved_live_method);
-  std::printf("\"last_dispatch_fell_back\":%d,",
-              snapshot.last_dispatch_fell_back);
+  std::printf("\"last_dispatch_strict_error\":%d,",
+              snapshot.last_dispatch_strict_error);
   std::printf("\"last_resolved_class_name\":");
   PrintJsonStringOrNull(snapshot.last_resolved_class_name);
   std::printf(",\"last_resolved_owner_identity\":");
@@ -887,8 +887,8 @@ inline void PrintDispatchStatePropertyExecution(
   PrintUint64Field("live_dispatch_count", static_cast<unsigned long long>(
                                               snapshot.live_dispatch_count));
   PrintUint64Field(
-      "fallback_dispatch_count",
-      static_cast<unsigned long long>(snapshot.fallback_dispatch_count));
+      "strict_dispatch_error_count",
+      static_cast<unsigned long long>(snapshot.strict_dispatch_error_count));
   PrintUint64Field(
       "last_resolved_parameter_count",
       static_cast<unsigned long long>(snapshot.last_resolved_parameter_count));
@@ -903,7 +903,8 @@ inline void PrintDispatchStatePropertyExecution(
                 snapshot.last_dispatch_used_fast_path);
   PrintIntField("last_dispatch_resolved_live_method",
                 snapshot.last_dispatch_resolved_live_method);
-  PrintIntField("last_dispatch_fell_back", snapshot.last_dispatch_fell_back);
+  PrintIntField("last_dispatch_strict_error",
+                snapshot.last_dispatch_strict_error);
   PrintIntField("last_effective_direct_dispatch",
                 snapshot.last_effective_direct_dispatch);
   PrintIntField("last_used_builtin", snapshot.last_used_builtin);

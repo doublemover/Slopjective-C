@@ -126,7 +126,7 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   uint64_t cache_miss_count;
   uint64_t slow_path_lookup_count;
   uint64_t live_dispatch_count;
-  uint64_t fallback_dispatch_count;
+  uint64_t strict_dispatch_error_count;
   uint64_t fast_path_seed_count;
   uint64_t fast_path_hit_count;
   uint64_t last_selector_stable_id;
@@ -136,7 +136,7 @@ typedef struct objc3_runtime_method_cache_state_snapshot {
   int last_dispatch_used_cache;
   int last_dispatch_used_fast_path;
   int last_dispatch_resolved_live_method;
-  int last_dispatch_fell_back;
+  int last_dispatch_strict_error;
   const char *last_selector;
   const char *last_fast_path_reason;
   const char *last_resolved_class_name;
@@ -172,7 +172,7 @@ typedef struct objc3_runtime_dispatch_state_snapshot {
   uint64_t fast_path_seed_count;
   uint64_t fast_path_hit_count;
   uint64_t live_dispatch_count;
-  uint64_t fallback_dispatch_count;
+  uint64_t strict_dispatch_error_count;
   uint64_t last_selector_stable_id;
   uint64_t last_normalized_receiver_identity;
   uint64_t last_resolved_parameter_count;
@@ -181,7 +181,7 @@ typedef struct objc3_runtime_dispatch_state_snapshot {
   int last_dispatch_used_cache;
   int last_dispatch_used_fast_path;
   int last_dispatch_resolved_live_method;
-  int last_dispatch_fell_back;
+  int last_dispatch_strict_error;
   int last_effective_direct_dispatch;
   int last_used_builtin;
   const char *last_selector;

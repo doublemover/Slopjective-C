@@ -24,7 +24,7 @@ WriteLabeledDispatchState(std::ostream &out, const char *label,
   out << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
       << "\n";
   out << label
-      << "_fallback_dispatch_count=" << snapshot.fallback_dispatch_count
+      << "_strict_dispatch_error_count=" << snapshot.strict_dispatch_error_count
       << "\n";
   out << label << "_last_resolved_parameter_count="
       << snapshot.last_resolved_parameter_count << "\n";
@@ -36,7 +36,7 @@ WriteLabeledDispatchState(std::ostream &out, const char *label,
   out << label << "_last_dispatch_resolved_live_method="
       << snapshot.last_dispatch_resolved_live_method << "\n";
   out << label
-      << "_last_dispatch_fell_back=" << snapshot.last_dispatch_fell_back
+      << "_last_dispatch_strict_error=" << snapshot.last_dispatch_strict_error
       << "\n";
   out << label << "_last_effective_direct_dispatch="
       << snapshot.last_effective_direct_dispatch << "\n";
@@ -62,7 +62,7 @@ inline void WriteLabeledMethodCacheState(
   out << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
       << "\n";
   out << label
-      << "_fallback_dispatch_count=" << snapshot.fallback_dispatch_count
+      << "_strict_dispatch_error_count=" << snapshot.strict_dispatch_error_count
       << "\n";
   out << label
       << "_last_dispatch_used_cache=" << snapshot.last_dispatch_used_cache
@@ -70,7 +70,7 @@ inline void WriteLabeledMethodCacheState(
   out << label << "_last_dispatch_resolved_live_method="
       << snapshot.last_dispatch_resolved_live_method << "\n";
   out << label
-      << "_last_dispatch_fell_back=" << snapshot.last_dispatch_fell_back
+      << "_last_dispatch_strict_error=" << snapshot.last_dispatch_strict_error
       << "\n";
   out << label << "_last_selector=" << last_selector << "\n";
 }
@@ -88,7 +88,7 @@ inline void WriteLabeledFastPathMethodCacheState(
   out << label << "_live_dispatch_count=" << snapshot.live_dispatch_count
       << "\n";
   out << label
-      << "_fallback_dispatch_count=" << snapshot.fallback_dispatch_count
+      << "_strict_dispatch_error_count=" << snapshot.strict_dispatch_error_count
       << "\n";
   out << label << "_fast_path_seed_count=" << snapshot.fast_path_seed_count
       << "\n";
@@ -102,7 +102,7 @@ inline void WriteLabeledFastPathMethodCacheState(
   out << label << "_last_dispatch_resolved_live_method="
       << snapshot.last_dispatch_resolved_live_method << "\n";
   out << label
-      << "_last_dispatch_fell_back=" << snapshot.last_dispatch_fell_back
+      << "_last_dispatch_strict_error=" << snapshot.last_dispatch_strict_error
       << "\n";
   out << label << "_last_selector=" << last_selector << "\n";
   out << label << "_last_fast_path_reason=" << last_fast_path_reason << "\n";

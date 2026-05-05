@@ -589,7 +589,7 @@ struct RuntimeState {
   std::uint64_t method_cache_miss_count = 0;
   std::uint64_t slow_path_lookup_count = 0;
   std::uint64_t live_dispatch_count = 0;
-  std::uint64_t fallback_dispatch_count = 0;
+  std::uint64_t strict_dispatch_error_count = 0;
   std::uint64_t fast_path_seed_count = 0;
   std::uint64_t fast_path_hit_count = 0;
   std::string last_dispatch_selector;
@@ -600,7 +600,7 @@ struct RuntimeState {
   bool last_dispatch_used_cache = false;
   bool last_dispatch_used_fast_path = false;
   bool last_dispatch_resolved_live_method = false;
-  bool last_dispatch_fell_back = false;
+  bool last_dispatch_strict_error = false;
   bool last_dispatch_effective_direct_dispatch = false;
   bool last_dispatch_used_builtin = false;
   std::string last_fast_path_reason;
@@ -824,7 +824,7 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.method_cache_miss_count = 0;
   state.slow_path_lookup_count = 0;
   state.live_dispatch_count = 0;
-  state.fallback_dispatch_count = 0;
+  state.strict_dispatch_error_count = 0;
   state.fast_path_seed_count = 0;
   state.fast_path_hit_count = 0;
   state.last_dispatch_selector.clear();
@@ -835,7 +835,7 @@ void ClearMethodCacheStateUnlocked(RuntimeState &state) {
   state.last_dispatch_used_cache = false;
   state.last_dispatch_used_fast_path = false;
   state.last_dispatch_resolved_live_method = false;
-  state.last_dispatch_fell_back = false;
+  state.last_dispatch_strict_error = false;
   state.last_dispatch_effective_direct_dispatch = false;
   state.last_dispatch_used_builtin = false;
   state.last_fast_path_reason.clear();

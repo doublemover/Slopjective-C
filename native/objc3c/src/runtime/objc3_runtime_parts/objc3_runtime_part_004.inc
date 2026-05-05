@@ -5,7 +5,7 @@
   snapshot->fast_path_seed_count = state.fast_path_seed_count;
   snapshot->fast_path_hit_count = state.fast_path_hit_count;
   snapshot->live_dispatch_count = state.live_dispatch_count;
-  snapshot->fallback_dispatch_count = state.fallback_dispatch_count;
+  snapshot->strict_dispatch_error_count = state.strict_dispatch_error_count;
   snapshot->last_selector_stable_id = state.last_dispatch_selector_stable_id;
   snapshot->last_normalized_receiver_identity =
       state.last_dispatch_normalized_receiver_identity;
@@ -18,7 +18,7 @@
       state.last_dispatch_used_fast_path ? 1 : 0;
   snapshot->last_dispatch_resolved_live_method =
       state.last_dispatch_resolved_live_method ? 1 : 0;
-  snapshot->last_dispatch_fell_back = state.last_dispatch_fell_back ? 1 : 0;
+  snapshot->last_dispatch_strict_error = state.last_dispatch_strict_error ? 1 : 0;
   snapshot->last_effective_direct_dispatch =
       state.last_dispatch_effective_direct_dispatch ? 1 : 0;
   snapshot->last_used_builtin = state.last_dispatch_used_builtin ? 1 : 0;
