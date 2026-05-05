@@ -973,14 +973,14 @@ static std::string SemanticTypeName(const SemanticTypeInfo &info) {
 
 static unsigned OwnershipQualifierLine(
     const std::vector<Objc3SemaTokenMetadata> &tokens,
-    unsigned fallback_line) {
-  return tokens.empty() ? fallback_line : tokens.front().line;
+    unsigned default_line) {
+  return tokens.empty() ? default_line : tokens.front().line;
 }
 
 static unsigned OwnershipQualifierColumn(
     const std::vector<Objc3SemaTokenMetadata> &tokens,
-    unsigned fallback_column) {
-  return tokens.empty() ? fallback_column : tokens.front().column;
+    unsigned default_column) {
+  return tokens.empty() ? default_column : tokens.front().column;
 }
 
 static void RecordUnsupportedFeatureClaimDiagnostic(

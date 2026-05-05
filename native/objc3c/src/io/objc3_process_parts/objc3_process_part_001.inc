@@ -1037,7 +1037,7 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
   // launch-integration anchor: compile, proof, and execution-smoke
   // command surfaces must all consume this emitted registration manifest as the
   // authoritative runtime launch contract instead of guessing archive paths or
-  // linker flags from ad hoc fallback heuristics.
+  // linker flags from implicit heuristics.
   // live catch/bridge/runtime integration anchor: runnable Part 6
   // probes keep using this same emitted runtime-library archive path and
   // linker-response topology; lane-D must prove linked error/bridge execution

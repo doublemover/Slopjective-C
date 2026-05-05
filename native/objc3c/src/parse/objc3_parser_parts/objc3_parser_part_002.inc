@@ -1012,7 +1012,6 @@ static bool IsRecoveryAnchorSymbol(const std::string &symbol) {
   const std::string lowered = BuildLowercaseProfileToken(symbol);
   return lowered.find("recover") != std::string::npos ||
          lowered.find("recovery") != std::string::npos ||
-         lowered.find("fallback") != std::string::npos ||
          lowered.find("resync") != std::string::npos ||
          lowered.find("anchor") != std::string::npos;
 }

@@ -499,7 +499,7 @@
       pipeline_result.sema_parity_surface.property_synthesis_ivar_binding_summary;
   // export-legality anchor: manifest sema surfaces must publish the
   // canonical sema property-synthesis/ivar-binding summary rather than the
-  // lowering fallback contract used for later replay keys.
+  // lowering fail-closed contract used for later replay keys.
   const bool property_synthesis_ivar_binding_handoff_deterministic =
       property_synthesis_ivar_binding_summary.deterministic &&
       pipeline_result.sema_parity_surface

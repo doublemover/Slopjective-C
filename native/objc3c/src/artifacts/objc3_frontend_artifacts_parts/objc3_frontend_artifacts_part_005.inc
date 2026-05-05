@@ -1090,7 +1090,7 @@ std::string BuildTypeSystemOptionalKeypathRuntimeHelperContractJson(
           contract.typed_keypath_literal_sites &&
       contract.deferred_typed_keypath_sites == 0;
   const bool typed_keypath_runtime_execution_helper_landed = true;
-  const bool diagnostic_fallback_ready = true;
+  const bool diagnostic_fail_closed_ready = true;
   std::ostringstream replay_key;
   replay_key << "contract="
              << kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId
@@ -1121,7 +1121,7 @@ std::string BuildTypeSystemOptionalKeypathRuntimeHelperContractJson(
       << "\",\"typed_keypath_helper_model\":\""
       << EscapeJsonString(
              kObjc3TypeSystemOptionalKeypathRuntimeHelperTypedKeypathModel)
-      << "\",\"diagnostic_fallback_model\":\""
+      << "\",\"diagnostic_fail_closed_model\":\""
       << EscapeJsonString(
              kObjc3TypeSystemOptionalKeypathRuntimeHelperDiagnosticModel)
       << "\",\"public_lookup_selector_symbol\":\""
@@ -1143,8 +1143,8 @@ std::string BuildTypeSystemOptionalKeypathRuntimeHelperContractJson(
       << (typed_keypath_descriptor_handles_ready ? "true" : "false")
       << ",\"typed_keypath_runtime_execution_helper_landed\":"
       << (typed_keypath_runtime_execution_helper_landed ? "true" : "false")
-      << ",\"diagnostic_fallback_ready\":"
-      << (diagnostic_fallback_ready ? "true" : "false")
+      << ",\"diagnostic_fail_closed_ready\":"
+      << (diagnostic_fail_closed_ready ? "true" : "false")
       << ",\"fail_closed\":true"
       << ",\"replay_key\":\"" << EscapeJsonString(replay_key.str()) << "\"}";
   return out.str();

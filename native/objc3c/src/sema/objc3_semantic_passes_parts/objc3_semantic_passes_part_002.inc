@@ -479,13 +479,13 @@ struct Objc3ConcurrencyTaskCallableLegalityProfile {
 
 struct Objc3ResolvedMessageSendMethod {
   enum class Status {
-    DynamicFallback,
+    RuntimeDynamic,
     Resolved,
     MissingConcreteSelector,
     AmbiguousConcreteSelector
   };
 
-  Status status = Status::DynamicFallback;
+  Status status = Status::RuntimeDynamic;
   const Objc3MethodInfo *method = nullptr;
   std::string owner_name;
   bool is_class_method = false;
