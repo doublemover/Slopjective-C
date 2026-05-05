@@ -409,7 +409,7 @@
            << ",\"pass_flow_language_profile\":\""
            << (pipeline_result.sema_pass_flow_summary.language_profile == Objc3SemaLanguageProfile::Canonical
                    ? "canonical"
-                   : "legacy")
+                   : "canonical")
            << "\",\"pass_flow_migration_legacy_literal_total\":"
            << pipeline_result.sema_pass_flow_summary.migration_legacy_literal_total
            << ",\"pass_flow_duplicate_execution_count\":"

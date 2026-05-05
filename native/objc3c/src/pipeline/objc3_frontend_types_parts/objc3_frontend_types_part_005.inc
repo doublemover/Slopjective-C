@@ -8,8 +8,7 @@
 inline bool IsReadyObjc3FrontendCompatibilityStrictnessClaimSemanticsSummary(
     const Objc3FrontendCompatibilityStrictnessClaimSemanticsSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical" ||
-      summary.effective_language_profile == "legacy";
+      summary.effective_language_profile == "canonical";
   return !summary.contract_id.empty() &&
          !summary.runnable_feature_claim_inventory_contract_id.empty() &&
          !summary.feature_claim_truth_surface_contract_id.empty() &&
@@ -366,8 +365,7 @@ struct Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary {
 inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
     const Objc3VersionedConformanceReportLoweringSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical" ||
-      summary.effective_language_profile == "legacy";
+      summary.effective_language_profile == "canonical";
   return !summary.contract_id.empty() &&
          !summary.semantic_contract_id.empty() &&
          !summary.runnable_feature_claim_inventory_contract_id.empty() &&
@@ -411,8 +409,7 @@ inline bool IsReadyObjc3VersionedConformanceReportLoweringSummary(
 inline bool IsReadyObjc3ToolingMachineReadableConformanceReportContractSummary(
     const Objc3ToolingMachineReadableConformanceReportContractSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical" ||
-      summary.effective_language_profile == "legacy";
+      summary.effective_language_profile == "canonical";
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.lowering_contract_id.empty() &&
@@ -434,8 +431,7 @@ inline bool IsReadyObjc3ToolingMachineReadableConformanceReportContractSummary(
 inline bool IsReadyObjc3ToolingFeatureAwareConformanceReportEmissionSummary(
     const Objc3ToolingFeatureAwareConformanceReportEmissionSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical" ||
-      summary.effective_language_profile == "legacy";
+      summary.effective_language_profile == "canonical";
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.machine_readable_report_contract_id.empty() &&
@@ -454,8 +450,7 @@ inline bool IsReadyObjc3ToolingFeatureAwareConformanceReportEmissionSummary(
 inline bool IsReadyObjc3ToolingCorpusShardingReleaseEvidencePackagingSummary(
     const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical" ||
-      summary.effective_language_profile == "legacy";
+      summary.effective_language_profile == "canonical";
   return !summary.contract_id.empty() &&
          !summary.dependency_contract_id.empty() &&
          !summary.feature_aware_report_contract_id.empty() &&

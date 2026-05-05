@@ -838,12 +838,10 @@ BuildUnsupportedFeatureClaimContext(const Objc3Program &ast,
 static Objc3CompatibilityStrictnessClaimSemanticsSummary
 BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
     const Objc3SemanticIntegrationSurface &surface,
-    bool legacy_language_profile,
     const Objc3UnsupportedFeatureClaimEnforcementStats
         &unsupported_feature_enforcement) {
   Objc3CompatibilityStrictnessClaimSemanticsSummary summary;
-  summary.effective_language_profile =
-      legacy_language_profile ? "legacy" : "canonical";
+  summary.effective_language_profile = "canonical";
   summary.valid_language_profile_count =
       kObjc3CompatibilityStrictnessClaimValidLanguageProfileCount;
   summary.live_selection_surface_count =

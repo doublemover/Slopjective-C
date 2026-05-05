@@ -204,7 +204,6 @@ def publish_matrix(json_out: Path, md_out: Path) -> None:
         ],
         "language_profiles": [
             {"id": "canonical", "status": "supported"},
-            {"id": "legacy", "status": "supported"},
         ],
         "canonical_literal_rejection_diagnostics": {"status": "supported"},
         "macro_claim_surface": {"status": "suppressed"},

@@ -282,7 +282,6 @@
   surface.compatibility_strictness_claim_semantics_summary =
       BuildCompatibilityStrictnessClaimSemanticsSummaryFromIntegrationSurface(
           surface,
-          legacy_language_profile,
           unsupported_feature_enforcement);
   surface.built = true;
   return surface;

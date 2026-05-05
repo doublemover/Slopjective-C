@@ -916,7 +916,6 @@ Objc3SemaPassManagerResult RunObjc3SemaPassManager(const Objc3SemaPassManagerInp
           // semantic surface any further.
           BuildSemanticIntegrationSurface(
               *input.program,
-              false,
               input.validation_options.allow_source_only_block_literals,
               input.validation_options.allow_source_only_defer_statements,
               input.validation_options.allow_source_only_error_runtime_surface,

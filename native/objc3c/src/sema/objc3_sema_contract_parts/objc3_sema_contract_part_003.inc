@@ -770,8 +770,7 @@ struct Objc3CompatibilityStrictnessClaimSemanticsSummary {
 inline bool IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
     const Objc3CompatibilityStrictnessClaimSemanticsSummary &summary) {
   const bool language_profile_valid =
-      summary.effective_language_profile == "canonical" ||
-      summary.effective_language_profile == "legacy";
+      summary.effective_language_profile == "canonical";
   return !summary.contract_id.empty() &&
          !summary.runnable_feature_claim_inventory_contract_id.empty() &&
          !summary.feature_claim_truth_surface_contract_id.empty() &&

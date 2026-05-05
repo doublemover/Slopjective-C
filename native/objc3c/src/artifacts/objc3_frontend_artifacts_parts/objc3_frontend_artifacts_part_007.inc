@@ -1051,7 +1051,6 @@ std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
       BuildSuppressedMacroClaimIds();
   const std::vector<std::string> supported_language_profiles = {
       "canonical",
-      "legacy",
   };
   std::ostringstream out;
   out << "{"
