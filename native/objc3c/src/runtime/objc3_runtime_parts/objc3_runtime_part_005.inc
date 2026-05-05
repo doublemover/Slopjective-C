@@ -415,13 +415,72 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
 // runtime-fast-path-integration anchor: Part 9 freezes the current
 // mixed dispatch boundary exactly as implemented here. IR-lowered direct sites
 // bypass this entrypoint, while objc_dynamic opt-out and unresolved sends still
-// flow through the canonical method-cache/slow-path/fallback surface below.
+// flow through the canonical method-cache/slow-path/strict-error surface below.
 // live-dispatch-fast-path anchor: cache hits can now come from
 // registration-time seeded direct/final/sealed entries, and that seeded path
 // remains explicit in the runtime-owned proof counters and last-fast-path
 // reason snapshot state.
-int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
-                               int a1, int a2, int a3) {
+const char *DispatchDiagnosticCode(
+    objc3_runtime_dispatch_status_code status_code) {
+  switch (status_code) {
+    case OBJC3_RUNTIME_DISPATCH_STATUS_OK:
+    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
+      return "";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR:
+      return "O3RT001";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS:
+      return "O3RT002";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH:
+      return "O3RT003";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA:
+      return "O3RT004";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE:
+      return "O3RT005";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT:
+      return "O3RT006";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT:
+      return "O3RT007";
+  }
+  return "O3RT000";
+}
+
+const char *DispatchDiagnosticMessage(
+    objc3_runtime_dispatch_status_code status_code) {
+  switch (status_code) {
+    case OBJC3_RUNTIME_DISPATCH_STATUS_OK:
+      return "";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
+      return "";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR:
+      return "runtime dispatch failed: unknown selector";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS:
+      return "runtime dispatch failed: unknown receiver class";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH:
+      return "runtime dispatch failed: missing class graph";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA:
+      return "runtime dispatch failed: malformed metadata";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE:
+      return "runtime dispatch failed: unsupported return type";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT:
+      return "runtime dispatch failed: unsupported argument layout";
+    case OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT:
+      return "runtime dispatch failed: category conflict";
+  }
+  return "runtime dispatch failed: internal dispatch status";
+}
+
+objc3_runtime_dispatch_i32_result MakeDispatchI32Result(
+    objc3_runtime_dispatch_status_code status_code, int value) {
+  objc3_runtime_dispatch_i32_result result{};
+  result.status_code = status_code;
+  result.value = value;
+  result.diagnostic_code = DispatchDiagnosticCode(status_code);
+  result.diagnostic_message = DispatchDiagnosticMessage(status_code);
+  return result;
+}
+
+objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
+    int receiver, const char *selector, int a0, int a1, int a2, int a3) {
   RuntimeState &state = State();
   const void *resolved_implementation = nullptr;
   const RealizedPropertyAccessor *resolved_runtime_property_accessor = nullptr;
@@ -431,6 +490,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
   RuntimeBuiltinKind resolved_builtin_kind = RuntimeBuiltinKind::None;
   bool resolved_live_method = false;
   std::uint64_t receiver_base_identity = 0;
+  objc3_runtime_dispatch_status_code dispatch_status =
+      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
   {
     std::lock_guard<std::mutex> lock(state.mutex);
     const objc3_runtime_selector_handle *selector_handle =
@@ -521,6 +582,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           } else {
             state.last_dispatch_path = "cache-hit-error";
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
+            dispatch_status =
+                OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
             ++state.fallback_dispatch_count;
           }
         } else {
@@ -598,6 +661,10 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
           } else {
             state.last_dispatch_path = "slow-path-error";
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
+            dispatch_status =
+                resolution.ambiguous
+                    ? OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT
+                    : OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
             ++state.fallback_dispatch_count;
           }
         }
@@ -606,6 +673,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
         state.last_dispatch_fell_back = true;
         state.last_dispatch_path = "invalid-receiver-error";
         state.last_dispatch_implementation_kind = "strict-dispatch-error";
+        dispatch_status =
+            OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS;
       }
     }
   }
@@ -616,7 +685,8 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
     std::lock_guard<std::mutex> lock(state.mutex);
     state.last_dispatch_path = "nil-short-circuit";
     state.last_dispatch_implementation_kind = "nil-short-circuit";
-    return 0;
+    return MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
+                                 0);
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
@@ -632,7 +702,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
         ReleaseRuntimeValueUnlocked(state, value);
       }
     }
-    return result;
+    return MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
@@ -648,9 +718,16 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
         ReleaseRuntimeValueUnlocked(state, value);
       }
     }
-    return result;
+    return MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
   }
-  return 0;
+  return MakeDispatchI32Result(dispatch_status, 0);
+}
+
+int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
+                               int a1, int a2, int a3) {
+  const objc3_runtime_dispatch_i32_result result =
+      objc3_runtime_dispatch_i32_checked(receiver, selector, a0, a1, a2, a3);
+  return result.value;
 }
 
 int objc3_runtime_copy_registration_state_for_testing(

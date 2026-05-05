@@ -578,7 +578,7 @@ int objc3_runtime_copy_keypath_entry_for_testing(
 // resolution, category attachment, and protocol-aware negative runtime checks
 // without widening the public runtime header.
 // runtime-fast-path-integration anchor: Part 9 explicitly reuses this
-// same cache snapshot surface for direct-bypass/cache/fallback proof rather
+// same cache snapshot surface for direct-bypass/cache/strict-error proof rather
 // than inventing a second runtime query API.
 int objc3_runtime_copy_method_cache_state_for_testing(
     objc3_runtime_method_cache_state_snapshot *snapshot);

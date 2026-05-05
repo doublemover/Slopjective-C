@@ -35,18 +35,31 @@ int main() {
   }
 
   objc3_runtime_reset_for_testing();
-  const int unresolved =
-      objc3_runtime_dispatch_i32(123, "missingDispatch:", 4, 5, 6, 7);
-  if (ExpectValueEqual(
-          unresolved, ExpectedDispatch(123, "missingDispatch:", 4, 5, 6, 7),
-          "live runtime strict dispatch error drift", 14) != 0) {
+  const objc3_runtime_dispatch_i32_result unresolved =
+      objc3_runtime_dispatch_i32_checked(123, "missingDispatch:", 4, 5, 6, 7);
+  if (ExpectValueEqual(unresolved.status_code,
+                       OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
+                       "live runtime typed dispatch error status", 14) != 0) {
     return 14;
   }
   if (ExpectValueEqual(
-          objc3_runtime_dispatch_i32(0, "missingDispatch:", 4, 5, 6, 7),
+          unresolved.value,
+          ExpectedDispatch(123, "missingDispatch:", 4, 5, 6, 7),
+          "live runtime strict dispatch error value projection", 16) != 0) {
+    return 16;
+  }
+  const objc3_runtime_dispatch_i32_result nil_receiver =
+      objc3_runtime_dispatch_i32_checked(0, "missingDispatch:", 4, 5, 6, 7);
+  if (ExpectValueEqual(nil_receiver.status_code,
+                       OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
+                       "live runtime nil receiver dispatch status", 17) != 0) {
+    return 17;
+  }
+  if (ExpectValueEqual(
+          nil_receiver.value,
           ExpectedDispatch(0, "missingDispatch:", 4, 5, 6, 7),
-          "live runtime nil receiver dispatch drift", 15) != 0) {
-    return 15;
+          "live runtime nil receiver dispatch value", 18) != 0) {
+    return 18;
   }
   return 0;
 }

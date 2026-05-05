@@ -368,7 +368,7 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector) {
   // selector-table anchor: metadata-backed selector pools now
   // materialize the canonical runtime selector table, while direct lookup of
-  // non-emitted selectors remains a dynamic fallback. The later runtime step layers
+  // non-emitted selectors remains a dynamic strict-error path. The later runtime step layers
   // method-cache and class/metaclass slow-path dispatch on top of the same
   // preserved public lookup/dispatch surface.
   if (selector == nullptr) {

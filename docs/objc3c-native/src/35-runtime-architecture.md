@@ -1431,11 +1431,11 @@ from source-side manifests alone.
     - `objc3_runtime_copy_protocol_conformance_query_for_testing`
 - frozen semantic models:
   - lookup resolution order:
-    - `seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-deterministic-fallback`
+    - `seeded-cache-then-live-class-chain-then-attached-category-and-protocol-checks-then-strict-dispatch-error`
   - selector materialization:
     - `metadata-selectors-materialized-at-registration-and-dynamic-misses-interned-at-first-lookup`
   - unresolved selector behavior:
-    - `negative-cache-entry-preserved-and-deterministic-fallback-returned`
+    - `negative-cache-entry-preserved-and-typed-strict-dispatch-error-returned`
 - authoritative evidence paths:
   - fixtures:
     - `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
@@ -1516,7 +1516,7 @@ milestone notes, or synthetic summaries.
   - category attachment:
     - `registration-attaches-category-owned-instance-and-protocol-members-onto-live-realized-classes-before-dispatch`
   - merged dispatch resolution:
-    - `attached-category-implementations-override-base-class-instance-lookup-before-superclass-and-protocol-fallback`
+    - `attached-category-implementations-override-base-class-instance-lookup-before-superclass-and-protocol-strict-error`
   - attached protocol visibility:
     - `attached-categories-publish-owner-and-name-through-realized-class-entries-and-protocol-conformance-queries`
 - authoritative evidence paths:
@@ -1533,7 +1533,7 @@ milestone notes, or synthetic summaries.
 This is the authoritative category-attachment and merged-dispatch boundary. It
 freezes the fact that live registration attaches category-owned methods and
 protocol conformance before runtime dispatch, that attached implementations win
-before superclass/protocol fallback, and that attached category owner/name
+before superclass/protocol strict-error checks, and that attached category owner/name
 facts remain queryable through the same compile-coupled executable path used by
 dispatch and reflection. Downstream work must extend this emitted surface
 instead of reconstructing category merge truth from ad hoc sidecars or stale

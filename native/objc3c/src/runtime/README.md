@@ -7,6 +7,7 @@ Live runtime surface:
 - primary entrypoints:
   - `objc3_runtime_register_image`
   - `objc3_runtime_lookup_selector`
+  - `objc3_runtime_dispatch_i32_checked`
   - `objc3_runtime_dispatch_i32`
   - `objc3_runtime_reset_for_testing`
 
@@ -21,7 +22,7 @@ Current dispatch path:
 2. the runtime interns or resolves the selector through `objc3_runtime_lookup_selector`
 3. dispatch probes the method cache and then the realized class/category/protocol slow path
 4. resolved methods execute either live emitted method bodies or runtime builtins such as `alloc`, `init`, and synthesized property accessors
-5. unresolved sends are recorded as strict dispatch errors; the legacy int ABI returns zero until the typed dispatch result API lands
+5. unresolved sends return a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`; the current `i32` entrypoint exposes only the value field for lowered IR call sites
 
 Installation lifecycle:
 
@@ -336,7 +337,7 @@ Category attachment and merged dispatch surface:
   - registration attaches category-owned instance and protocol members onto live
     realized classes before dispatch
   - attached-category implementations override base-class instance lookup
-    before superclass and protocol fallback
+    before superclass and protocol strict-error checks
   - attached categories publish owner and name through realized class entries
     and protocol-conformance queries
 

@@ -31,6 +31,25 @@ typedef struct objc3_runtime_selector_handle {
   uint64_t stable_id;
 } objc3_runtime_selector_handle;
 
+typedef enum objc3_runtime_dispatch_status_code {
+  OBJC3_RUNTIME_DISPATCH_STATUS_OK = 0,
+  OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER = 1,
+  OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR = -1,
+  OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS = -2,
+  OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH = -3,
+  OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA = -4,
+  OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE = -5,
+  OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT = -6,
+  OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT = -7
+} objc3_runtime_dispatch_status_code;
+
+typedef struct objc3_runtime_dispatch_i32_result {
+  objc3_runtime_dispatch_status_code status_code;
+  int value;
+  const char *diagnostic_code;
+  const char *diagnostic_message;
+} objc3_runtime_dispatch_i32_result;
+
 typedef struct objc3_runtime_registration_state_snapshot {
   uint64_t registered_image_count;
   uint64_t registered_descriptor_total;
@@ -109,6 +128,13 @@ typedef struct objc3_runtime_registration_state_snapshot {
 int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image);
 const objc3_runtime_selector_handle *objc3_runtime_lookup_selector(
     const char *selector);
+objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
+    int receiver,
+    const char *selector,
+    int a0,
+    int a1,
+    int a2,
+    int a3);
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3);
 int objc3_runtime_copy_registration_state_for_testing(
