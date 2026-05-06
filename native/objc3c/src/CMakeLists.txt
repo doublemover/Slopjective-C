@@ -23,18 +23,6 @@ target_link_libraries(objc3c_runtime_metadata INTERFACE
   objc3c_build_defaults
 )
 
-add_library(objc3c_artifacts_evidence INTERFACE)
-target_link_libraries(objc3c_artifacts_evidence INTERFACE
-  objc3c_build_defaults
-  objc3c_pipeline_results
-)
-
-add_library(objc3c_artifacts_reports INTERFACE)
-target_link_libraries(objc3c_artifacts_reports INTERFACE
-  objc3c_build_defaults
-  objc3c_pipeline_results
-)
-
 set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
 set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/runtime)
 set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/public/objc3_runtime_api.h)
@@ -93,20 +81,7 @@ add_subdirectory(io)
 
 add_subdirectory(pipeline)
 
-add_library(objc3c_artifacts STATIC
-  artifacts/json/artifact_json_model.cpp
-  artifacts/json/artifact_json_writer.cpp
-  artifacts/json/artifact_schema_registry.cpp
-  artifacts/objc3_frontend_artifacts.cpp
-)
-objc3c_apply_build_defaults(objc3c_artifacts)
-objc3c_apply_llvm_direct_config(objc3c_artifacts)
-target_link_libraries(objc3c_artifacts PUBLIC
-  objc3c_artifacts_evidence
-  objc3c_artifacts_reports
-  objc3c_pipeline
-  objc3c_json
-)
+add_subdirectory(artifacts)
 
 add_library(objc3_runtime STATIC
   runtime/blocks/block_capture_storage.cpp

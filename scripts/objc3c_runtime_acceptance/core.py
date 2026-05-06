@@ -20,6 +20,13 @@ from objc3c_runtime_acceptance.checksums import optional_file_sha256_hex
 from objc3c_runtime_acceptance.checksums import replay_key_counter
 from objc3c_runtime_acceptance.checksums import sha256_text_hex
 from objc3c_runtime_acceptance.commands import run
+from objc3c_runtime_acceptance.domains.probe_helpers import RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID
+from objc3c_runtime_acceptance.domains.probe_helpers import RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID
+from objc3c_runtime_acceptance.domains.probe_helpers import RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID
+from objc3c_runtime_acceptance.domains.probe_helpers import build_runtime_bootstrap_lowering_registration_artifact_surface
+from objc3c_runtime_acceptance.domains.probe_helpers import build_runtime_bootstrap_registration_source_surface
+from objc3c_runtime_acceptance.domains.probe_helpers import build_runtime_state_publication_surface
+from objc3c_runtime_acceptance.domains.probe_helpers import check_runtime_probe_helper_support_case
 from objc3c_runtime_acceptance.native_build import ACCEPTANCE_ARTIFACT_REGISTRY
 from objc3c_runtime_acceptance.native_build import COMPILE_OUTPUT_TRUTHFULNESS_CONTRACT_ID
 from objc3c_runtime_acceptance.native_build import COMPILE_PROVENANCE_CONTRACT_ID
@@ -51,7 +58,6 @@ from objc3c_runtime_acceptance.progress import set_acceptance_progress
 from objc3c_runtime_acceptance.probes import ACCEPTANCE_PROBE_RETRY_EVENTS
 from objc3c_runtime_acceptance.probes import DEFAULT_PROBE_RETRIES
 from objc3c_runtime_acceptance.probes import RETRYABLE_PROBE_EXIT_CODES
-from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_json_output
 from objc3c_runtime_acceptance.probes import parse_key_value_output
 from objc3c_runtime_acceptance.probes import run_probe
@@ -61,12 +67,6 @@ from objc3c_runtime_acceptance.reports import write_json_report
 ROOT = Path(__file__).resolve().parents[2]
 TMP_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-runtime-acceptance"
 REPORT_ROOT = ROOT / "tmp" / "reports" / "runtime" / "acceptance"
-RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID = "objc3c.runtime.state.publication.surface.v1"
-RUNTIME_STATE_PUBLICATION_SURFACE_KIND = "compile-manifest-plus-registration-manifest"
-RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID = "objc3c.runtime.bootstrap.registration.source.surface.v1"
-RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID = (
-    "objc3c.runtime.bootstrap.lowering.registration.artifact.surface.v1"
-)
 RUNTIME_MULTI_IMAGE_STARTUP_ORDERING_SOURCE_SURFACE_CONTRACT_ID = (
     "objc3c.runtime.multi.image.startup.ordering.source.surface.v1"
 )
@@ -709,93 +709,6 @@ def build_claim_boundary() -> dict[str, Any]:
     }
 
 
-def build_runtime_state_publication_surface() -> dict[str, Any]:
-    return {
-        "contract_id": RUNTIME_STATE_PUBLICATION_SURFACE_CONTRACT_ID,
-        "publication_surface_kind": RUNTIME_STATE_PUBLICATION_SURFACE_KIND,
-        "compile_artifact_set": [
-            "<emit-prefix>.obj",
-            "<emit-prefix>.ll",
-            "<emit-prefix>.manifest.json",
-            "<emit-prefix>.runtime-registration-manifest.json",
-        ],
-        "public_runtime_abi_boundary": PUBLIC_RUNTIME_ABI_BOUNDARY,
-        "publication_requires_coupled_registration_manifest": True,
-        "publication_requires_real_compile_output": True,
-    }
-
-
-def build_runtime_bootstrap_registration_source_surface() -> dict[str, Any]:
-    return {
-        "contract_id": RUNTIME_BOOTSTRAP_REGISTRATION_SOURCE_SURFACE_CONTRACT_ID,
-        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
-        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
-        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
-        "object_artifact": "<emit-prefix>.obj",
-        "backend_artifact": "<emit-prefix>.ll",
-        "requires_coupled_registration_descriptor_artifact": True,
-        "requires_coupled_registration_manifest": True,
-        "requires_real_compile_output": True,
-    }
-
-
-def build_runtime_bootstrap_lowering_registration_artifact_surface() -> dict[str, Any]:
-    return {
-        "contract_id": RUNTIME_BOOTSTRAP_LOWERING_REGISTRATION_ARTIFACT_SURFACE_CONTRACT_ID,
-        "compile_manifest_artifact": "<emit-prefix>.manifest.json",
-        "registration_manifest_artifact": "<emit-prefix>.runtime-registration-manifest.json",
-        "registration_descriptor_artifact": "<emit-prefix>.runtime-registration-descriptor.json",
-        "object_artifact": "<emit-prefix>.obj",
-        "backend_artifact": "<emit-prefix>.ll",
-        "composed_source_inputs": [
-            "objc_runtime_bootstrap_lowering_contract",
-            "objc_runtime_translation_unit_registration_manifest",
-            "objc_runtime_startup_bootstrap_semantics",
-            "objc_runtime_registration_descriptor_frontend_closure",
-        ],
-        "emitted_symbol_fields": [
-            "constructor_root_symbol",
-            "init_stub_symbol_prefix",
-            "registration_table_symbol_prefix",
-            "image_local_init_state_symbol_prefix",
-            "registration_entrypoint_symbol",
-        ],
-        "emitted_table_fields": [
-            "registration_table_layout_model",
-            "registration_table_abi_version",
-            "registration_table_pointer_field_count",
-        ],
-        "emission_state_fields": [
-            "constructor_root_emission_state",
-            "init_stub_emission_state",
-            "registration_table_emission_state",
-            "bootstrap_ir_materialization_landed",
-            "image_local_initialization_landed",
-        ],
-        "lowered_registration_descriptor_fields": [
-            "constructor_init_stub_symbol",
-            "bootstrap_registration_table_symbol",
-            "bootstrap_image_local_init_state_symbol",
-            "bootstrap_registration_table_layout_model",
-            "bootstrap_image_local_initialization_model",
-            "bootstrap_registration_table_abi_version",
-            "bootstrap_registration_table_pointer_field_count",
-            "translation_unit_registration_order_ordinal",
-        ],
-        "loader_table_ir_proof_fields": [
-            "constructor_root_symbol",
-            "constructor_init_stub_symbol",
-            "bootstrap_registration_table_symbol",
-            "bootstrap_image_local_init_state_symbol",
-            "translation_unit_registration_order_ordinal",
-        ],
-        "requires_coupled_registration_descriptor_artifact": True,
-        "requires_coupled_registration_manifest": True,
-        "requires_real_compile_output": True,
-        "requires_emitted_loader_table_ir": True,
-    }
-
-
 def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path) -> dict[str, Any]:
     compile_coupled_case_ids = [result.case_id for result in results if result.fixture is not None]
     linked_runtime_probe_case_ids = [
@@ -824,44 +737,6 @@ def build_acceptance_suite_surface(results: list[CaseResult], report_path: Path)
             "<emit-prefix>.compile-provenance.json",
         ],
     }
-
-
-def check_runtime_probe_helper_support_case(clangxx: str, run_dir: Path) -> CaseResult:
-    case_dir = run_dir / "runtime-probe-helper-support"
-    helper_probes = [
-        ROOT / "tests" / "tooling" / "runtime" / "json_probe_writer_support_test.cpp",
-        ROOT / "tests" / "tooling" / "runtime" / "runtime_snapshot_stabilizers_support_test.cpp",
-        ROOT / "tests" / "tooling" / "runtime" / "dispatch_expectations_support_test.cpp",
-        ROOT
-        / "tests"
-        / "tooling"
-        / "runtime"
-        / "runtime_probe_helper_output_equivalence_test.cpp",
-    ]
-    completed_probes: list[str] = []
-    for helper_probe in helper_probes:
-        helper_exe = case_dir / f"{helper_probe.stem}.exe"
-        compile_probe(clangxx, helper_probe, helper_exe, [])
-        run_probe(helper_exe)
-        completed_probes.append(repo_display_path(helper_probe))
-    return CaseResult(
-        case_id="runtime-probe-helper-support",
-        probe="tests/tooling/runtime/*_support_test.cpp",
-        fixture=None,
-        claim_class="runtime-probe-helper-tests",
-        passed=True,
-        summary={
-            "kind": "fast-runtime-probe-helper-tests",
-            "helper_probes": completed_probes,
-            "bounded_mismatch_diagnostics": True,
-            "representative_output_equivalence": [
-                "json-field-writer-comma-and-null-output",
-                "labeled-method-cache-state-output",
-                "labeled-fast-path-method-cache-state-output",
-                "labeled-dispatch-state-output",
-            ],
-        },
-    )
 
 
 def check_cross_module_block_ownership_artifact_preservation_case(
@@ -1320,7 +1195,9 @@ def main(argv: list[str] | None = None) -> int:
             for result in results
         ],
         "claim_boundary": build_claim_boundary(),
-        "runtime_state_publication_surface": build_runtime_state_publication_surface(),
+        "runtime_state_publication_surface": build_runtime_state_publication_surface(
+            PUBLIC_RUNTIME_ABI_BOUNDARY
+        ),
         "runtime_bootstrap_registration_source_surface": build_runtime_bootstrap_registration_source_surface(),
         "runtime_bootstrap_lowering_registration_artifact_surface": (
             build_runtime_bootstrap_lowering_registration_artifact_surface()

@@ -42,6 +42,13 @@ from scripts.objc3c_workflow.actions.docs import (
     action_lint_markdown,
     action_validate_documentation_surface,
 )
+from scripts.objc3c_workflow.actions.external_validation import (
+    action_check_external_validation_surface,
+    action_publish_external_repro_corpus,
+    action_test_external_validation_replay,
+    action_validate_external_validation,
+    action_validate_external_validation_integration,
+)
 from scripts.objc3c_workflow.actions.native_build import (
     BUILD_PS1,
     action_build_native_binaries,
@@ -151,10 +158,6 @@ FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
 BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
-EXTERNAL_VALIDATION_SURFACE_PY = ROOT / "scripts" / "check_external_validation_source_surface.py"
-EXTERNAL_VALIDATION_REPLAY_PY = ROOT / "scripts" / "run_objc3c_external_validation_replay.py"
-EXTERNAL_VALIDATION_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_external_repro_corpus.py"
-EXTERNAL_VALIDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_external_validation_integration.py"
 PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_reporting_source_surface.py"
 PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_schema_surface.py"
 PUBLIC_CONFORMANCE_SCORECARD_PY = ROOT / "scripts" / "build_objc3c_public_conformance_scorecard.py"
@@ -760,33 +763,6 @@ def action_validate_conformance_corpus(_: list[str]) -> int:
 
 def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_CONFORMANCE_CORPUS_E2E_PY)])
-
-
-def action_check_external_validation_surface(_: list[str]) -> int:
-    return run([sys.executable, str(EXTERNAL_VALIDATION_SURFACE_PY)])
-
-
-def action_test_external_validation_replay(_: list[str]) -> int:
-    return run([sys.executable, str(EXTERNAL_VALIDATION_REPLAY_PY)])
-
-
-def action_publish_external_repro_corpus(_: list[str]) -> int:
-    return run([sys.executable, str(EXTERNAL_VALIDATION_PUBLICATION_PY)])
-
-
-def action_validate_external_validation(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-external-validation",
-        [
-            ("check-external-validation-surface", [sys.executable, str(EXTERNAL_VALIDATION_SURFACE_PY)]),
-            ("test-external-validation-replay", [sys.executable, str(EXTERNAL_VALIDATION_REPLAY_PY)]),
-            ("publish-external-repro-corpus", [sys.executable, str(EXTERNAL_VALIDATION_PUBLICATION_PY)]),
-        ],
-    )
-
-
-def action_validate_external_validation_integration(_: list[str]) -> int:
-    return run([sys.executable, str(EXTERNAL_VALIDATION_INTEGRATION_PY)])
 
 
 def action_check_public_conformance_reporting_surface(_: list[str]) -> int:
