@@ -10,6 +10,7 @@
 namespace {
 
 using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
+using objc3c::runtime::probe::HasDispatchStatus;
 
 using objc3c::runtime::probe::PrintConformanceQueryProtocolCategory;
 using objc3c::runtime::probe::PrintGraphStateProtocolCategory;
@@ -107,6 +108,15 @@ int main() {
       &ignored_cached_state);
   const int ignored_expected =
       ExpectedStrictDispatchErrorValue(init_value, "ignoredValue", 0, 0, 0, 0);
+  if (!HasDispatchStatus(
+          ignored_result, OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR, 0,
+          "O3RT001", "runtime dispatch failed: unknown selector") ||
+      !HasDispatchStatus(
+          ignored_cached_result,
+          OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR, 0, "O3RT001",
+          "runtime dispatch failed: unknown selector")) {
+    return 1;
+  }
 
   (void)objc3_runtime_copy_protocol_conformance_query_for_testing(
       "Widget", "Worker", &worker_query);

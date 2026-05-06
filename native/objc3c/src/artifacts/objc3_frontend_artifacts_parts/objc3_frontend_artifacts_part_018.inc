@@ -849,7 +849,7 @@
            << ",\"native/objc3c/src/sema/objc3_semantic_passes.cpp\""
            << ",\"native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp\""
            << ",\"native/objc3c/src/ir/objc3_ir_emitter.cpp\""
-           << ",\"native/objc3c/src/runtime/objc3_runtime.h\""
+           << ",\"native/objc3c/src/runtime/public/objc3_runtime_api.h\""
            << ",\"native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h\""
            << ",\"native/objc3c/src/runtime/objc3_runtime.cpp\"]"
            << ",\"authoritative_source_fields\":[\"frontend.pipeline.semantic_surface.objc_concurrency_async_source_closure\""

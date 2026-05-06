@@ -455,7 +455,7 @@ struct Objc3IRFrontendMetadata {
   bool runtime_support_library_exported_entrypoints_frozen = false;
   bool runtime_support_library_ownership_boundaries_frozen = false;
   bool runtime_support_library_build_constraints_frozen = false;
-  bool runtime_support_library_test_dispatch_surface_remains_non_authoritative =
+  bool runtime_support_library_strict_dispatch_errors_required =
       false;
   bool runtime_support_library_native_library_present = false;
   bool runtime_support_library_driver_link_wiring_pending = false;
@@ -484,7 +484,7 @@ struct Objc3IRFrontendMetadata {
   bool runtime_support_library_core_feature_dispatch_formula_matches_runtime_test_helper =
       false;
   bool runtime_support_library_core_feature_reset_for_testing_supported = false;
-  bool runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative =
+  bool runtime_support_library_core_feature_strict_dispatch_errors_required =
       false;
   bool runtime_support_library_core_feature_driver_link_wiring_pending = false;
   bool runtime_support_library_core_feature_ready_for_driver_link_wiring = false;
@@ -505,18 +505,15 @@ struct Objc3IRFrontendMetadata {
   std::string runtime_support_library_link_wiring_core_feature_contract_id;
   bool runtime_support_library_link_wiring_fail_closed = false;
   bool runtime_support_library_link_wiring_archive_available = false;
-  bool runtime_support_library_link_wiring_compatibility_dispatch_alias_exported =
-      false;
   bool runtime_support_library_link_wiring_driver_emits_runtime_link_contract =
       false;
   bool runtime_support_library_link_wiring_execution_smoke_consumes_runtime_library =
       false;
-  bool runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative =
+  bool runtime_support_library_link_wiring_strict_dispatch_errors_required =
       false;
   bool runtime_support_library_link_wiring_ready_for_runtime_library_consumption =
       false;
   std::string runtime_support_library_link_wiring_archive_relative_path;
-  std::string runtime_support_library_link_wiring_compatibility_dispatch_symbol;
   std::string runtime_support_library_link_wiring_runtime_dispatch_symbol;
   std::string runtime_support_library_link_wiring_execution_smoke_script_path;
   std::string runtime_support_library_link_wiring_driver_link_mode;

@@ -1289,7 +1289,7 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryTargetName =
 inline constexpr const char *kObjc3RuntimeSupportLibrarySourceRoot =
     "native/objc3c/src/runtime";
 inline constexpr const char *kObjc3RuntimeSupportLibraryPublicHeaderPath =
-    "native/objc3c/src/runtime/objc3_runtime.h";
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h";
 inline constexpr const char *kObjc3RuntimeSupportLibraryKind = "static";
 inline constexpr const char *kObjc3RuntimeSupportLibraryArchiveBasename =
     "objc3_runtime";
@@ -1311,9 +1311,6 @@ inline constexpr const char *kObjc3RuntimeSupportLibraryDriverLinkMode =
     "not-linked-until-next-runtime-phase";
 inline constexpr const char *kObjc3RuntimeSupportLibraryLinkWiringContractId =
     "objc3c.runtime.support.library.link.wiring.v1";
-inline constexpr const char
-    *kObjc3RuntimeSupportLibraryCompatibilityDispatchSymbol =
-        "objc3_msgsend_i32";
 inline constexpr const char
     *kObjc3RuntimeSupportLibraryExecutionSmokeScriptPath =
         "scripts/check_objc3c_native_execution_smoke.ps1";

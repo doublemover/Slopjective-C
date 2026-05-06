@@ -405,9 +405,9 @@ A conforming implementation shall preserve, for all exported declarations:
      for `M228-C019` plus explicit `M228-C018` dependency continuity so
      advanced-integration-shard1 drift fails closed,
    - deterministic lane-D runtime-facing type metadata metadata anchors for `M227-D001`
-     with canonical reference type-form order, runtime dispatch default symbol
-     continuity (`objc3_msgsend_i32`), and fail-closed sema/pipeline/artifact
-     handoff evidence continuity,
+     with canonical reference type-form order, canonical runtime dispatch symbol
+     continuity (`objc3_runtime_dispatch_i32`), and fail-closed strict
+     resolved-or-error handoff evidence continuity,
    - deterministic lane-D runtime-facing type metadata modular split/scaffolding metadata anchors for `M227-D002`
      with explicit `M227-D001` dependency continuity so sema scaffold/runtime metadata handoff drift fails closed,
    - deterministic lane-D runtime-facing type metadata edge-case expansion and robustness metadata anchors for `M227-D006`
@@ -4820,13 +4820,20 @@ shall preserve:
   `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
 - target name `objc3_runtime`,
 - source root `native/objc3c/src/runtime`,
-- public header `native/objc3c/src/runtime/objc3_runtime.h`,
+- current pre-hard-cutover public header
+  `native/objc3c/src/runtime/public/objc3_runtime_api.h`,
 - library kind `static` and archive basename `objc3_runtime`,
 - exported entrypoints `objc3_runtime_register_image`,
   `objc3_runtime_lookup_selector`, `objc3_runtime_dispatch_i32`, and
   `objc3_runtime_reset_for_testing`,
 - driver link mode `not-linked-until-m251-d003`,
 - named LLVM IR metadata `!objc3.objc_runtime_support_library`.
+
+The hard-cutover runtime module tree is not established by this anchor. It is
+claimable only when `runtime/public/objc3_runtime_api.h`,
+`runtime/public/objc3_runtime_result.h`, and the required `state`, `selectors`,
+`images`, `classes`, `dispatch`, `storage`, `memory`, `blocks`, `errors`, and
+`concurrency` module files exist and are wired.
 
 Native runtime-library surface anchors must remain deterministic and fail
 closed before the library skeleton, bootstrap registrar, and live dispatch
@@ -4841,7 +4848,7 @@ Deterministic lane-D native runtime-library core feature anchors for
 - dependency ids
   `objc3c-runtime-support-library-surface-build-contract/m251-d001-v1` and
   `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
-- implementation source
+- current pre-module-tree implementation source
   `native/objc3c/src/runtime/objc3_runtime.cpp`,
 - archive output `artifacts/lib/objc3_runtime.lib`,
 - runtime probe source
@@ -4866,11 +4873,10 @@ Deterministic lane-D native runtime-library link wiring anchors for
 - named LLVM IR metadata `!objc3.objc_runtime_support_library_link_wiring`,
 - manifest keys `runtime_support_library_link_wiring_contract_id`,
   `runtime_support_library_link_wiring_archive_relative_path`,
-  `runtime_support_library_link_wiring_compatibility_dispatch_symbol`, and
+  `runtime_support_library_link_wiring_runtime_dispatch_symbol`, and
   `runtime_support_library_link_wiring_driver_link_mode`,
 - archive relative path `artifacts/lib/objc3_runtime.lib`,
-- compatibility dispatch symbol `objc3_msgsend_i32`,
-- canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`,
+- strict runtime dispatch symbol `objc3_runtime_dispatch_i32`,
 - execution smoke script path `scripts/check_objc3c_native_execution_smoke.ps1`,
 - driver link mode `emitted-object-links-against-objc3_runtime-lib`.
 
@@ -5329,8 +5335,8 @@ preserve:
   without introducing a second export-enforcement summary node,
 - source-anchored deterministic diagnostics for interface-only and
   category-interface-only runtime export units,
-- fallback continuity with the generic B002 runtime export blocker when a
-  declaration-specific explanation is not available.
+- generic B002 runtime export blocker continuity when a declaration-specific
+  explanation is not available.
 
 No new metadata node is introduced for B003; the precision change is diagnostic-surface only.
 This means runtime export diagnostic precision must remain source-anchored and deterministic before native metadata section emission, runtime registration, and executable object-model enforcement land.
@@ -5449,7 +5455,6 @@ preserve:
   - `objc3.runtime.string_pool`
 - validation fixtures:
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
-  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
 - evidence path
   `tmp/reports/m253/M253-C005/selector_string_pool_emission_summary.json`.
 
@@ -5493,7 +5498,6 @@ shall preserve:
   - `tests/tooling/fixtures/native/m251_runtime_metadata_object_inspection_zero_descriptor.objc3`
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_class_protocol_property_ivar.objc3`
   - `tests/tooling/fixtures/native/m251_runtime_metadata_source_records_category_protocol_property.objc3`
-  - `tests/tooling/fixtures/native/execution/positive/message_send_runtime_shim.objc3`
   - `tests/tooling/fixtures/native/missing_interface_property.objc3`
 - evidence path
   `tmp/reports/m253/M253-C006/binary_inspection_harness_summary.json`.
@@ -5887,11 +5891,9 @@ replay:
 
 ## M255 dispatch/runtime metadata anchors (A001)
 
-`M255-A001` keeps the dispatch/runtime ABI anchor set narrow and explicit while
-the live runtime family is frozen:
+`M255-A001` keeps the dispatch/runtime ABI anchor set narrow and explicit:
 
-- current selector/message-send compatibility entrypoint `objc3_msgsend_i32`
-- current live runtime dispatch family anchor `objc3_runtime_dispatch_i32`
+- current strict runtime dispatch entrypoint `objc3_runtime_dispatch_i32`
 - no additional direct-dispatch metadata anchors are introduced in `M255-A001`
 
 ## M255 dispatch/runtime metadata anchors (A002)
@@ -5930,8 +5932,8 @@ runtime dispatch path now consumes:
 - contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
 - concrete receiver policy
   `self-super-known-class-receivers-resolve-concretely`
-- dynamic fallback policy
-  `non-concrete-receivers-remain-runtime-dynamic`
+- dynamic runtime-resolution policy
+  `non-concrete-receivers-enter-strict-runtime-resolution`
 - overload policy
   `no-overload-recovery-exact-signature-or-fail-closed`
 - diagnostic anchors `O3S216` and `O3S217`
@@ -5965,14 +5967,14 @@ cutover boundary without changing code generation yet:
 - semantic surface path
   `frontend.pipeline.semantic_surface.objc_runtime_dispatch_lowering_abi_contract`
 - canonical runtime dispatch symbol `objc3_runtime_dispatch_i32`
-- compatibility bridge symbol `objc3_msgsend_i32`
 - selector lookup symbol `objc3_runtime_lookup_selector`
 - selector handle type `objc3_runtime_selector_handle`
 - receiver ABI `i32`
 - selector ABI `ptr`
 - fixed argument ABI `i32[4]`
 - result ABI `i32`
-- compatibility bridge remains the default lowering target until `M255-C002`
+- admitted dispatch lowers only to `objc3_runtime_dispatch_i32`; unresolved or
+  unsupported dispatch fails closed
 
 ## M255 runtime call ABI metadata anchors (C002)
 
@@ -5982,8 +5984,8 @@ runtime cutover:
 - contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
 - normalized instance/class sends now lower directly to
   `objc3_runtime_dispatch_i32`
-- normalized super/dynamic/deferred sends remain on `objc3_msgsend_i32` until
-  `M255-C003`
+- non-admitted send forms fail closed instead of targeting another dispatch
+  symbol
 - the issue-local lane-C proof keeps selector operands as lowered cstring
   pointers and preserves the fixed `i32[4]` ABI while verifying executable
   happy-path behavior
@@ -5996,7 +5998,8 @@ runtime cutover:
 - normalized super sends now lower directly to `objc3_runtime_dispatch_i32`
 - canonical nil-receiver surfaces now lower through
   `objc3_runtime_dispatch_i32` instead of lowering-side elision
-- normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
+- normalized dynamic sends lower to `objc3_runtime_dispatch_i32` when admitted;
+  unresolved dynamic dispatch fails closed
 - reserved direct-dispatch surfaces fail closed if they reach live IR emission
 
 ## M255 live dispatch cutover metadata anchors (C004)
@@ -6006,7 +6009,7 @@ runtime cutover:
 - contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
 - normalized dynamic sends now lower directly to `objc3_runtime_dispatch_i32`
 - all supported live sends lower directly to `objc3_runtime_dispatch_i32`
-- `objc3_msgsend_i32` remains exported but is not emitted on the live path
+- no alternate dispatch symbol is part of the live dispatch contract
 - reserved direct-dispatch surfaces remain fail closed
 
 ## M255 lookup/dispatch runtime metadata anchors (D001)
@@ -6087,8 +6090,9 @@ is authoritative:
 - upstream taxonomy/legality continuity remains rooted in:
   - `tmp/reports/m255/M255-A002/dispatch_site_modeling_summary.json`
   - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
-- `objc3_msgsend_i32` remains an exported compatibility/test symbol and not the
-  authoritative live-dispatch proof surface
+- strict dispatch proof is claimable only when `objc3_runtime_dispatch_i32`
+  returns typed success for resolved/nil cases or structured runtime errors for
+  unresolved cases
 
 ## M255 live dispatch smoke/replay metadata anchors (E002)
 
@@ -6100,8 +6104,12 @@ smoke/replay closeout surface:
   - `requires_live_runtime_dispatch`
   - `runtime_dispatch_symbol`
   - `runtime_library`
-  - `compatibility_runtime_shim`
-  - `live_runtime_dispatch_default_symbol`
+  - `strict_runtime_dispatch_contract`
+- strict-runtime summaries are not closeout proof unless they cover nil
+  receiver, resolved live method, resolved builtin, resolved property accessor,
+  unknown selector, unknown receiver class, missing class graph, unsupported
+  return type, unsupported argument layout, malformed metadata, and category
+  conflict cases
 - canonical live smoke summary path
   `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
 - canonical issue closeout summary path
@@ -6368,7 +6376,7 @@ emitted realization records.
 - canonical runtime models:
   - `runtime-owned-realized-class-nodes-bind-receiver-base-identities-to-class-and-metaclass-records`
   - `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
-  - `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+  - `missing-receiver-bindings-or-broken-realized-superclass-links-fail-closed-before-runtime-dispatch`
 - canonical proof artifacts:
   - `tests/tooling/fixtures/native/metaclass_graph_root_class_library.objc3`
   - `tests/tooling/runtime/metaclass_graph_root_class_probe.cpp`
@@ -7459,7 +7467,6 @@ under a local package root.
   - `scripts/check_objc3c_native_execution_smoke.ps1`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
   - `tests/tooling/fixtures/native/execution`
-  - `tests/tooling/runtime/objc3_msgsend_i32_shim.c`
   - `tmp/artifacts/objc3c-native/frontend_modular_scaffold.json`
   - `tmp/artifacts/objc3c-native/frontend_integration_closeout.json`
 - truthful boundary

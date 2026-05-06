@@ -420,65 +420,6 @@ extern "C" void objc3_runtime_pop_autoreleasepool_scope(void) {
 // registration-time seeded direct/final/sealed entries, and that seeded path
 // remains explicit in the runtime-owned proof counters and last-fast-path
 // reason snapshot state.
-const char *DispatchDiagnosticCode(
-    objc3_runtime_dispatch_status_code status_code) {
-  switch (status_code) {
-    case OBJC3_RUNTIME_DISPATCH_STATUS_OK:
-    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
-      return "";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR:
-      return "O3RT001";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS:
-      return "O3RT002";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH:
-      return "O3RT003";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA:
-      return "O3RT004";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE:
-      return "O3RT005";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT:
-      return "O3RT006";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT:
-      return "O3RT007";
-  }
-  return "O3RT000";
-}
-
-const char *DispatchDiagnosticMessage(
-    objc3_runtime_dispatch_status_code status_code) {
-  switch (status_code) {
-    case OBJC3_RUNTIME_DISPATCH_STATUS_OK:
-      return "";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER:
-      return "";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR:
-      return "runtime dispatch failed: unknown selector";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS:
-      return "runtime dispatch failed: unknown receiver class";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH:
-      return "runtime dispatch failed: missing class graph";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA:
-      return "runtime dispatch failed: malformed metadata";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE:
-      return "runtime dispatch failed: unsupported return type";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT:
-      return "runtime dispatch failed: unsupported argument layout";
-    case OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT:
-      return "runtime dispatch failed: category conflict";
-  }
-  return "runtime dispatch failed: internal dispatch status";
-}
-
-objc3_runtime_dispatch_i32_result MakeDispatchI32Result(
-    objc3_runtime_dispatch_status_code status_code, int value) {
-  objc3_runtime_dispatch_i32_result result{};
-  result.status_code = status_code;
-  result.value = value;
-  result.diagnostic_code = DispatchDiagnosticCode(status_code);
-  result.diagnostic_message = DispatchDiagnosticMessage(status_code);
-  return result;
-}
-
 objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
   RuntimeState &state = State();
@@ -685,8 +626,8 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     std::lock_guard<std::mutex> lock(state.mutex);
     state.last_dispatch_path = "nil-short-circuit";
     state.last_dispatch_implementation_kind = "nil-short-circuit";
-    return MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
-                                 0);
+    return objc3c::runtime::MakeDispatchI32Result(
+        OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER, 0);
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
@@ -702,7 +643,8 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
         ReleaseRuntimeValueUnlocked(state, value);
       }
     }
-    return MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
+    return objc3c::runtime::MakeDispatchI32Result(
+        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
@@ -718,9 +660,10 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
         ReleaseRuntimeValueUnlocked(state, value);
       }
     }
-    return MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
+    return objc3c::runtime::MakeDispatchI32Result(
+        OBJC3_RUNTIME_DISPATCH_STATUS_OK, result);
   }
-  return MakeDispatchI32Result(dispatch_status, 0);
+  return objc3c::runtime::MakeDispatchI32Result(dispatch_status, 0);
 }
 
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,

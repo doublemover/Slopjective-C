@@ -3,7 +3,7 @@
 Live runtime surface:
 
 - archive: `artifacts/lib/objc3_runtime.lib`
-- public header: `native/objc3c/src/runtime/objc3_runtime.h`
+- public header: `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - primary entrypoints:
   - `objc3_runtime_register_image`
   - `objc3_runtime_lookup_selector`
@@ -383,7 +383,7 @@ Authoritative code paths for the current tranche:
 
 - runtime registration and dispatch:
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - message-send lowering:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - compile and artifact publication:

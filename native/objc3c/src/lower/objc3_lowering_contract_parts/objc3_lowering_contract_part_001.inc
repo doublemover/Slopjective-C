@@ -51,9 +51,9 @@ inline constexpr const char *kObjc3DynamicDispatchMethodFamilyPolicy =
 inline constexpr const char *kObjc3RuntimeVisibleMethodFamilyPolicy =
     "super-and-dynamic-sites-preserve-method-family-runtime-visibility";
 // dispatch lowering ABI anchor: emitted sends already lower to the canonical
-// runtime entrypoint. The compatibility symbol stays exported as a non-emitted
-// alias only, while selector lookup, receiver/result ABI, and fixed-slot
-// argument padding remain the compiler-to-runtime boundary.
+// runtime entrypoint, while selector lookup, receiver/result ABI, fixed-slot
+// argument padding, and strict dispatch errors remain the
+// compiler-to-runtime boundary.
 inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiContractId =
     "objc3c.runtime.dispatch.lowering.abi.freeze.v1";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiBoundaryModel =
@@ -61,9 +61,6 @@ inline constexpr const char *kObjc3RuntimeDispatchLoweringAbiBoundaryModel =
 inline constexpr const char
     *kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol =
         "objc3_runtime_dispatch_i32";
-inline constexpr const char
-    *kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol =
-        "objc3_msgsend_i32";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorLookupSymbol =
     "objc3_runtime_lookup_selector";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringSelectorHandleType =
@@ -85,8 +82,8 @@ inline constexpr const char *kObjc3RuntimeDispatchLoweringArgumentPaddingModel =
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDefaultTargetModel =
     "default-lowering-target-is-canonical-runtime-entrypoint";
 inline constexpr const char
-    *kObjc3RuntimeDispatchLoweringCompatibilityRoleModel =
-        "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
+    *kObjc3RuntimeDispatchLoweringStrictDispatchErrorModel =
+        "resolved-runtime-call-or-hard-diagnostic-error-only";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringDeferredCasesModel =
     "direct-dispatch-remains-fail-closed-after-live-cutover";
 // runtime call ABI generation anchor: all supported send surfaces use the
@@ -114,17 +111,16 @@ inline constexpr const char
     *kObjc3RuntimeDispatchSuperNilUnsupportedModel =
         "direct-dispatch-fails-closed-until-supported-surface-materializes";
 // live-dispatch cutover anchor: lane-C routes normalized dynamic sends through
-// the canonical runtime entrypoint too, while keeping the compatibility symbol
-// exported as non-emitted test/compat evidence only and leaving direct
-// dispatch fail-closed.
+// the canonical runtime entrypoint too, while unsupported direct dispatch
+// remains a hard diagnostic path before IR can emit a call.
 inline constexpr const char *kObjc3RuntimeDispatchLiveCutoverContractId =
     "objc3c.runtime.call.abi.live.dispatch.cutover.v1";
 inline constexpr const char
     *kObjc3RuntimeDispatchLiveCutoverActiveLoweringModel =
         "all-supported-sends-lower-directly-to-canonical-runtime-entrypoint";
 inline constexpr const char
-    *kObjc3RuntimeDispatchLiveCutoverLanguageProfileModel =
-        "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
+    *kObjc3RuntimeDispatchLiveCutoverStrictDispatchModel =
+        "resolved-runtime-call-or-hard-diagnostic-error-only";
 inline constexpr const char
     *kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel =
         "default-lowering-target-is-canonical-runtime-entrypoint";
@@ -133,8 +129,7 @@ inline constexpr const char
         "direct-dispatch-remains-fail-closed-after-live-cutover";
 // lookup/dispatch runtime anchor: the live runtime owns selector interning,
 // realized lookup tables, method cache, and slow-path method resolution behind
-// objc3_runtime_lookup_selector plus objc3_runtime_dispatch_i32. The
-// compatibility symbol is non-authoritative alias surface only.
+// objc3_runtime_lookup_selector plus objc3_runtime_dispatch_i32.
 inline constexpr const char *kObjc3RuntimeLookupDispatchContractId =
     "objc3c.runtime.lookup.dispatch.freeze.v1";
 inline constexpr const char
@@ -149,7 +144,7 @@ inline constexpr const char
     *kObjc3RuntimeLookupDispatchProtocolCategoryModel =
         "protocol-and-category-aware-method-resolution-participate-in-realized-slow-path";
 inline constexpr const char *kObjc3RuntimeLookupDispatchLanguageProfileModel =
-    "compatibility-dispatch-symbol-remains-exported-but-not-emitted-on-live-path";
+    "resolved-runtime-call-or-strict-dispatch-error";
 inline constexpr const char *kObjc3RuntimeLookupDispatchFailureModel =
     "only-unresolved-or-invalid-runtime-resolution-publishes-strict-dispatch-error";
 // selector lookup table anchor: lane-D now materializes the selector
@@ -177,8 +172,7 @@ inline constexpr const char *kObjc3SelectorGlobalOrdering = "lexicographic";
 // the frozen D001 public runtime API. Selector tables remain the authoritative
 // stable-id source from D002, class-known and class-self receivers normalize
 // onto one metaclass lookup family, and unresolved or ambiguous runtime
-// lookups still fail closed back to the compatibility arithmetic model until
-// later protocol/category-aware resolution lands in the subsequent runtime step.
+// lookups publish typed strict dispatch errors.
 inline constexpr const char *kObjc3RuntimeMethodCacheSlowPathContractId =
     "objc3c.runtime.method.cache.slow.path.lookup.v1";
 inline constexpr const char
@@ -211,10 +205,9 @@ inline constexpr const char
         "only-unresolved-conflicting-category-or-protocol-resolution-publishes-typed-strict-dispatch-error";
 // live-dispatch gate anchor: lane-E now freezes one fail-closed
 // evidence boundary proving supported message sends execute through the live
-// runtime path rather than the non-authoritative test surface. The upstream gate chain
-// stays rooted on A002/B003/C004/D004, the non-authoritative test surface remains
-// exported only as evidence/test surface, and E002 is the next issue allowed
-// to replace non-authoritative smoke/closeout assumptions with the integrated gate.
+// runtime path or produce a strict diagnostic/error. The upstream gate chain
+// stays rooted on A002/B003/C004/D004, and E002 is the next issue allowed to
+// replace smoke/closeout assumptions with the integrated gate.
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateContractId =
     "objc3c.runtime.live.dispatch.gate.v1";
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateEvidenceModel =
@@ -226,15 +219,14 @@ inline constexpr const char *kObjc3RuntimeLiveDispatchGateFailureModel =
 inline constexpr const char *kObjc3RuntimeLiveDispatchGateNextIssue =
     "objc3c.runtime.livedispatch.closeout.v1";
 // live-dispatch smoke/replay closeout anchor: lane-E now replaces
-// the last non-authoritative smoke/replay assumptions with canonical live runtime
-// dispatch evidence. Execution smoke and replay must publish
-// requires_live_runtime_dispatch, the canonical runtime library path, the
-// non-authoritative test surface as non-authoritative evidence only, and the canonical
-// default symbol objc3_runtime_dispatch_i32.
+// the last smoke/replay assumptions with canonical live runtime dispatch
+// evidence. Execution smoke and replay must publish requires_live_runtime_dispatch,
+// the canonical runtime library path, and the canonical default symbol
+// objc3_runtime_dispatch_i32.
 inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutContractId =
     "objc3c.runtime.live.dispatch.smoke.replay.closeout.v1";
 inline constexpr const char *kObjc3RuntimeLiveDispatchSmokeReplayCloseoutModel =
-    "live-runtime-dispatch-smoke-and-replay-authoritative-test-surface-non-authoritative";
+    "live-runtime-dispatch-smoke-and-replay-authoritative-strict-error-on-unresolved";
 // emitted metadata inventory freeze anchor: lowering contracts do
 // not own or infer object-file metadata inventory. The emitted inventory
 // remains the frontend ABI/scaffold/object-inspection boundary for image-info
@@ -1125,7 +1117,7 @@ inline constexpr const char *kObjc3RuntimeRealizedClassGraphModel =
 inline constexpr const char *kObjc3RuntimeRootClassBaselineModel =
     "root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch";
 inline constexpr const char *kObjc3RuntimeRealizedClassGraphFailClosedModel =
-    "missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch";
+    "missing-receiver-bindings-or-broken-realized-superclass-links-publish-strict-dispatch-error";
 inline constexpr const char *kObjc3RuntimeCategoryAttachmentProtocolConformanceContractId =
     "objc3c.runtime.category.attachment.protocol.conformance.v1";
 inline constexpr const char *kObjc3RuntimeCategoryAttachmentRealizedGraphModel =

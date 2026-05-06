@@ -27,8 +27,6 @@ struct Objc3RuntimeBootstrapApiSummary {
   std::string state_snapshot_symbol = kObjc3RuntimeBootstrapStateSnapshotSymbol;
   std::string reset_for_testing_symbol =
       kObjc3RuntimeSupportLibraryResetForTestingSymbol;
-  std::string compatibility_dispatch_symbol =
-      kObjc3RuntimeSupportLibraryCompatibilityDispatchSymbol;
   std::string registration_result_model = kObjc3RuntimeBootstrapResultModel;
   std::string registration_order_ordinal_model =
       kObjc3RuntimeBootstrapRegistrationOrderOrdinalModel;
@@ -74,7 +72,6 @@ inline bool IsReadyObjc3RuntimeBootstrapApiSummary(
          !summary.dispatch_entrypoint_symbol.empty() &&
          !summary.state_snapshot_symbol.empty() &&
          !summary.reset_for_testing_symbol.empty() &&
-         !summary.compatibility_dispatch_symbol.empty() &&
          !summary.registration_result_model.empty() &&
          !summary.registration_order_ordinal_model.empty() &&
          !summary.runtime_state_locking_model.empty() &&

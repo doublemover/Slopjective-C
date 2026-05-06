@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#include "runtime/objc3_runtime.h"
+#include "runtime/public/objc3_runtime_api.h"
 
 #ifdef __cplusplus
 extern "C" {

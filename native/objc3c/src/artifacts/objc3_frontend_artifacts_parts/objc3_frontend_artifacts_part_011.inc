@@ -56,8 +56,6 @@ std::string BuildRuntimeBootstrapApiReplayKey(
       << ";dispatch_entrypoint_symbol=" << summary.dispatch_entrypoint_symbol
       << ";state_snapshot_symbol=" << summary.state_snapshot_symbol
       << ";reset_for_testing_symbol=" << summary.reset_for_testing_symbol
-      << ";compatibility_dispatch_symbol="
-      << summary.compatibility_dispatch_symbol
       << ";registration_result_model=" << summary.registration_result_model
       << ";registration_order_ordinal_model="
       << summary.registration_order_ordinal_model
@@ -114,8 +112,6 @@ Objc3RuntimeBootstrapApiSummary BuildRuntimeBootstrapApiSummary(
         runtime_support_library_link_wiring.contract_id +
         ";archive_relative_path=" +
         runtime_support_library_link_wiring.archive_relative_path +
-        ";compatibility_dispatch_symbol=" +
-        runtime_support_library_link_wiring.compatibility_dispatch_symbol +
         ";runtime_dispatch_symbol=" +
         runtime_support_library_link_wiring.runtime_dispatch_symbol +
         ";driver_link_mode=" +
@@ -162,8 +158,6 @@ std::string BuildRuntimeBootstrapApiSummaryJson(
       << EscapeJsonString(summary.state_snapshot_symbol)
       << "\",\"reset_for_testing_symbol\":\""
       << EscapeJsonString(summary.reset_for_testing_symbol)
-      << "\",\"compatibility_dispatch_symbol\":\""
-      << EscapeJsonString(summary.compatibility_dispatch_symbol)
       << "\",\"registration_result_model\":\""
       << EscapeJsonString(summary.registration_result_model)
       << "\",\"registration_order_ordinal_model\":\""
@@ -965,14 +959,12 @@ Objc3RuntimeDispatchLoweringAbiContract BuildRuntimeDispatchLoweringAbiContract(
           .runtime_dispatch_declaration_parameter_count;
   contract.canonical_runtime_dispatch_symbol =
       runtime_bootstrap_api_summary.dispatch_entrypoint_symbol;
-  contract.compatibility_runtime_dispatch_symbol =
-      runtime_bootstrap_api_summary.compatibility_dispatch_symbol;
   contract.default_lowering_target_symbol =
       contract.canonical_runtime_dispatch_symbol;
   contract.default_lowering_target_model =
       kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel;
-  contract.compatibility_bridge_role_model =
-      kObjc3RuntimeDispatchLiveCutoverLanguageProfileModel;
+  contract.strict_dispatch_error_model =
+      kObjc3RuntimeDispatchLiveCutoverStrictDispatchModel;
   contract.deferred_cases_model =
       kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel;
   contract.selector_lookup_symbol =

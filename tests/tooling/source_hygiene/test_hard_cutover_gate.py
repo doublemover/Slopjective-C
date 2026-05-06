@@ -36,6 +36,137 @@ def test_hard_cutover_gate_rejects_dotted_runtime_shim_tokens(tmp_path: Path) ->
     assert report["active_findings"][0]["pattern_id"] == "runtime-shim-token"
 
 
+def test_hard_cutover_gate_rejects_retired_msgsend_symbol(tmp_path: Path) -> None:
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "call i32 @objc3_msgsend_i32(i32 %receiver, ptr %selector)\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "retired-msgsend-compatibility-dispatch"
+
+
+def test_hard_cutover_gate_rejects_unresolved_dispatch_pseudo_success(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/objc3c-native/src/10-cli.md",
+        "Unresolved runtime dispatch pseudo-success remains documented.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "unresolved-dispatch-pseudo-success"
+
+
+def test_hard_cutover_gate_rejects_compatibility_dispatch_symbol_fields(tmp_path: Path) -> None:
+    write(
+        tmp_path / "native/objc3c/src/lower/contract.cpp",
+        "\n".join(
+            [
+                "std::string compatibility_runtime_dispatch_symbol;",
+                "auto key = runtime_support_library_link_wiring_compatibility_dispatch_symbol;",
+            ]
+        )
+        + "\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+
+    assert report["ok"] is False
+    assert [finding["pattern_id"] for finding in report["active_findings"]] == [
+        "retired-msgsend-compatibility-dispatch",
+        "retired-msgsend-compatibility-dispatch",
+    ]
+
+
+def test_hard_cutover_gate_rejects_compatibility_dispatch_wording_in_required_roots(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/objc3c-native/src/10-cli.md",
+        "Compatibility dispatch symbol remains documented.\n",
+    )
+    write(tmp_path / "spec/LOWERING_AND_RUNTIME_CONTRACTS.md", "`objc3_msgsend_i32` remains exported.\n")
+    write(
+        tmp_path / "native/objc3c/src/runtime/dispatch.cpp",
+        "const char *field = \"compatibility_runtime_dispatch_symbol\";\n",
+    )
+    write(tmp_path / "tests/tooling/test_runtime_dispatch_contract.py", 'TOKEN = "objc3_msgsend_i32"\n')
+
+    report = build_report(root=tmp_path)
+
+    assert report["ok"] is False
+    assert report["stats"]["active_finding_count"] == 4
+    assert {
+        finding["path"]: finding["pattern_id"] for finding in report["active_findings"]
+    } == {
+        "docs/objc3c-native/src/10-cli.md": "retired-msgsend-compatibility-dispatch",
+        "spec/LOWERING_AND_RUNTIME_CONTRACTS.md": "retired-msgsend-compatibility-dispatch",
+        "native/objc3c/src/runtime/dispatch.cpp": "retired-msgsend-compatibility-dispatch",
+        "tests/tooling/test_runtime_dispatch_contract.py": "retired-msgsend-compatibility-dispatch",
+    }
+
+
+def test_hard_cutover_gate_covers_runtime_docs_spec_and_test_surfaces(tmp_path: Path) -> None:
+    write(
+        tmp_path / "docs/objc3c-native/src/50-artifacts.md",
+        "Runtime dispatch keeps unresolved call pseudo-success metadata.\n",
+    )
+    write(
+        tmp_path / "spec/LOWERING_AND_RUNTIME_CONTRACTS.md",
+        "The runtime dispatch lane is fallback-only for unresolved calls.\n",
+    )
+    write(
+        tmp_path / "tests/tooling/test_runtime_dispatch_contract.py",
+        'CLAIM = "deterministic arithmetic formula selects dispatch"\n',
+    )
+
+    report = build_report(root=tmp_path)
+
+    assert report["ok"] is False
+    assert {
+        finding["path"]: finding["pattern_id"] for finding in report["active_findings"]
+    } == {
+        "docs/objc3c-native/src/50-artifacts.md": "unresolved-dispatch-pseudo-success",
+        "spec/LOWERING_AND_RUNTIME_CONTRACTS.md": "fallback-only-wording",
+        "tests/tooling/test_runtime_dispatch_contract.py": "deterministic-runtime-arithmetic",
+    }
+
+
+def test_hard_cutover_gate_allows_negative_absence_assertions(tmp_path: Path) -> None:
+    write(
+        tmp_path / "tests/tooling/test_runtime_surface.py",
+        "\n".join(
+            [
+                'assert "objc3_msgsend_i32" not in emitted_ir',
+                'assert "compatibility_runtime_dispatch_symbol" not in manifest',
+            ]
+        )
+        + "\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("tests",), excludes=())
+
+    assert report["ok"] is True
+    assert report["stats"]["active_finding_count"] == 0
+
+
+def test_hard_cutover_gate_excludes_source_hygiene_violation_fixtures(tmp_path: Path) -> None:
+    write(
+        tmp_path / "tests/tooling/source_hygiene/fixtures/retired_msgsend_violation.txt",
+        "objc3_msgsend_i32 compatibility_runtime_dispatch_symbol\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("tests",))
+
+    assert report["ok"] is True
+    assert report["stats"]["active_finding_count"] == 0
+
+
 def test_hard_cutover_gate_allows_temporary_tmp_allowlist(tmp_path: Path) -> None:
     write(
         tmp_path / "native/objc3c/src/driver/options.cpp",
@@ -131,13 +262,37 @@ def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: P
 def test_hard_cutover_gate_rejects_fallback_behavior_wording(tmp_path: Path) -> None:
     write(
         tmp_path / "docs/runbooks/runtime.md",
-        "Allowed fallback behavior:\n",
+        "Allowed fallback behaviors:\n",
     )
 
     report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
 
     assert report["ok"] is False
     assert report["active_findings"][0]["pattern_id"] == "deterministic-fallback-wording"
+
+
+def test_hard_cutover_gate_rejects_fallback_only_wording(tmp_path: Path) -> None:
+    write(
+        tmp_path / "spec/LOWERING_AND_RUNTIME_CONTRACTS.md",
+        "The runtime dispatch path is fallback-only.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("spec",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "fallback-only-wording"
+
+
+def test_hard_cutover_gate_rejects_deterministic_arithmetic_wording(tmp_path: Path) -> None:
+    write(
+        tmp_path / "tests/tooling/test_runtime_dispatch_contract.py",
+        'CLAIM = "deterministic arithmetic runtime dispatch formula"\n',
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("tests",), excludes=())
+
+    assert report["ok"] is False
+    assert report["active_findings"][0]["pattern_id"] == "deterministic-runtime-arithmetic"
 
 
 def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:

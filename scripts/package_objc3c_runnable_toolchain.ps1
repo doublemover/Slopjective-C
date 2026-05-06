@@ -333,7 +333,7 @@ $requiredRelativeFiles = @(
   "tmp/artifacts/objc3c-native/frontend_conformance_corpus.json",
   "tmp/artifacts/objc3c-native/frontend_integration_closeout.json",
   "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json",
-  "native/objc3c/src/runtime/objc3_runtime.h",
+  "native/objc3c/src/runtime/public/objc3_runtime_api.h",
   "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
   "schemas/objc3c-application-architecture-evidence-summary-v1.schema.json",
   "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json",
@@ -607,7 +607,7 @@ $manifestPayload = [ordered]@{
     }
   )
   canonical_runnable_fixture = "tests/tooling/fixtures/native/canonical_runnable_sample_set.objc3"
-  runtime_public_header = "native/objc3c/src/runtime/objc3_runtime.h"
+  runtime_public_header = "native/objc3c/src/runtime/public/objc3_runtime_api.h"
   runtime_internal_header = "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   release_evidence_dashboard_schema = "schemas/objc3-conformance-dashboard-status-v1.schema.json"
   release_evidence_gate_script = "scripts/check_release_evidence.py"

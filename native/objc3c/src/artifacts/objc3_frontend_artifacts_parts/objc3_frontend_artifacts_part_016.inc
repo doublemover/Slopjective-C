@@ -1230,9 +1230,6 @@
            << "\",\"canonical_runtime_dispatch_symbol\":\""
            << runtime_dispatch_lowering_abi_contract
                   .canonical_runtime_dispatch_symbol
-           << "\",\"compatibility_runtime_dispatch_symbol\":\""
-           << runtime_dispatch_lowering_abi_contract
-                  .compatibility_runtime_dispatch_symbol
            << "\",\"default_lowering_target_symbol\":\""
            << runtime_dispatch_lowering_abi_contract.default_lowering_target_symbol
            << "\",\"selector_lookup_symbol\":\""
@@ -1256,9 +1253,9 @@
            << "\",\"default_lowering_target_model\":\""
            << runtime_dispatch_lowering_abi_contract
                   .default_lowering_target_model
-           << "\",\"compatibility_bridge_role_model\":\""
+           << "\",\"strict_dispatch_error_model\":\""
            << runtime_dispatch_lowering_abi_contract
-                  .compatibility_bridge_role_model
+                  .strict_dispatch_error_model
            << "\",\"deferred_cases_model\":\""
            << runtime_dispatch_lowering_abi_contract.deferred_cases_model
            << "\",\"replay_key\":\""

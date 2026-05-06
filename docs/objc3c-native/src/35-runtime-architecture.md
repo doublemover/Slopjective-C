@@ -19,9 +19,23 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/io/objc3_process.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - runtime-owned installation and execution path:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+- hard-cutover runtime module tree acceptance is not current until the named
+  files exist and are wired:
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_result.h`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/images/`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/storage/`
+  - `native/objc3c/src/runtime/memory/`
+  - `native/objc3c/src/runtime/blocks/`
+  - `native/objc3c/src/runtime/errors/`
+  - `native/objc3c/src/runtime/concurrency/`
 - authoritative emitted artifacts:
   - `<prefix>.obj`
   - `<prefix>.ll`
@@ -419,7 +433,7 @@ evidence-only summaries or release-scope cache assumptions.
   - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
 - authoritative evidence paths:
@@ -657,7 +671,7 @@ artifact surface that packaged builds actually consume.
   - `runtime_error_runtime_abi_cleanup_surface`
 - authoritative runtime boundary:
   - public ABI:
-    - `native/objc3c/src/runtime/objc3_runtime.h`
+    - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - private ABI:
     - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
     - `native/objc3c/src/runtime/objc3_runtime.cpp`
@@ -916,7 +930,7 @@ boundary truth from one-off probes, sidecar notes, or release-scope scaffolds.
   - `runtime_block_arc_runtime_abi_surface`
 - authoritative header boundary:
   - public header:
-    - `native/objc3c/src/runtime/objc3_runtime.h`
+    - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - internal header:
     - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
 - authoritative public runtime ABI boundary:
@@ -1825,13 +1839,14 @@ architecture surface drifts between the full workflow and the evidence bundle.
   - any surface described only by comments, sidecars, or private placeholders
   - synthetic `.ll` or hand-authored artifacts with no matching compile output
   - proof that depends on non-authoritative test surfaces without a coupled emitted object
-  - future runtime capability that would require widening
-    `native/objc3c/src/runtime/objc3_runtime.h`
+  - the hard-cutover runtime module tree until the required files exist and
+    acceptance probes cover strict dispatch success and structured error cases
 
 ## Explicit Non-Goals
 
 - no milestone-specific compile wrappers, evidence bundles, or closeout sidecars
-- no parallel dispatch or installation ABI outside the current runtime header
+- no claim that the hard-cutover public/module split has landed while the
+  runtime still routes through the current header/source boundary
 - no authoritative proof from replay text alone without emitted object and probe
 - no widening of public runtime claims beyond what the live acceptance and probe
   path can execute today

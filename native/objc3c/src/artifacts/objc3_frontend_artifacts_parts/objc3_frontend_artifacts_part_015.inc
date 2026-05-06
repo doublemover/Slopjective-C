@@ -753,9 +753,6 @@
           << "\",\"runtime_bootstrap_api_dispatch_entrypoint_symbol\":\""
           << EscapeJsonString(
                  runtime_bootstrap_api.dispatch_entrypoint_symbol)
-          << "\",\"runtime_bootstrap_api_compatibility_dispatch_symbol\":\""
-          << EscapeJsonString(
-                 runtime_bootstrap_api.compatibility_dispatch_symbol)
           << "\",\"runtime_bootstrap_api_state_snapshot_symbol\":\""
           << EscapeJsonString(runtime_bootstrap_api.state_snapshot_symbol)
           << "\",\"runtime_bootstrap_api_reset_for_testing_symbol\":\""

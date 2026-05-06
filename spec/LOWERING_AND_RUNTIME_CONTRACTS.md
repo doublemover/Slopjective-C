@@ -103,9 +103,9 @@ At minimum, the pass-graph gate shall validate:
   backend-output marker path/payload drift and core-feature readiness drift
   after backend object dispatch.
 - runtime-facing type metadata semantics governance shall preserve
-  deterministic sema parity handoff, runtime host-link default dispatch symbol
-  (`objc3_msgsend_i32`), and fail-closed pipeline/artifact metadata projection
-  continuity (`M227-D001`).
+  deterministic sema parity handoff, canonical runtime dispatch symbol
+  (`objc3_runtime_dispatch_i32`), and fail-closed strict resolved-or-error
+  pipeline/artifact metadata projection continuity (`M227-D001`).
 - runtime-facing type metadata modular split/scaffolding governance shall preserve explicit
   lane-D dependency anchors (`M227-D001`) and fail closed on sema handoff scaffold/pass-flow scaffold
   or runtime-facing metadata projection drift before runtime-facing core-feature validation advances.
@@ -3859,9 +3859,9 @@ the library skeleton and driver link wiring land.
 - manifest JSON and LLVM IR metadata to publish the same runtime-library
   contract through `runtime_support_library_contract_id` and
   `!objc3.objc_runtime_support_library`,
-- the in-tree runtime-library surface to remain frozen as target
+- the current pre-hard-cutover runtime-library surface to remain target
   `objc3_runtime`, source root `native/objc3c/src/runtime`, public header
-  `native/objc3c/src/runtime/objc3_runtime.h`, and static archive basename
+  `native/objc3c/src/runtime/public/objc3_runtime_api.h`, and static archive basename
   `objc3_runtime`,
 - the exported entrypoint family to remain frozen as
   `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
@@ -3895,8 +3895,8 @@ runtime library artifact before D003 links the driver against it.
   `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
   `objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`,
 - `npm run objc3c -- build-native-binaries` to emit `artifacts/lib/objc3_runtime.lib`,
-- `objc3_runtime_dispatch_i32` to preserve the deterministic
-  `objc3_msgsend_i32` arithmetic formula while driver link mode remains
+- `objc3_runtime_dispatch_i32` to provide the entrypoint the hard-cutover
+  resolved-or-error contract must harden while driver link mode remains
   `not-linked-until-m251-d003`,
 - `tests/tooling/runtime/m251_d002_runtime_library_probe.cpp` to link against
   the real archive and prove registration, selector lookup, dispatch, and
@@ -3921,9 +3921,8 @@ packet.
   `!objc3.objc_runtime_support_library_link_wiring`,
 - emitted-object runtime link mode to become
   `emitted-object-links-against-objc3_runtime-lib`,
-- `native/objc3c/src/runtime/objc3_runtime.cpp` to export the compatibility
-  bridge symbol `objc3_msgsend_i32` while keeping
-  `objc3_runtime_dispatch_i32` canonical,
+- emitted objects to call the canonical strict runtime dispatch symbol
+  `objc3_runtime_dispatch_i32`,
 - `scripts/check_objc3c_native_execution_smoke.ps1` to consume the emitted
   manifest/runtime archive contract and link runtime-requiring fixtures against
   `artifacts/lib/objc3_runtime.lib`,
@@ -4997,7 +4996,8 @@ registrar/image-walk and deterministic-reset work must preserve.
 - contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
 - semantic surface path
   `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
-- public header path `native/objc3c/src/runtime/objc3_runtime.h`
+- current pre-hard-cutover public header path
+  `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - archive path `artifacts/lib/objc3_runtime.lib`
 - registration status enum type `objc3_runtime_registration_status_code`
 - image descriptor type `objc3_runtime_image_descriptor`
@@ -5113,8 +5113,7 @@ behavior yet:
 
 - contract id `objc3c-dispatch-surface-classification/m255-a001-v1`
 - instance/class/super/dynamic dispatch remain classified against the live
-  runtime family
-  `objc3_runtime_dispatch_i32-objc3_msgsend_i32-compat`
+  runtime family `objc3_runtime_dispatch_i32`
 - direct dispatch remains a reserved non-goal in `M255-A001`
 - the freeze exists to hand off a deterministic starting point to `M255-A002`
 
@@ -5162,8 +5161,8 @@ dispatch-site classification and runtime dispatch emission:
 - contract id `objc3c-selector-resolution-ambiguity/m255-b002-v1`
 - concrete receiver policy
   `self-super-known-class-receivers-resolve-concretely`
-- dynamic fallback policy
-  `non-concrete-receivers-remain-runtime-dynamic`
+- dynamic runtime-resolution policy
+  `non-concrete-receivers-enter-strict-runtime-resolution`
 - overload policy
   `no-overload-recovery-exact-signature-or-fail-closed`
 - concrete `self`, `super`, and known-class receivers now resolve against the
@@ -5194,20 +5193,17 @@ dispatch-site classification and live runtime dispatch lowering:
 
 ## M255 dispatch lowering ABI freeze (C001)
 
-`M255-C001` freezes the lane-C lowering boundary that will later switch native
-IR off the compatibility bridge and onto the canonical runtime ABI:
+`M255-C001` freezes the lowering boundary for the canonical strict runtime ABI:
 
 - contract id `objc3c-runtime-dispatch-lowering-abi-freeze/m255-c001-v1`
 - canonical runtime entrypoint `objc3_runtime_dispatch_i32`
-- compatibility bridge entrypoint `objc3_msgsend_i32`
 - selector lookup symbol `objc3_runtime_lookup_selector`
 - selector handle type `objc3_runtime_selector_handle`
 - receiver/result ABI remain `i32`
-- selector operand remains a lowered cstring pointer until `M255-C002`
+- selector operand remains a lowered cstring pointer
 - fixed argument marshalling remains `4` `i32` slots with zero padding
-- default lowering target remains the compatibility bridge until `M255-C002`
-- `super`, nil, and direct runtime-entrypoint cutover stay deferred until
-  `M255-C003`
+- admitted dispatch lowers only to `objc3_runtime_dispatch_i32`; unresolved or
+  unsupported dispatch fails closed
 
 ## M255 runtime call ABI generation for instance and class sends (C002)
 
@@ -5216,8 +5212,8 @@ IR off the compatibility bridge and onto the canonical runtime ABI:
 - contract id `objc3c-runtime-call-abi-instance-class-dispatch/m255-c002-v1`
 - normalized instance sends lower to `objc3_runtime_dispatch_i32`
 - normalized class sends lower to `objc3_runtime_dispatch_i32`
-- normalized super/dynamic/deferred sends stay on `objc3_msgsend_i32` until
-  `M255-C003`
+- non-admitted send forms fail closed instead of targeting another dispatch
+  symbol
 - selector operands remain lowered cstring pointers
 - the fixed four-slot `i32` argument vector is preserved unchanged
 
@@ -5230,18 +5226,18 @@ separate:
 - normalized super sends now lower to `objc3_runtime_dispatch_i32`
 - canonical nil-receiver sends no longer lower to local IR elision; they lower
   through `objc3_runtime_dispatch_i32`, which owns the nil `0` result
-- normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
+- normalized dynamic sends lower to `objc3_runtime_dispatch_i32` when admitted;
+  unresolved dynamic dispatch fails closed
 - reserved direct-dispatch surfaces fail closed if they reach IR emission
 
-## M255 live dispatch cutover and runtime-adapter-removal boundary (C004)
+## M255 live dispatch cutover and strict runtime boundary (C004)
 
-`M255-C004` removes the final live compatibility-bridge dependency:
+`M255-C004` closes the live dispatch ABI around the strict runtime entrypoint:
 
 - contract id `objc3c-runtime-call-abi-live-dispatch-cutover/m255-c004-v1`
 - normalized dynamic sends now lower to `objc3_runtime_dispatch_i32`
 - all supported live sends lower to `objc3_runtime_dispatch_i32`
-- `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
-  is no longer emitted by live-path IR
+- no alternate dispatch symbol is part of the live dispatch contract
 - reserved direct-dispatch surfaces remain fail closed
 
 ## M255 lookup and dispatch runtime freeze (D001)
@@ -5275,8 +5271,8 @@ registration-table selector pools while preserving the frozen D001 public ABI:
   `registered-selector-pools-materialize-process-global-stable-id-table`
 - merge model
   `per-image-selector-pools-deduplicated-and-merged-across-registration-order`
-- dynamic fallback model
-  `unknown-selector-lookups-remain-dynamic-until-m255-d003`
+- dynamic runtime-resolution model
+  `unknown-selector-lookups-enter-strict-runtime-resolution`
 - replay model
   `reset-replay-rebuilds-metadata-backed-selector-table-in-registration-order`
 
@@ -5296,8 +5292,8 @@ registered class/metaclass records and emitted callable method tables:
   `registered-class-and-metaclass-records-drive-deterministic-slow-path-method-resolution`
 - cache model
   `normalized-receiver-plus-selector-stable-id-positive-and-negative-cache`
-- fallback model
-  `unsupported-or-ambiguous-runtime-resolution-falls-back-to-compatibility-dispatch-formula`
+- strict miss model
+  `unsupported-or-ambiguous-runtime-resolution-returns-hard-dispatch-error`
 
 ## M255 protocol and category-aware method resolution (D004)
 
@@ -5312,46 +5308,52 @@ registered class/metaclass records and emitted callable method tables:
   `class-bodies-win-first-category-implementation-records-supply-next-live-method-tier`
 - protocol declaration model
   `adopted-and-inherited-protocol-method-lists-provide-declaration-aware-negative-resolution`
-- fallback model
-  `conflicting-category-or-protocol-resolution-fails-closed-to-compatibility-dispatch`
+- conflict model
+  `conflicting-category-or-protocol-resolution-fails-closed-with-strict-dispatch-error`
 - runtime snapshots stay on the preserved D003 boundary:
   - `objc3_runtime_copy_method_cache_state_for_testing`
   - `objc3_runtime_copy_method_cache_entry_for_testing`
 
 ## M255 live dispatch gate (E001)
 
-`M255-E001` freezes one fail-closed lane-E gate over the already-landed live
-dispatch path:
+`M255-E001` freezes one fail-closed lane-E gate over the current live dispatch
+path. It is not by itself proof that the hard-cutover status/error matrix has
+landed:
 
 - contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
 - evidence model `a002-b003-c004-d004-summary-chain`
-- runtime adapter boundary model
-  `live-runtime-dispatch-required-runtime-adapter-evidence-only`
+- strict runtime boundary model
+  `live-runtime-dispatch-requires-resolved-runtime-call-or-hard-error`
 - failure model `fail-closed-on-live-dispatch-evidence-drift`
 - the gate requires `M255-C004` to keep all supported live sends on
   `objc3_runtime_dispatch_i32`
 - the gate requires `M255-D004` to keep live category-backed resolution and
   protocol-backed negative lookup evidence on the runtime-owned slow path
-- `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
-  is not an acceptable substitute for live-dispatch proof
-- `M255-E002` is the explicit handoff for replacing adapter-based smoke and
-  closeout gates with integrated live-dispatch evidence
+- no alternate dispatch symbol is acceptable live-dispatch evidence
 
-## M255 live dispatch smoke and replay closeout (E002)
+## M255 live dispatch smoke and replay claim boundary (E002)
 
-`M255-E002` closes the live-dispatch tranche by making the integrated smoke and
-replay proof authoritative:
+`M255-E002` records the live-dispatch smoke/replay surface. Strict
+resolved-or-error closeout is claimable only when this surface covers the full
+runtime status/error matrix:
 
 - contract id `objc3c-runtime-live-dispatch-smoke-replay-closeout/m255-e002-v1`
 - execution smoke now publishes `requires_live_runtime_dispatch`
 - the canonical live smoke summary path is
   `tmp/artifacts/objc3c-native/execution-smoke/m255_e002_live_dispatch_smoke/summary.json`
 - execution replay proof now canonicalizes `runtime_library`,
-  `compatibility_runtime_shim`, and `live_runtime_dispatch_default_symbol`
-- supported message-send and runtime-dispatch negative fixtures now assert
-  `objc3_runtime_dispatch_i32`
-- `objc3_msgsend_i32` remains compatibility/test evidence only and is not an
-  acceptable substitute for live smoke/replay proof
+  `strict_runtime_dispatch_symbol`, and `strict_dispatch_error_model`
+- required success cases: nil receiver, resolved live method, resolved builtin,
+  and resolved property accessor behavior
+- required structured error cases: unknown selector, unknown receiver class,
+  missing class graph, unsupported return type, unsupported argument layout,
+  malformed metadata, and category conflict
+
+The hard-cutover runtime module tree is likewise claimable only after
+`runtime/public/objc3_runtime_api.h`, `runtime/public/objc3_runtime_result.h`,
+and the required `state`, `selectors`, `images`, `classes`, `dispatch`,
+`storage`, `memory`, `blocks`, `errors`, and `concurrency` module files exist
+and are wired.
 
 ## M256 executable class/protocol/category source closure (A001)
 
@@ -5614,7 +5616,7 @@ identity bindings.
 - root-class baseline model
   `root-classes-realize-with-null-superclass-links-and-live-instance-plus-class-dispatch`
 - fail-closed model
-  `missing-receiver-bindings-or-broken-realized-superclass-links-fall-closed-to-compatibility-dispatch`
+  `missing-receiver-bindings-or-broken-realized-superclass-links-fail-closed-before-runtime-dispatch`
 - non-goals:
   - object allocation
   - instance storage / ivar layout
@@ -6767,7 +6769,6 @@ local package root.
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
   - `tests/tooling/fixtures/native/execution`
-  - `tests/tooling/runtime/objc3_msgsend_i32_shim.c`
   - the frontend readiness JSON payloads under `tmp/artifacts/objc3c-native/`
 - truthful boundary
   - staged local package root only

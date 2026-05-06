@@ -33,7 +33,7 @@
     "objc3_runtime_exchange_current_property_i32",
     "objc3_runtime_load_weak_current_property_i32",
     "objc3_runtime_store_weak_current_property_i32",
-    "objc3_msgsend_i32"
+    "objc3_runtime_dispatch_i32_checked"
   ],
   "authoritative_probe_paths": [
     "tests/tooling/runtime/class_realization_runtime_probe.cpp",
@@ -65,8 +65,8 @@
   ],
   "current_corrective_gaps": [
     {
-      "gap_id": "dispatch-fallback-after-slow-path-miss",
-      "summary": "Unresolved sends still retain one strict dispatch error path after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
+      "gap_id": "unresolved-dispatch-strict-error-after-slow-path-miss",
+      "summary": "Unresolved sends still terminate with a strict dispatch error after slow-path miss, so dispatch proof cannot claim universal realized-method execution yet.",
       "evidence_references": [
         "docs/objc3c-native.md",
         "native/objc3c/src/runtime/objc3_runtime.cpp"

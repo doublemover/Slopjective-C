@@ -4,7 +4,7 @@
   "surface_kind": "runtime-hot-path-and-bottleneck-boundary",
   "runbook": "docs/runbooks/objc3c_runtime_performance.md",
   "runtime_library_paths": [
-    "native/objc3c/src/runtime/objc3_runtime.h",
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/objc3_runtime.cpp",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
     "native/objc3c/src/runtime/ARCHITECTURE.md"

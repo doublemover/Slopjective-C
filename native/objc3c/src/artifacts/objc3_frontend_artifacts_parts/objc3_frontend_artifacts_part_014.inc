@@ -1104,9 +1104,9 @@
            << ",\"runtime_support_library_build_constraints_frozen\":"
            << (runtime_support_library.build_constraints_frozen ? "true"
                                                                 : "false")
-           << ",\"runtime_support_library_test_dispatch_surface_remains_non_authoritative\":"
+           << ",\"runtime_support_library_strict_dispatch_errors_required\":"
            << (runtime_support_library
-                           .test_dispatch_surface_remains_non_authoritative
+                           .strict_dispatch_errors_required
                    ? "true"
                    : "false")
            << ",\"runtime_support_library_native_library_present\":"
@@ -1187,9 +1187,9 @@
            << (runtime_support_library_core_feature.reset_for_testing_supported
                    ? "true"
                    : "false")
-           << ",\"runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative\":"
+           << ",\"runtime_support_library_core_feature_strict_dispatch_errors_required\":"
            << (runtime_support_library_core_feature
-                           .test_dispatch_surface_remains_non_authoritative
+                           .strict_dispatch_errors_required
                    ? "true"
                    : "false")
            << ",\"runtime_support_library_core_feature_driver_link_wiring_pending\":"
@@ -1239,11 +1239,6 @@
                        .runtime_library_archive_available
                    ? "true"
                    : "false")
-           << ",\"runtime_support_library_link_wiring_compatibility_dispatch_alias_exported\":"
-           << (runtime_support_library_link_wiring
-                       .compatibility_dispatch_alias_exported
-                   ? "true"
-                   : "false")
            << ",\"runtime_support_library_link_wiring_driver_emits_runtime_link_contract\":"
            << (runtime_support_library_link_wiring
                        .driver_emits_runtime_link_contract
@@ -1254,9 +1249,9 @@
                        .execution_smoke_consumes_runtime_library
                    ? "true"
                    : "false")
-           << ",\"runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative\":"
+           << ",\"runtime_support_library_link_wiring_strict_dispatch_errors_required\":"
            << (runtime_support_library_link_wiring
-                           .test_dispatch_surface_remains_non_authoritative
+                           .strict_dispatch_errors_required
                    ? "true"
                    : "false")
            << ",\"runtime_support_library_link_wiring_ready_for_runtime_library_consumption\":"
@@ -1266,8 +1261,6 @@
                    : "false")
            << ",\"runtime_support_library_link_wiring_archive_relative_path\":\""
            << runtime_support_library_link_wiring.archive_relative_path
-           << "\",\"runtime_support_library_link_wiring_compatibility_dispatch_symbol\":\""
-           << runtime_support_library_link_wiring.compatibility_dispatch_symbol
            << "\",\"runtime_support_library_link_wiring_runtime_dispatch_symbol\":\""
            << runtime_support_library_link_wiring.runtime_dispatch_symbol
            << "\",\"runtime_support_library_link_wiring_execution_smoke_script_path\":\""

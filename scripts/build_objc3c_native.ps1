@@ -2206,7 +2206,7 @@ $frontendModules = @(
 )
 $sharedSources = @(Get-FrontendSharedSourcesFromModules -Modules $frontendModules)
 $runtimeLibrarySourcePath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.cpp"
-$runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/objc3_runtime.h"
+$runtimeLibraryHeaderPath = Join-Path $repoRoot "native/objc3c/src/runtime/public/objc3_runtime_api.h"
 $frontendScaffoldPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_source_graph.json"
 $frontendInvocationLockPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_invocation_lock.json"
 $frontendCoreFeatureExpansionPath = Join-Path $repoRoot "tmp/artifacts/objc3c-native/frontend_core_feature_expansion.json"

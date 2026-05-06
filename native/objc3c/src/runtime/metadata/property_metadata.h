@@ -281,7 +281,7 @@ struct Objc3RuntimeSupportLibraryContractSummary {
   bool exported_entrypoints_frozen = false;
   bool ownership_boundaries_frozen = false;
   bool build_constraints_frozen = false;
-  bool test_dispatch_surface_remains_non_authoritative = false;
+  bool strict_dispatch_errors_required = false;
   bool native_runtime_library_present = false;
   bool driver_link_wiring_pending = true;
   bool ready_for_runtime_library_skeleton = false;
@@ -316,7 +316,7 @@ inline bool IsReadyObjc3RuntimeSupportLibraryContractSummary(
          summary.exported_entrypoints_frozen &&
          summary.ownership_boundaries_frozen &&
          summary.build_constraints_frozen &&
-         summary.test_dispatch_surface_remains_non_authoritative &&
+         summary.strict_dispatch_errors_required &&
          !summary.native_runtime_library_present &&
          summary.driver_link_wiring_pending &&
          summary.ready_for_runtime_library_skeleton &&
@@ -348,7 +348,7 @@ struct Objc3RuntimeSupportLibraryCoreFeatureSummary {
   bool selector_lookup_stateful = false;
   bool deterministic_dispatch_formula_matches_runtime_test_helper = false;
   bool reset_for_testing_supported = false;
-  bool test_dispatch_surface_remains_non_authoritative = false;
+  bool strict_dispatch_errors_required = false;
   bool driver_link_wiring_pending = true;
   bool ready_for_driver_link_wiring = false;
   std::string cmake_target_name = kObjc3RuntimeSupportLibraryTargetName;
@@ -386,7 +386,7 @@ inline bool IsReadyObjc3RuntimeSupportLibraryCoreFeatureSummary(
          summary.selector_lookup_stateful &&
          summary.deterministic_dispatch_formula_matches_runtime_test_helper &&
          summary.reset_for_testing_supported &&
-         summary.test_dispatch_surface_remains_non_authoritative &&
+         summary.strict_dispatch_errors_required &&
          summary.driver_link_wiring_pending &&
          summary.ready_for_driver_link_wiring &&
          !summary.cmake_target_name.empty() &&
@@ -411,15 +411,12 @@ struct Objc3RuntimeSupportLibraryLinkWiringSummary {
       kObjc3RuntimeSupportLibraryCoreFeatureContractId;
   bool fail_closed = false;
   bool runtime_library_archive_available = false;
-  bool compatibility_dispatch_alias_exported = false;
   bool driver_emits_runtime_link_contract = false;
   bool execution_smoke_consumes_runtime_library = false;
-  bool test_dispatch_surface_remains_non_authoritative = false;
+  bool strict_dispatch_errors_required = false;
   bool ready_for_runtime_library_consumption = false;
   std::string archive_relative_path =
       kObjc3RuntimeSupportLibraryArchiveRelativePath;
-  std::string compatibility_dispatch_symbol =
-      kObjc3RuntimeSupportLibraryCompatibilityDispatchSymbol;
   std::string runtime_dispatch_symbol =
       kObjc3RuntimeSupportLibraryDispatchI32Symbol;
   std::string execution_smoke_script_path =
@@ -434,13 +431,11 @@ inline bool IsReadyObjc3RuntimeSupportLibraryLinkWiringSummary(
          !summary.support_library_core_feature_contract_id.empty() &&
          summary.fail_closed &&
          summary.runtime_library_archive_available &&
-         summary.compatibility_dispatch_alias_exported &&
          summary.driver_emits_runtime_link_contract &&
          summary.execution_smoke_consumes_runtime_library &&
-         summary.test_dispatch_surface_remains_non_authoritative &&
+         summary.strict_dispatch_errors_required &&
          summary.ready_for_runtime_library_consumption &&
          !summary.archive_relative_path.empty() &&
-         !summary.compatibility_dispatch_symbol.empty() &&
          !summary.runtime_dispatch_symbol.empty() &&
          !summary.execution_smoke_script_path.empty() &&
          !summary.driver_link_mode.empty() &&

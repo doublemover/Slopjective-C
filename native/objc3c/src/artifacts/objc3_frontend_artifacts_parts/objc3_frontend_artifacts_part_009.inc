@@ -881,7 +881,7 @@ BuildRuntimeSupportLibraryContractSummary() {
   summary.exported_entrypoints_frozen = true;
   summary.ownership_boundaries_frozen = true;
   summary.build_constraints_frozen = true;
-  summary.test_dispatch_surface_remains_non_authoritative = true;
+  summary.strict_dispatch_errors_required = true;
   summary.native_runtime_library_present = false;
   summary.driver_link_wiring_pending = true;
   summary.ready_for_runtime_library_skeleton = true;
@@ -903,7 +903,7 @@ BuildRuntimeSupportLibraryCoreFeatureSummary(
   summary.selector_lookup_stateful = true;
   summary.deterministic_dispatch_formula_matches_runtime_test_helper = true;
   summary.reset_for_testing_supported = true;
-  summary.test_dispatch_surface_remains_non_authoritative = true;
+  summary.strict_dispatch_errors_required = true;
   summary.driver_link_wiring_pending = true;
   summary.ready_for_driver_link_wiring =
       IsReadyObjc3RuntimeSupportLibraryContractSummary(runtime_support_library);
@@ -921,10 +921,9 @@ BuildRuntimeSupportLibraryLinkWiringSummary(
   summary.runtime_library_archive_available =
       runtime_support_library_core_feature
           .native_runtime_library_archive_build_enabled;
-  summary.compatibility_dispatch_alias_exported = true;
   summary.driver_emits_runtime_link_contract = true;
   summary.execution_smoke_consumes_runtime_library = true;
-  summary.test_dispatch_surface_remains_non_authoritative = true;
+  summary.strict_dispatch_errors_required = true;
   summary.ready_for_runtime_library_consumption =
       IsReadyObjc3RuntimeSupportLibraryCoreFeatureSummary(
           runtime_support_library_core_feature);

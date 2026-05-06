@@ -14,7 +14,7 @@ MD_OUT = SUMMARY_OUT_DIR / "realized_dispatch_semantic_summary.md"
 RUNTIME_PATH = ROOT / "native/objc3c/src/runtime/objc3_runtime.cpp"
 RUNTIME_PARTS_DIR = ROOT / "native/objc3c/src/runtime/objc3_runtime_parts"
 RUNTIME_HEADER_PATHS = [
-    ROOT / "native/objc3c/src/runtime/objc3_runtime.h",
+    ROOT / "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     ROOT / "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
 ]
 DOC_PATH = ROOT / "docs/objc3c-native.md"

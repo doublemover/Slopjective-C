@@ -1074,7 +1074,7 @@
            << "\"objc3c.runtime.dispatch_accessor.abi.surface.v1\""
            << ",\"abi_boundary_model\":"
            << "\"public-dispatch-entrypoint-plus-private-testing-snapshot-and-property-helper-surface\""
-           << ",\"public_header_path\":\"native/objc3c/src/runtime/objc3_runtime.h\""
+           << ",\"public_header_path\":\"native/objc3c/src/runtime/public/objc3_runtime_api.h\""
            << ",\"private_header_path\":\"native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h\""
            << ",\"runtime_dispatch_symbol\":\""
            << runtime_link_host_link_contract.runtime_dispatch_symbol

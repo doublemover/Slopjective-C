@@ -1,4 +1,4 @@
-#include "runtime/objc3_runtime.h"
+#include "runtime/public/objc3_runtime_api.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <cstdio>

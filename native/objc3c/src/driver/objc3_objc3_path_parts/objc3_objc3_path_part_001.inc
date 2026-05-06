@@ -761,7 +761,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           manifest_inputs.dispatch_accessor_runtime_abi_boundary_model =
               "public-dispatch-entrypoint-plus-private-testing-snapshot-and-property-helper-surface";
           manifest_inputs.dispatch_accessor_public_header_path =
-              "native/objc3c/src/runtime/objc3_runtime.h";
+              "native/objc3c/src/runtime/public/objc3_runtime_api.h";
           manifest_inputs.dispatch_accessor_private_header_path =
               "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
           manifest_inputs.dispatch_accessor_runtime_dispatch_symbol =
@@ -810,7 +810,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
           manifest_inputs.storage_accessor_runtime_abi_boundary_model =
               "private-bootstrap-internal-property-helper-and-reflection-snapshot-surface-without-public-header-widening";
           manifest_inputs.storage_accessor_public_header_path =
-              "native/objc3c/src/runtime/objc3_runtime.h";
+              "native/objc3c/src/runtime/public/objc3_runtime_api.h";
           manifest_inputs.storage_accessor_private_header_path =
               "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h";
           manifest_inputs

@@ -704,8 +704,8 @@
   ir_frontend_metadata.runtime_support_library_build_constraints_frozen =
       runtime_support_library.build_constraints_frozen;
   ir_frontend_metadata
-      .runtime_support_library_test_dispatch_surface_remains_non_authoritative =
-      runtime_support_library.test_dispatch_surface_remains_non_authoritative;
+      .runtime_support_library_strict_dispatch_errors_required =
+      runtime_support_library.strict_dispatch_errors_required;
   ir_frontend_metadata.runtime_support_library_native_library_present =
       runtime_support_library.native_runtime_library_present;
   ir_frontend_metadata.runtime_support_library_driver_link_wiring_pending =
@@ -770,9 +770,9 @@
       .runtime_support_library_core_feature_reset_for_testing_supported =
       runtime_support_library_core_feature.reset_for_testing_supported;
   ir_frontend_metadata
-      .runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative =
+      .runtime_support_library_core_feature_strict_dispatch_errors_required =
       runtime_support_library_core_feature
-          .test_dispatch_surface_remains_non_authoritative;
+          .strict_dispatch_errors_required;
   ir_frontend_metadata
       .runtime_support_library_core_feature_driver_link_wiring_pending =
       runtime_support_library_core_feature.driver_link_wiring_pending;
@@ -819,10 +819,6 @@
   ir_frontend_metadata.runtime_support_library_link_wiring_archive_available =
       runtime_support_library_link_wiring.runtime_library_archive_available;
   ir_frontend_metadata
-      .runtime_support_library_link_wiring_compatibility_dispatch_alias_exported =
-      runtime_support_library_link_wiring
-          .compatibility_dispatch_alias_exported;
-  ir_frontend_metadata
       .runtime_support_library_link_wiring_driver_emits_runtime_link_contract =
       runtime_support_library_link_wiring.driver_emits_runtime_link_contract;
   ir_frontend_metadata
@@ -830,18 +826,15 @@
       runtime_support_library_link_wiring
           .execution_smoke_consumes_runtime_library;
   ir_frontend_metadata
-      .runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative =
+      .runtime_support_library_link_wiring_strict_dispatch_errors_required =
       runtime_support_library_link_wiring
-          .test_dispatch_surface_remains_non_authoritative;
+          .strict_dispatch_errors_required;
   ir_frontend_metadata
       .runtime_support_library_link_wiring_ready_for_runtime_library_consumption =
       runtime_support_library_link_wiring
           .ready_for_runtime_library_consumption;
   ir_frontend_metadata.runtime_support_library_link_wiring_archive_relative_path =
       runtime_support_library_link_wiring.archive_relative_path;
-  ir_frontend_metadata
-      .runtime_support_library_link_wiring_compatibility_dispatch_symbol =
-      runtime_support_library_link_wiring.compatibility_dispatch_symbol;
   ir_frontend_metadata.runtime_support_library_link_wiring_runtime_dispatch_symbol =
       runtime_support_library_link_wiring.runtime_dispatch_symbol;
   ir_frontend_metadata

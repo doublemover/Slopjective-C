@@ -30,6 +30,9 @@
 
 namespace {
 
+using objc3c::runtime::MethodCacheKey;
+using objc3c::runtime::MethodCacheKeyHash;
+
 constexpr std::uint64_t kReceiverIdentityBase = 1024;
 constexpr std::uint64_t kReceiverIdentityStride = 17;
 constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
@@ -188,23 +191,6 @@ struct PropertyLookupCacheEntry {
   bool inherited = false;
   std::size_t resolved_node_index = 0;
   std::size_t accessor_index = 0;
-};
-
-struct MethodCacheKey {
-  std::uint64_t normalized_receiver_identity = 0;
-  std::uint64_t selector_stable_id = 0;
-
-  bool operator==(const MethodCacheKey &other) const {
-    return normalized_receiver_identity == other.normalized_receiver_identity &&
-           selector_stable_id == other.selector_stable_id;
-  }
-};
-
-struct MethodCacheKeyHash {
-  std::size_t operator()(const MethodCacheKey &key) const {
-    return std::hash<std::uint64_t>{}(key.normalized_receiver_identity) ^
-           (std::hash<std::uint64_t>{}(key.selector_stable_id) << 1u);
-  }
 };
 
 struct MethodCacheEntry {
@@ -1345,8 +1331,8 @@ bool ProbeProtocolSelectorDeclarationUnlocked(
     bool &declared, bool &ambiguous) {
   // protocol/category-aware resolution anchor: adopted/inherited
   // protocol method lists now provide declaration-aware negative resolution
-  // while remaining non-callable, so unresolved selectors can fall closed to
-  // compatibility dispatch with explicit protocol probe evidence.
+  // while remaining non-callable, so unresolved selectors publish strict
+  // dispatch errors with explicit protocol probe evidence.
   (void)ambiguous;
   if (start_record == nullptr) {
     return true;

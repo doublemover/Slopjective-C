@@ -153,7 +153,7 @@ target_link_libraries(objc3c_artifacts_reports INTERFACE
 
 set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
 set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime)
-set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/objc3_runtime.h)
+set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/public/objc3_runtime_api.h)
 set(OBJC3_RUNTIME_LIBRARY_KIND STATIC)
 set(OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME objc3_runtime)
 # M251-D001 freeze: reserve the canonical in-tree native runtime library
@@ -301,8 +301,15 @@ objc3c_apply_build_defaults(objc3c_io)
 objc3c_apply_llvm_direct_config(objc3c_io)
 
 add_library(objc3_runtime STATIC
+  src/runtime/dispatch/dispatch_errors.cpp
+  src/runtime/dispatch/dispatch_errors.h
+  src/runtime/dispatch/method_cache.cpp
+  src/runtime/dispatch/method_cache.h
+  src/runtime/errors/runtime_error.cpp
+  src/runtime/errors/runtime_error.h
   src/runtime/objc3_runtime.cpp
-  src/runtime/objc3_runtime.h
+  src/runtime/public/objc3_runtime_api.h
+  src/runtime/public/objc3_runtime_result.h
 )
 objc3c_apply_build_defaults(objc3_runtime)
 target_link_libraries(objc3_runtime PUBLIC

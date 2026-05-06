@@ -109,7 +109,7 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_test_dispatch_surface_remains_non_authoritative
+                    .runtime_support_library_strict_dispatch_errors_required
                 ? 1
                 : 0)
         << ", i1 "
@@ -210,7 +210,7 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_core_feature_test_dispatch_surface_remains_non_authoritative
+                    .runtime_support_library_core_feature_strict_dispatch_errors_required
                 ? 1
                 : 0)
         << ", i1 "
@@ -292,11 +292,6 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_link_wiring_compatibility_dispatch_alias_exported
-                ? 1
-                : 0)
-        << ", i1 "
-        << (frontend_metadata_
                     .runtime_support_library_link_wiring_driver_emits_runtime_link_contract
                 ? 1
                 : 0)
@@ -307,7 +302,7 @@
                 : 0)
         << ", i1 "
         << (frontend_metadata_
-                    .runtime_support_library_link_wiring_test_dispatch_surface_remains_non_authoritative
+                    .runtime_support_library_link_wiring_strict_dispatch_errors_required
                 ? 1
                 : 0)
         << ", i1 "
@@ -319,10 +314,6 @@
         << EscapeCStringLiteral(
                frontend_metadata_
                    .runtime_support_library_link_wiring_archive_relative_path)
-        << "\", !\""
-        << EscapeCStringLiteral(
-               frontend_metadata_
-                   .runtime_support_library_link_wiring_compatibility_dispatch_symbol)
         << "\", !\""
         << EscapeCStringLiteral(
                frontend_metadata_

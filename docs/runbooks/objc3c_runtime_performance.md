@@ -88,7 +88,7 @@ Disallowed optimization moves:
 
 - no alternate dispatch entrypoint, benchmark-only runtime adapter, or synthetic
   property/reflection path
-- no widening of `native/objc3c/src/runtime/objc3_runtime.h` just to expose
+- no widening of `native/objc3c/src/runtime/public/objc3_runtime_api.h` just to expose
   performance counters
 - no sidecar-only timing report with no coupled runtime probe result
 - no claim that a cache fast path is active unless the runtime snapshot state
@@ -97,7 +97,7 @@ Disallowed optimization moves:
 ## Exact Live Implementation Paths
 
 - runtime library:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/ARCHITECTURE.md`

@@ -647,7 +647,7 @@ def test_parity_source_mode_work_key_changes_with_backend_and_runtime_contract(
             "--summary-out",
             str(summary_a),
             "--objc3-runtime-dispatch-symbol",
-            "objc3_msgsend_i32",
+            "objc3_runtime_dispatch_i32",
             "--cli-ir-object-backend",
             "clang",
         ]
@@ -669,7 +669,7 @@ def test_parity_source_mode_work_key_changes_with_backend_and_runtime_contract(
             "--summary-out",
             str(summary_b),
             "--objc3-runtime-dispatch-symbol",
-            "objc3_msgsend_i32_alt",
+            "objc3_runtime_dispatch_i32_alt",
             "--cli-ir-object-backend",
             "llvm-direct",
         ]
@@ -714,7 +714,7 @@ def test_parity_source_mode_default_work_key_is_deterministic_for_same_inputs(
         "--c-api-bin",
         str(c_api_bin),
         "--objc3-runtime-dispatch-symbol",
-        "objc3_msgsend_i32",
+        "objc3_runtime_dispatch_i32",
         "--cli-ir-object-backend",
         "clang",
     ]

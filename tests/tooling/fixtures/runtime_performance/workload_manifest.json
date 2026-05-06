@@ -9,7 +9,7 @@
   "runtime_acceptance_script": "scripts/check_objc3c_runtime_acceptance.py",
   "authoritative_runtime_code_paths": [
     "native/objc3c/src/runtime/objc3_runtime.cpp",
-    "native/objc3c/src/runtime/objc3_runtime.h",
+    "native/objc3c/src/runtime/public/objc3_runtime_api.h",
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
   ],
   "workload_families": [

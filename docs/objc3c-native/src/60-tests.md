@@ -53,8 +53,13 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 - runtime-backed storage ownership reflection over emitted property descriptors
 - native-output provenance through real compile and probe paths
 
-## Current Corrective Gaps Under Test
+## Runtime Dispatch Acceptance Gates
 
-- unresolved dispatch still has one strict dispatch error path after slow-path miss
-- synthesized accessor IR still carries transitional lowering residue even though live getter/setter execution is already runtime-backed
+- strict dispatch is claimable only when every admitted send returns typed
+  success for nil receiver, resolved live method, resolved builtin, or resolved
+  property accessor behavior
+- runtime dispatch errors are claimable only when tests cover unknown selector,
+  unknown receiver class, missing class graph, unsupported return type,
+  unsupported argument layout, malformed metadata, and category conflict cases
+- synthesized getter/setter execution is runtime-backed on live paths
 - native-output truth requires the emitted object and linked probe to stay coupled end to end

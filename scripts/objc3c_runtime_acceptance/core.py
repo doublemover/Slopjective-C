@@ -244,7 +244,7 @@ RUNTIME_DUPLICATE_INSTALL_DIAGNOSTIC_MODEL = (
 RUNTIME_OUT_OF_ORDER_INSTALL_DIAGNOSTIC_MODEL = (
     "out-of-order-install-rejections-publish-the-rejected-module-identity-and-registration-ordinal-without-advancing-runtime-installation-state"
 )
-RUNTIME_PUBLIC_HEADER_PATH = "native/objc3c/src/runtime/objc3_runtime.h"
+RUNTIME_PUBLIC_HEADER_PATH = "native/objc3c/src/runtime/public/objc3_runtime_api.h"
 RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH = (
     "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h"
 )
@@ -2102,7 +2102,7 @@ def compile_fixture_with_args(
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/runtime/objc3_runtime.h",
+            "native/objc3c/src/runtime/public/objc3_runtime_api.h",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],
@@ -6197,7 +6197,7 @@ def build_runtime_unified_concurrency_source_surface(
             "native/objc3c/src/sema/objc3_semantic_passes.cpp",
             "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",
             "native/objc3c/src/ir/objc3_ir_emitter.cpp",
-            "native/objc3c/src/runtime/objc3_runtime.h",
+            "native/objc3c/src/runtime/public/objc3_runtime_api.h",
             "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
             "native/objc3c/src/runtime/objc3_runtime.cpp",
         ],

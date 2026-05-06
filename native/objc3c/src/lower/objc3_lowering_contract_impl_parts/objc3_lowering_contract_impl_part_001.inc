@@ -2,7 +2,6 @@
 
 #include "ast/objc3_ast.h"
 #include "sema/objc3_sema_contract.h"
-#include "support/objc3_runtime_dispatch_symbol.h"
 
 #include <sstream>
 #include <string>
@@ -133,7 +132,7 @@ std::size_t CountRuntimeMetadataLayoutDescriptors(
 }  // namespace
 
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol) {
-  return objc3c::support::IsValidRuntimeDispatchSymbol(symbol);
+  return symbol == kObjc3RuntimeDispatchSymbol;
 }
 
 bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
@@ -145,7 +144,7 @@ bool TryNormalizeObjc3LoweringContract(const Objc3LoweringContract &input,
     return false;
   }
   if (!IsValidRuntimeDispatchSymbol(input.runtime_dispatch_symbol)) {
-    error = "invalid lowering contract runtime_dispatch_symbol (expected [A-Za-z_.$][A-Za-z0-9_.$]*): " +
+    error = "invalid lowering contract runtime_dispatch_symbol (expected objc3_runtime_dispatch_i32): " +
             input.runtime_dispatch_symbol;
     return false;
   }
@@ -200,13 +199,12 @@ bool RequiresFailClosedObjc3RuntimeDispatchError(
 
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family) {
-  // live-dispatch cutover anchor: all supported live dispatch
-  // surfaces now route through objc3_runtime_dispatch_i32, the exported
-  // compatibility symbol remains a non-emitted alias/test surface, and
-  // reserved direct-dispatch cases still fail closed before IR emission.
+  // live-dispatch cutover anchor: supported live dispatch surfaces route
+  // through objc3_runtime_dispatch_i32; reserved direct-dispatch cases have no
+  // runtime entrypoint and still fail closed before IR emission.
   return UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family)
              ? kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol
-             : kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol;
+             : "";
 }
 
 bool TryBuildObjc3RuntimeMetadataLayoutPolicy(

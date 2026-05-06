@@ -18,11 +18,11 @@ Owned code paths:
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - installation and registration:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
 - selector lookup and dispatch:
-  - `native/objc3c/src/runtime/objc3_runtime.h`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - property, storage, and ownership execution:
@@ -46,7 +46,7 @@ Forbidden subsystem shortcuts:
 
 - acceptance or replay reporting must not claim runtime execution from sidecars alone
 - selector or property execution must not bypass installation through alternate loader state
-- compile publication must not widen the public runtime ABI outside `native/objc3c/src/runtime/objc3_runtime.h`
+- compile publication must not widen the public runtime ABI outside `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - milestone-specific closeout helpers must not become runtime subsystem dependencies
 
 Bootstrap registration source of truth:
@@ -227,7 +227,7 @@ Unified concurrency runtime architecture source of truth:
 - that same surface must freeze the private continuation/task/actor runtime
   helper boundary in `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   and `native/objc3c/src/runtime/objc3_runtime.cpp` without widening the public
-  runtime ABI beyond `native/objc3c/src/runtime/objc3_runtime.h`
+  runtime ABI beyond `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - later lowering, runtime ABI, actor mailbox, executor, and runnable
   validation work must extend that emitted surface instead of inferring
   concurrency source truth from probe-local notes, sidecar-only manifests, or

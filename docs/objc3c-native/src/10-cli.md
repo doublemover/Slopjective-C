@@ -20,7 +20,7 @@ Defaults:
 - clang: `clang`
 - llc: `llc`
 - language version: `3`
-- runtime dispatch symbol: `objc3_msgsend_i32`
+- runtime dispatch symbol: `objc3_runtime_dispatch_i32`
 
 ## C API Runner
 

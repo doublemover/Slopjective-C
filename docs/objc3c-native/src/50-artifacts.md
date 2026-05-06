@@ -74,6 +74,14 @@ Do not treat these as authoritative proof:
 
 ## Current Corrective Gaps
 
-- unresolved sends still have one deterministic arithmetic strict error path in `native/objc3c/src/runtime/objc3_runtime.cpp`
+- unresolved sends must publish a typed strict dispatch error instead of any fabricated result
+- strict dispatch status/error coverage must include success for nil receiver,
+  resolved live methods, resolved builtins, and resolved property accessors,
+  plus structured errors for unknown selectors, unknown receiver classes,
+  missing class graph state, unsupported return types, unsupported argument
+  layouts, malformed metadata, and category conflicts
+- the hard-cutover runtime module tree under
+  `native/objc3c/src/runtime/{public,state,selectors,images,classes,dispatch,storage,memory,blocks,errors,concurrency}/`
+  is not claimable until those named files exist and are wired
 - synthesized accessor IR still carries transitional lowering residue in `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - native proof remains invalid unless the emitted object, manifest, and linked runtime probe all come from the same reproducible compile path

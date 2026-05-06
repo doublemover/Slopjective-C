@@ -154,10 +154,6 @@ bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
       kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol) {
     return false;
   }
-  if (contract.compatibility_runtime_dispatch_symbol !=
-      kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol) {
-    return false;
-  }
   if (!IsValidRuntimeDispatchSymbol(contract.default_lowering_target_symbol)) {
     return false;
   }
@@ -187,8 +183,8 @@ bool IsValidObjc3RuntimeDispatchLoweringAbiContract(
           kObjc3RuntimeDispatchLoweringArgumentPaddingModel ||
       contract.default_lowering_target_model !=
           kObjc3RuntimeDispatchLiveCutoverDefaultTargetModel ||
-      contract.compatibility_bridge_role_model !=
-          kObjc3RuntimeDispatchLoweringCompatibilityRoleModel ||
+      contract.strict_dispatch_error_model !=
+          kObjc3RuntimeDispatchLoweringStrictDispatchErrorModel ||
       contract.deferred_cases_model !=
           kObjc3RuntimeDispatchLiveCutoverDeferredCasesModel) {
     return false;
@@ -207,8 +203,6 @@ std::string Objc3RuntimeDispatchLoweringAbiReplayKey(
          ";lowering_boundary_model=" + contract.lowering_boundary_model +
          ";canonical_runtime_dispatch_symbol=" +
          contract.canonical_runtime_dispatch_symbol +
-         ";compatibility_runtime_dispatch_symbol=" +
-         contract.compatibility_runtime_dispatch_symbol +
          ";default_lowering_target_symbol=" +
          contract.default_lowering_target_symbol +
          ";selector_lookup_symbol=" + contract.selector_lookup_symbol +
@@ -222,8 +216,8 @@ std::string Objc3RuntimeDispatchLoweringAbiReplayKey(
          ";argument_padding_model=" + contract.argument_padding_model +
          ";default_lowering_target_model=" +
          contract.default_lowering_target_model +
-         ";compatibility_bridge_role_model=" +
-         contract.compatibility_bridge_role_model +
+         ";strict_dispatch_error_model=" +
+         contract.strict_dispatch_error_model +
          ";deferred_cases_model=" + contract.deferred_cases_model +
          ";fail_closed=" + BoolToken(contract.fail_closed) +
          ";deterministic=" + BoolToken(contract.deterministic) +
@@ -235,8 +229,6 @@ std::string Objc3RuntimeDispatchLoweringAbiBoundarySummary(
   return std::string("contract=") + kObjc3RuntimeDispatchLoweringAbiContractId +
          ";canonical_runtime_dispatch_symbol=" +
          contract.canonical_runtime_dispatch_symbol +
-         ";compatibility_runtime_dispatch_symbol=" +
-         contract.compatibility_runtime_dispatch_symbol +
          ";default_lowering_target_symbol=" +
          contract.default_lowering_target_symbol +
          ";selector_lookup_symbol=" + contract.selector_lookup_symbol +

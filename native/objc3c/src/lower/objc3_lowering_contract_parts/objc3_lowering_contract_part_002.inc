@@ -745,8 +745,6 @@ struct Objc3RuntimeDispatchLoweringAbiContract {
       kObjc3RuntimeDispatchLoweringAbiBoundaryModel;
   std::string canonical_runtime_dispatch_symbol =
       kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol;
-  std::string compatibility_runtime_dispatch_symbol =
-      kObjc3RuntimeDispatchLoweringCompatibilityEntrypointSymbol;
   std::string default_lowering_target_symbol = kObjc3RuntimeDispatchSymbol;
   std::string selector_lookup_symbol =
       kObjc3RuntimeDispatchLoweringSelectorLookupSymbol;
@@ -764,8 +762,8 @@ struct Objc3RuntimeDispatchLoweringAbiContract {
       kObjc3RuntimeDispatchLoweringArgumentPaddingModel;
   std::string default_lowering_target_model =
       kObjc3RuntimeDispatchLoweringDefaultTargetModel;
-  std::string compatibility_bridge_role_model =
-      kObjc3RuntimeDispatchLoweringCompatibilityRoleModel;
+  std::string strict_dispatch_error_model =
+      kObjc3RuntimeDispatchLoweringStrictDispatchErrorModel;
   std::string deferred_cases_model =
       kObjc3RuntimeDispatchLoweringDeferredCasesModel;
   bool fail_closed = true;
