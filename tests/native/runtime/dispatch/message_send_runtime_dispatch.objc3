@@ -1,4 +1,4 @@
-// Canonical runtime fixture: live message-send dispatch is explicit runtime behavior.
+// Canonical runtime strict-error fixture: unknown receiver dispatch hard-fails.
 module MessageSendRuntimeDispatchBehavior;
 
 fn main() -> i32 {

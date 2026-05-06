@@ -1,4 +1,4 @@
-// Positive execution fixture: compile with --objc3-max-message-args 6 for high-arity dispatch coverage.
+// Negative execution fixture: custom high-arity runtime dispatch hard-fails for unknown receiver class.
 module MessageSendSixArgsCustomCap;
 
 fn main() {

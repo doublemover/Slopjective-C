@@ -17,6 +17,7 @@ from objc3c_tooling.behavior_fixtures import (
 )
 
 NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
+RETIRED_SURFACE_TAGS = {"old-mode", "runtime-adapter", "fallback", "runtime-dispatch"}
 
 
 def _load_json(path: Path) -> dict:
@@ -102,17 +103,42 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
 
 def test_old_mode_and_runtime_strict_error_cases_are_not_positive_canonical_fixtures() -> None:
     canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
+    fixtures_by_path = {fixture.relative_source: fixture for fixture in load_behavior_fixtures()}
 
-    retired_surface_entries = [
-        entry
-        for entry in canonical_manifest["fixtures"]
-        if set(entry.get("retired_surface_tags", ())) & {"old-mode", "runtime-adapter", "fallback", "runtime-dispatch"}
-    ]
+    retired_surface_entries = []
+    for entry in canonical_manifest["fixtures"]:
+        fixture = fixtures_by_path[entry["path"]]
+        manifest_tags = set(entry.get("retired_surface_tags", ()))
+        metadata_tags = set(fixture.metadata.get("retired_surface_tags", ()))
+        if (manifest_tags | metadata_tags) & RETIRED_SURFACE_TAGS:
+            retired_surface_entries.append((entry, fixture, manifest_tags, metadata_tags))
     assert retired_surface_entries
 
-    for entry in retired_surface_entries:
+    for entry, fixture, manifest_tags, metadata_tags in retired_surface_entries:
+        assert manifest_tags == metadata_tags
         assert entry["fixture_kind"] in STRICT_KINDS
+        assert fixture.fixture_kind in STRICT_KINDS
         assert entry["expected_diagnostic_code"]
+        assert entry["expected_diagnostic_code"] == fixture.expected_diagnostic_code
+
+
+def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:
+    negative_root = ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "negative"
+    strict_runtime_cases = (
+        "message_send_runtime_dispatch.objc3",
+        "message_send_six_args_custom_cap.objc3",
+    )
+
+    for fixture_name in strict_runtime_cases:
+        source_path = negative_root / fixture_name
+        first_line = source_path.read_text(encoding="utf-8").splitlines()[0]
+        meta = _load_json(source_path.with_name(f"{source_path.stem}.meta.json"))
+        tokens = meta["expect_failure"]["required_diagnostic_tokens"]
+
+        assert first_line.startswith("// Negative execution fixture:")
+        assert "Positive execution fixture" not in first_line
+        assert meta["expect_failure"]["stage"] == "run"
+        assert "O3RT002" in tokens
 
 
 def test_support_claims_link_to_executable_behavior_fixtures() -> None:

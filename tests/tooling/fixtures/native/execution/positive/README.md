@@ -24,14 +24,6 @@ Optional meta sidecar schema:
 
 Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. Unknown selectors publish a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`, and the public `i32` entrypoint aborts instead of fabricating a value when strict dispatch fails.
 
-For `message_send_runtime_dispatch.objc3`:
-
-- Selector: `sum:with:`
-- Strict runtime dispatch value: `0`
-- Fixture return expression: `0`
-
-So `message_send_runtime_dispatch.exitcode.txt` is `0`.
-
 For `message_send_nil_receiver_short_circuit.objc3`:
 
 - Mutable receiver value can evaluate to nil at runtime and short-circuits through the emitted nil-dispatch branch.

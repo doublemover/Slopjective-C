@@ -8,7 +8,7 @@ layout: default
 _Working draft v0.11_  
 _Last updated: 2026-03-11_
 
-Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: the archived `spec/` corpus now sits behind a compatibility redirect index, but this page is where the project should explain itself cleanly.
+Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: the archived `spec/` corpus now sits behind a historical anchor index, but this page is where the project should explain itself cleanly.
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model is still in progress.
 
@@ -29,7 +29,7 @@ Use this page in three passes:
 
 1. Read the status sections below to understand what is real today.
 2. Use the spec map to find the normative area you care about.
-3. Use the archived spec index only when you need historical links into archived language rules, ABI notes, or compatibility constraints.
+3. Use the archived spec index only when you need historical links into archived language rules, ABI notes, or retired constraints.
 
 ## Quick Routes <a id="toc-quick-routes"></a>
 
@@ -45,7 +45,7 @@ Use this page in three passes:
 | follow the guided showcase walkthrough                   | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)                 |
 | follow the ObjC2-to-ObjC3 migration guide                | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)     |
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
-| evaluate adoption, migration, and support claims         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
+| evaluate adoption, support, and claim boundaries         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
 | find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |
 | build and validate the implementation                    | [README.md](../README.md)                                                                       |
 | inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
@@ -130,11 +130,11 @@ Section D exists to keep the project honest at module boundaries. It defines wha
 
 At minimum, a conforming implementation needs stable preservation for:
 
-- module identity and compatibility information,
+- module identity and versioned importer requirements,
 - declaration signatures and dispatch-affecting attributes,
 - class/protocol/category/property/ivar metadata,
 - layout- and registration-relevant runtime records,
-- importer validation and fail-closed compatibility gates.
+- importer validation and fail-closed capability gates.
 
 #### D.2 Current Implementation Status <a id="d-2"></a>
 

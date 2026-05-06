@@ -108,6 +108,10 @@
       "owner_phase": "runtime",
       "behavior_family": "dispatch",
       "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch",
+        "fallback"
+      ],
       "expected_diagnostic_code": "O3RT002"
     },
     {

@@ -1,4 +1,4 @@
-// Positive execution fixture: message-send path uses strict runtime dispatch at link time.
+// Negative execution fixture: strict runtime dispatch hard-fails for unknown receiver class.
 module MessageSendRuntimeDispatch;
 
 fn main() -> i32 {
