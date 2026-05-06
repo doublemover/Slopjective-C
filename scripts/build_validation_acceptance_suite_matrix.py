@@ -42,9 +42,9 @@ def main() -> None:
         'suite_families': families,
         'aggregate_entrypoints': [
             {
-                'action': 'test-fast',
-                'package_script': 'test:fast',
-                'role': 'developer-fast-aggregate',
+                'action': 'test-smoke',
+                'package_script': 'test:smoke',
+                'role': 'developer-smoke-aggregate',
             },
             {
                 'action': 'test-full',

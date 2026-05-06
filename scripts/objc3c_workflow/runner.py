@@ -172,6 +172,7 @@ SOURCE_HYGIENE_HARD_CUTOVER_PY = ROOT / "scripts" / "check_source_hygiene_hard_c
 RUNNABLE_BONUS_EXPERIENCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_bonus_experience_end_to_end.py"
 SPEC_LINT_PY = ROOT / "scripts" / "spec_lint.py"
 TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
+BEHAVIOR_MATRIX_PY = ROOT / "scripts" / "check_objc3c_behavior_matrix.py"
 RUNTIME_ACCEPTANCE_PY = ROOT / "scripts" / "check_objc3c_runtime_acceptance.py"
 RUNTIME_ARCHITECTURE_PROOF_PACKET_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_proof_packet.py"
 RUNTIME_ARCHITECTURE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_architecture_integration.py"
@@ -1228,7 +1229,7 @@ def action_lint(_: list[str]) -> int:
 
 
 def action_test_default(_: list[str]) -> int:
-    return run_steps(["test-fast"])
+    return run_steps(["test-smoke"])
 
 
 def to_repo_relative(raw_path: str) -> str:
@@ -2031,19 +2032,19 @@ def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]
     return 0
 
 
-def action_test_fast(_: list[str]) -> int:
+def action_test_behavior_matrix(_: list[str]) -> int:
+    return run([sys.executable, str(BEHAVIOR_MATRIX_PY)])
+
+
+def action_test_smoke(_: list[str]) -> int:
     return run_composite_validation(
-        "test-fast",
+        "test-smoke",
         [
-            ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "12"]),
+            ("test-behavior-matrix", [sys.executable, str(BEHAVIOR_MATRIX_PY)]),
             ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
             ("test-execution-replay-focused", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(REPLAY_PS1), "-Limit", "1"]),
         ],
     )
-
-
-def action_test_smoke(_: list[str]) -> int:
-    return run_steps(["test-execution-smoke"])
 
 
 def action_test_ci(_: list[str]) -> int:
@@ -2224,13 +2225,14 @@ VALIDATION_PROFILE_RULES: dict[str, dict[str, object]] = {
             "native/objc3c/src/ir/",
             "native/objc3c/src/sema/",
             "native/objc3c/src/parser/",
+            "tests/native/",
             "tests/tooling/fixtures/native/",
         ),
         "recommended_actions": (
+            "test-behavior-matrix",
             "test-runtime-acceptance-fast",
             "test-runtime-acceptance-diagnostics",
             "test-execution-replay-focused",
-            "test-execution-smoke -- -Limit 12",
         ),
         "exhaustive_actions": ("test-full", "test-nightly"),
         "skipped_by_default": ("full smoke matrix", "nightly recovery fan-out"),
@@ -2381,18 +2383,18 @@ def select_validation_profiles(paths: Sequence[str]) -> dict[str, object]:
     if not matched_profiles and paths:
         matched_profiles.append(
             {
-                "profile": "repo",
-                "matched_paths": list(paths)[:20],
-                "recommended_actions": ("test-fast", "check-task-hygiene"),
-                "exhaustive_actions": ("test-full", "test-nightly"),
-                "skipped_by_default": ("nightly release and stress fan-out",),
-            }
+            "profile": "repo",
+            "matched_paths": list(paths)[:20],
+            "recommended_actions": ("test-smoke", "check-task-hygiene"),
+            "exhaustive_actions": ("test-full", "test-nightly"),
+            "skipped_by_default": ("nightly release and stress fan-out",),
+        }
         )
     return {
         "changed_paths": list(paths),
         "profiles": matched_profiles,
         "manual_override": {
-            "fast": f"{WORKFLOW_COMMAND_TEXT} test-fast",
+            "smoke": f"{WORKFLOW_COMMAND_TEXT} test-smoke",
             "full": f"{WORKFLOW_COMMAND_TEXT} test-full",
             "nightly": f"{WORKFLOW_COMMAND_TEXT} test-nightly",
         },
@@ -2494,10 +2496,10 @@ def action_inspect_validation_timing(_: list[str]) -> int:
     smoke_path = latest_json_file(ROOT / "tmp" / "artifacts" / "objc3c-native" / "execution-smoke")
     replay_path = latest_json_file(ROOT / "tmp" / "artifacts" / "objc3c-native" / "execution-replay-proof")
     test_full_path = latest_json_file(PUBLIC_WORKFLOW_REPORT_ROOT / "test-full.json")
-    test_fast_path = latest_json_file(PUBLIC_WORKFLOW_REPORT_ROOT / "test-fast.json")
+    test_smoke_path = latest_json_file(PUBLIC_WORKFLOW_REPORT_ROOT / "test-smoke.json")
     report_payloads = {
         "test_full": load_latest_report_payload(test_full_path),
-        "test_fast": load_latest_report_payload(test_fast_path),
+        "test_smoke": load_latest_report_payload(test_smoke_path),
         "runtime_acceptance": load_latest_report_payload(runtime_path),
         "execution_smoke": load_latest_report_payload(smoke_path),
         "execution_replay": load_latest_report_payload(replay_path),
@@ -2506,8 +2508,8 @@ def action_inspect_validation_timing(_: list[str]) -> int:
         "test_full": dashboard_section_from_report(
             "test_full", test_full_path, report_payloads["test_full"]
         ),
-        "test_fast": dashboard_section_from_report(
-            "test_fast", test_fast_path, report_payloads["test_fast"]
+        "test_smoke": dashboard_section_from_report(
+            "test_smoke", test_smoke_path, report_payloads["test_smoke"]
         ),
         "runtime_acceptance": dashboard_section_from_report(
             "runtime_acceptance",
@@ -2527,7 +2529,7 @@ def action_inspect_validation_timing(_: list[str]) -> int:
     total_seconds = safe_float(
         reports["test_full"].get("estimated_no_skip_seconds")
         or reports["test_full"].get("elapsed_seconds")
-        or reports["test_fast"].get("elapsed_seconds")
+        or reports["test_smoke"].get("elapsed_seconds")
     )
     payload = {
         "contract_id": "objc3c.validation.speed.dashboard.v1",
@@ -2562,6 +2564,7 @@ def action_test_full(_: list[str]) -> int:
     return run_composite_validation(
         "test-full",
         [
+            ("test-behavior-matrix", [sys.executable, str(BEHAVIOR_MATRIX_PY)]),
             ("test-compile-wrapper-self-audit", [sys.executable, str(COMPILE_WRAPPER_SELF_AUDIT_PY)]),
             ("test-execution-smoke", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(SMOKE_PS1), "-Limit", "24"]),
             ("test-runtime-acceptance-fast", [sys.executable, str(RUNTIME_ACCEPTANCE_PY), "--suite", "fast"]),
@@ -2751,7 +2754,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-planning-publication-drift": action_check_planning_publication_drift,
     "lint-spec": action_lint_spec,
     "test-default": action_test_default,
-    "test-fast": action_test_fast,
+    "test-behavior-matrix": action_test_behavior_matrix,
     "test-smoke": action_test_smoke,
     "test-ci": action_test_ci,
     "test-recovery": action_test_recovery,

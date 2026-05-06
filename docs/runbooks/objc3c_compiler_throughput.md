@@ -90,11 +90,11 @@ The authoritative tier map is checked in at
 
 The live ownership split is:
 
-- `test-fast`
-  - bounded smoke slice
+- `test-smoke`
+  - behavior-first parser, sema, lowering, IR, runtime, and e2e matrix
   - runtime acceptance and ABI/accessor proof
   - canonical replay/native-truth proof
-- `test-smoke`
+- `test-execution-smoke`
   - compile, link, and run execution behavior over the full runnable smoke
     corpus
 - `test-recovery`

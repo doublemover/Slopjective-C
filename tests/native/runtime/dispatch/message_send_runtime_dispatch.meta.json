@@ -4,11 +4,14 @@
   "origin": "hand-authored",
   "owner_phase": "runtime",
   "behavior_family": "dispatch",
-  "fixture_kind": "positive",
+  "fixture_kind": "strict-error",
   "expected": {
     "stage": "run",
-    "diagnostic_code": "",
-    "required_tokens": []
+    "diagnostic_code": "O3RT002",
+    "required_tokens": [
+      "O3RT002",
+      "runtime dispatch failed: unknown receiver class"
+    ]
   },
   "execution": {
     "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",

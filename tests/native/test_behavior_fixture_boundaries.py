@@ -1,43 +1,26 @@
 import json
 import subprocess
+import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[2]
-NATIVE_ROOT = ROOT / "tests" / "native"
-FIXTURE_ROOT = ROOT / "tests" / "fixtures"
+SCRIPT_ROOT = ROOT / "scripts"
+if str(SCRIPT_ROOT) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_ROOT))
+
+from objc3c_tooling.behavior_fixtures import (
+    FIXTURE_ROOT,
+    NATIVE_ROOT,
+    REQUIRED_TREE,
+    STRICT_KINDS,
+    load_behavior_fixtures,
+)
+
 NATIVE_EXE = ROOT / "artifacts" / "bin" / "objc3c-native.exe"
-
-REQUIRED_TREE = {
-    "parser": ("positive", "negative", "snapshots"),
-    "sema": (
-        "types",
-        "ownership",
-        "objc",
-        "control_flow",
-        "errors",
-        "concurrency",
-        "negative",
-    ),
-    "lowering": ("expressions", "statements", "objc_runtime", "ownership", "errors"),
-    "ir": ("module", "function", "metadata", "runtime_calls"),
-    "runtime": ("dispatch", "object_model", "storage", "arc", "blocks", "errors", "concurrency"),
-    "e2e": ("smoke", "feature_matrix", "negative_execution"),
-}
-
-STRICT_KINDS = {"negative", "strict-error", "rejection"}
 
 
 def _load_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _metadata_files() -> list[Path]:
-    return sorted(NATIVE_ROOT.rglob("*.meta.json"))
-
-
-def _fixture_path_for_metadata(meta_path: Path) -> Path:
-    return meta_path.with_name(meta_path.name.removesuffix(".meta.json") + ".objc3")
 
 
 def test_required_behavior_tree_boundaries_exist() -> None:
@@ -53,14 +36,12 @@ def test_required_behavior_tree_boundaries_exist() -> None:
 
 
 def test_native_fixture_metadata_records_phase_and_diagnostics() -> None:
-    metadata_paths = _metadata_files()
-    assert metadata_paths, "native behavior fixtures must carry metadata"
+    fixtures = load_behavior_fixtures()
+    assert fixtures, "native behavior fixtures must carry metadata"
 
-    for meta_path in metadata_paths:
-        metadata = _load_json(meta_path)
-        fixture_path = _fixture_path_for_metadata(meta_path)
-
-        assert fixture_path.exists(), f"missing fixture for {meta_path.relative_to(ROOT)}"
+    for fixture in fixtures:
+        metadata = fixture.metadata
+        fixture_path = fixture.source_path
         assert metadata["schema_version"] == 1
         assert metadata["fixture"] == fixture_path.name
         assert metadata["origin"] == "hand-authored"
@@ -82,6 +63,13 @@ def test_native_fixture_metadata_records_phase_and_diagnostics() -> None:
             assert expected["required_tokens"]
 
 
+def test_behavior_matrix_has_representative_phase_coverage() -> None:
+    fixtures = load_behavior_fixtures()
+    covered_phases = {fixture.owner_phase for fixture in fixtures}
+
+    assert covered_phases == set(REQUIRED_TREE)
+
+
 def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
     canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
     generated_manifest = _load_json(FIXTURE_ROOT / "generated" / "manifest.json")
@@ -99,6 +87,9 @@ def test_canonical_and_generated_fixture_ownership_are_disjoint() -> None:
         assert entry["origin"] == "hand-authored"
         assert entry["owner_phase"] in REQUIRED_TREE
         assert path.is_relative_to(NATIVE_ROOT)
+
+    behavior_paths = {fixture.relative_source for fixture in load_behavior_fixtures()}
+    assert behavior_paths.issubset(canonical_paths)
 
     for entry in generated_manifest["fixtures"]:
         path = ROOT / entry["path"]
@@ -122,6 +113,17 @@ def test_old_mode_and_runtime_strict_error_cases_are_not_positive_canonical_fixt
     for entry in retired_surface_entries:
         assert entry["fixture_kind"] in STRICT_KINDS
         assert entry["expected_diagnostic_code"]
+
+
+def test_support_claims_link_to_executable_behavior_fixtures() -> None:
+    canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
+    behavior_paths = {fixture.relative_source for fixture in load_behavior_fixtures()}
+    claims = canonical_manifest["support_claims"]
+
+    assert {claim["owner_phase"] for claim in claims} == set(REQUIRED_TREE)
+    for claim in claims:
+        assert claim["behavior_fixture"] in behavior_paths
+        assert claim["executable_command"] == "npm run objc3c -- test-behavior-matrix"
 
 
 def _compile_fixture(source_path: Path, out_dir: Path) -> tuple[int, str]:

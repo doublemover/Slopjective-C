@@ -269,7 +269,7 @@ npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3 --out
 4. Run the bounded default validation:
 
 ```powershell
-npm run objc3c -- test-fast
+npm run objc3c -- test-smoke
 ```
 
 5. If you need execution smoke, set `llc.exe` only when it is not already on `PATH`:
@@ -309,7 +309,7 @@ Common entrypoints by job:
 - bootstrap and native compile:
   - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- compile-objc3c ...`
-  - `npm run objc3c -- test-fast`
+  - `npm run objc3c -- test-default`
   - `npm run objc3c -- test-smoke`
   - `npm run objc3c -- test-ci`
 - docs, tutorials, showcase, and stdlib:

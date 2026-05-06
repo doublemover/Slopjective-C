@@ -34,7 +34,7 @@ Run the normal repo checks before you trust any tutorial claim:
 
 ```sh
 npm run objc3c -- build-native-binaries
-npm run objc3c -- test-fast
+npm run objc3c -- test-smoke
 ```
 
 If those fail, stop there and fix the repo state first.

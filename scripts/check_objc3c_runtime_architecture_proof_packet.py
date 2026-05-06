@@ -22,7 +22,7 @@ HARNESS_SUMMARY_PATH = (
     / "reports"
     / "runtime"
     / "shared-executable-acceptance-harness"
-    / "public-test-fast"
+    / "public-test-smoke"
     / "summary.json"
 )
 PROOF_PACKET_PATH = (
@@ -119,10 +119,10 @@ def collect_child_report_paths(public_workflow_report: dict[str, Any]) -> list[s
 
 def main() -> int:
     result = run_capture(
-        [sys.executable, str(HARNESS_SCRIPT), "--run-suite", "public-test-fast"]
+        [sys.executable, str(HARNESS_SCRIPT), "--run-suite", "public-test-smoke"]
     )
     if result.returncode != 0:
-        raise RuntimeError("shared executable acceptance harness failed for public-test-fast")
+        raise RuntimeError("shared executable acceptance harness failed for public-test-smoke")
 
     harness_summary = load_json(HARNESS_SUMMARY_PATH)
     expect(
@@ -134,7 +134,7 @@ def main() -> int:
     expect(isinstance(suites, list) and len(suites) == 1, "shared harness summary did not publish exactly one suite result")
     suite_summary = suites[0]
     expect(isinstance(suite_summary, dict), "shared harness suite summary was not a JSON object")
-    expect(suite_summary.get("suite_id") == "public-test-fast", "shared harness summary drifted from public-test-fast")
+    expect(suite_summary.get("suite_id") == "public-test-smoke", "shared harness summary drifted from public-test-smoke")
 
     public_workflow_report_path = ROOT / str(suite_summary.get("report_path", ""))
     public_workflow_report = load_json(public_workflow_report_path)

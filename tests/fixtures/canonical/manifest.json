@@ -1,5 +1,43 @@
 {
   "schema_version": 1,
+  "support_claims": [
+    {
+      "claim_id": "objc3c.behavior.parser.canonical-syntax",
+      "owner_phase": "parser",
+      "behavior_fixture": "tests/native/parser/positive/canonical_module_main.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.sema.typed-flow",
+      "owner_phase": "sema",
+      "behavior_fixture": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.lowering.strict-runtime-dispatch",
+      "owner_phase": "lowering",
+      "behavior_fixture": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.ir.module-emission",
+      "owner_phase": "ir",
+      "behavior_fixture": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.runtime.strict-dispatch-error",
+      "owner_phase": "runtime",
+      "behavior_fixture": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    },
+    {
+      "claim_id": "objc3c.behavior.e2e.runnable-smoke",
+      "owner_phase": "e2e",
+      "behavior_fixture": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "executable_command": "npm run objc3c -- test-behavior-matrix"
+    }
+  ],
   "fixtures": [
     {
       "path": "tests/native/parser/positive/canonical_module_main.objc3",
@@ -29,6 +67,22 @@
       "expected_diagnostic_code": "O3S211"
     },
     {
+      "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "types",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/lowering/expressions/message_send_direct_nil_receiver_elision.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "expressions",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
       "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
       "origin": "hand-authored",
       "owner_phase": "lowering",
@@ -39,6 +93,22 @@
         "fallback"
       ],
       "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "ir",
+      "behavior_family": "module",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "dispatch",
+      "fixture_kind": "strict-error",
+      "expected_diagnostic_code": "O3RT002"
     },
     {
       "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
@@ -57,6 +127,25 @@
       "origin": "hand-authored",
       "owner_phase": "e2e",
       "behavior_family": "smoke",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "negative_execution",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/e2e/feature_matrix/typed_i32_bool_flow.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "feature_matrix",
       "fixture_kind": "positive",
       "expected_diagnostic_code": ""
     }

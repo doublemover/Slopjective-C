@@ -43,13 +43,13 @@ FORBIDDEN_SNIPPETS = {
     'docs/objc3c-native/src/60-tests.md': [
         'python scripts/ci/check_task_hygiene.py',
         'python scripts/check_objc3c_dependency_boundaries.py --strict',
-        'python -m scripts.objc3c_workflow test-fast',
+        'python -m scripts.objc3c_workflow test-smoke',
         'python -m scripts.objc3c_workflow test-recovery',
     ],
     'docs/objc3c-native.md': [
         'python scripts/ci/check_task_hygiene.py',
         'python scripts/check_objc3c_dependency_boundaries.py --strict',
-        'python -m scripts.objc3c_workflow test-fast',
+        'python -m scripts.objc3c_workflow test-smoke',
         'python -m scripts.objc3c_workflow test-recovery',
     ],
 }
@@ -76,7 +76,7 @@ REQUIRED_SNIPPETS = {
         'npm run objc3c -- check-dependency-boundaries',
     ],
     'docs/objc3c-native/src/60-tests.md': [
-        'npm run objc3c -- test-fast',
+        'npm run objc3c -- test-smoke',
         'npm run objc3c -- test-recovery',
         'npm run objc3c -- test-execution-smoke',
         'npm run objc3c -- test-execution-replay',
@@ -84,7 +84,7 @@ REQUIRED_SNIPPETS = {
         'npm run objc3c -- check-dependency-boundaries',
     ],
     'docs/objc3c-native.md': [
-        'npm run objc3c -- test-fast',
+        'npm run objc3c -- test-smoke',
         'npm run objc3c -- test-recovery',
         'npm run objc3c -- test-execution-smoke',
         'npm run objc3c -- test-execution-replay',

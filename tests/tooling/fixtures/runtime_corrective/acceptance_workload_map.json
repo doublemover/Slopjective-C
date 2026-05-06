@@ -7,7 +7,7 @@
   "harness_path": "scripts/shared_compiler_runtime_acceptance_harness.py",
   "suite_ids": [
     "runtime-acceptance",
-    "public-test-fast",
+    "public-test-smoke",
     "public-test-full"
   ],
   "dispatch_focus": {
@@ -45,7 +45,7 @@
   },
   "required_reports": [
     "tmp/reports/runtime/acceptance/summary.json",
-    "tmp/reports/objc3c-public-workflow/test-fast.json",
+    "tmp/reports/objc3c-public-workflow/test-smoke.json",
     "tmp/reports/objc3c-public-workflow/test-full.json"
   ],
   "explicit_non_goals": [

@@ -157,7 +157,7 @@ def main() -> int:
         "## Teaching Model",
         "## Step 1 Verify The Toolchain",
         "npm run objc3c -- build-native-binaries",
-        "npm run objc3c -- test-fast",
+        "npm run objc3c -- test-smoke",
         "## Step 2 Compile One Runnable Example",
         "showcase/auroraBoard/main.objc3",
         "## Step 3 Use The Showcase Surface As The Tutorial Backbone",

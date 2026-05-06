@@ -1789,7 +1789,7 @@ forward when a composite action runs runtime acceptance.
   - `scripts/shared_compiler_runtime_acceptance_harness.py`
 - live executable suites:
   - `runtime-acceptance`
-  - `public-test-fast`
+  - `public-test-smoke`
   - `public-test-full`
 - harness summary root:
   - `tmp/reports/runtime/shared-executable-acceptance-harness`

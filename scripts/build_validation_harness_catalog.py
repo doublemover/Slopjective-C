@@ -75,7 +75,7 @@ def classify_family(script_name: str, action: str) -> str:
     ):
         if token in script_name or token in action:
             return family
-    if action in {'test-full', 'test-nightly', 'test-fast'}:
+    if action in {'test-full', 'test-nightly', 'test-smoke'}:
         return 'aggregate-validation'
     if script_name.startswith('check:'):
         return 'static-guard-surface'

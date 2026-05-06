@@ -15,7 +15,7 @@ REPORT_JSON_PATH = REPORT_DIR / 'validation_ci_topology.json'
 REPORT_MD_PATH = REPORT_DIR / 'validation_ci_topology.md'
 
 TOPOLOGY = {
-    'test:fast': ['aggregate-validation', 'docs', 'repo-shape', 'showcase', 'onboarding'],
+    'test:smoke': ['aggregate-validation', 'docs', 'repo-shape', 'showcase', 'onboarding'],
     'test:objc3c:full': [
         'aggregate-validation',
         'docs',

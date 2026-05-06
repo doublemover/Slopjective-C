@@ -9,5 +9,8 @@
     "stage": "run",
     "diagnostic_code": "",
     "required_tokens": []
+  },
+  "execution": {
+    "expected_exit_code": 1
   }
 }

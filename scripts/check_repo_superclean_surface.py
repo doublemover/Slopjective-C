@@ -124,7 +124,7 @@ def main() -> int:
             "test_runtime_performance_e2e": "test:objc3c:runnable-runtime-performance",
             "test_stdlib": "test:stdlib",
             "test_stdlib_e2e": "test:stdlib:e2e",
-            "test_fast": "test:fast",
+            "test_smoke": "test:smoke",
             "test_ci": "test:ci",
             "test_docs": "test:docs",
         },

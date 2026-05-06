@@ -16,7 +16,7 @@ OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
 WORKFLOW_RUNNER = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 ACTION_MAP = {
-    'test:fast': 'test-fast',
+    'test:smoke': 'test-smoke',
     'test:objc3c:full': 'test-full',
     'test:objc3c:nightly': 'test-nightly',
 }
