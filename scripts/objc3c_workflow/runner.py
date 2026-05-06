@@ -52,6 +52,26 @@ from scripts.objc3c_workflow.actions.native_build import (
     action_package_runnable_toolchain,
     action_proof_objc3c,
 )
+from scripts.objc3c_workflow.actions.performance import (
+    action_benchmark_comparative_baselines,
+    action_benchmark_compiler_throughput,
+    action_benchmark_performance,
+    action_benchmark_runtime_inspector,
+    action_benchmark_runtime_performance,
+    action_build_performance_dashboard,
+    action_check_performance_governance_schema_surface,
+    action_check_performance_governance_surface,
+    action_publish_performance_report,
+    action_validate_compiler_throughput,
+    action_validate_performance_foundation,
+    action_validate_performance_governance,
+    action_validate_performance_governance_end_to_end,
+    action_validate_performance_governance_integration,
+    action_validate_runnable_compiler_throughput,
+    action_validate_runnable_performance,
+    action_validate_runnable_runtime_performance,
+    action_validate_runtime_performance,
+)
 from scripts.objc3c_workflow.actions.runtime_tests import (
     action_proof_runtime_architecture,
     action_test_runtime_acceptance,
@@ -107,7 +127,6 @@ REPLAY_PS1 = ROOT / "scripts" / "check_objc3c_execution_replay_proof.ps1"
 RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
 MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
 NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
-COMPILER_THROUGHPUT_PS1 = ROOT / "scripts" / "check_objc3c_native_perf_budget.ps1"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
@@ -119,16 +138,6 @@ RUNNABLE_DEVELOPER_TOOLING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_de
 EDITOR_TOOLING_SURFACE_PY = ROOT / "scripts" / "build_objc3c_editor_tooling_surface.py"
 FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
 BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
-RUNTIME_INSPECTOR_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_inspector.py"
-PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_performance.py"
-RUNTIME_PERFORMANCE_BENCHMARK_PY = ROOT / "scripts" / "benchmark_objc3c_runtime_performance.py"
-COMPILER_THROUGHPUT_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_compiler_throughput_integration.py"
-RUNNABLE_COMPILER_THROUGHPUT_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_compiler_throughput_end_to_end.py"
-COMPARATIVE_BASELINES_PY = ROOT / "scripts" / "run_objc3c_comparative_baselines.py"
-RUNNABLE_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
-PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_integration.py"
-RUNTIME_PERFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_runtime_performance_integration.py"
-RUNNABLE_RUNTIME_PERFORMANCE_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_runtime_performance_end_to_end.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
@@ -149,12 +158,6 @@ PUBLIC_CONFORMANCE_SCORECARD_PY = ROOT / "scripts" / "build_objc3c_public_confor
 PUBLIC_CONFORMANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_public_conformance_report.py"
 PUBLIC_CONFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_integration.py"
 PUBLIC_CONFORMANCE_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_end_to_end.py"
-PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_performance_governance_source_surface.py"
-PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_performance_governance_schema_surface.py"
-PERFORMANCE_GOVERNANCE_DASHBOARD_PY = ROOT / "scripts" / "build_objc3c_performance_dashboard.py"
-PERFORMANCE_GOVERNANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_performance_report.py"
-PERFORMANCE_GOVERNANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_performance_governance_integration.py"
-PERFORMANCE_GOVERNANCE_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_performance_governance_end_to_end.py"
 RELEASE_FOUNDATION_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_release_foundation_source_surface.py"
 RELEASE_FOUNDATION_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_release_foundation_schema_surface.py"
 RELEASE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_release_manifest.py"
@@ -748,38 +751,6 @@ def action_validate_bonus_experiences(_: list[str]) -> int:
     return run([sys.executable, str(BONUS_EXPERIENCE_INTEGRATION_PY)])
 
 
-def action_benchmark_runtime_inspector(rest: list[str]) -> int:
-    return run([sys.executable, str(RUNTIME_INSPECTOR_BENCHMARK_PY), *rest])
-
-
-def action_benchmark_performance(rest: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_BENCHMARK_PY), *rest])
-
-
-def action_benchmark_runtime_performance(rest: list[str]) -> int:
-    return run([sys.executable, str(RUNTIME_PERFORMANCE_BENCHMARK_PY), *rest])
-
-
-def action_validate_runtime_performance(_: list[str]) -> int:
-    return run([sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)])
-
-
-def action_validate_runnable_runtime_performance(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_RUNTIME_PERFORMANCE_E2E_PY)])
-
-
-def action_benchmark_comparative_baselines(rest: list[str]) -> int:
-    return run([sys.executable, str(COMPARATIVE_BASELINES_PY), *rest])
-
-
-def action_validate_runnable_performance(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_PERFORMANCE_E2E_PY)])
-
-
-def action_validate_performance_foundation(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_INTEGRATION_PY)])
-
-
 def action_validate_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(CONFORMANCE_CORPUS_INTEGRATION_PY)])
 
@@ -895,45 +866,6 @@ def action_validate_public_conformance_reporting_integration(_: list[str]) -> in
 
 def action_validate_public_conformance_reporting_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(PUBLIC_CONFORMANCE_END_TO_END_PY)])
-
-
-def action_check_performance_governance_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY)])
-
-
-def action_check_performance_governance_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY)])
-
-
-def action_build_performance_dashboard(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_DASHBOARD_PY)])
-
-
-def action_publish_performance_report(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_REPORT_PY)])
-
-
-def action_validate_performance_governance(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-performance-governance",
-        [
-            ("validate-performance-foundation", [sys.executable, str(PERFORMANCE_INTEGRATION_PY)]),
-            ("validate-compiler-throughput", [sys.executable, str(COMPILER_THROUGHPUT_INTEGRATION_PY)]),
-            ("validate-runtime-performance", [sys.executable, str(RUNTIME_PERFORMANCE_INTEGRATION_PY)]),
-            ("check-performance-governance-surface", [sys.executable, str(PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY)]),
-            ("check-performance-governance-schema-surface", [sys.executable, str(PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY)]),
-            ("build-performance-dashboard", [sys.executable, str(PERFORMANCE_GOVERNANCE_DASHBOARD_PY)]),
-            ("publish-performance-report", [sys.executable, str(PERFORMANCE_GOVERNANCE_REPORT_PY)]),
-        ],
-    )
-
-
-def action_validate_performance_governance_integration(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_INTEGRATION_PY)])
-
-
-def action_validate_performance_governance_end_to_end(_: list[str]) -> int:
-    return run([sys.executable, str(PERFORMANCE_GOVERNANCE_END_TO_END_PY)])
 
 
 def action_check_release_foundation_surface(_: list[str]) -> int:
@@ -1722,18 +1654,6 @@ def action_test_fixture_matrix(rest: list[str]) -> int:
 
 def action_test_negative_expectations(rest: list[str]) -> int:
     return pwsh_file(NEGATIVE_EXPECTATIONS_PS1, *rest)
-
-
-def action_benchmark_compiler_throughput(rest: list[str]) -> int:
-    return pwsh_file(COMPILER_THROUGHPUT_PS1, *rest)
-
-
-def action_validate_compiler_throughput(_: list[str]) -> int:
-    return run([sys.executable, str(COMPILER_THROUGHPUT_INTEGRATION_PY)])
-
-
-def action_validate_runnable_compiler_throughput(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_COMPILER_THROUGHPUT_E2E_PY)])
 
 
 def action_test_full(_: list[str]) -> int:

@@ -74,46 +74,8 @@ target_link_libraries(objc3c_lex PUBLIC
   objc3c_diag
 )
 
-add_library(objc3c_parse STATIC
-  parse/objc3_ast_builder.cpp
-  parse/objc3_ast_builder_contract.cpp
-  parse/objc3_diagnostic_grammar_hooks_core_feature.cpp
-  parse/objc3_diagnostic_source_precision_scaffold.cpp
-  parse/objc3_message_send_profiles.cpp
-  parse/objc3_parse_support.cpp
-  parse/objc3_parser.cpp
-)
-objc3c_apply_build_defaults(objc3c_parse)
-objc3c_apply_llvm_direct_config(objc3c_parse)
-target_link_libraries(objc3c_parse PUBLIC
-  objc3c_lex
-  objc3c_diag
-)
-
-add_library(objc3c_sema STATIC
-  sema/objc3_parser_sema_handoff_contract.h
-  sema/objc3_parser_sema_handoff_scaffold.h
-  sema/objc3_sema_diagnostics_bus.cpp
-  sema/objc3_sema_pass_block_equivalence.cpp
-  sema/objc3_sema_pass_flow_scaffold.cpp
-  sema/objc3_sema_pass_manager.cpp
-  sema/objc3_semantic_passes.cpp
-  sema/objc3_type_form_scaffold.cpp
-  sema/objc3_static_analysis.cpp
-  sema/objc3_pure_contract.cpp
-)
-objc3c_apply_build_defaults(objc3c_sema)
-objc3c_apply_llvm_direct_config(objc3c_sema)
-target_link_libraries(objc3c_sema PUBLIC
-  objc3c_parse
-  objc3c_diag
-  objc3c_sema_model
-)
-# M141-B001 sema/type-system surface target for downstream topology hardening.
-add_library(objc3c_sema_type_system INTERFACE)
-target_link_libraries(objc3c_sema_type_system INTERFACE
-  objc3c_sema
-)
+add_subdirectory(parse)
+add_subdirectory(sema)
 
 add_subdirectory(lower)
 

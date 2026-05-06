@@ -25,12 +25,14 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-package-install-receipt-v1": ROOT
     / "schemas"
     / "objc3c-package-install-receipt-v1.schema.json",
+    "objc3c-compatibility-report-v1": ROOT / "schemas" / "objc3c-compatibility-report-v1.schema.json",
     "objc3c-public-command-contract-v1": ROOT / "schemas" / "objc3c-public-command-contract-v1.schema.json",
     "objc3c-public-conformance-summary-v1": ROOT
     / "schemas"
     / "objc3c-public-conformance-summary-v1.schema.json",
     "objc3c-release-attestation-v1": ROOT / "schemas" / "objc3c-release-attestation-v1.schema.json",
     "objc3c-release-manifest-v1": ROOT / "schemas" / "objc3c-release-manifest-v1.schema.json",
+    "objc3c-update-manifest-v1": ROOT / "schemas" / "objc3c-update-manifest-v1.schema.json",
     "objc3c-release-sbom-v1": ROOT / "schemas" / "objc3c-release-sbom-v1.schema.json",
     "objc3c-runtime-performance-telemetry-v1": ROOT
     / "schemas"

@@ -3,20 +3,21 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from typing import Any
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
+from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "schema_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "schema-surface-summary.json"
 
 EXPECTED_SCHEMAS = {
-    "schemas/objc3c-update-manifest-v1.schema.json",
-    "schemas/objc3c-compatibility-report-v1.schema.json",
+    "objc3c-update-manifest-v1": "https://objc3c.dev/schemas/objc3c-update-manifest-v1.schema.json",
+    "objc3c-compatibility-report-v1": "https://objc3c.dev/schemas/objc3c-compatibility-report-v1.schema.json",
 }
 
 
@@ -40,23 +41,23 @@ def main() -> int:
     schemas = surface.get("schemas")
     if not isinstance(schemas, list) or not schemas:
         return fail("schemas must be a non-empty list")
-    if set(schemas) != EXPECTED_SCHEMAS:
+    expected_paths = {repo_rel(schema_path(schema_id)) for schema_id in EXPECTED_SCHEMAS}
+    if set(schemas) != expected_paths:
         return fail(f"schema set drifted: {schemas}")
-    for raw_path in schemas:
-        target = ROOT / raw_path
-        if not target.is_file():
-            return fail(f"missing schema {raw_path}")
-        payload = load_json(target)
+    for schema_id, expected_schema_url in EXPECTED_SCHEMAS.items():
+        raw_path = repo_rel(schema_path(schema_id))
+        payload = load_schema(schema_id)
         if payload.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
             return fail(f"{raw_path} drifted from draft 2020-12")
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
+        if payload.get("$id") != expected_schema_url:
+            return fail(f"{raw_path} drifted from expected schema id {expected_schema_url}")
     summary = {
         "contract_id": "objc3c.release.operations.schema.surface.summary.v1",
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "schemas": sorted(schemas),
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("release-operations-schema-surface: OK")
     return 0
