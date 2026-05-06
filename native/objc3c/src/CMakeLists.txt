@@ -91,26 +91,7 @@ target_link_libraries(objc3c_ir PUBLIC
 
 add_subdirectory(io)
 
-add_library(objc3c_pipeline STATIC
-  pipeline/objc3_frontend_pipeline.cpp
-  pipeline/objc3_runtime_import_surface.cpp
-  pipeline/objc3_typed_sema_to_lowering_contract_surface_core.h
-  pipeline/objc3_typed_sema_to_lowering_contract_surface.h
-  pipeline/objc3_ir_emission_completeness_scaffold.cpp
-  pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp
-  pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp
-)
-objc3c_apply_build_defaults(objc3c_pipeline)
-objc3c_apply_llvm_direct_config(objc3c_pipeline)
-target_link_libraries(objc3c_pipeline PUBLIC
-  objc3c_parse
-  objc3c_sema
-  objc3c_lower
-  objc3c_ir
-  objc3c_diag
-  objc3c_json
-  objc3c_pipeline_results
-)
+add_subdirectory(pipeline)
 
 add_library(objc3c_artifacts STATIC
   artifacts/json/artifact_json_model.cpp

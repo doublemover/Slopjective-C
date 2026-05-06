@@ -99,6 +99,17 @@ from scripts.objc3c_workflow.actions.runtime_tests import (
     action_validate_runtime_architecture,
     action_validate_storage_reflection_conformance,
 )
+from scripts.objc3c_workflow.actions.stress import (
+    action_check_stress_surface,
+    action_test_fuzz_safety,
+    action_test_lowering_runtime_stress,
+    action_test_mixed_module_differential,
+    action_test_stress_crash_triage,
+    action_test_stress_minimization,
+    action_validate_stress,
+    action_validate_stress_end_to_end,
+    action_validate_stress_integration,
+)
 from scripts.objc3c_workflow.actions.validation_timing import (
     action_inspect_validation_timing,
     collect_child_timing,
@@ -140,14 +151,6 @@ FORMAT_OBJC3C_SOURCE_PY = ROOT / "scripts" / "format_objc3c_source.py"
 BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experience_integration.py"
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
-STRESS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_stress_source_surface.py"
-FUZZ_SAFETY_PY = ROOT / "scripts" / "run_objc3c_fuzz_safety.py"
-LOWERING_RUNTIME_STRESS_PY = ROOT / "scripts" / "run_objc3c_lowering_runtime_stress.py"
-MIXED_MODULE_DIFFERENTIAL_PY = ROOT / "scripts" / "run_objc3c_mixed_module_differential.py"
-STRESS_MINIMIZATION_PY = ROOT / "scripts" / "run_objc3c_stress_minimization.py"
-STRESS_CRASH_TRIAGE_PY = ROOT / "scripts" / "run_objc3c_stress_crash_triage.py"
-STRESS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_stress_integration.py"
-STRESS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_stress_end_to_end.py"
 EXTERNAL_VALIDATION_SURFACE_PY = ROOT / "scripts" / "check_external_validation_source_surface.py"
 EXTERNAL_VALIDATION_REPLAY_PY = ROOT / "scripts" / "run_objc3c_external_validation_replay.py"
 EXTERNAL_VALIDATION_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_external_repro_corpus.py"
@@ -757,52 +760,6 @@ def action_validate_conformance_corpus(_: list[str]) -> int:
 
 def action_validate_runnable_conformance_corpus(_: list[str]) -> int:
     return run([sys.executable, str(RUNNABLE_CONFORMANCE_CORPUS_E2E_PY)])
-
-
-def action_check_stress_surface(_: list[str]) -> int:
-    return run([sys.executable, str(STRESS_SOURCE_SURFACE_PY)])
-
-
-def action_test_fuzz_safety(rest: list[str]) -> int:
-    return run([sys.executable, str(FUZZ_SAFETY_PY), *rest])
-
-
-def action_test_lowering_runtime_stress(rest: list[str]) -> int:
-    return run([sys.executable, str(LOWERING_RUNTIME_STRESS_PY), *rest])
-
-
-def action_test_mixed_module_differential(rest: list[str]) -> int:
-    return run([sys.executable, str(MIXED_MODULE_DIFFERENTIAL_PY), *rest])
-
-
-def action_test_stress_minimization(rest: list[str]) -> int:
-    return run([sys.executable, str(STRESS_MINIMIZATION_PY), *rest])
-
-
-def action_test_stress_crash_triage(rest: list[str]) -> int:
-    return run([sys.executable, str(STRESS_CRASH_TRIAGE_PY), *rest])
-
-
-def action_validate_stress(_: list[str]) -> int:
-    return run_composite_validation(
-        "validate-stress",
-        [
-            ("check-stress-surface", [sys.executable, str(STRESS_SOURCE_SURFACE_PY)]),
-            ("test-fuzz-safety", [sys.executable, str(FUZZ_SAFETY_PY)]),
-            ("test-lowering-runtime-stress", [sys.executable, str(LOWERING_RUNTIME_STRESS_PY)]),
-            ("test-mixed-module-differential", [sys.executable, str(MIXED_MODULE_DIFFERENTIAL_PY)]),
-            ("test-stress-minimization", [sys.executable, str(STRESS_MINIMIZATION_PY)]),
-            ("test-stress-crash-triage", [sys.executable, str(STRESS_CRASH_TRIAGE_PY)]),
-        ],
-    )
-
-
-def action_validate_stress_integration(_: list[str]) -> int:
-    return run([sys.executable, str(STRESS_INTEGRATION_PY)])
-
-
-def action_validate_stress_end_to_end(_: list[str]) -> int:
-    return run([sys.executable, str(STRESS_END_TO_END_PY)])
 
 
 def action_check_external_validation_surface(_: list[str]) -> int:

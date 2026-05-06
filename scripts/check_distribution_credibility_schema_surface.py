@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from typing import Any
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
+from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -16,8 +17,8 @@ SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "distribution_credibi
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "distribution-credibility" / "schema-surface-summary.json"
 
 EXPECTED_SCHEMAS = {
-    "schemas/objc3c-distribution-credibility-dashboard-v1.schema.json",
-    "schemas/objc3c-distribution-trust-report-v1.schema.json",
+    "dashboard_schema": "objc3c-distribution-credibility-dashboard-v1",
+    "trust_report_schema": "objc3c-distribution-trust-report-v1",
 }
 
 
@@ -37,27 +38,24 @@ def main() -> int:
     if surface.get("schema_version") != 1:
         return fail("schema_version drifted")
 
-    schema_paths = {surface.get("dashboard_schema"), surface.get("trust_report_schema")}
-    if schema_paths != EXPECTED_SCHEMAS:
-        return fail(f"schema set drifted: {sorted(str(path) for path in schema_paths)}")
-    for raw_path in sorted(schema_paths):
-        if not isinstance(raw_path, str):
-            return fail("schema path drifted from string contract")
-        target = ROOT / raw_path
-        if not target.is_file():
-            return fail(f"missing schema {raw_path}")
-        payload = load_json(target)
+    schema_paths: set[str] = set()
+    for surface_key, schema_id in EXPECTED_SCHEMAS.items():
+        raw_path = surface.get(surface_key)
+        expected_path = repo_rel(schema_path(schema_id))
+        if raw_path != expected_path:
+            return fail(f"{surface_key} drifted from registered schema {expected_path}")
+        payload = load_schema(schema_id)
         if payload.get("$schema") != "https://json-schema.org/draft/2020-12/schema":
-            return fail(f"{raw_path} drifted from draft 2020-12")
+            return fail(f"{expected_path} drifted from draft 2020-12")
+        schema_paths.add(expected_path)
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
         "contract_id": "objc3c.distribution.credibility.schema.surface.summary.v1",
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
-        "schemas": sorted(str(path) for path in schema_paths),
+        "schemas": sorted(schema_paths),
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("distribution-credibility-schema-surface: OK")
     return 0

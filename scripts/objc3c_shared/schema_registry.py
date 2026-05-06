@@ -37,6 +37,12 @@ SCHEMA_PATHS: dict[str, Path] = {
     "objc3c-runtime-performance-telemetry-v1": ROOT
     / "schemas"
     / "objc3c-runtime-performance-telemetry-v1.schema.json",
+    "objc3c-distribution-credibility-dashboard-v1": ROOT
+    / "schemas"
+    / "objc3c-distribution-credibility-dashboard-v1.schema.json",
+    "objc3c-distribution-trust-report-v1": ROOT
+    / "schemas"
+    / "objc3c-distribution-trust-report-v1.schema.json",
     "objc3c-validation-acceptance-artifact-index-v1": ROOT
     / "schemas"
     / "objc3c-validation-acceptance-artifact-index-v1.schema.json",
