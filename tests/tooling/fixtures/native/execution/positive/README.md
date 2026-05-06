@@ -22,7 +22,7 @@ Optional meta sidecar schema:
 
 ## Live-runtime dispatch note
 
-Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. Unknown selectors publish a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`; the execution-smoke path still observes the projected `i32` value until lowering branches on typed status.
+Fixtures that use supported live message-send syntax (`[receiver selector: ...]`) now prove execution through the native runtime dispatch entrypoint `objc3_runtime_dispatch_i32`. Unknown selectors publish a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`, and the public `i32` entrypoint aborts instead of fabricating a value when strict dispatch fails.
 
 For `message_send_runtime_dispatch.objc3`:
 

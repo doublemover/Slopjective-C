@@ -81,6 +81,8 @@ int main() {
       MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR, 0),
       MakeDispatchI32Result(
           OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS, 0),
+      MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH,
+                            0),
       MakeDispatchI32Result(OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
                             0),
       MakeDispatchI32Result(
@@ -105,19 +107,23 @@ int main() {
           "runtime dispatch failed: unknown receiver class") ||
       !HasDispatchStatus(
           diagnostic_contracts[4],
+          OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH, 0, "O3RT003",
+          "runtime dispatch failed: missing class graph") ||
+      !HasDispatchStatus(
+          diagnostic_contracts[5],
           OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0, "O3RT004",
           "runtime dispatch failed: malformed metadata") ||
       !HasDispatchStatus(
-          diagnostic_contracts[5],
+          diagnostic_contracts[6],
           OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE, 0, "O3RT005",
           "runtime dispatch failed: unsupported return type") ||
       !HasDispatchStatus(
-          diagnostic_contracts[6],
+          diagnostic_contracts[7],
           OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT, 0,
           "O3RT006",
           "runtime dispatch failed: unsupported argument layout") ||
       !HasDispatchStatus(
-          diagnostic_contracts[7],
+          diagnostic_contracts[8],
           OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT, 0, "O3RT007",
           "runtime dispatch failed: category conflict")) {
     return 31;
@@ -143,6 +149,13 @@ int main() {
                       "live runtime unknown receiver diagnostic message", 28) !=
           0) {
     return 27;
+  }
+  const objc3_runtime_dispatch_i32_result missing_graph =
+      objc3_runtime_dispatch_i32_checked(1024, "missingDispatch:", 4, 5, 6, 7);
+  if (!HasDispatchStatus(
+          missing_graph, OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH, 0,
+          "O3RT003", "runtime dispatch failed: missing class graph")) {
+    return 32;
   }
   const objc3_runtime_dispatch_i32_result nil_receiver =
       objc3_runtime_dispatch_i32_checked(0, "missingDispatch:", 4, 5, 6, 7);

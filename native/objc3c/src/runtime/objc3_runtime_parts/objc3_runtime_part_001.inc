@@ -32,9 +32,16 @@ namespace {
 
 using objc3c::runtime::MethodCacheKey;
 using objc3c::runtime::MethodCacheKeyHash;
-
-constexpr std::uint64_t kReceiverIdentityBase = 1024;
-constexpr std::uint64_t kReceiverIdentityStride = 17;
+using objc3c::runtime::BuildReceiverBaseIdentity;
+using objc3c::runtime::ClassifyRuntimeReturnType;
+using objc3c::runtime::DescribeResolvedImplementationKind;
+using objc3c::runtime::DispatchFamily;
+using objc3c::runtime::IsRuntimeReceiverBaseIdentity;
+using objc3c::runtime::RuntimeBuiltinKind;
+using objc3c::runtime::RuntimeMethodReturnKind;
+using objc3c::runtime::RuntimeMethodShapeStatus;
+using objc3c::runtime::RuntimeReceiverIdentityBase;
+using objc3c::runtime::RuntimeReceiverIdentityStride;
 constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
     "tmp/artifacts/objc3c-native/cache/metaprogramming";
 [[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =
@@ -145,28 +152,6 @@ struct RegisteredImageMetadata {
   bool used_staged_registration_table = false;
 };
 
-enum class DispatchFamily {
-  Invalid = 0,
-  Instance = 1,
-  Class = 2,
-};
-
-enum class RuntimeBuiltinKind {
-  None = 0,
-  Alloc = 1,
-  Init = 2,
-  New = 3,
-  PropertyGetter = 4,
-  PropertySetter = 5,
-};
-
-enum class RuntimeMethodReturnKind {
-  Unsupported = 0,
-  I32Like = 1,
-  Bool = 2,
-  Void = 3,
-};
-
 struct RealizedPropertyAccessor;
 
 struct PropertyLookupCacheKey {
@@ -210,6 +195,8 @@ struct MethodCacheEntry {
   RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
+  objc3_runtime_dispatch_status_code strict_error_status =
+      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
   const void *implementation = nullptr;
   RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
   const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
@@ -232,10 +219,18 @@ struct SlowPathResolution {
   RuntimeMethodReturnKind return_kind = RuntimeMethodReturnKind::Unsupported;
   std::uint64_t category_probe_count = 0;
   std::uint64_t protocol_probe_count = 0;
+  objc3_runtime_dispatch_status_code strict_error_status =
+      OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
   const void *implementation = nullptr;
   RuntimeBuiltinKind builtin_kind = RuntimeBuiltinKind::None;
   const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
 };
+
+bool HasTerminalStrictDispatchError(const SlowPathResolution &resolution) {
+  return !resolution.resolved &&
+         resolution.strict_error_status !=
+             OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+}
 
 struct EmittedMethodListRef {
   std::uint64_t count;
@@ -443,7 +438,8 @@ unsigned char *RuntimeBlockStorageBytes(RuntimeBlockRecord &record) {
   return reinterpret_cast<unsigned char *>(record.storage_words.data());
 }
 
-const unsigned char *RuntimeBlockStorageBytes(const RuntimeBlockRecord &record) {
+[[maybe_unused]] const unsigned char *RuntimeBlockStorageBytes(
+    const RuntimeBlockRecord &record) {
   return reinterpret_cast<const unsigned char *>(record.storage_words.data());
 }
 
@@ -801,7 +797,6 @@ thread_local std::unordered_map<int, std::deque<int>> g_runtime_actor_mailboxes;
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index);
-RuntimeMethodReturnKind ClassifyRuntimeReturnType(const char *return_type_name);
 std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name);
 
@@ -1068,16 +1063,6 @@ const char *RuntimeErrorCatchKindName(int catch_kind) {
   }
 }
 
-bool RuntimeErrorCatchKindMatches(int catch_kind) {
-  switch (catch_kind) {
-  case 1:
-  case 2:
-    return true;
-  default:
-    return false;
-  }
-}
-
 void PushRuntimeAutoreleasePoolFrame() {
   g_runtime_autoreleasepool_frames.push_back({});
   ++g_runtime_arc_debug_autoreleasepool_push_count;
@@ -1105,7 +1090,7 @@ std::uint64_t CountQueuedAutoreleaseValues() {
 }
 
 void EnqueueAutoreleaseValue(int value) {
-  if (value == 0) {
+  if (!objc3c::runtime::RuntimeAutoreleasePoolCanEnqueue(value)) {
     return;
   }
   g_runtime_last_autoreleased_value = value;
@@ -1124,7 +1109,7 @@ void EnqueueAutoreleaseValue(int value) {
 }
 
 bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state, int value) {
-  return value != 0 &&
+  return objc3c::runtime::RuntimeInstanceReceiverIsManaged(value) &&
          state.runtime_instances_by_receiver.find(value) !=
              state.runtime_instances_by_receiver.end();
 }
@@ -1132,7 +1117,7 @@ bool IsRuntimeManagedReceiverValueUnlocked(const RuntimeState &state, int value)
 void RemoveWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
                                int owner_receiver, std::size_t offset,
                                std::size_t size) {
-  if (target_receiver == 0) {
+  if (!objc3c::runtime::RuntimeWeakSlotTargetIsTrackable(target_receiver)) {
     return;
   }
   const auto found = state.weak_slot_refs_by_target_receiver.find(target_receiver);
@@ -1156,7 +1141,7 @@ void RemoveWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
 void RegisterWeakSlotRefUnlocked(RuntimeState &state, int target_receiver,
                                  int owner_receiver, std::size_t offset,
                                  std::size_t size) {
-  if (target_receiver == 0) {
+  if (!objc3c::runtime::RuntimeWeakSlotTargetIsTrackable(target_receiver)) {
     return;
   }
   std::vector<RuntimeWeakSlotRef> &refs =
@@ -1190,6 +1175,9 @@ void RemoveWeakSlotRefsOwnedByReceiverUnlocked(RuntimeState &state,
 }
 
 void ZeroWeakSlotRefsForTargetUnlocked(RuntimeState &state, int target_receiver) {
+  if (!objc3c::runtime::RuntimeWeakSlotTargetIsTrackable(target_receiver)) {
+    return;
+  }
   const auto found = state.weak_slot_refs_by_target_receiver.find(target_receiver);
   if (found == state.weak_slot_refs_by_target_receiver.end()) {
     return;
@@ -1219,11 +1207,6 @@ std::string BuildSynthesizedInstanceMethodOwnerIdentity(
   return owner + "::instance_method:" + selector_text;
 }
 
-std::uint64_t BuildReceiverBaseIdentity(std::size_t ordinal) {
-  return kReceiverIdentityBase +
-         static_cast<std::uint64_t>(ordinal) * kReceiverIdentityStride;
-}
-
 const EmittedMethodListEntry *MethodListEntries(
     const EmittedMethodListHeader *header) {
   return header == nullptr
@@ -1243,7 +1226,7 @@ const EmittedMethodListRef *SelectMethodListRef(const EmittedCategoryRecord &rec
                                          : record.instance_method_list_ref;
 }
 
-bool SelectorMatchesMethodEntryUnlocked(RuntimeState &state,
+bool SelectorMatchesMethodEntryUnlocked(RuntimeState &,
                                         const char *entry_selector,
                                         std::uint64_t selector_stable_id,
                                         const char *selector_spelling) {
@@ -1278,25 +1261,35 @@ bool TryResolveMethodFromMethodListRefUnlocked(
   const auto *header =
       static_cast<const EmittedMethodListHeader *>(method_list_ref->method_list);
   if (header == nullptr || header->count != method_list_ref->count) {
+    resolution.strict_error_status =
+        OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
     return false;
   }
   const EmittedMethodListEntry *entries = MethodListEntries(header);
   for (std::uint64_t index = 0; index < header->count; ++index) {
     const EmittedMethodListEntry &entry = entries[index];
-    const RuntimeMethodReturnKind entry_return_kind =
-        ClassifyRuntimeReturnType(entry.return_type_name);
     if (entry.selector == nullptr || entry.owner_identity == nullptr ||
         entry.return_type_name == nullptr) {
+      resolution.strict_error_status =
+          OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
       return false;
     }
     if (!SelectorMatchesMethodEntryUnlocked(state, entry.selector,
                                             selector_stable_id,
-                                            selector_spelling) ||
-        entry.has_body == 0 || entry.implementation == nullptr ||
-        entry_return_kind == RuntimeMethodReturnKind::Unsupported ||
-        entry.parameter_count > 4) {
+                                            selector_spelling)) {
       continue;
     }
+    if (entry.has_body == 0 || entry.implementation == nullptr) {
+      continue;
+    }
+    const objc3_runtime_dispatch_status_code shape_status =
+        RuntimeMethodShapeStatus(entry.return_type_name, entry.parameter_count);
+    if (shape_status != OBJC3_RUNTIME_DISPATCH_STATUS_OK) {
+      resolution.strict_error_status = shape_status;
+      return true;
+    }
+    const RuntimeMethodReturnKind entry_return_kind =
+        ClassifyRuntimeReturnType(entry.return_type_name);
     if (resolution.resolved &&
         (resolution.implementation != entry.implementation ||
          resolution.parameter_count != entry.parameter_count ||
@@ -1346,7 +1339,9 @@ bool ProbeProtocolSelectorDeclarationUnlocked(
     if (record == nullptr || !visited.insert(record).second) {
       continue;
     }
-    if (record->protocol_name == nullptr || record->owner_identity == nullptr) {
+    if (record->protocol_name == nullptr || record->owner_identity == nullptr ||
+        !objc3c::runtime::RuntimeProtocolConformanceEdgeIsMaterializable(
+            "protocol-adopter", record->protocol_name)) {
       return false;
     }
     ++protocol_probe_count;

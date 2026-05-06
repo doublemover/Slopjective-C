@@ -224,6 +224,9 @@ void DestroyRuntimeInstanceUnlocked(RuntimeState &state, int receiver) {
 }
 
 void RetainRuntimeValueUnlocked(RuntimeState &state, int value) {
+  if (!objc3c::runtime::RuntimeArcValueIsRetainable(value)) {
+    return;
+  }
   const auto instance_it = state.runtime_instances_by_receiver.find(value);
   if (instance_it != state.runtime_instances_by_receiver.end()) {
     ++instance_it->second.retain_count;
@@ -237,6 +240,9 @@ void RetainRuntimeValueUnlocked(RuntimeState &state, int value) {
 }
 
 void ReleaseRuntimeValueUnlocked(RuntimeState &state, int value) {
+  if (!objc3c::runtime::RuntimeArcValueIsRetainable(value)) {
+    return;
+  }
   const auto instance_it = state.runtime_instances_by_receiver.find(value);
   if (instance_it != state.runtime_instances_by_receiver.end()) {
     if (instance_it->second.retain_count > 1u) {
@@ -293,7 +299,8 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
       instance.base_identity = base_identity;
       instance.class_name = node->class_name;
       instance.instance_size_bytes =
-          std::max<std::size_t>(node->runtime_instance_size_bytes, 1u);
+          objc3c::runtime::RuntimeInstanceStorageSize(
+              node->runtime_instance_size_bytes);
       instance.storage_bytes.assign(instance.instance_size_bytes, 0u);
       instance.retain_count = 1u;
       state.runtime_instances_by_receiver.emplace(receiver_identity,
@@ -304,7 +311,7 @@ int InvokeRuntimeBuiltinMethod(RuntimeState &state,
           static_cast<std::uint64_t>(receiver_identity);
       state.last_allocated_runtime_instance_base_identity = base_identity;
       state.last_allocated_runtime_instance_size_bytes =
-          std::max<std::size_t>(node->runtime_instance_size_bytes, 1u);
+          instance.instance_size_bytes;
       state.last_allocated_runtime_instance_class_name = node->class_name;
       return receiver_identity;
     }
@@ -371,18 +378,21 @@ const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector
   // non-emitted selectors remains a dynamic strict-error path. The later runtime step layers
   // method-cache and class/metaclass slow-path dispatch on top of the same
   // preserved public lookup/dispatch surface.
-  if (selector == nullptr) {
+  const char *normalized_selector =
+      objc3c::support::selectors::NormalizeSelectorSpelling(selector);
+  if (!objc3c::runtime::RuntimeSelectorTableAcceptsDynamicSelector(
+          normalized_selector)) {
     return nullptr;
   }
 
   RuntimeState &state = State();
-  const auto found = state.selector_index_by_name.find(selector);
+  const auto found = state.selector_index_by_name.find(normalized_selector);
   if (found != state.selector_index_by_name.end()) {
     return &state.selector_slots[found->second].handle;
   }
 
   SelectorSlot slot;
-  slot.spelling_storage = selector;
+  slot.spelling_storage = normalized_selector;
   state.selector_slots.push_back(std::move(slot));
   SelectorSlot &stored = state.selector_slots.back();
   stored.handle.selector = stored.spelling_storage.c_str();
@@ -402,14 +412,17 @@ bool MaterializeSelectorLookupEntryUnlocked(RuntimeState &state,
                                             const char *selector,
                                             std::uint64_t registration_order_ordinal,
                                             std::uint64_t selector_pool_index) {
-  if (selector == nullptr || selector[0] == '\0') {
+  const char *normalized_selector =
+      objc3c::support::selectors::NormalizeSelectorSpelling(selector);
+  if (!objc3c::runtime::RuntimeSelectorTableAcceptsMetadataSelector(
+          normalized_selector)) {
     return false;
   }
 
-  const auto found = state.selector_index_by_name.find(selector);
+  const auto found = state.selector_index_by_name.find(normalized_selector);
   if (found == state.selector_index_by_name.end()) {
     SelectorSlot slot;
-    slot.spelling_storage = selector;
+    slot.spelling_storage = normalized_selector;
     slot.metadata_backed = true;
     slot.metadata_provider_count = 1;
     slot.first_registration_order_ordinal = registration_order_ordinal;
@@ -489,9 +502,10 @@ bool KeyPathDescriptorsCompatible(const KeyPathSlot &slot,
 bool MaterializeKeyPathDescriptorUnlocked(
     RuntimeState &state, const EmittedKeyPathDescriptor &descriptor,
     std::uint64_t registration_order_ordinal) {
-  if (descriptor.stable_id == 0 || descriptor.root_name == nullptr ||
-      descriptor.root_name[0] == '\0' || descriptor.component_path == nullptr ||
-      descriptor.component_path[0] == '\0' || descriptor.profile == nullptr ||
+  if (!objc3c::runtime::RuntimeKeyPathHandleIsValid(descriptor.stable_id) ||
+      !objc3c::runtime::RuntimeKeyPathDescriptorIsMaterializable(
+          descriptor.root_name, descriptor.component_path) ||
+      descriptor.profile == nullptr ||
       descriptor.profile[0] == '\0') {
     return false;
   }
@@ -542,62 +556,21 @@ bool MaterializeKeyPathDescriptorUnlocked(
 
 std::uint64_t DescriptorTotal(
     const objc3_runtime_image_descriptor *image) {
-  return image->class_descriptor_count + image->protocol_descriptor_count +
-         image->category_descriptor_count + image->property_descriptor_count +
-         image->ivar_descriptor_count;
+  return objc3c::runtime::RuntimeDescriptorTotal(image);
 }
 
 std::uint64_t AggregateCount(const objc3_runtime_pointer_aggregate *aggregate) {
-  return aggregate == nullptr ? 0 : aggregate->count;
+  return objc3c::runtime::RuntimeAggregateCount(aggregate);
 }
 
 const void *AggregateEntry(const objc3_runtime_pointer_aggregate *aggregate,
                            std::uint64_t index) {
-  if (aggregate == nullptr || index >= aggregate->count) {
-    return nullptr;
-  }
-  return aggregate->entries[index];
+  return objc3c::runtime::RuntimeAggregateEntry(aggregate, index);
 }
 
 bool AggregateContainsPointer(const objc3_runtime_pointer_aggregate *aggregate,
                               const void *target) {
-  if (aggregate == nullptr || target == nullptr) {
-    return false;
-  }
-  for (std::uint64_t index = 0; index < aggregate->count; ++index) {
-    if (aggregate->entries[index] == target) {
-      return true;
-    }
-  }
-  return false;
-}
-
-bool ImageDescriptorsMatch(const objc3_runtime_image_descriptor *lhs,
-                           const objc3_runtime_image_descriptor *rhs) {
-  if (lhs == nullptr || rhs == nullptr) {
-    return false;
-  }
-
-  const std::string lhs_module =
-      lhs->module_name != nullptr ? lhs->module_name : "";
-  const std::string rhs_module =
-      rhs->module_name != nullptr ? rhs->module_name : "";
-  const std::string lhs_identity =
-      lhs->translation_unit_identity_key != nullptr
-          ? lhs->translation_unit_identity_key
-          : "";
-  const std::string rhs_identity =
-      rhs->translation_unit_identity_key != nullptr
-          ? rhs->translation_unit_identity_key
-          : "";
-  return lhs_module == rhs_module &&
-         lhs_identity == rhs_identity &&
-         lhs->registration_order_ordinal == rhs->registration_order_ordinal &&
-         lhs->class_descriptor_count == rhs->class_descriptor_count &&
-         lhs->protocol_descriptor_count == rhs->protocol_descriptor_count &&
-         lhs->category_descriptor_count == rhs->category_descriptor_count &&
-         lhs->property_descriptor_count == rhs->property_descriptor_count &&
-         lhs->ivar_descriptor_count == rhs->ivar_descriptor_count;
+  return objc3c::runtime::RuntimeAggregateContainsPointer(aggregate, target);
 }
 
 const char *StableCString(const std::string &text) {
@@ -745,19 +718,8 @@ bool TryWalkRegistrationTableUnlocked(
   // must close over every descriptor family before image state is published,
   // and the walked image snapshot is derived from this validated table rather
   // than from sidecar manifests or replay-only bookkeeping.
-  if (registration_table == nullptr ||
-      registration_table->abi_version != 2 ||
-      registration_table->pointer_field_count != 12 ||
-      registration_table->image_descriptor == nullptr ||
-      !ImageDescriptorsMatch(registration_table->image_descriptor, image) ||
-      registration_table->discovery_root == nullptr ||
-      registration_table->linker_anchor == nullptr ||
-      registration_table->class_descriptor_root == nullptr ||
-      registration_table->protocol_descriptor_root == nullptr ||
-      registration_table->category_descriptor_root == nullptr ||
-      registration_table->property_descriptor_root == nullptr ||
-      registration_table->ivar_descriptor_root == nullptr ||
-      registration_table->image_local_init_state == nullptr) {
+  if (!objc3c::runtime::RuntimeRegistrationTableShapeIsSupported(
+          registration_table, image)) {
     return false;
   }
 
@@ -1312,7 +1274,9 @@ int objc3_runtime_copy_keypath_entry_for_testing(
 }
 
 int objc3_runtime_keypath_component_count_for_testing(int keypath_handle) {
-  if (keypath_handle <= 0) {
+  if (keypath_handle <= 0 ||
+      !objc3c::runtime::RuntimeKeyPathHandleIsValid(
+          static_cast<std::uint64_t>(keypath_handle))) {
     return 0;
   }
 
@@ -1334,7 +1298,9 @@ int objc3_runtime_keypath_component_count_for_testing(int keypath_handle) {
 }
 
 int objc3_runtime_keypath_root_is_self_for_testing(int keypath_handle) {
-  if (keypath_handle <= 0) {
+  if (keypath_handle <= 0 ||
+      !objc3c::runtime::RuntimeKeyPathHandleIsValid(
+          static_cast<std::uint64_t>(keypath_handle))) {
     return 0;
   }
 

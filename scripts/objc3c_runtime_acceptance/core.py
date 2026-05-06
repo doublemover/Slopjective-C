@@ -9407,6 +9407,12 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
     dispatch_expectations_exe = case_dir / "dispatch_expectations_support_test.exe"
     compile_probe(clangxx, dispatch_expectations_probe, dispatch_expectations_exe, [])
     run_probe(dispatch_expectations_exe)
+    strict_dispatch_probe = (
+        ROOT / "tests" / "tooling" / "runtime" / "strict_dispatch_error_status_probe.cpp"
+    )
+    strict_dispatch_exe = case_dir / "strict_dispatch_error_status_probe.exe"
+    compile_probe(clangxx, strict_dispatch_probe, strict_dispatch_exe, [])
+    run_probe(strict_dispatch_exe)
     return CaseResult(
         case_id="runtime-library",
         probe="tests/tooling/runtime/runtime_library_probe.cpp",
@@ -9417,6 +9423,9 @@ def check_runtime_library_case(clangxx: str, run_dir: Path) -> CaseResult:
             "kind": "standalone-runtime-probe",
             "dispatch_expectations_drift_probe": (
                 "tests/tooling/runtime/dispatch_expectations_support_test.cpp"
+            ),
+            "strict_dispatch_error_status_probe": (
+                "tests/tooling/runtime/strict_dispatch_error_status_probe.cpp"
             ),
         },
     )

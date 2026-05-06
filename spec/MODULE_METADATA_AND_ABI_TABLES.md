@@ -4820,7 +4820,7 @@ shall preserve:
   `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
 - target name `objc3_runtime`,
 - source root `native/objc3c/src/runtime`,
-- current pre-hard-cutover public header
+- current public runtime header
   `native/objc3c/src/runtime/public/objc3_runtime_api.h`,
 - library kind `static` and archive basename `objc3_runtime`,
 - exported entrypoints `objc3_runtime_register_image`,
@@ -4829,11 +4829,13 @@ shall preserve:
 - driver link mode `not-linked-until-m251-d003`,
 - named LLVM IR metadata `!objc3.objc_runtime_support_library`.
 
-The hard-cutover runtime module tree is not established by this anchor. It is
-claimable only when `runtime/public/objc3_runtime_api.h`,
-`runtime/public/objc3_runtime_result.h`, and the required `state`, `selectors`,
-`images`, `classes`, `dispatch`, `storage`, `memory`, `blocks`, `errors`, and
-`concurrency` module files exist and are wired.
+This anchor records the current hard-cutover runtime module layout:
+`runtime/public/objc3_runtime_api.h`, `runtime/public/objc3_runtime_result.h`,
+and the named `state`, `selectors`, `images`, `classes`, `dispatch`, `storage`,
+`memory`, `blocks`, `errors`, and `concurrency` module paths. The module-tree
+claim covers the wired core dispatch, selector, image, and realized-class graph
+helpers; strict dispatch proof still requires live status probe and gate
+evidence.
 
 Native runtime-library surface anchors must remain deterministic and fail
 closed before the library skeleton, bootstrap registrar, and live dispatch
@@ -4848,7 +4850,7 @@ Deterministic lane-D native runtime-library core feature anchors for
 - dependency ids
   `objc3c-runtime-support-library-surface-build-contract/m251-d001-v1` and
   `objc3c-runtime-metadata-section-scaffold/m251-c002-v1`,
-- current pre-module-tree implementation source
+- current runtime implementation source
   `native/objc3c/src/runtime/objc3_runtime.cpp`,
 - archive output `artifacts/lib/objc3_runtime.lib`,
 - runtime probe source
@@ -6090,8 +6092,9 @@ is authoritative:
 - upstream taxonomy/legality continuity remains rooted in:
   - `tmp/reports/m255/M255-A002/dispatch_site_modeling_summary.json`
   - `tmp/reports/m255/M255-B003/super_direct_dynamic_method_family_summary.json`
-- strict dispatch proof is claimable only when `objc3_runtime_dispatch_i32`
-  returns typed success for resolved/nil cases or structured runtime errors for
+- strict dispatch proof is claimable only when linked live probes and gates show
+  `objc3_runtime_dispatch_i32_checked` / `objc3_runtime_dispatch_i32` returning
+  typed success for resolved/nil cases or structured runtime errors for
   unresolved cases
 
 ## M255 live dispatch smoke/replay metadata anchors (E002)

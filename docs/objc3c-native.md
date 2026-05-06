@@ -89,8 +89,7 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
-- hard-cutover runtime module tree acceptance is not current until the named
-  files exist and are wired:
+- hard-cutover runtime module tree:
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/public/objc3_runtime_result.h`
   - `native/objc3c/src/runtime/state/`
@@ -103,6 +102,12 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/errors/`
   - `native/objc3c/src/runtime/concurrency/`
+- currently intended completion claims only the named module tree plus wired
+  core helpers for dispatch, selector lookup, image registration, and realized
+  class graph consumption. Broader runtime behavior remains claimable only
+  through the live strict dispatch status probes and gates that exercise typed
+  success/error results from `objc3_runtime_dispatch_i32_checked` and
+  `objc3_runtime_dispatch_i32`.
 - authoritative emitted artifacts:
   - `<prefix>.obj`
   - `<prefix>.ll`
@@ -1906,14 +1911,14 @@ architecture surface drifts between the full workflow and the evidence bundle.
   - any surface described only by comments, sidecars, or private placeholders
   - synthetic `.ll` or hand-authored artifacts with no matching compile output
   - proof that depends on non-authoritative test surfaces without a coupled emitted object
-  - the hard-cutover runtime module tree until the required files exist and
-    acceptance probes cover strict dispatch success and structured error cases
+  - strict dispatch completion without live acceptance probes covering typed
+    success and structured error cases
 
 ## Explicit Non-Goals
 
 - no milestone-specific compile wrappers, evidence bundles, or closeout sidecars
-- no claim that the hard-cutover public/module split has landed while the
-  runtime still routes through the current header/source boundary
+- no claim beyond the named runtime module tree and the live helper/probe
+  evidence that exercises it
 - no authoritative proof from replay text alone without emitted object and probe
 - no widening of public runtime claims beyond what the live acceptance and probe
   path can execute today
@@ -2008,15 +2013,19 @@ Do not treat these as authoritative proof:
 
 ## Current Corrective Gaps
 
-- unresolved sends must publish a typed strict dispatch error instead of any fabricated result
-- strict dispatch status/error coverage must include success for nil receiver,
-  resolved live methods, resolved builtins, and resolved property accessors,
-  plus structured errors for unknown selectors, unknown receiver classes,
-  missing class graph state, unsupported return types, unsupported argument
-  layouts, malformed metadata, and category conflicts
+- unresolved sends must publish typed strict dispatch errors through the checked
+  runtime result path
+- strict dispatch status/error coverage must remain live-probe-backed and must
+  include success for nil receiver, resolved live methods, resolved builtins,
+  and resolved property accessors, plus structured errors for unknown selectors,
+  unknown receiver classes, missing class graph state, unsupported return
+  types, unsupported argument layouts, malformed metadata, and category
+  conflicts
 - the hard-cutover runtime module tree under
   `native/objc3c/src/runtime/{public,state,selectors,images,classes,dispatch,storage,memory,blocks,errors,concurrency}/`
-  is not claimable until those named files exist and are wired
+  is the current named runtime layout for module-tree claims; those claims cover
+  the wired dispatch, selector, image, and class-graph helper paths only when
+  the linked strict dispatch probes and gates publish matching status evidence
 - synthesized accessor IR still carries transitional lowering residue in `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - native proof remains invalid unless the emitted object, manifest, and linked runtime probe all come from the same reproducible compile path
 ## Live Validation Commands
@@ -2076,10 +2085,14 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 
 - strict dispatch is claimable only when every admitted send returns typed
   success for nil receiver, resolved live method, resolved builtin, or resolved
-  property accessor behavior
+  property accessor behavior through live status evidence
 - runtime dispatch errors are claimable only when tests cover unknown selector,
   unknown receiver class, missing class graph, unsupported return type,
   unsupported argument layout, malformed metadata, and category conflict cases
+- linked strict dispatch status probes, including
+  `tests/tooling/runtime/strict_dispatch_error_status_probe.cpp`, are required
+  evidence for the dispatch gate; manifest or source inventory alone is not
+  enough to claim strict dispatch completion
 - synthesized getter/setter execution is runtime-backed on live paths
 - native-output truth requires the emitted object and linked probe to stay coupled end to end
 # libobjc3c_frontend Library API

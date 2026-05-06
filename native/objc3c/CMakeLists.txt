@@ -301,15 +301,69 @@ objc3c_apply_build_defaults(objc3c_io)
 objc3c_apply_llvm_direct_config(objc3c_io)
 
 add_library(objc3_runtime STATIC
+  src/runtime/blocks/block_capture_storage.cpp
+  src/runtime/blocks/block_capture_storage.h
+  src/runtime/blocks/block_record.cpp
+  src/runtime/blocks/block_record.h
+  src/runtime/classes/category_attachment.cpp
+  src/runtime/classes/category_attachment.h
+  src/runtime/classes/class_graph.cpp
+  src/runtime/classes/class_graph.h
+  src/runtime/classes/metaclass_graph.cpp
+  src/runtime/classes/metaclass_graph.h
+  src/runtime/classes/protocol_conformance.cpp
+  src/runtime/classes/protocol_conformance.h
+  src/runtime/concurrency/actor.cpp
+  src/runtime/concurrency/actor.h
+  src/runtime/concurrency/executor.cpp
+  src/runtime/concurrency/executor.h
+  src/runtime/concurrency/task.cpp
+  src/runtime/concurrency/task.h
+  src/runtime/dispatch/builtin_methods.cpp
+  src/runtime/dispatch/builtin_methods.h
+  src/runtime/dispatch/dispatch_api.cpp
+  src/runtime/dispatch/dispatch_api.h
   src/runtime/dispatch/dispatch_errors.cpp
   src/runtime/dispatch/dispatch_errors.h
   src/runtime/dispatch/method_cache.cpp
   src/runtime/dispatch/method_cache.h
+  src/runtime/dispatch/method_lookup.cpp
+  src/runtime/dispatch/method_lookup.h
+  src/runtime/errors/catch_filter.cpp
+  src/runtime/errors/catch_filter.h
   src/runtime/errors/runtime_error.cpp
   src/runtime/errors/runtime_error.h
+  src/runtime/images/image_descriptor.cpp
+  src/runtime/images/image_descriptor.h
+  src/runtime/images/multi_image_ordering.cpp
+  src/runtime/images/multi_image_ordering.h
+  src/runtime/images/registration.cpp
+  src/runtime/images/registration.h
+  src/runtime/memory/arc.cpp
+  src/runtime/memory/arc.h
+  src/runtime/memory/autorelease_pool.cpp
+  src/runtime/memory/autorelease_pool.h
   src/runtime/objc3_runtime.cpp
   src/runtime/public/objc3_runtime_api.h
   src/runtime/public/objc3_runtime_result.h
+  src/runtime/selectors/keypath_table.cpp
+  src/runtime/selectors/keypath_table.h
+  src/runtime/selectors/selector_table.cpp
+  src/runtime/selectors/selector_table.h
+  src/runtime/state/runtime_reset.cpp
+  src/runtime/state/runtime_reset.h
+  src/runtime/state/runtime_state.cpp
+  src/runtime/state/runtime_state.h
+  src/runtime/storage/instance_storage.cpp
+  src/runtime/storage/instance_storage.h
+  src/runtime/storage/ivar_layout.cpp
+  src/runtime/storage/ivar_layout.h
+  src/runtime/storage/property_accessors.cpp
+  src/runtime/storage/property_accessors.h
+  src/runtime/storage/weak_slots.cpp
+  src/runtime/storage/weak_slots.h
+  src/support/selectors/selector_normalization.cpp
+  src/support/selectors/selector_normalization.h
 )
 objc3c_apply_build_defaults(objc3_runtime)
 target_link_libraries(objc3_runtime PUBLIC

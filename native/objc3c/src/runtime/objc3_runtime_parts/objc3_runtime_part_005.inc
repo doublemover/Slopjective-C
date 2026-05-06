@@ -63,7 +63,10 @@ extern "C" int objc3_runtime_catch_matches_error_i32(int error_value,
   g_runtime_error_bridge_last_catch_kind_name =
       RuntimeErrorCatchKindName(catch_kind);
   const int matches =
-      catch_all != 0 ? 1 : ((error_value != 0) && RuntimeErrorCatchKindMatches(catch_kind) ? 1 : 0);
+      objc3c::runtime::RuntimeCatchFilterMatches(error_value, catch_kind,
+                                                 catch_all)
+          ? 1
+          : 0;
   g_runtime_error_bridge_last_catch_match_result = matches;
   return matches;
 }
@@ -123,24 +126,38 @@ extern "C" int objc3_runtime_spawn_task_i32(int task_kind, int executor_tag) {
   ++g_runtime_task_spawn_call_count;
   g_runtime_task_last_spawn_kind = task_kind;
   g_runtime_task_last_spawn_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeTaskKindIsSupported(task_kind) ||
+      !objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return 100 + (task_kind * 10) + (executor_tag != 0 ? 1 : 0);
 }
 
 extern "C" int objc3_runtime_enter_task_group_scope_i32(int executor_tag) {
   ++g_runtime_task_scope_call_count;
   g_runtime_task_last_scope_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return 1;
 }
 
 extern "C" int objc3_runtime_add_task_group_task_i32(int executor_tag) {
   ++g_runtime_task_add_task_call_count;
   g_runtime_task_last_add_task_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return 1;
 }
 
 extern "C" int objc3_runtime_wait_task_group_next_i32(int executor_tag) {
   ++g_runtime_task_wait_next_call_count;
   g_runtime_task_last_wait_next_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_task_last_wait_next_result = 0;
+    return 0;
+  }
   g_runtime_task_last_wait_next_result = 23;
   return g_runtime_task_last_wait_next_result;
 }
@@ -148,6 +165,10 @@ extern "C" int objc3_runtime_wait_task_group_next_i32(int executor_tag) {
 extern "C" int objc3_runtime_cancel_task_group_i32(int executor_tag) {
   ++g_runtime_task_cancel_all_call_count;
   g_runtime_task_last_cancel_all_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_task_last_cancel_all_result = 0;
+    return 0;
+  }
   g_runtime_task_last_cancel_all_result = 31;
   return g_runtime_task_last_cancel_all_result;
 }
@@ -155,6 +176,10 @@ extern "C" int objc3_runtime_cancel_task_group_i32(int executor_tag) {
 extern "C" int objc3_runtime_task_is_cancelled_i32(int executor_tag) {
   ++g_runtime_task_cancellation_poll_call_count;
   g_runtime_task_last_cancellation_poll_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_task_last_cancellation_poll_result = 0;
+    return 0;
+  }
   g_runtime_task_last_cancellation_poll_result = 0;
   return g_runtime_task_last_cancellation_poll_result;
 }
@@ -162,6 +187,9 @@ extern "C" int objc3_runtime_task_is_cancelled_i32(int executor_tag) {
 extern "C" int objc3_runtime_task_on_cancel_i32(int executor_tag) {
   ++g_runtime_task_on_cancel_call_count;
   g_runtime_task_last_on_cancel_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return 41;
 }
 
@@ -169,6 +197,9 @@ extern "C" int objc3_runtime_executor_hop_i32(int value, int executor_tag) {
   ++g_runtime_task_executor_hop_call_count;
   g_runtime_task_last_executor_hop_executor_tag = executor_tag;
   g_runtime_task_last_executor_hop_value = value;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return value;
 }
 
@@ -177,6 +208,9 @@ extern "C" int objc3_runtime_actor_enter_isolation_thunk_i32(int executor_tag) {
   // reaches the runtime through this private thunk/hop/nonisolated cluster.
   ++g_runtime_actor_isolation_thunk_call_count;
   g_runtime_actor_last_isolation_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return executor_tag;
 }
 
@@ -185,6 +219,9 @@ extern "C" int objc3_runtime_actor_enter_nonisolated_i32(int value,
   ++g_runtime_actor_nonisolated_entry_call_count;
   g_runtime_actor_last_nonisolated_value = value;
   g_runtime_actor_last_nonisolated_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return value;
 }
 
@@ -193,6 +230,10 @@ extern "C" int objc3_runtime_actor_hop_to_executor_i32(int value,
   ++g_runtime_actor_hop_to_executor_call_count;
   g_runtime_actor_last_hop_value = value;
   g_runtime_actor_last_hop_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_actor_last_hop_result = 0;
+    return 0;
+  }
   g_runtime_actor_last_hop_result = value;
   return value;
 }
@@ -200,12 +241,18 @@ extern "C" int objc3_runtime_actor_hop_to_executor_i32(int value,
 extern "C" int objc3_runtime_actor_record_replay_proof_i32(int executor_tag) {
   ++g_runtime_actor_replay_proof_call_count;
   g_runtime_actor_last_replay_proof_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return executor_tag;
 }
 
 extern "C" int objc3_runtime_actor_record_race_guard_i32(int executor_tag) {
   ++g_runtime_actor_race_guard_call_count;
   g_runtime_actor_last_race_guard_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    return 0;
+  }
   return executor_tag;
 }
 
@@ -219,6 +266,11 @@ extern "C" int objc3_runtime_actor_bind_executor_i32(int actor_handle,
   g_runtime_actor_last_bound_executor_tag = executor_tag;
   g_runtime_actor_last_mailbox_actor_handle = actor_handle;
   g_runtime_actor_last_mailbox_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeActorHandleIsValid(actor_handle) ||
+      !objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_actor_last_mailbox_depth = 0;
+    return 0;
+  }
   g_runtime_actor_last_mailbox_depth =
       static_cast<int>(g_runtime_actor_mailboxes[actor_handle].size());
   return executor_tag;
@@ -231,6 +283,11 @@ extern "C" int objc3_runtime_actor_mailbox_enqueue_i32(int actor_handle,
   g_runtime_actor_last_mailbox_actor_handle = actor_handle;
   g_runtime_actor_last_mailbox_enqueued_value = value;
   g_runtime_actor_last_mailbox_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeActorHandleIsValid(actor_handle) ||
+      !objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_actor_last_mailbox_depth = 0;
+    return 0;
+  }
   std::deque<int> &mailbox = g_runtime_actor_mailboxes[actor_handle];
   mailbox.push_back(value);
   g_runtime_actor_last_mailbox_depth = static_cast<int>(mailbox.size());
@@ -242,6 +299,12 @@ extern "C" int objc3_runtime_actor_mailbox_drain_next_i32(int actor_handle,
   ++g_runtime_actor_mailbox_drain_call_count;
   g_runtime_actor_last_mailbox_actor_handle = actor_handle;
   g_runtime_actor_last_mailbox_executor_tag = executor_tag;
+  if (!objc3c::runtime::RuntimeActorHandleIsValid(actor_handle) ||
+      !objc3c::runtime::RuntimeExecutorTagIsValid(executor_tag)) {
+    g_runtime_actor_last_mailbox_depth = 0;
+    g_runtime_actor_last_mailbox_drained_value = 0;
+    return 0;
+  }
   std::deque<int> &mailbox = g_runtime_actor_mailboxes[actor_handle];
   if (mailbox.empty()) {
     g_runtime_actor_last_mailbox_depth = 0;
@@ -276,7 +339,9 @@ extern "C" int objc3_runtime_release_i32(int value) {
 extern "C" int objc3_runtime_autorelease_i32(int value) {
   ++g_runtime_arc_debug_autorelease_call_count;
   g_runtime_arc_debug_last_autorelease_value = value;
-  EnqueueAutoreleaseValue(value);
+  if (objc3c::runtime::RuntimeAutoreleasePoolCanEnqueue(value)) {
+    EnqueueAutoreleaseValue(value);
+  }
   return value;
 }
 
@@ -291,7 +356,9 @@ extern "C" int objc3_runtime_promote_block_i32(
   // pointer-capture promotion also rewrites capture slots onto runtime-owned
   // heap cells before helper execution so escaping blocks do not retain stack
   // addresses after the source frame returns.
-  if (storage == nullptr || storage_size_bytes == 0u) {
+  if (storage == nullptr ||
+      !objc3c::runtime::RuntimeBlockStorageSizeIsSupported(
+          static_cast<std::size_t>(storage_size_bytes))) {
     return 0;
   }
   ++g_runtime_block_promote_call_count;
@@ -310,7 +377,9 @@ extern "C" int objc3_runtime_promote_block_i32(
   state.next_runtime_block_handle = block_handle + 1;
   RuntimeBlockRecord record;
   record.block_handle = block_handle;
-  record.has_pointer_capture_storage = has_pointer_capture_storage != 0;
+  record.has_pointer_capture_storage =
+      objc3c::runtime::RuntimeBlockCaptureStorageNeedsCopyDispose(
+          has_pointer_capture_storage);
   record.storage_size_bytes =
       static_cast<std::size_t>(std::max<std::uint64_t>(storage_size_bytes, 1u));
   const std::size_t storage_word_count =
@@ -523,8 +592,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
           } else {
             state.last_dispatch_path = "cache-hit-error";
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
-            dispatch_status =
-                OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+            dispatch_status = entry.strict_error_status;
             ++state.strict_dispatch_error_count;
           }
         } else {
@@ -552,6 +620,10 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
           cache_entry.return_kind = resolution.return_kind;
           cache_entry.category_probe_count = resolution.category_probe_count;
           cache_entry.protocol_probe_count = resolution.protocol_probe_count;
+          cache_entry.strict_error_status =
+              objc3c::runtime::RuntimeStrictDispatchStatus(
+                  resolution.resolved, resolution.ambiguous,
+                  resolution.strict_error_status);
           cache_entry.implementation = resolution.implementation;
           cache_entry.builtin_kind = resolution.builtin_kind;
           cache_entry.runtime_property_accessor =
@@ -602,10 +674,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
           } else {
             state.last_dispatch_path = "slow-path-error";
             state.last_dispatch_implementation_kind = "strict-dispatch-error";
-            dispatch_status =
-                resolution.ambiguous
-                    ? OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT
-                    : OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR;
+            dispatch_status = cache_entry.strict_error_status;
             ++state.strict_dispatch_error_count;
           }
         }
@@ -670,8 +739,7 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3) {
   const objc3_runtime_dispatch_i32_result result =
       objc3_runtime_dispatch_i32_checked(receiver, selector, a0, a1, a2, a3);
-  if (result.status_code != OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
-      result.status_code != OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER) {
+  if (!objc3c::runtime::RuntimeDispatchStatusIsSuccess(result.status_code)) {
     std::fprintf(
         stderr,
         "%s [%s]\n",
@@ -715,13 +783,19 @@ int objc3_runtime_copy_registration_state_for_testing(
 void objc3_runtime_reset_for_testing(void) {
   RuntimeState &state = State();
   std::lock_guard<std::mutex> lock(state.mutex);
+  (void)objc3c::runtime::RuntimeStateLockDiscipline();
+  (void)objc3c::runtime::RuntimeStateOwnershipModel();
   // live-restart-hardening anchor: teardown clears only live runtime
   // state, preserves the retained bootstrap catalog for restart, zeroes image-
   // local init cells, and advances reset-generation evidence for repeated
   // restart-cycle probes.
-  ClearLiveRegistrationStateUnlocked(state);
+  if (objc3c::runtime::RuntimeResetClearsLiveExecutionState()) {
+    ClearLiveRegistrationStateUnlocked(state);
+  }
   state.last_reset_cleared_image_local_init_state_count =
-      ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state);
+      objc3c::runtime::RuntimeResetPreservesBootstrapCatalog()
+          ? ZeroRetainedBootstrapImageLocalInitStatesUnlocked(state)
+          : 0;
   ++state.reset_generation;
   state.last_replay_status = OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
   state.last_replayed_image_count = 0;

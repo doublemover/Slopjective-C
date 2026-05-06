@@ -3859,8 +3859,8 @@ the library skeleton and driver link wiring land.
 - manifest JSON and LLVM IR metadata to publish the same runtime-library
   contract through `runtime_support_library_contract_id` and
   `!objc3.objc_runtime_support_library`,
-- the current pre-hard-cutover runtime-library surface to remain target
-  `objc3_runtime`, source root `native/objc3c/src/runtime`, public header
+- the current runtime-library surface to remain target `objc3_runtime`, source
+  root `native/objc3c/src/runtime`, public header
   `native/objc3c/src/runtime/public/objc3_runtime_api.h`, and static archive basename
   `objc3_runtime`,
 - the exported entrypoint family to remain frozen as
@@ -4996,7 +4996,7 @@ registrar/image-walk and deterministic-reset work must preserve.
 - contract id `objc3c-runtime-bootstrap-api-freeze/m254-d001-v1`
 - semantic surface path
   `frontend.pipeline.semantic_surface.objc_runtime_bootstrap_api_contract`
-- current pre-hard-cutover public header path
+- current public runtime header path
   `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - archive path `artifacts/lib/objc3_runtime.lib`
 - registration status enum type `objc3_runtime_registration_status_code`
@@ -5349,11 +5349,15 @@ runtime status/error matrix:
   missing class graph, unsupported return type, unsupported argument layout,
   malformed metadata, and category conflict
 
-The hard-cutover runtime module tree is likewise claimable only after
-`runtime/public/objc3_runtime_api.h`, `runtime/public/objc3_runtime_result.h`,
-and the required `state`, `selectors`, `images`, `classes`, `dispatch`,
-`storage`, `memory`, `blocks`, `errors`, and `concurrency` module files exist
-and are wired.
+The hard-cutover runtime module tree is part of the current intended completion
+boundary: `runtime/public/objc3_runtime_api.h`,
+`runtime/public/objc3_runtime_result.h`, and the named `state`, `selectors`,
+`images`, `classes`, `dispatch`, `storage`, `memory`, `blocks`, `errors`, and
+`concurrency` module paths exist as the runtime layout. The claim is limited to
+that named tree plus wired core dispatch, selector, image, and realized-class
+graph helper paths. Strict dispatch completion remains gated by live status
+evidence from linked probes and acceptance summaries over
+`objc3_runtime_dispatch_i32_checked` / `objc3_runtime_dispatch_i32`.
 
 ## M256 executable class/protocol/category source closure (A001)
 

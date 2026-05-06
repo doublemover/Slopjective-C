@@ -57,9 +57,13 @@ Composite runner entrypoints also write one integrated report to `tmp/reports/ob
 
 - strict dispatch is claimable only when every admitted send returns typed
   success for nil receiver, resolved live method, resolved builtin, or resolved
-  property accessor behavior
+  property accessor behavior through live status evidence
 - runtime dispatch errors are claimable only when tests cover unknown selector,
   unknown receiver class, missing class graph, unsupported return type,
   unsupported argument layout, malformed metadata, and category conflict cases
+- linked strict dispatch status probes, including
+  `tests/tooling/runtime/strict_dispatch_error_status_probe.cpp`, are required
+  evidence for the dispatch gate; manifest or source inventory alone is not
+  enough to claim strict dispatch completion
 - synthesized getter/setter execution is runtime-backed on live paths
 - native-output truth requires the emitted object and linked probe to stay coupled end to end

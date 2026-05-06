@@ -171,7 +171,9 @@ bool AttachRealizedCategoryRecordsUnlocked(RuntimeState &state,
   for (const EmittedCategoryRecord *category_record : category_records) {
     if (category_record == nullptr || category_record->class_owner_identity == nullptr ||
         category_record->category_owner_identity == nullptr ||
-        category_record->owner_identity == nullptr) {
+        category_record->owner_identity == nullptr ||
+        !objc3c::runtime::RuntimeCategoryAttachmentIsMaterializable(
+            category_record->category_name, node.class_name.c_str())) {
       return false;
     }
     if (node.class_owner_identity != category_record->class_owner_identity) {
@@ -279,6 +281,11 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
         (alignment != 0u && offset % alignment != 0u)) {
       return false;
     }
+    if (size != 0u &&
+        !objc3c::runtime::RuntimeIvarLayoutSlotIsAddressable(offset, size,
+                                                            SIZE_MAX)) {
+      return false;
+    }
     if (size != 0u) {
       max_end = std::max(max_end, offset + size);
       max_alignment = std::max(max_alignment, alignment);
@@ -298,7 +305,9 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
         AggregateEntry(node.image->property_descriptor_root, index));
     if (descriptor == nullptr || descriptor->declaration_owner_identity == nullptr ||
         descriptor->property_name == nullptr ||
-        descriptor->effective_getter_selector == nullptr) {
+        descriptor->effective_getter_selector == nullptr ||
+        !objc3c::runtime::RuntimePropertyAccessorSelectorIsMaterializable(
+            descriptor->effective_getter_selector)) {
       return false;
     }
     if (node.bundle_owner_identity != descriptor->declaration_owner_identity) {
@@ -338,6 +347,11 @@ bool AttachRealizedPropertyLayoutRecordsUnlocked(RuntimeState &state,
     if (descriptor->effective_setter_available &&
         descriptor->effective_setter_selector != nullptr &&
         descriptor->effective_setter_selector[0] != '\0') {
+      if (!objc3c::runtime::RuntimePropertyAccessorSelectorIsMaterializable(
+              descriptor->effective_setter_selector) ||
+          !objc3c::runtime::RuntimePropertySetterHasSupportedArity(1)) {
+        return false;
+      }
       accessor.setter_owner_identity = BuildSynthesizedInstanceMethodOwnerIdentity(
           descriptor->declaration_owner_identity,
           descriptor->effective_setter_selector);
@@ -393,13 +407,18 @@ bool TryResolveRuntimeManagedPropertyAccessorUnlocked(
       for (const RealizedPropertyAccessor &accessor :
            node->runtime_property_accessors) {
         if (accessor.property_descriptor == nullptr ||
-            accessor.ivar_descriptor == nullptr ||
-            accessor.getter_return_kind == RuntimeMethodReturnKind::Unsupported) {
+            accessor.ivar_descriptor == nullptr) {
           continue;
         }
         if (accessor.property_descriptor->effective_getter_selector != nullptr &&
             std::strcmp(accessor.property_descriptor->effective_getter_selector,
                         selector_spelling) == 0) {
+          if (accessor.getter_return_kind ==
+              RuntimeMethodReturnKind::Unsupported) {
+            resolution.strict_error_status =
+                OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE;
+            return true;
+          }
           resolution.resolved = true;
           resolution.dispatch_family_is_class = false;
           resolution.selector_storage = selector_spelling;
@@ -534,7 +553,8 @@ bool TryResolveMethodFromAttachedCategoriesUnlocked(
             selector_spelling, resolution, ambiguous)) {
       return false;
     }
-    if (ambiguous || resolution.resolved) {
+    if (ambiguous || resolution.resolved ||
+        HasTerminalStrictDispatchError(resolution)) {
       return true;
     }
     if (!ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
@@ -556,23 +576,6 @@ bool IsImplementationOwnerIdentity(const char *owner_identity) {
   }
   static constexpr char kImplementationPrefix[] = "implementation:";
   return std::string(owner_identity).rfind(kImplementationPrefix, 0) == 0;
-}
-
-RuntimeMethodReturnKind ClassifyRuntimeReturnType(const char *return_type_name) {
-  if (return_type_name == nullptr) {
-    return RuntimeMethodReturnKind::Unsupported;
-  }
-  const std::string type_name = return_type_name;
-  if (type_name == "void") {
-    return RuntimeMethodReturnKind::Void;
-  }
-  if (type_name == "bool") {
-    return RuntimeMethodReturnKind::Bool;
-  }
-  if (type_name.empty()) {
-    return RuntimeMethodReturnKind::Unsupported;
-  }
-  return RuntimeMethodReturnKind::I32Like;
 }
 
 bool TryResolveRuntimeBuiltinObjectSampleMethod(
@@ -634,21 +637,21 @@ bool DecodeReceiverIdentity(const RuntimeState &state, int receiver,
     return true;
   }
   const std::int64_t signed_receiver = receiver;
-  if (signed_receiver < static_cast<std::int64_t>(kReceiverIdentityBase)) {
+  if (signed_receiver < static_cast<std::int64_t>(RuntimeReceiverIdentityBase())) {
     return false;
   }
   const std::int64_t delta =
-      signed_receiver - static_cast<std::int64_t>(kReceiverIdentityBase);
+      signed_receiver - static_cast<std::int64_t>(RuntimeReceiverIdentityBase());
   const std::int64_t ordinal =
-      delta / static_cast<std::int64_t>(kReceiverIdentityStride);
+      delta / static_cast<std::int64_t>(RuntimeReceiverIdentityStride());
   const std::int64_t salt =
-      delta % static_cast<std::int64_t>(kReceiverIdentityStride);
+      delta % static_cast<std::int64_t>(RuntimeReceiverIdentityStride());
   if (ordinal < 0) {
     return false;
   }
   base_identity = static_cast<std::uint64_t>(
-      static_cast<std::int64_t>(kReceiverIdentityBase) +
-      ordinal * static_cast<std::int64_t>(kReceiverIdentityStride));
+      static_cast<std::int64_t>(RuntimeReceiverIdentityBase()) +
+      ordinal * static_cast<std::int64_t>(RuntimeReceiverIdentityStride()));
   switch (salt) {
     case 0:
     case 2:
@@ -674,10 +677,11 @@ std::vector<const RegisteredImageMetadata *> OrderedRegisteredImages(
   std::sort(
       ordered.begin(), ordered.end(),
       [](const RegisteredImageMetadata *lhs, const RegisteredImageMetadata *rhs) {
-        if (lhs->registration_order_ordinal != rhs->registration_order_ordinal) {
-          return lhs->registration_order_ordinal < rhs->registration_order_ordinal;
-        }
-        return lhs->translation_unit_identity_key < rhs->translation_unit_identity_key;
+        return objc3c::runtime::CompareRuntimeImageRegistrationOrder(
+                   lhs->registration_order_ordinal,
+                   lhs->translation_unit_identity_key.c_str(),
+                   rhs->registration_order_ordinal,
+                   rhs->translation_unit_identity_key.c_str()) < 0;
       });
   return ordered;
 }
@@ -800,6 +804,11 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
             bundle->metaclass_record.object_owner_identity != nullptr
                 ? bundle->metaclass_record.object_owner_identity
                 : "";
+        if (!objc3c::runtime::RuntimeMetaclassEdgeIsMaterializable(
+                node.class_owner_identity.c_str(),
+                node.metaclass_owner_identity.c_str())) {
+          continue;
+        }
         node.super_class_owner_identity =
             bundle->class_record.super_owner_identity != nullptr
                 ? bundle->class_record.super_owner_identity
@@ -862,8 +871,7 @@ bool ResolveReceiverClassNameUnlocked(const RuntimeState &state,
                                       std::string &class_name,
                                       bool &ambiguous) {
   ambiguous = false;
-  if (base_identity < kReceiverIdentityBase ||
-      ((base_identity - kReceiverIdentityBase) % kReceiverIdentityStride) != 0) {
+  if (!IsRuntimeReceiverBaseIdentity(base_identity)) {
     return false;
   }
   if (state.ambiguous_realized_base_identities.find(base_identity) !=
@@ -933,7 +941,8 @@ bool TryResolveMethodFromRealizedClassChainUnlocked(
             resolution, ambiguous)) {
       return false;
     }
-    if (ambiguous || resolution.resolved) {
+    if (ambiguous || resolution.resolved ||
+        HasTerminalStrictDispatchError(resolution)) {
       return true;
     }
     if (!TryResolveMethodFromAttachedCategoriesUnlocked(
@@ -943,7 +952,8 @@ bool TryResolveMethodFromRealizedClassChainUnlocked(
             protocol_probe_count)) {
       return false;
     }
-    if (ambiguous || resolution.resolved) {
+    if (ambiguous || resolution.resolved ||
+        HasTerminalStrictDispatchError(resolution)) {
       return true;
     }
     if (!ProbeProtocolSelectorDeclarationsFromAggregateUnlocked(
@@ -1014,28 +1024,6 @@ std::string BuildDispatchIntentFastPathReason(const RealizedClassNode &node,
     return "class-sealed";
   }
   return {};
-}
-
-const char *DescribeResolvedImplementationKind(
-    RuntimeBuiltinKind builtin_kind, const void *implementation) {
-  switch (builtin_kind) {
-    case RuntimeBuiltinKind::Alloc:
-      return "builtin-alloc";
-    case RuntimeBuiltinKind::Init:
-      return "builtin-init";
-    case RuntimeBuiltinKind::New:
-      return "builtin-new";
-    case RuntimeBuiltinKind::PropertyGetter:
-      return "builtin-property-getter";
-    case RuntimeBuiltinKind::PropertySetter:
-      return "builtin-property-setter";
-    case RuntimeBuiltinKind::None:
-      break;
-  }
-  if (implementation != nullptr) {
-    return "emitted-method-body";
-  }
-  return "";
 }
 
 std::size_t EstimateSeedableMethodEntriesForMethodList(
@@ -1192,12 +1180,17 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
   if (!ResolveReceiverClassNameUnlocked(state, base_identity, resolved_class_name,
                                         receiver_ambiguous)) {
     resolution.ambiguous = receiver_ambiguous;
+    resolution.strict_error_status =
+        receiver_ambiguous ? OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT
+                           : OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH;
     return resolution;
   }
 
   const auto realized_nodes_it =
       state.realized_class_node_indices_by_name.find(resolved_class_name);
   if (realized_nodes_it == state.realized_class_node_indices_by_name.end()) {
+    resolution.strict_error_status =
+        OBJC3_RUNTIME_DISPATCH_STATUS_MISSING_CLASS_GRAPH;
     return resolution;
   }
 
@@ -1219,11 +1212,25 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
             selector_stable_id, selector_spelling, image_resolution,
             method_ambiguous, image_category_probe_count,
             image_protocol_probe_count)) {
-      return SlowPathResolution{};
+      if (image_resolution.strict_error_status !=
+          OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_SELECTOR) {
+        return image_resolution;
+      }
+      SlowPathResolution malformed_resolution;
+      malformed_resolution.selector_storage =
+          selector_spelling != nullptr ? selector_spelling : "";
+      malformed_resolution.normalized_receiver_identity =
+          normalized_receiver_identity;
+      malformed_resolution.selector_stable_id = selector_stable_id;
+      malformed_resolution.strict_error_status =
+          OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA;
+      return malformed_resolution;
     }
     if (method_ambiguous) {
       resolution = SlowPathResolution{};
       resolution.ambiguous = true;
+      resolution.strict_error_status =
+          OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
       resolution.selector_storage =
           selector_spelling != nullptr ? selector_spelling : "";
       resolution.normalized_receiver_identity = normalized_receiver_identity;
@@ -1233,6 +1240,13 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
       resolution.protocol_probe_count =
           protocol_probe_count + image_protocol_probe_count;
       return resolution;
+    }
+    if (HasTerminalStrictDispatchError(image_resolution)) {
+      image_resolution.category_probe_count =
+          category_probe_count + image_category_probe_count;
+      image_resolution.protocol_probe_count =
+          protocol_probe_count + image_protocol_probe_count;
+      return image_resolution;
     }
     category_probe_count += image_category_probe_count;
     protocol_probe_count += image_protocol_probe_count;
@@ -1244,6 +1258,9 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
           category_probe_count + image_category_probe_count;
       image_resolution.protocol_probe_count =
           protocol_probe_count + image_protocol_probe_count;
+    }
+    if (HasTerminalStrictDispatchError(image_resolution)) {
+      return image_resolution;
     }
     if (image_resolution.resolved) {
       image_resolution.objc_final_declared =
@@ -1264,6 +1281,8 @@ SlowPathResolution ResolveMethodSlowPathUnlocked(
            resolution.class_name != image_resolution.class_name)) {
         resolution = SlowPathResolution{};
         resolution.ambiguous = true;
+        resolution.strict_error_status =
+            OBJC3_RUNTIME_DISPATCH_STATUS_CATEGORY_CONFLICT;
         resolution.selector_storage =
             selector_spelling != nullptr ? selector_spelling : "";
         resolution.normalized_receiver_identity = normalized_receiver_identity;

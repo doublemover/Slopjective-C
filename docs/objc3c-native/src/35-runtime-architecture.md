@@ -22,8 +22,7 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/objc3_runtime.cpp`
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
-- hard-cutover runtime module tree acceptance is not current until the named
-  files exist and are wired:
+- hard-cutover runtime module tree:
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
   - `native/objc3c/src/runtime/public/objc3_runtime_result.h`
   - `native/objc3c/src/runtime/state/`
@@ -36,6 +35,12 @@ closure work must extend this path, not bypass it.
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/errors/`
   - `native/objc3c/src/runtime/concurrency/`
+- currently intended completion claims only the named module tree plus wired
+  core helpers for dispatch, selector lookup, image registration, and realized
+  class graph consumption. Broader runtime behavior remains claimable only
+  through the live strict dispatch status probes and gates that exercise typed
+  success/error results from `objc3_runtime_dispatch_i32_checked` and
+  `objc3_runtime_dispatch_i32`.
 - authoritative emitted artifacts:
   - `<prefix>.obj`
   - `<prefix>.ll`
@@ -1839,14 +1844,14 @@ architecture surface drifts between the full workflow and the evidence bundle.
   - any surface described only by comments, sidecars, or private placeholders
   - synthetic `.ll` or hand-authored artifacts with no matching compile output
   - proof that depends on non-authoritative test surfaces without a coupled emitted object
-  - the hard-cutover runtime module tree until the required files exist and
-    acceptance probes cover strict dispatch success and structured error cases
+  - strict dispatch completion without live acceptance probes covering typed
+    success and structured error cases
 
 ## Explicit Non-Goals
 
 - no milestone-specific compile wrappers, evidence bundles, or closeout sidecars
-- no claim that the hard-cutover public/module split has landed while the
-  runtime still routes through the current header/source boundary
+- no claim beyond the named runtime module tree and the live helper/probe
+  evidence that exercises it
 - no authoritative proof from replay text alone without emitted object and probe
 - no widening of public runtime claims beyond what the live acceptance and probe
   path can execute today
