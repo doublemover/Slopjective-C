@@ -127,16 +127,7 @@ target_link_libraries(objc3c_ir PUBLIC
   objc3c_sema_type_system
 )
 
-add_library(objc3c_json STATIC
-  io/json/json_error.cpp
-  io/json/json_parser.cpp
-  io/json/json_schema.cpp
-  io/json/json_value.cpp
-  io/json/json_writer.cpp
-  io/objc3_json.cpp
-)
-objc3c_apply_build_defaults(objc3c_json)
-objc3c_apply_llvm_direct_config(objc3c_json)
+add_subdirectory(io)
 
 add_library(objc3c_pipeline STATIC
   pipeline/objc3_frontend_pipeline.cpp
@@ -173,14 +164,6 @@ target_link_libraries(objc3c_artifacts PUBLIC
   objc3c_pipeline
   objc3c_json
 )
-
-add_library(objc3c_io STATIC
-  io/objc3_diagnostics_artifacts.cpp
-  io/objc3_file_io.cpp
-  io/objc3_manifest_artifacts.cpp
-)
-objc3c_apply_build_defaults(objc3c_io)
-objc3c_apply_llvm_direct_config(objc3c_io)
 
 add_library(objc3_runtime STATIC
   runtime/blocks/block_capture_storage.cpp
@@ -256,20 +239,6 @@ set_target_properties(objc3_runtime PROPERTIES
 )
 objc3c_apply_archive_output(objc3_runtime)
 add_library(objc3c::runtime ALIAS objc3_runtime)
-
-add_library(objc3c_runtime_abi STATIC
-  io/objc3_process.cpp
-)
-objc3c_apply_build_defaults(objc3c_runtime_abi)
-objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
-target_link_libraries(objc3c_runtime_abi PUBLIC
-  objc3c_json
-)
-target_link_libraries(objc3c_io PUBLIC
-  objc3c_diag
-  objc3c_json
-  objc3c_runtime_abi
-)
 
 add_library(objc3c_diagnostics_modes STATIC
   diagnostics/modes/objc3_removed_mode_options.cpp

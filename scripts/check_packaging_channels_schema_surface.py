@@ -3,18 +3,22 @@
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Any
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
+from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 METADATA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "metadata_surface.json"
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "packaging_channels" / "schema_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "schema-surface-summary.json"
 
-
+EXPECTED_SCHEMAS = {
+    "objc3c-package-channels-manifest-v1",
+    "objc3c-package-install-receipt-v1",
+}
 
 
 def main() -> int:
@@ -27,14 +31,25 @@ def main() -> int:
     for raw_path in schemas:
         if not isinstance(raw_path, str) or not raw_path:
             raise RuntimeError("schema surface contained an invalid schema path")
-        schema_path = ROOT / raw_path.replace("/", "\\")
-        if not schema_path.is_file():
-            raise RuntimeError(f"missing packaging-channels schema {raw_path}")
-        schema_payload = load_json(schema_path)
+        registry_id = next(
+            (
+                schema_id
+                for schema_id in EXPECTED_SCHEMAS
+                if raw_path == repo_rel(schema_path(schema_id))
+            ),
+            None,
+        )
+        if registry_id is None:
+            raise RuntimeError(f"schema surface contained an unregistered schema path {raw_path}")
+        schema_payload = load_schema(registry_id)
         schema_id = schema_payload.get("$id")
         if not isinstance(schema_id, str) or not schema_id:
             raise RuntimeError(f"schema {raw_path} did not publish $id")
         schema_ids.append(schema_id)
+
+    expected_paths = {repo_rel(schema_path(schema_id)) for schema_id in EXPECTED_SCHEMAS}
+    if set(schemas) != expected_paths:
+        raise RuntimeError(f"schema surface drifted from registered schemas: {schemas}")
 
     for required_key in ("package_channels_manifest", "install_receipt"):
         raw_path = metadata_surface.get(required_key)
@@ -49,8 +64,7 @@ def main() -> int:
         "schema_count": len(schemas),
         "schema_ids": schema_ids,
     }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("packaging-channels-schema-surface: OK")
     return 0
