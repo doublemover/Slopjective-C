@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://slopjective-c.local/schemas/action-registry-v1.schema.json",
+  "title": "objc3c workflow action registry",
+  "type": "object",
+  "required": ["mode", "runner_path", "action_count", "actions"],
+  "properties": {
+    "mode": { "const": "objc3c-workflow-action-registry-v1" },
+    "runner_path": { "type": "string" },
+    "action_count": { "type": "integer", "minimum": 1 },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["action", "summary", "backend", "pass_through_args"],
+        "properties": {
+          "action": { "type": "string", "minLength": 1 },
+          "summary": { "type": "string", "minLength": 1 },
+          "backend": { "type": "string", "minLength": 1 },
+          "validation_tier": { "type": "string" },
+          "guarantee_owner": { "type": "string" },
+          "pass_through_args": { "type": "boolean" }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

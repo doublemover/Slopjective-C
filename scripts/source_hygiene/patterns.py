@@ -33,8 +33,8 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bobjc3c_public_workflow_runner\.py\b",
     ),
     ForbiddenPattern(
-        "retired-npm-workflow-alias",
-        "Workflow actions must route through npm run objc3c -- <action>, not retired colon-style npm aliases.",
+        "retired-npm-workflow-command",
+        "Workflow actions must route through npm run objc3c -- <action>, not retired colon-style npm command names.",
         r"\bnpm\s+run\s+(?!objc3c\b)[a-z0-9][a-z0-9:_-]*:",
     ),
     ForbiddenPattern(

@@ -149,4 +149,4 @@ That keeps migration teaching tied to the same examples the repo already compile
 - no promise of full ObjC2 runtime parity
 - no claim of broad Swift interop beyond the checked-in runnable examples
 - no migration advice rooted in `tmp/`, archived spec material, or maintainer-only notes
-- no sidecar command aliases outside the public package-script surface
+- no command names outside the canonical `npm run objc3c -- <action>` surface

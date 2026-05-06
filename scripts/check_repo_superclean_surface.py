@@ -719,7 +719,7 @@ def main() -> int:
     expect(
         explicit_non_goals
         == [
-            "no milestone-coded command aliases",
+            "no milestone-coded command names",
             "no secondary source-of-truth directories",
             "no generated-output hand edits",
         ],

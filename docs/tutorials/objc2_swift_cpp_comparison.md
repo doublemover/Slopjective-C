@@ -107,4 +107,4 @@ Downstream comparison and migration work should use these live inputs directly:
 - no parity-table claims for unsupported Swift or C++ behavior
 - no tutorial text that treats archived ObjC2 material as a normative source
 - no fake migration promises that are not backed by the runnable subset or checked-in examples
-- no separate sidecar command list when `package.json` and the public command surface already define the entrypoints
+- no separate command list when `package.json` and the public command surface already define the entrypoints

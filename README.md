@@ -151,7 +151,7 @@ Canonical roots:
 
 Explicit non-goals for cleanup work:
 
-- reintroducing milestone-coded command aliases or sidecar compatibility files,
+- reintroducing milestone-coded command names or sidecar compatibility files,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
 - hand-editing generated outputs instead of their canonical inputs.
 

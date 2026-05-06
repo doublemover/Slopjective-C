@@ -113,7 +113,7 @@ def test_hard_cutover_gate_rejects_retired_npm_workflow_aliases(tmp_path: Path) 
     report = build_report(root=tmp_path, scan_roots=("docs",), excludes=())
 
     assert report["ok"] is False
-    assert report["active_findings"][0]["pattern_id"] == "retired-npm-workflow-alias"
+    assert report["active_findings"][0]["pattern_id"] == "retired-npm-workflow-command"
 
 
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:

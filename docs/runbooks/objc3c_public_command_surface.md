@@ -32,4 +32,4 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Composite validation entrypoints write an integrated runner summary to `tmp/reports/objc3c-public-workflow/<action>.json`.
 - Those integrated summaries record the exact child-suite report paths emitted by smoke, replay, runtime-acceptance, and other live validation scripts.
 - `compile:objc3c` and the fixture-backed suite commands accept pass-through arguments for bounded selectors.
-- No additional package-script compatibility aliases remain supported.
+- No additional package-script compatibility names remain supported.

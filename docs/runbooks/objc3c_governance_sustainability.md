@@ -22,7 +22,7 @@ Sustainable progress policy:
 
 - every governed surface must map to one canonical checked-in owner and one replayable measurement path
 - budget increases are allowed only with a measured delta, a recorded reason, and a follow-on ratchet path
-- new automation should extend existing runner, hygiene, and source-surface checks before adding new wrappers or command aliases
+- new automation should extend existing runner, hygiene, and source-surface checks before adding new command names
 - governance claims stay narrower than the evidence; unresolved drifts must appear in reports, waivers, or release-blocking status instead of being silently tolerated
 
 Exception model:
