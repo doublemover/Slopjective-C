@@ -468,7 +468,7 @@ def main() -> int:
         "[docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)",
         "[docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",
-        "[legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
+        "[archived spec index](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
     ):
         require_token(site_body, token, path=SITE_BODY_PATH, errors=errors)
 

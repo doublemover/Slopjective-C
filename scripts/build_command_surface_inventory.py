@@ -35,15 +35,10 @@ def main() -> None:
     runner = load_runner()
     action_specs = runner.ACTION_SPECS
 
-    public_script_to_action: dict[str, str] = {}
-    for action_name, spec in action_specs.items():
-        for public_script in spec.public_scripts:
-            public_script_to_action[public_script] = action_name
-
     category_counts = Counter(category_for_script(name) for name in scripts)
-    public_actions = sorted({action for action in public_script_to_action.values()})
-    internal_actions = sorted(action for action in action_specs if action not in public_actions)
-    orphan_public_scripts = sorted(name for name in scripts if name not in public_script_to_action)
+    public_actions = sorted(action_specs)
+    internal_actions: list[str] = []
+    orphan_public_scripts = sorted(name for name in scripts if name != "objc3c")
 
     payload = {
         'issue': 'workflow-command-surface-inventory',
@@ -56,7 +51,7 @@ def main() -> None:
         'category_counts': dict(sorted(category_counts.items())),
         'orchestration_model': {
             'public_entrypoint_owner': 'package.json -> python -m scripts.objc3c_workflow',
-            'internal_action_owner': 'ACTION_SPECS actions without public_scripts aliases',
+            'internal_action_owner': 'ACTION_SPECS actions are reached through the objc3c package bridge',
             'appendix_generator': 'scripts/render_objc3c_public_command_surface.py',
         },
         'orphan_public_scripts': orphan_public_scripts,

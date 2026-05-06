@@ -63,16 +63,18 @@ int main() {
   const char *const strict_error_selector = "missingDispatch:";
   const int strict_error_expected =
       ExpectedStrictDispatchErrorValue(1024, strict_error_selector, 4, 5, 6, 7);
-  const int strict_error_first =
-      objc3_runtime_dispatch_i32(1024, strict_error_selector, 4, 5, 6, 7);
+  const objc3_runtime_dispatch_i32_result strict_error_first_result =
+      objc3_runtime_dispatch_i32_checked(1024, strict_error_selector, 4, 5, 6, 7);
+  const int strict_error_first = strict_error_first_result.value;
   std::cout << "stage=strict_error_first_call" << std::endl;
   const int strict_error_first_status =
       objc3_runtime_copy_method_cache_state_for_testing(&strict_error_first_state);
   strict_error_first_last_selector = strict_error_first_state.last_selector != nullptr
                                      ? strict_error_first_state.last_selector
                                      : "";
-  const int strict_error_second =
-      objc3_runtime_dispatch_i32(1024, strict_error_selector, 4, 5, 6, 7);
+  const objc3_runtime_dispatch_i32_result strict_error_second_result =
+      objc3_runtime_dispatch_i32_checked(1024, strict_error_selector, 4, 5, 6, 7);
+  const int strict_error_second = strict_error_second_result.value;
   std::cout << "stage=strict_error_second_call" << std::endl;
   const int strict_error_second_status =
       objc3_runtime_copy_method_cache_state_for_testing(&strict_error_second_state);

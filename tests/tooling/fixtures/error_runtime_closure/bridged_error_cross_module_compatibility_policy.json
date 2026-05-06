@@ -13,7 +13,7 @@
   ],
   "compatibility_rules": [
     "bridged NSError and status propagation remain supported only through the emitted helper ABI and runtime bridge-state snapshot path",
-    "cross-module propagation claims are limited to the manifest, runtime-registration, replay, and packaged runnable proof path already exercised by live validation",
+    "cross-module propagation claims are limited to the manifest, runtime-registration, replay, and packaged runnable evidence path already exercised by live validation",
     "bridge compatibility remains fail-closed where a wider public ABI, richer interop transport, or foreign-runtime model would be required",
     "public claims stay narrower than the private runtime-owned helper ABI and runtime bridge-state evidence"
   ],

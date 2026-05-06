@@ -237,10 +237,10 @@ try {
     -Evidence @{ missing = $missingTokenKinds }
 
   Assert-Contract `
-    -Condition (Assert-TokensPresent -Text $tokenCompatHeaderText -RequiredTokens @("using TokenKind = Objc3LexTokenKind;", "using Token = Objc3LexToken;")) `
-    -Id "contract.token_compat_header.aliases" `
-    -FailureMessage "token compatibility header missing backward-compatible aliases to Objc3LexTokenKind/Objc3LexToken" `
-    -PassMessage "token compatibility header preserves backward-compatible aliases"
+    -Condition (-not (Assert-TokensPresent -Text $tokenCompatHeaderText -RequiredTokens @("using TokenKind = Objc3LexTokenKind;", "using Token = Objc3LexToken;"))) `
+    -Id "contract.token_contract_header.canonical_names" `
+    -FailureMessage "token contract header still publishes retired short token names" `
+    -PassMessage "token contract header publishes only explicit Objc3LexToken names"
 
   Assert-Contract `
     -Condition (Assert-TokensPresent -Text $lexerSourceText -RequiredTokens @("O3L001", "O3L002", "O3L003", "O3L004", "O3C002")) `

@@ -79,9 +79,16 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
     objc3c_frontend_context_t *context,
     const objc3c_frontend_compile_options_t *options,
     objc3c_frontend_compile_result_t *result) {
-  if (context == nullptr || options == nullptr || result == nullptr) {
+  if (result == nullptr) {
     return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   }
+  if (context == nullptr) {
+    return SetUsageErrorWithoutContext(result, "compile_file requires a frontend context.");
+  }
+  if (options == nullptr) {
+    return SetUsageError(context, result, "compile_file requires compile options.");
+  }
+  std::lock_guard<std::mutex> lock(context->mutex);
   std::string language_version_error;
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
@@ -107,9 +114,16 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
     objc3c_frontend_context_t *context,
     const objc3c_frontend_compile_options_t *options,
     objc3c_frontend_compile_result_t *result) {
-  if (context == nullptr || options == nullptr || result == nullptr) {
+  if (result == nullptr) {
     return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   }
+  if (context == nullptr) {
+    return SetUsageErrorWithoutContext(result, "compile_source requires a frontend context.");
+  }
+  if (options == nullptr) {
+    return SetUsageError(context, result, "compile_source requires compile options.");
+  }
+  std::lock_guard<std::mutex> lock(context->mutex);
   std::string language_version_error;
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
@@ -125,6 +139,10 @@ extern "C" OBJC3C_FRONTEND_API size_t objc3c_frontend_copy_last_error(
     const objc3c_frontend_context_t *context,
     char *buffer,
     size_t buffer_size) {
+  std::unique_lock<std::mutex> lock;
+  if (context != nullptr) {
+    lock = std::unique_lock<std::mutex>(context->mutex);
+  }
   const std::string message = context == nullptr ? "" : context->last_error;
   const size_t required = message.size() + 1;
 

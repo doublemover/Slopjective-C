@@ -89,21 +89,15 @@
         "action",
         "summary",
         "backend",
-        "public_scripts",
         "pass_through_args",
         "mode",
         "runner_path",
-        "audience",
         "category"
       ],
       "properties": {
         "action": { "type": "string" },
         "summary": { "type": "string" },
         "backend": { "type": "string" },
-        "public_scripts": {
-          "type": "array",
-          "items": { "type": "string" }
-        },
         "validation_tier": { "type": "string" },
         "guarantee_owner": { "type": "string" },
         "pass_through_args": { "type": "boolean" },

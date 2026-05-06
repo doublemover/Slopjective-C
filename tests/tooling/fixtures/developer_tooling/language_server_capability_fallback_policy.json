@@ -1,5 +1,5 @@
 {
-  "contract_id": "objc3c.developer.tooling.language.server.capability.fallback.policy.v1",
+  "contract_id": "objc3c.developer.tooling.language.server.capability.publication.policy.v1",
   "surface_kind": "developer-tooling-policy",
   "milestone": "M325",
   "issue": "M325-B002",
@@ -18,7 +18,7 @@
     "documentFormatting",
     "debugArtifactInspection"
   ],
-  "fallback_only_capability_classes": [
+  "unpublished_capability_classes": [
     "references",
     "rename",
     "semanticTokens",
@@ -32,7 +32,7 @@
   ],
   "claim_narrowing_constraints": [
     "capability publication must stay narrower than the shipped developer-tooling artifact set",
-    "unsupported capabilities must publish explicit fallback metadata instead of partial-success theater",
+    "unsupported capabilities must publish explicit unpublished-status metadata instead of partial-success theater",
     "editor claims must stay rooted in compile-owned diagnostics, declaration coordinates, and emitted artifact presence"
   ]
 }

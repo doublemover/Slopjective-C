@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "path": "tests/tooling/fixtures/objc3c/validation_error_diagnostics_recovery_contract/M185-D001.json",
+      "origin": "generated",
+      "generator": "scripts/build_objc3c_native.ps1",
+      "provenance": "frontend contract artifact generation",
+      "owner": "generated-fixture-provenance"
+    },
+    {
+      "path": "tests/tooling/fixtures/objc3c/validation_await_lowering_suspension_state_contract/M187-D001.json",
+      "origin": "generated",
+      "generator": "scripts/build_objc3c_native.ps1",
+      "provenance": "frontend contract artifact generation",
+      "owner": "generated-fixture-provenance"
+    }
+  ]
+}

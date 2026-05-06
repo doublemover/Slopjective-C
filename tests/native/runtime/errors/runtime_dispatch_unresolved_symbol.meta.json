@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "fixture": "runtime_dispatch_unresolved_symbol.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "runtime",
+  "behavior_family": "errors",
+  "fixture_kind": "strict-error",
+  "retired_surface_tags": [
+    "runtime-adapter",
+    "runtime-dispatch"
+  ],
+  "expected": {
+    "stage": "link",
+    "diagnostic_code": "link.unresolved_symbol",
+    "required_tokens": [
+      "link.unresolved_symbol:objc3_runtime_dispatch_i32",
+      "link.input_object_basename:module."
+    ]
+  },
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
+  }
+}

@@ -5,6 +5,7 @@
 
 #include "objc3c_frontend_artifact.h"
 #include "objc3c_frontend_diagnostic.h"
+#include "objc3c_frontend_string.h"
 
 /* Top-level compile status values returned by compile entrypoints. */
 typedef enum objc3c_frontend_status {
@@ -17,7 +18,8 @@ typedef enum objc3c_frontend_status {
 
 /*
  * Caller-owned compile output struct populated by compile entrypoints.
- * Path pointers may be NULL when artifacts are unavailable or not emitted.
+ * Non-NULL strings are owned by the result and released by
+ * objc3c_frontend_result_destroy().
  */
 typedef struct objc3c_frontend_compile_result {
   objc3c_frontend_status_t status;
@@ -30,10 +32,30 @@ typedef struct objc3c_frontend_compile_result {
   objc3c_frontend_stage_summary_t sema;
   objc3c_frontend_stage_summary_t lower;
   objc3c_frontend_stage_summary_t emit;
-  const char *diagnostics_path;
-  const char *manifest_path;
-  const char *ir_path;
-  const char *object_path;
+  objc3c_frontend_string_t *error_message;
+  objc3c_frontend_string_t *diagnostics_path;
+  objc3c_frontend_string_t *manifest_path;
+  objc3c_frontend_string_t *runtime_metadata_path;
+  objc3c_frontend_string_t *ir_path;
+  objc3c_frontend_string_t *object_path;
 } objc3c_frontend_compile_result_t;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+OBJC3C_FRONTEND_API void objc3c_frontend_result_destroy(
+    objc3c_frontend_compile_result_t *result);
+OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
+objc3c_frontend_result_artifact_path(
+    const objc3c_frontend_compile_result_t *result,
+    objc3c_frontend_artifact_kind_t artifact_kind);
+OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
+objc3c_frontend_result_error_message(
+    const objc3c_frontend_compile_result_t *result);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif  // OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_RESULT_H_

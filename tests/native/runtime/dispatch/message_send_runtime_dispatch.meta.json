@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "fixture": "message_send_runtime_dispatch.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "runtime",
+  "behavior_family": "dispatch",
+  "fixture_kind": "positive",
+  "expected": {
+    "stage": "run",
+    "diagnostic_code": "",
+    "required_tokens": []
+  },
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true
+  }
+}

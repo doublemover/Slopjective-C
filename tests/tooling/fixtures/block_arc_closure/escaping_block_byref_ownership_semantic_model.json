@@ -30,7 +30,7 @@
   "frozen_semantic_models": [
     {
       "semantic_id": "escaping-block-capture-family-truth-stays-sema-owned-before-lowering",
-      "summary": "Owned, weak, and unowned capture-family truth is fixed on the semantic surface before lowering and must not be reinterpreted by milestone-local helpers."
+      "summary": "Owned, weak, and unowned capture-family truth is fixed on the semantic surface before lowering and must not be reinterpreted by shared helpers."
     },
     {
       "semantic_id": "byref-forwarding-is-only-valid-through-runtime-owned-promotion-and-helper-paths",
@@ -48,7 +48,7 @@
   "claim_narrowing_constraints": [
     "no-public-block-or-arc-abi-widening",
     "no-lowering-owned-reinterpretation-of-capture-family-truth",
-    "no-proof-only-sidecar-ownership-model"
+    "no-evidence-only-sidecar-ownership-model"
   ],
   "authoritative_case_ids": [
     "escaping-block-capture-legality",

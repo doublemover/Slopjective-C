@@ -119,6 +119,38 @@ target_link_libraries(objc3c_config INTERFACE
   objc3c_build_defaults
 )
 
+add_library(objc3c_pipeline_results INTERFACE)
+target_link_libraries(objc3c_pipeline_results INTERFACE
+  objc3c_build_defaults
+)
+
+add_library(objc3c_sema_model INTERFACE)
+target_link_libraries(objc3c_sema_model INTERFACE
+  objc3c_build_defaults
+)
+
+add_library(objc3c_lower_model INTERFACE)
+target_link_libraries(objc3c_lower_model INTERFACE
+  objc3c_build_defaults
+)
+
+add_library(objc3c_runtime_metadata INTERFACE)
+target_link_libraries(objc3c_runtime_metadata INTERFACE
+  objc3c_build_defaults
+)
+
+add_library(objc3c_artifacts_evidence INTERFACE)
+target_link_libraries(objc3c_artifacts_evidence INTERFACE
+  objc3c_build_defaults
+  objc3c_pipeline_results
+)
+
+add_library(objc3c_artifacts_reports INTERFACE)
+target_link_libraries(objc3c_artifacts_reports INTERFACE
+  objc3c_build_defaults
+  objc3c_pipeline_results
+)
+
 set(OBJC3_RUNTIME_LIBRARY_TARGET objc3_runtime)
 set(OBJC3_RUNTIME_LIBRARY_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/src/runtime)
 set(OBJC3_RUNTIME_LIBRARY_PUBLIC_HEADER ${OBJC3_RUNTIME_LIBRARY_SOURCE_DIR}/objc3_runtime.h)
@@ -187,6 +219,7 @@ objc3c_apply_llvm_direct_config(objc3c_sema)
 target_link_libraries(objc3c_sema PUBLIC
   objc3c_parse
   objc3c_diag
+  objc3c_sema_model
 )
 # M141-B001 sema/type-system surface target for downstream topology hardening.
 add_library(objc3c_sema_type_system INTERFACE)
@@ -200,6 +233,7 @@ add_library(objc3c_lower STATIC
 objc3c_apply_build_defaults(objc3c_lower)
 objc3c_apply_llvm_direct_config(objc3c_lower)
 target_link_libraries(objc3c_lower PUBLIC
+  objc3c_lower_model
   objc3c_sema_type_system
 )
 
@@ -214,6 +248,11 @@ target_link_libraries(objc3c_ir PUBLIC
 )
 
 add_library(objc3c_json STATIC
+  src/io/json/json_error.cpp
+  src/io/json/json_parser.cpp
+  src/io/json/json_schema.cpp
+  src/io/json/json_value.cpp
+  src/io/json/json_writer.cpp
   src/io/objc3_json.cpp
 )
 objc3c_apply_build_defaults(objc3c_json)
@@ -235,14 +274,20 @@ target_link_libraries(objc3c_pipeline PUBLIC
   objc3c_ir
   objc3c_diag
   objc3c_json
+  objc3c_pipeline_results
 )
 
 add_library(objc3c_artifacts STATIC
+  src/artifacts/json/artifact_json_model.cpp
+  src/artifacts/json/artifact_json_writer.cpp
+  src/artifacts/json/artifact_schema_registry.cpp
   src/artifacts/objc3_frontend_artifacts.cpp
 )
 objc3c_apply_build_defaults(objc3c_artifacts)
 objc3c_apply_llvm_direct_config(objc3c_artifacts)
 target_link_libraries(objc3c_artifacts PUBLIC
+  objc3c_artifacts_evidence
+  objc3c_artifacts_reports
   objc3c_pipeline
   objc3c_json
 )
@@ -260,6 +305,9 @@ add_library(objc3_runtime STATIC
   src/runtime/objc3_runtime.h
 )
 objc3c_apply_build_defaults(objc3_runtime)
+target_link_libraries(objc3_runtime PUBLIC
+  objc3c_runtime_metadata
+)
 set_target_properties(objc3_runtime PROPERTIES
   OUTPUT_NAME ${OBJC3_RUNTIME_LIBRARY_ARCHIVE_BASENAME}
 )
@@ -329,13 +377,17 @@ target_link_libraries(objc3c-native PRIVATE
   objc3c_driver
 )
 
-add_executable(objc3c-frontend-c-api-runner
+add_executable(objc3c_tools_frontend_c_api_runner
   src/tools/objc3c_frontend_c_api_runner.cpp
 )
-objc3c_apply_build_defaults(objc3c-frontend-c-api-runner)
-objc3c_apply_llvm_direct_config(objc3c-frontend-c-api-runner)
-objc3c_apply_runtime_output(objc3c-frontend-c-api-runner)
-target_link_libraries(objc3c-frontend-c-api-runner PRIVATE
+objc3c_apply_build_defaults(objc3c_tools_frontend_c_api_runner)
+objc3c_apply_llvm_direct_config(objc3c_tools_frontend_c_api_runner)
+objc3c_apply_runtime_output(objc3c_tools_frontend_c_api_runner)
+set_target_properties(objc3c_tools_frontend_c_api_runner PROPERTIES
+  OUTPUT_NAME objc3c-frontend-c-api-runner
+)
+target_link_libraries(objc3c_tools_frontend_c_api_runner PRIVATE
+  objc3c_frontend
   objc3c_driver
   objc3c_diagnostics_modes
   objc3c_json

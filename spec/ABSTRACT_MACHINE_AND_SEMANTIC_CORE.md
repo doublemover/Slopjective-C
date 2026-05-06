@@ -1161,7 +1161,7 @@ M275-A002 migration/canonicalization completion note:
 
 - the frontend now also publishes
   `frontend.pipeline.semantic_surface.objc_part12_migration_and_canonicalization_source_completion`
-- this packet reports the live lexer-owned migration-assist behavior for legacy
+- this packet reports the live lexer-owned canonical rejection behavior for legacy
   `YES` / `NO` / `NULL` spellings as deterministic canonicalization, fix-it, and
   migrator candidate counts
 - it closes the remaining frontend/source-model surface without claiming
@@ -1192,7 +1192,7 @@ M275-B003 legacy/canonical migration semantics note:
   `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
 - this packet is tied to the live semantic migration path rather than a
   placeholder contract:
-  - canonical mode plus migration assist rejects legacy `YES` / `NO` / `NULL`
+  - canonical mode plus canonical rejection rejects legacy `YES` / `NO` / `NULL`
     with `O3S216`
   - canonical literals remain accepted on the happy path
 

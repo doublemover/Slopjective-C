@@ -20,7 +20,7 @@
   ],
   "abi_rules": [
     "throw and catch execution remain supported only through the private runtime-owned helper ABI and emitted lowering packets already exercised by live probes",
-    "cleanup ordering, bridge normalization, and catch matching are one executable runtime story and must not drift into independent proof-only models",
+    "cleanup ordering, bridge normalization, and catch matching are one executable runtime story and must not drift into independent evidence-only models",
     "public workflow and package claims stay anchored to validate-error-conformance and validate-runnable-error instead of widening the public runtime header",
     "cross-module and packaged execution claims remain bounded by the existing manifest, runtime-registration, replay, and probe evidence"
   ],

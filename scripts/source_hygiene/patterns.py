@@ -11,48 +11,6 @@ class ForbiddenPattern:
     severity: str = "error"
 
 
-DEFAULT_SCAN_ROOTS: tuple[str, ...] = (
-    "native/objc3c",
-    "scripts",
-    "docs",
-    "schemas",
-    "package.json",
-    ".github/workflows",
-)
-
-DEFAULT_EXCLUDES: tuple[str, ...] = (
-    ".git/**",
-    "node_modules/**",
-    "tmp/**",
-    "artifacts/**",
-    "reports/**",
-    "scripts/source_hygiene/**",
-    "scripts/check_source_hygiene_hard_cutover.py",
-    "schemas/source-hygiene-hard-cutover-report-v1.schema.json",
-    "tests/tooling/source_hygiene/**",
-    "native/objc3c/src/config/**",
-    "native/objc3c/src/diagnostics/modes/**",
-)
-
-TEXT_SUFFIXES: frozenset[str] = frozenset(
-    {
-        ".c",
-        ".cc",
-        ".cmake",
-        ".cpp",
-        ".h",
-        ".hpp",
-        ".inc",
-        ".json",
-        ".md",
-        ".ps1",
-        ".py",
-        ".txt",
-        ".yaml",
-        ".yml",
-    }
-)
-
 FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
     ForbiddenPattern(
         "runtime-dispatch-pseudo-success",
@@ -90,14 +48,34 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bmigration[_-]?assist\b|--objc3-canonical-rejection-diagnostics|\blegacy_literal_diagnostics\b",
     ),
     ForbiddenPattern(
+        "backward-compatible-alias-wording",
+        "Backward-compatible alias claims are removed from active hard-cutover surfaces.",
+        r"\bbackward[-\s]+compatible\s+aliases\b",
+    ),
+    ForbiddenPattern(
+        "legacy-spec-redirect-wording",
+        "Legacy spec redirect claims are removed from active hard-cutover surfaces.",
+        r"\blegacy\s+spec\s+redirects?\b",
+    ),
+    ForbiddenPattern(
         "deterministic-fallback-wording",
         "Fallback wording is not allowed as active behavior documentation.",
         r"\bdeterministic\s+fallback\b|\bfallback\s+path\b|\bfallback\s+dispatch\b|\bfallback\s+behavior\b",
     ),
     ForbiddenPattern(
+        "fallback-only-wording",
+        "Fallback-only wording is not allowed as active behavior documentation.",
+        r"\bfallback[-\s]+only\b",
+    ),
+    ForbiddenPattern(
         "shim-wording",
         "Shim wording is not allowed on authoritative active paths.",
-        r"\bshim\b",
+        r"\bshim\b|\bcompatibility\s+shim\b",
+    ),
+    ForbiddenPattern(
+        "old-mode-wording",
+        "Old-mode wording is not allowed on authoritative active paths.",
+        r"\bold\s+mode\b",
     ),
     ForbiddenPattern(
         "stale-monolithic-cmake",

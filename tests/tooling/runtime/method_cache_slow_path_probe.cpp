@@ -103,8 +103,9 @@ int main() {
                             known_class_class_storage,
                             known_class_owner_storage);
   const char *const strict_error_selector = "missingRuntimeSelector:";
-  const int strict_error_first =
-      objc3_runtime_dispatch_i32(1025, strict_error_selector, 4, 5, 6, 7);
+  const objc3_runtime_dispatch_i32_result strict_error_first_result =
+      objc3_runtime_dispatch_i32_checked(1025, strict_error_selector, 4, 5, 6, 7);
+  const int strict_error_first = strict_error_first_result.value;
   const int strict_error_expected =
       ExpectedStrictDispatchErrorValue(1025, strict_error_selector, 4, 5, 6, 7);
   (void)objc3_runtime_copy_method_cache_state_for_testing(
@@ -112,8 +113,9 @@ int main() {
   StabilizeMethodCacheState(
       strict_error_first_state, strict_error_first_selector_storage,
       strict_error_first_class_storage, strict_error_first_owner_storage);
-  const int strict_error_second =
-      objc3_runtime_dispatch_i32(1025, strict_error_selector, 4, 5, 6, 7);
+  const objc3_runtime_dispatch_i32_result strict_error_second_result =
+      objc3_runtime_dispatch_i32_checked(1025, strict_error_selector, 4, 5, 6, 7);
+  const int strict_error_second = strict_error_second_result.value;
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &strict_error_second_state);
   StabilizeMethodCacheState(

@@ -26,8 +26,8 @@ They describe the live native frontend, not historical milestone closeouts.
   - public project explanation and implementation status
 - `docs/objc3c-native.md`
   - implementation-facing narrative over the live native frontend/runtime surface
-- `docs/reference/legacy_spec_anchor_index.md`
-  - compatibility redirects only, not primary onboarding
+- `docs/support/capability_matrix.md`
+  - current support truth with executable evidence links
 
 Do not move machine-owned packet inventories, `tmp/` evidence paths, or archived
 milestone closeout material into these fragments.

@@ -34,7 +34,7 @@
     "writing reducer outputs back into checked-in fixture roots",
     "claiming crash freedom from compile success alone",
     "running generated binaries outside machine-owned temporary roots",
-    "milestone-local wrapper scripts that bypass the public compile path"
+    "shared wrapper scripts that bypass the public compile path"
   ],
   "claim_boundary": {
     "allowed_claims": [

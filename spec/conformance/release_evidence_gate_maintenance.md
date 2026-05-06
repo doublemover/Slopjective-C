@@ -32,7 +32,7 @@ python scripts/check_release_evidence.py
 Or:
 
 ```sh
-npm run check:release-evidence
+npm run objc3c -- check-release-evidence
 ```
 
 ## Failure Diagnostics

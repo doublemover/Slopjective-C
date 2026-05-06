@@ -1,0 +1,78 @@
+{
+  "schema_version": "objc3c-capability-matrix-v1",
+  "states": [
+    "implemented",
+    "rejected",
+    "reserved",
+    "internal"
+  ],
+  "capabilities": [
+    {
+      "id": "compiler.parser.core-declarations",
+      "title": "Core declarations and statements",
+      "state": "implemented",
+      "summary": "The native parser accepts modules, bindings, functions, control flow, and expression forms used by the runnable subset.",
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_parser_extraction.py",
+          "command": "python -m pytest tests/tooling/test_objc3c_parser_extraction.py"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/parse/objc3_parser.cpp"
+        }
+      ]
+    },
+    {
+      "id": "compiler.sema.canonical-diagnostics",
+      "title": "Canonical semantic rejection",
+      "state": "rejected",
+      "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics instead of legacy mode switches.",
+      "evidence": [
+        {
+          "kind": "diagnostic",
+          "path": "tests/conformance/diagnostics/manifest.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_parser_contract_sema_integration.py",
+          "command": "python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py"
+        }
+      ]
+    },
+    {
+      "id": "runtime.concurrency.async-actors",
+      "title": "Async and actor runtime closure",
+      "state": "reserved",
+      "summary": "Async, task, and actor syntax and runtime concepts remain unavailable unless an entry is separately marked implemented here.",
+      "evidence": [
+        {
+          "kind": "doc",
+          "path": "docs/spec/concurrency_reserved.md"
+        },
+        {
+          "kind": "diagnostic",
+          "path": "tests/conformance/diagnostics/manifest.json"
+        }
+      ]
+    },
+    {
+      "id": "tooling.json.schema-registry",
+      "title": "JSON and schema registry helpers",
+      "state": "internal",
+      "summary": "Shared native and Python helpers own deterministic JSON rendering, strict JSON loading, schema lookup, and report envelopes.",
+      "evidence": [
+        {
+          "kind": "schema",
+          "path": "docs/support/capability_matrix.schema.json"
+        },
+        {
+          "kind": "test",
+          "path": "tests/tooling/test_objc3c_shared_json_schema.py",
+          "command": "python -m pytest tests/tooling/test_objc3c_shared_json_schema.py"
+        }
+      ]
+    }
+  ]
+}

@@ -56,12 +56,12 @@ def main() -> int:
     nightly_desc = describe_action("test-nightly")
 
     expect(
-        validate_desc.get("public_scripts") == ["test:objc3c:public-conformance"],
-        "validate-public-conformance-reporting public script drifted",
+        validate_desc.get("action") == "validate-public-conformance-reporting",
+        "validate-public-conformance-reporting description drifted",
     )
     expect(
-        integration_desc.get("public_scripts") == ["test:objc3c:public-conformance:integration"],
-        "validate-public-conformance-reporting-integration public script drifted",
+        integration_desc.get("action") == "validate-public-conformance-reporting-integration",
+        "validate-public-conformance-reporting-integration description drifted",
     )
     expect(nightly_desc.get("action") == "test-nightly", "test-nightly description drifted")
 

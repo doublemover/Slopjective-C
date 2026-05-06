@@ -1309,7 +1309,7 @@ Current implementation status (`M272-D002`):
 - registration-time runtime rebuild now pre-seeds deterministic cache entries for safe implementation-backed direct/final/sealed methods
 - direct `objc_direct` call sites still bypass the runtime entrypoint even when a seeded cache entry exists for the same selector
 - `objc_dynamic` opt-out sends on final/sealed owners can hit a seeded cache entry on the first live dispatch
-- unresolved selectors still use the deterministic cached fallback path
+- unresolved selectors still use the deterministic unresolved-dispatch rejection path
 - the private proof surface now exposes:
   - `fast_path_seed_count`
   - `fast_path_hit_count`
@@ -1334,7 +1334,7 @@ Current implementation status (`M272-E002`):
 - lane E now publishes one runnable Part 9 closeout matrix over `M272-A002`, `M272-B003`, `M272-C003`, `M272-D002`, and `M272-E001`
 - direct exact-call continuity remains part of the supported surface and is revalidated on the `M272-D002` runtime proof
 - the seeded runtime fast path for final/sealed live sends remains the executable Part 9 boundary
-- deterministic fallback caching remains part of the same closeout matrix instead of becoming a separate publication channel
+- deterministic unresolved-dispatch rejection remains part of the same closeout matrix instead of becoming a separate publication channel
 - the next issue is `M273-A001`
 
 ## M273 derive, macro, and property-behavior source closure (A001)
@@ -1613,7 +1613,7 @@ Current implementation status (`M274-B001`):
   - Part 6 error-bridge legality reuse
   - Part 7 async-affinity and actor-hazard legality reuse
   - metadata payload normalization
-- this freeze still does not claim foreign ABI lowering, bridge shim emission,
+- this freeze still does not claim foreign ABI lowering, bridge adapter emission,
   or runnable cross-language interop behavior
 
 ## M274 Part 11 C and Objective-C runtime parity semantics (B002)

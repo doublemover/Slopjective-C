@@ -457,6 +457,16 @@ function Get-NegativeExpectation {
     throw "execution smoke FAIL: negative expectation fixture field does not match fixture name in $expectPath"
   }
 
+  $compileArgs = @()
+  if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "native_compile_args") {
+    foreach ($arg in @($spec.execution.native_compile_args)) {
+      $text = "$arg".Trim()
+      if (![string]::IsNullOrWhiteSpace($text)) {
+        $compileArgs += $text
+      }
+    }
+  }
+
   $requiresLiveRuntimeDispatch = $false
   $requiresLiveRuntimeDispatchExplicit = $false
   if ($null -ne $spec.execution -and $spec.execution.PSObject.Properties.Name -contains "requires_runtime_link") {
@@ -479,6 +489,7 @@ function Get-NegativeExpectation {
 
   return [pscustomobject]@{
     stage = $stage
+    compile_args = @($compileArgs)
     requires_live_runtime_dispatch = $requiresLiveRuntimeDispatch
     requires_live_runtime_dispatch_explicit = $requiresLiveRuntimeDispatchExplicit
     runtime_dispatch_symbol = $runtimeDispatchSymbol
@@ -814,7 +825,11 @@ try {
     $runLog = Join-Path $caseDir "run.log"
     New-Item -ItemType Directory -Force -Path $compileDir | Out-Null
 
-    $compileStep = Invoke-TimedLoggedCommand -StageKey "negative_compile_seconds" -Command $nativeExe -Arguments @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand) -LogPath $compileLog
+    $nativeArgs = @($fixture.FullName, "--out-dir", $compileDir, "--emit-prefix", "module", "--llc", $llcCommand)
+    if ($spec.compile_args.Count -gt 0) {
+      $nativeArgs += @($spec.compile_args)
+    }
+    $compileStep = Invoke-TimedLoggedCommand -StageKey "negative_compile_seconds" -Command $nativeExe -Arguments $nativeArgs -LogPath $compileLog
     $compileExit = [int]$compileStep.exit_code
     $compileDiagPath = Join-Path $compileDir "module.diagnostics.txt"
     $compileText = if (Test-Path -LiteralPath $compileDiagPath -PathType Leaf) {
@@ -838,6 +853,7 @@ try {
         fixture = $fixtureRel
         expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $repoRoot
         stage = $spec.stage
+        native_compile_args = @($spec.compile_args)
         requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
         compile_exit = $compileExit
@@ -914,6 +930,7 @@ try {
         fixture = $fixtureRel
         expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $repoRoot
         stage = $spec.stage
+        native_compile_args = @($spec.compile_args)
         requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
         launch_integration_contract_id = $launchContract.launch_integration_contract_id
@@ -976,6 +993,7 @@ try {
         fixture = $fixtureRel
         expectation = Get-RepoRelativePath -Path $spec.expectation_path -Root $repoRoot
         stage = $spec.stage
+        native_compile_args = @($spec.compile_args)
         requires_live_runtime_dispatch = $spec.requires_live_runtime_dispatch
         runtime_dispatch_symbol = $spec.runtime_dispatch_symbol
         launch_integration_contract_id = $launchContract.launch_integration_contract_id

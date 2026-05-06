@@ -7,14 +7,14 @@ CLI_HEADER = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_cli_options.
 CLI_SOURCE = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_cli_options.cpp"
 FRONTEND_OPTIONS = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_frontend_options.cpp"
 LEXER_HEADER = ROOT / "native" / "objc3c" / "src" / "lex" / "objc3_lexer.h"
-PIPELINE_TYPES_PART = (
+PIPELINE_COMPILE_OPTIONS = (
     ROOT
     / "native"
     / "objc3c"
     / "src"
     / "pipeline"
-    / "objc3_frontend_types_parts"
-    / "objc3_frontend_types_part_001.inc"
+    / "results"
+    / "compile_options.h"
 )
 REMOVED_MODES = (
     ROOT
@@ -53,7 +53,7 @@ def test_frontend_surfaces_use_canonical_config_defaults() -> None:
     assert "objc3c::config::UnsupportedLanguageVersionDiagnostic(" in _read(CLI_SOURCE)
     assert "objc3c::config::kCanonicalLanguageVersion" in _read(FRONTEND_OPTIONS)
     assert "objc3c::config::kCanonicalLanguageVersion" in _read(LEXER_HEADER)
-    assert "objc3c::config::kCanonicalLanguageVersion" in _read(PIPELINE_TYPES_PART)
+    assert "objc3c::config::kCanonicalLanguageVersion" in _read(PIPELINE_COMPILE_OPTIONS)
     assert "objc3c::config::FindRemovedCommandOption(flag)" in _read(REMOVED_MODES)
 
 

@@ -103,7 +103,7 @@ At minimum, the pass-graph gate shall validate:
   backend-output marker path/payload drift and core-feature readiness drift
   after backend object dispatch.
 - runtime-facing type metadata semantics governance shall preserve
-  deterministic sema parity handoff, runtime-shim default dispatch symbol
+  deterministic sema parity handoff, runtime host-link default dispatch symbol
   (`objc3_msgsend_i32`), and fail-closed pipeline/artifact metadata projection
   continuity (`M227-D001`).
 - runtime-facing type metadata modular split/scaffolding governance shall preserve explicit
@@ -1123,7 +1123,7 @@ At minimum, the pass-graph gate shall validate:
   `toolchain_runtime_ga_operations_integration_closeout_signoff_key` drift before
   lane-E integration gate validation advances.
 - semantic compatibility and migration checks governance shall preserve explicit
-  lane-B compatibility-mode and migration-assist handoff anchors and fail
+  lane-B canonical-mode and canonical rejection handoff anchors and fail
   closed on sema pass-flow or parse/lowering compatibility drift before
   semantic stability expansion validation advances.
 - semantic compatibility and migration checks modular split scaffolding shall
@@ -3685,7 +3685,7 @@ The canonical freeze for `M251-A001` is:
 
 For `M251-A001`, lowering/runtime must treat the emitted boundary as authoritative
 ownership evidence while runtime metadata source records remain not yet ready
-for lowering and the test shim topology remains explicitly non-production.
+for lowering and the test harness topology remains explicitly non-production.
 
 ## M251 runtime metadata source record extraction (A002)
 
@@ -3894,7 +3894,7 @@ runtime library artifact before D003 links the driver against it.
 - `native/objc3c/src/runtime/objc3_runtime.cpp` to implement
   `objc3_runtime_register_image`, `objc3_runtime_lookup_selector`,
   `objc3_runtime_dispatch_i32`, and `objc3_runtime_reset_for_testing`,
-- `npm run build:objc3c-native` to emit `artifacts/lib/objc3_runtime.lib`,
+- `npm run objc3c -- build-native-binaries` to emit `artifacts/lib/objc3_runtime.lib`,
 - `objc3_runtime_dispatch_i32` to preserve the deterministic
   `objc3_msgsend_i32` arithmetic formula while driver link mode remains
   `not-linked-until-m251-d003`,
@@ -3993,7 +3993,7 @@ Lane-E shall publish one canonical runtime-foundation runbook at
 
 `M251-E003` requires:
 
-- the documented build command `npm run build:objc3c-native`,
+- the documented build command `npm run objc3c -- build-native-binaries`,
 - the documented native object-emission command through
   `.\artifacts\bin\objc3c-native.exe`,
 - the documented object-inspection commands through `llvm-readobj.exe` and
@@ -5233,7 +5233,7 @@ separate:
 - normalized dynamic sends remain on `objc3_msgsend_i32` until `M255-C004`
 - reserved direct-dispatch surfaces fail closed if they reach IR emission
 
-## M255 live dispatch cutover and shim-removal boundary (C004)
+## M255 live dispatch cutover and runtime-adapter-removal boundary (C004)
 
 `M255-C004` removes the final live compatibility-bridge dependency:
 
@@ -5325,8 +5325,8 @@ dispatch path:
 
 - contract id `objc3c-runtime-live-dispatch-gate/m255-e001-v1`
 - evidence model `a002-b003-c004-d004-summary-chain`
-- shim boundary model
-  `live-runtime-dispatch-required-compatibility-shim-evidence-only`
+- runtime adapter boundary model
+  `live-runtime-dispatch-required-runtime-adapter-evidence-only`
 - failure model `fail-closed-on-live-dispatch-evidence-drift`
 - the gate requires `M255-C004` to keep all supported live sends on
   `objc3_runtime_dispatch_i32`
@@ -5334,7 +5334,7 @@ dispatch path:
   protocol-backed negative lookup evidence on the runtime-owned slow path
 - `objc3_msgsend_i32` remains exported only as compatibility/test evidence and
   is not an acceptable substitute for live-dispatch proof
-- `M255-E002` is the explicit handoff for replacing shim-based smoke and
+- `M255-E002` is the explicit handoff for replacing adapter-based smoke and
   closeout gates with integrated live-dispatch evidence
 
 ## M255 live dispatch smoke and replay closeout (E002)
@@ -5444,7 +5444,7 @@ class/protocol/category runtime work:
   - deterministic category merge policy
 - parser remains source-only for superclass, adoption, and category-owner
   identities
-- IR remains proof-only for the frozen semantic boundary and does not yet claim
+- IR remains evidence-only for the frozen semantic boundary and does not yet claim
   executable enforcement
 - the frozen semantic models are:
   - `interface-plus-implementation-pair-required-before-runtime-realization`
@@ -5654,7 +5654,7 @@ back to manifest-only summaries.
 
 `M256-D004` turns the realized graph into a truthful executable object-sample
 surface by admitting runtime-owned builtin `alloc`/`new`/`init` while keeping
-metadata-rich object-model cases on a library-plus-probe proof path until the
+metadata-rich object-model cases on a library-plus-probe evidence path until the
 runtime export gate is wider.
 
 - contract id `objc3c-runtime-canonical-runnable-object-sample-support/m256-d004-v1`
@@ -6633,8 +6633,8 @@ current runnable core.
   `a002-live-runnable-core-proof-plus-sema-compatibility-selection-and-unsupported-claim-boundary`
 - truthful boundary
   - `M259-A002` remains the live runtime-backed proof floor
-  - compatibility mode and migration assist remain live semantic selections
-  - `O3S216` remains the live migration-assist fail-closed diagnostic
+  - canonical-only mode and canonical rejection remain live semantic selections
+  - `O3S216` remains the live canonical rejection fail-closed diagnostic
   - `@autoreleasepool`, block literals, `throws`, and ARC ownership qualifiers
     remain the currently landed unsupported-feature diagnostics
   - later advanced surfaces remain outside the runnable core and are not
@@ -6664,7 +6664,7 @@ semantic gate.
   - this issue proves the live negative path for `throws`,
     `@autoreleasepool`, and ARC ownership qualifiers
   - block literals remain explicitly unsupported without over-claiming this
-    issue as the canonical live proof path while that source surface is still
+    issue as the canonical live evidence path while that source surface is still
     gated earlier
   - the next implementation issue is `M259-C001`
 
@@ -6733,10 +6733,10 @@ implementation.
 - failure model
   `fail-closed-on-unsupported-packaging-or-runtime-operations-claim-drift`
 - frozen operations
-  - `npm run build:objc3c-native`
+  - `npm run objc3c -- build-native-binaries`
   - `pwsh -NoProfile -ExecutionPolicy Bypass -File scripts/objc3c_native_compile.ps1 <input.objc3> --out-dir <out_dir> --emit-prefix module`
-  - `npm run test:objc3c:execution-smoke`
-  - `npm run test:objc3c:execution-replay-proof`
+  - `npm run objc3c -- test-execution-smoke`
+  - `npm run objc3c -- test-execution-replay`
 - truthful boundary
   - only the current Windows x64 + `pwsh` + `python` + `node`/`npm` + MSVC/CMake/Ninja + LLVM `llc`/`llvm-readobj` host baseline is claimed here
   - installer, system deployment, and cross-platform packaging claims remain deferred
@@ -6757,8 +6757,8 @@ local package root.
 - staged package manifest
   `artifacts/package/objc3c-runnable-toolchain-package.json`
 - required workflow continuity
-  - build remains `npm run build:objc3c-native`
-  - packaging is `npm run package:objc3c-native:runnable-toolchain`
+  - build remains `npm run objc3c -- build-native-binaries`
+  - packaging is `npm run objc3c -- package-runnable-toolchain`
   - packaged compile remains `scripts/objc3c_native_compile.ps1`
   - packaged smoke remains `scripts/check_objc3c_native_execution_smoke.ps1`
   - packaged replay remains `scripts/check_objc3c_execution_replay_proof.ps1`

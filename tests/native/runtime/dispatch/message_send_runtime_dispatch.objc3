@@ -1,0 +1,8 @@
+// Canonical runtime fixture: live message-send dispatch is explicit runtime behavior.
+module MessageSendRuntimeDispatchBehavior;
+
+fn main() -> i32 {
+  let receiver = 9;
+  let sent = [receiver sum: 3 with: 4];
+  return sent;
+}

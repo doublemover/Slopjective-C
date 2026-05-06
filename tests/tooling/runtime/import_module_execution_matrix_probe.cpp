@@ -109,6 +109,29 @@ int main() {
   const std::string startup_local_class_owner_identity =
       local_entry.class_owner_identity != nullptr ? local_entry.class_owner_identity
                                                   : "";
+  const std::string startup_method_cache_last_selector =
+      method_cache_state.last_selector != nullptr ? method_cache_state.last_selector
+                                                  : "";
+  const std::string startup_method_cache_last_resolved_class_name =
+      method_cache_state.last_resolved_class_name != nullptr
+          ? method_cache_state.last_resolved_class_name
+          : "";
+  const std::string startup_method_cache_last_resolved_owner_identity =
+      method_cache_state.last_resolved_owner_identity != nullptr
+          ? method_cache_state.last_resolved_owner_identity
+          : "";
+  const std::string startup_provider_method_owner_identity =
+      provider_method.resolved_owner_identity != nullptr
+          ? provider_method.resolved_owner_identity
+          : "";
+  const std::string startup_imported_protocol_method_owner_identity =
+      imported_protocol_method.resolved_owner_identity != nullptr
+          ? imported_protocol_method.resolved_owner_identity
+          : "";
+  const std::string startup_local_method_owner_identity =
+      local_method.resolved_owner_identity != nullptr
+          ? local_method.resolved_owner_identity
+          : "";
 
   objc3_runtime_reset_for_testing();
   objc3_runtime_registration_state_snapshot post_reset_registration{};
@@ -297,16 +320,16 @@ int main() {
   PrintUint64Field("method_cache_strict_dispatch_error_count",
                    method_cache_state.strict_dispatch_error_count);
   PrintStringField("method_cache_last_selector",
-                   method_cache_state.last_selector);
+                   startup_method_cache_last_selector.c_str());
   PrintStringField("method_cache_last_resolved_class_name",
-                   method_cache_state.last_resolved_class_name);
+                   startup_method_cache_last_resolved_class_name.c_str());
   PrintStringField("method_cache_last_resolved_owner_identity",
-                   method_cache_state.last_resolved_owner_identity);
+                   startup_method_cache_last_resolved_owner_identity.c_str());
   PrintIntField("provider_method_status", provider_method_status);
   PrintIntField("provider_method_found", provider_method.found);
   PrintIntField("provider_method_resolved", provider_method.resolved);
   PrintStringField("provider_method_owner_identity",
-                   provider_method.resolved_owner_identity);
+                   startup_provider_method_owner_identity.c_str());
   PrintIntField("imported_protocol_method_status",
                 imported_protocol_method_status);
   PrintIntField("imported_protocol_method_found",
@@ -314,12 +337,12 @@ int main() {
   PrintIntField("imported_protocol_method_resolved",
                 imported_protocol_method.resolved);
   PrintStringField("imported_protocol_method_owner_identity",
-                   imported_protocol_method.resolved_owner_identity);
+                   startup_imported_protocol_method_owner_identity.c_str());
   PrintIntField("local_method_status", local_method_status);
   PrintIntField("local_method_found", local_method.found);
   PrintIntField("local_method_resolved", local_method.resolved);
   PrintStringField("local_method_owner_identity",
-                   local_method.resolved_owner_identity);
+                   startup_local_method_owner_identity.c_str());
   PrintIntField("protocol_query_status", protocol_query_status);
   PrintIntField("protocol_query_class_found", protocol_query.class_found);
   PrintIntField("protocol_query_protocol_found", protocol_query.protocol_found);

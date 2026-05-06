@@ -3,6 +3,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 TYPES_HEADER = ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types.h"
 ARTIFACTS_HEADER = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.h"
+FRONTEND_TYPE_PARTS_DIR = (
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "objc3_frontend_types_parts"
+)
+FRONTEND_TYPE_HEADERS = [
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "compile_options.h",
+    ROOT / "native" / "objc3c" / "src" / "lower" / "model" / "lowered_runtime_surface.h",
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "phase_result.h",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "semantic_effect.h",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "semantic_program.h",
+    ROOT / "native" / "objc3c" / "src" / "lower" / "model" / "lowered_module.h",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "semantic_symbol.h",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "semantic_ownership.h",
+    ROOT / "native" / "objc3c" / "src" / "runtime" / "metadata" / "runtime_metadata_model.h",
+    ROOT / "native" / "objc3c" / "src" / "artifacts" / "evidence" / "evidence_record.h",
+    ROOT / "native" / "objc3c" / "src" / "sema" / "model" / "semantic_type.h",
+    ROOT / "native" / "objc3c" / "src" / "runtime" / "metadata" / "class_metadata.h",
+    ROOT / "native" / "objc3c" / "src" / "runtime" / "metadata" / "property_metadata.h",
+    ROOT / "native" / "objc3c" / "src" / "runtime" / "metadata" / "selector_metadata.h",
+    ROOT / "native" / "objc3c" / "src" / "artifacts" / "evidence" / "capability_status.h",
+    ROOT / "native" / "objc3c" / "src" / "artifacts" / "reports" / "report_dto.h",
+    ROOT / "native" / "objc3c" / "src" / "runtime" / "metadata" / "runtime_metadata_bootstrap.h",
+    ROOT / "native" / "objc3c" / "src" / "pipeline" / "results" / "compile_result.h",
+]
 
 
 def _read(path: Path) -> str:
@@ -31,7 +54,16 @@ def _assert_in_order(text: str, snippets: list[str]) -> None:
 
 def test_frontend_types_header_is_used_by_pipeline_artifacts() -> None:
     assert TYPES_HEADER.exists()
-    types_header = _read(TYPES_HEADER)
+    frontend_umbrella = _read(TYPES_HEADER)
+    assert '#include "pipeline/results/compile_result.h"' in frontend_umbrella
+    assert "_parts/" not in frontend_umbrella
+    assert not FRONTEND_TYPE_PARTS_DIR.exists()
+
+    for header in FRONTEND_TYPE_HEADERS:
+        assert header.exists()
+        assert len(header.read_text(encoding="utf-8").splitlines()) <= 1000
+
+    types_header = "\n".join(_read(header) for header in FRONTEND_TYPE_HEADERS)
     assert '#include "parse/objc3_diagnostics_bus.h"' in types_header
     assert '#include "parse/objc3_parser_contract.h"' in types_header
     assert '#include "ast/objc3_ast.h"' not in types_header

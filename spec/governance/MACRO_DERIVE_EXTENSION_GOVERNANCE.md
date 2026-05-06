@@ -93,7 +93,7 @@ A stage change request shall include a transition dossier with, at minimum:
 - normative spec text: syntax, semantic rules, diagnostics, and metadata/interface requirements,
 - test evidence: parser, semantic, diagnostics, module_roundtrip, and (if ABI-impacting) lowering_abi coverage,
 - implementation evidence: shipping implementation(s) and reproducibility proof for macro/derive expansion,
-- compatibility evidence: migration notes, breakage analysis, and fallback behavior for unsupported toolchains,
+- compatibility evidence: migration notes, breakage analysis, and strict unsupported-toolchain behavior for unsupported toolchains,
 - issue hygiene: unresolved critical soundness/security issues must be zero at approval time.
 
 Additional requirements by transition:

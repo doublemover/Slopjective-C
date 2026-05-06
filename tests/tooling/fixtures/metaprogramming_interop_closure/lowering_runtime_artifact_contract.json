@@ -20,8 +20,8 @@
   ],
   "artifact_rules": [
     "the canonical compile-manifest and runtime-registration truth for this milestone is emitted by scripts/check_objc3c_runtime_acceptance.py and replayed by architecture integration and runnable metaprogramming workflows",
-    "milestone-local checks consume the shared runtime acceptance integration conformance and packaged e2e artifacts instead of creating a parallel metaprogramming or property-behavior manifest",
-    "property-behavior runtime evidence is carried through the shared executable_synthesized_accessor_property_lowering_surface rather than a milestone-local sidecar artifact",
+    "shared checks consume the shared runtime acceptance integration conformance and packaged e2e artifacts instead of creating a parallel metaprogramming or property-behavior manifest",
+    "property-behavior runtime evidence is carried through the shared executable_synthesized_accessor_property_lowering_surface rather than a shared sidecar artifact",
     "generated evidence remains deterministic and narrower than the shared acceptance and packaged runnable metaprogramming path"
   ],
   "authoritative_code_paths": [

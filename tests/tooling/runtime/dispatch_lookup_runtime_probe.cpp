@@ -48,7 +48,9 @@ int main() {
   const bool copy_selector_spelling_matches =
       copy_first != nullptr && std::strcmp(copy_first->selector, "copy") == 0;
 
-  const int dispatch_result = objc3_runtime_dispatch_i32(7, "copy", 1, 2, 3, 4);
+  const objc3_runtime_dispatch_i32_result dispatch =
+      objc3_runtime_dispatch_i32_checked(7, "copy", 1, 2, 3, 4);
+  const int dispatch_result = dispatch.value;
   const int expected_dispatch_result = ExpectedDispatch(7, "copy", 1, 2, 3, 4);
   const int nil_dispatch_result =
       objc3_runtime_dispatch_i32(0, "copy", 1, 2, 3, 4);

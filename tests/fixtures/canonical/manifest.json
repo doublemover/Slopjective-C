@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "path": "tests/native/parser/positive/canonical_module_main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "positive",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    },
+    {
+      "path": "tests/native/parser/negative/legacy_null_literal_alias_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
+      "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "sema",
+      "behavior_family": "negative",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "lowering",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-dispatch",
+        "fallback"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/runtime/errors/runtime_dispatch_unresolved_symbol.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "runtime",
+      "behavior_family": "errors",
+      "fixture_kind": "strict-error",
+      "retired_surface_tags": [
+        "runtime-adapter",
+        "runtime-dispatch"
+      ],
+      "expected_diagnostic_code": "link.unresolved_symbol"
+    },
+    {
+      "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "e2e",
+      "behavior_family": "smoke",
+      "fixture_kind": "positive",
+      "expected_diagnostic_code": ""
+    }
+  ]
+}

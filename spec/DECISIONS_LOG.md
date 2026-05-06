@@ -590,7 +590,7 @@ That gate currently permits only:
 
 - claimed profile `core`
 - compatibility selection `canonical|legacy`
-- migration-assist selection
+- canonical rejection selection
 - JSON conformance publication/validation
 
 It explicitly does not permit:
@@ -618,8 +618,8 @@ operator probes.
 That matrix currently permits only:
 
 - claimed profile `core`
-- compatibility modes `canonical|legacy`
-- migration assist
+- canonical-only modes `canonical|legacy`
+- canonical rejection
 - JSON conformance emit/validate operations
 - native CLI report/publication/validation evidence
 - frontend C API report/publication evidence
@@ -674,8 +674,8 @@ macro-claim set for strictness and strict-concurrency publication.
 currently live selection surfaces:
 
 - language version,
-- compatibility mode,
-- migration assist.
+- canonical-only mode,
+- canonical rejection.
 
 Strictness selection, strict concurrency selection, and feature-macro claim
 publication shall remain machine-readable but fail-closed as unsupported until
@@ -695,7 +695,7 @@ spec eventually defines.
 **Decision:** The native `objc3c` sema layer shall publish one fail-closed
 semantic legality packet that classifies the current frontend truth surface as:
 
-- valid live selections: language version, compatibility mode, migration assist,
+- valid live selections: language version, canonical-only mode, canonical rejection,
 - downgraded recognized claims: source-only declaration/object-surface features,
 - rejected claim surfaces: strictness, strict concurrency, and feature-macro publication.
 
@@ -775,10 +775,10 @@ Direct LLVM call sites remain outside the runtime dispatch entrypoint. The widen
 
 `M272-E001` does not invent a new runtime proof channel. Lane E freezes the current Part 9 gate by consuming the standard driver/manifest/frontend publication surface plus the already-landed `M272-D002` live summary.
 
-That means the Part 9 conformance gate remains tied to the published D002 runtime evidence for seeded fast-path baseline state, first-call cache hits, and deterministic fallback continuity.
+That means the Part 9 conformance gate remains tied to the published D002 runtime evidence for seeded fast-path baseline state, first-call cache hits, and deterministic dispatch-continuity evidence.
 
 ## D-035: Part 9 closeout publishes one runnable dispatch-control matrix on the existing D002 runtime proof {#decisions-d-035}
 
 `M272-E002` keeps the milestone closeout truthful by replaying the existing `M272-A002` through `M272-E001` proof chain and freezing one explicit runnable matrix rather than inventing a new runtime or publication boundary.
 
-That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic fallback caching on top of the same `M272-D002` evidence surface.
+That closeout matrix is intentionally narrow: it preserves direct exact-call continuity, final/sealed seeded runtime fast-path behavior, and deterministic unresolved-dispatch rejection on top of the same `M272-D002` evidence surface.

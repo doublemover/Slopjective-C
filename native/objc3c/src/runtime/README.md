@@ -22,7 +22,7 @@ Current dispatch path:
 2. the runtime interns or resolves the selector through `objc3_runtime_lookup_selector`
 3. dispatch probes the method cache and then the realized class/category/protocol slow path
 4. resolved methods execute either live emitted method bodies or runtime builtins such as `alloc`, `init`, and synthesized property accessors
-5. unresolved sends return a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`; the current `i32` entrypoint exposes only the value field for lowered IR call sites
+5. unresolved sends return a typed strict dispatch error through `objc3_runtime_dispatch_i32_checked`; the current `i32` entrypoint returns values only for successful or nil-receiver sends and aborts on strict dispatch errors
 
 Installation lifecycle:
 

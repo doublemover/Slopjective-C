@@ -39,7 +39,9 @@ int main() {
     return 14;
   }
 
-  const int actual = objc3_runtime_dispatch_i32(5, "alpha:beta:", 1, 2, 3, 4);
+  const objc3_runtime_dispatch_i32_result dispatch =
+      objc3_runtime_dispatch_i32_checked(5, "alpha:beta:", 1, 2, 3, 4);
+  const int actual = dispatch.value;
   const int expected = ExpectedDispatch(5, "alpha:beta:", 1, 2, 3, 4);
   if (actual != expected) {
     return 15;

@@ -228,7 +228,7 @@ frontend runner output model.
 Downstream editor and navigation work must use compile-owned declaration
 coordinates instead of building a shadow symbol index from ad hoc text scans.
 
-## Language-Server Capability And Fallback Policy
+## Language-Server Capability Publication Policy
 
 Language-server claims must stay narrower than the real shipped capability set.
 
@@ -236,7 +236,7 @@ Language-server claims must stay narrower than the real shipped capability set.
   - compile-owned diagnostics
   - compile-owned declaration coordinates
   - emitted artifact presence and runtime inspection facts
-- unsupported capability classes must fail closed with explicit fallback
+- unsupported capability classes must fail closed with explicit unpublished-status
   metadata instead of pretending partial support:
   - references
   - rename
@@ -245,7 +245,7 @@ Language-server claims must stay narrower than the real shipped capability set.
   - statement-level debugger stepping
 
 The public developer-tooling surface must publish one canonical capability map
-with capability status, fallback status, and evidence roots instead of
+with capability status, publication status, and evidence roots instead of
 duplicating per-editor interpretations.
 
 ## Debugger, Source-Map, And Stepping Semantics
@@ -273,7 +273,7 @@ scattering separate editor-only payloads across ad hoc scripts.
 The canonical generated surface must group:
 
 - diagnostics summary and per-diagnostic entries
-- language-server capability publication and fallback metadata
+- language-server capability publication and unpublished-status metadata
 - navigation and declaration coordinates rooted in compile-owned manifest data
 - formatter execution results and formatted output references
 - debug artifact inspection, breakpoint anchors, and stepping availability

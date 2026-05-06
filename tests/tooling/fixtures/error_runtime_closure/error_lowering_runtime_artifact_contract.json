@@ -18,7 +18,7 @@
   ],
   "artifact_rules": [
     "the canonical compile-manifest and runtime-registration truth for this milestone is emitted by scripts/check_objc3c_runtime_acceptance.py and replayed by the integration and runnable error workflows",
-    "milestone-local checks consume the shared runtime acceptance, integration, conformance, and packaged e2e artifacts instead of recreating a parallel error manifest",
+    "shared checks consume the shared runtime acceptance, integration, conformance, and packaged e2e artifacts instead of recreating a parallel error manifest",
     "public workflow reporting must preserve the same error surface packets carried by acceptance and architecture integration",
     "generated evidence remains deterministic and narrower than the shared acceptance and packaged runnable error path"
   ],

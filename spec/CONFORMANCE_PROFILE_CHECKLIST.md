@@ -488,7 +488,7 @@ frontend currently accepts and advertises:
 
 That surface must keep the current state explicit:
 
-- language-version / compatibility / migration-assist selection are live
+- language-version / compatibility / canonical rejection selection are live
 - strictness / strict-concurrency selection remain unsupported
 - feature-macro claim publication remains unsupported
 
@@ -505,7 +505,7 @@ classifies the currently live truth surface:
 
 That packet must keep the semantic classification explicit:
 
-- compatibility mode and migration-assist combinations are valid live selections
+- canonical-only mode and canonical rejection combinations are valid live selections
 - source-only recognized claims remain downgraded and never promote to runnable
 - strictness / strict-concurrency selection remain rejected
 - feature-macro publication remains suppressed
@@ -611,7 +611,7 @@ The lane-E gate for this milestone freezes one integrated truth boundary:
 
 - claimed profile remains `core`
 - compatibility selection remains live
-- migration assist remains live
+- canonical rejection remains live
 - strictness and strict concurrency remain fail-closed
 - feature-macro claims remain suppressed
 - runtime/public capability reports remain a truthful projection of the lowered
@@ -629,8 +629,8 @@ the shipped surface.
 That closeout matrix must keep the current truth explicit:
 
 - claimed profile remains `core`
-- compatibility modes remain `canonical|legacy`
-- migration assist remains live
+- canonical-only modes remain `canonical|legacy`
+- canonical rejection remains live
 - strict, strict-concurrency, and strict-system remain unclaimed and fail
   closed
 - feature-macro publication remains suppressed
@@ -683,7 +683,7 @@ Current truthful scope:
 - the packet aggregates the already-landed Part 6 through Part 11 source
   closure/completion packets
 - legacy migration-hint counters for `yes` / `no` / `null` are included when
-  migration assist is enabled
+  canonical rejection is enabled
 - lexer-owned legacy `YES` / `NO` / `NULL` canonicalization now has a dedicated
   frontend completion packet for deterministic fix-it and migrator candidate
   planning
@@ -696,7 +696,7 @@ Current truthful scope:
   families
 - legacy/canonical migration semantics now publish
   `frontend.pipeline.semantic_surface.objc_part12_legacy_canonical_migration_semantics`
-  over the live canonical-mode migration-assist rejection path
+  over the live canonical-mode canonical rejection rejection path
 - Part 12 machine-readable report contract now publishes
   `frontend.pipeline.semantic_surface.objc_part12_machine_readable_conformance_report_contract`
   over the existing versioned conformance sidecar and runtime capability path

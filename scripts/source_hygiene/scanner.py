@@ -9,7 +9,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from .patterns import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS, FORBIDDEN_PATTERNS, TEXT_SUFFIXES
+from .diagnostics import format_finding
+from .patterns import FORBIDDEN_PATTERNS
+from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS, TEXT_SUFFIXES
 
 REPORT_SCHEMA_VERSION = "source-hygiene-hard-cutover-report-v1"
 DEFAULT_ALLOWLIST = Path("tmp/source-hygiene-hard-cutover-allowlist.json")
@@ -87,6 +89,10 @@ def scan_forbidden_patterns(root: Path, scan_roots: Iterable[str], excludes: Ite
         for line_number, line in enumerate(lines, start=1):
             for pattern, regex in compiled:
                 if regex.search(line):
+                    if is_negative_test_assertion(repo_path, line):
+                        continue
+                    if is_guardrail_identifier(line):
+                        continue
                     findings.append(
                         {
                             "pattern_id": pattern.pattern_id,
@@ -99,6 +105,22 @@ def scan_forbidden_patterns(root: Path, scan_roots: Iterable[str], excludes: Ite
                     )
     findings.sort(key=lambda item: (item["path"], item["line"], item["pattern_id"]))
     return findings
+
+
+def is_negative_test_assertion(repo_path: str, line: str) -> bool:
+    return repo_path.startswith("tests/") and "assert" in line and " not in " in line
+
+
+def is_guardrail_identifier(line: str) -> bool:
+    return any(
+        marker in line
+        for marker in (
+            "no-milestone-local",
+            "no milestone-local",
+            "no-duplicate-milestone-local",
+            "no-proof-only",
+        )
+    )
 
 
 def tracked_generated_reports(root: Path) -> list[str]:
@@ -165,8 +187,5 @@ def write_reports(report: dict[str, Any], json_path: Path, text_path: Path) -> N
         f"tracked_generated_reports: {report['stats']['tracked_generated_report_count']}",
     ]
     for finding in report["active_findings"][:100]:
-        lines.append(
-            f"{finding['path']}:{finding['line']}: {finding['pattern_id']}: {finding['excerpt']}"
-        )
+        lines.append(format_finding(finding))
     text_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-

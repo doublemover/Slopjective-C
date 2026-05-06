@@ -43,14 +43,10 @@ def build_contract() -> dict[str, object]:
     list_payload = runner.list_actions_payload()
     package_scripts = package['scripts']
 
-    public_script_to_action = runner.public_script_to_action_map()
-    distinct_runner_scripts = sorted(public_script_to_action)
     package_script_names = sorted(package_scripts)
     bridge_scripts = {'objc3c'}
-    unmapped_scripts = sorted(set(package_script_names) - set(distinct_runner_scripts) - bridge_scripts)
-    extra_runner_public_scripts = [] if bridge_scripts & set(package_script_names) else sorted(
-        set(distinct_runner_scripts) - set(package_script_names)
-    )
+    unmapped_scripts = sorted(set(package_script_names) - bridge_scripts)
+    extra_runner_public_scripts: list[str] = []
 
     action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
     package_script_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_script_names]

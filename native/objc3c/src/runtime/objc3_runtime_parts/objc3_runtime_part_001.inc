@@ -11,6 +11,7 @@
 #include "runtime/objc3_runtime_bootstrap_internal.h"
 
 #include <algorithm>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <cstdint>

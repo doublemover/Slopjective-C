@@ -37,25 +37,15 @@ def main() -> None:
     b002 = load_json(B002_REPORT_PATH)
     runner = load_runner()
 
-    public_script_to_action: dict[str, str] = {}
     maintainer_scripts: list[str] = []
-    operator_scripts: list[str] = []
-    for action_name, spec in runner.ACTION_SPECS.items():
-        payload = runner.describe_action_payload(action_name)
-        for public_script in spec.public_scripts:
-            public_script_to_action[public_script] = action_name
-            if payload['audience'] == 'maintainer':
-                maintainer_scripts.append(public_script)
-            elif payload['audience'] == 'operator':
-                operator_scripts.append(public_script)
-
-    unmapped_scripts = sorted(name for name in scripts if name not in public_script_to_action)
+    operator_scripts = ['objc3c'] if 'objc3c' in scripts else []
+    unmapped_scripts = sorted(name for name in scripts if name != 'objc3c')
     category_counts = Counter(category_for_script(name) for name in scripts)
     payload = {
         'issue': 'workflow-runner-unification',
         'package_script_count': len(scripts),
         'workflow_action_count': len(runner.ACTION_SPECS),
-        'public_script_count': len(public_script_to_action),
+        'public_script_count': len(operator_scripts),
         'unmapped_script_count': len(unmapped_scripts),
         'maintainer_script_count': len(sorted(maintainer_scripts)),
         'operator_script_count': len(sorted(operator_scripts)),

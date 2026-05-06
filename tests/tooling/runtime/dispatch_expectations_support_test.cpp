@@ -6,6 +6,7 @@ using objc3c::runtime::probe::ExpectedStrictDispatchErrorValue;
 using objc3c::runtime::probe::ExpectTrue;
 using objc3c::runtime::probe::ExpectValueEqual;
 using objc3c::runtime::probe::ExpectedDispatch;
+using objc3c::runtime::probe::IsStrictDispatchError;
 using objc3c::runtime::probe::kStrictDispatchErrorValueI32;
 
 int main() {
@@ -37,15 +38,13 @@ int main() {
   objc3_runtime_reset_for_testing();
   const objc3_runtime_dispatch_i32_result unresolved =
       objc3_runtime_dispatch_i32_checked(123, "missingDispatch:", 4, 5, 6, 7);
-  if (ExpectValueEqual(unresolved.status_code,
-                       OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS,
-                       "live runtime typed dispatch error status", 14) != 0) {
+  if (!IsStrictDispatchError(
+          unresolved, OBJC3_RUNTIME_DISPATCH_STATUS_UNKNOWN_RECEIVER_CLASS)) {
     return 14;
   }
-  if (ExpectValueEqual(
-          unresolved.value,
-          ExpectedDispatch(123, "missingDispatch:", 4, 5, 6, 7),
-          "live runtime strict dispatch error value projection", 16) != 0) {
+  if (ExpectValueEqual(unresolved.value, 0,
+                       "live runtime strict dispatch error carries no value",
+                       16) != 0) {
     return 16;
   }
   const objc3_runtime_dispatch_i32_result nil_receiver =
@@ -55,10 +54,8 @@ int main() {
                        "live runtime nil receiver dispatch status", 17) != 0) {
     return 17;
   }
-  if (ExpectValueEqual(
-          nil_receiver.value,
-          ExpectedDispatch(0, "missingDispatch:", 4, 5, 6, 7),
-          "live runtime nil receiver dispatch value", 18) != 0) {
+  if (ExpectValueEqual(nil_receiver.value, 0,
+                       "live runtime nil receiver dispatch value", 18) != 0) {
     return 18;
   }
   return 0;

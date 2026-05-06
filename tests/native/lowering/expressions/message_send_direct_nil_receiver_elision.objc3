@@ -1,0 +1,7 @@
+// Canonical lowering fixture: direct nil optional send elides live dispatch.
+module MessageSendDirectNilReceiverElision;
+
+fn main() -> i32 {
+  let sent = [nil? ping];
+  return sent + 9;
+}

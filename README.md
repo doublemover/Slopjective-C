@@ -105,7 +105,7 @@ Use the shortest path that matches what you are trying to do.
 | inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                       |
 | inspect implementation boundaries                               | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                      |
 | run exact package-script workflows                              | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use the mapped `npm run ...` entrypoint instead of guessing                                                     |
-| follow old spec links or archived anchors                       | [legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files)                 | use this only for compatibility lookups                                                                         |
+| evaluate support status and evidence                            | [capability matrix](docs/support/capability_matrix.md)                                           | verify the linked executable evidence before relying on a support claim                                         |
 
 Documentation boundary:
 
@@ -115,7 +115,7 @@ Documentation boundary:
 - runnable examples: `showcase/`
 - implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
 - operator runbooks: `docs/runbooks/`
-- compatibility redirects: `docs/reference/legacy_spec_anchor_index.md`
+- support truth: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`
 - machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
 If you are new to the repo, stay out of `tmp/` and the legacy redirect index until you actually need them.
@@ -166,7 +166,7 @@ Explicit non-goals for cleanup work:
 - `scripts/`: build, validation, packaging, and publication tooling
 - `tests/`: tooling, conformance, runtime, and stress coverage
 - `site/`: generated public overview output
-- `docs/reference/legacy_spec_anchor_index.md`: compatibility redirects for old anchors
+- `docs/support/`: capability matrix, schema, and evidence map
 
 ## Dependencies
 
@@ -360,7 +360,7 @@ Start here:
 - [Specification map](https://doublemover.github.io/Slopjective-C/#toc-front-matter)
 - [Module metadata and ABI surface tables](https://doublemover.github.io/Slopjective-C/#d)
 - [Conformance profile checklist](https://doublemover.github.io/Slopjective-C/#e)
-- [Legacy spec redirects](docs/reference/legacy_spec_anchor_index.md#legacy-files) for archived anchors and compatibility links only
+- [Capability matrix](docs/support/capability_matrix.md) for support status and executable evidence
 
 Language parts:
 

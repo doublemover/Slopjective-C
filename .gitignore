@@ -11,3 +11,5 @@ spec/planning/evidence/**/*.log
 
 # Milestone execution scratch evidence (not source-controlled)
 artifacts/
+!native/objc3c/src/artifacts/
+!native/objc3c/src/artifacts/**

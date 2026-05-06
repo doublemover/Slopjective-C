@@ -37,6 +37,8 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     header = _read(C_API_H)
     frontend_header = _read(FRONTEND_H)
     options_header = _read(OPTIONS_H)
+    result_header = _read(RESULT_H)
+    string_header = _read(STRING_H)
 
     assert "#include \"objc3c_frontend.h\"" in header
     assert "#include \"objc3c_frontend_options.h\"" in frontend_header
@@ -58,6 +60,13 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_file(" in header
     assert "objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(" in header
     assert "size_t objc3c_frontend_c_copy_last_error(" in header
+    assert "objc3c_frontend_string_t *diagnostics_path;" in result_header
+    assert "const char *diagnostics_path;" not in result_header
+    assert "objc3c_frontend_result_destroy(" in result_header
+    assert "objc3c_frontend_result_artifact_path(" in result_header
+    assert "objc3c_frontend_result_error_message(" in result_header
+    assert "objc3c_frontend_string_release(" in string_header
+    assert "objc3c_frontend_string_view(" in string_header
 
 
 def test_frontend_public_headers_are_domain_owned() -> None:

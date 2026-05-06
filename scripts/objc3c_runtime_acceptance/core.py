@@ -16,6 +16,9 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable
+from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.commands import run_command
+from objc3c_runtime_acceptance.reports import write_json_report
 from objc3c_tooling.probe_output import parse_json_output
 from objc3c_tooling.probe_output import parse_key_value_output
 from objc3c_tooling.probe_compile import compile_probe as compile_runtime_probe
@@ -882,18 +885,7 @@ def run(
     resolved_cwd = cwd or ROOT
     progress = ACCEPTANCE_PROGRESS
     started_at = progress.start_command(command, resolved_cwd) if progress else perf_counter()
-    subprocess_env = None
-    if env:
-        subprocess_env = os.environ.copy()
-        subprocess_env.update(env)
-    result = subprocess.run(
-        command,
-        cwd=str(resolved_cwd),
-        env=subprocess_env,
-        text=True,
-        capture_output=True,
-        check=False,
-    )
+    result = run_command(command, cwd=resolved_cwd, env=env)
     if progress:
         progress.finish_command(
             command=command,
@@ -5284,16 +5276,6 @@ def remove_metaprogramming_cache_entry_from_artifact(artifact: dict[str, Any]) -
     return False
 
 
-
-
-@dataclass(frozen=True)
-class CaseResult:
-    case_id: str
-    probe: str
-    fixture: str | None
-    claim_class: str
-    passed: bool
-    summary: dict[str, Any]
 
 
 RUNTIME_ACCEPTANCE_SUITE_CASES: dict[str, tuple[str, ...]] = {
@@ -14540,18 +14522,18 @@ def check_imported_runtime_packaging_replay_case(
     local_consumer_class_value = payload.get("local_consumer_class_value")
     expect(
         isinstance(imported_provider_class_value, int)
-        and imported_provider_class_value == 0,
-        "expected imported provider class metadata-only dispatch to return the strict dispatch error value",
+        and imported_provider_class_value == 43,
+        "expected imported provider class dispatch to execute the provider class method",
     )
     expect(
         isinstance(imported_provider_protocol_value, int)
-        and imported_provider_protocol_value == 0,
-        "expected imported provider protocol metadata-only dispatch to return the strict dispatch error value",
+        and imported_provider_protocol_value == 41,
+        "expected imported provider protocol method dispatch to execute the provider implementation",
     )
     expect(
         isinstance(local_consumer_class_value, int)
-        and local_consumer_class_value == 0,
-        "expected local consumer class metadata-only dispatch to return the strict dispatch error value",
+        and local_consumer_class_value == 53,
+        "expected local consumer class dispatch to execute the local class method",
     )
     expect(payload.get("selector_table_status") == 0, "expected imported-runtime startup selector-table snapshot copy to succeed")
     expect(payload.get("selector_table_entry_count") == 3, "expected imported-runtime startup to publish three selector entries")
@@ -14574,17 +14556,17 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("local_selector_last_ordinal") == 2, "expected local class selector metadata to end at the local registration ordinal")
     expect(payload.get("method_cache_state_status") == 0, "expected imported-runtime startup method-cache snapshot copy to succeed")
     expect(payload.get("method_cache_entry_count") == 3, "expected imported-runtime startup to publish three method-cache entries")
-    expect(payload.get("method_cache_live_dispatch_count") == 0, "expected imported-runtime startup to avoid live dispatch fast-path entries")
-    expect(payload.get("method_cache_strict_dispatch_error_count") == 3, "expected imported-runtime startup to publish three metadata-backed strict dispatch errors")
+    expect(payload.get("method_cache_live_dispatch_count") == 3, "expected imported-runtime startup to publish three live dispatch entries")
+    expect(payload.get("method_cache_strict_dispatch_error_count") == 0, "expected imported-runtime startup to avoid metadata-backed strict dispatch errors")
     expect(payload.get("method_cache_last_selector") == "localClassValue", "expected imported-runtime startup to publish the last resolved selector")
-    expect(payload.get("method_cache_last_resolved_class_name") is None, "expected imported-runtime startup to keep the method-cache class name unset for metadata-backed strict dispatch error")
-    expect(payload.get("method_cache_last_resolved_owner_identity") is None, "expected imported-runtime startup to keep the method-cache owner identity unset for metadata-backed strict dispatch error")
-    expect(payload.get("provider_method_status") == 0 and payload.get("provider_method_found") == 1 and payload.get("provider_method_resolved") == 0, "expected provider class method metadata to remain an unresolved strict error entry at startup")
-    expect(payload.get("provider_method_owner_identity") is None, "expected provider class strict error method metadata to avoid a resolved owner identity at startup")
-    expect(payload.get("imported_protocol_method_status") == 0 and payload.get("imported_protocol_method_found") == 1 and payload.get("imported_protocol_method_resolved") == 0, "expected imported protocol method metadata to remain an unresolved strict error entry at startup")
-    expect(payload.get("imported_protocol_method_owner_identity") is None, "expected imported protocol strict error metadata to avoid a resolved owner identity at startup")
-    expect(payload.get("local_method_status") == 0 and payload.get("local_method_found") == 1 and payload.get("local_method_resolved") == 0, "expected local class method metadata to remain an unresolved strict error entry at startup")
-    expect(payload.get("local_method_owner_identity") is None, "expected local class strict error metadata to avoid a resolved owner identity at startup")
+    expect(payload.get("method_cache_last_resolved_class_name") == "LocalConsumer", "expected imported-runtime startup to resolve the last method-cache class name")
+    expect(payload.get("method_cache_last_resolved_owner_identity") == "implementation:LocalConsumer::class_method:localClassValue", "expected imported-runtime startup to resolve the last method-cache owner identity")
+    expect(payload.get("provider_method_status") == 0 and payload.get("provider_method_found") == 1 and payload.get("provider_method_resolved") == 1, "expected provider class method metadata to resolve at startup")
+    expect(payload.get("provider_method_owner_identity") == "implementation:ImportedProvider::class_method:providerClassValue", "expected provider class method metadata to publish the resolved owner identity at startup")
+    expect(payload.get("imported_protocol_method_status") == 0 and payload.get("imported_protocol_method_found") == 1 and payload.get("imported_protocol_method_resolved") == 1, "expected imported protocol method metadata to resolve at startup")
+    expect(payload.get("imported_protocol_method_owner_identity") == "implementation:ImportedProvider::class_method:importedProtocolValue", "expected imported protocol method metadata to publish the resolved owner identity at startup")
+    expect(payload.get("local_method_status") == 0 and payload.get("local_method_found") == 1 and payload.get("local_method_resolved") == 1, "expected local class method metadata to resolve at startup")
+    expect(payload.get("local_method_owner_identity") == "implementation:LocalConsumer::class_method:localClassValue", "expected local class method metadata to publish the resolved owner identity at startup")
     expect(payload.get("protocol_query_status") == 0, "expected imported-runtime startup protocol-conformance query snapshot copy to succeed")
     expect(payload.get("protocol_query_class_found") == 1 and payload.get("protocol_query_protocol_found") == 1 and payload.get("protocol_query_conforms") == 1, "expected imported provider protocol conformance to survive cross-module startup")
     expect(payload.get("protocol_query_visited_protocol_count") == 1, "expected imported-runtime startup to visit one protocol during conformance evaluation")
@@ -14621,20 +14603,20 @@ def check_imported_runtime_packaging_replay_case(
     expect(
         payload.get("post_replay_imported_provider_class_value")
         == imported_provider_class_value
-        == 0,
-        "expected imported provider class strict dispatch error value to survive replay",
+        == 43,
+        "expected imported provider class dispatch value to survive replay",
     )
     expect(
         payload.get("post_replay_imported_provider_protocol_value")
         == imported_provider_protocol_value
-        == 0,
-        "expected imported provider protocol strict dispatch error value to survive replay",
+        == 41,
+        "expected imported provider protocol dispatch value to survive replay",
     )
     expect(
         payload.get("post_replay_local_consumer_class_value")
         == local_consumer_class_value
-        == 0,
-        "expected local consumer class strict dispatch error value to survive replay",
+        == 53,
+        "expected local consumer class dispatch value to survive replay",
     )
     expect(payload.get("post_replay_selector_table_status") == 0, "expected replay selector-table snapshot copy to succeed")
     expect(payload.get("post_replay_selector_table_entry_count") == 3, "expected replay to restore three selector entries")
@@ -14644,17 +14626,17 @@ def check_imported_runtime_packaging_replay_case(
     expect(payload.get("post_replay_local_selector_status") == 0 and payload.get("post_replay_local_selector_found") == 1, "expected local selector metadata to survive replay")
     expect(payload.get("post_replay_method_cache_state_status") == 0, "expected replay method-cache snapshot copy to succeed")
     expect(payload.get("post_replay_method_cache_entry_count") == 3, "expected replay to restore three method-cache entries")
-    expect(payload.get("post_replay_method_cache_live_dispatch_count") == 0, "expected replay to keep method-cache entries on the strict error path")
-    expect(payload.get("post_replay_method_cache_strict_dispatch_error_count") == 3, "expected replay to restore three metadata-backed strict dispatch errors")
+    expect(payload.get("post_replay_method_cache_live_dispatch_count") == 3, "expected replay to restore three live dispatch entries")
+    expect(payload.get("post_replay_method_cache_strict_dispatch_error_count") == 0, "expected replay to avoid metadata-backed strict dispatch errors")
     expect(payload.get("post_replay_method_cache_last_selector") == "localClassValue", "expected replay to preserve the last resolved selector")
-    expect(payload.get("post_replay_method_cache_last_resolved_class_name") is None, "expected replay to keep the method-cache class name unset for metadata-backed strict dispatch error")
-    expect(payload.get("post_replay_method_cache_last_resolved_owner_identity") is None, "expected replay to keep the method-cache owner identity unset for metadata-backed strict dispatch error")
-    expect(payload.get("post_replay_provider_method_status") == 0 and payload.get("post_replay_provider_method_found") == 1 and payload.get("post_replay_provider_method_resolved") == 0, "expected provider class strict error metadata to survive replay")
-    expect(payload.get("post_replay_provider_method_owner_identity") is None, "expected provider class strict error metadata to avoid a resolved owner identity after replay")
-    expect(payload.get("post_replay_imported_protocol_method_status") == 0 and payload.get("post_replay_imported_protocol_method_found") == 1 and payload.get("post_replay_imported_protocol_method_resolved") == 0, "expected imported protocol strict error metadata to survive replay")
-    expect(payload.get("post_replay_imported_protocol_method_owner_identity") is None, "expected imported protocol strict error metadata to avoid a resolved owner identity after replay")
-    expect(payload.get("post_replay_local_method_status") == 0 and payload.get("post_replay_local_method_found") == 1 and payload.get("post_replay_local_method_resolved") == 0, "expected local class strict error metadata to survive replay")
-    expect(payload.get("post_replay_local_method_owner_identity") is None, "expected local class strict error metadata to avoid a resolved owner identity after replay")
+    expect(payload.get("post_replay_method_cache_last_resolved_class_name") == "LocalConsumer", "expected replay to preserve the last resolved method-cache class name")
+    expect(payload.get("post_replay_method_cache_last_resolved_owner_identity") == "implementation:LocalConsumer::class_method:localClassValue", "expected replay to preserve the last resolved method-cache owner identity")
+    expect(payload.get("post_replay_provider_method_status") == 0 and payload.get("post_replay_provider_method_found") == 1 and payload.get("post_replay_provider_method_resolved") == 1, "expected provider class method metadata to resolve after replay")
+    expect(payload.get("post_replay_provider_method_owner_identity") == "implementation:ImportedProvider::class_method:providerClassValue", "expected provider class method metadata to preserve its resolved owner identity after replay")
+    expect(payload.get("post_replay_imported_protocol_method_status") == 0 and payload.get("post_replay_imported_protocol_method_found") == 1 and payload.get("post_replay_imported_protocol_method_resolved") == 1, "expected imported protocol method metadata to resolve after replay")
+    expect(payload.get("post_replay_imported_protocol_method_owner_identity") == "implementation:ImportedProvider::class_method:importedProtocolValue", "expected imported protocol method metadata to preserve its resolved owner identity after replay")
+    expect(payload.get("post_replay_local_method_status") == 0 and payload.get("post_replay_local_method_found") == 1 and payload.get("post_replay_local_method_resolved") == 1, "expected local class method metadata to resolve after replay")
+    expect(payload.get("post_replay_local_method_owner_identity") == "implementation:LocalConsumer::class_method:localClassValue", "expected local class method metadata to preserve its resolved owner identity after replay")
 
     return CaseResult(
         case_id="imported-runtime-packaging-replay",
@@ -21693,11 +21675,8 @@ def main(argv: list[str] | None = None) -> int:
             "deterministic": True,
         },
     }
-    progress_path.write_text(
-        json.dumps(ACCEPTANCE_PROGRESS.final_summary(), indent=2) + "\n",
-        encoding="utf-8",
-    )
-    report_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_json_report(progress_path, ACCEPTANCE_PROGRESS.final_summary())
+    write_json_report(report_path, summary)
     print(f"runtime-acceptance: PASS ({report_path})")
     return 0
 

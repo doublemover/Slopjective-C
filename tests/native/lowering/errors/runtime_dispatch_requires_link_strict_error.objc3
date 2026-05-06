@@ -1,0 +1,7 @@
+// Canonical strict-error fixture: non-nil message send must not fall back when runtime dispatch is unresolved.
+module RuntimeDispatchRequiresLinkStrictError;
+
+fn main() -> i32 {
+  let receiver = 3;
+  return [receiver ping];
+}

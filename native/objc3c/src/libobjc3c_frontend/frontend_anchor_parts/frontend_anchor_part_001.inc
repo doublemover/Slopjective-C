@@ -3,12 +3,14 @@
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <new>
 #include <limits>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -26,6 +28,7 @@
 using objc3::io::EscapeJsonString;
 
 struct objc3c_frontend_context {
+  mutable std::mutex mutex;
   std::string last_error;
   std::string diagnostics_path;
   // control-flow execution gate anchor: the C frontend bridge must
@@ -98,6 +101,86 @@ static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const 
     return;
   }
   context->last_error = message == nullptr ? "" : message;
+}
+
+static objc3c_frontend_string_t *CloneFrontendString(const std::string &text) {
+  if (text.empty()) {
+    return nullptr;
+  }
+  auto *string = static_cast<objc3c_frontend_string_t *>(
+      std::malloc(sizeof(objc3c_frontend_string_t)));
+  if (string == nullptr) {
+    return nullptr;
+  }
+  auto *data = static_cast<char *>(std::malloc(text.size() + 1u));
+  if (data == nullptr) {
+    std::free(string);
+    return nullptr;
+  }
+  std::memcpy(data, text.data(), text.size());
+  data[text.size()] = '\0';
+  string->data = data;
+  string->size = text.size();
+  return string;
+}
+
+extern "C" OBJC3C_FRONTEND_API objc3c_frontend_string_view_t
+objc3c_frontend_string_view(const objc3c_frontend_string_t *string) {
+  if (string == nullptr || string->data == nullptr) {
+    return {nullptr, 0u};
+  }
+  return {string->data, string->size};
+}
+
+extern "C" OBJC3C_FRONTEND_API void objc3c_frontend_string_release(
+    objc3c_frontend_string_t *string) {
+  if (string == nullptr) {
+    return;
+  }
+  std::free(string->data);
+  std::free(string);
+}
+
+extern "C" OBJC3C_FRONTEND_API void objc3c_frontend_result_destroy(
+    objc3c_frontend_compile_result_t *result) {
+  if (result == nullptr) {
+    return;
+  }
+  objc3c_frontend_string_release(result->error_message);
+  objc3c_frontend_string_release(result->diagnostics_path);
+  objc3c_frontend_string_release(result->manifest_path);
+  objc3c_frontend_string_release(result->runtime_metadata_path);
+  objc3c_frontend_string_release(result->ir_path);
+  objc3c_frontend_string_release(result->object_path);
+  *result = {};
+}
+
+extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
+objc3c_frontend_result_artifact_path(
+    const objc3c_frontend_compile_result_t *result,
+    objc3c_frontend_artifact_kind_t artifact_kind) {
+  if (result == nullptr) {
+    return nullptr;
+  }
+  switch (artifact_kind) {
+    case OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS:
+      return result->diagnostics_path;
+    case OBJC3C_FRONTEND_ARTIFACT_MANIFEST:
+      return result->manifest_path;
+    case OBJC3C_FRONTEND_ARTIFACT_IR:
+      return result->ir_path;
+    case OBJC3C_FRONTEND_ARTIFACT_OBJECT:
+      return result->object_path;
+    case OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA:
+      return result->runtime_metadata_path;
+  }
+  return nullptr;
+}
+
+extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
+objc3c_frontend_result_error_message(
+    const objc3c_frontend_compile_result_t *result) {
+  return result == nullptr ? nullptr : result->error_message;
 }
 
 static bool IsNullOrEmpty(const char *text) {
@@ -356,21 +439,17 @@ static void ClearCompileResultPaths(objc3c_frontend_context_t *context) {
   context->object_path.clear();
 }
 
-static const char *OptionalCString(const std::string &text) {
-  if (text.empty()) {
-    return nullptr;
-  }
-  return text.c_str();
-}
-
 static void PopulateResultPaths(objc3c_frontend_context_t *context, objc3c_frontend_compile_result_t *result) {
   if (context == nullptr || result == nullptr) {
     return;
   }
-  result->diagnostics_path = OptionalCString(context->diagnostics_path);
-  result->manifest_path = OptionalCString(context->manifest_path);
-  result->ir_path = OptionalCString(context->ir_path);
-  result->object_path = OptionalCString(context->object_path);
+  result->error_message = CloneFrontendString(context->last_error);
+  result->diagnostics_path = CloneFrontendString(context->diagnostics_path);
+  result->manifest_path = CloneFrontendString(context->manifest_path);
+  result->runtime_metadata_path =
+      CloneFrontendString(context->runtime_metadata_binary_path);
+  result->ir_path = CloneFrontendString(context->ir_path);
+  result->object_path = CloneFrontendString(context->object_path);
 }
 
 static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context,
@@ -380,8 +459,22 @@ static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context
   result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   result->process_exit_code = 2;
   result->success = 0;
+  result->error_message = CloneFrontendString(message);
   objc3c_frontend_set_error(context, message.c_str());
   return result->status;
+}
+
+static objc3c_frontend_status_t SetUsageErrorWithoutContext(
+    objc3c_frontend_compile_result_t *result,
+    const std::string &message) {
+  if (result != nullptr) {
+    *result = {};
+    result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
+    result->process_exit_code = 2;
+    result->success = 0;
+    result->error_message = CloneFrontendString(message);
+  }
+  return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
 }
 
 static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_options_t &options) {

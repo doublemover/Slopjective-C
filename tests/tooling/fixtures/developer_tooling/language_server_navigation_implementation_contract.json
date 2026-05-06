@@ -13,7 +13,7 @@
     "workspaceSymbol",
     "definition"
   ],
-  "expected_fallback_capabilities": [
+  "expected_unpublished_capabilities": [
     "references",
     "rename",
     "semanticTokens",

@@ -540,7 +540,7 @@ int objc3_runtime_copy_storage_accessor_implementation_snapshot_for_testing(
   snapshot->reflection_model =
       "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts";
   snapshot->fail_closed_model =
-      "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-synthesis";
+      "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

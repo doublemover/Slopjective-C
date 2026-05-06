@@ -1,0 +1,8 @@
+// Canonical rejection fixture: legacy NULL literal alias is not a positive mode.
+module LegacyNullLiteralAliasRejected;
+
+let value = NULL / 0;
+
+fn main() -> i32 {
+  return value;
+}

@@ -48,8 +48,8 @@ Integrator final checks:
 1. `python scripts/spec_lint.py`
 2. `python scripts/check_issue_checkbox_drift.py`
 3. `python -m pytest tests/tooling -q`
-4. `npm run check:extension-registry-compatibility:w1:strict`
-5. `npm run check:dispatch-reopen-guardrails:w1:strict`
+4. `npm run objc3c -- check-extension-registry-compatibility-w1-strict`
+5. `npm run objc3c -- check-dispatch-reopen-guardrails-w1-strict`
 
 ## 7. Execution Status
 

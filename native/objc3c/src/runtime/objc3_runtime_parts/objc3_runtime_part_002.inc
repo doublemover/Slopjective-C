@@ -707,16 +707,10 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   // the class family from emitted bundles on every dispatch.
   ClearRealizedClassGraphUnlocked(state);
 
-  struct ReceiverBinding {
-    std::string class_name;
-    bool ambiguous = false;
-  };
-
-  std::unordered_map<std::size_t, ReceiverBinding> bindings_by_ordinal;
   std::vector<const RegisteredImageMetadata *> ordered_images =
       OrderedRegisteredImages(state);
-  std::size_t max_class_name_count = 0;
   std::size_t estimated_realized_node_count = 0;
+  std::unordered_set<std::string> global_class_name_set;
   for (const RegisteredImageMetadata *record : ordered_images) {
     if (record == nullptr) {
       continue;
@@ -729,33 +723,25 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
     if (!CollectSortedImageClassNames(*record, class_names)) {
       continue;
     }
-    max_class_name_count =
-        std::max(max_class_name_count, class_names.size());
-    bindings_by_ordinal.reserve(max_class_name_count);
-    for (std::size_t ordinal = 0; ordinal < class_names.size(); ++ordinal) {
-      ReceiverBinding &binding = bindings_by_ordinal[ordinal];
-      if (binding.class_name.empty() && !binding.ambiguous) {
-        binding.class_name = class_names[ordinal];
-        continue;
-      }
-      if (binding.class_name != class_names[ordinal]) {
-        binding.class_name.clear();
-        binding.ambiguous = true;
-      }
+    global_class_name_set.reserve(global_class_name_set.size() +
+                                  class_names.size());
+    for (const std::string &class_name : class_names) {
+      global_class_name_set.insert(class_name);
     }
   }
-  state.realized_class_name_by_base_identity.reserve(bindings_by_ordinal.size());
-  state.ambiguous_realized_base_identities.reserve(bindings_by_ordinal.size());
-  for (const auto &[ordinal, binding] : bindings_by_ordinal) {
+
+  std::vector<std::string> global_class_names(global_class_name_set.begin(),
+                                             global_class_name_set.end());
+  std::sort(global_class_names.begin(), global_class_names.end());
+  std::unordered_map<std::string, std::size_t> global_ordinal_by_class_name;
+  global_ordinal_by_class_name.reserve(global_class_names.size());
+  state.realized_class_name_by_base_identity.reserve(global_class_names.size());
+  for (std::size_t ordinal = 0; ordinal < global_class_names.size(); ++ordinal) {
+    const std::string &class_name = global_class_names[ordinal];
+    global_ordinal_by_class_name.emplace(class_name, ordinal);
     const std::uint64_t base_identity = BuildReceiverBaseIdentity(ordinal);
-    if (binding.ambiguous) {
-      state.ambiguous_realized_base_identities.insert(base_identity);
-      continue;
-    }
-    if (!binding.class_name.empty()) {
-      state.realized_class_name_by_base_identity.emplace(base_identity,
-                                                         binding.class_name);
-    }
+    state.realized_class_name_by_base_identity.emplace(base_identity,
+                                                       class_name);
   }
   state.receiver_class_binding_count =
       static_cast<std::uint64_t>(state.realized_class_name_by_base_identity.size());
@@ -763,20 +749,15 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   std::unordered_map<const EmittedClassBundle *, std::size_t> node_index_by_bundle;
   node_index_by_bundle.reserve(estimated_realized_node_count);
   state.realized_class_nodes.reserve(estimated_realized_node_count);
-  state.realized_class_node_indices_by_name.reserve(max_class_name_count);
+  state.realized_class_node_indices_by_name.reserve(global_class_names.size());
   for (const RegisteredImageMetadata *record : ordered_images) {
     std::vector<std::string> class_names;
     if (!CollectSortedImageClassNames(*record, class_names)) {
       continue;
     }
-    std::unordered_map<std::string, std::size_t> ordinal_by_class_name;
-    ordinal_by_class_name.reserve(class_names.size());
-    for (std::size_t ordinal = 0; ordinal < class_names.size(); ++ordinal) {
-      ordinal_by_class_name.emplace(class_names[ordinal], ordinal);
-    }
     for (const std::string &class_name : class_names) {
-      const auto ordinal_it = ordinal_by_class_name.find(class_name);
-      if (ordinal_it == ordinal_by_class_name.end()) {
+      const auto ordinal_it = global_ordinal_by_class_name.find(class_name);
+      if (ordinal_it == global_ordinal_by_class_name.end()) {
         continue;
       }
       const auto bundles = CollectPreferredClassBundlesForImage(*record, class_name);

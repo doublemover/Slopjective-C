@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "fixture": "message_send_direct_nil_receiver_elision.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "lowering",
+  "behavior_family": "expressions",
+  "fixture_kind": "positive",
+  "expected": {
+    "stage": "compile",
+    "diagnostic_code": "",
+    "required_tokens": []
+  },
+  "execution": {
+    "requires_live_runtime_dispatch": false
+  }
+}

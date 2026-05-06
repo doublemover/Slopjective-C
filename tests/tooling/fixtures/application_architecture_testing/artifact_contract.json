@@ -60,7 +60,7 @@
     "package and runnable evidence is invalid if it bypasses the public workflow runner"
   ],
   "non_goals": [
-    "independent milestone-local evidence roots",
+    "independent shared evidence roots",
     "untracked schema drift between template and canonical-app evidence",
     "package or install evidence published without a corresponding source contract"
   ]

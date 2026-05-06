@@ -36,8 +36,9 @@ int main() {
   const char *const selector = "bootstrap:ready:";
   const objc3_runtime_selector_handle *selector_handle =
       objc3_runtime_lookup_selector(selector);
-  const int dispatch_result =
-      objc3_runtime_dispatch_i32(5, selector, 1, 2, 3, 4);
+  const objc3_runtime_dispatch_i32_result dispatch =
+      objc3_runtime_dispatch_i32_checked(5, selector, 1, 2, 3, 4);
+  const int dispatch_result = dispatch.value;
 
   objc3_runtime_registration_state_snapshot post_register_snapshot{};
   const int post_register_copy_status =

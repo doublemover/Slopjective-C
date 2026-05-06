@@ -102,7 +102,7 @@ def build_language_server_payload(
         "definition" if manifest_available and symbols else None,
     ]
     supported_capabilities = [capability for capability in supported_capabilities if capability is not None]
-    fallback_capabilities = [
+    unpublished_capabilities = [
         "references",
         "rename",
         "semanticTokens",
@@ -118,42 +118,42 @@ def build_language_server_payload(
         "documentSymbol": {
             "supported": manifest_available,
             "support_class": "manifest-backed" if manifest_available else "fail-closed",
-            "fallback_behavior": "" if manifest_available else "disabled until compile emits manifest declarations",
+            "unpublished_reason": "" if manifest_available else "disabled until compile emits manifest declarations",
         },
         "workspaceSymbol": {
             "supported": manifest_available,
             "support_class": "manifest-backed" if manifest_available else "fail-closed",
-            "fallback_behavior": "" if manifest_available else "disabled until compile emits manifest declarations",
+            "unpublished_reason": "" if manifest_available else "disabled until compile emits manifest declarations",
         },
         "definition": {
             "supported": manifest_available and bool(symbols),
             "support_class": "manifest-backed" if manifest_available and symbols else "fail-closed",
-            "fallback_behavior": "" if manifest_available and symbols else "disabled until compile emits declaration coordinates",
+            "unpublished_reason": "" if manifest_available and symbols else "disabled until compile emits declaration coordinates",
         },
         "references": {
             "supported": False,
-            "support_class": "fallback-only",
-            "fallback_behavior": "not published; use documentSymbol/workspaceSymbol and definition on compile-owned declarations",
+            "support_class": "unpublished",
+            "unpublished_reason": "not published; use documentSymbol/workspaceSymbol and definition on compile-owned declarations",
         },
         "rename": {
             "supported": False,
-            "support_class": "fallback-only",
-            "fallback_behavior": "not published; canonical compile graph has no rename contract yet",
+            "support_class": "unpublished",
+            "unpublished_reason": "not published; canonical compile graph has no rename contract yet",
         },
         "semanticTokens": {
             "supported": False,
-            "support_class": "fallback-only",
-            "fallback_behavior": "not published; no semantic token contract is emitted on the canonical toolchain path",
+            "support_class": "unpublished",
+            "unpublished_reason": "not published; no semantic token contract is emitted on the canonical toolchain path",
         },
         "codeAction": {
             "supported": False,
-            "support_class": "fallback-only",
-            "fallback_behavior": "not published; diagnostics remain actionable only through compile output and operator guidance",
+            "support_class": "unpublished",
+            "unpublished_reason": "not published; diagnostics remain actionable only through compile output and operator guidance",
         },
         "statementLevelStepping": {
             "supported": False,
-            "support_class": "fallback-only",
-            "fallback_behavior": "not published; statement stepping remains fail-closed pending line-table evidence",
+            "support_class": "unpublished",
+            "unpublished_reason": "not published; statement stepping remains fail-closed pending line-table evidence",
         },
     }
     return {
@@ -161,7 +161,7 @@ def build_language_server_payload(
         "summary_status_name": summary.get("observability", {}).get("status_name", ""),
         "manifest_backed_navigation": manifest_available,
         "supported_capability_ids": supported_capabilities,
-        "fallback_only_capability_ids": fallback_capabilities,
+        "unpublished_capability_ids": unpublished_capabilities,
         "capability_statuses": capability_statuses,
     }
 

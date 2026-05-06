@@ -24,7 +24,7 @@ Use this page in three passes:
 
 1. Read the status sections below to understand what is real today.
 2. Use the spec map to find the normative area you care about.
-3. Use the legacy spec redirect index only when you need compatibility links into archived language rules, ABI notes, or compatibility constraints.
+3. Use the archived spec index only when you need historical links into archived language rules, ABI notes, or compatibility constraints.
 
 ## Quick Routes {#toc-quick-routes}
 
@@ -44,7 +44,8 @@ Use this page in three passes:
 | find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |
 | build and validate the implementation                    | [README.md](../README.md)                                                                       |
 | inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
-| follow old spec links                                    | [legacy spec redirects](../docs/reference/legacy_spec_anchor_index.md#legacy-files)             |
+| follow archived spec anchors                             | [archived spec index](../docs/reference/legacy_spec_anchor_index.md#legacy-files)               |
+| verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
 
 ## Reader Promises {#toc-reader-promises}
 

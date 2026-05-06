@@ -32,7 +32,7 @@
   "frozen_semantic_models": [
     {
       "semantic_id": "thrown-value-storage-and-cleanup-order-form-one-runtime-story",
-      "summary": "Thrown-value storage, exceptional exit, cleanup scheduling, and cleanup resume behavior are one runtime-backed contract and must not drift into separate proof-only interpretations."
+      "summary": "Thrown-value storage, exceptional exit, cleanup scheduling, and cleanup resume behavior are one runtime-backed contract and must not drift into separate evidence-only interpretations."
     },
     {
       "semantic_id": "catch-filtering-and-catch-all-finalization-stay-coupled-to-runtime-observable-behavior",
@@ -49,7 +49,7 @@
   ],
   "claim_narrowing_constraints": [
     "no-public-error-runtime-abi-widening",
-    "no-proof-only-cleanup-ordering-model",
+    "no-evidence-only-cleanup-ordering-model",
     "no-async-or-interop-closure-claims-beyond-current-error-runtime-evidence"
   ],
   "authoritative_case_ids": [

@@ -101,16 +101,19 @@ int main() {
                             known_class_class_storage,
                             known_class_owner_storage);
 
-  const int protocol_strict_error =
-      objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result protocol_strict_error_result =
+      objc3_runtime_dispatch_i32_checked(1042, "ignoredValue", 0, 0, 0, 0);
+  const int protocol_strict_error = protocol_strict_error_result.value;
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &protocol_strict_error_state);
   StabilizeMethodCacheState(
       protocol_strict_error_state, protocol_strict_error_selector_storage,
       protocol_strict_error_class_storage, protocol_strict_error_owner_storage);
 
+  const objc3_runtime_dispatch_i32_result protocol_strict_error_cached_result =
+      objc3_runtime_dispatch_i32_checked(1042, "ignoredValue", 0, 0, 0, 0);
   const int protocol_strict_error_cached =
-      objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
+      protocol_strict_error_cached_result.value;
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &protocol_strict_error_cached_state);
   StabilizeMethodCacheState(protocol_strict_error_cached_state,

@@ -31,8 +31,9 @@ int main() {
       objc3_runtime_dispatch_i32(1042, "tracedValue", 0, 0, 0, 0);
   const int class_value =
       objc3_runtime_dispatch_i32(1043, "classValue", 0, 0, 0, 0);
-  const int protocol_strict_error =
-      objc3_runtime_dispatch_i32(1042, "ignoredValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result protocol_strict_error_result =
+      objc3_runtime_dispatch_i32_checked(1042, "ignoredValue", 0, 0, 0, 0);
+  const int protocol_strict_error = protocol_strict_error_result.value;
   const int protocol_strict_error_expected =
       ExpectedStrictDispatchErrorValue(1042, "ignoredValue", 0, 0, 0, 0);
 

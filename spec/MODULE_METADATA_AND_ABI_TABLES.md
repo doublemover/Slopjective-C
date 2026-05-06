@@ -4669,7 +4669,7 @@ Deterministic lane-A runtime metadata ownership metadata anchors for
 - record-count evidence for classes, protocols, category interfaces,
   category implementations, properties, methods, and ivar source packets
 - explicit booleans for frontend ownership, fail-closed status, lowering
-  readiness, native runtime library presence, and test-shim-only topology
+  readiness, native runtime library presence, and test-harness-only topology
 
 Runtime metadata ownership evidence and parser/sema source-boundary continuity
 must remain deterministic before metadata section ABI work begins.
@@ -5954,7 +5954,7 @@ super/dynamic dispatch evidence while direct dispatch remains reserved:
   `super-and-dynamic-sites-preserve-method-family-runtime-visibility`
 - negative legality diagnostic anchor `O3S216`
 - metadata evidence now expects `super` and dynamic site counts to stay visible
-  in the same manifest/handoff family that feeds runtime-shim host-link checks
+  in the same manifest/handoff family that feeds runtime host-link host-link checks
 
 ## M255 dispatch lowering ABI metadata anchors (C001)
 
@@ -6203,7 +6203,7 @@ semantic interpretation boundary over the already-emitted M256 source graph:
   - `selector-kind-and-instance-class-ownership-must-remain-compatible-before-runtime-binding`
   - `declared-adoption-requires-required-member-coverage-optional-members-are-non-blocking`
   - `deterministic-declaration-order-with-fail-closed-conflict-detection-before-runtime-installation`
-- IR anchor remains proof-only commentary over the same source-closure metadata
+- IR anchor remains evidence-only commentary over the same source-closure metadata
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B001/object_model_semantic_rules_contract_summary.json`
 
@@ -6223,7 +6223,7 @@ that decision:
   - optional members remain non-blocking
   - inherited protocol requirements fail closed on incompatible required members
   - conformance diagnostics collapse onto `O3S218`
-- IR anchor remains proof-only commentary over the same conformance result
+- IR anchor remains evidence-only commentary over the same conformance result
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B002/protocol_conformance_required_optional_member_enforcement_summary.json`
 
@@ -6243,7 +6243,7 @@ that deterministic merge decision:
   - concrete resolution and protocol conformance consume the merged surface
   - missing interface/implementation category pairs fail closed
   - incompatible attached category members collapse onto `O3S219`
-- IR anchor remains proof-only commentary over the same merge decision
+- IR anchor remains evidence-only commentary over the same merge decision
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B003/category_merge_and_conflict_semantics_summary.json`
 
@@ -6266,7 +6266,7 @@ of that deterministic decision:
   - selector-kind drift fails closed
   - incompatible inherited properties fail closed
   - all realized-class inheritance legality failures collapse onto `O3S220`
-- IR anchor remains proof-only commentary over the same realized-class
+- IR anchor remains evidence-only commentary over the same realized-class
   legality result
 - canonical lane-B summary path
   `tmp/reports/m256/M256-B004/inheritance_override_realization_legality_summary.json`

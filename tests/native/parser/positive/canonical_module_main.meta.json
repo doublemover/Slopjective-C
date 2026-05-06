@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "fixture": "canonical_module_main.objc3",
+  "origin": "hand-authored",
+  "owner_phase": "parser",
+  "behavior_family": "positive",
+  "fixture_kind": "positive",
+  "expected": {
+    "stage": "parse",
+    "diagnostic_code": "",
+    "required_tokens": []
+  }
+}

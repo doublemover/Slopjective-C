@@ -727,6 +727,17 @@ int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,
                                int a1, int a2, int a3) {
   const objc3_runtime_dispatch_i32_result result =
       objc3_runtime_dispatch_i32_checked(receiver, selector, a0, a1, a2, a3);
+  if (result.status_code != OBJC3_RUNTIME_DISPATCH_STATUS_OK &&
+      result.status_code != OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER) {
+    std::fprintf(
+        stderr,
+        "%s [%s]\n",
+        result.diagnostic_message != nullptr ? result.diagnostic_message
+                                             : "runtime dispatch failed",
+        result.diagnostic_code != nullptr ? result.diagnostic_code
+                                          : "O3RT000");
+    std::abort();
+  }
   return result.value;
 }
 
@@ -756,11 +767,6 @@ int objc3_runtime_copy_registration_state_for_testing(
   snapshot->last_rejected_registration_order_ordinal =
       state.last_rejected_registration_order_ordinal;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
-}
-
-extern "C" int objc3_msgsend_i32(int receiver, const char *selector, int a0,
-                                 int a1, int a2, int a3) {
-  return objc3_runtime_dispatch_i32(receiver, selector, a0, a1, a2, a3);
 }
 
 void objc3_runtime_reset_for_testing(void) {

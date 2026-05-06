@@ -61,7 +61,7 @@ def main() -> int:
     negative_payload = load_json(ROOT / negative_dump) if negative_dump else {}
 
     positive_supported = set(positive_payload.get("language_server", {}).get("supported_capability_ids", []))
-    positive_fallback = set(positive_payload.get("language_server", {}).get("fallback_only_capability_ids", []))
+    positive_unpublished = set(positive_payload.get("language_server", {}).get("unpublished_capability_ids", []))
     positive_symbols = [symbol.get("name") for symbol in positive_payload.get("navigation", {}).get("symbols", [])]
     negative_codes = [entry.get("code") for entry in negative_payload.get("diagnostics", {}).get("entries", [])]
 
@@ -71,8 +71,8 @@ def main() -> int:
         failures,
     )
     expect(
-        all(capability in positive_fallback for capability in contract["expected_fallback_capabilities"]),
-        "positive editor surface is missing expected fallback-only capabilities",
+        all(capability in positive_unpublished for capability in contract["expected_unpublished_capabilities"]),
+        "positive editor surface is missing expected unpublished capabilities",
         failures,
     )
     expect(

@@ -547,7 +547,7 @@ function Invoke-CMakeNativeBuild {
   )
 
   Write-BuildStep "cmake_build_start=native-binaries"
-  & $CmakeTool --build $BuildDir --parallel --target objc3c-native objc3c-frontend-c-api-runner objc3_runtime
+  & $CmakeTool --build $BuildDir --parallel --target objc3c-native objc3c_tools_frontend_c_api_runner objc3_runtime
   if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
   Write-BuildStep "cmake_build_done=native-binaries"
 }

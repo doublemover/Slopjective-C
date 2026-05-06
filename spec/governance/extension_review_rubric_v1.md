@@ -89,7 +89,7 @@ An extension review is accepted only if all checks pass:
 | Hard-fail ID | Trigger                                                                                          | Required disposition                |
 | ------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------- |
 | `HF-01`      | Open critical security or safety issue without approved mitigation plan.                         | `REJECT` or emergency `hold`.       |
-| `HF-02`      | Non-deterministic behavior in required extension path without deterministic fallback.            | Minimum `DEFER`.                    |
+| `HF-02`      | Non-deterministic behavior in required extension path without deterministic rejection.           | Minimum `DEFER`.                    |
 | `HF-03`      | Portability claims lack independent corroboration and replayable evidence.                       | `DEFER` until evidence is complete. |
 | `HF-04`      | Tooling cost introduces release or CI instability above approved risk budget without mitigation. | `DEFER` or `REJECT`.                |
 | `HF-05`      | Provenance or traceability gap prevents audit replay.                                            | `DEFER` until repaired.             |

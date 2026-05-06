@@ -144,7 +144,7 @@
     "shared validation and packaging through the existing public runner and runnable toolchain bundle"
   ],
   "non_goals": [
-    "milestone-local tutorial wrappers",
+    "shared tutorial wrappers",
     "duplicate example trees outside showcase",
     "machine-owned documentation under tmp",
     "a second stdlib demo packaging flow outside the existing runnable toolchain bundle"

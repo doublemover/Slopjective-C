@@ -95,7 +95,7 @@
     "public runtime ABI widening for macro host execution or package loader helpers",
     "claiming unsupported property-behavior combinations as runtime complete",
     "claiming unsupported foreign loader topologies or unsupported bridge ecosystems as live",
-    "creating milestone-local scaffolding parallel to the shared runtime acceptance and packaged e2e surfaces"
+    "creating shared scaffolding parallel to the shared runtime acceptance and packaged e2e surfaces"
   ],
   "successor_milestones": [
     "M324",

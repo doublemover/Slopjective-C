@@ -18,6 +18,6 @@ Authoritative workload inventory:
 
 What does not count:
 
-- milestone-local probe copies
+- shared probe copies
 - sidecar-only timing claims with no coupled runtime probe
 - ad hoc workload substitutions that are not recorded in the manifest

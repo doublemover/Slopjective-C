@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "fixture": "message_send_six_args_custom_cap.objc3",
+  "expect_failure": {
+    "stage": "run",
+    "required_diagnostic_tokens": [
+      "runtime dispatch failed: unknown receiver class",
+      "O3RT002"
+    ]
+  },
+  "execution": {
+    "runtime_dispatch_symbol": "objc3_runtime_dispatch_i32",
+    "requires_live_runtime_dispatch": true,
+    "native_compile_args": [
+      "--objc3-max-message-args",
+      "6"
+    ]
+  }
+}

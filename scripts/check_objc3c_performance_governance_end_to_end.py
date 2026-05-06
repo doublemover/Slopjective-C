@@ -57,9 +57,9 @@ def main() -> int:
     ci_desc = describe_action("test-ci")
     nightly_desc = describe_action("test-nightly")
 
-    expect(validate_desc.get("public_scripts") == ["test:objc3c:performance-governance"], "validate-performance-governance public script drifted")
-    expect(integration_desc.get("public_scripts") == ["test:objc3c:performance-governance:integration"], "validate-performance-governance-integration public script drifted")
-    expect(end_to_end_desc.get("public_scripts") == ["test:objc3c:performance-governance:e2e"], "validate-performance-governance-end-to-end public script drifted")
+    expect(validate_desc.get("action") == "validate-performance-governance", "validate-performance-governance description drifted")
+    expect(integration_desc.get("action") == "validate-performance-governance-integration", "validate-performance-governance-integration description drifted")
+    expect(end_to_end_desc.get("action") == "validate-performance-governance-end-to-end", "validate-performance-governance-end-to-end description drifted")
     expect(ci_desc.get("action") == "test-ci", "test-ci description drifted")
     expect(nightly_desc.get("action") == "test-nightly", "test-nightly description drifted")
 

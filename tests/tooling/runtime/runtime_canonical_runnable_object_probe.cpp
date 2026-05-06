@@ -96,11 +96,13 @@ int main() {
   const int class_value = objc3_runtime_dispatch_i32(widget_class_receiver,
                                                      "classValue", 0, 0, 0, 0);
   (void)objc3_runtime_copy_method_cache_state_for_testing(&class_state);
-  const int ignored_value =
-      objc3_runtime_dispatch_i32(init_value, "ignoredValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result ignored_result =
+      objc3_runtime_dispatch_i32_checked(init_value, "ignoredValue", 0, 0, 0, 0);
+  const int ignored_value = ignored_result.value;
   (void)objc3_runtime_copy_method_cache_state_for_testing(&ignored_state);
-  const int ignored_cached_value =
-      objc3_runtime_dispatch_i32(init_value, "ignoredValue", 0, 0, 0, 0);
+  const objc3_runtime_dispatch_i32_result ignored_cached_result =
+      objc3_runtime_dispatch_i32_checked(init_value, "ignoredValue", 0, 0, 0, 0);
+  const int ignored_cached_value = ignored_cached_result.value;
   (void)objc3_runtime_copy_method_cache_state_for_testing(
       &ignored_cached_state);
   const int ignored_expected =

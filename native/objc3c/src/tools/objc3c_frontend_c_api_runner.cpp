@@ -175,6 +175,23 @@ std::string OptionalPath(const char *value) {
   return value;
 }
 
+std::string OptionalPath(const objc3c_frontend_string_t *value) {
+  const objc3c_frontend_string_view_t view =
+      objc3c_frontend_string_view(value);
+  if (view.data == nullptr || view.size == 0) {
+    return "";
+  }
+  return std::string(view.data, view.size);
+}
+
+struct CompileResultGuard {
+  objc3c_frontend_c_compile_result_t *result = nullptr;
+
+  ~CompileResultGuard() {
+    objc3c_frontend_result_destroy(result);
+  }
+};
+
 struct DiagnosticTotals {
   std::uint64_t total = 0;
   std::uint64_t notes = 0;
@@ -1098,6 +1115,7 @@ int main(int argc, char **argv) {
   compile_options.ir_object_backend = options.ir_object_backend;
 
   objc3c_frontend_c_compile_result_t result = {};
+  const CompileResultGuard result_guard{&result};
   const objc3c_frontend_c_status_t status = objc3c_frontend_c_compile_file(context, &compile_options, &result);
   const std::string last_error = ReadLastError(context);
   const int exit_code = ExitCodeFromStatus(status, result);

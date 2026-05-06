@@ -2,14 +2,18 @@
 
 #include <exception>
 #include <filesystem>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "io/objc3_file_io.h"
+#include "io/json/json_parser.h"
 
 namespace {
+
+using objc3::io::json::JsonValue;
 
 struct Objc3LLVMCabilitySummary {
   std::string mode;
@@ -22,159 +26,74 @@ struct Objc3LLVMCabilitySummary {
   std::vector<std::string> blockers;
 };
 
-bool ExtractObjectSegment(const std::string &text, const std::string &name, std::string &segment) {
-  const std::string key = "\"" + name + "\"";
-  const std::size_t key_pos = text.find(key);
-  if (key_pos == std::string::npos) {
-    return false;
-  }
-  const std::size_t object_start = text.find('{', key_pos);
-  if (object_start == std::string::npos) {
-    return false;
-  }
-
-  int depth = 0;
-  for (std::size_t i = object_start; i < text.size(); ++i) {
-    const char ch = text[i];
-    if (ch == '{') {
-      ++depth;
-    } else if (ch == '}') {
-      --depth;
-      if (depth == 0) {
-        segment = text.substr(object_start, i - object_start + 1);
-        return true;
-      }
-      if (depth < 0) {
-        return false;
-      }
-    }
-  }
-  return false;
-}
-
-bool ExtractBoolField(const std::string &text, const std::string &name, bool &value) {
-  const std::string key = "\"" + name + "\"";
-  const std::size_t key_pos = text.find(key);
-  if (key_pos == std::string::npos) {
-    return false;
-  }
-  const std::size_t colon_pos = text.find(':', key_pos + key.size());
-  if (colon_pos == std::string::npos) {
-    return false;
-  }
-  const std::size_t bool_pos = text.find_first_not_of(" \t\r\n", colon_pos + 1);
-  if (bool_pos == std::string::npos) {
-    return false;
-  }
-  if (text.compare(bool_pos, 4, "true") == 0) {
-    value = true;
-    return true;
-  }
-  if (text.compare(bool_pos, 5, "false") == 0) {
-    value = false;
-    return true;
-  }
-  return false;
-}
-
-bool ExtractStringField(const std::string &text, const std::string &name, std::string &value) {
-  const std::string key = "\"" + name + "\"";
-  const std::size_t key_pos = text.find(key);
-  if (key_pos == std::string::npos) {
-    return false;
-  }
-  const std::size_t colon_pos = text.find(':', key_pos + key.size());
-  if (colon_pos == std::string::npos) {
-    return false;
-  }
-  const std::size_t quote_start = text.find('"', colon_pos + 1);
-  if (quote_start == std::string::npos) {
-    return false;
-  }
-  const std::size_t quote_end = text.find('"', quote_start + 1);
-  if (quote_end == std::string::npos) {
-    return false;
-  }
-  value = text.substr(quote_start + 1, quote_end - quote_start - 1);
-  return true;
-}
-
-std::vector<std::string> ExtractStringArrayField(const std::string &text, const std::string &name) {
+std::vector<std::string> ReadStringArrayField(const JsonValue &object, std::string_view name) {
   std::vector<std::string> values;
-  const std::string key = "\"" + name + "\"";
-  const std::size_t key_pos = text.find(key);
-  if (key_pos == std::string::npos) {
+  const JsonValue *field = object.Find(name);
+  if (field == nullptr || !field->IsArray()) {
     return values;
   }
-  const std::size_t colon_pos = text.find(':', key_pos + key.size());
-  if (colon_pos == std::string::npos) {
-    return values;
-  }
-  const std::size_t array_start = text.find('[', colon_pos + 1);
-  if (array_start == std::string::npos) {
-    return values;
-  }
-  const std::size_t array_end = text.find(']', array_start + 1);
-  if (array_end == std::string::npos || array_end <= array_start) {
-    return values;
-  }
-  const std::string body = text.substr(array_start + 1, array_end - array_start - 1);
-
-  std::size_t cursor = 0;
-  while (cursor < body.size()) {
-    const std::size_t quote_start = body.find('"', cursor);
-    if (quote_start == std::string::npos) {
-      break;
+  for (const JsonValue &entry : field->AsArray()) {
+    if (entry.IsString()) {
+      values.push_back(entry.AsString());
     }
-    const std::size_t quote_end = body.find('"', quote_start + 1);
-    if (quote_end == std::string::npos) {
-      break;
-    }
-    values.push_back(body.substr(quote_start + 1, quote_end - quote_start - 1));
-    cursor = quote_end + 1;
   }
   return values;
 }
 
 bool ParseCapabilitySummary(const std::string &text, Objc3LLVMCabilitySummary &summary, std::string &error) {
-  if (!ExtractStringField(text, "mode", summary.mode)) {
+  const auto parsed = objc3::io::json::ParseJson(text);
+  if (!parsed.ok()) {
+    error = "llvm capability summary parse failure: " + parsed.error->Format();
+    return false;
+  }
+  const JsonValue &root = parsed.value;
+  if (!root.IsObject()) {
+    error = "llvm capability summary parse failure: root must be an object";
+    return false;
+  }
+
+  const auto mode = root.GetString("mode");
+  if (!mode) {
     error = "llvm capability summary parse failure: missing mode";
     return false;
   }
+  summary.mode = *mode;
   if (summary.mode != "objc3c-llvm-capabilities-v2") {
     error = "llvm capability summary mode mismatch: expected objc3c-llvm-capabilities-v2";
     return false;
   }
 
-  std::string clang_segment;
-  if (!ExtractObjectSegment(text, "clang", clang_segment) ||
-      !ExtractStringField(clang_segment, "path", summary.clang_path) ||
-      !ExtractBoolField(clang_segment, "found", summary.clang_found)) {
+  const JsonValue *clang = root.Find("clang");
+  if (clang == nullptr || !clang->IsObject() || !clang->GetString("path") || !clang->GetBool("found")) {
     error = "llvm capability summary parse failure: invalid clang capability section";
     return false;
   }
+  summary.clang_path = *clang->GetString("path");
+  summary.clang_found = *clang->GetBool("found");
 
-  std::string llc_segment;
-  if (!ExtractObjectSegment(text, "llc", llc_segment) || !ExtractStringField(llc_segment, "path", summary.llc_path) ||
-      !ExtractBoolField(llc_segment, "found", summary.llc_found)) {
+  const JsonValue *llc = root.Find("llc");
+  if (llc == nullptr || !llc->IsObject() || !llc->GetString("path") || !llc->GetBool("found")) {
     error = "llvm capability summary parse failure: invalid llc capability section";
     return false;
   }
+  summary.llc_path = *llc->GetString("path");
+  summary.llc_found = *llc->GetBool("found");
 
-  std::string llc_features_segment;
-  if (!ExtractObjectSegment(text, "llc_features", llc_features_segment) ||
-      !ExtractBoolField(llc_features_segment, "supports_filetype_obj", summary.llc_supports_filetype_obj)) {
+  const JsonValue *llc_features = root.Find("llc_features");
+  if (llc_features == nullptr || !llc_features->IsObject() ||
+      !llc_features->GetBool("supports_filetype_obj")) {
     error = "llvm capability summary parse failure: invalid llc_features section";
     return false;
   }
+  summary.llc_supports_filetype_obj = *llc_features->GetBool("supports_filetype_obj");
 
-  std::string sema_segment;
-  if (!ExtractObjectSegment(text, "sema_type_system_parity", sema_segment) ||
-      !ExtractBoolField(sema_segment, "parity_ready", summary.parity_ready)) {
+  const JsonValue *sema = root.Find("sema_type_system_parity");
+  if (sema == nullptr || !sema->IsObject() || !sema->GetBool("parity_ready")) {
     error = "llvm capability summary parse failure: invalid sema/type-system parity section";
     return false;
   }
-  summary.blockers = ExtractStringArrayField(sema_segment, "blockers");
+  summary.parity_ready = *sema->GetBool("parity_ready");
+  summary.blockers = ReadStringArrayField(*sema, "blockers");
   return true;
 }
 
