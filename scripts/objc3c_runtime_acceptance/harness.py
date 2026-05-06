@@ -1,10 +1,10 @@
 """Harness primitives for runtime acceptance."""
 
+from .artifacts import RuntimeAcceptanceArtifactRegistry
 from .core import (
     ACCEPTANCE_ARTIFACT_REGISTRY,
     ACCEPTANCE_PROGRESS,
     CaseResult,
-    RuntimeAcceptanceArtifactRegistry,
     RuntimeAcceptanceProgress,
     command_display,
     expect,

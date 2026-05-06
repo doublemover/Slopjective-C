@@ -16,6 +16,8 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 from typing import Any, Callable
+from objc3c_runtime_acceptance.artifacts import ArtifactRegistryConfig
+from objc3c_runtime_acceptance.artifacts import RuntimeAcceptanceArtifactRegistry
 from objc3c_runtime_acceptance.case_result import CaseResult
 from objc3c_runtime_acceptance.commands import run_command
 from objc3c_runtime_acceptance.reports import write_json_report
@@ -698,184 +700,6 @@ class RuntimeAcceptanceProgress:
 ACCEPTANCE_PROGRESS: RuntimeAcceptanceProgress | None = None
 
 
-class RuntimeAcceptanceArtifactRegistry:
-    def __init__(self) -> None:
-        self.entries: dict[str, dict[str, Any]] = {}
-        self.reuse_events: list[dict[str, Any]] = []
-        self.miss_events: list[dict[str, Any]] = []
-
-    def cache_key(
-        self,
-        fixture: Path,
-        *,
-        extra_args: list[str] | None,
-        backend: str,
-        emit_prefix: str,
-    ) -> tuple[str, dict[str, Any]]:
-        source_path = fixture.resolve()
-        key_payload = {
-            "contract_id": "objc3c.runtime.acceptance.artifact.registry.key.v1",
-            "source_path": repo_display_path(source_path),
-            "source_sha256": optional_file_sha256_hex(source_path),
-            "extra_args": list(extra_args or []),
-            "backend": backend,
-            "emit_prefix": emit_prefix,
-            "compiler_binary": repo_display_path(NATIVE_EXE),
-            "compiler_binary_sha256": optional_file_sha256_hex(NATIVE_EXE),
-            "runtime_support_library": repo_display_path(RUNTIME_LIB),
-            "runtime_support_library_sha256": optional_file_sha256_hex(RUNTIME_LIB),
-            "environment": {
-                "OBJC3C_RUNTIME_ACCEPTANCE_COMPILE_BACKEND": DEFAULT_COMPILE_BACKEND,
-            },
-        }
-        key = sha256_text_hex(json.dumps(key_payload, sort_keys=True))
-        return key, key_payload
-
-    def required_artifacts(self, emit_prefix: str) -> list[str]:
-        return [
-            f"{emit_prefix}.obj",
-            f"{emit_prefix}.ll",
-            f"{emit_prefix}.manifest.json",
-            f"{emit_prefix}.runtime-registration-manifest.json",
-            f"{emit_prefix}.runtime-registration-descriptor.json",
-            f"{emit_prefix}.compile-provenance.json",
-        ]
-
-    def validate_artifacts(self, directory: Path, emit_prefix: str) -> list[str]:
-        missing = [
-            artifact
-            for artifact in self.required_artifacts(emit_prefix)
-            if not (directory / artifact).is_file()
-        ]
-        if missing:
-            raise RuntimeError(
-                "runtime acceptance artifact registry missing required artifacts "
-                f"in {directory}: {', '.join(missing)}"
-            )
-        return self.required_artifacts(emit_prefix)
-
-    def try_reuse(
-        self,
-        *,
-        fixture: Path,
-        out_dir: Path,
-        extra_args: list[str] | None,
-        backend: str,
-        emit_prefix: str,
-        reuse_policy: str,
-    ) -> bool:
-        if reuse_policy == "none" or backend != DIRECT_COMPILE_BACKEND:
-            return False
-        key, key_payload = self.cache_key(
-            fixture,
-            extra_args=extra_args,
-            backend=backend,
-            emit_prefix=emit_prefix,
-        )
-        entry = self.entries.get(key)
-        current_case = (
-            ACCEPTANCE_PROGRESS.current_case.get("label")
-            if ACCEPTANCE_PROGRESS and ACCEPTANCE_PROGRESS.current_case
-            else None
-        )
-        if entry is None:
-            self.miss_events.append(
-                {
-                    "cache_key_sha256": key,
-                    "case": current_case,
-                    "fixture": key_payload["source_path"],
-                    "extra_args": key_payload["extra_args"],
-                    "reuse_policy": reuse_policy,
-                    "reason": "no-producer",
-                }
-            )
-            return False
-        producer_dir = ROOT / str(entry["producer_dir"])
-        self.validate_artifacts(producer_dir, emit_prefix)
-        out_dir.mkdir(parents=True, exist_ok=True)
-        copied_artifacts: list[str] = []
-        for artifact in sorted(producer_dir.iterdir(), key=lambda item: item.name):
-            if artifact.is_file():
-                shutil.copy2(artifact, out_dir / artifact.name)
-                copied_artifacts.append(artifact.name)
-        self.validate_artifacts(out_dir, emit_prefix)
-        event = {
-            "cache_key_sha256": key,
-            "producer_case": entry.get("producer_case"),
-            "consumer_case": current_case,
-            "fixture": key_payload["source_path"],
-            "extra_args": key_payload["extra_args"],
-            "producer_dir": entry["producer_dir"],
-            "consumer_dir": repo_display_path(out_dir),
-            "reuse_policy": reuse_policy,
-            "artifact_paths": copied_artifacts,
-        }
-        self.reuse_events.append(event)
-        if ACCEPTANCE_PROGRESS:
-            ACCEPTANCE_PROGRESS.emit(
-                "ARTIFACT reuse "
-                f"case={current_case} fixture={key_payload['source_path']} "
-                f"producer={entry.get('producer_case')} key={key[:12]}"
-            )
-        return True
-
-    def register(
-        self,
-        *,
-        fixture: Path,
-        out_dir: Path,
-        extra_args: list[str] | None,
-        backend: str,
-        emit_prefix: str,
-        reuse_policy: str,
-    ) -> None:
-        if reuse_policy == "none" or backend != DIRECT_COMPILE_BACKEND:
-            return
-        artifact_paths = self.validate_artifacts(out_dir, emit_prefix)
-        key, key_payload = self.cache_key(
-            fixture,
-            extra_args=extra_args,
-            backend=backend,
-            emit_prefix=emit_prefix,
-        )
-        producer_case = (
-            ACCEPTANCE_PROGRESS.current_case.get("label")
-            if ACCEPTANCE_PROGRESS and ACCEPTANCE_PROGRESS.current_case
-            else None
-        )
-        self.entries.setdefault(
-            key,
-            {
-                "cache_key_sha256": key,
-                "producer_case": producer_case,
-                "fixture": key_payload["source_path"],
-                "extra_args": key_payload["extra_args"],
-                "producer_dir": repo_display_path(out_dir),
-                "reuse_policy": reuse_policy,
-                "artifact_paths": artifact_paths,
-            },
-        )
-
-    def summary(self) -> dict[str, Any]:
-        return {
-            "contract_id": "objc3c.runtime.acceptance.artifact.registry.v1",
-            "entry_count": len(self.entries),
-            "reuse_count": len(self.reuse_events),
-            "miss_count": len(self.miss_events),
-            "entries": list(self.entries.values()),
-            "reuse_events": self.reuse_events,
-            "miss_events": self.miss_events,
-            "reuse_model": (
-                "only opt-in immutable direct-native compile artifacts are copied "
-                "within one run; runtime-linked, negative, cache-mutating, and "
-                "cold-warm cases stay isolated unless explicitly opted in"
-            ),
-        }
-
-
-ACCEPTANCE_ARTIFACT_REGISTRY = RuntimeAcceptanceArtifactRegistry()
-
-
 def run(
     command: list[str],
     *,
@@ -921,6 +745,20 @@ def replay_key_counter(replay_key: str, counter_name: str) -> int:
     if match is None:
         return 0
     return int(match.group(1))
+
+
+ACCEPTANCE_ARTIFACT_REGISTRY = RuntimeAcceptanceArtifactRegistry(
+    ArtifactRegistryConfig(
+        root=ROOT,
+        native_exe=NATIVE_EXE,
+        runtime_lib=RUNTIME_LIB,
+        direct_compile_backend=DIRECT_COMPILE_BACKEND,
+        default_compile_backend=DEFAULT_COMPILE_BACKEND,
+        repo_display_path=repo_display_path,
+        optional_file_sha256_hex=optional_file_sha256_hex,
+        sha256_text_hex=sha256_text_hex,
+    )
+)
 
 
 def compile_output_truthfulness(compile_dir: Path, emit_prefix: str = "module") -> dict[str, Any]:
@@ -1269,6 +1107,7 @@ def run_fixture_compile(
         backend=selected_backend,
         emit_prefix="module",
         reuse_policy=reuse_policy,
+        progress=ACCEPTANCE_PROGRESS,
     ):
         return (
             subprocess.CompletedProcess(
@@ -1298,6 +1137,7 @@ def run_fixture_compile(
             backend=selected_backend,
             emit_prefix="module",
             reuse_policy=reuse_policy,
+            progress=ACCEPTANCE_PROGRESS,
         )
     return result, selected_backend
 
