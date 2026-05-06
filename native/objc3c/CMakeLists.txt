@@ -195,6 +195,7 @@ add_library(objc3c_parse STATIC
   src/parse/objc3_ast_builder_contract.cpp
   src/parse/objc3_diagnostic_grammar_hooks_core_feature.cpp
   src/parse/objc3_diagnostic_source_precision_scaffold.cpp
+  src/parse/objc3_message_send_profiles.cpp
   src/parse/objc3_parse_support.cpp
   src/parse/objc3_parser.cpp
 )
