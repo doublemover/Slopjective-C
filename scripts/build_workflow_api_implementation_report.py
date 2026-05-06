@@ -27,7 +27,7 @@ def read_json_from_command(command: list[str]) -> dict[str, object]:
 def main() -> None:
     subprocess.run([sys.executable, str(CONTRACT_BUILDER)], cwd=ROOT, check=True)
     contract = json.loads(DEFAULT_CONTRACT_PATH.read_text(encoding='utf-8'))
-    describe_lint = read_json_from_command([sys.executable, str(RUNNER), '--describe', 'lint-default'])
+    describe_lint = read_json_from_command([sys.executable, str(RUNNER), '--describe', 'lint'])
 
     payload = {
         'issue': 'workflow-api-implementation',

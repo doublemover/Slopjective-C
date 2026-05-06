@@ -1223,7 +1223,7 @@ def action_lint_spec(_: list[str]) -> int:
     return run([sys.executable, str(SPEC_LINT_PY)])
 
 
-def action_lint_default(_: list[str]) -> int:
+def action_lint(_: list[str]) -> int:
     return run_steps(["check-source-hygiene-hard-cutover", "check-task-hygiene", "build-site", "check-markdown"])
 
 
@@ -2622,7 +2622,7 @@ ACTION_HANDLERS: dict[str, ActionHandler] = {
     "check-markdown": action_check_markdown,
     "format-markdown": action_format_markdown,
     "lint-markdown": action_lint_markdown,
-    "lint-default": action_lint_default,
+    "lint": action_lint,
     "check-dependency-boundaries": action_check_dependency_boundaries,
     "check-llvm-capabilities": action_check_llvm_capabilities,
     "check-release-evidence": action_check_release_evidence,

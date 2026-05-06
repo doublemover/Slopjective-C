@@ -23,7 +23,7 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "check-markdown": ActionSpec("check-markdown", "check markdown formatting drift across checked-in docs", "npx prettier --check <checked-in-md-globs>"),
     "format-markdown": ActionSpec("format-markdown", "rewrite markdown formatting across checked-in docs", "npx prettier --write <checked-in-md-globs>"),
     "lint-markdown": ActionSpec("lint-markdown", "run markdownlint across checked-in docs", "npx markdownlint-cli2 <checked-in-md-globs>"),
-    "lint-default": ActionSpec("lint-default", "run the canonical maintainer lint workflow", "runner-internal + task hygiene + site build + markdown format check"),
+    "lint": ActionSpec("lint", "run the canonical maintainer lint workflow", "runner-internal + task hygiene + site build + markdown format check"),
     "check-dependency-boundaries": ActionSpec("check-dependency-boundaries", "check strict objc3c dependency boundaries", "python:scripts/check_objc3c_dependency_boundaries.py --strict", validation_tier="repo", guarantee_owner="repo dependency boundaries stay explicit and strict"),
     "check-llvm-capabilities": ActionSpec("check-llvm-capabilities", "probe llvm capability availability and write the summary artifact", "python:scripts/probe_objc3c_llvm_capabilities.py --summary-out tmp/artifacts/objc3c-native/llvm_capabilities/summary.json", validation_tier="repo", guarantee_owner="llvm capability probe output stays tied to the live toolchain environment"),
     "check-release-evidence": ActionSpec("check-release-evidence", "check the generated-only release evidence surface", "python:scripts/check_release_evidence.py", validation_tier="repo", guarantee_owner="release evidence indexes stay coherent and replayable from schemas plus generated tmp artifacts"),

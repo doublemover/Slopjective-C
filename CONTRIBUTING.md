@@ -64,7 +64,7 @@ Run these before committing:
 
 ```sh
 npm run objc3c -- build-site
-npm run objc3c -- lint-default
+npm run objc3c -- lint
 npm run objc3c -- check-markdown
 npm run objc3c -- test-fast
 ```
