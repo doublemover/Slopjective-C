@@ -3,21 +3,31 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
-from typing import Any
+
+from objc3c_shared.json_io import load_json_object as load_json
+from objc3c_shared.json_io import write_report_json
+from objc3c_shared.schema_registry import load_schema, schema_path
 from objc3c_tooling.paths import repo_rel
-from objc3c_tooling.json_io import load_json_object as load_json
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "release_foundation" / "schema_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-foundation" / "schema-surface-summary.json"
 
 EXPECTED_SCHEMAS = {
-    "release_manifest_schema": "https://objc3c.dev/schemas/objc3c-release-manifest-v1.schema.json",
-    "release_sbom_schema": "https://objc3c.dev/schemas/objc3c-release-sbom-v1.schema.json",
-    "release_attestation_schema": "https://objc3c.dev/schemas/objc3c-release-attestation-v1.schema.json",
+    "release_manifest_schema": (
+        "objc3c-release-manifest-v1",
+        "https://objc3c.dev/schemas/objc3c-release-manifest-v1.schema.json",
+    ),
+    "release_sbom_schema": (
+        "objc3c-release-sbom-v1",
+        "https://objc3c.dev/schemas/objc3c-release-sbom-v1.schema.json",
+    ),
+    "release_attestation_schema": (
+        "objc3c-release-attestation-v1",
+        "https://objc3c.dev/schemas/objc3c-release-attestation-v1.schema.json",
+    ),
 }
 
 
@@ -40,26 +50,23 @@ def main() -> int:
         return fail("schema_check_script drifted")
 
     checked_paths = [repo_rel(SCHEMA_SURFACE)]
-    for field_name, expected_schema_id in EXPECTED_SCHEMAS.items():
+    for field_name, (registry_id, expected_schema_id) in EXPECTED_SCHEMAS.items():
         raw_path = surface.get(field_name)
-        if not isinstance(raw_path, str) or not raw_path:
-            return fail(f"{field_name} was missing from the schema surface")
-        schema_path = ROOT / raw_path
-        if not schema_path.is_file():
-            return fail(f"{field_name} referenced missing file {raw_path}")
-        payload = load_json(schema_path)
+        expected_path = repo_rel(schema_path(registry_id))
+        if raw_path != expected_path:
+            return fail(f"{field_name} drifted from registered schema path {expected_path}")
+        payload = load_schema(registry_id)
         if payload.get("$id") != expected_schema_id:
             return fail(f"{field_name} drifted from expected schema id {expected_schema_id}")
-        checked_paths.append(raw_path)
+        checked_paths.append(expected_path)
 
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
         "contract_id": "objc3c.release.foundation.schema.surface.summary.v1",
         "status": "PASS",
         "schema_surface": repo_rel(SCHEMA_SURFACE),
         "checked_paths": checked_paths,
     }
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("release-foundation-schema-surface: OK")
     return 0

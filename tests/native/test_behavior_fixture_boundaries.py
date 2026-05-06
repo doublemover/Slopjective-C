@@ -152,6 +152,24 @@ def test_legacy_migration_pair_no_longer_lives_as_tooling_root_residue() -> None
         assert not path.exists(), f"retired old-mode fixture must live in tests/native: {path.relative_to(ROOT)}"
 
 
+def test_legacy_literal_aliases_are_rejection_coverage_not_positive_recovery() -> None:
+    recovery_positive = ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "positive"
+
+    assert not (recovery_positive / "objc_literal_aliases_globals.objc3").exists()
+    assert (recovery_positive / "canonical_literal_globals.objc3").is_file()
+
+    rejection_fixtures = (
+        NATIVE_ROOT / "parser" / "negative" / "legacy_boolean_and_null_aliases_rejected.objc3",
+        NATIVE_ROOT / "parser" / "negative" / "legacy_null_literal_alias_rejected.objc3",
+        NATIVE_ROOT / "e2e" / "negative_execution" / "legacy_null_literal_alias_rejected.objc3",
+    )
+    for fixture_path in rejection_fixtures:
+        meta = _load_json(fixture_path.with_name(f"{fixture_path.stem}.meta.json"))
+        assert meta["fixture_kind"] == "rejection"
+        assert meta["expected"]["stage"] == "compile"
+        assert meta["expected"]["diagnostic_code"] == "O3C002"
+
+
 def test_support_claims_link_to_executable_behavior_fixtures() -> None:
     canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
     behavior_paths = {fixture.relative_source for fixture in load_behavior_fixtures()}

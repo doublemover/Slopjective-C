@@ -42,6 +42,16 @@ from scripts.objc3c_workflow.actions.docs import (
     action_lint_markdown,
     action_validate_documentation_surface,
 )
+from scripts.objc3c_workflow.actions.native_build import (
+    BUILD_PS1,
+    action_build_native_binaries,
+    action_build_native_contracts,
+    action_build_native_full,
+    action_build_native_reconfigure,
+    action_compile_objc3c,
+    action_package_runnable_toolchain,
+    action_proof_objc3c,
+)
 from scripts.objc3c_workflow.actions.validation_timing import (
     action_inspect_validation_timing,
     collect_child_timing,
@@ -62,8 +72,6 @@ from scripts.objc3c_workflow.npm_surface import describe_package_script_payload
 from scripts.objc3c_workflow.registry import ACTION_SPECS
 from scripts.objc3c_workflow.reports import emit_json
 
-BUILD_PS1 = ROOT / "scripts" / "build_objc3c_native.ps1"
-COMPILE_PS1 = ROOT / "scripts" / "objc3c_native_compile.ps1"
 COMPILE_WRAPPER_SELF_AUDIT_PY = (
     ROOT / "scripts" / "check_objc3c_compile_wrapper_self_audit.py"
 )
@@ -73,8 +81,6 @@ RECOVERY_PS1 = ROOT / "scripts" / "check_objc3c_native_recovery_contract.ps1"
 MATRIX_PS1 = ROOT / "scripts" / "run_objc3c_native_fixture_matrix.ps1"
 NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_expectations.ps1"
 COMPILER_THROUGHPUT_PS1 = ROOT / "scripts" / "check_objc3c_native_perf_budget.ps1"
-PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
-PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
@@ -229,22 +235,6 @@ def run_steps(actions: Sequence[str]) -> int:
 
 def action_build_default(_: list[str]) -> int:
     return run_steps(["build-native-binaries"])
-
-
-def action_build_native_binaries(_: list[str]) -> int:
-    return pwsh_file(BUILD_PS1, "-ExecutionMode", "binaries-only")
-
-
-def action_build_native_contracts(_: list[str]) -> int:
-    return pwsh_file(BUILD_PS1, "-ExecutionMode", "contracts-binary")
-
-
-def action_build_native_full(_: list[str]) -> int:
-    return pwsh_file(BUILD_PS1, "-ExecutionMode", "full")
-
-
-def action_build_native_reconfigure(_: list[str]) -> int:
-    return pwsh_file(BUILD_PS1, "-ExecutionMode", "binaries-only", "-ForceReconfigure")
 
 
 def action_check_dependency_boundaries(_: list[str]) -> int:
@@ -403,10 +393,6 @@ def action_validate_repo_superclean(_: list[str]) -> int:
             ("source-hygiene", [sys.executable, str(SOURCE_HYGIENE_AUTHENTICITY_PY)]),
         ],
     )
-
-
-def action_compile_objc3c(rest: list[str]) -> int:
-    return pwsh_file(COMPILE_PS1, *rest)
 
 
 def _parse_developer_tooling_invocation(rest: list[str]) -> tuple[str, list[str]]:
@@ -1876,16 +1862,6 @@ def action_test_nightly(_: list[str]) -> int:
             ("test-negative-expectations", [PWSH, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(NEGATIVE_EXPECTATIONS_PS1)]),
         ],
     )
-
-
-def action_package_runnable_toolchain(_: list[str]) -> int:
-    return pwsh_file(PACKAGE_PS1)
-
-
-def action_proof_objc3c(_: list[str]) -> int:
-    return pwsh_file(PROOF_PS1)
-
-
 
 
 ACTION_HANDLERS: dict[str, ActionHandler] = {

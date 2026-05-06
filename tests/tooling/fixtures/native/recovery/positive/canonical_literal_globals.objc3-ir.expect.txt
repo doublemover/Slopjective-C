@@ -1,0 +1,6 @@
+# Canonical literal global lowering markers.
+@true_value = global i32 1
+@false_value = global i32 0
+@nil_value = global i32 0
+@folded = global i32 1
+ret i32

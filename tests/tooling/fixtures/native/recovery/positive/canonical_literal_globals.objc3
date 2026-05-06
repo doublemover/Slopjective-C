@@ -1,0 +1,10 @@
+module CanonicalLiteralGlobals;
+
+let true_value = true;
+let false_value = false;
+let nil_value = nil;
+let folded = true_value + false_value + nil_value;
+
+fn main() -> i32 {
+  return folded;
+}
