@@ -12,22 +12,28 @@ typedef enum objc3c_frontend_ir_object_backend {
   OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT = 1
 } objc3c_frontend_ir_object_backend_t;
 
+typedef const char *objc3c_frontend_borrowed_c_string_t;
+typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_path_t;
+typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
+
 /*
  * Compile options consumed by objc3c_frontend_compile_file/source.
- * - const char * fields are borrowed caller storage for the duration of the call.
+ * - Borrowed option values are caller-owned storage for the duration of the call.
+ * - borrowed_path_t fields are interpreted as filesystem paths.
+ * - borrowed_text_t fields are interpreted as literal source/symbol/prefix text.
  * - input_path is used by file-backed workflows.
  * - source_text is used by in-memory workflows.
  * - language_version uses Objective-C version 3 by default when set to 0.
  * - Set unused pointers to NULL and reserved fields to 0.
  */
 typedef struct objc3c_frontend_compile_options {
-  const char *input_path;
-  const char *source_text;
-  const char *out_dir;
-  const char *emit_prefix;
-  const char *clang_path;
-  const char *llc_path;
-  const char *runtime_dispatch_symbol;
+  objc3c_frontend_borrowed_path_t input_path;
+  objc3c_frontend_borrowed_text_t source_text;
+  objc3c_frontend_borrowed_path_t out_dir;
+  objc3c_frontend_borrowed_text_t emit_prefix;
+  objc3c_frontend_borrowed_path_t clang_path;
+  objc3c_frontend_borrowed_path_t llc_path;
+  objc3c_frontend_borrowed_text_t runtime_dispatch_symbol;
   uint32_t max_message_send_args;
   uint8_t emit_manifest;
   uint8_t emit_ir;

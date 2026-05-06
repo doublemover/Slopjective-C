@@ -46,13 +46,22 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "#include \"objc3c_frontend_options.h\"" in frontend_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in options_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in options_header
+    assert "typedef const char *objc3c_frontend_borrowed_c_string_t;" in options_header
+    assert "typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_path_t;" in options_header
+    assert "typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;" in options_header
     assert "OBJC3C_FRONTEND_COMPATIBILITY_MODE" not in options_header
+    assert "objc3c_frontend_borrowed_path_t input_path;" in options_header
+    assert "objc3c_frontend_borrowed_text_t source_text;" in options_header
+    assert "objc3c_frontend_borrowed_path_t out_dir;" in options_header
+    assert "objc3c_frontend_borrowed_path_t clang_path;" in options_header
+    assert "objc3c_frontend_borrowed_path_t llc_path;" in options_header
+    assert not re.search(r"const char \*.*path", options_header)
     assert "uint8_t language_version;" in options_header
     assert "uint8_t compatibility_mode;" not in options_header
     assert "uint8_t migration_assist;" not in options_header
     assert "uint8_t reserved1;" in options_header
     assert "uint8_t reserved2;" in options_header
-    assert "const char * fields are borrowed caller storage for the duration of the call." in options_header
+    assert "Borrowed option values are caller-owned storage for the duration of the call." in options_header
     assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u" in header
     assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
     assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header
@@ -129,6 +138,9 @@ def test_frontend_anchor_releases_immutable_owned_strings() -> None:
     assert "string->data = data;" in source
     assert "std::free(const_cast<char *>(string->data));" in source
     assert "Copy context strings into result-owned immutable string objects." in source
+    assert "IsMissingBorrowedPath(" in source
+    assert "OptionalBorrowedFilesystemPath(" in source
+    assert "IsNullOrEmpty(" not in source
 
 
 def test_c_api_header_compiles_from_c_when_compiler_available(tmp_path: Path) -> None:

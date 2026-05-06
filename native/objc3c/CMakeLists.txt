@@ -232,6 +232,7 @@ target_link_libraries(objc3c_sema_type_system INTERFACE
 )
 
 add_library(objc3c_lower STATIC
+  src/lower/core/lowering_primitive_ops.cpp
   src/lower/objc3_lowering_contract.cpp
 )
 objc3c_apply_build_defaults(objc3c_lower)

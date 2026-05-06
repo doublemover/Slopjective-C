@@ -125,15 +125,23 @@ objc3c_frontend_result_error_message(
   return result == nullptr ? nullptr : result->error_message;
 }
 
-static bool IsNullOrEmpty(const char *text) {
+static bool IsMissingBorrowedText(objc3c_frontend_borrowed_text_t text) {
   return text == nullptr || text[0] == '\0';
 }
 
-static std::filesystem::path OptionalFilesystemPath(const char *text) {
-  if (IsNullOrEmpty(text)) {
+static bool IsMissingBorrowedPath(objc3c_frontend_borrowed_path_t path) {
+  return path == nullptr || path[0] == '\0';
+}
+
+static std::filesystem::path BorrowedPathToFilesystemPath(objc3c_frontend_borrowed_path_t path) {
+  return std::filesystem::path(path);
+}
+
+static std::filesystem::path OptionalBorrowedFilesystemPath(objc3c_frontend_borrowed_path_t path) {
+  if (IsMissingBorrowedPath(path)) {
     return std::filesystem::path();
   }
-  return std::filesystem::path(text);
+  return BorrowedPathToFilesystemPath(path);
 }
 
 static std::string ToLowerCopy(std::string value) {
@@ -165,22 +173,22 @@ static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version,
 }
 
 static std::filesystem::path ResolveInputPath(const objc3c_frontend_compile_options_t &options) {
-  if (!IsNullOrEmpty(options.input_path)) {
-    return std::filesystem::path(options.input_path);
+  if (!IsMissingBorrowedPath(options.input_path)) {
+    return BorrowedPathToFilesystemPath(options.input_path);
   }
   return std::filesystem::path(DefaultMemoryInputPath);
 }
 
 static std::filesystem::path ResolveOutputDir(const objc3c_frontend_compile_options_t &options) {
-  if (IsNullOrEmpty(options.out_dir)) {
+  if (IsMissingBorrowedPath(options.out_dir)) {
     return std::filesystem::path();
   }
-  return std::filesystem::path(options.out_dir);
+  return BorrowedPathToFilesystemPath(options.out_dir);
 }
 
 static std::string ResolveEmitPrefix(const objc3c_frontend_compile_options_t &options,
                                      const std::filesystem::path &input_path) {
-  if (!IsNullOrEmpty(options.emit_prefix)) {
+  if (!IsMissingBorrowedText(options.emit_prefix)) {
     return std::string(options.emit_prefix);
   }
   const std::string stem = input_path.stem().string();
@@ -434,7 +442,7 @@ static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_o
   if (options.max_message_send_args > 0) {
     frontend_options.lowering.max_message_send_args = options.max_message_send_args;
   }
-  if (!IsNullOrEmpty(options.runtime_dispatch_symbol)) {
+  if (!IsMissingBorrowedText(options.runtime_dispatch_symbol)) {
     frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;
   }
   return frontend_options;
@@ -851,13 +859,13 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       objc3c_frontend_set_error(context, "emit_object requires a valid ir_object_backend (clang|llvm-direct).");
       emit_diagnostics.push_back(
           "error:1:1: emit_object requires valid ir_object_backend (clang|llvm-direct) [O3E001]");
-    } else if (wants_clang_backend && IsNullOrEmpty(options->clang_path)) {
+    } else if (wants_clang_backend && IsMissingBorrowedPath(options->clang_path)) {
       result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, "emit_object requires clang_path in compile options.");
       emit_diagnostics.push_back("error:1:1: emit_object requires clang_path in compile options [O3E001]");
-    } else if (wants_llvm_direct_backend && IsNullOrEmpty(options->llc_path)) {
+    } else if (wants_llvm_direct_backend && IsMissingBorrowedPath(options->llc_path)) {
       result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
@@ -874,8 +882,8 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
 #else
       const bool llvm_direct_backend_enabled = false;
 #endif
-      const std::filesystem::path clang_path = OptionalFilesystemPath(options->clang_path);
-      const std::filesystem::path llc_path = OptionalFilesystemPath(options->llc_path);
+      const std::filesystem::path clang_path = OptionalBorrowedFilesystemPath(options->clang_path);
+      const std::filesystem::path llc_path = OptionalBorrowedFilesystemPath(options->llc_path);
       const Objc3ToolchainRuntimeGaOperationsScaffold toolchain_runtime_ga_operations_scaffold =
           BuildObjc3ToolchainRuntimeGaOperationsScaffold(
               wants_clang_backend,

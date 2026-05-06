@@ -8,26 +8,6 @@
 
 namespace {
 
-const char *AtomicMemoryOrderToken(Objc3AtomicMemoryOrder order) {
-  switch (order) {
-    case Objc3AtomicMemoryOrder::Relaxed:
-      return kObjc3AtomicMemoryOrderRelaxed;
-    case Objc3AtomicMemoryOrder::Acquire:
-      return kObjc3AtomicMemoryOrderAcquire;
-    case Objc3AtomicMemoryOrder::Release:
-      return kObjc3AtomicMemoryOrderRelease;
-    case Objc3AtomicMemoryOrder::AcqRel:
-      return kObjc3AtomicMemoryOrderAcqRel;
-    case Objc3AtomicMemoryOrder::SeqCst:
-    default:
-      return kObjc3AtomicMemoryOrderSeqCst;
-  }
-}
-
-bool IsSupportedVectorBaseSpelling(const std::string &base_spelling) {
-  return base_spelling == kObjc3SimdVectorBaseI32 || base_spelling == kObjc3SimdVectorBaseBool;
-}
-
 constexpr std::array<const char *, kObjc3RuntimeMetadataLayoutPolicyFamilyCount>
     kCanonicalRuntimeMetadataFamilyOrder = {
         kObjc3RuntimeMetadataLayoutPolicyClassFamily,
@@ -36,10 +16,6 @@ constexpr std::array<const char *, kObjc3RuntimeMetadataLayoutPolicyFamilyCount>
         kObjc3RuntimeMetadataLayoutPolicyPropertyFamily,
         kObjc3RuntimeMetadataLayoutPolicyIvarFamily,
 };
-
-std::string VectorTypeSpelling(const std::string &base_spelling, unsigned lane_count) {
-  return base_spelling + "x" + std::to_string(lane_count);
-}
 
 const char *BoolToken(bool value) { return value ? "true" : "false"; }
 

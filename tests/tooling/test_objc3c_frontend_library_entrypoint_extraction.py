@@ -74,7 +74,7 @@ def test_frontend_anchor_compile_entrypoints_are_pipeline_backed() -> None:
         [
             "if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {",
             "return SetUsageError(context, result, language_version_error);",
-            "if (IsNullOrEmpty(options->input_path)) {",
+            "if (IsMissingBorrowedPath(options->input_path)) {",
         ],
     )
 
@@ -104,4 +104,7 @@ def test_public_api_documents_pipeline_backed_compile_behavior() -> None:
     assert "Current implementation status: scaffolded" not in frontend_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u" in options_header
     assert "#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3" in options_header
+    assert "objc3c_frontend_borrowed_path_t input_path;" in options_header
+    assert "objc3c_frontend_borrowed_text_t source_text;" in options_header
+    assert "const char *input_path;" not in options_header
     assert "uint8_t language_version;" in options_header

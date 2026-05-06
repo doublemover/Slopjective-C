@@ -77,13 +77,6 @@ std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
     const std::string &object_format, const std::string &symbol_name);
 std::string Objc3RuntimeMetadataHostSectionForLogicalName(
     const std::string &logical_section);
-bool TryGetCompoundAssignmentBinaryOpcode(const std::string &op, std::string &opcode);
-bool TryParseObjc3AtomicMemoryOrder(const std::string &token, Objc3AtomicMemoryOrder &order);
-const char *Objc3AtomicMemoryOrderToLLVMOrdering(Objc3AtomicMemoryOrder order);
-std::string Objc3AtomicMemoryOrderMappingReplayKey();
-bool IsSupportedObjc3SimdVectorLaneCount(unsigned lane_count);
-bool TryBuildObjc3SimdVectorLLVMType(const std::string &base_spelling, unsigned lane_count, std::string &llvm_type);
-std::string Objc3SimdVectorTypeLoweringReplayKey();
 bool IsValidObjc3MethodLookupOverrideConflictContract(const Objc3MethodLookupOverrideConflictContract &contract);
 std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOverrideConflictContract &contract);
 Objc3PropertySynthesisIvarBindingContract Objc3DefaultPropertySynthesisIvarBindingContract(

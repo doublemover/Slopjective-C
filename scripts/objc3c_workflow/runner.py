@@ -26,6 +26,22 @@ from objc3c_tooling.subprocesses import run_capture
 from objc3c_tooling.public_workflow_output import extract_public_workflow_report_paths as extract_report_paths
 
 from scripts.objc3c_workflow.action_spec import ActionHandler, ActionSpec
+from scripts.objc3c_workflow.actions.docs import (
+    action_build_native_docs,
+    action_build_public_command_contract,
+    action_build_public_command_surface,
+    action_build_site,
+    action_check_documentation_surface,
+    action_check_markdown,
+    action_check_native_docs,
+    action_check_public_command_budget,
+    action_check_public_command_contract,
+    action_check_public_command_surface,
+    action_check_site,
+    action_format_markdown,
+    action_lint_markdown,
+    action_validate_documentation_surface,
+)
 from scripts.objc3c_workflow.actions.validation_timing import (
     action_inspect_validation_timing,
     collect_child_timing,
@@ -36,8 +52,6 @@ from scripts.objc3c_workflow.actions.validation_timing import (
 )
 from scripts.objc3c_workflow.commands import extract_output_line, pwsh_file, run, workflow_command
 from scripts.objc3c_workflow.environment import (
-    MARKDOWN_GLOBS,
-    NPX,
     PWSH,
     WORKFLOW_COMMAND_TEXT,
     WORKFLOW_MODULE,
@@ -61,12 +75,6 @@ NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_ex
 COMPILER_THROUGHPUT_PS1 = ROOT / "scripts" / "check_objc3c_native_perf_budget.ps1"
 PACKAGE_PS1 = ROOT / "scripts" / "package_objc3c_runnable_toolchain.ps1"
 PROOF_PS1 = ROOT / "scripts" / "run_objc3c_native_compile_proof.ps1"
-SITE_PY = ROOT / "scripts" / "build_site_index.py"
-NATIVE_DOCS_PY = ROOT / "scripts" / "build_objc3c_native_docs.py"
-PUBLIC_COMMAND_SURFACE_PY = ROOT / "scripts" / "render_objc3c_public_command_surface.py"
-PUBLIC_COMMAND_CONTRACT_PY = ROOT / "scripts" / "build_objc3c_public_command_contract.py"
-PUBLIC_COMMAND_BUDGET_PY = ROOT / "scripts" / "check_objc3c_public_command_budget.py"
-DOCUMENTATION_SURFACE_PY = ROOT / "scripts" / "check_documentation_surface.py"
 REPO_SUPERCLEAN_SURFACE_PY = ROOT / "scripts" / "check_repo_superclean_surface.py"
 SHOWCASE_SURFACE_PY = ROOT / "scripts" / "check_showcase_surface.py"
 SHOWCASE_RUNTIME_PS1 = ROOT / "scripts" / "check_showcase_runtime.ps1"
@@ -239,61 +247,6 @@ def action_build_native_reconfigure(_: list[str]) -> int:
     return pwsh_file(BUILD_PS1, "-ExecutionMode", "binaries-only", "-ForceReconfigure")
 
 
-def action_build_site(_: list[str]) -> int:
-    rc = run([sys.executable, str(SITE_PY)])
-    if rc != 0:
-        return rc
-    return run([NPX, "prettier", "--write", "site/index.md"])
-
-
-def action_check_site(_: list[str]) -> int:
-    return run([sys.executable, str(SITE_PY), "--check"])
-
-
-def action_build_native_docs(_: list[str]) -> int:
-    return run([sys.executable, str(NATIVE_DOCS_PY)])
-
-
-def action_check_native_docs(_: list[str]) -> int:
-    return run([sys.executable, str(NATIVE_DOCS_PY), "--check"])
-
-
-def action_build_public_command_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_COMMAND_SURFACE_PY)])
-
-
-def action_check_public_command_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_COMMAND_SURFACE_PY), "--check"])
-
-
-def action_build_public_command_contract(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_COMMAND_CONTRACT_PY)])
-
-
-def action_check_public_command_contract(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_COMMAND_CONTRACT_PY), "--check"])
-
-
-def action_check_public_command_budget(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_COMMAND_BUDGET_PY)])
-
-
-def action_check_documentation_surface(_: list[str]) -> int:
-    return run([sys.executable, str(DOCUMENTATION_SURFACE_PY)])
-
-
-def action_check_markdown(_: list[str]) -> int:
-    return run([NPX, "prettier", "--check", *MARKDOWN_GLOBS])
-
-
-def action_format_markdown(_: list[str]) -> int:
-    return run([NPX, "prettier", "--write", *MARKDOWN_GLOBS])
-
-
-def action_lint_markdown(_: list[str]) -> int:
-    return run([NPX, "markdownlint-cli2", *MARKDOWN_GLOBS])
-
-
 def action_check_dependency_boundaries(_: list[str]) -> int:
     return run([sys.executable, str(DEPENDENCY_BOUNDARIES_PY), "--strict"])
 
@@ -439,23 +392,6 @@ def action_validate_runnable_showcase(_: list[str]) -> int:
 
 def action_validate_getting_started(_: list[str]) -> int:
     return run([sys.executable, str(GETTING_STARTED_INTEGRATION_PY)])
-
-
-def action_validate_documentation_surface(_: list[str]) -> int:
-    commands = [
-        [sys.executable, str(SITE_PY)],
-        [sys.executable, str(NATIVE_DOCS_PY)],
-        [sys.executable, str(PUBLIC_COMMAND_SURFACE_PY)],
-        [sys.executable, str(SITE_PY), "--check"],
-        [sys.executable, str(NATIVE_DOCS_PY), "--check"],
-        [sys.executable, str(PUBLIC_COMMAND_SURFACE_PY), "--check"],
-        [sys.executable, str(DOCUMENTATION_SURFACE_PY)],
-    ]
-    for command in commands:
-        rc = run(command)
-        if rc != 0:
-            return rc
-    return 0
 
 
 def action_validate_repo_superclean(_: list[str]) -> int:

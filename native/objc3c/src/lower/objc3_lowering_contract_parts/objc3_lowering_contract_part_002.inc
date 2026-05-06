@@ -69,14 +69,6 @@ inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyPropertyFamily =
     "property";
 inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyIvarFamily =
     "ivar";
-inline constexpr const char *kObjc3AtomicMemoryOrderRelaxed = "relaxed";
-inline constexpr const char *kObjc3AtomicMemoryOrderAcquire = "acquire";
-inline constexpr const char *kObjc3AtomicMemoryOrderRelease = "release";
-inline constexpr const char *kObjc3AtomicMemoryOrderAcqRel = "acq_rel";
-inline constexpr const char *kObjc3AtomicMemoryOrderSeqCst = "seq_cst";
-inline constexpr const char *kObjc3SimdVectorLaneContract = "2,4,8,16";
-inline constexpr const char *kObjc3SimdVectorBaseI32 = "i32";
-inline constexpr const char *kObjc3SimdVectorBaseBool = "bool";
 inline constexpr const char *kObjc3MethodLookupOverrideConflictLaneContract =
     "objc3c.method.lookup.override.conflict.v1";
 inline constexpr const char *kObjc3PropertySynthesisIvarBindingLaneContract =
@@ -530,14 +522,6 @@ inline constexpr const char *kObjc3UnsafePointerExtensionLoweringLaneContract =
     "objc3c.unsafe.pointer.extension.gating.lowering.v1";
 inline constexpr const char *kObjc3InlineAsmIntrinsicGovernanceLoweringLaneContract =
     "objc3c.inline.asm.intrinsic.governance.lowering.v1";
-
-enum class Objc3AtomicMemoryOrder : std::uint8_t {
-  Relaxed = 0,
-  Acquire = 1,
-  Release = 2,
-  AcqRel = 3,
-  SeqCst = 4,
-};
 
 struct Objc3LoweringContract {
   std::size_t max_message_send_args = kObjc3RuntimeDispatchDefaultArgs;

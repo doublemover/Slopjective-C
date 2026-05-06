@@ -93,13 +93,13 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
   }
-  if (IsNullOrEmpty(options->input_path)) {
+  if (IsMissingBorrowedPath(options->input_path)) {
     return SetUsageError(context, result, "compile_file requires compile_options.input_path.");
   }
 
   std::string source_text;
   std::string io_error;
-  const std::filesystem::path input_path(options->input_path);
+  const std::filesystem::path input_path = BorrowedPathToFilesystemPath(options->input_path);
   if (!objc3c::support::TryReadTextFile(input_path,
                                         source_text,
                                         io_error,
@@ -128,7 +128,7 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
   }
-  if (IsNullOrEmpty(options->source_text)) {
+  if (IsMissingBorrowedText(options->source_text)) {
     return SetUsageError(context, result, "compile_source requires compile_options.source_text.");
   }
   const std::filesystem::path input_path = ResolveInputPath(*options);
