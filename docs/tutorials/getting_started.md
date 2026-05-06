@@ -7,7 +7,7 @@ Use it when you want to:
 - prove the repo is healthy before reading implementation code,
 - learn the surface area through one small compileable example at a time,
 - understand which commands are the normal user path,
-- and choose the next tutorial or migration guide based on the capability you actually care about.
+- and choose the next tutorial or canonicalization guide based on the capability you actually care about.
 
 ## What This Tutorial Proves
 
@@ -16,7 +16,7 @@ By the end of this file, a reader should know:
 - which commands count as the normal public path
 - which example is the right first compile target
 - which showcase story matches the capability they care about next
-- which document to open for migration or comparison questions instead of guessing
+- which document to open for ObjC2 habit-mapping or comparison questions instead of guessing
 
 ## Teaching Model
 
@@ -87,7 +87,7 @@ immediately:
 Choose the next document based on the question you actually have:
 
 - if you need the exact build, run, and verify flow, continue to `docs/tutorials/build_run_verify.md`
-- if you need migration language, continue to `docs/tutorials/objc2_swift_cpp_comparison.md`
+- if you need ObjC2 habit-mapping language, continue to `docs/tutorials/objc2_swift_cpp_comparison.md`
 - if you need runnable example context, continue to `showcase/README.md`
 - if you need exact command mapping, use `docs/runbooks/objc3c_public_command_surface.md`
 - if you need implementation boundaries after the tutorial, then open `docs/objc3c-native.md`
@@ -96,7 +96,7 @@ Use this decision rule:
 
 - compile first
 - then choose the showcase example that matches the capability
-- then open the migration or comparison guide only after the runnable source is in view
+- then open the canonicalization or comparison guide only after the runnable source is in view
 
 ## Canonical Inputs
 

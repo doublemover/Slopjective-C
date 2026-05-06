@@ -1,6 +1,6 @@
 # Tutorial Build Run And Verify Surface
 
-This file defines the live build, run, and verify workflow for the tutorial and migration path.
+This file defines the live build, run, and verify workflow for the tutorial and canonicalization path.
 
 Use it when you need the exact commands and artifact expectations behind the reader-facing tutorials.
 

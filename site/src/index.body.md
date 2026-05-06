@@ -3,7 +3,7 @@
 _Working draft v0.11_  
 _Last updated: 2026-03-11_
 
-Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: the archived `spec/` corpus now sits behind a historical anchor index, but this page is where the project should explain itself cleanly.
+Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the capability matrix and evidence map instead of archived planning notes.
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model is still in progress.
 
@@ -24,7 +24,7 @@ Use this page in three passes:
 
 1. Read the status sections below to understand what is real today.
 2. Use the spec map to find the normative area you care about.
-3. Use the archived spec index only when you need historical links into archived language rules, ABI notes, or retired constraints.
+3. Use the capability matrix and evidence map when you need to verify a support claim.
 
 ## Quick Routes {#toc-quick-routes}
 
@@ -38,14 +38,14 @@ Use this page in three passes:
 | pick a capability-backed showcase example first          | [showcase/README.md](../showcase/README.md)                                                     |
 | see the tutorial build run and verify flow               | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)                     |
 | follow the guided showcase walkthrough                   | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)                 |
-| follow the ObjC2-to-ObjC3 migration guide                | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)     |
+| map ObjC2 habits to canonical ObjC3 examples            | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)     |
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
 | evaluate adoption, support, and claim boundaries         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
 | find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |
 | build and validate the implementation                    | [README.md](../README.md)                                                                       |
 | inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
-| follow archived spec anchors                             | [archived spec index](../docs/reference/legacy_spec_anchor_index.md#legacy-files)               |
 | verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
+| inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
 
 ## Reader Promises {#toc-reader-promises}
 
@@ -174,9 +174,9 @@ The integrated grammar and operator-precedence appendix. Use this when surface s
 
 Defines the baseline language, pinned references, and conflict-resolution model.
 
-### Part 1 — Versioning, Compatibility, and Conformance {#part-1}
+### Part 1 — Canonical Language Mode And Conformance {#part-1}
 
-Defines language modes, version claims, feature gating, and what it means to support Objective-C 3.0 truthfully.
+Defines the single Objective-C 3.0 language mode, capability states, rejected-form diagnostics, and evidence-backed conformance claims.
 
 ### Part 2 — Modules, Namespacing, and API Surfaces {#part-2}
 
@@ -220,7 +220,7 @@ Defines foreign-language boundaries, bridging, ABI-facing interop, and distribut
 
 ### Part 12 — Diagnostics, Tooling, and Tests {#part-12}
 
-Defines the required diagnostics, fix-its, migrators, analyzers, and conformance evidence expected from a serious implementation.
+Defines the required diagnostics, canonicalization fix-its, analyzers, and conformance evidence expected from a serious implementation.
 
 ## Implementation Reality Check {#e-1}
 

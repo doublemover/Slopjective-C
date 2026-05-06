@@ -59,6 +59,17 @@
       "expected_diagnostic_code": "O3C002"
     },
     {
+      "path": "tests/native/parser/negative/legacy_boolean_and_null_aliases_rejected.objc3",
+      "origin": "hand-authored",
+      "owner_phase": "parser",
+      "behavior_family": "negative",
+      "fixture_kind": "rejection",
+      "retired_surface_tags": [
+        "old-mode"
+      ],
+      "expected_diagnostic_code": "O3C002"
+    },
+    {
       "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
       "origin": "hand-authored",
       "owner_phase": "sema",

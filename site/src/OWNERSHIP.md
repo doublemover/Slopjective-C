@@ -49,5 +49,5 @@ Treat these as the live documentation-generation surfaces:
   - `python scripts/render_objc3c_public_command_surface.py`
   - `docs/runbooks/objc3c_public_command_surface.md`
 
-`tmp/reports/` and `tmp/artifacts/` remain generated proof/evidence outputs, not
+`tmp/reports/` and `tmp/artifacts/` remain generated evidence outputs, not
 canonical documentation sources.

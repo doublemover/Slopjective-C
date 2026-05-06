@@ -34,11 +34,11 @@ Public site content must optimize for first-read comprehension:
 - define specialist terms by context instead of assuming prior repo knowledge,
 - prefer short lists and comparison tables over dense paragraphs,
 - give readers a direct next link when a section names a deeper path,
-- keep generated artifact paths and proof inventories out of the public overview unless they are the point of the section.
+- keep generated artifact paths and evidence inventories out of the public overview unless they are the point of the section.
 
 Non-goals for the public site:
 
-- milestone closeout narration,
+- historical closeout narration,
 - machine-facing packet inventories,
 - unexplained abbreviations or internal shorthand,
 - treating the site as a mirror of the archived `spec/` corpus.

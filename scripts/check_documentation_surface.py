@@ -124,7 +124,7 @@ def main() -> int:
 
     tutorial_readme = TUTORIAL_README_PATH.read_text(encoding="utf-8")
     for token in (
-        "# Tutorials And Migration Guides",
+        "# Tutorials And Canonicalization Guides",
         "## Learning Paths",
         "## Start Here By Goal",
         "## Capability-Backed Routes",
@@ -233,8 +233,8 @@ def main() -> int:
 
     migration_guide = MIGRATION_GUIDE_PATH.read_text(encoding="utf-8")
     for token in (
-        "# ObjC2 To ObjC3 Migration Guide",
-        "## Migration Boundary",
+        "# ObjC2 To ObjC3 Canonicalization Guide",
+        "## Canonicalization Boundary",
         "## Step 1 Keep The Familiar ObjC Shape, Drop The Implicit Assumptions",
         "showcase/auroraBoard/main.objc3",
         "## Step 3 Treat Swift-Facing Async And Imported Hooks As Explicit Interop Contracts",
@@ -468,9 +468,16 @@ def main() -> int:
         "[docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)",
         "[docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md)",
         "[docs/objc3c-native.md](../docs/objc3c-native.md)",
-        "[archived spec index](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
+        "[capability matrix](../docs/support/capability_matrix.md)",
+        "[evidence map](../docs/support/evidence_map.md)",
     ):
         require_token(site_body, token, path=SITE_BODY_PATH, errors=errors)
+    forbid_token(
+        site_body,
+        "[archived spec index](../docs/reference/legacy_spec_anchor_index.md#legacy-files)",
+        path=SITE_BODY_PATH,
+        errors=errors,
+    )
 
     site_policy = SITE_POLICY_PATH.read_text(encoding="utf-8")
     require_token(site_policy, "## Tone and Accessibility Rules", path=SITE_POLICY_PATH, errors=errors)

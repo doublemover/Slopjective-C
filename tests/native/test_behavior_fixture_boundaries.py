@@ -141,6 +141,17 @@ def test_legacy_runtime_dispatch_execution_residues_are_negative() -> None:
         assert "O3RT002" in tokens
 
 
+def test_legacy_migration_pair_no_longer_lives_as_tooling_root_residue() -> None:
+    tooling_root = ROOT / "tests" / "tooling" / "fixtures" / "native"
+    retired_paths = (
+        tooling_root / "legacy_canonical_migration_positive.objc3",
+        tooling_root / "legacy_canonical_migration_negative.objc3",
+    )
+
+    for path in retired_paths:
+        assert not path.exists(), f"retired old-mode fixture must live in tests/native: {path.relative_to(ROOT)}"
+
+
 def test_support_claims_link_to_executable_behavior_fixtures() -> None:
     canonical_manifest = _load_json(FIXTURE_ROOT / "canonical" / "manifest.json")
     behavior_paths = {fixture.relative_source for fixture in load_behavior_fixtures()}
@@ -179,6 +190,11 @@ def test_behavior_fixture_slice_executes_compile_and_strict_error_contracts(tmp_
     assert positive_code == 0, positive_output
 
     negative_cases = (
+        (
+            NATIVE_ROOT / "parser" / "negative" / "legacy_boolean_and_null_aliases_rejected.objc3",
+            "O3C002",
+            "legacy literal alias 'YES' is rejected",
+        ),
         (
             NATIVE_ROOT / "parser" / "negative" / "legacy_null_literal_alias_rejected.objc3",
             "O3C002",

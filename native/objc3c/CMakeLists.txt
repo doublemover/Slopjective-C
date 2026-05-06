@@ -210,6 +210,7 @@ add_library(objc3c_sema STATIC
   src/sema/objc3_parser_sema_handoff_contract.h
   src/sema/objc3_parser_sema_handoff_scaffold.h
   src/sema/objc3_sema_diagnostics_bus.cpp
+  src/sema/objc3_sema_pass_block_equivalence.cpp
   src/sema/objc3_sema_pass_flow_scaffold.cpp
   src/sema/objc3_sema_pass_manager.cpp
   src/sema/objc3_semantic_passes.cpp
