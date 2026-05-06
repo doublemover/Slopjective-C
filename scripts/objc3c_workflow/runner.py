@@ -106,6 +106,20 @@ from scripts.objc3c_workflow.actions.runtime_tests import (
     action_validate_runtime_architecture,
     action_validate_storage_reflection_conformance,
 )
+from scripts.objc3c_workflow.actions.schema_surfaces import (
+    DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY,
+    PACKAGING_CHANNELS_SCHEMA_SURFACE_PY,
+    PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY,
+    RELEASE_FOUNDATION_SCHEMA_SURFACE_PY,
+    RELEASE_OPERATIONS_SCHEMA_SURFACE_PY,
+    SECURITY_HARDENING_SCHEMA_SURFACE_PY,
+    action_check_distribution_credibility_schema_surface,
+    action_check_packaging_channels_schema_surface,
+    action_check_public_conformance_schema_surface,
+    action_check_release_foundation_schema_surface,
+    action_check_release_operations_schema_surface,
+    action_check_security_hardening_schema_surface,
+)
 from scripts.objc3c_workflow.actions.stress import (
     action_check_stress_surface,
     action_test_fuzz_safety,
@@ -159,18 +173,15 @@ BONUS_EXPERIENCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_bonus_experie
 CONFORMANCE_CORPUS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_conformance_corpus_integration.py"
 RUNNABLE_CONFORMANCE_CORPUS_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_conformance_corpus_end_to_end.py"
 PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_reporting_source_surface.py"
-PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_public_conformance_schema_surface.py"
 PUBLIC_CONFORMANCE_SCORECARD_PY = ROOT / "scripts" / "build_objc3c_public_conformance_scorecard.py"
 PUBLIC_CONFORMANCE_REPORT_PY = ROOT / "scripts" / "publish_objc3c_public_conformance_report.py"
 PUBLIC_CONFORMANCE_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_integration.py"
 PUBLIC_CONFORMANCE_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_public_conformance_reporting_end_to_end.py"
 RELEASE_FOUNDATION_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_release_foundation_source_surface.py"
-RELEASE_FOUNDATION_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_release_foundation_schema_surface.py"
 RELEASE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_release_manifest.py"
 RELEASE_PROVENANCE_PY = ROOT / "scripts" / "publish_objc3c_release_provenance.py"
 RELEASE_FOUNDATION_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_release_foundation_integration.py"
 PACKAGING_CHANNELS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_packaging_channels_source_surface.py"
-PACKAGING_CHANNELS_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_packaging_channels_schema_surface.py"
 PACKAGE_CHANNELS_BUILD_PY = ROOT / "scripts" / "build_objc3c_package_channels.py"
 PACKAGING_CHANNELS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_packaging_channels_integration.py"
 PACKAGING_CHANNELS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_packaging_channels_end_to_end.py"
@@ -178,19 +189,16 @@ PLATFORM_SUPPORT_MATRIX_PY = ROOT / "scripts" / "build_objc3c_platform_support_m
 PLATFORM_HARDENING_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_platform_hardening_integration.py"
 RUNNABLE_PLATFORM_HARDENING_E2E_PY = ROOT / "scripts" / "check_objc3c_runnable_platform_hardening_end_to_end.py"
 RELEASE_OPERATIONS_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_release_operations_source_surface.py"
-RELEASE_OPERATIONS_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_release_operations_schema_surface.py"
 UPDATE_MANIFEST_PY = ROOT / "scripts" / "build_objc3c_update_manifest.py"
 RELEASE_OPERATIONS_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_release_operations_metadata.py"
 RELEASE_OPERATIONS_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_release_operations_integration.py"
 RELEASE_OPERATIONS_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_release_operations_end_to_end.py"
 DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_distribution_credibility_source_surface.py"
-DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_distribution_credibility_schema_surface.py"
 DISTRIBUTION_CREDIBILITY_DASHBOARD_PY = ROOT / "scripts" / "build_objc3c_distribution_credibility_dashboard.py"
 DISTRIBUTION_CREDIBILITY_PUBLICATION_PY = ROOT / "scripts" / "publish_objc3c_distribution_trust_report.py"
 DISTRIBUTION_CREDIBILITY_INTEGRATION_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_integration.py"
 DISTRIBUTION_CREDIBILITY_END_TO_END_PY = ROOT / "scripts" / "check_objc3c_distribution_credibility_end_to_end.py"
 SECURITY_HARDENING_SOURCE_SURFACE_PY = ROOT / "scripts" / "check_security_hardening_source_surface.py"
-SECURITY_HARDENING_SCHEMA_SURFACE_PY = ROOT / "scripts" / "check_security_hardening_schema_surface.py"
 SECURITY_HARDENING_RESPONSE_DRILL_PY = ROOT / "scripts" / "check_security_hardening_response_drill.py"
 SECURITY_HARDENING_RUNTIME_HARDENING_PY = ROOT / "scripts" / "check_security_hardening_runtime_hardening.py"
 SECURITY_HARDENING_POSTURE_PY = ROOT / "scripts" / "build_objc3c_security_posture.py"
@@ -769,10 +777,6 @@ def action_check_public_conformance_reporting_surface(_: list[str]) -> int:
     return run([sys.executable, str(PUBLIC_CONFORMANCE_SOURCE_SURFACE_PY)])
 
 
-def action_check_public_conformance_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PUBLIC_CONFORMANCE_SCHEMA_SURFACE_PY)])
-
-
 def action_build_public_conformance_scorecard(_: list[str]) -> int:
     return run([sys.executable, str(PUBLIC_CONFORMANCE_SCORECARD_PY)])
 
@@ -805,10 +809,6 @@ def action_check_release_foundation_surface(_: list[str]) -> int:
     return run([sys.executable, str(RELEASE_FOUNDATION_SOURCE_SURFACE_PY)])
 
 
-def action_check_release_foundation_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(RELEASE_FOUNDATION_SCHEMA_SURFACE_PY)])
-
-
 def action_build_release_manifest(_: list[str]) -> int:
     return run([sys.executable, str(RELEASE_MANIFEST_PY)])
 
@@ -834,10 +834,6 @@ def action_validate_release_foundation(_: list[str]) -> int:
 
 def action_check_packaging_channels_surface(_: list[str]) -> int:
     return run([sys.executable, str(PACKAGING_CHANNELS_SOURCE_SURFACE_PY)])
-
-
-def action_check_packaging_channels_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(PACKAGING_CHANNELS_SCHEMA_SURFACE_PY)])
 
 
 def action_build_package_channels(_: list[str]) -> int:
@@ -876,10 +872,6 @@ def action_check_release_operations_surface(_: list[str]) -> int:
     return run([sys.executable, str(RELEASE_OPERATIONS_SOURCE_SURFACE_PY)])
 
 
-def action_check_release_operations_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(RELEASE_OPERATIONS_SCHEMA_SURFACE_PY)])
-
-
 def action_build_update_manifest(_: list[str]) -> int:
     return run([sys.executable, str(UPDATE_MANIFEST_PY)])
 
@@ -912,10 +904,6 @@ def action_check_distribution_credibility_surface(_: list[str]) -> int:
     return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_SOURCE_SURFACE_PY)])
 
 
-def action_check_distribution_credibility_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY)])
-
-
 def action_build_distribution_credibility_dashboard(_: list[str]) -> int:
     return run([sys.executable, str(DISTRIBUTION_CREDIBILITY_DASHBOARD_PY)])
 
@@ -943,10 +931,6 @@ def action_validate_distribution_credibility_end_to_end(_: list[str]) -> int:
 
 def action_check_security_hardening_surface(_: list[str]) -> int:
     return run([sys.executable, str(SECURITY_HARDENING_SOURCE_SURFACE_PY)])
-
-
-def action_check_security_hardening_schema_surface(_: list[str]) -> int:
-    return run([sys.executable, str(SECURITY_HARDENING_SCHEMA_SURFACE_PY)])
 
 
 def action_build_security_posture(_: list[str]) -> int:

@@ -10,6 +10,9 @@ from objc3c_shared.json_io import load_json_any, load_json_object, validate_json
 ROOT = Path(__file__).resolve().parents[2]
 
 SCHEMA_PATHS: dict[str, Path] = {
+    "objc3-conformance-dashboard-status-v1": ROOT
+    / "schemas"
+    / "objc3-conformance-dashboard-status-v1.schema.json",
     "objc3c-governance-anti-regression-summary-v1": ROOT
     / "schemas"
     / "objc3c-governance-anti-regression-summary-v1.schema.json",
@@ -27,6 +30,9 @@ SCHEMA_PATHS: dict[str, Path] = {
     / "objc3c-package-install-receipt-v1.schema.json",
     "objc3c-compatibility-report-v1": ROOT / "schemas" / "objc3c-compatibility-report-v1.schema.json",
     "objc3c-public-command-contract-v1": ROOT / "schemas" / "objc3c-public-command-contract-v1.schema.json",
+    "objc3c-public-conformance-scorecard-v1": ROOT
+    / "schemas"
+    / "objc3c-public-conformance-scorecard-v1.schema.json",
     "objc3c-public-conformance-summary-v1": ROOT
     / "schemas"
     / "objc3c-public-conformance-summary-v1.schema.json",
