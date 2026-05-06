@@ -263,6 +263,8 @@ objc3c_apply_llvm_direct_config(objc3c_json)
 add_library(objc3c_pipeline STATIC
   src/pipeline/objc3_frontend_pipeline.cpp
   src/pipeline/objc3_runtime_import_surface.cpp
+  src/pipeline/objc3_typed_sema_to_lowering_contract_surface_core.h
+  src/pipeline/objc3_typed_sema_to_lowering_contract_surface.h
   src/pipeline/objc3_ir_emission_completeness_scaffold.cpp
   src/pipeline/objc3_lowering_pipeline_pass_graph_core_feature_surface.cpp
   src/pipeline/objc3_lowering_pipeline_pass_graph_scaffold.cpp
