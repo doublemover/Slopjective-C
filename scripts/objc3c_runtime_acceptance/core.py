@@ -19,16 +19,21 @@ from typing import Any, Callable
 from objc3c_runtime_acceptance.artifacts import ArtifactRegistryConfig
 from objc3c_runtime_acceptance.artifacts import RuntimeAcceptanceArtifactRegistry
 from objc3c_runtime_acceptance.case_result import CaseResult
-from objc3c_runtime_acceptance.commands import run_command
+from objc3c_runtime_acceptance.commands import run
 from objc3c_runtime_acceptance.progress import RuntimeAcceptanceProgress
-from objc3c_runtime_acceptance.progress import command_display
-from objc3c_runtime_acceptance.progress import format_seconds
+from objc3c_runtime_acceptance.progress import get_acceptance_progress
 from objc3c_runtime_acceptance.progress import repo_display_path
 from objc3c_runtime_acceptance.progress import round_seconds
+from objc3c_runtime_acceptance.progress import set_acceptance_progress
+from objc3c_runtime_acceptance.probes import ACCEPTANCE_PROBE_RETRY_EVENTS
+from objc3c_runtime_acceptance.probes import DEFAULT_PROBE_RETRIES
+from objc3c_runtime_acceptance.probes import RETRYABLE_PROBE_EXIT_CODES
+from objc3c_runtime_acceptance.probes import compile_probe
+from objc3c_runtime_acceptance.probes import compile_probe_with_args
+from objc3c_runtime_acceptance.probes import parse_json_output
+from objc3c_runtime_acceptance.probes import parse_key_value_output
+from objc3c_runtime_acceptance.probes import run_probe
 from objc3c_runtime_acceptance.reports import write_json_report
-from objc3c_tooling.probe_output import parse_json_output
-from objc3c_tooling.probe_output import parse_key_value_output
-from objc3c_tooling.probe_compile import compile_probe as compile_runtime_probe
 from objc3c_tooling.probe_compile import find_clangxx
 from objc3c_tooling.probe_compile import normal_user_manifest_link_args
 
@@ -482,34 +487,6 @@ DEFAULT_COMPILE_BACKEND = os.environ.get(
     "OBJC3C_RUNTIME_ACCEPTANCE_COMPILE_BACKEND",
     DIRECT_COMPILE_BACKEND,
 ).strip().lower() or DIRECT_COMPILE_BACKEND
-RETRYABLE_PROBE_EXIT_CODES = {3221226356}
-DEFAULT_PROBE_RETRIES = int(
-    os.environ.get("OBJC3C_RUNTIME_ACCEPTANCE_PROBE_RETRIES", "1")
-)
-ACCEPTANCE_PROBE_RETRY_EVENTS: list[dict[str, Any]] = []
-
-
-ACCEPTANCE_PROGRESS: RuntimeAcceptanceProgress | None = None
-
-
-def run(
-    command: list[str],
-    *,
-    cwd: Path | None = None,
-    env: dict[str, str] | None = None,
-) -> subprocess.CompletedProcess[str]:
-    resolved_cwd = cwd or ROOT
-    progress = ACCEPTANCE_PROGRESS
-    started_at = progress.start_command(command, resolved_cwd) if progress else perf_counter()
-    result = run_command(command, cwd=resolved_cwd, env=env)
-    if progress:
-        progress.finish_command(
-            command=command,
-            cwd=resolved_cwd,
-            started_at=started_at,
-            returncode=result.returncode,
-        )
-    return result
 
 
 def file_sha256_hex(path: Path) -> str:
@@ -886,6 +863,7 @@ def run_fixture_compile(
     reuse_policy: str = "none",
 ) -> tuple[subprocess.CompletedProcess[str], str]:
     out_dir.mkdir(parents=True, exist_ok=True)
+    progress = get_acceptance_progress()
     command, selected_backend = compile_command(
         fixture,
         out_dir,
@@ -899,7 +877,7 @@ def run_fixture_compile(
         backend=selected_backend,
         emit_prefix="module",
         reuse_policy=reuse_policy,
-        progress=ACCEPTANCE_PROGRESS,
+        progress=progress,
     ):
         return (
             subprocess.CompletedProcess(
@@ -929,7 +907,7 @@ def run_fixture_compile(
             backend=selected_backend,
             emit_prefix="module",
             reuse_policy=reuse_policy,
-            progress=ACCEPTANCE_PROGRESS,
+            progress=progress,
         )
     return result, selected_backend
 
@@ -4794,30 +4772,6 @@ def compile_negative_diagnostic_batch(
     }
 
 
-def compile_probe(clangxx: str, probe: Path, exe_path: Path, extra_objects: list[Path]) -> None:
-    compile_probe_with_args(clangxx, probe, exe_path, extra_objects, [])
-
-
-def compile_probe_with_args(
-    clangxx: str,
-    probe: Path,
-    exe_path: Path,
-    extra_objects: list[Path],
-    extra_args: list[str],
-) -> None:
-    compile_runtime_probe(
-        clangxx,
-        probe,
-        exe_path,
-        cwd=ROOT,
-        runtime_library=RUNTIME_LIB,
-        object_inputs=extra_objects,
-        extra_args=extra_args,
-        failure_context=f"probe link failed for {probe}",
-        runner=run,
-    )
-
-
 def link_fixture_executable(clangxx: str, obj_path: Path, exe_path: Path) -> None:
     exe_path.parent.mkdir(parents=True, exist_ok=True)
     command = [
@@ -4835,53 +4789,6 @@ def link_fixture_executable(clangxx: str, obj_path: Path, exe_path: Path) -> Non
         raise RuntimeError(
             f"fixture link failed for {obj_path}:\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
         )
-
-
-def run_probe(
-    exe_path: Path, *, env: dict[str, str] | None = None
-) -> subprocess.CompletedProcess[str]:
-    attempts: list[dict[str, Any]] = []
-    for attempt in range(DEFAULT_PROBE_RETRIES + 1):
-        result = run([str(exe_path)], env=env)
-        attempts.append(
-            {
-                "attempt": attempt + 1,
-                "returncode": result.returncode,
-                "stdout_present": result.stdout != "",
-                "stderr_present": result.stderr != "",
-            }
-        )
-        if result.returncode == 0:
-            if attempt > 0:
-                ACCEPTANCE_PROBE_RETRY_EVENTS.append(
-                    {
-                        "probe": repo_display_path(exe_path),
-                        "retry_count": attempt,
-                        "attempts": attempts,
-                        "model": (
-                            "retry is fail-closed and only masks transient process exits "
-                            "that are followed by a successful identical probe invocation"
-                        ),
-                    }
-                )
-            return result
-        if (
-            result.returncode not in RETRYABLE_PROBE_EXIT_CODES
-            or attempt >= DEFAULT_PROBE_RETRIES
-        ):
-            raise RuntimeError(
-                f"probe execution failed for {exe_path} (exit={result.returncode}):\n"
-                f"STDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
-            )
-        if ACCEPTANCE_PROGRESS:
-            ACCEPTANCE_PROGRESS.emit(
-                "PROBE retry "
-                f"probe={repo_display_path(exe_path)} exit={result.returncode} "
-                f"attempt={attempt + 1}/{DEFAULT_PROBE_RETRIES + 1}"
-            )
-    raise RuntimeError(f"probe execution failed for {exe_path}")
-
-
 def expect(condition: bool, message: str) -> None:
     if not condition:
         raise RuntimeError(message)
@@ -20846,7 +20753,6 @@ def check_live_package_loading_interop_runtime_implementation_case(
 
 
 def main(argv: list[str] | None = None) -> int:
-    global ACCEPTANCE_PROGRESS
     args = parse_args(sys.argv[1:] if argv is None else argv)
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
@@ -20953,27 +20859,28 @@ def main(argv: list[str] | None = None) -> int:
         selected_cases=list(args.cases),
     )
 
-    ACCEPTANCE_PROGRESS = RuntimeAcceptanceProgress(
+    acceptance_progress = RuntimeAcceptanceProgress(
         run_id=run_id,
         run_dir=run_dir,
         progress_path=progress_path,
         total_cases=len(case_factories),
     )
+    set_acceptance_progress(acceptance_progress)
     print(f"runtime-acceptance-progress-log: {repo_display_path(progress_path)}", flush=True)
     results: list[CaseResult] = []
     for index, (label, factory) in enumerate(case_factories, start=1):
-        case_started_at = ACCEPTANCE_PROGRESS.start_case(index=index, label=label)
+        case_started_at = acceptance_progress.start_case(index=index, label=label)
         try:
             result = factory()
         except BaseException as exc:
-            ACCEPTANCE_PROGRESS.fail_case(
+            acceptance_progress.fail_case(
                 index=index,
                 label=label,
                 started_at=case_started_at,
                 error=exc,
             )
             raise
-        ACCEPTANCE_PROGRESS.finish_case(
+        acceptance_progress.finish_case(
             index=index,
             label=label,
             result=result,
@@ -21004,7 +20911,7 @@ def main(argv: list[str] | None = None) -> int:
         },
         "probe_retry_events": ACCEPTANCE_PROBE_RETRY_EVENTS,
         "progress_report_path": repo_display_path(progress_path),
-        "timing": ACCEPTANCE_PROGRESS.final_summary(),
+        "timing": acceptance_progress.final_summary(),
         "artifact_registry": ACCEPTANCE_ARTIFACT_REGISTRY.summary(),
         "cases": [
             {
@@ -21316,8 +21223,9 @@ def main(argv: list[str] | None = None) -> int:
             "deterministic": True,
         },
     }
-    write_json_report(progress_path, ACCEPTANCE_PROGRESS.final_summary())
+    write_json_report(progress_path, acceptance_progress.final_summary())
     write_json_report(report_path, summary)
+    set_acceptance_progress(None)
     print(f"runtime-acceptance: PASS ({report_path})")
     return 0
 

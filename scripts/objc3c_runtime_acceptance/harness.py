@@ -1,7 +1,9 @@
 """Harness primitives for runtime acceptance."""
 
 from .artifacts import RuntimeAcceptanceArtifactRegistry
+from .commands import run
 from .progress import (
+    ACCEPTANCE_PROGRESS,
     RuntimeAcceptanceProgress,
     command_display,
     format_seconds,
@@ -10,13 +12,11 @@ from .progress import (
 )
 from .core import (
     ACCEPTANCE_ARTIFACT_REGISTRY,
-    ACCEPTANCE_PROGRESS,
     CaseResult,
     expect,
     file_sha256_hex,
     optional_file_sha256_hex,
     replay_key_counter,
-    run,
     sha256_text_hex,
 )
 

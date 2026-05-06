@@ -6,6 +6,11 @@ import os
 import subprocess
 from pathlib import Path
 
+from .progress import get_acceptance_progress
+
+
+ROOT = Path(__file__).resolve().parents[2]
+
 
 def run_command(
     command: list[str],
@@ -25,3 +30,23 @@ def run_command(
         capture_output=True,
         check=False,
     )
+
+
+def run(
+    command: list[str],
+    *,
+    cwd: Path | None = None,
+    env: dict[str, str] | None = None,
+) -> subprocess.CompletedProcess[str]:
+    resolved_cwd = cwd or ROOT
+    progress = get_acceptance_progress()
+    started_at = progress.start_command(command, resolved_cwd) if progress else None
+    result = run_command(command, cwd=resolved_cwd, env=env)
+    if progress and started_at is not None:
+        progress.finish_command(
+            command=command,
+            cwd=resolved_cwd,
+            started_at=started_at,
+            returncode=result.returncode,
+        )
+    return result

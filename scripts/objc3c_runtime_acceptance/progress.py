@@ -222,3 +222,15 @@ class RuntimeAcceptanceProgress:
         summary["current_case"] = None
         summary["current_command"] = None
         return summary
+
+
+ACCEPTANCE_PROGRESS: RuntimeAcceptanceProgress | None = None
+
+
+def get_acceptance_progress() -> RuntimeAcceptanceProgress | None:
+    return ACCEPTANCE_PROGRESS
+
+
+def set_acceptance_progress(progress: RuntimeAcceptanceProgress | None) -> None:
+    global ACCEPTANCE_PROGRESS
+    ACCEPTANCE_PROGRESS = progress
