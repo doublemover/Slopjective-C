@@ -5,11 +5,16 @@
 
 #include "objc3c_frontend_version.h"
 
+/*
+ * Owned immutable string returned by libobjc3c_frontend.
+ * Release only with objc3c_frontend_string_release().
+ */
 typedef struct objc3c_frontend_string {
-  char *data;
+  const char *data;
   size_t size;
 } objc3c_frontend_string_t;
 
+/* Borrowed view valid until the owning objc3c_frontend_string_t is released. */
 typedef struct objc3c_frontend_string_view {
   const char *data;
   size_t size;

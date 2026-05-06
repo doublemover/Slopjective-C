@@ -14,6 +14,7 @@ typedef enum objc3c_frontend_ir_object_backend {
 
 /*
  * Compile options consumed by objc3c_frontend_compile_file/source.
+ * - const char * fields are borrowed caller storage for the duration of the call.
  * - input_path is used by file-backed workflows.
  * - source_text is used by in-memory workflows.
  * - language_version uses Objective-C version 3 by default when set to 0.

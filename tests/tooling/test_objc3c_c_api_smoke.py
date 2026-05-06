@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 from pathlib import Path
@@ -19,6 +20,7 @@ ARTIFACT_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_artifact.h"
 STRING_H = SRC_ROOT / "libobjc3c_frontend" / "objc3c_frontend_string.h"
 C_API_H = SRC_ROOT / "libobjc3c_frontend" / "c_api.h"
 C_API_CPP = SRC_ROOT / "libobjc3c_frontend" / "c_api.cpp"
+ANCHOR_PART_001 = SRC_ROOT / "libobjc3c_frontend" / "frontend_anchor_parts" / "frontend_anchor_part_001.inc"
 
 
 def _read(path: Path) -> str:
@@ -50,6 +52,7 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "uint8_t migration_assist;" not in options_header
     assert "uint8_t reserved1;" in options_header
     assert "uint8_t reserved2;" in options_header
+    assert "const char * fields are borrowed caller storage for the duration of the call." in options_header
     assert "#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u" in header
     assert "typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;" in header
     assert "typedef objc3c_frontend_compile_options_t objc3c_frontend_c_compile_options_t;" in header
@@ -62,9 +65,14 @@ def test_c_api_header_exposes_wrapper_surface() -> None:
     assert "size_t objc3c_frontend_c_copy_last_error(" in header
     assert "objc3c_frontend_string_t *diagnostics_path;" in result_header
     assert "const char *diagnostics_path;" not in result_header
+    assert "callers must not release them directly." in result_header
+    assert "Returns a borrowed pointer to a result-owned artifact path string." in result_header
     assert "objc3c_frontend_result_destroy(" in result_header
     assert "objc3c_frontend_result_artifact_path(" in result_header
     assert "objc3c_frontend_result_error_message(" in result_header
+    assert "Owned immutable string returned by libobjc3c_frontend." in string_header
+    assert re.search(r"^\s+const char \*data;$", string_header, re.MULTILINE)
+    assert not re.search(r"^\s+char \*data;$", string_header, re.MULTILINE)
     assert "objc3c_frontend_string_release(" in string_header
     assert "objc3c_frontend_string_view(" in string_header
 
@@ -90,6 +98,16 @@ def test_frontend_public_headers_are_domain_owned() -> None:
         assert header.exists(), header
 
 
+def test_public_frontend_surface_has_no_lane_or_roadmap_comments() -> None:
+    forbidden_terms = ["lane", "milestone", "roadmap", "reserved future"]
+    for path in (SRC_ROOT / "libobjc3c_frontend").glob("**/*"):
+        if path.suffix not in {".h", ".cpp", ".inc"}:
+            continue
+        text = _read(path).lower()
+        for term in forbidden_terms:
+            assert term not in text, f"{term!r} remains in {path}"
+
+
 def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
     source = _read(C_API_CPP)
 
@@ -103,6 +121,14 @@ def test_c_api_cpp_delegates_to_core_frontend_api() -> None:
     assert "return objc3c_frontend_compile_file(context, options, result);" in source
     assert "return objc3c_frontend_compile_source(context, options, result);" in source
     assert "return objc3c_frontend_copy_last_error(context, buffer, buffer_size);" in source
+
+
+def test_frontend_anchor_releases_immutable_owned_strings() -> None:
+    source = _read(ANCHOR_PART_001)
+
+    assert "string->data = data;" in source
+    assert "std::free(const_cast<char *>(string->data));" in source
+    assert "Copy context strings into result-owned immutable string objects." in source
 
 
 def test_c_api_header_compiles_from_c_when_compiler_available(tmp_path: Path) -> None:

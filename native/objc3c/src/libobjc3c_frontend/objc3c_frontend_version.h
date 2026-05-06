@@ -35,7 +35,7 @@
 
 #define OBJC3C_FRONTEND_ABI_VERSION 1u
 
-/* Compatibility policy: SemVer; ABI breaks require major version bump. */
+/* Accepted ABI version range for this frontend build. */
 #define OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION 1u
 #define OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION
 #define OBJC3C_FRONTEND_DEPRECATION_WINDOW_MAJOR 1u
@@ -74,6 +74,7 @@ extern "C" {
 OBJC3C_FRONTEND_API uint8_t objc3c_frontend_is_abi_compatible(uint32_t requested_abi_version);
 OBJC3C_FRONTEND_API uint32_t objc3c_frontend_abi_version(void);
 OBJC3C_FRONTEND_API objc3c_frontend_version_t objc3c_frontend_version(void);
+/* Returns static read-only version storage; callers must not release it. */
 OBJC3C_FRONTEND_API const char *objc3c_frontend_version_string(void);
 
 #ifdef __cplusplus

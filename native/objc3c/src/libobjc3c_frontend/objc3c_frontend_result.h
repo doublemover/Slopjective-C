@@ -17,9 +17,9 @@ typedef enum objc3c_frontend_status {
 } objc3c_frontend_status_t;
 
 /*
- * Caller-owned compile output struct populated by compile entrypoints.
- * Non-NULL strings are owned by the result and released by
- * objc3c_frontend_result_destroy().
+ * Caller-owned compile output storage populated by compile entrypoints.
+ * Non-NULL string members are owned by this result and released by
+ * objc3c_frontend_result_destroy(); callers must not release them directly.
  */
 typedef struct objc3c_frontend_compile_result {
   objc3c_frontend_status_t status;
@@ -46,10 +46,18 @@ extern "C" {
 
 OBJC3C_FRONTEND_API void objc3c_frontend_result_destroy(
     objc3c_frontend_compile_result_t *result);
+/*
+ * Returns a borrowed pointer to a result-owned artifact path string.
+ * The pointer remains valid until objc3c_frontend_result_destroy(result).
+ */
 OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
 objc3c_frontend_result_artifact_path(
     const objc3c_frontend_compile_result_t *result,
     objc3c_frontend_artifact_kind_t artifact_kind);
+/*
+ * Returns a borrowed pointer to the result-owned error string.
+ * The pointer remains valid until objc3c_frontend_result_destroy(result).
+ */
 OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
 objc3c_frontend_result_error_message(
     const objc3c_frontend_compile_result_t *result);
