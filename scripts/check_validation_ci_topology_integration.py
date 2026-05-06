@@ -15,11 +15,8 @@ OUTPUT_JSON_PATH = REPORT_DIR / 'validation_ci_topology_integration.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
 WORKFLOW_RUNNER = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
 PACKAGE_JSON_PATH = ROOT / 'package.json'
-ACTION_MAP = {
-    'test:smoke': 'test-smoke',
-    'test:objc3c:full': 'test-full',
-    'test:objc3c:nightly': 'test-nightly',
-}
+TOPOLOGY_BUILDER = ROOT / 'scripts' / 'build_validation_ci_topology.py'
+PUBLIC_NPM_BRIDGE = 'npm run objc3c -- '
 
 
 
@@ -35,28 +32,33 @@ def describe_action(action: str) -> dict[str, Any]:
     return json.loads(result.stdout)
 
 
+def ensure_topology() -> None:
+    if TOPOLOGY_PATH.is_file():
+        return
+    subprocess.run(['python', str(TOPOLOGY_BUILDER)], cwd=ROOT, check=True)
+
+
 def main() -> None:
+    ensure_topology()
     topology = load_json(TOPOLOGY_PATH)
     package_json = load_json(PACKAGE_JSON_PATH)
     scripts = package_json['scripts']
     rows = []
     failures: list[str] = []
 
+    if scripts != {'objc3c': 'python -m scripts.objc3c_workflow'}:
+        failures.append('package.json must expose only the canonical objc3c npm bridge')
+
     for row in topology['topology']:
-        package_script = row['package_script']
-        action = ACTION_MAP[package_script]
-        package_command = scripts.get(package_script)
-        if package_command is None:
-            failures.append(f'missing package script: {package_script}')
-            continue
+        action = row['action']
+        public_command = row['public_command']
         description = describe_action(action)
-        public_scripts = description.get('public_scripts', [])
-        if package_script not in public_scripts:
-            failures.append(f'workflow describe for {action} does not publish public script {package_script}')
+        expected_public_command = f'{PUBLIC_NPM_BRIDGE}{action}'
+        if public_command != expected_public_command:
+            failures.append(f'topology command for {action} drifted: {public_command}')
         rows.append({
-            'package_script': package_script,
             'action': action,
-            'package_command': package_command,
+            'public_command': public_command,
             'validation_tier': description.get('validation_tier'),
             'guarantee_owner': description.get('guarantee_owner'),
             'family_count': row['family_count'],
@@ -84,7 +86,7 @@ def main() -> None:
         '## Aggregate entrypoints',
     ]
     for row in rows:
-        lines.append(f"- `{row['package_script']}` -> `{row['action']}`")
+        lines.append(f"- `{row['public_command']}` -> `{row['action']}`")
         lines.append(f"  - validation_tier: `{row['validation_tier']}`")
         lines.append(f"  - family_count: `{row['family_count']}`")
         lines.append(f"  - guarantee_owner: `{row['guarantee_owner']}`")

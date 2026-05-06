@@ -9,10 +9,18 @@
   "capabilities": [
     {
       "id": "compiler.parser.core-declarations",
-      "title": "Core declarations and statements",
+      "title": "Canonical parser syntax",
       "state": "implemented",
-      "summary": "The native parser accepts modules, bindings, functions, control flow, and expression forms used by the runnable subset.",
+      "summary": "The native parser accepts canonical modules, bindings, functions, control flow, and expression forms used by the runnable subset.",
+      "support_claims": [
+        "objc3c.behavior.parser.canonical-syntax"
+      ],
       "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/parser/positive/canonical_module_main.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        },
         {
           "kind": "test",
           "path": "tests/tooling/test_objc3c_parser_extraction.py",
@@ -25,10 +33,26 @@
       ]
     },
     {
+      "id": "compiler.sema.typed-flow",
+      "title": "Typed semantic flow",
+      "state": "implemented",
+      "summary": "Semantic analysis preserves the typed integer and boolean flow used by the runnable subset.",
+      "support_claims": [
+        "objc3c.behavior.sema.typed-flow"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/sema/types/typed_i32_bool_flow.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        }
+      ]
+    },
+    {
       "id": "compiler.sema.canonical-diagnostics",
       "title": "Canonical semantic rejection",
       "state": "rejected",
-      "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics instead of legacy mode switches.",
+      "summary": "Unsupported or invalid language forms are rejected through parser or semantic diagnostics instead of compatibility switches.",
       "evidence": [
         {
           "kind": "diagnostic",
@@ -38,6 +62,70 @@
           "kind": "test",
           "path": "tests/tooling/test_objc3c_parser_contract_sema_integration.py",
           "command": "python -m pytest tests/tooling/test_objc3c_parser_contract_sema_integration.py"
+        }
+      ]
+    },
+    {
+      "id": "compiler.lowering.strict-runtime-dispatch",
+      "title": "Strict runtime dispatch lowering",
+      "state": "implemented",
+      "summary": "Lowering reports unresolved runtime-dispatch linkage through the strict behavior matrix fixture.",
+      "support_claims": [
+        "objc3c.behavior.lowering.strict-runtime-dispatch"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/lowering/errors/runtime_dispatch_requires_link_strict_error.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        }
+      ]
+    },
+    {
+      "id": "compiler.ir.module-emission",
+      "title": "IR module emission",
+      "state": "implemented",
+      "summary": "IR generation emits the basic module shape used by the runnable native fixture set.",
+      "support_claims": [
+        "objc3c.behavior.ir.module-emission"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/ir/module/basic_i32_return_main.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        }
+      ]
+    },
+    {
+      "id": "runtime.dispatch.strict-error",
+      "title": "Runtime dispatch strict diagnostic",
+      "state": "implemented",
+      "summary": "Runtime dispatch unresolved-symbol behavior is exercised as a strict executable diagnostic.",
+      "support_claims": [
+        "objc3c.behavior.runtime.strict-dispatch-error"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
+        }
+      ]
+    },
+    {
+      "id": "compiler.e2e.runnable-smoke",
+      "title": "Runnable smoke path",
+      "state": "implemented",
+      "summary": "The end-to-end native smoke fixture compiles and runs through the behavior matrix command.",
+      "support_claims": [
+        "objc3c.behavior.e2e.runnable-smoke"
+      ],
+      "evidence": [
+        {
+          "kind": "test",
+          "path": "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+          "command": "npm run objc3c -- test-behavior-matrix"
         }
       ]
     },

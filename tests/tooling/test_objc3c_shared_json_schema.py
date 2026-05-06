@@ -4,9 +4,27 @@ import importlib.util
 import sys
 from pathlib import Path
 
-from objc3c_shared.json_io import load_json_object, render_json, write_report_json
-from objc3c_shared.report_model import report_envelope
-from objc3c_shared.schema_registry import schema_path, schema_registry_summary
+import pytest
+
+from objc3c_shared import json_io as shared_json_io
+from objc3c_shared.json_io import (
+    JsonSchemaValidationError,
+    load_json_object,
+    load_json_with_schema,
+    render_json,
+    validate_json_schema,
+    write_json_file,
+    write_report_json,
+)
+from objc3c_shared.report_model import report_envelope, validate_report_envelope
+from objc3c_shared.schema_registry import (
+    load_schema,
+    schema_ids,
+    schema_path,
+    schema_registry_summary,
+    validate_registered_schema,
+)
+from objc3c_tooling import json_io as tooling_json_io
 
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR_PATH = ROOT / "scripts" / "validate_capability_docs.py"
@@ -32,18 +50,84 @@ def test_shared_json_helpers_are_deterministic(tmp_path: Path) -> None:
         status="PASS",
         generated_by="tests/tooling/test_objc3c_shared_json_schema.py",
         payload={"b": 2, "a": 1},
+        schema_id="objc3c.test.report.schema.v1",
     )
 
-    write_report_json(out, payload, sort_keys=True)
+    validate_report_envelope(payload, require_schema_id=True)
+    write_report_json(out, payload)
 
     assert load_json_object(out)["contract_id"] == "objc3c.test.report.v1"
     assert render_json({"b": 2, "a": 1}, sort_keys=True) == '{\n  "a": 1,\n  "b": 2\n}\n'
     assert out.read_text(encoding="utf-8").endswith("\n")
 
 
+def test_tooling_json_io_facade_routes_to_shared_helpers() -> None:
+    assert tooling_json_io.canonical_json is shared_json_io.canonical_json
+    assert tooling_json_io.load_json_object is shared_json_io.load_json_object
+    assert tooling_json_io.write_json_file is shared_json_io.write_json_file
+    assert tooling_json_io.write_report_json is shared_json_io.write_report_json
+
+
+def test_shared_json_schema_validation_blocks_invalid_reports(tmp_path: Path) -> None:
+    schema = {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "type": "object",
+        "required": ["contract_id", "status"],
+        "properties": {
+            "contract_id": {"type": "string"},
+            "status": {"enum": ["PASS", "FAIL"]},
+        },
+        "additionalProperties": False,
+    }
+    schema_file = tmp_path / "report.schema.json"
+    report_file = tmp_path / "report.json"
+    write_json_file(schema_file, schema, sort_keys=True)
+    write_report_json(
+        report_file,
+        {"contract_id": "objc3c.test", "status": "PASS"},
+        schema=schema,
+    )
+
+    assert load_json_with_schema(report_file, schema_file) == {
+        "contract_id": "objc3c.test",
+        "status": "PASS",
+    }
+    with pytest.raises(JsonSchemaValidationError, match=r"schema validation failed at status"):
+        validate_json_schema(
+            {"contract_id": "objc3c.test", "status": "UNKNOWN"},
+            schema,
+            label="test report",
+        )
+
+
+def test_report_envelope_rejects_invalid_shape() -> None:
+    with pytest.raises(ValueError, match="report status must be PASS or FAIL"):
+        report_envelope(
+            contract_id="objc3c.test.report.v1",
+            status="UNKNOWN",
+            generated_by="tests/tooling/test_objc3c_shared_json_schema.py",
+            payload={},
+        )
+    with pytest.raises(ValueError, match="report payload must be an object"):
+        validate_report_envelope(
+            {
+                "contract_id": "objc3c.test.report.v1",
+                "status": "PASS",
+                "generated_by": "tests/tooling/test_objc3c_shared_json_schema.py",
+                "payload": [],
+            }
+        )
+
+
 def test_schema_registry_includes_capability_matrix() -> None:
+    assert "objc3c-capability-matrix-v1" in schema_ids()
     assert schema_path("objc3c-capability-matrix-v1").as_posix().endswith(
         "docs/support/capability_matrix.schema.json"
+    )
+    assert load_schema("objc3c-capability-matrix-v1")["type"] == "object"
+    validate_registered_schema(
+        load_json_object(ROOT / "docs" / "support" / "capability_matrix.json"),
+        "objc3c-capability-matrix-v1",
     )
     assert "objc3c-capability-matrix-v1" in schema_registry_summary()
 
