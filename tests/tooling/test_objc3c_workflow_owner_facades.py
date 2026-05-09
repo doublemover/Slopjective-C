@@ -73,6 +73,43 @@ OWNER_FACADES = {
         ),
         "handlers": (WORKFLOW_ROOT / "action_handlers_tooling_developer.py",),
     },
+    "performance": {
+        "owners": (
+            "performance_artifacts",
+            "performance_compiler_throughput",
+            "performance_foundation",
+            "performance_governance_policy",
+            "performance_governance_workflow",
+            "performance_metrics",
+            "performance_runnable",
+            "performance_runtime",
+            "performance_scenarios",
+        ),
+        "exports": (
+            "action_benchmark_comparative_baselines",
+            "action_benchmark_compiler_throughput",
+            "action_benchmark_performance",
+            "action_benchmark_runtime_inspector",
+            "action_benchmark_runtime_performance",
+            "action_build_performance_dashboard",
+            "action_check_performance_governance_schema_surface",
+            "action_check_performance_governance_surface",
+            "action_publish_performance_report",
+            "action_validate_compiler_throughput",
+            "action_validate_performance_foundation",
+            "action_validate_performance_governance",
+            "action_validate_performance_governance_end_to_end",
+            "action_validate_performance_governance_integration",
+            "action_validate_runnable_compiler_throughput",
+            "action_validate_runnable_performance",
+            "action_validate_runnable_runtime_performance",
+            "action_validate_runtime_performance",
+        ),
+        "handlers": (
+            WORKFLOW_ROOT / "action_handlers_performance.py",
+            WORKFLOW_ROOT / "action_handlers_reporting_public_performance.py",
+        ),
+    },
 }
 
 FORBIDDEN_FACADE_IMPLEMENTATION_IMPORTS = (

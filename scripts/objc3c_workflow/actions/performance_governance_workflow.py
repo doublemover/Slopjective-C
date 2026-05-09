@@ -1,4 +1,4 @@
-"""Composite and runnable performance-validation workflow actions."""
+"""Composite performance-governance workflow actions."""
 
 from __future__ import annotations
 
@@ -11,41 +11,20 @@ from .performance_artifacts import (
     PERFORMANCE_GOVERNANCE_DASHBOARD_PY,
     PERFORMANCE_GOVERNANCE_REPORT_PY,
 )
-from .performance_threshold_policy import (
-    COMPILER_THROUGHPUT_INTEGRATION_PY,
+from .performance_compiler_throughput import COMPILER_THROUGHPUT_INTEGRATION_PY
+from .performance_foundation import PERFORMANCE_INTEGRATION_PY
+from .performance_governance_policy import (
     PERFORMANCE_GOVERNANCE_SCHEMA_SURFACE_PY,
     PERFORMANCE_GOVERNANCE_SOURCE_SURFACE_PY,
-    PERFORMANCE_INTEGRATION_PY,
-    RUNTIME_PERFORMANCE_INTEGRATION_PY,
 )
+from .performance_runtime import RUNTIME_PERFORMANCE_INTEGRATION_PY
 
-RUNNABLE_COMPILER_THROUGHPUT_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_compiler_throughput_end_to_end.py"
-)
-RUNNABLE_PERFORMANCE_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_performance_end_to_end.py"
-)
-RUNNABLE_RUNTIME_PERFORMANCE_E2E_PY = (
-    ROOT / "scripts" / "check_objc3c_runnable_runtime_performance_end_to_end.py"
-)
 PERFORMANCE_GOVERNANCE_INTEGRATION_PY = (
     ROOT / "scripts" / "check_objc3c_performance_governance_integration.py"
 )
 PERFORMANCE_GOVERNANCE_END_TO_END_PY = (
     ROOT / "scripts" / "check_objc3c_performance_governance_end_to_end.py"
 )
-
-
-def action_validate_runnable_compiler_throughput(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_COMPILER_THROUGHPUT_E2E_PY)])
-
-
-def action_validate_runnable_performance(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_PERFORMANCE_E2E_PY)])
-
-
-def action_validate_runnable_runtime_performance(_: list[str]) -> int:
-    return run([sys.executable, str(RUNNABLE_RUNTIME_PERFORMANCE_E2E_PY)])
 
 
 def action_validate_performance_governance(_: list[str]) -> int:
@@ -90,3 +69,12 @@ def action_validate_performance_governance_integration(_: list[str]) -> int:
 
 def action_validate_performance_governance_end_to_end(_: list[str]) -> int:
     return run([sys.executable, str(PERFORMANCE_GOVERNANCE_END_TO_END_PY)])
+
+
+__all__ = [
+    "PERFORMANCE_GOVERNANCE_END_TO_END_PY",
+    "PERFORMANCE_GOVERNANCE_INTEGRATION_PY",
+    "action_validate_performance_governance",
+    "action_validate_performance_governance_end_to_end",
+    "action_validate_performance_governance_integration",
+]
