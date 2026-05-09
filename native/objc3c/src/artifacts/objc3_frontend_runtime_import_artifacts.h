@@ -49,6 +49,13 @@ BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
 [[nodiscard]] std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
     const Objc3ImportedRuntimeMetadataSemanticRulesSummary &summary);
 
+[[nodiscard]] Objc3ImportedRuntimeMetadataSemanticRulesSummary
+BuildImportedRuntimeMetadataSemanticRulesSummary(
+    const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary
+        &source_semantic_preservation,
+    const std::vector<Objc3ImportedRuntimeModuleSurface> &imported_surfaces,
+    std::size_t imported_input_path_count);
+
 [[nodiscard]] std::string BuildSerializedRuntimeMetadataImportLoweringReplayKey(
     const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary);
 
