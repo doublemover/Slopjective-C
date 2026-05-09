@@ -6,6 +6,7 @@
 
 #include "lower/objc3_lowering_contract.h"
 #include "pipeline/runtime_import_link_plan.h"
+#include "pipeline/runtime_import_manifest_preservation.h"
 #include "pipeline/runtime_import_json_helpers.h"
 #include "pipeline/runtime_import_record_parsing.h"
 #include "support/objc3_file_reading.h"
@@ -29,6 +30,9 @@ using objc3c::pipeline::ReadStringArrayMember;
 using objc3c::pipeline::ReadStringMember;
 using objc3c::pipeline::ReadUnsignedMember;
 using objc3c::pipeline::SplitRuntimeImportLinkerResponseFlags;
+using objc3c::pipeline::ValidateImportedRuntimeRegistrationManifestDescriptorInventory;
+using objc3c::pipeline::ValidateImportedRuntimeRegistrationManifestLinkerFlags;
+using objc3c::pipeline::ValidateImportedRuntimeRegistrationManifestReadiness;
 
 bool PopulateFrontendClosureSummary(const JsonValue::Object &root,
                                     Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary,
@@ -1666,34 +1670,15 @@ bool PopulateImportedRuntimeRegistrationManifestPeerArtifacts(
     error = "unexpected runtime registration manifest contract id";
     return false;
   }
-  if (!ready_for_runtime_bootstrap_enforcement) {
-    error =
-        "runtime registration manifest is not ready for runtime bootstrap enforcement";
+  if (!ValidateImportedRuntimeRegistrationManifestReadiness(
+          ready_for_runtime_bootstrap_enforcement,
+          ready_for_live_registration_discovery_replay,
+          ready_for_live_restart_hardening, error) ||
+      !ValidateImportedRuntimeRegistrationManifestDescriptorInventory(
+          artifacts, error) ||
+      !ValidateImportedRuntimeRegistrationManifestLinkerFlags(
+          artifacts.driver_linker_flags, error)) {
     return false;
-  }
-  if (!ready_for_live_registration_discovery_replay) {
-    error =
-        "runtime registration manifest is not ready for live registration discovery replay";
-    return false;
-  }
-  if (!ready_for_live_restart_hardening) {
-    error =
-        "runtime registration manifest is not ready for live restart hardening";
-    return false;
-  }
-  if (artifacts.total_descriptor_count !=
-      artifacts.class_descriptor_count + artifacts.protocol_descriptor_count +
-          artifacts.category_descriptor_count +
-          artifacts.property_descriptor_count + artifacts.ivar_descriptor_count) {
-    error =
-        "runtime registration manifest descriptor counts are internally inconsistent";
-    return false;
-  }
-  for (const auto &flag : artifacts.driver_linker_flags) {
-    if (flag.empty()) {
-      error = "runtime registration manifest contains an empty driver linker flag";
-      return false;
-    }
   }
   artifacts.ready_for_live_registration_discovery_replay =
       ready_for_live_registration_discovery_replay;
