@@ -20,7 +20,13 @@ typedef enum objc3c_frontend_diagnostic_severity {
   OBJC3C_FRONTEND_DIAG_FATAL = 3
 } objc3c_frontend_diagnostic_severity_t;
 
-/* Per-stage execution summary written to objc3c_frontend_compile_result_t. */
+/*
+ * Per-stage execution summary written by value to
+ * objc3c_frontend_compile_result_t. Detailed diagnostics payloads are not
+ * borrowed from transient pipeline storage; callers read them through the
+ * result-owned OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS path when that artifact is
+ * produced.
+ */
 typedef struct objc3c_frontend_stage_summary {
   /* Stage identity for this summary record. */
   objc3c_frontend_stage_id_t stage;

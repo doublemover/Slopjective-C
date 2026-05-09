@@ -19,13 +19,15 @@
 #include "ast/objc3_ast.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
-#include "io/objc3_json.h"
+#include "io/json/json_writer.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
 #include "io/objc3_toolchain_runtime_ga_operations_scaffold.h"
 #include "libobjc3c_frontend/objc3_cli_frontend.h"
+#include "libobjc3c_frontend/objc3c_frontend_compile_contract.h"
+#include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
 #include "support/objc3_file_reading.h"
 
-using objc3::io::EscapeJsonString;
+using objc3::io::json::JsonObjectWriter;
 
 struct objc3c_frontend_context {
   mutable std::mutex mutex;
@@ -45,100 +47,12 @@ static void objc3c_frontend_set_error(objc3c_frontend_context_t *context, const 
   context->last_error = message == nullptr ? "" : message;
 }
 
-static objc3c_frontend_string_t *CloneFrontendString(const std::string &text) {
-  if (text.empty()) {
-    return nullptr;
-  }
-  auto *string = static_cast<objc3c_frontend_string_t *>(
-      std::malloc(sizeof(objc3c_frontend_string_t)));
-  if (string == nullptr) {
-    return nullptr;
-  }
-  auto *data = static_cast<char *>(std::malloc(text.size() + 1u));
-  if (data == nullptr) {
-    std::free(string);
-    return nullptr;
-  }
-  std::memcpy(data, text.data(), text.size());
-  data[text.size()] = '\0';
-  string->data = data;
-  string->size = text.size();
-  return string;
-}
-
-extern "C" OBJC3C_FRONTEND_API objc3c_frontend_string_view_t
-objc3c_frontend_string_view(const objc3c_frontend_string_t *string) {
-  if (string == nullptr || string->data == nullptr) {
-    return {nullptr, 0u};
-  }
-  return {string->data, string->size};
-}
-
-extern "C" OBJC3C_FRONTEND_API void objc3c_frontend_string_release(
-    objc3c_frontend_string_t *string) {
-  if (string == nullptr) {
-    return;
-  }
-  std::free(const_cast<char *>(string->data));
-  std::free(string);
-}
-
-extern "C" OBJC3C_FRONTEND_API void objc3c_frontend_result_destroy(
-    objc3c_frontend_compile_result_t *result) {
-  if (result == nullptr) {
-    return;
-  }
-  objc3c_frontend_string_release(result->error_message);
-  objc3c_frontend_string_release(result->diagnostics_path);
-  objc3c_frontend_string_release(result->manifest_path);
-  objc3c_frontend_string_release(result->runtime_metadata_path);
-  objc3c_frontend_string_release(result->ir_path);
-  objc3c_frontend_string_release(result->object_path);
-  *result = {};
-}
-
-extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
-objc3c_frontend_result_artifact_path(
-    const objc3c_frontend_compile_result_t *result,
-    objc3c_frontend_artifact_kind_t artifact_kind) {
-  if (result == nullptr) {
-    return nullptr;
-  }
-  switch (artifact_kind) {
-    case OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS:
-      return result->diagnostics_path;
-    case OBJC3C_FRONTEND_ARTIFACT_MANIFEST:
-      return result->manifest_path;
-    case OBJC3C_FRONTEND_ARTIFACT_IR:
-      return result->ir_path;
-    case OBJC3C_FRONTEND_ARTIFACT_OBJECT:
-      return result->object_path;
-    case OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA:
-      return result->runtime_metadata_path;
-  }
-  return nullptr;
-}
-
-extern "C" OBJC3C_FRONTEND_API const objc3c_frontend_string_t *
-objc3c_frontend_result_error_message(
-    const objc3c_frontend_compile_result_t *result) {
-  return result == nullptr ? nullptr : result->error_message;
-}
-
-static bool IsMissingBorrowedText(objc3c_frontend_borrowed_text_t text) {
-  return text == nullptr || text[0] == '\0';
-}
-
-static bool IsMissingBorrowedPath(objc3c_frontend_borrowed_path_t path) {
-  return path == nullptr || path[0] == '\0';
-}
-
 static std::filesystem::path BorrowedPathToFilesystemPath(objc3c_frontend_borrowed_path_t path) {
   return std::filesystem::path(path);
 }
 
 static std::filesystem::path OptionalBorrowedFilesystemPath(objc3c_frontend_borrowed_path_t path) {
-  if (IsMissingBorrowedPath(path)) {
+  if (objc3c::frontend::IsMissingFrontendBorrowedPath(path)) {
     return std::filesystem::path();
   }
   return BorrowedPathToFilesystemPath(path);
@@ -173,14 +87,14 @@ static bool ValidateSupportedLanguageVersion(uint8_t requested_language_version,
 }
 
 static std::filesystem::path ResolveInputPath(const objc3c_frontend_compile_options_t &options) {
-  if (!IsMissingBorrowedPath(options.input_path)) {
+  if (!objc3c::frontend::IsMissingFrontendBorrowedPath(options.input_path)) {
     return BorrowedPathToFilesystemPath(options.input_path);
   }
   return std::filesystem::path(DefaultMemoryInputPath);
 }
 
 static std::filesystem::path ResolveOutputDir(const objc3c_frontend_compile_options_t &options) {
-  if (IsMissingBorrowedPath(options.out_dir)) {
+  if (objc3c::frontend::IsMissingFrontendBorrowedPath(options.out_dir)) {
     return std::filesystem::path();
   }
   return BorrowedPathToFilesystemPath(options.out_dir);
@@ -188,7 +102,7 @@ static std::filesystem::path ResolveOutputDir(const objc3c_frontend_compile_opti
 
 static std::string ResolveEmitPrefix(const objc3c_frontend_compile_options_t &options,
                                      const std::filesystem::path &input_path) {
-  if (!IsMissingBorrowedText(options.emit_prefix)) {
+  if (!objc3c::frontend::IsMissingFrontendBorrowedText(options.emit_prefix)) {
     return std::string(options.emit_prefix);
   }
   const std::string stem = input_path.stem().string();
@@ -323,9 +237,15 @@ static std::string BuildDiagnosticsJson(const std::vector<std::string> &diagnost
     const ParsedFrontendDiagnostic parsed = ParseFrontendDiagnostic(diagnostics[i]);
     const unsigned line = parsed.line == std::numeric_limits<unsigned>::max() ? 0U : parsed.line;
     const unsigned column = parsed.column == std::numeric_limits<unsigned>::max() ? 0U : parsed.column;
-    out << "    {\"severity\":\"" << EscapeJsonString(parsed.severity) << "\",\"line\":" << line
-        << ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(parsed.code) << "\",\"message\":\""
-        << EscapeJsonString(parsed.message) << "\",\"raw\":\"" << EscapeJsonString(parsed.raw) << "\"}";
+    out << "    ";
+    JsonObjectWriter diagnostic(out);
+    diagnostic.StringField("severity", parsed.severity);
+    diagnostic.UnsignedField("line", line);
+    diagnostic.UnsignedField("column", column);
+    diagnostic.StringField("code", parsed.code);
+    diagnostic.StringField("message", parsed.message);
+    diagnostic.StringField("raw", parsed.raw);
+    diagnostic.End();
     if (i + 1 != diagnostics.size()) {
       out << ",";
     }
@@ -389,28 +309,39 @@ static void ClearCompileResultPaths(objc3c_frontend_context_t *context) {
   context->object_path.clear();
 }
 
-static void PopulateResultPaths(objc3c_frontend_context_t *context, objc3c_frontend_compile_result_t *result) {
+static bool PopulateResultPaths(objc3c_frontend_context_t *context,
+                                objc3c_frontend_compile_result_t *result,
+                                std::string &error) {
   if (context == nullptr || result == nullptr) {
-    return;
+    error = "result path population requires context and result storage.";
+    return false;
   }
-  // Copy context strings into result-owned immutable string objects.
-  result->error_message = CloneFrontendString(context->last_error);
-  result->diagnostics_path = CloneFrontendString(context->diagnostics_path);
-  result->manifest_path = CloneFrontendString(context->manifest_path);
-  result->runtime_metadata_path =
-      CloneFrontendString(context->runtime_metadata_binary_path);
-  result->ir_path = CloneFrontendString(context->ir_path);
-  result->object_path = CloneFrontendString(context->object_path);
+  return objc3c::frontend::PopulateCompileResultOwnedPayload(
+      result,
+      {.error_message = context->last_error,
+       .diagnostics_path = context->diagnostics_path,
+       .manifest_path = context->manifest_path,
+       .runtime_metadata_path = context->runtime_metadata_binary_path,
+       .ir_path = context->ir_path,
+       .object_path = context->object_path},
+      error);
 }
 
 static objc3c_frontend_status_t SetUsageError(objc3c_frontend_context_t *context,
                                               objc3c_frontend_compile_result_t *result,
                                               const std::string &message) {
-  *result = {};
+  objc3c::frontend::ResetCompileResultForWrite(result);
   result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
   result->process_exit_code = 2;
   result->success = 0;
-  result->error_message = CloneFrontendString(message);
+  std::string ownership_error;
+  if (!objc3c::frontend::SetCompileResultOwnedErrorMessage(
+          result, message, ownership_error)) {
+    result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+    result->process_exit_code = 2;
+    objc3c_frontend_set_error(context, ownership_error.c_str());
+    return result->status;
+  }
   objc3c_frontend_set_error(context, message.c_str());
   return result->status;
 }
@@ -419,11 +350,17 @@ static objc3c_frontend_status_t SetUsageErrorWithoutContext(
     objc3c_frontend_compile_result_t *result,
     const std::string &message) {
   if (result != nullptr) {
-    *result = {};
+    objc3c::frontend::ResetCompileResultForWrite(result);
     result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
     result->process_exit_code = 2;
     result->success = 0;
-    result->error_message = CloneFrontendString(message);
+    std::string ownership_error;
+    if (!objc3c::frontend::SetCompileResultOwnedErrorMessage(
+            result, message, ownership_error)) {
+      result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+      result->process_exit_code = 2;
+    }
+    return result->status;
   }
   return OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
 }
@@ -442,7 +379,8 @@ static Objc3FrontendOptions BuildFrontendOptions(const objc3c_frontend_compile_o
   if (options.max_message_send_args > 0) {
     frontend_options.lowering.max_message_send_args = options.max_message_send_args;
   }
-  if (!IsMissingBorrowedText(options.runtime_dispatch_symbol)) {
+  if (!objc3c::frontend::IsMissingFrontendBorrowedText(
+          options.runtime_dispatch_symbol)) {
     frontend_options.lowering.runtime_dispatch_symbol = options.runtime_dispatch_symbol;
   }
   return frontend_options;
@@ -453,7 +391,7 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
                                                        const std::string &source_text,
                                                        const objc3c_frontend_compile_options_t *options,
                                                        objc3c_frontend_compile_result_t *result) {
-  *result = {};
+  objc3c::frontend::ResetCompileResultForWrite(result);
   ClearCompileResultPaths(context);
 
   Objc3FrontendOptions frontend_options = BuildFrontendOptions(*options);
@@ -859,13 +797,17 @@ static objc3c_frontend_status_t CompileObjc3SourceImpl(objc3c_frontend_context_t
       objc3c_frontend_set_error(context, "emit_object requires a valid ir_object_backend (clang|llvm-direct).");
       emit_diagnostics.push_back(
           "error:1:1: emit_object requires valid ir_object_backend (clang|llvm-direct) [O3E001]");
-    } else if (wants_clang_backend && IsMissingBorrowedPath(options->clang_path)) {
+    } else if (wants_clang_backend &&
+               objc3c::frontend::IsMissingFrontendBorrowedPath(
+                   options->clang_path)) {
       result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
       result->process_exit_code = 2;
       result->success = 0;
       objc3c_frontend_set_error(context, "emit_object requires clang_path in compile options.");
       emit_diagnostics.push_back("error:1:1: emit_object requires clang_path in compile options [O3E001]");
-    } else if (wants_llvm_direct_backend && IsMissingBorrowedPath(options->llc_path)) {
+    } else if (wants_llvm_direct_backend &&
+               objc3c::frontend::IsMissingFrontendBorrowedPath(
+                   options->llc_path)) {
       result->status = OBJC3C_FRONTEND_STATUS_USAGE_ERROR;
       result->process_exit_code = 2;
       result->success = 0;

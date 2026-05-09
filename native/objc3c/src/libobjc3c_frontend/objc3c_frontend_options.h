@@ -21,8 +21,12 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
  * - Borrowed option values are caller-owned storage for the duration of the call.
  * - borrowed_path_t fields are interpreted as filesystem paths.
  * - borrowed_text_t fields are interpreted as literal source/symbol/prefix text.
- * - input_path is used by file-backed workflows.
- * - source_text is used by in-memory workflows.
+ * - compile_file requires non-NULL, non-empty input_path.
+ * - compile_source requires non-NULL, non-empty source_text.
+ * - emit_ir or emit_object requires non-NULL, non-empty out_dir and fails
+ *   before pipeline execution when absent.
+ * - emit_object requires clang_path for clang backend and llc_path for
+ *   llvm-direct backend and fails before pipeline execution when absent.
  * - language_version uses Objective-C version 3 by default when set to 0.
  * - Set unused pointers to NULL and reserved fields to 0.
  */

@@ -7,11 +7,11 @@
 
 #include "diag/objc3_diag_utils.h"
 #include "io/objc3_file_io.h"
-#include "io/objc3_json.h"
+#include "io/json/json_writer.h"
 
 namespace {
 
-using objc3::io::EscapeJsonString;
+using objc3::io::json::JsonObjectWriter;
 
 void WriteDiagnosticsTextArtifact(const std::filesystem::path &out_dir,
                                   const std::string &emit_prefix,
@@ -30,9 +30,15 @@ void WriteDiagnosticsJsonArtifact(const std::filesystem::path &out_dir,
     const DiagSortKey key = ParseDiagSortKey(diagnostics[i]);
     const unsigned line = key.line == std::numeric_limits<unsigned>::max() ? 0U : key.line;
     const unsigned column = key.column == std::numeric_limits<unsigned>::max() ? 0U : key.column;
-    out << "    {\"severity\":\"" << EscapeJsonString(ToLower(key.severity)) << "\",\"line\":" << line
-        << ",\"column\":" << column << ",\"code\":\"" << EscapeJsonString(key.code) << "\",\"message\":\""
-        << EscapeJsonString(key.message) << "\",\"raw\":\"" << EscapeJsonString(diagnostics[i]) << "\"}";
+    out << "    ";
+    JsonObjectWriter diagnostic(out);
+    diagnostic.StringField("severity", ToLower(key.severity));
+    diagnostic.UnsignedField("line", line);
+    diagnostic.UnsignedField("column", column);
+    diagnostic.StringField("code", key.code);
+    diagnostic.StringField("message", key.message);
+    diagnostic.StringField("raw", diagnostics[i]);
+    diagnostic.End();
     if (i + 1 != diagnostics.size()) {
       out << ",";
     }

@@ -1,6 +1,11 @@
 #ifndef OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_ARTIFACT_H_
 #define OBJC3C_LIBOBJC3C_FRONTEND_OBJC3C_FRONTEND_ARTIFACT_H_
 
+/*
+ * Artifact path selectors for objc3c_frontend_result_artifact_path().
+ * Returned paths are result-owned strings borrowed by the caller until
+ * objc3c_frontend_result_destroy(). Undefined enum values return NULL.
+ */
 typedef enum objc3c_frontend_artifact_kind {
   OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS = 0,
   OBJC3C_FRONTEND_ARTIFACT_MANIFEST = 1,

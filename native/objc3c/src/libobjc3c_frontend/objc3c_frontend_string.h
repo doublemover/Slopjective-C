@@ -6,8 +6,10 @@
 #include "objc3c_frontend_version.h"
 
 /*
- * Owned immutable string returned by libobjc3c_frontend.
- * Release only with objc3c_frontend_string_release().
+ * Owned immutable string returned by libobjc3c_frontend. Strings returned as
+ * members of objc3c_frontend_compile_result_t are result-owned and released
+ * only by objc3c_frontend_result_destroy(); standalone strings, if added to the
+ * public API, are released with objc3c_frontend_string_release().
  */
 typedef struct objc3c_frontend_string {
   const char *data;
@@ -26,6 +28,7 @@ extern "C" {
 
 OBJC3C_FRONTEND_API objc3c_frontend_string_view_t objc3c_frontend_string_view(
     const objc3c_frontend_string_t *string);
+/* Releases standalone owned strings. Passing NULL is a no-op. */
 OBJC3C_FRONTEND_API void objc3c_frontend_string_release(
     objc3c_frontend_string_t *string);
 

@@ -1,5 +1,6 @@
 #include "io/objc3_process.h"
 
+#include "io/json/json_parser.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_json.h"
 #include "lower/objc3_lowering_contract.h"
@@ -18,9 +19,11 @@
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -340,7 +343,8 @@ std::string BuildIndentedStringArrayJson(const std::vector<std::string> &values,
   std::ostringstream out;
   out << "[\n";
   for (std::size_t index = 0; index < values.size(); ++index) {
-    out << indent << "\"" << EscapeJsonString(values[index]) << "\"";
+    out << indent;
+    objc3::io::WriteJsonString(out, values[index]);
     if (index + 1u < values.size()) {
       out << ",";
     }
@@ -372,116 +376,56 @@ std::string ComputeSha256ShapedContentDigest(const std::string &text) {
          ComputeFnv1a64Hex("objc3c-dashboard-digest-4:" + text);
 }
 
-void SkipJsonWhitespace(const std::string &text, std::size_t &index) {
-  while (index < text.size() &&
-         std::isspace(static_cast<unsigned char>(text[index])) != 0) {
-    ++index;
-  }
-}
-
-bool TryFindJsonFieldValueStart(const std::string &text,
-                                const std::string &field,
-                                std::size_t &value_start) {
-  const std::string key = "\"" + field + "\"";
-  const std::size_t key_pos = text.find(key);
-  if (key_pos == std::string::npos) {
-    return false;
-  }
-  const std::size_t colon_pos = text.find(':', key_pos + key.size());
-  if (colon_pos == std::string::npos) {
-    return false;
-  }
-  value_start = colon_pos + 1u;
-  SkipJsonWhitespace(text, value_start);
-  return value_start < text.size();
-}
-
 bool TryExtractJsonStringField(const std::string &text,
                                const std::string &field,
                                std::string &value) {
-  std::size_t index = 0;
-  if (!TryFindJsonFieldValueStart(text, field, index) || text[index] != '"') {
+  const objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
+  if (!parsed.ok()) {
     return false;
   }
-  ++index;
-  std::string decoded;
-  while (index < text.size()) {
-    const char ch = text[index++];
-    if (ch == '\\') {
-      if (index >= text.size()) {
-        return false;
-      }
-      decoded.push_back(text[index++]);
-      continue;
-    }
-    if (ch == '"') {
-      value = decoded;
-      return true;
-    }
-    decoded.push_back(ch);
+  const std::optional<std::string> field_value = parsed.value.GetString(field);
+  if (!field_value.has_value()) {
+    return false;
   }
-  return false;
+  value = *field_value;
+  return true;
 }
 
 bool TryExtractJsonBoolField(const std::string &text,
                              const std::string &field,
                              bool &value) {
-  std::size_t index = 0;
-  if (!TryFindJsonFieldValueStart(text, field, index)) {
+  const objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
+  if (!parsed.ok()) {
     return false;
   }
-  if (text.compare(index, 4u, "true") == 0) {
-    value = true;
-    return true;
+  const std::optional<bool> field_value = parsed.value.GetBool(field);
+  if (!field_value.has_value()) {
+    return false;
   }
-  if (text.compare(index, 5u, "false") == 0) {
-    value = false;
-    return true;
-  }
-  return false;
+  value = *field_value;
+  return true;
 }
 
 bool TryExtractJsonStringArrayField(const std::string &text,
                                     const std::string &field,
                                     std::vector<std::string> &values) {
-  std::size_t index = 0;
-  if (!TryFindJsonFieldValueStart(text, field, index) || text[index] != '[') {
+  const objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
+  if (!parsed.ok()) {
     return false;
   }
-  ++index;
-  SkipJsonWhitespace(text, index);
-  std::vector<std::string> parsed;
-  while (index < text.size() && text[index] != ']') {
-    if (text[index] != '"') {
+  const objc3::io::json::JsonValue *field_value = parsed.value.Find(field);
+  if (field_value == nullptr || !field_value->IsArray()) {
+    return false;
+  }
+  std::vector<std::string> array_values;
+  array_values.reserve(field_value->AsArray().size());
+  for (const objc3::io::json::JsonValue &entry : field_value->AsArray()) {
+    if (!entry.IsString()) {
       return false;
     }
-    ++index;
-    std::string decoded;
-    while (index < text.size()) {
-      const char ch = text[index++];
-      if (ch == '\\') {
-        if (index >= text.size()) {
-          return false;
-        }
-        decoded.push_back(text[index++]);
-        continue;
-      }
-      if (ch == '"') {
-        break;
-      }
-      decoded.push_back(ch);
-    }
-    parsed.push_back(decoded);
-    SkipJsonWhitespace(text, index);
-    if (index < text.size() && text[index] == ',') {
-      ++index;
-      SkipJsonWhitespace(text, index);
-    }
+    array_values.push_back(entry.AsString());
   }
-  if (index >= text.size() || text[index] != ']') {
-    return false;
-  }
-  values = parsed;
+  values = std::move(array_values);
   return true;
 }
 

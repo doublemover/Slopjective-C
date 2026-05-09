@@ -184,6 +184,13 @@ std::string OptionalPath(const objc3c_frontend_string_t *value) {
   return std::string(view.data, view.size);
 }
 
+std::string ResultArtifactPath(
+    const objc3c_frontend_c_compile_result_t &result,
+    objc3c_frontend_artifact_kind_t artifact_kind) {
+  return OptionalPath(objc3c_frontend_result_artifact_path(&result,
+                                                          artifact_kind));
+}
+
 struct CompileResultGuard {
   objc3c_frontend_c_compile_result_t *result = nullptr;
 
@@ -396,10 +403,14 @@ void WriteObservabilityJson(
     const objc3c_frontend_c_compile_result_t &result,
     objc3c_frontend_c_status_t status,
     const std::string &runtime_metadata_binary_path_text) {
-  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
-  const std::string manifest_path_text = OptionalPath(result.manifest_path);
-  const std::string ir_path_text = OptionalPath(result.ir_path);
-  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string diagnostics_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+  const std::string manifest_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+  const std::string ir_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+  const std::string object_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const DiagnosticTotals diagnostic_totals = BuildDiagnosticTotals(result);
   const std::string last_attempted_stage = LastAttemptedStageName(result);
   const std::string blocking_stage = BlockingStageName(result);
@@ -461,7 +472,8 @@ void WriteRuntimeInspectorJson(
     const std::string &indent,
     const RunnerOptions &options,
     const objc3c_frontend_c_compile_result_t &result) {
-  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string object_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
   const bool available = PathExists(object_path_text);
@@ -535,10 +547,14 @@ void WriteBonusExperiencesJson(
     const objc3c_frontend_c_compile_result_t &result,
     const std::string &summary_path_text,
     const std::string &runtime_metadata_binary_path_text) {
-  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
-  const std::string manifest_path_text = OptionalPath(result.manifest_path);
-  const std::string ir_path_text = OptionalPath(result.ir_path);
-  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string diagnostics_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+  const std::string manifest_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+  const std::string ir_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+  const std::string object_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
   const bool compile_surface_ready = result.emit.attempted != 0;
@@ -648,10 +664,14 @@ void WritePlaygroundReproJson(
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT
           ? "llvm-direct"
           : "clang";
-  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
-  const std::string manifest_path_text = OptionalPath(result.manifest_path);
-  const std::string ir_path_text = OptionalPath(result.ir_path);
-  const std::string object_path_text = OptionalPath(result.object_path);
+  const std::string diagnostics_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+  const std::string manifest_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+  const std::string ir_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+  const std::string object_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   const std::string child_indent = indent + "  ";
   const std::string grandchild_indent = child_indent + "  ";
 
@@ -769,17 +789,17 @@ std::string BuildSummaryJson(const RunnerOptions &options,
                                  &output_contract_conformance_corpus_surface) {
   const char *backend_name =
       options.ir_object_backend == OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT ? "llvm-direct" : "clang";
-  const fs::path runtime_metadata_binary_path =
-      BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
   const std::string summary_path_text = summary_path.generic_string();
   const std::string runtime_metadata_binary_path_text =
-      fs::exists(runtime_metadata_binary_path)
-          ? runtime_metadata_binary_path.generic_string()
-          : std::string();
-  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
-  const std::string manifest_path_text = OptionalPath(result.manifest_path);
-  const std::string ir_path_text = OptionalPath(result.ir_path);
-  const std::string object_path_text = OptionalPath(result.object_path);
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
+  const std::string diagnostics_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
+  const std::string manifest_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_MANIFEST);
+  const std::string ir_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_IR);
+  const std::string object_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_OBJECT);
   std::ostringstream out;
   out << "{\n";
   out << "  \"mode\": \"objc3c-frontend-c-api-runner-v1\",\n";
@@ -1122,12 +1142,8 @@ int main(int argc, char **argv) {
 
   const fs::path summary_path =
       options.summary_out.empty() ? (options.out_dir / (options.emit_prefix + ".c_api_summary.json")) : options.summary_out;
-  const fs::path runtime_metadata_binary_path =
-      BuildRuntimeMetadataBinaryArtifactPath(options.out_dir, options.emit_prefix);
   const std::string runtime_metadata_binary_path_text =
-      fs::exists(runtime_metadata_binary_path)
-          ? runtime_metadata_binary_path.generic_string()
-          : std::string();
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_RUNTIME_METADATA);
   const bool stage_report_output_contract_ready =
       result.lex.stage == OBJC3C_FRONTEND_STAGE_LEX &&
       result.parse.stage == OBJC3C_FRONTEND_STAGE_PARSE &&
@@ -1150,7 +1166,8 @@ int main(int argc, char **argv) {
     return 2;
   }
 
-  const std::string diagnostics_path_text = OptionalPath(result.diagnostics_path);
+  const std::string diagnostics_path_text =
+      ResultArtifactPath(result, OBJC3C_FRONTEND_ARTIFACT_DIAGNOSTICS);
   const fs::path diagnostics_output_path = diagnostics_path_text.empty()
                                                ? (options.out_dir / (options.emit_prefix + ".diagnostics.json"))
                                                : fs::path(diagnostics_path_text);

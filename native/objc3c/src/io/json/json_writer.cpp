@@ -2,6 +2,7 @@
 
 #include <iomanip>
 #include <sstream>
+#include <string_view>
 
 #include "io/objc3_json.h"
 
@@ -53,6 +54,52 @@ void WriteValue(std::ostream &out, const JsonValue &value) {
 }
 
 }  // namespace
+
+JsonObjectWriter::JsonObjectWriter(std::ostream &out) : out_(out) {
+  out_ << '{';
+}
+
+void JsonObjectWriter::BeginField(std::string_view name) {
+  if (!first_) {
+    out_ << ',';
+  }
+  first_ = false;
+  objc3::io::WriteJsonString(out_, name);
+  out_ << ':';
+}
+
+void JsonObjectWriter::StringField(std::string_view name, std::string_view value) {
+  BeginField(name);
+  objc3::io::WriteJsonString(out_, value);
+}
+
+void JsonObjectWriter::BoolField(std::string_view name, bool value) {
+  BeginField(name);
+  out_ << (value ? "true" : "false");
+}
+
+void JsonObjectWriter::NumberField(std::string_view name, double value) {
+  BeginField(name);
+  out_ << std::setprecision(17) << value;
+}
+
+void JsonObjectWriter::UnsignedField(std::string_view name, std::uint64_t value) {
+  BeginField(name);
+  out_ << value;
+}
+
+void JsonObjectWriter::RawJsonField(std::string_view name, std::string_view value) {
+  BeginField(name);
+  out_ << value;
+}
+
+void JsonObjectWriter::End() {
+  if (ended_) {
+    return;
+  }
+  out_ << '}';
+  ended_ = true;
+}
 
 void WriteJson(std::ostream &out, const JsonValue &value) {
   WriteValue(out, value);

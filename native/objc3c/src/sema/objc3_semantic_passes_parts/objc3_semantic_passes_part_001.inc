@@ -1,4 +1,5 @@
 #include "sema/objc3_semantic_passes.h"
+#include "sema/objc3_semantic_type_helpers.h"
 #include "sema/objc3_static_analysis.h"
 #include "sema/objc3_type_form_scaffold.h"
 #include "pipeline/objc3_frontend_types.h"
@@ -32,35 +33,6 @@ static std::string JoinStringVector(const std::vector<std::string> &items,
 static bool IsObjCReferenceAliasValueType(ValueType type);
 struct Objc3ProtocolSemanticDefinition;
 
-enum class SemanticOwnershipKind {
-  None,
-  Retained,
-  Weak,
-  Unowned,
-};
-
-struct SemanticTypeInfo {
-  ValueType type = ValueType::Unknown;
-  Objc3SemanticCanonicalType canonical_type;
-  bool is_vector = false;
-  std::string vector_base_spelling;
-  unsigned vector_lane_count = 1;
-  bool is_callable = false;
-  std::vector<ValueType> callable_param_types;
-  ValueType callable_return_type = ValueType::Unknown;
-  bool callable_block_runtime_handle_candidate = false;
-  bool callable_block_runtime_handle_has_byref_capture = false;
-  bool callable_block_runtime_handle_has_owned_object_capture = false;
-  std::string callable_block_runtime_first_byref_capture_name;
-  std::string callable_block_runtime_first_owned_capture_name;
-  SemanticOwnershipKind ownership_kind = SemanticOwnershipKind::None;
-  bool has_nullability_suffix = false;
-  bool is_refined_nonnull_reference = false;
-  std::string object_pointer_type_name;
-};
-
-using SemanticScope = std::unordered_map<std::string, SemanticTypeInfo>;
-
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromParam(
     const FuncParam &param);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromFunctionReturn(
@@ -69,16 +41,6 @@ static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromMethodReturn(
     const Objc3MethodDecl &method);
 static Objc3SemanticCanonicalType BuildCanonicalSemanticTypeFromProperty(
     const Objc3PropertyDecl &property);
-
-struct OwnershipResourceMoveBindingState {
-  bool cleanup_owned = false;
-  bool moved = false;
-  unsigned move_line = 1;
-  unsigned move_column = 1;
-};
-
-using OwnershipResourceMoveScope =
-    std::unordered_map<std::string, OwnershipResourceMoveBindingState>;
 
 static OwnershipResourceMoveBindingState *LookupOwnershipResourceMoveBinding(
     std::vector<OwnershipResourceMoveScope> &scopes, const std::string &name) {

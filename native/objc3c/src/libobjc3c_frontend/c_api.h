@@ -15,7 +15,10 @@ extern "C" {
 /*
  * C ABI wrapper for non-C++ embedding environments. It preserves the
  * underlying objc3c_frontend ABI data structures and forwards to the primary
- * libobjc3c_frontend entrypoints.
+ * libobjc3c_frontend entrypoints. Result/string ownership is identical to
+ * objc3c_frontend.h: compile_result storage is caller-owned, result payload
+ * strings are released only by objc3c_frontend_result_destroy(), and borrowed
+ * option strings/paths must remain valid for the duration of the call.
  */
 typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;
 typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;

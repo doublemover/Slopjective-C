@@ -39,7 +39,13 @@
   result->lower = BuildStageSummary(OBJC3C_FRONTEND_STAGE_LOWER, lower_attempted, !lower_attempted, {});
   result->emit = BuildStageSummary(OBJC3C_FRONTEND_STAGE_EMIT, emit_attempted, emit_skipped, emit_diagnostics);
 
-  PopulateResultPaths(context, result);
+  std::string result_ownership_error;
+  if (!PopulateResultPaths(context, result, result_ownership_error)) {
+    result->status = OBJC3C_FRONTEND_STATUS_INTERNAL_ERROR;
+    result->process_exit_code = 2;
+    result->success = 0;
+    objc3c_frontend_set_error(context, result_ownership_error.c_str());
+  }
   return result->status;
 }
 
@@ -93,8 +99,10 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
   }
-  if (IsMissingBorrowedPath(options->input_path)) {
-    return SetUsageError(context, result, "compile_file requires compile_options.input_path.");
+  std::string compile_options_error;
+  if (!objc3c::frontend::ValidateFrontendCompileFileOptions(
+          *options, compile_options_error)) {
+    return SetUsageError(context, result, compile_options_error);
   }
 
   std::string source_text;
@@ -128,8 +136,10 @@ extern "C" OBJC3C_FRONTEND_API objc3c_frontend_status_t objc3c_frontend_compile_
   if (!ValidateSupportedLanguageVersion(options->language_version, language_version_error)) {
     return SetUsageError(context, result, language_version_error);
   }
-  if (IsMissingBorrowedText(options->source_text)) {
-    return SetUsageError(context, result, "compile_source requires compile_options.source_text.");
+  std::string compile_options_error;
+  if (!objc3c::frontend::ValidateFrontendCompileSourceOptions(
+          *options, compile_options_error)) {
+    return SetUsageError(context, result, compile_options_error);
   }
   const std::filesystem::path input_path = ResolveInputPath(*options);
   return CompileObjc3SourceImpl(context, input_path, std::string(options->source_text), options, result);
