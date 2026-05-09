@@ -1,4 +1,5 @@
 add_subdirectory(config)
+add_subdirectory(ast)
 add_subdirectory(support)
 
 # Dependency-direction authority is defined in `ARCHITECTURE.md` and checked

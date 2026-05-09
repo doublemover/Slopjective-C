@@ -11,6 +11,7 @@ add_library(objc3c_parse STATIC
 objc3c_apply_build_defaults(objc3c_parse)
 objc3c_apply_llvm_direct_config(objc3c_parse)
 target_link_libraries(objc3c_parse PUBLIC
+  objc3c_ast
   objc3c_lex
   objc3c_diag
   objc3c_support

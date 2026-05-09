@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-#include "ast/objc3_ast.h"
+#include "ast/objc3_ast_declarations.h"
 
 // Parser-to-sema contract types. Keep parser outputs wrapped so downstream
 // lowering/IR/runtime consumers bind to explicit parser contracts.

@@ -14,6 +14,7 @@ add_library(objc3c_sema STATIC
 objc3c_apply_build_defaults(objc3c_sema)
 objc3c_apply_llvm_direct_config(objc3c_sema)
 target_link_libraries(objc3c_sema PUBLIC
+  objc3c_ast
   objc3c_parse
   objc3c_diag
   objc3c_sema_model

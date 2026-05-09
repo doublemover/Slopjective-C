@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ast/objc3_ast.h"
+#include "ast/objc3_ast_core.h"
 
 #include <string>
 

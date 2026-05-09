@@ -12,3 +12,6 @@ add_library(objc3c_support STATIC
   selectors/selector_normalization.h
 )
 objc3c_apply_build_defaults(objc3c_support)
+target_link_libraries(objc3c_support PUBLIC
+  objc3c_ast_core
+)

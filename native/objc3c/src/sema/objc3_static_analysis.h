@@ -5,7 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "ast/objc3_ast.h"
+#include "ast/objc3_ast_core.h"
 
 using StaticScalarBindings = std::unordered_map<std::string, int>;
 

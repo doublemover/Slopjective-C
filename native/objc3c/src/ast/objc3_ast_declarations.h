@@ -1,9 +1,11 @@
-inline constexpr const char
-    *kObjc3RuntimeBlockArcRuntimeAbiArcModel =
-        "retain-release-autorelease-autoreleasepool-and-current-property-weak-helper-traffic-stays-on-bootstrap-internal-runtime-entrypoints";
-inline constexpr const char
-    *kObjc3RuntimeBlockArcRuntimeAbiFailClosedModel =
-        "public-runtime-header-remains-registration-lookup-dispatch-only-until-deliberate-runtime-abi-widening";
+#pragma once
+
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "ast/objc3_ast_core.h"
 
 enum class Objc3ProtocolRequirementKind {
   NotApplicable,

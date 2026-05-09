@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "ast/objc3_ast.h"
+#include "ast/objc3_ast_core.h"
 
 namespace objc3c::parse {
 

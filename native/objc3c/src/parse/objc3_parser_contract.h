@@ -6,7 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "ast/objc3_ast.h"
 #include "parse/objc3_parser_contract_types.h"
 
 inline std::uint64_t MixObjc3ParserContractFingerprint(const std::uint64_t fingerprint, const std::uint64_t value) {
