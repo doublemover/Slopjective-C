@@ -13,7 +13,11 @@ extern "C" {
 
 OBJC3C_FRONTEND_API uint32_t objc3c_frontend_c_api_abi_version(void);
 
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_is_abi_compatible(
+/*
+ * Hard-cutover ABI gate. Returns non-zero only for the exact public C ABI
+ * version exposed by this library; no compatibility windows are honored.
+ */
+OBJC3C_FRONTEND_API uint8_t objc3c_frontend_c_is_exact_abi_version(
     uint32_t requested_abi_version);
 OBJC3C_FRONTEND_API uint32_t objc3c_frontend_c_abi_version(void);
 OBJC3C_FRONTEND_API objc3c_frontend_c_version_t objc3c_frontend_c_version(void);

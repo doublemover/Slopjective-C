@@ -4,7 +4,7 @@
 
 static_assert(OBJC3C_FRONTEND_C_API_ABI_VERSION ==
                   OBJC3C_FRONTEND_ABI_VERSION,
-              "unexpected c api wrapper abi version");
+              "unexpected c api abi version");
 static_assert(std::is_same_v<objc3c_frontend_c_context_t,
                              objc3c_frontend_context_t>,
               "context ABI mirror mismatch");
@@ -44,21 +44,22 @@ objc3c_frontend_c_api_abi_version(void) {
 }
 
 extern "C" OBJC3C_FRONTEND_API uint8_t
-objc3c_frontend_c_is_abi_compatible(uint32_t requested_abi_version) {
-  return objc3c_frontend_is_abi_compatible(requested_abi_version);
+objc3c_frontend_c_is_exact_abi_version(uint32_t requested_abi_version) {
+  return requested_abi_version == OBJC3C_FRONTEND_C_API_ABI_VERSION ? 1u : 0u;
 }
 
 extern "C" OBJC3C_FRONTEND_API uint32_t
 objc3c_frontend_c_abi_version(void) {
-  return objc3c_frontend_abi_version();
+  return OBJC3C_FRONTEND_C_API_ABI_VERSION;
 }
 
 extern "C" OBJC3C_FRONTEND_API objc3c_frontend_c_version_t
 objc3c_frontend_c_version(void) {
-  return objc3c_frontend_version();
+  const objc3c_frontend_c_version_t version = OBJC3C_FRONTEND_VERSION_INIT;
+  return version;
 }
 
 extern "C" OBJC3C_FRONTEND_API const char *
 objc3c_frontend_c_version_string(void) {
-  return objc3c_frontend_version_string();
+  return OBJC3C_FRONTEND_VERSION_STRING;
 }

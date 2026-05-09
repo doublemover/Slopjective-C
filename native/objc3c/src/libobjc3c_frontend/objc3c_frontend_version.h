@@ -19,26 +19,11 @@
 #endif
 #endif
 
-#ifndef OBJC3C_FRONTEND_DEPRECATED
-#if defined(__GNUC__) || defined(__clang__)
-#define OBJC3C_FRONTEND_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#elif defined(_MSC_VER)
-#define OBJC3C_FRONTEND_DEPRECATED(msg) __declspec(deprecated(msg))
-#else
-#define OBJC3C_FRONTEND_DEPRECATED(msg)
-#endif
-#endif
-
 #define OBJC3C_FRONTEND_VERSION_MAJOR 0u
 #define OBJC3C_FRONTEND_VERSION_MINOR 1u
 #define OBJC3C_FRONTEND_VERSION_PATCH 0u
 
 #define OBJC3C_FRONTEND_ABI_VERSION 2u
-
-/* Hard-cutover ABI: callers must request this exact public ABI version. */
-#define OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION
-#define OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION
-#define OBJC3C_FRONTEND_DEPRECATION_WINDOW_MAJOR 1u
 
 #define OBJC3C_FRONTEND_VERSION_STRING "0.1.0"
 
@@ -71,7 +56,11 @@ typedef struct objc3c_frontend_version {
 extern "C" {
 #endif
 
-OBJC3C_FRONTEND_API uint8_t objc3c_frontend_is_abi_compatible(uint32_t requested_abi_version);
+/*
+ * Hard-cutover ABI gate. Returns non-zero only for OBJC3C_FRONTEND_ABI_VERSION.
+ */
+OBJC3C_FRONTEND_API uint8_t objc3c_frontend_is_exact_abi_version(
+    uint32_t requested_abi_version);
 OBJC3C_FRONTEND_API uint32_t objc3c_frontend_abi_version(void);
 OBJC3C_FRONTEND_API objc3c_frontend_version_t objc3c_frontend_version(void);
 /* Returns static read-only version storage; callers must not release it. */

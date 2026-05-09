@@ -1,11 +1,8 @@
 #include "libobjc3c_frontend/objc3c_frontend_version.h"
 
-extern "C" OBJC3C_FRONTEND_API uint8_t objc3c_frontend_is_abi_compatible(
+extern "C" OBJC3C_FRONTEND_API uint8_t objc3c_frontend_is_exact_abi_version(
     uint32_t requested_abi_version) {
-  return requested_abi_version >= OBJC3C_FRONTEND_MIN_COMPATIBILITY_ABI_VERSION &&
-                 requested_abi_version <= OBJC3C_FRONTEND_MAX_COMPATIBILITY_ABI_VERSION
-             ? 1u
-             : 0u;
+  return requested_abi_version == OBJC3C_FRONTEND_ABI_VERSION ? 1u : 0u;
 }
 
 extern "C" OBJC3C_FRONTEND_API uint32_t objc3c_frontend_abi_version(void) {
