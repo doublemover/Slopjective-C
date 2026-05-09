@@ -46,6 +46,9 @@ BuildCrossModuleRuntimeMetadataSemanticPreservationSummary(
 BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
     const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary &summary);
 
+[[nodiscard]] std::string BuildImportedRuntimeMetadataSemanticRulesReplayKey(
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary &summary);
+
 [[nodiscard]] std::string BuildSerializedRuntimeMetadataImportLoweringReplayKey(
     const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary);
 
