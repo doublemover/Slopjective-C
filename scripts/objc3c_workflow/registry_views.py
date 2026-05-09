@@ -5,45 +5,49 @@ from __future__ import annotations
 from collections.abc import Callable
 
 from .action_spec import ActionSpec
-from .action_catalog import ACTION_SPECS
+from .registry_filters import filter_actions_by_category, filter_actions_matching
+from .registry_store import (
+    catalog_action_count,
+    catalog_action_items,
+    catalog_action_names,
+    catalog_action_spec,
+    catalog_action_specs,
+    catalog_has_action,
+    require_catalog_action_spec,
+)
 
 
 def action_spec(action: str) -> ActionSpec | None:
-    return ACTION_SPECS.get(action)
+    return catalog_action_spec(action)
 
 
 def require_action_spec(action: str) -> ActionSpec:
-    return ACTION_SPECS[action]
+    return require_catalog_action_spec(action)
 
 
 def has_action(action: str) -> bool:
-    return action in ACTION_SPECS
+    return catalog_has_action(action)
 
 
 def action_names() -> list[str]:
-    return list(ACTION_SPECS)
+    return catalog_action_names()
 
 
 def action_specs() -> list[ActionSpec]:
-    return list(ACTION_SPECS.values())
+    return catalog_action_specs()
 
 
 def action_items() -> list[tuple[str, ActionSpec]]:
-    return list(ACTION_SPECS.items())
+    return catalog_action_items()
 
 
 def actions_by_category(category: str) -> list[str]:
-    prefix = f"{category}-"
-    return [action for action in ACTION_SPECS if action == category or action.startswith(prefix)]
+    return filter_actions_by_category(action_items(), category)
 
 
 def actions_matching(predicate: Callable[[str, ActionSpec], bool]) -> list[str]:
-    return [
-        action
-        for action, spec in ACTION_SPECS.items()
-        if predicate(action, spec)
-    ]
+    return filter_actions_matching(action_items(), predicate)
 
 
 def action_count() -> int:
-    return len(ACTION_SPECS)
+    return catalog_action_count()
