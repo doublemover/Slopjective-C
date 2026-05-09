@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "driver/objc3_cli_conformance_profile.h"
 #include "io/objc3_process.h"
 
 bool ValidateObjc3DriverConformanceSelection(

@@ -1,7 +1,6 @@
 #include "driver/objc3_driver_conformance_release_artifact_publication.h"
 
-#include <iostream>
-
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
@@ -72,7 +71,7 @@ int PublishObjc3DriverConformanceReleaseArtifacts(
           conformance_publication_artifact_json,
           advanced_feature_gate_artifact_json,
           advanced_feature_gate_error)) {
-    std::cerr << advanced_feature_gate_error << "\n";
+    EmitObjc3DriverError(advanced_feature_gate_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
@@ -105,7 +104,7 @@ int PublishObjc3DriverConformanceReleaseArtifacts(
           advanced_feature_gate_artifact_json,
           release_candidate_matrix_artifact_json,
           release_candidate_matrix_error)) {
-    std::cerr << release_candidate_matrix_error << "\n";
+    EmitObjc3DriverError(release_candidate_matrix_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }

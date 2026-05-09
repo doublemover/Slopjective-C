@@ -1,8 +1,8 @@
 #include "driver/objc3_driver_conformance_publication_sidecar.h"
 
-#include <iostream>
-
 #include "driver/objc3_driver_conformance_surface.h"
+#include "driver/objc3_driver_diagnostic_output.h"
+#include "driver/objc3_driver_public_workflow_commands.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "lower/objc3_lowering_contract.h"
@@ -40,7 +40,7 @@ int PublishObjc3DriverConformancePublicationSidecar(
            .advanced_feature_release_evidence_contract_id =
                "objc3c.tooling.corpus.sharding.release.evidence.packaging.v1",
            .ci_release_evidence_gate_script_path =
-               "npm run objc3c -- check-release-evidence",
+               Objc3DriverPublicWorkflowCheckReleaseEvidenceCommand(),
            .runbook_reference_path =
                "spec/conformance/release_evidence_gate_maintenance.md",
            .dashboard_schema_path =
@@ -52,7 +52,7 @@ int PublishObjc3DriverConformancePublicationSidecar(
                 kObjc3VersionedConformanceReportLoweringArtifactSuffix)},
           conformance_publication_artifact_json,
           conformance_publication_error)) {
-    std::cerr << conformance_publication_error << "\n";
+    EmitObjc3DriverError(conformance_publication_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }

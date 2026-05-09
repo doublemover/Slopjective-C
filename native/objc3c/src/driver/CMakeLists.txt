@@ -1,15 +1,20 @@
 add_library(objc3c_driver STATIC
-  objc3_cli_options.cpp
   objc3_cli_environment.cpp
+  objc3_cli_artifact_options_contract.cpp
   objc3_cli_conformance_options.cpp
+  objc3_cli_conformance_profile.cpp
   objc3_cli_language_options.cpp
+  objc3_cli_language_version.cpp
   objc3_cli_option_reader.cpp
   objc3_cli_option_application.cpp
   objc3_cli_output_options.cpp
+  objc3_cli_parse.cpp
   objc3_cli_runtime_options.cpp
+  objc3_cli_integer_parsers.cpp
   objc3_cli_toolchain_options.cpp
   objc3_cli_option_validation.cpp
-  objc3_cli_value_parsers.cpp
+  objc3_cli_ir_backend_options.cpp
+  objc3_cli_usage.cpp
   objc3_driver_cross_module_imported_input_block.cpp
   objc3_driver_cross_module_imported_input_core.cpp
   objc3_driver_cross_module_imported_input_error_concurrency.cpp
@@ -23,6 +28,7 @@ add_library(objc3c_driver STATIC
   objc3_driver_cross_module_link_publication.cpp
   objc3_driver_cross_module_link_plan_inputs.cpp
   objc3_driver_command_dispatch.cpp
+  objc3_driver_command_result.cpp
   objc3_driver_conformance_publication.cpp
   objc3_driver_conformance_publication_sidecar.cpp
   objc3_driver_conformance_release_artifact_publication.cpp
@@ -46,6 +52,8 @@ add_library(objc3c_driver STATIC
   objc3_driver_runtime_registration_manifest_inputs.cpp
   objc3_driver_runtime_registration_publication.cpp
   objc3_driver_status_codes.cpp
+  objc3_driver_diagnostic_output.cpp
+  objc3_driver_public_workflow_commands.cpp
   objc3_driver_toolchain_runtime_gate.cpp
   objc3_driver_main.cpp
   objc3_driver_shell.cpp

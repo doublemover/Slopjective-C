@@ -2,13 +2,13 @@
 
 #include <cstddef>
 #include <filesystem>
-#include <iostream>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "driver/objc3_driver_cross_module_imported_input.h"
 #include "driver/objc3_driver_cross_module_link_plan_inputs.h"
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_process.h"
@@ -40,7 +40,7 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
         fs::absolute(import_path).lexically_normal();
     if (!TryLoadObjc3ImportedRuntimeModuleSurface(
             absolute_import_path, imported_surface, import_surface_error)) {
-      std::cerr << import_surface_error << "\n";
+      EmitObjc3DriverError(import_surface_error);
       return Objc3DriverStatusValue(
           Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
@@ -49,7 +49,7 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
     std::string peer_artifacts_error;
     if (!TryLoadObjc3ImportedRuntimeModulePackagingPeerArtifacts(
             imported_surface, peer_artifacts, peer_artifacts_error)) {
-      std::cerr << peer_artifacts_error << "\n";
+      EmitObjc3DriverError(peer_artifacts_error);
       return Objc3DriverStatusValue(
           Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
@@ -78,7 +78,7 @@ int PublishObjc3DriverCrossModuleRuntimeLinkArtifacts(
           link_plan_json,
           cross_module_linker_response_payload,
           link_plan_error)) {
-    std::cerr << link_plan_error << "\n";
+    EmitObjc3DriverError(link_plan_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }

@@ -1,7 +1,6 @@
 #include "driver/objc3_driver_conformance_validation_publication.h"
 
-#include <iostream>
-
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
 #include "io/objc3_toolchain_runtime_ga_operations_core_feature_surface.h"
@@ -73,7 +72,7 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           publication_json,
           validation_artifact_json,
           validation_error)) {
-    std::cerr << validation_error << "\n";
+    EmitObjc3DriverError(validation_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
@@ -93,7 +92,7 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           validation_artifact_json,
           release_evidence_operation_json,
           release_evidence_operation_error)) {
-    std::cerr << release_evidence_operation_error << "\n";
+    EmitObjc3DriverError(release_evidence_operation_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
@@ -115,7 +114,7 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           release_evidence_operation_json,
           dashboard_status_json,
           dashboard_status_error)) {
-    std::cerr << dashboard_status_error << "\n";
+    EmitObjc3DriverError(dashboard_status_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
@@ -137,7 +136,7 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           publication_json,
           advanced_feature_gate_artifact_json,
           advanced_feature_gate_error)) {
-    std::cerr << advanced_feature_gate_error << "\n";
+    EmitObjc3DriverError(advanced_feature_gate_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
@@ -162,7 +161,7 @@ int PublishObjc3DriverConformanceValidationArtifacts(
           advanced_feature_gate_artifact_json,
           release_candidate_matrix_artifact_json,
           release_candidate_matrix_error)) {
-    std::cerr << release_candidate_matrix_error << "\n";
+    EmitObjc3DriverError(release_candidate_matrix_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }

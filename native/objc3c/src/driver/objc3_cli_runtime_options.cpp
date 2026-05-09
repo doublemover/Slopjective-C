@@ -1,7 +1,7 @@
 #include "driver/objc3_cli_runtime_options.h"
 
+#include "driver/objc3_cli_integer_parsers.h"
 #include "driver/objc3_cli_option_reader.h"
-#include "driver/objc3_cli_value_parsers.h"
 #include "support/objc3_runtime_dispatch_symbol.h"
 
 bool TryApplyObjc3CliRuntimeOption(const std::string &flag,

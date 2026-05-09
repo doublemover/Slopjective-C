@@ -55,7 +55,3 @@ struct Objc3CliOptions {
   std::size_t max_message_send_args = 4;
   std::string runtime_dispatch_symbol = "objc3_runtime_dispatch_i32";
 };
-
-std::string Objc3CliUsage();
-std::string ConformanceProfileName(Objc3ConformanceProfile profile);
-bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::string &error);

@@ -1,7 +1,7 @@
 #include "driver/objc3_cli_toolchain_options.h"
 
+#include "driver/objc3_cli_ir_backend_options.h"
 #include "driver/objc3_cli_option_reader.h"
-#include "driver/objc3_cli_value_parsers.h"
 
 bool TryApplyObjc3CliToolchainOption(const std::string &flag,
                                      int &index,

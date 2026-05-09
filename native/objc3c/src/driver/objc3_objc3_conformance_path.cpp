@@ -2,10 +2,10 @@
 
 #include <exception>
 #include <filesystem>
-#include <iostream>
 #include <string>
 
 #include "ast/objc3_ast.h"
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_conformance_surface.h"
 #include "driver/objc3_driver_conformance_validation_paths.h"
 #include "driver/objc3_driver_conformance_validation_publication.h"
@@ -71,14 +71,15 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   std::string conformance_selection_error;
   if (!ValidateObjc3DriverConformanceSelection(cli_options,
                                                conformance_selection_error)) {
-    std::cerr << conformance_selection_error << "\n";
+    EmitObjc3DriverError(conformance_selection_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
 
   if (!fs::exists(cli_options.validate_conformance_report_path)) {
-    std::cerr << "conformance report not found: "
-              << cli_options.validate_conformance_report_path.string() << "\n";
+    EmitObjc3DriverError(
+        "conformance report not found: " +
+        cli_options.validate_conformance_report_path.string());
     return Objc3DriverStatusValue(Objc3DriverStatusCode::kInputUnavailable);
   }
 
@@ -86,21 +87,24 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   std::string emit_prefix;
   if (!TryDeriveObjc3DriverConformanceEmitPrefix(
           cli_options.validate_conformance_report_path, emit_prefix)) {
-    std::cerr << "validated artifact must end with "
-              << kObjc3VersionedConformanceReportLoweringArtifactSuffix << "\n";
+    EmitObjc3DriverError(
+        std::string("validated artifact must end with ") +
+        kObjc3VersionedConformanceReportLoweringArtifactSuffix);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   if (!TryDeriveObjc3DriverConformancePublicationPath(
           cli_options.validate_conformance_report_path, publication_path)) {
-    std::cerr << "validated artifact must end with "
-              << kObjc3VersionedConformanceReportLoweringArtifactSuffix << "\n";
+    EmitObjc3DriverError(
+        std::string("validated artifact must end with ") +
+        kObjc3VersionedConformanceReportLoweringArtifactSuffix);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
   if (!fs::exists(publication_path)) {
-    std::cerr << "conformance publication artifact not found next to report: "
-              << publication_path.string() << "\n";
+    EmitObjc3DriverError(
+        "conformance publication artifact not found next to report: " +
+        publication_path.string());
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }
@@ -108,7 +112,7 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
   if (!DiagnoseObjc3RetiredClaimSidecars(
           cli_options.validate_conformance_report_path.parent_path(), emit_prefix,
           retired_claim_sidecar_error)) {
-    std::cerr << retired_claim_sidecar_error << "\n";
+    EmitObjc3DriverError(retired_claim_sidecar_error);
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kHardCutoverContractFailure);
   }

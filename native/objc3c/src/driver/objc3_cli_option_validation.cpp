@@ -1,7 +1,8 @@
 #include "driver/objc3_cli_option_validation.h"
 
 #include "config/objc3_language_profile.h"
-#include "driver/objc3_cli_value_parsers.h"
+#include "driver/objc3_cli_artifact_options_contract.h"
+#include "driver/objc3_cli_usage.h"
 
 bool ValidateObjc3CliOptions(const Objc3CliOptions &options,
                              std::string &error) {
@@ -17,6 +18,10 @@ bool ValidateObjc3CliOptions(const Objc3CliOptions &options,
     }
   } else if (options.input.empty()) {
     error = Objc3CliUsage();
+    return false;
+  }
+
+  if (!ValidateObjc3CliArtifactOptions(options, error)) {
     return false;
   }
 

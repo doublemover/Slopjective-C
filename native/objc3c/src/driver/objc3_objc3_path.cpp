@@ -1,12 +1,12 @@
 #include "driver/objc3_objc3_path.h"
 
 #include <exception>
-#include <iostream>
 #include <string>
 
 #include "driver/objc3_driver_conformance_publication.h"
 #include "driver/objc3_driver_conformance_surface.h"
 #include "driver/objc3_driver_cross_module_link_publication.h"
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_frontend_artifact_handoff.h"
 #include "driver/objc3_driver_metaprogramming_cache_publication.h"
 #include "driver/objc3_driver_object_backend.h"
@@ -25,7 +25,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             cli_options.out_dir,
             cli_options.emit_prefix,
             retired_claim_sidecar_error)) {
-      std::cerr << retired_claim_sidecar_error << "\n";
+      EmitObjc3DriverError(retired_claim_sidecar_error);
       return Objc3DriverStatusValue(
           Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
@@ -33,7 +33,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     std::string conformance_selection_error;
     if (!ValidateObjc3DriverConformanceSelection(
             cli_options, conformance_selection_error)) {
-      std::cerr << conformance_selection_error << "\n";
+      EmitObjc3DriverError(conformance_selection_error);
       return Objc3DriverStatusValue(
           Objc3DriverStatusCode::kHardCutoverContractFailure);
     }
@@ -55,7 +55,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
         PublishObjc3DriverMetaprogrammingCacheArtifact(
             cli_options, artifacts, metaprogramming_cache_error);
     if (metaprogramming_cache_status != 0) {
-      std::cerr << metaprogramming_cache_error << "\n";
+      EmitObjc3DriverError(metaprogramming_cache_error);
       return metaprogramming_cache_status;
     }
 
@@ -89,14 +89,16 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
             object_backend,
             compile_status,
             toolchain_runtime_core_feature_reason)) {
-      std::cerr << "toolchain/runtime core feature fail-closed: "
-                << toolchain_runtime_core_feature_reason << "\n";
+      EmitObjc3DriverError(
+          "toolchain/runtime core feature fail-closed: " +
+          toolchain_runtime_core_feature_reason);
       return Objc3DriverStatusValue(
           Objc3DriverStatusCode::kNativeToolchainFailure);
     }
     return Objc3DriverStatusValue(Objc3DriverStatusCode::kSuccess);
   } catch (const std::exception &io_error) {
-    std::cerr << "artifact io failure: " << io_error.what() << "\n";
+    EmitObjc3DriverError(std::string("artifact io failure: ") +
+                         io_error.what());
     return Objc3DriverStatusValue(
         Objc3DriverStatusCode::kNativeToolchainFailure);
   }

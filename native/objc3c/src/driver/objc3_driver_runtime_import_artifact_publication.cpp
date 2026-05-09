@@ -1,7 +1,6 @@
 #include "driver/objc3_driver_runtime_import_artifact_publication.h"
 
-#include <iostream>
-
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_runtime_import_artifact_readiness.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_manifest_artifacts.h"
@@ -13,7 +12,8 @@ PublishObjc3DriverRuntimeImportArtifacts(
   const Objc3DriverRuntimeImportArtifactReadiness readiness =
       CheckObjc3DriverRuntimeImportArtifactReadiness(artifacts);
   if (!readiness.ready) {
-    std::cerr << "runtime-aware import/module frontend closure not ready\n";
+    EmitObjc3DriverError(
+        "runtime-aware import/module frontend closure not ready");
     return {.status_code = Objc3DriverStatusValue(
                 Objc3DriverStatusCode::kHardCutoverContractFailure),
             .has_runtime_import_artifact =

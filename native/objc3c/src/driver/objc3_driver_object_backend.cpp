@@ -1,7 +1,6 @@
 #include "driver/objc3_driver_object_backend.h"
 
-#include <iostream>
-
+#include "driver/objc3_driver_diagnostic_output.h"
 #include "driver/objc3_driver_status_codes.h"
 #include "io/objc3_file_io.h"
 #include "io/objc3_process.h"
@@ -38,8 +37,9 @@ Objc3DriverObjectBackendResult EmitObjc3DriverObjectBackend(
   std::string scaffold_reason;
   if (!IsObjc3ToolchainRuntimeGaOperationsScaffoldReady(result.scaffold,
                                                         scaffold_reason)) {
-    std::cerr << "toolchain/runtime readiness contract fail-closed: "
-              << scaffold_reason << "\n";
+    EmitObjc3DriverError(
+        "toolchain/runtime readiness contract fail-closed: " +
+        scaffold_reason);
     result.status_code = Objc3DriverStatusValue(
         Objc3DriverStatusCode::kNativeToolchainFailure);
     result.compile_status = Objc3DriverStatusValue(
@@ -59,7 +59,7 @@ Objc3DriverObjectBackendResult EmitObjc3DriverObjectBackend(
     result.compile_status = RunIRCompileLLVMDirect(
         cli_options.llc_path, result.ir_out, result.object_out, backend_error);
     if (!backend_error.empty()) {
-      std::cerr << backend_error << "\n";
+      EmitObjc3DriverError(backend_error);
     }
   }
   if (result.compile_status == 0) {

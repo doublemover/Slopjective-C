@@ -33,13 +33,6 @@ std::filesystem::path DefaultObjc3DriverLlcPath() {
   if (!llvm_root.empty()) {
     return std::filesystem::path(llvm_root) / "bin" / llc_name;
   }
-#if defined(_WIN32)
-  const std::filesystem::path standard_path =
-      std::filesystem::path("C:\\Program Files\\LLVM\\bin\\llc.exe");
-  if (std::filesystem::exists(standard_path)) {
-    return standard_path;
-  }
-#endif
   return std::filesystem::path(llc_name);
 }
 
