@@ -1,8 +1,8 @@
-# V013-GOV-02 Package: Extension Registry Compatibility Validation Suite {#v013-gov-02-extension-registry-compat-validation-package}
+# V013-GOV-02 Package: Extension Registry Transition/Rejection Validation Suite {#v013-gov-02-extension-registry-transition-rejection-package}
 
 _Published v0.13 - 2026-02-23_
 
-Status: published package for issue `#786` (`[W1][V013-GOV-02] Add extension registry compatibility validation suite`) in batch `BATCH-20260223-11R`. This package publishes the extension registry compatibility validation suite contract and closeout controls mapped to `AC-V013-GOV-02`.
+Status: published package fixture for issue `#786` (`[W1][V013-GOV-02] Add extension registry transition/rejection validation suite`) in batch `BATCH-20260223-11R`. This package preserves the extension registry transition/rejection fixture contract and closeout controls mapped to `AC-V013-GOV-02`; schema ownership is the fixture-local canonical schema ID `https://objc3c.dev/schemas/extension-registry-governance-contract-v1.schema.json`.
 
 ## 1. Issue Contract and Scope
 
@@ -33,47 +33,47 @@ Status: published package for issue `#786` (`[W1][V013-GOV-02] Add extension reg
 
 ### 1.3 In-scope deliverables
 
-1. Backward/forward compatibility matrix for the extension registry contract.
+1. Backward/forward change-rejection matrix for the extension registry contract.
 2. Deterministic validator command set with explicit pass/fail signals.
-3. Waiver and escalation policy for compatibility validation outcomes.
+3. Waiver and escalation policy for schema-transition validation outcomes.
 4. Acceptance checklist mapping to `AC-V013-GOV-02`.
 5. Validation transcript for `npm run objc3c -- lint-spec` plus lane-C evidence linkage.
 
 ### 1.4 Ownership lock for issue `#786`
 
 1. Lane C write ownership is limited to the two paths listed in Section `1.1`.
-2. `registries/experimental_extensions/index.schema.json` and `tests/governance/registry_compat/README.md` are consumed as read-only dependency artifacts in this issue.
+2. The fixture-local `schema.json` and `readme.md` carry the preserved transition/rejection evidence for this issue; they do not define public support, fallback, or alias behavior.
 3. Validation evidence for this issue is published in `docs/reference/legacy_spec_anchor_index.md`.
 
 ## 2. Suite Contract Summary
 
-The compatibility validation suite contract is published and validated against synchronized artifacts:
+The transition/rejection validation fixture contract is published against synchronized artifacts:
 
 | Artifact | Contract role | Ownership posture for `#786` |
 | --- | --- |
 | `docs/reference/legacy_spec_anchor_index.md` | Governance contract and closeout ledger for `#786`. | Lane C write-owned artifact. |
 | `docs/reference/legacy_spec_anchor_index.md` | Deterministic issue evidence mapping acceptance rows to concrete verification checks. | Lane C write-owned artifact. |
-| `registries/experimental_extensions/index.schema.json` | Machine-checkable schema contract including compatibility matrix, validators, waiver policy, and acceptance checklist structure. | Read-only dependency artifact for this issue. |
-| `tests/governance/registry_compat/README.md` | Deterministic validator runbook and governance-response expectations for failures. | Read-only dependency artifact for this issue. |
+| `schema.json` | Fixture-local machine-checkable schema with canonical ID `https://objc3c.dev/schemas/extension-registry-governance-contract-v1.schema.json`; historical `compatibility_*` keys are fixture keys only. | Read-only fixture artifact for this issue. |
+| `readme.md` | Deterministic transition/rejection runbook and governance-response expectations for failures. | Read-only fixture artifact for this issue. |
 
-## 3. Compatibility Matrix (Backward and Forward)
+## 3. Change-Rejection Matrix (Backward and Forward)
 
-### 3.1 Required compatibility dimensions
+### 3.1 Required transition dimensions
 
 1. Schema-versioning behavior is deterministic for patch, minor, and major updates.
 2. Required-field behavior is explicit for add/remove/type-change scenarios.
-3. Backward and forward outcomes are independently classified as `pass`, `conditional`, or `fail`.
+3. Backward and forward transition outcomes are independently classified as `pass`, `conditional`, or `fail`.
 
-### 3.2 Compatibility decision matrix
+### 3.2 Change-rejection decision matrix
 
 | Matrix ID | Change class | Schema versioning rule | Required-field rule | Backward result | Forward result | Deterministic action | Validator IDs |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `CM-RC-01` | `patch_nonsemantic` | Patch (`x.y.z`) only | Required fields unchanged | `pass` | `pass` | Accept publish if all validators pass. | `VAL-RC-01`, `VAL-RC-04` |
 | `CM-RC-02` | `minor_optional_addition` | Minor (`x.y.0`) | New fields must remain optional | `conditional` | `pass` | Accept only when unknown optional fields are documented as ignorable. | `VAL-RC-03`, `VAL-RC-05` |
-| `CM-RC-03` | `minor_enum_expansion` | Minor (`x.y.0`) | Required fields unchanged | `conditional` | `conditional` | Require explicit fallback handling note before publish. | `VAL-RC-03`, `VAL-RC-06` |
+| `CM-RC-03` | `minor_enum_expansion` | Minor (`x.y.0`) | Required fields unchanged | `conditional` | `conditional` | Require explicit replay-only migration note before publish. | `VAL-RC-03`, `VAL-RC-06` |
 | `CM-RC-04` | `minor_required_addition` | Minor requested but invalid | New required fields are not allowed in minor updates | `fail` | `fail` | Reject change; reclassify as major with migration plan. | `VAL-RC-05` |
 | `CM-RC-05` | `major_required_removal` | Major (`x.0.0`) required | Removed required field must include migration path | `fail` | `conditional` | Block until migration notes and transition window are attached. | `VAL-RC-05`, `VAL-RC-06` |
-| `CM-RC-06` | `major_required_rename_without_alias` | Major (`x.0.0`) required | Rename requires compatibility alias window | `fail` | `fail` | Reject publish until alias or dual-field transition is defined. | `VAL-RC-05` |
+| `CM-RC-06` | `major_required_rename_without_alias` | Major (`x.0.0`) required | Rename requires explicit transition mapping | `fail` | `fail` | Reject publish until transition mapping is defined. | `VAL-RC-05` |
 | `CM-RC-07` | `unknown_major_input` | Unknown major from consumer perspective | Required-field interpretation is undefined | `fail` | `fail` | Hard fail closed and escalate under `E2`. | `VAL-RC-06` |
 | `CM-RC-08` | `required_field_type_drift` | Any version | Required-field type changes are breaking | `fail` | `fail` | Reject publish and require schema correction. | `VAL-RC-04`, `VAL-RC-05` |
 
@@ -86,9 +86,9 @@ The compatibility validation suite contract is published and validated against s
 | `VAL-RC-01` | `npm run objc3c -- lint-spec` | Output contains `spec-lint: OK`; exit `0`. | Mark validation run failed and stop closeout. |
 | `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | Exit `0`; no blocking drift findings. | Open governance follow-up and block publish. |
 | `VAL-RC-03` | `rg -n "compat|version|schema" docs/reference/legacy_spec_anchor_index.md` | Exit `0`; at least one matching line. | Treat package as incomplete and block publish. |
-| `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | Output contains `schema-json: OK`; exit `0`. | Treat schema as invalid JSON and block publish. |
-| `VAL-RC-05` | `python -c 'import json,pathlib,sys;d=json.loads(pathlib.Path("registries/experimental_extensions/index.schema.json").read_text(encoding="utf-8"));p=d["$defs"]["governance_contract"]["properties"];need={"compatibility_matrix","required_field_policy","validators","waiver_policy","acceptance_checklist"};m=sorted(need-set(p));print("contract-keys: OK" if not m else "contract-keys: MISSING "+",".join(m));sys.exit(0 if not m else 1)'` | Output contains `contract-keys: OK`; exit `0`. | Treat contract as incomplete and block publish. |
-| `VAL-RC-06` | `rg -n "AC-V013-GOV-02|VAL-RC-|ESC-RC-" tests/governance/registry_compat/README.md` | Exit `0`; all required governance identifiers are present. | Treat test/readme contract as incomplete and block publish. |
+| `VAL-RC-04` | Fixture-local schema JSON parse check for `schema.json`. | Output contains `schema-json: OK`; exit `0`. | Treat schema as invalid JSON and block publish. |
+| `VAL-RC-05` | Fixture-local governance-contract key check for `schema.json`. | Output contains `contract-keys: OK`; exit `0`. | Treat contract as incomplete and block publish. |
+| `VAL-RC-06` | Fixture-local governance identifier check for `readme.md`. | Exit `0`; all required governance identifiers are present. | Treat test/readme contract as incomplete and block publish. |
 
 ### 4.2 Determinism rules
 
@@ -174,8 +174,8 @@ Exit status: `0` (`PASS`)
 | Dependency ID | Gate class | Deterministic semantic rule | Fail criteria | Escalation owner | Unblock condition | Linked acceptance row |
 | --- | --- | --- | --- | --- | --- | --- |
 | `ERC-DEP-M15-01` | `Hard` | This package is canonical authority for M15 W1 compatibility semantics (`CM-RC-*`), validator contract (`VAL-RC-*`), and escalation policy (`ESC-RC-*`). | M15 artifacts omit this package as authority, remove required row IDs, or introduce contradictory compatibility/validator/escalation semantics. | `Lane A M15 owner (#894)` | Restore canonical references + deterministic IDs, rerun M15 command anchors, and republish clean evidence. | `AC-V014-M15-01` |
-| `ERC-DEP-M15-02` | `Hard` | Schema contract in `registries/experimental_extensions/index.schema.json` preserves governance required keys and `acceptance_gate_id = AC-V013-GOV-02`. | Governance contract keys or acceptance gate constant drift, disappear, or become non-deterministic. | `Lane A M15 owner (#894)` | Repair schema keys/constants and rerun schema command anchors with exit `0`. | `AC-V014-M15-03`, `AC-V014-M15-05` |
-| `ERC-DEP-M15-03` | `Hard` | Governance validator runbook in `tests/governance/registry_compat/README.md` retains deterministic ID set (`CM-RC-01`..`CM-RC-08`, `VAL-RC-01`..`VAL-RC-06`, `ESC-RC-01`..`ESC-RC-04`, `AC-V013-GOV-02`). | Required ID families are missing, renumbered, or ambiguous. | `Lane A M15 owner (#894)` | Reconcile README IDs to canonical set and rerun README command anchor with exit `0`. | `AC-V014-M15-04` |
+| `ERC-DEP-M15-02` | `Hard` | Fixture-local `schema.json` preserves governance required keys, canonical schema ID, and `acceptance_gate_id = AC-V013-GOV-02`. | Governance contract keys, canonical schema ID, or acceptance gate constant drift, disappear, or become non-deterministic. | `Lane A M15 owner (#894)` | Repair fixture schema keys/constants and rerun schema evidence anchors with exit `0`. | `AC-V014-M15-03`, `AC-V014-M15-05` |
+| `ERC-DEP-M15-03` | `Hard` | Fixture-local `readme.md` retains deterministic ID set (`CM-RC-01`..`CM-RC-08`, `VAL-RC-01`..`VAL-RC-06`, `ESC-RC-01`..`ESC-RC-04`, `AC-V013-GOV-02`). | Required ID families are missing, renumbered, or ambiguous. | `Lane A M15 owner (#894)` | Reconcile README IDs to canonical set and rerun README evidence anchor with exit `0`. | `AC-V014-M15-04` |
 | `ERC-DEP-M15-04` | `Hard` | Breaking compatibility classes (`CM-RC-04`, `CM-RC-06`, `CM-RC-07`, `CM-RC-08`) remain non-waiverable fail-closed controls. | Any artifact permits waiver, `HOLD`, or conditional-success bypass for these breaking classes. | `Lane A M15 owner (#894)` | Restore non-waiverable fail-closed language and rerun disposition command anchor with exit `0`. | `AC-V014-M15-02` |
 | `ERC-DEP-M15-05` | `Soft` | Conditional classes (`CM-RC-02`, `CM-RC-03`, `CM-RC-05`) may enter `HOLD` only with explicit owner, ETA, and replay command; they cannot override hard gates. | Conditional drift lacks owner/ETA/replay command, or `HOLD` is used to bypass any hard gate failure. | `Lane A M15 owner (#894)` | Record owner + ETA + replay command, remediate drift, then rerun affected command anchors. | `AC-V014-M15-02` |
 | `ERC-DEP-M15-06` | `Hard` | M15 lane-A acceptance artifacts must preserve stable `DEP/CMD/EVID/AC` IDs and deterministic failure-handling schema fields. | Missing stable IDs, missing dependency type/fail criteria/escalation owner/unblock condition fields, or broken evidence mapping. | `Lane A M15 owner (#894)` | Repair matrix/evidence schema and rerun matrix/evidence command anchors with exit `0`. | `AC-V014-M15-06`, `AC-V014-M15-07` |

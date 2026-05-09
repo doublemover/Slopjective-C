@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://slopjective-c.dev/registries/experimental_extensions/index.schema.json",
+  "$id": "https://objc3c.dev/schemas/extension-registry-governance-contract-v1.schema.json",
   "title": "Experimental Extension Registry Index",
-  "description": "Schema and governance compatibility validation contract for V013-GOV-02.",
+  "description": "Schema and governance transition/rejection validation fixture for V013-GOV-02. Compatibility fields are retained as historical fixture keys only; they do not define public support or fallback behavior.",
   "type": "object",
   "additionalProperties": false,
   "required": [
