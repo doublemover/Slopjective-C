@@ -5,8 +5,9 @@
 #include <utility>
 
 #include "ir/objc3_ir_compile_time_proof_analysis.h"
+#include "ir/objc3_ir_emitter_expression_services.h"
+#include "ir/objc3_ir_emitter_statement_services.h"
 #include "ir/objc3_ir_expression_call_orchestration.h"
-#include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_statement_orchestration.h"
 #include "ir/objc3_ir_value_materialization.h"
 
@@ -19,16 +20,6 @@ std::string NewObjc3IREmitterServiceTemp(FunctionContext &ctx) {
 std::string NewObjc3IREmitterServiceLabel(FunctionContext &ctx,
                                           const std::string &prefix) {
   return prefix + std::to_string(ctx.label_counter++);
-}
-
-const LoweredFunctionSignature *LookupObjc3IREmitterFunctionSignature(
-    const Objc3IREmitterServiceContextState &state,
-    const std::string &name) {
-  auto signature_it = state.function_signatures.find(name);
-  if (signature_it == state.function_signatures.end()) {
-    return nullptr;
-  }
-  return &signature_it->second;
 }
 
 }  // namespace
@@ -113,87 +104,6 @@ BuildObjc3IREmitterValueMaterializationContext(
       [state, callbacks]() {
         return BuildObjc3IREmitterBlockLoweringContext(state, callbacks);
       }};
-}
-
-Objc3IRStatementOrchestrationOptions
-BuildObjc3IREmitterStatementOrchestrationOptions(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks) {
-  return Objc3IRStatementOrchestrationOptions{
-      state.frontend_metadata.arc_mode_enabled,
-      Objc3IRStatementOrchestrationServices{
-          [state, callbacks](const Expr *expr, FunctionContext &callback_ctx) {
-            return EmitObjc3IRExpressionCall(
-                expr, callback_ctx,
-                BuildObjc3IREmitterExpressionCallEmissionOptions(
-                    state, callbacks));
-          },
-          callbacks.new_temp,
-          callbacks.new_label,
-          callbacks.emit_unsupported_i32_value,
-          [state, callbacks]() {
-            return BuildObjc3IREmitterBlockLoweringContext(state, callbacks);
-          },
-          [state, callbacks]() {
-            return BuildObjc3IREmitterValueMaterializationContext(
-                state, callbacks);
-          },
-          [state, callbacks]() {
-            return BuildObjc3IREmitterCompileTimeProofAnalysisContext(
-                state, callbacks);
-          }}};
-}
-
-Objc3IRExpressionCallEmissionOptions
-BuildObjc3IREmitterExpressionCallEmissionOptions(
-    const Objc3IREmitterServiceContextState &state,
-    const Objc3IREmitterServiceContextCallbacks &callbacks) {
-  return Objc3IRExpressionCallEmissionOptions{
-      state.selector_pool_globals,
-      state.class_receiver_constants,
-      state.direct_dispatch_symbols_by_key,
-      state.lowering_ir_boundary.runtime_dispatch_arg_slots,
-      state.lowering_ir_boundary.runtime_dispatch_symbol,
-      state.runtime_dispatch_call_state,
-      state.defined_functions,
-      state.declared_pure_functions,
-      state.impure_functions,
-      Objc3IRExpressionCallEmissionServices{
-          callbacks.new_temp,
-          callbacks.new_label,
-          callbacks.emit_unsupported_i32_value,
-          [](FunctionContext &callback_ctx) {
-            InvalidateObjc3IRGlobalProofState(callback_ctx);
-          },
-          [state, callbacks](const std::string &name,
-                             FunctionContext &callback_ctx) {
-            return EmitObjc3IRIdentifierValue(
-                name, callback_ctx,
-                BuildObjc3IREmitterValueMaterializationContext(
-                    state, callbacks));
-          },
-          [state, callbacks](const Expr &callback_expr) {
-            return EmitObjc3IRTypedKeyPathLiteralValue(
-                callback_expr,
-                BuildObjc3IREmitterValueMaterializationContext(
-                    state, callbacks));
-          },
-          [state](const std::string &name)
-              -> const LoweredFunctionSignature * {
-            return LookupObjc3IREmitterFunctionSignature(state, name);
-          },
-          [state, callbacks]() {
-            return BuildObjc3IREmitterBlockLoweringContext(state, callbacks);
-          },
-          [state, callbacks]() {
-            return BuildObjc3IRStatementOrchestrationFunctionLocalContext(
-                BuildObjc3IREmitterStatementOrchestrationOptions(
-                    state, callbacks));
-          },
-          [state, callbacks]() {
-            return BuildObjc3IREmitterCompileTimeProofAnalysisContext(
-                state, callbacks);
-          }}};
 }
 
 Objc3IRFunctionOrchestrationOptions
