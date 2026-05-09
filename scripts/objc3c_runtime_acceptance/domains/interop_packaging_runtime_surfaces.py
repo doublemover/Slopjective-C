@@ -1,100 +1,18 @@
-"""Interop packaging linked-runtime contract surface builders."""
+"""Interop packaging linked-runtime contract surface builder exports."""
 
 from __future__ import annotations
 
-from typing import Any
-
-from objc3c_runtime_acceptance.case_result import CaseResult
-
-from ..core import (
-    INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
-    INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
-    INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
-    INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
-    RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
-    RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
-    RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
-    RUNTIME_PACKAGE_LOADING_INTEROP_IMPLEMENTATION_SURFACE_CONTRACT_ID,
-    RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
-    RUNTIME_PUBLIC_HEADER_PATH,
+from objc3c_runtime_acceptance.domains.interop_packaging_runtime_surface_live_loading import (
+    build_runtime_package_loading_interop_implementation_surface,
+)
+from objc3c_runtime_acceptance.domains.interop_packaging_runtime_surface_loader_abi import (
+    build_runtime_package_loader_bridge_abi_surface,
 )
 
 _EXPORTED_CASE_NAMES = [
     "build_runtime_package_loader_bridge_abi_surface",
     "build_runtime_package_loading_interop_implementation_surface",
 ]
-
-
-def build_runtime_package_loader_bridge_abi_surface(
-    results: list[CaseResult],
-) -> dict[str, Any]:
-    authoritative_case_ids = [
-        result.case_id
-        for result in results
-        if result.case_id in {"runtime-package-loader-bridge-abi"}
-    ]
-    return {
-        "contract_id": RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
-        "source_contract_ids": [
-            RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
-            RUNTIME_MIXED_IMAGE_PACKAGE_LOWERING_BRIDGE_EMISSION_SURFACE_CONTRACT_ID,
-        ],
-        "public_header_path": RUNTIME_PUBLIC_HEADER_PATH,
-        "internal_header_path": RUNTIME_BOOTSTRAP_INTERNAL_HEADER_PATH,
-        "authoritative_case_ids": authoritative_case_ids,
-        "runtime_abi_model": (
-            "private-runtime-snapshots-publish-package-loader-topology-and-bridge-generation-readiness-through-the-live-runtime-library-without-public-abi-widening"
-        ),
-        "authoritative_code_paths": [
-            "native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h",
-            "native/objc3c/src/runtime/objc3_runtime.cpp",
-        ],
-        "authoritative_probe_paths": [
-            INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
-            INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
-        ],
-        "requires_linked_runtime_probe": True,
-        "requires_real_compile_output": True,
-    }
-
-
-def build_runtime_package_loading_interop_implementation_surface(
-    results: list[CaseResult],
-) -> dict[str, Any]:
-    authoritative_case_ids = [
-        result.case_id
-        for result in results
-        if result.case_id in {"live-package-loading-interop-runtime-implementation"}
-    ]
-    return {
-        "contract_id": (
-            RUNTIME_PACKAGE_LOADING_INTEROP_IMPLEMENTATION_SURFACE_CONTRACT_ID
-        ),
-        "source_contract_ids": [
-            RUNTIME_PACKAGE_LOADER_BRIDGE_ABI_SURFACE_CONTRACT_ID,
-            RUNTIME_PACKAGING_BRIDGE_LOADER_ARTIFACT_SURFACE_CONTRACT_ID,
-        ],
-        "implementation_model": (
-            "live-runtime-package-loader-snapshots-agree-with-the-emitted-interop-link-plan-and-bridge-artifacts-for-the-current-mixed-image-packaging-boundary"
-        ),
-        "authoritative_case_ids": authoritative_case_ids,
-        "authoritative_code_paths": [
-            "native/objc3c/src/io/objc3_process.cpp",
-            "native/objc3c/src/runtime/objc3_runtime.cpp",
-        ],
-        "authoritative_fixture_paths": [
-            INTEROP_BRIDGE_PACKAGING_PROVIDER_FIXTURE,
-            INTEROP_BRIDGE_PACKAGING_CONSUMER_FIXTURE,
-        ],
-        "authoritative_probe_paths": [
-            INTEROP_BRIDGE_PACKAGING_RUNTIME_ABI_PROBE,
-            INTEROP_HEADER_MODULE_BRIDGE_RUNTIME_ABI_PROBE,
-        ],
-        "requires_runtime_import_surface_artifact": True,
-        "requires_cross_module_link_plan_artifact": True,
-        "requires_linked_runtime_probe": True,
-        "requires_real_compile_output": True,
-    }
 
 
 def exported_case_names() -> list[str]:
