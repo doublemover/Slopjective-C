@@ -36,6 +36,8 @@ add_library(objc3c_support STATIC
   objc3_objc_return_type_surface_profiles.h
   objc3_objc_runtime_type_surface_profiles.h
   objc3_objc_type_surface_profiles.h
+  objc3_objc_value_type_names.cpp
+  objc3_objc_value_type_names.h
   objc3_nil_receiver_profile.cpp
   objc3_nil_receiver_profile.h
   objc3_current_property_runtime_profiles.cpp
@@ -85,6 +87,8 @@ add_library(objc3c_support STATIC
   objc3_runtime_metadata_protocol_reference_counts.h
   objc3_runtime_metadata_reference_counts.h
   objc3_runtime_metadata_record_set.h
+  objc3_scalar_value_type_names.cpp
+  objc3_scalar_value_type_names.h
   objc3_string_affix_predicates.cpp
   objc3_string_affix_predicates.h
   objc3_string_predicates.h
