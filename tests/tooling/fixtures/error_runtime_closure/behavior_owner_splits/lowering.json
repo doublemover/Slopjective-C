@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/error_runtime_closure/throws_abi_helper_semantics_contract.json",
     "tests/tooling/fixtures/error_runtime_closure/error_lowering_runtime_artifact_contract.json"
   ],
-  "support_boundary": "lowering ownership covers emitted throw/catch helper packets, cleanup ordering, bridge helper calls, runtime-registration replay preservation, and cross-module manifest coupling before IR or runtime owners cite artifacts",
+  "support_boundary": "lowering ownership covers emitted throw/catch helper packets, diagnostics/recovery lowering, cleanup ordering, result bridge helper calls, error lowering artifacts, runtime import/preservation, runtime-registration replay preservation, and cross-module manifest coupling before IR or runtime owners cite artifacts; manifest-only and report-only lowering rows remain provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "canonical_surfaces:runtime_error_lowering_unwind_bridge_helper_surface",
@@ -19,5 +19,5 @@
     "authoritative_case_ids:executable-throw-catch-cleanup-lowering"
   ],
   "canonical_anchor": "tests/native/lowering",
-  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, public ABI widening through helper calls, missing runtime-registration replay, and lowering report-only success are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, old-mode result-bridge lowering, public ABI widening through helper calls, missing runtime-registration replay, runtime-import-only preservation, and lowering report-only success are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

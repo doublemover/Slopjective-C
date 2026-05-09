@@ -8,7 +8,14 @@
   "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/error-runtime-closure/boundary-inventory",
-  "generated_report_behavior_boundary": "generated error-runtime closure reports are provenance-only and cannot establish positive runtime, e2e, compatibility, or public ABI support",
+  "generated_report_behavior_boundary": "generated error-runtime closure reports are provenance-only and cannot establish positive parser, sema, lowering, IR, runtime, e2e, compatibility, or public ABI support",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before error lowering, diagnostics/recovery, result bridging, runtime import/preservation, private runtime helper ABI, runtime support/library behavior, runtime acceptance report, generated report, public command, packaged runnable proof, or provenance row",
+    "support_authority": "error runtime closure rows are source, semantic profile, lowering, runtime ABI, runtime import/replay, report, executable proof, and provenance evidence only until parser, sema, lowering, IR, runtime, or e2e behavior owner split claims the phase",
+    "generated_report_rule": "runtime acceptance reports, architecture integration summaries, runnable error conformance/e2e reports, compile manifests, runtime-registration replay packets, runtime-import preservation rows, private helper ABI snapshots, public workflow labels, and packaged proof summaries cannot define canonical support",
+    "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, public runtime ABI widening, wrapper-only runnable actions, foreign-runtime bridge compatibility, migration-only rows, milestone-specific scaffolding, async/interop overclaims, and cross-module claims without manifest/runtime-registration replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence",
+    "evidence_boundary_rule": "error lowering, diagnostics/recovery, result bridging, runtime import/preservation, runtime support/library behavior, private helper ABI snapshots, runtime acceptance reports, generated reports, public workflows, packaged proof labels, and replay artifacts are distinct evidence classes; only a canonical behavior owner can promote matching hand-authored behavior truth"
+  },
   "focus_tracks": [
     "throw-catch-cleanup-unwind-runtime-closure",
     "nserror-status-result-bridge-runtime-closure",
@@ -92,7 +99,8 @@
     "no-public-error-runtime-abi-widening",
     "no-milestone-specific-runtime-scaffolding",
     "no-claims-about-async-or-interop-closure-beyond-current-error-runtime-evidence",
-    "no-cross-module-claim-beyond-current-manifest-runtime-registration-and-replay-proof"
+    "no-cross-module-claim-beyond-current-manifest-runtime-registration-and-replay-proof",
+    "no-positive-support-from-generated-reports-compile-manifests-runtime-registration-replay-packets-runtime-import-preservation-rows-private-helper-snapshots-public-workflow-labels-packaged-proof-summaries-or-provenance-rows"
   ],
   "successor_milestones": [
     "M322",

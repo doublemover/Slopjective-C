@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json",
     "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json"
   ],
-  "support_boundary": "semantic ownership covers thrown value storage, catch filtering, finalization ordering, cleanup ordering, bridge normalization, and claim narrowing before lowering or runtime owners cite executable proof",
+  "support_boundary": "semantic ownership covers thrown value storage, diagnostics/recovery, catch filtering, finalization ordering, cleanup ordering, result bridge normalization, bridged NSError/status narrowing, and claim narrowing before lowering or runtime owners cite executable proof; evidence-only profiles and generated summaries remain provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_error_execution_cleanup_source_surface",
@@ -18,5 +18,5 @@
     "claim_narrowing_constraints:no-evidence-only-cleanup-ordering-model"
   ],
   "canonical_anchor": "tests/native/sema",
-  "retired_surface_rule": "compatibility-positive bridge semantics, evidence-only cleanup ordering, public ABI widening, unsupported async/interop closure, and semantic shim claims are diagnostics, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "compatibility-positive bridge semantics, evidence-only cleanup ordering, parser recovery-only promotion, public ABI widening, unsupported async/interop closure, fallback result-bridge semantics, and semantic shim claims are diagnostics, canonical rejection, strict-error, or provenance-only evidence"
 }

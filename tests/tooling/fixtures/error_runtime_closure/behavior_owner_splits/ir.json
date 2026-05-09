@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/error_runtime_closure/error_lowering_runtime_artifact_contract.json",
     "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json"
   ],
-  "support_boundary": "IR ownership covers compile manifests, runtime-registration packets, generated acceptance summaries, and artifact replay as provenance; generated artifacts do not create positive error runtime behavior",
+  "support_boundary": "IR ownership covers compile manifests, runtime-registration packets, runtime-import preservation rows, result-bridge metadata, generated acceptance summaries, architecture summaries, runnable summaries, and artifact replay as provenance; generated artifacts do not create positive error runtime behavior",
   "phase_support_claim_authority": false,
   "selectors": [
     "canonical_artifacts:tmp/reports/runtime/acceptance/summary.json",
@@ -20,5 +20,5 @@
     "machine_owned_output_roots:tmp/reports/runtime/runnable-error-e2e"
   ],
   "canonical_anchor": "tests/native/ir",
-  "retired_surface_rule": "generated reports, architecture summaries, runnable summaries, manifest replay packets, and runtime-registration artifacts are provenance-only until behavior owners claim support"
+  "retired_surface_rule": "generated reports, architecture summaries, runnable summaries, manifest replay packets, runtime-import artifacts, runtime-registration artifacts, and result-bridge metadata are provenance-only until behavior owners claim support"
 }

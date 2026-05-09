@@ -6,7 +6,7 @@
     "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
     "tests/tooling/fixtures/error_runtime_closure/owner_split_contract.json"
   ],
-  "support_boundary": "e2e ownership covers packaged runnable error conformance, runnable error end-to-end, public command routing, workflow actions, cross-module replay, and publication only after lower phase owners and executable proof pass",
+  "support_boundary": "e2e ownership covers packaged runnable error conformance, runnable error end-to-end, public command routing, workflow actions, cross-module replay, packaged proof, and publication only after lower phase owners and executable proof pass; public command wrappers and workflow labels are routing/provenance without canonical behavior ownership",
   "phase_support_claim_authority": false,
   "selectors": [
     "public_commands:test:objc3c:error-conformance",
@@ -18,5 +18,5 @@
     "hard_cutover_requirements:cross-module-bridge-claims-require-runtime-registration-replay-proof"
   ],
   "canonical_anchor": "tests/native/e2e",
-  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-report-only e2e claims, milestone-local runtime scaffolding, and cross-module claims without replay proof are canonical rejection or provenance-only evidence"
+  "retired_surface_rule": "wrapper-only runnable actions, report-only executable proof, generated-report-only e2e claims, generated-only reports, old-mode commands, shim workflows, fallback workflows, milestone-local runtime scaffolding, and cross-module claims without replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

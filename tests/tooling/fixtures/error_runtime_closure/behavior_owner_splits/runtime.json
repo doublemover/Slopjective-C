@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/error_runtime_closure/throws_abi_helper_semantics_contract.json",
     "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json"
   ],
-  "support_boundary": "runtime ownership covers private error helper ABI, bridge-state snapshots, live thrown-error storage, catch matching, NSError/status bridging, cleanup/unwind probes, and private runtime-owned evidence only",
+  "support_boundary": "runtime ownership covers private error helper ABI, runtime support/library behavior, bridge-state snapshots, live thrown-error storage, catch matching, NSError/status result bridging, cleanup/unwind probes, runtime import preservation, and private runtime-owned evidence only; report-only runtime proof and private-snapshot-only rows stay provenance",
   "phase_support_claim_authority": false,
   "selectors": [
     "private_runtime_abi_boundary:objc3_runtime_store_thrown_error_i32",
@@ -23,5 +23,5 @@
     "authoritative_probe_paths:tests/tooling/runtime/cleanup_unwind_nested_autoreleasepool_probe.cpp"
   ],
   "canonical_anchor": "tests/native/runtime",
-  "retired_surface_rule": "public runtime ABI widening, foreign-runtime bridge compatibility, fallback runtime behavior, compatibility shim runtime closure, and async/interop overclaims are strict-error, canonical rejection, or provenance-only evidence"
+  "retired_surface_rule": "public runtime ABI widening, foreign-runtime bridge compatibility, fallback runtime behavior, compatibility shim runtime closure, old-mode runtime behavior, private-snapshot-only proof, report-only runtime closure, and async/interop overclaims are strict-error, canonical rejection, absent-support, or provenance-only evidence"
 }

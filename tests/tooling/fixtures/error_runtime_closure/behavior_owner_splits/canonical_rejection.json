@@ -7,7 +7,7 @@
     "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
     "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json"
   ],
-  "support_boundary": "error runtime closure rows that mention fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-report-only source truth, public runtime ABI widening, milestone-specific scaffolding, async/interop overclaiming, foreign-runtime bridge compatibility, wrapper-only runnable actions, or cross-module claims without manifest/runtime-registration replay proof are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "error runtime closure rows that mention fallback runtime behavior, compatibility shims, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, public runtime ABI widening, milestone-specific scaffolding, async/interop overclaiming, foreign-runtime bridge compatibility, wrapper-only runnable actions, runtime-import-only preservation, manifest-only replay, private-snapshot-only proof, diagnostics-recovery-only proof, result-bridge-metadata-only proof, migration-only rows, or cross-module claims without manifest/runtime-registration replay proof are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "owner_policy:report_only_allowed=false",
@@ -27,6 +27,7 @@
     "explicit_non_goals:no-milestone-specific-runtime-scaffolding",
     "explicit_non_goals:no-claims-about-async-or-interop-closure-beyond-current-error-runtime-evidence",
     "explicit_non_goals:no-cross-module-claim-beyond-current-manifest-runtime-registration-and-replay-proof",
+    "explicit_non_goals:no-positive-support-from-generated-reports-compile-manifests-runtime-registration-replay-packets-runtime-import-preservation-rows-private-helper-snapshots-public-workflow-labels-packaged-proof-summaries-or-provenance-rows",
     "compatibility_rules:bridge compatibility remains fail-closed where a wider public ABI, richer interop transport, or foreign-runtime model would be required",
     "*fallback*",
     "*shim*",
@@ -36,12 +37,28 @@
     "*legacy*",
     "*unsupported*",
     "*report-only*",
+    "*report_only*",
+    "*generated-only*",
+    "*generated_only*",
     "*generated-report*",
     "*public-runtime-abi-widening*",
     "*wrapper-only*",
+    "*wrapper_only*",
     "*foreign-runtime*",
-    "*async-or-interop-overclaim*"
+    "*async-or-interop-overclaim*",
+    "*runtime-import-only*",
+    "*runtime_import_only*",
+    "*manifest-only*",
+    "*manifest_only*",
+    "*private-snapshot-only*",
+    "*private_snapshot_only*",
+    "*diagnostics-recovery-only*",
+    "*diagnostics_recovery_only*",
+    "*result-bridge-metadata-only*",
+    "*result_bridge_metadata_only*",
+    "*migration-only*",
+    "*migration_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-report-only source truth, public runtime ABI widening, wrapper-only runnable actions, foreign-runtime bridge compatibility, async/interop overclaims, and cross-module claims without replay proof are canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "fallback runtime behavior, compatibility shim runtime closure, old-mode behavior, report-only runtime closure, generated-only rows, generated-report-only source truth, public runtime ABI widening, wrapper-only runnable actions, foreign-runtime bridge compatibility, runtime-import-only preservation, manifest-only replay, private-snapshot-only proof, diagnostics-recovery-only proof, result-bridge-metadata-only proof, migration-only rows, async/interop overclaims, and cross-module claims without replay proof are canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }

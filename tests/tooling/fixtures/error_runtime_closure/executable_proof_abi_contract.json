@@ -9,9 +9,16 @@
   "behavior_owner_phases": [
     "runtime",
     "e2e",
-    "canonical_rejection"
+    "canonical_rejection",
+    "error_runtime_provenance"
   ],
   "public_command_behavior_boundary": "public commands and workflows are executable proof routing only and do not widen public runtime ABI or turn report-only/generated-report-only evidence into support",
+  "proof_boundary_policy": {
+    "primary_axis": "behavior owner before public command wrapper, workflow label, executable proof report, private runtime ABI snapshot, generated report, packaged proof summary, or public runtime ABI boundary",
+    "support_authority": "executable proof reports and public workflows are provenance unless runtime or e2e owners claim behavior already supported by parser, sema, lowering, and IR owners",
+    "positive_support_from_report": false,
+    "retired_surface_rule": "report-only, generated-report-only, wrapper-only, workflow-label-only, private-snapshot-only, package-only, shim workflow, fallback workflow, old-mode command, milestone-specific scaffolding, and public ABI widening proof rows are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "public_commands": [
     "test:objc3c:error-conformance",
     "test:objc3c:runnable-error"

@@ -9,10 +9,16 @@
   "behavior_owner_phases": [
     "lowering",
     "ir",
-    "provenance",
+    "error_runtime_provenance",
     "canonical_rejection"
   ],
-  "artifact_behavior_boundary": "runtime acceptance, architecture integration, runnable error conformance, and runnable error e2e reports are provenance until behavior owners claim support",
+  "artifact_behavior_boundary": "runtime acceptance, architecture integration, runnable error conformance, runnable error e2e reports, compile manifests, runtime-registration replay packets, runtime-import preservation rows, and result bridge metadata are provenance until behavior owners claim support",
+  "artifact_boundary_policy": {
+    "primary_axis": "behavior owner before lowering artifact, compile manifest, runtime-registration replay packet, runtime-import preservation row, result bridge metadata, generated report, or runnable report",
+    "support_authority": "error lowering and runtime import/preservation support requires lowering, IR, runtime, or e2e owner assignment over canonical fixtures and probes",
+    "positive_support_from_artifact": false,
+    "retired_surface_rule": "generated reports, manifest-only rows, replay-only rows, runtime-import-only rows, result-bridge-metadata-only rows, report-only rows, fallback lowering, shim lowering, old-mode lowering, and compatibility lowering claims are provenance, canonical rejection, strict-error, or absent-support evidence"
+  },
   "canonical_artifacts": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/architecture-integration/summary.json",

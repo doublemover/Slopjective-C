@@ -13,7 +13,8 @@
     "generated_reports_are_source": false,
     "public_claims_require_executable_proof": true,
     "behavior_owner_split_required": true,
-    "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json"
+    "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
+    "provenance_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/error_runtime_provenance.json"
   },
   "closure_publication_contract": {
     "source_owner_role": "semantic_model_owner",
@@ -34,7 +35,8 @@
         "parser",
         "sema",
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_semantic_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -45,7 +47,8 @@
       "behavior_owner_phases": [
         "lowering",
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_throws_abi_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -55,7 +58,8 @@
       "source": "tests/tooling/fixtures/error_runtime_closure/executable_proof_abi_contract.json",
       "behavior_owner_phases": [
         "runtime",
-        "canonical_rejection"
+        "canonical_rejection",
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_executable_proof_summary.py",
       "claim_scope": "private-helper-abi-only"
@@ -66,7 +70,8 @@
       "behavior_owner_phases": [
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_executable_proof_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -77,7 +82,7 @@
       "behavior_owner_phases": [
         "lowering",
         "ir",
-        "provenance",
+        "error_runtime_provenance",
         "canonical_rejection"
       ],
       "summary_script": "scripts/build_error_runtime_closure_artifact_summary.py",
@@ -93,7 +98,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
       "claim_scope": "current-runtime-closure"
@@ -103,7 +109,7 @@
       "source": "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
       "behavior_owner_phases": [
         "canonical_rejection",
-        "provenance"
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
       "claim_scope": "successor-boundary-no-current-scheduler-claim"
@@ -115,10 +121,20 @@
         "sema",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "error_runtime_provenance"
       ],
       "summary_script": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
       "claim_scope": "current-runtime-closure"
+    },
+    "provenance_owner": {
+      "owner": "error-runtime-closure-provenance",
+      "source": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/error_runtime_provenance.json",
+      "behavior_owner_phases": [
+        "error_runtime_provenance"
+      ],
+      "summary_script": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
+      "claim_scope": "provenance-only-no-positive-behavior"
     }
   },
   "hard_cutover_requirements": [

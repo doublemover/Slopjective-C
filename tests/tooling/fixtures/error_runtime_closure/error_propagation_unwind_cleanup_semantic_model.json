@@ -10,7 +10,8 @@
     "parser",
     "sema",
     "runtime",
-    "canonical_rejection"
+    "canonical_rejection",
+    "error_runtime_provenance"
   ],
   "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
@@ -58,7 +59,8 @@
   "claim_narrowing_constraints": [
     "no-public-error-runtime-abi-widening",
     "no-evidence-only-cleanup-ordering-model",
-    "no-async-or-interop-closure-claims-beyond-current-error-runtime-evidence"
+    "no-async-or-interop-closure-claims-beyond-current-error-runtime-evidence",
+    "diagnostics-recovery-profiles-result-bridge-metadata-runtime-import-preservation-rows-and-generated-summaries-are-provenance-until-claimed-by-canonical-behavior-owners"
   ],
   "authoritative_case_ids": [
     "throw-catch-cleanup-ordering",
