@@ -165,8 +165,8 @@ The replayable implementation is:
 - `npm run objc3c -- build-package-lock`
 - `npm run objc3c -- validate-package-authoring`
 
-Implementation anchors: `scripts/build_objc3c_package_lock.py` and
-`scripts/check_objc3c_package_authoring_workflow.py`.
+Helper implementations are action-catalog-owned and are not direct package
+commands.
 
 The lock generator derives packages from `stdlib/module_inventory.json` and
 `showcase/portfolio.json`, emits a deterministic lock under
@@ -183,8 +183,8 @@ The replayable implementation is:
 
 - `npm run objc3c -- validate-package-mirror`
 
-Implementation anchors: `scripts/build_objc3c_package_mirror.py` and
-`scripts/check_objc3c_package_registry_mirror_reproducibility.py`.
+Helper implementations are action-catalog-owned and are not direct package
+commands.
 
 The mirror generator consumes the generated lock, writes an offline mirror index,
 local registry index, and publication metadata under

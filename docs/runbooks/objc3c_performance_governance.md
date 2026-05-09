@@ -78,7 +78,7 @@ Only these checked-in sources may feed the public performance report:
   compiler-throughput, and runtime-performance workflows
 - checked-in budget, claim, breach-triage, and lab-policy contracts
 - checked-in public command and maintainer workflow surfaces
-- deterministic report-build scripts in `scripts/`
+- action-catalog-owned deterministic report builders
 
 No spreadsheet-only, screenshot-only, or hand-edited sidecar performance report
 is allowed.

@@ -34,7 +34,9 @@ Canonical checked-in boundary surfaces:
 Replayable boundary inventory:
 
 - covered by `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/build_adoption_legibility_boundary_inventory_summary.py`
+
+Helper implementations for this runbook are action-catalog-owned. Script paths
+are not operator commands and are not part of the public adoption surface.
 
 ## Public Adoption And Conversion Claim Policy
 
@@ -45,7 +47,6 @@ The canonical public-claim policy is checked in at:
 Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/build_adoption_legibility_public_claim_policy_summary.py`
 
 Public adoption and conversion claims are intentionally narrower than the
 available implementation surface. Any claim that describes production fit,
@@ -77,7 +78,6 @@ The canonical comparison semantics contract is checked in at:
 Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/build_adoption_legibility_capability_comparison_summary.py`
 
 Comparison language must answer a concrete evaluator question, name the
 Objective-C 2, Swift, or C++ comparison axis, then link to runnable examples and
@@ -88,14 +88,13 @@ visible in the comparison text.
 
 ## Canonical Conversion Playbook And Interop Guidance
 
-The canonical migration playbook semantics contract is checked in at:
+The canonical conversion playbook semantics contract is checked in at:
 
 - `tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`
 
 Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/build_adoption_legibility_migration_playbook_summary.py`
 
 Conversion guidance has four ordered phases: orient on public docs, compile the
 showcase anchors, create or validate package/application workspace state, then
@@ -116,7 +115,6 @@ Schema surface:
 Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/build_adoption_legibility_artifact_contract_summary.py`
 
 Generated machine-owned outputs stay under:
 
@@ -132,7 +130,6 @@ schema above.
 The canonical evidence workflow is:
 
 - `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/build_objc3c_adoption_legibility_evidence.py`
 
 It generates:
 
@@ -143,7 +140,7 @@ It generates:
 The generator replays the boundary inventory, public claim policy, comparison
 semantics, conversion playbook semantics, and artifact contract summaries before
 writing artifacts. Generated evidence is temporary output; checked-in contracts,
-docs, and scripts remain the source of truth.
+docs, and action-catalog-owned implementations remain the source of truth.
 
 ## Public Workflow Integration
 
@@ -155,9 +152,7 @@ The repo-scope adoption workflow is:
 It maps to:
 
 - `npm run objc3c -- validate-adoption-legibility`
-- implementation helper: `scripts/check_objc3c_adoption_legibility_integration.py`
 - `npm run objc3c -- publish-adoption-legibility`
-- implementation helper: `scripts/publish_objc3c_adoption_legibility_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, evaluator
 entrypoints, conversion phases, comparison axes, onboarding workspaces, support

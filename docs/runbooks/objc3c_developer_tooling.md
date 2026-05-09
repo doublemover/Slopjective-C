@@ -287,13 +287,11 @@ The current and follow-on public entrypoints for the surface converge on:
 - `npm run objc3c -- format-objc3c`
 - `npm run objc3c -- validate-developer-tooling`
 
-Exact implementation anchors for the current formatter/debug/workspace slice:
+The current formatter/debug/workspace slice is action-catalog-owned. Its script
+paths are implementation details, not direct public commands.
 
-- `scripts/format_objc3c_source.py`
-- `scripts/build_objc3c_editor_tooling_surface.py`
-- `scripts/check_developer_tooling_formatter_debug_surface.py`
-- `scripts/check_developer_tooling_workspace_integration.py`
-- `scripts/check_objc3c_runnable_developer_tooling_end_to_end.py`
+Checked-in contracts for the current slice:
+
 - `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
 - `tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json`
 

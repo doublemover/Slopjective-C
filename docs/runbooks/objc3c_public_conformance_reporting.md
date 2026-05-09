@@ -53,7 +53,7 @@ following:
 - a checked-in corpus or external-validation contract
 - a machine-owned report emitted by the live workflow
 - a checked-in schema or release-evidence contract
-- a deterministic reporting script in `scripts/`
+- an action-catalog-owned deterministic report builder
 
 Public reporting must fail closed when upstream evidence is missing, stale,
 quarantined, or not traceable to a checked-in validation family.
