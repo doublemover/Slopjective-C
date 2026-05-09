@@ -97,7 +97,7 @@ def main() -> int:
             failures,
         )
         expect(
-            template_payload.get("public_actions") == contract["public_actions"],
+            template_payload.get("public_actions") == contract["required_actions"],
             "template manifest public actions drifted from the canonical template semantics",
             failures,
         )

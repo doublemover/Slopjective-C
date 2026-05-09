@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -38,24 +37,22 @@ def summary_passes(payload: dict[str, Any]) -> bool:
     return payload.get("status") in {"PASS", "OK"} or payload.get("ok") is True
 
 
-def require_or_reuse_summary(
+def require_executed_summary(
     *,
     name: str,
     summary_path: Path,
     failures: list[str],
-    command: list[str] | None = None,
+    command: list[str],
 ) -> dict[str, Any]:
     step_result: dict[str, Any] = {
         "name": name,
         "command": command,
         "summary_path": repo_rel(summary_path),
-        "mode": "reused-summary" if command is None else "executed",
+        "mode": "executed",
     }
-    if command is not None:
-        result = run_capture(command)
-        step_result["exit_code"] = result.returncode
-        step_result["mode"] = "executed"
-        expect(result.returncode == 0, f"{name} failed", failures)
+    result = run_capture(command)
+    step_result["exit_code"] = result.returncode
+    expect(result.returncode == 0, f"{name} failed", failures)
 
     if not summary_path.is_file():
         failures.append(f"{name} missing expected summary {repo_rel(summary_path)}")
@@ -75,7 +72,7 @@ def main() -> int:
     step_results = []
 
     template_command = python_script_command(TEMPLATE_HARNESS_PY)
-    template_summary = require_or_reuse_summary(
+    template_summary = require_executed_summary(
         name="template-harness",
         command=template_command,
         summary_path=TEMPLATE_SUMMARY_PATH,
@@ -92,7 +89,7 @@ def main() -> int:
         }
     )
     canonical_command = python_script_command(CANONICAL_WORKSPACE_PY)
-    canonical_summary = require_or_reuse_summary(
+    canonical_summary = require_executed_summary(
         name="canonical-workspace",
         command=canonical_command,
         summary_path=CANONICAL_SUMMARY_PATH,
@@ -109,67 +106,45 @@ def main() -> int:
         }
     )
 
-    showcase_summary = load_json(SHOWCASE_SUMMARY_PATH) if SHOWCASE_SUMMARY_PATH.is_file() else {}
-    if summary_passes(showcase_summary):
-        step_results.append(
-            {
-                "name": "showcase-integration",
-                "command": None,
-                "summary_path": repo_rel(SHOWCASE_SUMMARY_PATH),
-                "mode": "reused-summary",
-                "summary_ok": True,
-                "summary_status": showcase_summary.get("status", showcase_summary.get("ok")),
-            }
-        )
-    else:
-        showcase_command = python_script_command(SHOWCASE_INTEGRATION_PY)
-        result = run_capture(showcase_command)
-        showcase_summary = load_json(SHOWCASE_SUMMARY_PATH) if SHOWCASE_SUMMARY_PATH.is_file() else {}
-        step_results.append(
-            {
-                "name": "showcase-integration",
-                "command": showcase_command,
-                "exit_code": result.returncode,
-                "summary_path": repo_rel(SHOWCASE_SUMMARY_PATH),
-                "mode": "executed",
-                "summary_ok": summary_passes(showcase_summary) if isinstance(showcase_summary, dict) else False,
-                "summary_status": showcase_summary.get("status", showcase_summary.get("ok")) if isinstance(showcase_summary, dict) else None,
-            }
-        )
-        if not summary_passes(showcase_summary):
-            expect(result.returncode == 0, "showcase-integration failed", failures)
-            expect(summary_passes(showcase_summary), "showcase integration summary did not report PASS", failures)
+    showcase_command = python_script_command(SHOWCASE_INTEGRATION_PY)
+    showcase_summary = require_executed_summary(
+        name="showcase-integration",
+        command=showcase_command,
+        summary_path=SHOWCASE_SUMMARY_PATH,
+        failures=failures,
+    )
+    step_results.append(
+        {
+            "name": "showcase-integration",
+            "command": showcase_command,
+            "summary_path": repo_rel(SHOWCASE_SUMMARY_PATH),
+            "mode": "executed",
+            "summary_ok": summary_passes(showcase_summary) if isinstance(showcase_summary, dict) else False,
+            "summary_status": showcase_summary.get("status", showcase_summary.get("ok")) if isinstance(showcase_summary, dict) else None,
+        }
+    )
+    if not summary_passes(showcase_summary):
+        expect(summary_passes(showcase_summary), "showcase integration summary did not report PASS", failures)
 
-    stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY_PATH) if STDLIB_PROGRAM_SUMMARY_PATH.is_file() else {}
-    if summary_passes(stdlib_program_summary):
-        step_results.append(
-            {
-                "name": "stdlib-program-integration",
-                "command": None,
-                "summary_path": repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
-                "mode": "reused-summary",
-                "summary_ok": True,
-                "summary_status": stdlib_program_summary.get("status", stdlib_program_summary.get("ok")),
-            }
-        )
-    else:
-        stdlib_program_command = python_script_command(STDLIB_PROGRAM_INTEGRATION_PY)
-        result = run_capture(stdlib_program_command)
-        stdlib_program_summary = load_json(STDLIB_PROGRAM_SUMMARY_PATH) if STDLIB_PROGRAM_SUMMARY_PATH.is_file() else {}
-        step_results.append(
-            {
-                "name": "stdlib-program-integration",
-                "command": stdlib_program_command,
-                "exit_code": result.returncode,
-                "summary_path": repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
-                "mode": "executed",
-                "summary_ok": summary_passes(stdlib_program_summary) if isinstance(stdlib_program_summary, dict) else False,
-                "summary_status": stdlib_program_summary.get("status", stdlib_program_summary.get("ok")) if isinstance(stdlib_program_summary, dict) else None,
-            }
-        )
-        if not summary_passes(stdlib_program_summary):
-            expect(result.returncode == 0, "stdlib-program-integration failed", failures)
-            expect(summary_passes(stdlib_program_summary), "stdlib program integration summary did not report PASS", failures)
+    stdlib_program_command = python_script_command(STDLIB_PROGRAM_INTEGRATION_PY)
+    stdlib_program_summary = require_executed_summary(
+        name="stdlib-program-integration",
+        command=stdlib_program_command,
+        summary_path=STDLIB_PROGRAM_SUMMARY_PATH,
+        failures=failures,
+    )
+    step_results.append(
+        {
+            "name": "stdlib-program-integration",
+            "command": stdlib_program_command,
+            "summary_path": repo_rel(STDLIB_PROGRAM_SUMMARY_PATH),
+            "mode": "executed",
+            "summary_ok": summary_passes(stdlib_program_summary) if isinstance(stdlib_program_summary, dict) else False,
+            "summary_status": stdlib_program_summary.get("status", stdlib_program_summary.get("ok")) if isinstance(stdlib_program_summary, dict) else None,
+        }
+    )
+    if not summary_passes(stdlib_program_summary):
+        expect(summary_passes(stdlib_program_summary), "stdlib program integration summary did not report PASS", failures)
 
     expect(template_summary.get("status") == "PASS", "template harness summary did not report PASS", failures)
     expect(

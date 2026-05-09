@@ -37,8 +37,12 @@ def main() -> int:
     ]
     showcase_workspace_filesystem = sorted(repo_rel(path) for path in (ROOT / "showcase").glob("*/workspace.json"))
 
-    template_materializers = [str(path) for path in contract["template_materializers"]]
-    existing_testing_surfaces = [str(path) for path in contract["existing_testing_surfaces"]]
+    template_materializers = [
+        str(path) for path in contract["template_materializer_implementation_anchors"]
+    ]
+    existing_testing_surfaces = [
+        str(path) for path in contract["testing_surface_implementation_anchors"]
+    ]
     required_actions = [str(name) for name in contract["required_actions"]]
     package_bridge = str(contract["package_bridge"])
     package_scripts = package.get("scripts", {})

@@ -11,7 +11,12 @@ from scripts.objc3c_workflow.action_handlers_application_workspaces import (
 )
 from scripts.objc3c_workflow.action_spec import ActionHandler
 
+APPLICATION_HANDLER_OWNER_SURFACE = "scripts/objc3c_workflow/action_handlers_application.py"
+
 APPLICATION_ACTION_HANDLERS: dict[str, ActionHandler] = merge_action_handler_sections(
     APPLICATION_WORKSPACE_ACTION_HANDLERS,
     APPLICATION_STDLIB_ACTION_HANDLERS,
 )
+
+
+__all__ = ["APPLICATION_ACTION_HANDLERS", "APPLICATION_HANDLER_OWNER_SURFACE"]

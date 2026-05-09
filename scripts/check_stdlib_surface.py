@@ -113,7 +113,7 @@ def main() -> int:
         return fail("package surface machine_report_root drifted")
     if package_surface.get("package_stage_root") != "tmp/pkg/objc3c-native-runnable-toolchain":
         return fail("package surface package_stage_root drifted")
-    if package_surface.get("import_model") != "implementation-alias-module-declarations-map-to-canonical-spec-module-ids":
+    if package_surface.get("import_model") != "compiler-visible-module-declarations-map-to-canonical-spec-module-ids":
         return fail("package surface import_model drifted")
     if core_architecture.get("contract_id") != "objc3c.stdlib.core_architecture.v1":
         return fail("core architecture contract_id drifted")
@@ -670,11 +670,11 @@ def main() -> int:
             "repo-health",
             "single-example-compile",
             "showcase-example-selection",
-            "migration-or-comparison-doc",
+            "canonical-conversion-or-comparison-doc",
         ],
         "runnable_claim_rule": "only capabilities backed by checked-in compile and shared validation flows may be presented as runnable-now stories",
-        "comparison_claim_rule": "not-yet-runnable capabilities must be framed as actor-shaped comparison or migration guidance rather than runnable parity claims",
-        "command_truth_rule": "package.json and scripts.objc3c_workflow define the authoritative public commands",
+        "comparison_claim_rule": "comparison-only capabilities must be framed as actor-shaped comparison or canonical conversion guidance rather than runnable parity stories",
+        "command_truth_rule": "package.json objc3c is the authoritative public npm entrypoint; workflow examples use npm run objc3c -- <action>",
         "machine_noise_rule": "tmp artifacts and legacy redirect material may not appear as the primary onboarding route",
     }:
         return fail("program surface onboarding_policy drifted")

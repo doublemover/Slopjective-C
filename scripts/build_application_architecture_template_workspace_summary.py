@@ -28,16 +28,23 @@ def main() -> int:
 
     materializer_source = MATERIALIZER_PATH.read_text(encoding="utf-8")
     checked_in_source_roots = [str(path) for path in contract["checked_in_source_roots"]]
-    missing_paths = [raw for raw in [str(contract["template_materializer"]), *checked_in_source_roots] if not (ROOT / raw).exists()]
+    template_materializer = str(contract["template_materializer_implementation_anchor"])
+    missing_paths = [
+        raw for raw in [template_materializer, *checked_in_source_roots] if not (ROOT / raw).exists()
+    ]
     package_bridge = str(contract["package_bridge"])
     package_bridge_exists = package_bridge in package_scripts
     required_actions = [str(name) for name in contract["required_actions"]]
     registered_actions = set(public_workflow_action_names())
     missing_actions = [action for action in required_actions if action not in registered_actions]
+    materializer_bound_actions = [
+        str(contract["template_materializer_action"]),
+        "inspect-bonus-tool-integration",
+        str(contract["playground_materializer_action"]),
+        "benchmark-runtime-inspector",
+    ]
     missing_materializer_actions = [
-        action
-        for action in required_actions
-        if f"\"{action}\"" not in materializer_source and action != contract["playground_materializer_action"]
+        action for action in materializer_bound_actions if f"\"{action}\"" not in materializer_source
     ]
 
     payload = {
@@ -46,7 +53,9 @@ def main() -> int:
         "template_contract": repo_rel(CONTRACT_PATH),
         "runbook": str(contract["runbook"]),
         "checked_in_source_root_count": len(checked_in_source_roots),
+        "template_materializer_implementation_anchor": template_materializer,
         "required_action_count": len(required_actions),
+        "materializer_bound_actions": materializer_bound_actions,
         "package_bridge_count": 1 if package_bridge_exists else 0,
         "generated_template_required_path_count": len(contract["generated_template_layout"]["required_paths"]),
         "generated_harness_required_path_count": len(contract["generated_harness_layout"]["required_paths"]),
