@@ -51,7 +51,7 @@
     },
     {
       "name": "issue_65_generic_methods_deferral_gate",
-      "feature": "generic method/function deferral and extension gating",
+      "feature": "generic method/function deferral with removed extension-flag rejection",
       "issue": 65,
       "files": [
         "GEN-65-01.json",
@@ -130,7 +130,7 @@
     },
     {
       "name": "issue_73_match_or_gating",
-      "feature": "match semantics and provisional feature gating",
+      "feature": "match semantics and hard-cutover disabled-feature rejection",
       "issue": 73,
       "files": [
         "MTC-73-01.json",

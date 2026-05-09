@@ -1,7 +1,7 @@
 {
   "id": "ACT-09",
   "title": "Preserve nonreentrant as an identifier outside reserved actor-member modifier positions",
-  "feature": "contextual-keyword compatibility and actor metadata round-trip stability",
+  "feature": "contextual-keyword identifier preservation and actor metadata round-trip stability",
   "bucket": "module_roundtrip",
   "profile": "strict",
   "references": [
@@ -13,7 +13,7 @@
     "docs/reference/legacy_spec_anchor_index.md#part-7-7-6",
     "docs/reference/legacy_spec_anchor_index.md#d-3-1"
   ],
-  "source": "// RUN: objc3c -fobjc-version=3 --emit-module ACT09.objcmod --emit-interface ACT09.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module ACT09-import.objcmod --import-interface ACT09.obji --emit-interface ACT09-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface ACT09.objcmod ACT09-roundtrip.obji %s\n// RUN: objc3c --verify-interface ACT09-import.objcmod ACT09.obji %s\nactor class ACT09CompatibilityActor : NSObject\n- (id _Nonnull)nonreentrant;\n@end\n\nint act09_nonreentrant(int value) {\n    return value + 1;\n}\n",
+  "source": "// RUN: objc3c -fobjc-version=3 --emit-module ACT09.objcmod --emit-interface ACT09.obji --emit-interface-mode=text --emit-interface-format=deterministic %s\n// RUN: objc3c --emit-module ACT09-import.objcmod --import-interface ACT09.obji --emit-interface ACT09-roundtrip.obji --emit-interface-mode=text --emit-interface-format=deterministic\n// RUN: objc3c --verify-interface ACT09.objcmod ACT09-roundtrip.obji %s\n// RUN: objc3c --verify-interface ACT09-import.objcmod ACT09.obji %s\nactor class ACT09ContextualActor : NSObject\n- (id _Nonnull)nonreentrant;\n@end\n\nint act09_nonreentrant(int value) {\n    return value + 1;\n}\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [],

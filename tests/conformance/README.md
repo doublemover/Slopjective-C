@@ -42,9 +42,19 @@ Machine-readable indexes:
 - `tests/conformance/semantic/manifest.json`
 - `tests/conformance/lowering_abi/manifest.json`
 - `tests/conformance/module_roundtrip/manifest.json`
+- `tests/conformance/hard_cutover_catalog.json` (behavior boundary and
+  no-compatibility policy for parser, semantic, lowering/ABI, IR/module, and
+  runtime/e2e fixture groups)
 - `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)
+
+## Hard-Cutover Fixture Policy
+
+Conformance metadata is canonical-first. Fixtures must not preserve retired
+old-mode, shim, fallback, or compatibility paths as positive behavior. When a
+fixture documents an unavailable feature configuration, the expected result is a
+strict error with stable diagnostic metadata, not fallback acceptance.
 
 Live validation entrypoints:
 

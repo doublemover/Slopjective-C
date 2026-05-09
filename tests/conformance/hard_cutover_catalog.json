@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "catalog": "objc3-hard-cutover-conformance-boundaries",
+  "policy": {
+    "language_mode": "canonical_objc3_only",
+    "retired_positive_claims": [
+      "old-mode acceptance",
+      "compatibility shim acceptance",
+      "fallback feature implementation acceptance",
+      "extension flag opt-in for deferred v1 features"
+    ],
+    "required_replacement": "canonical rejection or strict-error metadata with stable diagnostic codes"
+  },
+  "boundaries": [
+    {
+      "boundary": "parser",
+      "manifest": "tests/conformance/parser/manifest.json",
+      "owned_fixture_root": "tests/conformance/parser",
+      "behavior_focus": "grammar acceptance, grammar rejection, mode spelling, and source span stability",
+      "hard_cutover_rule": "parser positives use canonical Objective-C 3.0 spellings; retired mode and feature-toggle spellings are diagnostic fixtures"
+    },
+    {
+      "boundary": "semantic",
+      "manifest": "tests/conformance/semantic/manifest.json",
+      "owned_fixture_root": "tests/conformance/semantic",
+      "behavior_focus": "type system, effects, isolation, ownership, and feature gate semantics",
+      "hard_cutover_rule": "semantic positives must prove canonical behavior; deferred or disabled features are strict errors instead of compatibility opt-ins"
+    },
+    {
+      "boundary": "lowering_abi",
+      "manifest": "tests/conformance/lowering_abi/manifest.json",
+      "owned_fixture_root": "tests/conformance/lowering_abi",
+      "behavior_focus": "runtime-facing lowering contracts, ABI metadata, and optimization-invariant behavior",
+      "hard_cutover_rule": "lowering fixtures may assert ABI stability but must not introduce alternate shim ABIs or fallback lowering paths"
+    },
+    {
+      "boundary": "ir_module_roundtrip",
+      "manifest": "tests/conformance/module_roundtrip/manifest.json",
+      "owned_fixture_root": "tests/conformance/module_roundtrip",
+      "behavior_focus": "textual interface emission, module metadata preservation, and verifier drift diagnostics",
+      "hard_cutover_rule": "round-trip fixtures preserve canonical metadata and reject missing or downgraded metadata rather than accepting compatibility drift"
+    },
+    {
+      "boundary": "diagnostics",
+      "manifest": "tests/conformance/diagnostics/manifest.json",
+      "owned_fixture_root": "tests/conformance/diagnostics",
+      "behavior_focus": "portable diagnostic code, severity, span, and fix-it metadata",
+      "hard_cutover_rule": "diagnostic fixtures are the canonical home for retired spelling, removed flag, and unsupported feature rejection expectations"
+    }
+  ]
+}

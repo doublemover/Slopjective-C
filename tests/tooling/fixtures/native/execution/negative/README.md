@@ -5,6 +5,11 @@ Each negative execution fixture is a pair of files sharing a basename:
 - `<name>.objc3`: source fixture compiled by the execution smoke harness.
 - `<name>.meta.json`: deterministic failure expectations for that fixture.
 
+These fixtures are hard-cutover rejection contracts. A legacy, fallback,
+unsupported, or compatibility-looking basename does not imply a preserved
+compatibility path; the sidecar must describe the canonical compile, link, or
+run failure.
+
 ## Sidecar schema (`<name>.meta.json`)
 
 ```json
@@ -93,7 +98,7 @@ Field notes:
 - `return_bool_pointer_declarator_unsupported.objc3` is a compile-stage negative expecting semantic return pointer-declarator diagnostics (`O3S206`).
 - `sel_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
 - `protocol_return_nullability_suffix_unsupported.objc3` is a compile-stage negative expecting semantic return-suffix diagnostics (`O3S206`).
-- `instancetype_return_nullability_suffix_unsupported.objc3` is a legacy-name compile-stage negative that still asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes.
+- `instancetype_return_nullability_suffix_unsupported.objc3` is a retained-name compile-stage negative that asserts semantic return-suffix diagnostics (`O3S206`) for unsupported non-`id`/`Class`/`instancetype` return suffixes; it is not a legacy compatibility fixture.
 
 ## id-alias parser fixture note
 

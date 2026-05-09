@@ -85,7 +85,7 @@
     },
     {
       "name": "issue_84_actor_isolation_roundtrip",
-      "feature": "actor isolation metadata and contextual keyword compatibility across modules",
+      "feature": "actor isolation metadata and contextual keyword identifier preservation across modules",
       "issue": 84,
       "files": [
         "ACT-08.json",

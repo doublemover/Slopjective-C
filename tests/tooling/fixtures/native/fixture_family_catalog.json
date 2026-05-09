@@ -1,0 +1,55 @@
+{
+  "schema_version": "1.0.0",
+  "catalog": "native-fixture-family-boundaries",
+  "policy": {
+    "positive_fixture_rule": "canonical Objective-C 3.0 behavior only",
+    "negative_fixture_rule": "retired old-mode, shim, fallback, compatibility, and removed feature-toggle behavior must be represented as strict rejection metadata",
+    "validation_boundary": "fixture metadata only; runtime acceptance scripts and public command-surface metadata are owned by other lanes"
+  },
+  "families": [
+    {
+      "family": "parser",
+      "paths": [
+        "tests/tooling/fixtures/native/parser_split",
+        "tests/tooling/fixtures/native/recovery/negative"
+      ],
+      "metadata": "parser diagnostics and recovery expectations",
+      "hard_cutover_rule": "non-canonical grammar spellings are rejected; no parser compatibility mode positives"
+    },
+    {
+      "family": "semantic",
+      "paths": [
+        "tests/tooling/fixtures/native/recovery/positive",
+        "tests/tooling/fixtures/native/recovery/negative"
+      ],
+      "metadata": "semantic acceptance/rejection and recovery expectations",
+      "hard_cutover_rule": "semantic positives prove canonical type/effect behavior; unsupported aliases and retired suffixes stay negative"
+    },
+    {
+      "family": "lowering_ir",
+      "paths": [
+        "tests/tooling/fixtures/native/recovery/positive"
+      ],
+      "metadata": "IR expectation files paired with accepted source fixtures",
+      "hard_cutover_rule": "IR expectations use canonical lowering only and must not encode alternate shim paths"
+    },
+    {
+      "family": "runtime_like_e2e",
+      "paths": [
+        "tests/tooling/fixtures/native/execution/positive",
+        "tests/tooling/fixtures/native/execution/negative"
+      ],
+      "metadata": "exit-code files for positives and meta.json failure contracts for negatives",
+      "hard_cutover_rule": "runtime-like positives cannot stand in for runtime acceptance; unresolved dispatch, missing runtime symbols, and strict runtime diagnostics stay negative"
+    },
+    {
+      "family": "library_cli_parity",
+      "paths": [
+        "tests/tooling/fixtures/native/library_cli_parity",
+        "tests/tooling/fixtures/native/parity_baseline"
+      ],
+      "metadata": "fixture data for command/library parity and comparison baselines",
+      "hard_cutover_rule": "baseline comparison is descriptive evidence, not a compatibility guarantee"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "id": "GEN-65-02",
-  "title": "Accept generic methods/functions only under an explicit extension flag",
+  "title": "Reject removed generic-method extension flag in hard-cutover mode",
   "feature": "generic methods/functions deferral gate",
   "bucket": "semantic",
   "profile": "core",
@@ -15,6 +15,37 @@
   "source": "// RUN: objc3c -fobjc-version=3 -fobjc3-feature-generic-methods=on -fsyntax-only %s\n@interface GenericProbe : NSObject\n- <T> (T)identity:(T)value;\n@end\n\n<T> T GenericIdentity(T value) {\n    return value;\n}\n",
   "expect": {
     "parse": "accept",
-    "diagnostics": []
+    "diagnostics": [
+      {
+        "code": "OBJC3-E-REMOVED-EXTENSION-FLAG",
+        "severity": "error",
+        "span": {
+          "start": { "line": 1, "column": 29 },
+          "end": { "line": 1, "column": 61 }
+        },
+        "message": "generic method extension flags are removed in the Objective-C 3.0 hard cutover; generic methods/functions remain rejected",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-E-GENERIC-METHODS-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 3, "column": 3 },
+          "end": { "line": 3, "column": 6 }
+        },
+        "message": "generic method/function declaration syntax is deferred in Objective-C 3.0 v1",
+        "fixits": []
+      },
+      {
+        "code": "OBJC3-E-GENERIC-METHODS-DEFERRED",
+        "severity": "error",
+        "span": {
+          "start": { "line": 6, "column": 1 },
+          "end": { "line": 6, "column": 4 }
+        },
+        "message": "generic method/function declaration syntax is deferred in Objective-C 3.0 v1",
+        "fixits": []
+      }
+    ]
   }
 }
