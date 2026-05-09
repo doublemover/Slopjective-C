@@ -16,6 +16,9 @@ NEGATIVE_EXECUTION = (
 POSITIVE_EXECUTION = (
     ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive"
 )
+RECOVERY_README = (
+    ROOT / "tests" / "tooling" / "fixtures" / "native" / "recovery" / "README.md"
+)
 EXPECTED_OWNER_LABELS = {
     "parser",
     "sema",
@@ -44,6 +47,10 @@ def _read_json(path: Path) -> dict:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _read_text(path: Path) -> str:
+    return path.read_text(encoding="utf-8")
+
+
 def test_native_fixture_catalog_tracks_behavior_first_boundaries() -> None:
     catalog = _read_json(NATIVE_CATALOG)
     assert catalog["catalog"] == "native-fixture-family-boundaries"
@@ -61,6 +68,19 @@ def test_native_fixture_catalog_tracks_behavior_first_boundaries() -> None:
     ]
     assert "O3S221" in unsupported_claims["hard_cutover_rule"]
     assert "fallback execution paths" in unsupported_claims["hard_cutover_rule"]
+
+
+def test_recovery_fixture_readme_documents_phase_boundaries() -> None:
+    readme = _read_text(RECOVERY_README)
+    for required in (
+        "parser-owned positives",
+        "sema-owned positives",
+        "lowering-owned positives",
+        "runtime-owned positives",
+        "executable success belongs in `execution/positive`",
+        "must remain rejection metadata",
+    ):
+        assert required in readme
 
 
 def test_large_fixture_surfaces_are_split_by_behavior_owner() -> None:

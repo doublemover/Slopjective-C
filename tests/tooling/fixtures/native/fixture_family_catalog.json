@@ -118,8 +118,11 @@
         {
           "owner": "parser",
           "selectors": [
+            "block_comment_lexical_basic.objc3",
+            "control_*_statement_bodies.objc3",
             "function_return_annotation_*.objc3",
-            "message_send_keywords.objc3"
+            "message_send_keywords.objc3",
+            "*_literal_*.objc3"
           ],
           "disposition": "canonical syntax and selector-shape acceptance only"
         },
@@ -128,6 +131,10 @@
           "selectors": [
             "typed_*.objc3",
             "*bool*_*.objc3",
+            "*_alias_signature.objc3",
+            "assignment_*.objc3",
+            "compound_assignment_*.objc3",
+            "increment_decrement_*.objc3",
             "return_paths_ok.objc3"
           ],
           "disposition": "canonical type, bool-flow, and return-path semantics only"
@@ -137,7 +144,9 @@
           "selectors": [
             "message_send_*_elision.objc3",
             "message_send_*_short_circuit.objc3",
-            "main_bool_entrypoint.objc3"
+            "main_bool_entrypoint.objc3",
+            "*-ir.expect.txt",
+            "unary_plus_*.objc3"
           ],
           "disposition": "canonical lowering or ABI handoff evidence only; no runtime fallback acceptance"
         },
@@ -145,7 +154,9 @@
           "owner": "runtime",
           "selectors": [
             "message_send_numeric_zero_receiver_non_elided.objc3",
-            "message_send_keyword_bool_control_flow_mix.objc3"
+            "message_send_keyword_bool_control_flow_mix.objc3",
+            "message_send_nonzero_*_fast_path.objc3",
+            "message_send_*_non_fast_path.objc3"
           ],
           "disposition": "runtime-dispatch requirement evidence only when live dispatch remains canonical"
         }
