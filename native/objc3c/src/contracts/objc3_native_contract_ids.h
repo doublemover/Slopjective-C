@@ -9,6 +9,13 @@ enum class Objc3NativeContractId : std::uint8_t {
   kCanonicalLanguageProfileV1,
   kCanonicalFeatureStateCatalogV1,
   kRemovedOptionValidationV1,
+  kRuntimeMetadataSourceOwnershipFreezeV1,
+  kRuntimeMetadataSectionAbiSymbolPolicyFreezeV1,
+  kRuntimeMetadataSectionPublicationV1,
+  kRuntimeMetadataObjectInspectionHarnessV1,
+  kRuntimeMetadataSourceToSectionMatrixV1,
+  kRuntimeMetadataEmissionGateV1,
+  kRuntimeMetadataObjectEmissionCloseoutV1,
 };
 
 inline constexpr std::string_view Objc3NativeContractIdSpelling(
@@ -24,6 +31,20 @@ inline constexpr std::string_view Objc3NativeContractIdSpelling(
       return "objc3c.config.feature_state_catalog.canonical.v1";
     case Objc3NativeContractId::kRemovedOptionValidationV1:
       return "objc3c.config.removed_option_validation.v1";
+    case Objc3NativeContractId::kRuntimeMetadataSourceOwnershipFreezeV1:
+      return "objc3c.runtime.metadata.source.ownership.freeze.v1";
+    case Objc3NativeContractId::kRuntimeMetadataSectionAbiSymbolPolicyFreezeV1:
+      return "objc3c.runtime.metadata.section.abi.symbol.policy.freeze.v1";
+    case Objc3NativeContractId::kRuntimeMetadataSectionPublicationV1:
+      return "objc3c.runtime.metadata.section.publication.v1";
+    case Objc3NativeContractId::kRuntimeMetadataObjectInspectionHarnessV1:
+      return "objc3c.runtime.metadata.object.inspection.harness.v1";
+    case Objc3NativeContractId::kRuntimeMetadataSourceToSectionMatrixV1:
+      return "objc3c.runtime.metadata.source.to.section.matrix.v1";
+    case Objc3NativeContractId::kRuntimeMetadataEmissionGateV1:
+      return "objc3c.runtime.metadata.emission.gate.v1";
+    case Objc3NativeContractId::kRuntimeMetadataObjectEmissionCloseoutV1:
+      return "objc3c.runtime.cross.lane.object.emission.closeout.v1";
   }
   return {};
 }

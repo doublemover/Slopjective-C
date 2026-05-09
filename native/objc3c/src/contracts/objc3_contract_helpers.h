@@ -30,6 +30,15 @@ inline constexpr Objc3NativeContractDescriptor DescribeObjc3NativeContract(
     case Objc3NativeContractId::kRemovedOptionValidationV1:
       return {contract_id, Objc3NativeContractIdSpelling(contract_id),
               "config", "v1", true};
+    case Objc3NativeContractId::kRuntimeMetadataSourceOwnershipFreezeV1:
+    case Objc3NativeContractId::kRuntimeMetadataSectionAbiSymbolPolicyFreezeV1:
+    case Objc3NativeContractId::kRuntimeMetadataSectionPublicationV1:
+    case Objc3NativeContractId::kRuntimeMetadataObjectInspectionHarnessV1:
+    case Objc3NativeContractId::kRuntimeMetadataSourceToSectionMatrixV1:
+    case Objc3NativeContractId::kRuntimeMetadataEmissionGateV1:
+    case Objc3NativeContractId::kRuntimeMetadataObjectEmissionCloseoutV1:
+      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
+              "runtime-metadata", "v1", true};
   }
   return {};
 }
