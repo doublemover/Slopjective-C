@@ -2,29 +2,16 @@
 
 #include "io/json/json_equivalence.h"
 #include "io/json/json_pointer.h"
+#include "io/json/json_schema_array_validation.h"
+#include "io/json/json_schema_errors.h"
+#include "io/json/json_schema_object_validation.h"
+#include "io/json/json_schema_scalar_validation.h"
+#include "io/json/json_schema_subschema.h"
 #include "io/json/json_schema_type.h"
 
-#include <cstddef>
-#include <regex>
 #include <sstream>
-#include <utility>
 
 namespace objc3::io::json {
-namespace {
-
-void AddError(JsonSchemaResult &result, std::string message) {
-  result.errors.push_back(std::move(message));
-  result.ok = false;
-}
-
-bool SubschemaPasses(const JsonValue &schema_root, const JsonValue &schema,
-                     const JsonValue &payload, const std::string &path) {
-  JsonSchemaResult probe;
-  ValidateJsonSchemaNode(schema_root, schema, payload, path, probe);
-  return probe.ok;
-}
-
-}  // namespace
 
 void ValidateJsonSchemaNode(const JsonValue &schema_root,
                             const JsonValue &schema,
@@ -37,7 +24,7 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
   if (const auto ref = schema.GetString("$ref")) {
     const JsonValue *resolved = ResolveLocalJsonPointerRef(schema_root, *ref);
     if (resolved == nullptr) {
-      AddError(result, path + " unresolved schema reference " + *ref);
+      AddJsonSchemaError(result, path + " unresolved schema reference " + *ref);
       return;
     }
     ValidateJsonSchemaNode(schema_root, *resolved, payload, path, result);
@@ -53,13 +40,13 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
   if (any_of != nullptr && any_of->IsArray()) {
     bool matched = false;
     for (const JsonValue &candidate : any_of->AsArray()) {
-      if (SubschemaPasses(schema_root, candidate, payload, path)) {
+      if (JsonSubschemaPasses(schema_root, candidate, payload, path)) {
         matched = true;
         break;
       }
     }
     if (!matched) {
-      AddError(result, path + " did not match any allowed schema");
+      AddJsonSchemaError(result, path + " did not match any allowed schema");
     }
   }
   if (const JsonValue *schema_type = schema.Find("type");
@@ -69,13 +56,13 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
       out << path << " expected "
           << DescribeExpectedJsonSchemaType(*schema_type) << " but found "
           << JsonSchemaValueTypeName(payload);
-      AddError(result, out.str());
+      AddJsonSchemaError(result, out.str());
       return;
     }
   }
   const JsonValue *const_value = schema.Find("const");
   if (const_value != nullptr && !JsonEquals(*const_value, payload)) {
-    AddError(result, path + " did not match const value");
+    AddJsonSchemaError(result, path + " did not match const value");
   }
   const JsonValue *enum_values = schema.Find("enum");
   if (enum_values != nullptr && enum_values->IsArray()) {
@@ -87,133 +74,14 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
       }
     }
     if (!matched) {
-      AddError(result, path + " did not match enum values");
-    }
-  }
-  if (const JsonValue *required = schema.Find("required");
-      required != nullptr && required->IsArray() && payload.IsObject()) {
-    for (const JsonValue &entry : required->AsArray()) {
-      if (!entry.IsString()) {
-        continue;
-      }
-      if (payload.Find(entry.AsString()) == nullptr) {
-        AddError(result,
-                 path + " missing required property " + entry.AsString());
-      }
+      AddJsonSchemaError(result, path + " did not match enum values");
     }
   }
   const JsonValue *properties = schema.Find("properties");
-  if (properties != nullptr && properties->IsObject() && payload.IsObject()) {
-    for (const auto &[key, property_schema] : properties->AsObject()) {
-      const JsonValue *property = payload.Find(key);
-      if (property != nullptr) {
-        ValidateJsonSchemaNode(schema_root, property_schema, *property,
-                               path + "." + key, result);
-      }
-    }
-  }
-  const JsonValue *additional_properties = schema.Find("additionalProperties");
-  if (additional_properties != nullptr && payload.IsObject()) {
-    for (const auto &[key, value] : payload.AsObject()) {
-      const bool declared_property =
-          properties != nullptr && properties->IsObject() &&
-          properties->Find(key) != nullptr;
-      if (declared_property) {
-        continue;
-      }
-      if (additional_properties->IsBool() && !additional_properties->AsBool()) {
-        AddError(result, path + " unexpected property " + key);
-        continue;
-      }
-      if (additional_properties->IsObject()) {
-        ValidateJsonSchemaNode(schema_root, *additional_properties, value,
-                               path + "." + key, result);
-      }
-    }
-  }
-  const JsonValue *items = schema.Find("items");
-  if (items != nullptr && payload.IsArray()) {
-    const auto &array = payload.AsArray();
-    for (std::size_t i = 0; i < array.size(); ++i) {
-      ValidateJsonSchemaNode(schema_root, *items, array[i],
-                             path + "[" + std::to_string(i) + "]", result);
-    }
-  }
-  const JsonValue *contains = schema.Find("contains");
-  if (contains != nullptr && payload.IsArray()) {
-    bool matched = false;
-    for (const JsonValue &item : payload.AsArray()) {
-      if (SubschemaPasses(schema_root, *contains, item, path + "[]")) {
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      AddError(result, path + " did not contain a matching item");
-    }
-  }
-  const JsonValue *minimum = schema.Find("minimum");
-  if (minimum != nullptr && minimum->IsNumber() && payload.IsNumber() &&
-      payload.AsNumber() < minimum->AsNumber()) {
-    AddError(result, path + " below minimum");
-  }
-  const JsonValue *maximum = schema.Find("maximum");
-  if (maximum != nullptr && maximum->IsNumber() && payload.IsNumber() &&
-      payload.AsNumber() > maximum->AsNumber()) {
-    AddError(result, path + " above maximum");
-  }
-  const JsonValue *min_items = schema.Find("minItems");
-  if (min_items != nullptr && min_items->IsNumber() && payload.IsArray() &&
-      payload.AsArray().size() <
-          static_cast<std::size_t>(min_items->AsNumber())) {
-    AddError(result, path + " has too few items");
-  }
-  const JsonValue *max_items = schema.Find("maxItems");
-  if (max_items != nullptr && max_items->IsNumber() && payload.IsArray() &&
-      payload.AsArray().size() >
-          static_cast<std::size_t>(max_items->AsNumber())) {
-    AddError(result, path + " has too many items");
-  }
-  const JsonValue *unique_items = schema.Find("uniqueItems");
-  if (unique_items != nullptr && unique_items->IsBool() &&
-      unique_items->AsBool() && payload.IsArray()) {
-    const JsonValue::Array &array = payload.AsArray();
-    bool duplicate = false;
-    for (std::size_t i = 0; i < array.size(); ++i) {
-      for (std::size_t j = i + 1; j < array.size(); ++j) {
-        if (JsonEquals(array[i], array[j])) {
-          duplicate = true;
-          break;
-        }
-      }
-      if (duplicate) {
-        AddError(result, path + " contains duplicate items");
-        break;
-      }
-    }
-  }
-  const JsonValue *min_length = schema.Find("minLength");
-  if (min_length != nullptr && min_length->IsNumber() && payload.IsString() &&
-      payload.AsString().size() <
-          static_cast<std::size_t>(min_length->AsNumber())) {
-    AddError(result, path + " is shorter than minLength");
-  }
-  const JsonValue *max_length = schema.Find("maxLength");
-  if (max_length != nullptr && max_length->IsNumber() && payload.IsString() &&
-      payload.AsString().size() >
-          static_cast<std::size_t>(max_length->AsNumber())) {
-    AddError(result, path + " is longer than maxLength");
-  }
-  if (const auto pattern = schema.GetString("pattern");
-      pattern.has_value() && payload.IsString()) {
-    try {
-      if (!std::regex_search(payload.AsString(), std::regex(*pattern))) {
-        AddError(result, path + " did not match pattern");
-      }
-    } catch (const std::regex_error &) {
-      AddError(result, path + " contains an invalid schema pattern");
-    }
-  }
+  ValidateJsonSchemaObjectFields(schema_root, schema, payload, properties, path,
+                                 result);
+  ValidateJsonSchemaArrayFields(schema_root, schema, payload, path, result);
+  ValidateJsonSchemaScalarFields(schema, payload, path, result);
 }
 
 }  // namespace objc3::io::json
