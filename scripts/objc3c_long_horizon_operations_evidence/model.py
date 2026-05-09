@@ -10,8 +10,11 @@ from objc3c_tooling.paths import repo_rel
 from objc3c_long_horizon_operations_evidence.evidence_loading import LongHorizonEvidenceInputs
 from objc3c_long_horizon_operations_evidence.paths import (
     ARTIFACT_CONTRACT_ID,
+    BLOCKER_METADATA,
     SUMMARY_CONTRACT_ID,
     LongHorizonEvidencePaths,
+    OWNER_CONTRACTS,
+    OWNER_SPLIT,
 )
 
 
@@ -71,7 +74,11 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
         "contract_id": ARTIFACT_CONTRACT_ID,
         "schema_version": 1,
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        "owner_split": OWNER_SPLIT,
+        "owner_contracts": OWNER_CONTRACTS,
         "generated_from": {
+            "owner_split": OWNER_SPLIT,
+            "owner_contracts": OWNER_CONTRACTS,
             "contracts": [
                 "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
                 "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
@@ -138,6 +145,7 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
                 "background auto-update behavior",
                 "manual compatibility waivers without generated evidence",
             ],
+            "blocker_metadata": BLOCKER_METADATA,
             "release_blockers": failures,
         },
     }
@@ -153,7 +161,11 @@ def build_summary(
         "contract_id": SUMMARY_CONTRACT_ID,
         "status": "PASS" if not failures else "FAIL",
         "runner_path": "scripts/build_objc3c_long_horizon_operations_evidence.py",
+        "owner_split": OWNER_SPLIT,
+        "owner_contracts": OWNER_CONTRACTS,
         "artifact_path": rel(paths, paths.artifact_path),
+        "owner_contract_count": len(OWNER_CONTRACTS),
+        "blocker_metadata_count": len(BLOCKER_METADATA),
         "step_count": len(inputs.steps),
         "steps": inputs.steps,
         "report_count": len(paths.required_reports()),

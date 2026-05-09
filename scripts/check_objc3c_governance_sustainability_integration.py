@@ -30,6 +30,14 @@ OWNER_STEP_LABELS = [
     "budget-enforcement",
     "anti-regression",
 ]
+OWNER_CONTRACT_LABELS = [
+    "waiver_owner",
+    "budget_owner",
+    "stewardship_owner",
+    "extension_review_owner",
+    "sustainable_progress_owner",
+    "publication_owner",
+]
 
 STEPS = [
     (
@@ -125,6 +133,7 @@ def main() -> int:
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
         "package_bridge": "objc3c",
         "owner_step_labels": OWNER_STEP_LABELS,
+        "owner_contract_labels": OWNER_CONTRACT_LABELS,
         "step_count": len(step_results),
         "steps": step_results,
         "failures": failures,

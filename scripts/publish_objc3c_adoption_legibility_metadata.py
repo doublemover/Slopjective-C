@@ -68,6 +68,7 @@ def main() -> int:
     comparison = evidence.get("comparison_matrix", {}) if isinstance(evidence.get("comparison_matrix"), dict) else {}
     onboarding = evidence.get("onboarding", {}) if isinstance(evidence.get("onboarding"), dict) else {}
     candidate_claims = evidence.get("candidate_claims", {}) if isinstance(evidence.get("candidate_claims"), dict) else {}
+    owner_contracts = evidence.get("owner_contracts", {}) if isinstance(evidence.get("owner_contracts"), dict) else {}
 
     publication = dict(evidence)
     publication["published_at_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
@@ -77,6 +78,8 @@ def main() -> int:
         "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
         "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
         "operator_runbook": "docs/runbooks/objc3c_adoption_legibility.md",
+        "owner_contracts": owner_contracts,
+        "blocker_metadata": claim_audit.get("blocker_metadata", {}),
         "entrypoints": evaluator_path.get("entrypoints", []),
         "required_actions": evaluator_path.get("required_actions", []),
         "boundary_inventory": boundary_inventory,
@@ -109,6 +112,8 @@ def main() -> int:
         "boundary_surface_count": len(boundary_inventory.get("primary_evaluator_surfaces", [])),
         "migration_phase_count": len(publication["evaluator_publication"]["migration_phases"]),
         "comparison_axis_count": len(publication["evaluator_publication"]["comparison_axes"]),
+        "owner_contract_count": len(owner_contracts),
+        "blocker_metadata_count": len(claim_audit.get("blocker_metadata", {})) if isinstance(claim_audit.get("blocker_metadata"), dict) else 0,
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

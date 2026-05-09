@@ -5,6 +5,12 @@
   "author_guide": "docs/governance/extension_author_guide_v1.md",
   "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
   "owner_section": "extension_review",
+  "owner_contract": {
+    "owner": "extension_review_owner",
+    "artifact_section": "extension_review",
+    "publication_projection": "extension_review_publication.extension_review",
+    "blocker_projection": "claim_audit.blocker_metadata.extension_review"
+  },
   "review_classes": [
     {
       "review_class": "language-extension",

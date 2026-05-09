@@ -6,6 +6,7 @@
   "evidence_schema": "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
   "owner_sections": [
     "owner_split",
+    "owner_contracts",
     "metadata_publication",
     "budget",
     "extension_review",
@@ -13,6 +14,44 @@
     "public_workflow",
     "claim_audit"
   ],
+  "owner_contracts": {
+    "waiver_owner": {
+      "source_contract": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
+      "artifact_section": "budget.waiver_registry",
+      "publication_projection": "stewardship_publication.budget.waiver_registry",
+      "blocker_projection": "claim_audit.blocker_metadata.waiver_registry"
+    },
+    "budget_owner": {
+      "source_contract": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
+      "artifact_section": "budget.inventory_summary",
+      "publication_projection": "stewardship_publication.budget.inventory_summary",
+      "blocker_projection": "claim_audit.blocker_metadata.budget_inventory"
+    },
+    "stewardship_owner": {
+      "source_contract": "tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json",
+      "artifact_section": "stewardship",
+      "publication_projection": "stewardship_publication.stewardship",
+      "blocker_projection": "claim_audit.blocker_metadata.stewardship"
+    },
+    "extension_review_owner": {
+      "source_contract": "tests/tooling/fixtures/governance_sustainability/extension_review_policy.json",
+      "artifact_section": "extension_review",
+      "publication_projection": "extension_review_publication.extension_review",
+      "blocker_projection": "claim_audit.blocker_metadata.extension_review"
+    },
+    "sustainable_progress_owner": {
+      "source_contract": "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
+      "artifact_section": "stewardship.policy_summary",
+      "publication_projection": "stewardship_publication.stewardship.policy_summary",
+      "blocker_projection": "claim_audit.blocker_metadata.sustainable_progress_policy"
+    },
+    "publication_owner": {
+      "source_contract": "scripts/publish_objc3c_governance_sustainability_metadata.py",
+      "artifact_section": "metadata_publication",
+      "publication_projection": "stewardship_publication.metadata_publication",
+      "blocker_projection": "claim_audit.blocker_metadata.metadata_publication"
+    }
+  },
   "evidence_artifact": "tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json",
   "publication_artifacts": [
     "tmp/artifacts/governance-sustainability/stewardship-publication.json",
@@ -70,6 +109,7 @@
     "tmp reports and artifacts are replayable outputs only",
     "GitHub milestone numbers must come from the GitHub API at publish time",
     "public claims must point to generated evidence artifacts and stay narrower than passing evidence",
+    "waiver, budget, stewardship, extension-review, sustainable-progress, and publication blockers must project through claim_audit.blocker_metadata",
     "publication keeps validate-governance-sustainability and publish-governance-sustainability as the only public governance action names"
   ],
   "fail_closed_conditions": [

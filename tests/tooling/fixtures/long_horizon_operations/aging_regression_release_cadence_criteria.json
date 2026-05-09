@@ -1,6 +1,12 @@
 {
   "contract_id": "objc3c.long_horizon_operations.aging_regression_release_cadence_criteria.v1",
   "schema_version": 1,
+  "owner_contract": {
+    "owner": "cadence_owner",
+    "artifact_section": "aging_regression",
+    "publication_projection": "operator_publication.support_window_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.aging_release_cadence"
+  },
   "package_bridge": "objc3c",
   "depends_on": [
     "tests/tooling/fixtures/performance_governance/budget_model.json",
@@ -69,5 +75,6 @@
     "missing canonical application evidence",
     "missing rollback guidance",
     "manual or non-replayable aging evidence"
-  ]
+  ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata.aging_release_cadence"
 }

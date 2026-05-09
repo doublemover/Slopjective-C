@@ -59,6 +59,7 @@ def main() -> int:
     if release_blockers:
         raise RuntimeError(f"cannot publish long-horizon metadata with release blockers: {release_blockers}")
 
+    owner_contracts = evidence.get("owner_contracts", {}) if isinstance(evidence.get("owner_contracts"), dict) else {}
     publication = dict(evidence)
     publication["published_at_utc"] = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     publication["operator_publication"] = {
@@ -67,6 +68,8 @@ def main() -> int:
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
         "package_bridge": PACKAGE_BRIDGE,
         "operator_runbook": "docs/runbooks/objc3c_long_horizon_operations.md",
+        "owner_contracts": owner_contracts,
+        "blocker_metadata": claim_audit.get("blocker_metadata", {}),
         "support_window_summary": evidence.get("support_window", {}),
         "rollback_channels": evidence.get("rollback", {}).get("channels", []) if isinstance(evidence.get("rollback"), dict) else [],
         "demoted_or_out_of_scope_claims": claim_audit.get("demoted_or_out_of_scope_claims", []),
@@ -86,6 +89,8 @@ def main() -> int:
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
         "package_bridge": PACKAGE_BRIDGE,
         "rollback_channel_count": len(publication["operator_publication"]["rollback_channels"]),
+        "owner_contract_count": len(owner_contracts),
+        "blocker_metadata_count": len(claim_audit.get("blocker_metadata", {})) if isinstance(claim_audit.get("blocker_metadata"), dict) else 0,
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

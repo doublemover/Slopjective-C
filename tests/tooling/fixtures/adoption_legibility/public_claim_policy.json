@@ -2,6 +2,12 @@
   "contract_id": "objc3c.adoption_legibility.public_claim_policy.v1",
   "schema_version": 1,
   "owner_section": "candidate_claims",
+  "owner_contract": {
+    "owner": "public_claim_owner",
+    "artifact_section": "candidate_claims",
+    "publication_projection": "evaluator_publication.candidate_claim_classes",
+    "blocker_projection": "claim_audit.blocker_metadata.public_claim_policy"
+  },
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
@@ -98,6 +104,7 @@
     "metadata_projection": "evaluator_publication.candidate_claim_classes",
     "forbidden_claim_projection": "evaluator_publication.forbidden_claims",
     "release_blocker_field": "claim_audit.release_blockers",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.public_claim_policy",
     "requires_public_actions": [
       "validate-adoption-legibility",
       "publish-adoption-legibility"

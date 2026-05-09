@@ -1,6 +1,12 @@
 {
   "contract_id": "objc3c.long_horizon_operations.migration_rollback_support_window_semantics.v1",
   "schema_version": 1,
+  "owner_contract": {
+    "owner": "rollback_owner",
+    "artifact_section": "rollback",
+    "publication_projection": "operator_publication.rollback_channels",
+    "blocker_projection": "claim_audit.blocker_metadata.rollback"
+  },
   "depends_on": [
     "tests/tooling/fixtures/release_operations/versioning_model.json",
     "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
@@ -64,5 +70,6 @@
     "release channel catalog disagrees with update manifest default channel",
     "cross-major target advertised without generated migration replay evidence",
     "rollback transport not named for an advertised channel"
-  ]
+  ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata.rollback"
 }

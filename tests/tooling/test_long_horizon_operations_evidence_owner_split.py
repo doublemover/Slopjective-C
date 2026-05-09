@@ -13,7 +13,9 @@ from objc3c_long_horizon_operations_evidence.evidence_loading import LongHorizon
 from objc3c_long_horizon_operations_evidence.model import build_long_horizon_model
 from objc3c_long_horizon_operations_evidence.paths import (
     ARTIFACT_CONTRACT_ID,
+    BLOCKER_METADATA,
     LongHorizonEvidencePaths,
+    OWNER_CONTRACTS,
     SUMMARY_CONTRACT_ID,
 )
 from objc3c_long_horizon_operations_evidence.rendering import render_console_lines
@@ -32,6 +34,24 @@ OWNER_MODULES = (
 def test_long_horizon_owner_modules_are_explicit() -> None:
     for module_name in OWNER_MODULES:
         assert importlib.import_module(module_name)
+
+
+def test_long_horizon_owner_contracts_are_source_owned() -> None:
+    assert set(OWNER_CONTRACTS) == {
+        "deprecation_owner",
+        "rollback_owner",
+        "cadence_owner",
+        "publication_owner",
+    }
+    assert set(BLOCKER_METADATA) == {
+        "deprecation_support_policy",
+        "rollback",
+        "aging_release_cadence",
+        "metadata_publication",
+    }
+    for contract in OWNER_CONTRACTS.values():
+        assert contract["source_contract"].startswith(("tests/tooling/fixtures/long_horizon_operations/", "scripts/"))
+        assert contract["blocker_projection"].startswith("claim_audit.blocker_metadata.")
 
 
 def test_long_horizon_entrypoint_delegates_to_owner_modules() -> None:
@@ -70,11 +90,15 @@ def test_long_horizon_model_preserves_public_contract(tmp_path: Path) -> None:
 
     assert model.artifact["contract_id"] == ARTIFACT_CONTRACT_ID
     assert model.summary["contract_id"] == SUMMARY_CONTRACT_ID
+    assert model.artifact["owner_contracts"] == OWNER_CONTRACTS
+    assert model.artifact["claim_audit"]["blocker_metadata"] == BLOCKER_METADATA
     assert model.artifact["support_window"]["current_version"] == "3.0.0"
     assert model.artifact["migration_replay"]["target_version"] == "3.0.1-rc.1"
     assert model.artifact["rollback"]["channels"] == ["stable"]
     assert model.artifact["aging_regression"]["freshness_budget"]["publication_freshness_metric_count"] == 4
     assert model.summary["runner_path"] == "scripts/build_objc3c_long_horizon_operations_evidence.py"
+    assert model.summary["owner_contract_count"] == 4
+    assert model.summary["blocker_metadata_count"] == 4
     assert model.summary["rollback_channel_count"] == 1
 
 

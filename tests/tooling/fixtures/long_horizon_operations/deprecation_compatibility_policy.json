@@ -1,6 +1,12 @@
 {
   "contract_id": "objc3c.long_horizon_operations.deprecation_compatibility_policy.v1",
   "schema_version": 1,
+  "owner_contract": {
+    "owner": "deprecation_owner",
+    "artifact_section": "claim_audit",
+    "publication_projection": "operator_publication.support_window_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.deprecation_support_policy"
+  },
   "depends_on": [
     "tests/tooling/fixtures/release_operations/versioning_model.json",
     "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
@@ -58,5 +64,6 @@
     "public claim includes forbidden compatibility phrase",
     "hard-deprecated surface is still advertised as supported",
     "manual waiver used without generated migration and rollback evidence"
-  ]
+  ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata.deprecation_support_policy"
 }

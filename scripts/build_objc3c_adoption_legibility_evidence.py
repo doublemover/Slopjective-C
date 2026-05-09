@@ -45,6 +45,54 @@ OWNER_SPLIT = {
     "public_claim_policy": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "metadata_publication": "scripts/publish_objc3c_adoption_legibility_metadata.py",
 }
+OWNER_CONTRACTS = {
+    "public_claim_owner": {
+        "source_contract": OWNER_SPLIT["public_claim_policy"],
+        "artifact_section": "candidate_claims",
+        "publication_projection": "evaluator_publication.candidate_claim_classes",
+        "blocker_projection": "claim_audit.blocker_metadata.public_claim_policy",
+    },
+    "adoption_comparison_owner": {
+        "source_contract": OWNER_SPLIT["capability_comparison"],
+        "artifact_section": "comparison_matrix",
+        "publication_projection": "evaluator_publication.comparison_axes",
+        "blocker_projection": "claim_audit.blocker_metadata.capability_comparison",
+    },
+    "migration_playbook_owner": {
+        "source_contract": OWNER_SPLIT["migration_playbook"],
+        "artifact_section": "migration_playbook",
+        "publication_projection": "evaluator_publication.migration_phases",
+        "blocker_projection": "claim_audit.blocker_metadata.migration_playbook",
+    },
+    "publication_owner": {
+        "source_contract": OWNER_SPLIT["metadata_publication"],
+        "artifact_section": "public_workflow",
+        "publication_projection": "evaluator_publication",
+        "blocker_projection": "claim_audit.blocker_metadata.metadata_publication",
+    },
+}
+BLOCKER_METADATA = {
+    "public_claim_policy": {
+        "owner": "public_claim_owner",
+        "blocked_when": "candidate claim omits support class, evidence paths, or forbidden-claim demotion",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "capability_comparison": {
+        "owner": "adoption_comparison_owner",
+        "blocked_when": "comparison wording widens beyond conformance, performance, package, support, and checked-in example evidence",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "migration_playbook": {
+        "owner": "migration_playbook_owner",
+        "blocked_when": "same-major adoption playbook lacks replay fields, package bridge, rollback target, or public workflow action",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "metadata_publication": {
+        "owner": "publication_owner",
+        "blocked_when": "publication widens claims beyond generated adoption evidence",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+}
 
 STEPS = [
     ("boundary-inventory", python_script_command("scripts/build_adoption_legibility_boundary_inventory_summary.py")),
@@ -156,6 +204,7 @@ def main() -> int:
         "generated_at_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "generated_from": {
             "owner_split": OWNER_SPLIT,
+            "owner_contracts": OWNER_CONTRACTS,
             "contracts": [
                 repo_rel(BOUNDARY_CONTRACT),
                 repo_rel(PUBLIC_CLAIM_POLICY),
@@ -165,6 +214,7 @@ def main() -> int:
             ],
             "commands": [" ".join(command) for _, command in STEPS],
         },
+        "owner_contracts": OWNER_CONTRACTS,
         "public_workflow": {
             "status": "PASS" if not release_blockers else "FAIL",
             "public_actions": PUBLIC_ACTIONS,
@@ -240,6 +290,7 @@ def main() -> int:
                 "hosted registry or IDE marketplace parity",
                 "private maintainer context as an evaluator prerequisite",
             ],
+            "blocker_metadata": BLOCKER_METADATA,
             "release_blockers": release_blockers,
         },
     }
@@ -265,8 +316,11 @@ def main() -> int:
         "status": "PASS" if not release_blockers else "FAIL",
         "runner_path": "scripts/build_objc3c_adoption_legibility_evidence.py",
         "owner_split": OWNER_SPLIT,
+        "owner_contracts": OWNER_CONTRACTS,
         "artifact_path": repo_rel(ARTIFACT_PATH),
         "publication_path": repo_rel(PUBLICATION_PATH),
+        "owner_contract_count": len(OWNER_CONTRACTS),
+        "blocker_metadata_count": len(BLOCKER_METADATA),
         "step_count": len(steps),
         "steps": steps,
         "report_count": len(required_reports),

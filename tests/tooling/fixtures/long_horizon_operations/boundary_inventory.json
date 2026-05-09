@@ -3,6 +3,14 @@
   "schema_version": 1,
   "milestone": "M328",
   "runbook": "docs/runbooks/objc3c_long_horizon_operations.md",
+  "owner_split": {
+    "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
+    "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
+    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
+    "migration_rollback_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
+    "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py"
+  },
   "working_scope": [
     "compatibility maintenance policy over release, package, and canonical application workflows",
     "migration replay and rollback evidence generated from checked-in surfaces",
@@ -63,6 +71,7 @@
     "tmp/reports/long-horizon-operations/",
     "tmp/artifacts/long-horizon-operations/"
   ],
+  "blocker_metadata_projection": "claim_audit.blocker_metadata",
   "successor_surfaces": [
     "M331 production-readiness support and operations evidence",
     "M332 final full-envelope stability and claimability closeout"

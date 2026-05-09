@@ -4,6 +4,7 @@
   "schema": "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
   "runbook": "docs/runbooks/objc3c_adoption_legibility.md",
   "owner_sections": [
+    "owner_contracts",
     "public_workflow",
     "boundary_inventory",
     "artifact_contract",
@@ -14,6 +15,32 @@
     "candidate_claims",
     "claim_audit"
   ],
+  "owner_contracts": {
+    "public_claim_owner": {
+      "source_contract": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+      "artifact_section": "candidate_claims",
+      "publication_projection": "evaluator_publication.candidate_claim_classes",
+      "blocker_projection": "claim_audit.blocker_metadata.public_claim_policy"
+    },
+    "adoption_comparison_owner": {
+      "source_contract": "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
+      "artifact_section": "comparison_matrix",
+      "publication_projection": "evaluator_publication.comparison_axes",
+      "blocker_projection": "claim_audit.blocker_metadata.capability_comparison"
+    },
+    "migration_playbook_owner": {
+      "source_contract": "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+      "artifact_section": "migration_playbook",
+      "publication_projection": "evaluator_publication.migration_phases",
+      "blocker_projection": "claim_audit.blocker_metadata.migration_playbook"
+    },
+    "publication_owner": {
+      "source_contract": "scripts/publish_objc3c_adoption_legibility_metadata.py",
+      "artifact_section": "public_workflow",
+      "publication_projection": "evaluator_publication",
+      "blocker_projection": "claim_audit.blocker_metadata.metadata_publication"
+    }
+  },
   "source_contracts": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
@@ -45,7 +72,8 @@
     "All adoption machine-owned artifacts must be regenerated from checked-in source contracts.",
     "tmp/ artifacts and reports are replay outputs, never canonical source authority.",
     "Evaluator, migration, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
-    "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims."
+    "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims.",
+    "Public-claim, comparison, playbook, and publication blockers must project through claim_audit.blocker_metadata."
   ],
   "metadata_publication_rules": [
     "Publication consumes the generated evidence artifact and does not widen public claims.",

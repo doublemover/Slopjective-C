@@ -4,6 +4,12 @@
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "summary_implementation_anchor": "scripts/build_governance_budget_inventory_summary.py",
   "owner_section": "budget",
+  "owner_contract": {
+    "owner": "budget_owner",
+    "artifact_section": "budget.inventory_summary",
+    "publication_projection": "stewardship_publication.budget.inventory_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.budget_inventory"
+  },
   "measured_budget_surfaces": [
     {
       "surface_id": "package-bridge-budget",
@@ -88,7 +94,8 @@
     "evidence_section": "budget",
     "claim_audit_projection": "claim_audit.measured_budget_state",
     "anti_regression_projection": "budget.anti_regression_summary",
-    "waiver_projection": "budget.waiver_registry"
+    "waiver_projection": "budget.waiver_registry",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.budget_inventory"
   },
   "governance_entry_surfaces": [
     "scripts/ci/check_task_hygiene.py",

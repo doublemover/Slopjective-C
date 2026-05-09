@@ -26,6 +26,7 @@ EXPECTED_PUBLIC_ACTIONS = [
     "publish-adoption-legibility",
 ]
 EXPECTED_OWNER_SECTIONS = [
+    "owner_contracts",
     "public_workflow",
     "boundary_inventory",
     "artifact_contract",
@@ -87,7 +88,19 @@ def main() -> int:
     comparison = artifact.get("comparison_matrix", {}) if isinstance(artifact.get("comparison_matrix"), dict) else {}
     onboarding = artifact.get("onboarding", {}) if isinstance(artifact.get("onboarding"), dict) else {}
     claim_audit = artifact.get("claim_audit", {}) if isinstance(artifact.get("claim_audit"), dict) else {}
+    owner_contracts = artifact.get("owner_contracts", {}) if isinstance(artifact.get("owner_contracts"), dict) else {}
+    blocker_metadata = claim_audit.get("blocker_metadata", {}) if isinstance(claim_audit.get("blocker_metadata"), dict) else {}
 
+    expect(
+        {"public_claim_owner", "adoption_comparison_owner", "migration_playbook_owner", "publication_owner"}.issubset(owner_contracts),
+        "adoption owner contracts are incomplete",
+        failures,
+    )
+    expect(
+        {"public_claim_policy", "capability_comparison", "migration_playbook", "metadata_publication"}.issubset(blocker_metadata),
+        "adoption blocker metadata is incomplete",
+        failures,
+    )
     expect(public_workflow.get("public_actions") == EXPECTED_PUBLIC_ACTIONS, "adoption public action names drifted", failures)
     expect(public_workflow.get("package_bridge") == "objc3c", "adoption public workflow package bridge drifted", failures)
     expect(len(boundary_inventory.get("primary_evaluator_surfaces", [])) >= 8, "boundary inventory evaluator surface is too narrow", failures)
@@ -117,6 +130,8 @@ def main() -> int:
         "support_state": claim_audit.get("support_state"),
         "public_actions": public_workflow.get("public_actions", []),
         "owner_section_count": len(EXPECTED_OWNER_SECTIONS),
+        "owner_contract_count": len(owner_contracts),
+        "blocker_metadata_count": len(blocker_metadata),
         "boundary_surface_count": len(boundary_inventory.get("primary_evaluator_surfaces", [])),
         "artifact_generated_artifact_count": len(artifact_contract.get("generated_artifacts", [])),
         "evaluator_entrypoint_count": len(evaluator_path.get("entrypoints", [])),

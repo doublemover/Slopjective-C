@@ -6,6 +6,12 @@
   "waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
   "summary_implementation_anchor": "scripts/build_governance_policy_summary.py",
   "owner_section": "stewardship.policy_summary",
+  "owner_contract": {
+    "owner": "sustainable_progress_owner",
+    "artifact_section": "stewardship.policy_summary",
+    "publication_projection": "stewardship_publication.stewardship.policy_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.sustainable_progress_policy"
+  },
   "governed_budget_surfaces": [
     {
       "surface_id": "package-script-budget",
@@ -75,6 +81,7 @@
   "waiver_semantics": {
     "evidence_section": "budget.waiver_registry",
     "release_blocker_field": "claim_audit.release_blockers",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.sustainable_progress_policy",
     "active_waiver_budget": "max_active_waivers_per_surface"
   },
   "claim_statuses": [

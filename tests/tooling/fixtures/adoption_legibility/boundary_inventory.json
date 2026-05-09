@@ -11,6 +11,12 @@
     "public_claim_policy": "candidate claim classes and forbidden public wording",
     "metadata_publication": "evaluator-facing metadata projection"
   },
+  "owner_contracts": {
+    "public_claim_owner": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
+    "adoption_comparison_owner": "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
+    "migration_playbook_owner": "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+    "publication_owner": "scripts/publish_objc3c_adoption_legibility_metadata.py"
+  },
   "working_scope": [
     "external evaluator entrypoints across README, site, tutorials, showcase, and public command surfaces",
     "migration guidance from Objective-C 2 and adjacent Swift/C++ ecosystems grounded in checked-in support evidence",

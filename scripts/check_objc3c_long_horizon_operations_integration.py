@@ -51,10 +51,22 @@ def main() -> int:
     expect(artifact.get("schema_version") == 1, "evidence artifact schema_version drifted", failures)
     expect(evidence_summary.get("status") == "PASS", "evidence summary did not report PASS", failures)
 
-    for section in ("support_window", "migration_replay", "rollback", "soak", "aging_regression", "claim_audit"):
+    for section in ("owner_contracts", "support_window", "migration_replay", "rollback", "soak", "aging_regression", "claim_audit"):
         expect(isinstance(artifact.get(section), dict), f"evidence artifact missing section {section}", failures)
 
     claim_audit = artifact.get("claim_audit", {}) if isinstance(artifact.get("claim_audit"), dict) else {}
+    owner_contracts = artifact.get("owner_contracts", {}) if isinstance(artifact.get("owner_contracts"), dict) else {}
+    blocker_metadata = claim_audit.get("blocker_metadata", {}) if isinstance(claim_audit.get("blocker_metadata"), dict) else {}
+    expect(
+        {"deprecation_owner", "rollback_owner", "cadence_owner", "publication_owner"}.issubset(owner_contracts),
+        "long-horizon owner contracts are incomplete",
+        failures,
+    )
+    expect(
+        {"deprecation_support_policy", "rollback", "aging_release_cadence", "metadata_publication"}.issubset(blocker_metadata),
+        "long-horizon blocker metadata is incomplete",
+        failures,
+    )
     expect("same-major" in str(claim_audit.get("support_state", "")), "support_state is not same-major scoped", failures)
     expect(claim_audit.get("release_blockers") == [], "claim audit reported release blockers", failures)
     expect(len(artifact.get("migration_replay", {}).get("evidence_paths", [])) >= 4, "migration replay evidence is too narrow", failures)
@@ -70,6 +82,8 @@ def main() -> int:
         "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
         "evidence_summary": repo_rel(EVIDENCE_SUMMARY),
         "support_state": claim_audit.get("support_state"),
+        "owner_contract_count": len(owner_contracts),
+        "blocker_metadata_count": len(blocker_metadata),
         "migration_evidence_path_count": len(artifact.get("migration_replay", {}).get("evidence_paths", [])) if isinstance(artifact.get("migration_replay"), dict) else 0,
         "soak_evidence_path_count": len(artifact.get("soak", {}).get("evidence_paths", [])) if isinstance(artifact.get("soak"), dict) else 0,
         "rollback_channel_count": len(artifact.get("rollback", {}).get("channels", [])) if isinstance(artifact.get("rollback"), dict) else 0,

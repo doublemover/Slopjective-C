@@ -6,6 +6,12 @@
   "summary_implementation_anchor": "scripts/build_governance_maintainer_review_summary.py",
   "package_bridge": "objc3c",
   "owner_section": "stewardship.maintainer_review_summary",
+  "owner_contract": {
+    "owner": "stewardship_owner",
+    "artifact_section": "stewardship.maintainer_review_summary",
+    "publication_projection": "stewardship_publication.stewardship.maintainer_review_summary",
+    "blocker_projection": "claim_audit.blocker_metadata.stewardship"
+  },
   "required_review_checks": [
     {
       "check_id": "task-hygiene",

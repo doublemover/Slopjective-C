@@ -41,6 +41,76 @@ OWNER_SPLIT = {
     "anti_regression": "tests/tooling/fixtures/governance_sustainability/anti_regression_reporting_contract.json",
     "metadata_publication": "scripts/publish_objc3c_governance_sustainability_metadata.py",
 }
+OWNER_CONTRACTS = {
+    "waiver_owner": {
+        "source_contract": OWNER_SPLIT["waiver_registry"],
+        "artifact_section": "budget.waiver_registry",
+        "publication_projection": "stewardship_publication.budget.waiver_registry",
+        "blocker_projection": "claim_audit.blocker_metadata.waiver_registry",
+    },
+    "budget_owner": {
+        "source_contract": OWNER_SPLIT["budget_inventory"],
+        "artifact_section": "budget.inventory_summary",
+        "publication_projection": "stewardship_publication.budget.inventory_summary",
+        "blocker_projection": "claim_audit.blocker_metadata.budget_inventory",
+    },
+    "stewardship_owner": {
+        "source_contract": OWNER_SPLIT["stewardship"],
+        "artifact_section": "stewardship",
+        "publication_projection": "stewardship_publication.stewardship",
+        "blocker_projection": "claim_audit.blocker_metadata.stewardship",
+    },
+    "extension_review_owner": {
+        "source_contract": OWNER_SPLIT["extension_review"],
+        "artifact_section": "extension_review",
+        "publication_projection": "extension_review_publication.extension_review",
+        "blocker_projection": "claim_audit.blocker_metadata.extension_review",
+    },
+    "sustainable_progress_owner": {
+        "source_contract": OWNER_SPLIT["budget_policy"],
+        "artifact_section": "stewardship.policy_summary",
+        "publication_projection": "stewardship_publication.stewardship.policy_summary",
+        "blocker_projection": "claim_audit.blocker_metadata.sustainable_progress_policy",
+    },
+    "publication_owner": {
+        "source_contract": OWNER_SPLIT["metadata_publication"],
+        "artifact_section": "metadata_publication",
+        "publication_projection": "stewardship_publication.metadata_publication",
+        "blocker_projection": "claim_audit.blocker_metadata.metadata_publication",
+    },
+}
+BLOCKER_METADATA = {
+    "waiver_registry": {
+        "owner": "waiver_owner",
+        "blocked_when": "expired, unowned, duplicate active, or evidence-free waiver is present",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "budget_inventory": {
+        "owner": "budget_owner",
+        "blocked_when": "public surface growth is not measured or exceeds a release-blocking budget",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "stewardship": {
+        "owner": "stewardship_owner",
+        "blocked_when": "review roles, entry surfaces, or required checks lose checked-in ownership",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "extension_review": {
+        "owner": "extension_review_owner",
+        "blocked_when": "new work proposal lacks review class, evidence surfaces, owner, rollback path, or publication plan",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "sustainable_progress_policy": {
+        "owner": "sustainable_progress_owner",
+        "blocked_when": "new work lacks measured budget delta, owner, exception status, or follow-on ratchet",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "metadata_publication": {
+        "owner": "publication_owner",
+        "blocked_when": "publication presents governance stability wider than generated evidence",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+}
 
 
 
@@ -106,6 +176,7 @@ def main() -> int:
             "hosted registry moderation",
             "prose-only governance approval",
         ],
+        "blocker_metadata": BLOCKER_METADATA,
         "measured_budget_state": {
             "package_bridge_count": measured.get("package_bridge_count"),
             "package_bridge_budget": measured.get("package_bridge_budget"),
@@ -121,6 +192,7 @@ def main() -> int:
         "status": "PASS" if not failures else "FAIL",
         "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
         "owner_split": OWNER_SPLIT,
+        "owner_contracts": OWNER_CONTRACTS,
         "source_contracts": contract.get("source_contracts", []),
         "generated_reports": generated_reports,
         "publication_artifacts": contract.get("publication_artifacts", []),
@@ -165,6 +237,9 @@ def main() -> int:
         "evidence_artifact": repo_rel(EVIDENCE_ARTIFACT),
         "artifact_contract": repo_rel(ARTIFACT_CONTRACT_PATH),
         "owner_split": OWNER_SPLIT,
+        "owner_contracts": OWNER_CONTRACTS,
+        "owner_contract_count": len(OWNER_CONTRACTS),
+        "blocker_metadata_count": len(BLOCKER_METADATA),
         "source_contract_count": len(evidence["source_contracts"]),
         "generated_report_count": len(generated_reports),
         "publication_artifact_count": len(evidence["publication_artifacts"]),

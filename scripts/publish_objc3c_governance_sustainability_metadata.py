@@ -62,6 +62,7 @@ def main() -> int:
     extension_review = evidence.get("extension_review", {}) if isinstance(evidence.get("extension_review"), dict) else {}
     public_workflow = evidence.get("public_workflow", {}) if isinstance(evidence.get("public_workflow"), dict) else {}
     metadata_publication = evidence.get("metadata_publication", {}) if isinstance(evidence.get("metadata_publication"), dict) else {}
+    owner_contracts = evidence.get("owner_contracts", {}) if isinstance(evidence.get("owner_contracts"), dict) else {}
 
     stewardship_publication = {
         "contract_id": STEWARDSHIP_PUBLICATION_ID,
@@ -72,6 +73,8 @@ def main() -> int:
         "contributor_surface": "CONTRIBUTING.md",
         "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
         "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
+        "owner_contracts": owner_contracts,
+        "blocker_metadata": claim_audit.get("blocker_metadata", {}),
         "metadata_publication": metadata_publication,
         "stewardship": stewardship,
         "budget": evidence.get("budget", {}),
@@ -86,6 +89,8 @@ def main() -> int:
         "proposal_template": "tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json",
         "public_actions": public_workflow.get("public_actions", EXPECTED_PUBLIC_ACTIONS),
         "package_bridge": public_workflow.get("package_bridge", PACKAGE_BRIDGE),
+        "owner_contracts": owner_contracts,
+        "blocker_metadata": claim_audit.get("blocker_metadata", {}),
         "metadata_publication": metadata_publication,
         "extension_review": extension_review,
         "claim_audit": claim_audit,
@@ -108,6 +113,8 @@ def main() -> int:
         ],
         "public_actions": EXPECTED_PUBLIC_ACTIONS,
         "package_bridge": PACKAGE_BRIDGE,
+        "owner_contract_count": len(owner_contracts),
+        "blocker_metadata_count": len(claim_audit.get("blocker_metadata", {})) if isinstance(claim_audit.get("blocker_metadata"), dict) else 0,
         "release_blocker_count": len(release_blockers) if isinstance(release_blockers, list) else 0,
     }
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)

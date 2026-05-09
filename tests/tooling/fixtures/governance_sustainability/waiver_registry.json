@@ -1,6 +1,12 @@
 {
   "contract_id": "objc3c.governance.sustainability.waiver.registry.v1",
   "owner_section": "budget.waiver_registry",
+  "owner_contract": {
+    "owner": "waiver_owner",
+    "artifact_section": "budget.waiver_registry",
+    "publication_projection": "stewardship_publication.budget.waiver_registry",
+    "blocker_projection": "claim_audit.blocker_metadata.waiver_registry"
+  },
   "policy": "tests/tooling/fixtures/governance_sustainability/sustainable_progress_policy.json",
   "active_waiver_budget_per_surface": 1,
   "release_blocker_when_expired": true,

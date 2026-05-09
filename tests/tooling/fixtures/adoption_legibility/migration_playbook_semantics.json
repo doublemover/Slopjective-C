@@ -2,6 +2,12 @@
   "contract_id": "objc3c.adoption_legibility.migration_playbook_semantics.v1",
   "schema_version": 1,
   "owner_section": "migration_playbook",
+  "owner_contract": {
+    "owner": "migration_playbook_owner",
+    "artifact_section": "migration_playbook",
+    "publication_projection": "evaluator_publication.migration_phases",
+    "blocker_projection": "claim_audit.blocker_metadata.migration_playbook"
+  },
   "package_bridge": "objc3c",
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
@@ -119,6 +125,7 @@
   "publication_policy": {
     "metadata_projection": "evaluator_publication.migration_phases",
     "support_state": "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.migration_playbook",
     "requires_public_actions": [
       "validate-adoption-legibility",
       "publish-adoption-legibility"

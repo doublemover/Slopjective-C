@@ -24,6 +24,7 @@
   "publication_semantics": {
     "evidence_section": "budget.anti_regression_summary",
     "history_artifact": "tmp/artifacts/governance-sustainability/anti-regression-history.json",
-    "release_blocker_field": "claim_audit.release_blockers"
+    "release_blocker_field": "claim_audit.release_blockers",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.budget_inventory"
   }
 }

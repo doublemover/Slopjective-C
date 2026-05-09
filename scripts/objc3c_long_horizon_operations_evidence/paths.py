@@ -9,6 +9,62 @@ from objc3c_tooling.subprocesses import python_script_command
 
 ARTIFACT_CONTRACT_ID = "objc3c.long_horizon_operations.evidence.v1"
 SUMMARY_CONTRACT_ID = "objc3c.long_horizon_operations.evidence.summary.v1"
+OWNER_SPLIT = {
+    "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
+    "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
+    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
+    "migration_rollback_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
+    "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py",
+}
+OWNER_CONTRACTS = {
+    "deprecation_owner": {
+        "source_contract": OWNER_SPLIT["deprecation_support_policy"],
+        "artifact_section": "claim_audit",
+        "publication_projection": "operator_publication.support_window_summary",
+        "blocker_projection": "claim_audit.blocker_metadata.deprecation_support_policy",
+    },
+    "rollback_owner": {
+        "source_contract": OWNER_SPLIT["migration_rollback_support_window"],
+        "artifact_section": "rollback",
+        "publication_projection": "operator_publication.rollback_channels",
+        "blocker_projection": "claim_audit.blocker_metadata.rollback",
+    },
+    "cadence_owner": {
+        "source_contract": OWNER_SPLIT["aging_release_cadence"],
+        "artifact_section": "aging_regression",
+        "publication_projection": "operator_publication.support_window_summary",
+        "blocker_projection": "claim_audit.blocker_metadata.aging_release_cadence",
+    },
+    "publication_owner": {
+        "source_contract": OWNER_SPLIT["metadata_publication"],
+        "artifact_section": "claim_audit",
+        "publication_projection": "operator_publication",
+        "blocker_projection": "claim_audit.blocker_metadata.metadata_publication",
+    },
+}
+BLOCKER_METADATA = {
+    "deprecation_support_policy": {
+        "owner": "deprecation_owner",
+        "blocked_when": "advertised support lacks current support-window authority or generated replay evidence",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "rollback": {
+        "owner": "rollback_owner",
+        "blocked_when": "advertised channel lacks generated rollback guidance or transport",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "aging_release_cadence": {
+        "owner": "cadence_owner",
+        "blocked_when": "cadence claim lacks package, application, soak, freshness, or rollback evidence",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+    "metadata_publication": {
+        "owner": "publication_owner",
+        "blocked_when": "operator publication widens support claims beyond generated long-horizon evidence",
+        "release_blocker_field": "claim_audit.release_blockers",
+    },
+}
 
 
 @dataclass(frozen=True)

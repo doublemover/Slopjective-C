@@ -2,6 +2,12 @@
   "contract_id": "objc3c.adoption_legibility.capability_comparison_semantics.v1",
   "schema_version": 1,
   "owner_section": "comparison_matrix",
+  "owner_contract": {
+    "owner": "adoption_comparison_owner",
+    "artifact_section": "comparison_matrix",
+    "publication_projection": "evaluator_publication.comparison_axes",
+    "blocker_projection": "claim_audit.blocker_metadata.capability_comparison"
+  },
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
@@ -81,6 +87,7 @@
   "publication_policy": {
     "metadata_projection": "evaluator_publication.comparison_axes",
     "claim_audit_projection": "claim_audit.demoted_or_out_of_scope_claims",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.capability_comparison",
     "requires_public_actions": [
       "validate-adoption-legibility",
       "publish-adoption-legibility"
