@@ -66,6 +66,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_reset.h
   state/runtime_state.cpp
   state/runtime_state.h
+  strings/borrowed_string.cpp
+  strings/borrowed_string.h
   storage/instance_storage.cpp
   storage/instance_storage.h
   storage/ivar_layout.cpp

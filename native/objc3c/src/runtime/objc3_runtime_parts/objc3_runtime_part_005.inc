@@ -855,14 +855,15 @@ int objc3_runtime_copy_registration_state_for_testing(
   snapshot->last_successful_registration_order_ordinal =
       state.last_successful_registration_order_ordinal;
   snapshot->last_registration_status = state.last_registration_status;
+  (void)objc3c::runtime::RuntimeCStringSnapshotOwnershipModel();
   snapshot->last_registered_module_name =
-      StableCString(state.last_registered_module_name);
+      BorrowRuntimeCString(state.last_registered_module_name);
   snapshot->last_registered_translation_unit_identity_key =
-      StableCString(state.last_registered_translation_unit_identity_key);
+      BorrowRuntimeCString(state.last_registered_translation_unit_identity_key);
   snapshot->last_rejected_module_name =
-      StableCString(state.last_rejected_module_name);
+      BorrowRuntimeCString(state.last_rejected_module_name);
   snapshot->last_rejected_translation_unit_identity_key =
-      StableCString(state.last_rejected_translation_unit_identity_key);
+      BorrowRuntimeCString(state.last_rejected_translation_unit_identity_key);
   snapshot->last_rejected_registration_order_ordinal =
       state.last_rejected_registration_order_ordinal;
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;

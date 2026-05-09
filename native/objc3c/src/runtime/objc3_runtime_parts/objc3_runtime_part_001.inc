@@ -46,6 +46,7 @@ using objc3c::runtime::RuntimeReceiverIdentityStride;
 using objc3c::runtime::RuntimeTypedDispatchFailure;
 using objc3c::runtime::RuntimeTypedDispatchResult;
 using objc3c::runtime::RuntimeTypedDispatchSuccess;
+using objc3c::runtime::BorrowRuntimeCString;
 constexpr const char *kObjc3DefaultMetaprogrammingHostCacheRoot =
     "tmp/artifacts/objc3c-native/cache/metaprogramming";
 [[maybe_unused]] constexpr const char *kObjc3ConformancePublicationContractId =

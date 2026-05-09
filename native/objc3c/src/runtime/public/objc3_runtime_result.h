@@ -30,6 +30,7 @@ typedef enum objc3_runtime_dispatch_status_code {
 typedef struct objc3_runtime_dispatch_i32_result {
   objc3_runtime_dispatch_status_code status_code;
   int value;
+  /* Runtime-owned diagnostic string literals. Callers must not free them. */
   const char *diagnostic_code;
   const char *diagnostic_message;
 } objc3_runtime_dispatch_i32_result;

@@ -23,25 +23,25 @@
       state.last_dispatch_effective_direct_dispatch ? 1 : 0;
   snapshot->last_used_builtin = state.last_dispatch_used_builtin ? 1 : 0;
   snapshot->last_dispatch_status_code = state.last_dispatch_status_code;
-  snapshot->last_selector = StableCString(state.last_dispatch_selector);
-  snapshot->last_fast_path_reason = StableCString(state.last_fast_path_reason);
-  snapshot->last_dispatch_path = StableCString(state.last_dispatch_path);
+  snapshot->last_selector = BorrowRuntimeCString(state.last_dispatch_selector);
+  snapshot->last_fast_path_reason = BorrowRuntimeCString(state.last_fast_path_reason);
+  snapshot->last_dispatch_path = BorrowRuntimeCString(state.last_dispatch_path);
   snapshot->last_implementation_kind =
-      StableCString(state.last_dispatch_implementation_kind);
+      BorrowRuntimeCString(state.last_dispatch_implementation_kind);
   snapshot->last_return_kind =
-      StableCString(state.last_dispatch_return_kind);
+      BorrowRuntimeCString(state.last_dispatch_return_kind);
   snapshot->last_diagnostic_code =
-      StableCString(state.last_dispatch_diagnostic_code);
+      BorrowRuntimeCString(state.last_dispatch_diagnostic_code);
   snapshot->last_diagnostic_message =
-      StableCString(state.last_dispatch_diagnostic_message);
+      BorrowRuntimeCString(state.last_dispatch_diagnostic_message);
   snapshot->last_result_contract =
-      StableCString(state.last_dispatch_result_contract);
+      BorrowRuntimeCString(state.last_dispatch_result_contract);
   snapshot->last_property_name =
-      StableCString(state.last_dispatch_property_name);
+      BorrowRuntimeCString(state.last_dispatch_property_name);
   snapshot->last_resolved_class_name =
-      StableCString(state.last_resolved_class_name);
+      BorrowRuntimeCString(state.last_resolved_class_name);
   snapshot->last_resolved_owner_identity =
-      StableCString(state.last_resolved_owner_identity);
+      BorrowRuntimeCString(state.last_resolved_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -107,10 +107,10 @@ int objc3_runtime_copy_method_cache_entry_for_testing(
       entry.effective_direct_dispatch ? 1 : 0;
   snapshot->objc_final_declared = entry.objc_final_declared ? 1 : 0;
   snapshot->objc_sealed_declared = entry.objc_sealed_declared ? 1 : 0;
-  snapshot->selector = StableCString(entry.selector_storage);
-  snapshot->fast_path_reason = StableCString(entry.fast_path_reason);
-  snapshot->resolved_class_name = StableCString(entry.class_name);
-  snapshot->resolved_owner_identity = StableCString(entry.owner_identity);
+  snapshot->selector = BorrowRuntimeCString(entry.selector_storage);
+  snapshot->fast_path_reason = BorrowRuntimeCString(entry.fast_path_reason);
+  snapshot->resolved_class_name = BorrowRuntimeCString(entry.class_name);
+  snapshot->resolved_owner_identity = BorrowRuntimeCString(entry.owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -138,17 +138,17 @@ int objc3_runtime_copy_realized_class_graph_state_for_testing(
   snapshot->last_allocated_instance_size_bytes =
       state.last_allocated_runtime_instance_size_bytes;
   snapshot->last_realized_class_name =
-      StableCString(state.last_realized_class_name);
+      BorrowRuntimeCString(state.last_realized_class_name);
   snapshot->last_realized_class_owner_identity =
-      StableCString(state.last_realized_class_owner_identity);
+      BorrowRuntimeCString(state.last_realized_class_owner_identity);
   snapshot->last_realized_metaclass_owner_identity =
-      StableCString(state.last_realized_metaclass_owner_identity);
+      BorrowRuntimeCString(state.last_realized_metaclass_owner_identity);
   snapshot->last_attached_category_owner_identity =
-      StableCString(state.last_attached_category_owner_identity);
+      BorrowRuntimeCString(state.last_attached_category_owner_identity);
   snapshot->last_attached_category_name =
-      StableCString(state.last_attached_category_name);
+      BorrowRuntimeCString(state.last_attached_category_name);
   snapshot->last_allocated_class_name =
-      StableCString(state.last_allocated_runtime_instance_class_name);
+      BorrowRuntimeCString(state.last_allocated_runtime_instance_class_name);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -217,16 +217,16 @@ int objc3_runtime_copy_realized_class_entry_for_testing(
        node.bundle->class_record.adopted_protocol_refs != nullptr)
           ? node.bundle->class_record.adopted_protocol_refs->count
           : 0;
-  snapshot->module_name = StableCString(node.module_name);
+  snapshot->module_name = BorrowRuntimeCString(node.module_name);
   snapshot->translation_unit_identity_key =
-      StableCString(node.translation_unit_identity_key);
-  snapshot->class_name = StableCString(node.class_name);
-  snapshot->class_owner_identity = StableCString(node.class_owner_identity);
-  snapshot->metaclass_owner_identity = StableCString(node.metaclass_owner_identity);
+      BorrowRuntimeCString(node.translation_unit_identity_key);
+  snapshot->class_name = BorrowRuntimeCString(node.class_name);
+  snapshot->class_owner_identity = BorrowRuntimeCString(node.class_owner_identity);
+  snapshot->metaclass_owner_identity = BorrowRuntimeCString(node.metaclass_owner_identity);
   snapshot->super_class_owner_identity =
-      StableCString(node.super_class_owner_identity);
+      BorrowRuntimeCString(node.super_class_owner_identity);
   snapshot->super_metaclass_owner_identity =
-      StableCString(node.super_metaclass_owner_identity);
+      BorrowRuntimeCString(node.super_metaclass_owner_identity);
   std::uint64_t attached_protocol_count = 0;
   for (const EmittedCategoryRecord *category_record : node.attached_category_records) {
     if (category_record != nullptr && category_record->adopted_protocol_refs != nullptr) {
@@ -298,13 +298,13 @@ int objc3_runtime_copy_property_registry_state_for_testing(
   snapshot->last_query_used_cache =
       state.last_property_query_used_cache ? 1 : 0;
   snapshot->last_queried_class_name =
-      StableCString(state.last_queried_property_class_name);
+      BorrowRuntimeCString(state.last_queried_property_class_name);
   snapshot->last_queried_property_name =
-      StableCString(state.last_queried_property_name);
+      BorrowRuntimeCString(state.last_queried_property_name);
   snapshot->last_resolved_class_name =
-      StableCString(state.last_reflected_property_class_name);
+      BorrowRuntimeCString(state.last_reflected_property_class_name);
   snapshot->last_resolved_owner_identity =
-      StableCString(state.last_reflected_property_owner_identity);
+      BorrowRuntimeCString(state.last_reflected_property_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -368,7 +368,7 @@ int objc3_runtime_copy_property_entry_for_testing(
   state.last_property_query_inherited = false;
 
   snapshot->queried_class_name =
-      StableCString(state.last_queried_property_class_name);
+      BorrowRuntimeCString(state.last_queried_property_class_name);
   if (class_name == nullptr || class_name[0] == '\0' ||
       property_name == nullptr || property_name[0] == '\0') {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
@@ -455,7 +455,7 @@ int objc3_runtime_copy_property_entry_for_testing(
   snapshot->instance_size_bytes =
       static_cast<std::uint64_t>(resolved_node->runtime_instance_size_bytes);
   snapshot->resolved_class_name =
-      StableCString(state.last_reflected_property_class_name);
+      BorrowRuntimeCString(state.last_reflected_property_class_name);
   snapshot->property_name = descriptor.property_name;
   snapshot->declaration_owner_identity =
       descriptor.declaration_owner_identity != nullptr
@@ -509,9 +509,9 @@ int objc3_runtime_copy_property_entry_for_testing(
           ? descriptor.accessor_ownership_profile
           : nullptr;
   snapshot->getter_owner_identity =
-      StableCString(accessor->getter_owner_identity);
+      BorrowRuntimeCString(accessor->getter_owner_identity);
   snapshot->setter_owner_identity =
-      StableCString(accessor->setter_owner_identity);
+      BorrowRuntimeCString(accessor->setter_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -584,9 +584,9 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
   state.last_protocol_query_class_found = false;
   state.last_protocol_query_protocol_found = false;
   state.last_protocol_query_conforms = false;
-  snapshot->class_name = StableCString(state.last_protocol_conformance_class_name);
+  snapshot->class_name = BorrowRuntimeCString(state.last_protocol_conformance_class_name);
   snapshot->protocol_name =
-      StableCString(state.last_protocol_conformance_protocol_name);
+      BorrowRuntimeCString(state.last_protocol_conformance_protocol_name);
   snapshot->protocol_found = ProtocolExistsByNameUnlocked(state, protocol_name) ? 1 : 0;
   state.last_protocol_query_protocol_found = snapshot->protocol_found != 0;
 
@@ -617,9 +617,9 @@ int objc3_runtime_copy_protocol_conformance_query_for_testing(
     state.last_protocol_conformance_attachment_owner_identity =
         matched_attachment_owner_identity;
     snapshot->matched_protocol_owner_identity =
-        StableCString(state.last_protocol_conformance_owner_identity);
+        BorrowRuntimeCString(state.last_protocol_conformance_owner_identity);
     snapshot->matched_attachment_owner_identity =
-        StableCString(state.last_protocol_conformance_attachment_owner_identity);
+        BorrowRuntimeCString(state.last_protocol_conformance_attachment_owner_identity);
   }
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
@@ -677,25 +677,25 @@ int objc3_runtime_copy_object_model_query_state_for_testing(
         static_cast<std::uint64_t>(node.runtime_property_accessors.size());
   }
   snapshot->last_queried_class_name =
-      StableCString(state.last_queried_class_name);
+      BorrowRuntimeCString(state.last_queried_class_name);
   snapshot->last_resolved_class_name =
-      StableCString(state.last_resolved_class_query_name);
+      BorrowRuntimeCString(state.last_resolved_class_query_name);
   snapshot->last_resolved_class_owner_identity =
-      StableCString(state.last_resolved_class_query_owner_identity);
+      BorrowRuntimeCString(state.last_resolved_class_query_owner_identity);
   snapshot->last_queried_property_name =
-      StableCString(state.last_queried_property_name);
+      BorrowRuntimeCString(state.last_queried_property_name);
   snapshot->last_resolved_property_class_name =
-      StableCString(state.last_reflected_property_class_name);
+      BorrowRuntimeCString(state.last_reflected_property_class_name);
   snapshot->last_resolved_property_owner_identity =
-      StableCString(state.last_reflected_property_owner_identity);
+      BorrowRuntimeCString(state.last_reflected_property_owner_identity);
   snapshot->last_queried_protocol_class_name =
-      StableCString(state.last_protocol_conformance_class_name);
+      BorrowRuntimeCString(state.last_protocol_conformance_class_name);
   snapshot->last_queried_protocol_name =
-      StableCString(state.last_protocol_conformance_protocol_name);
+      BorrowRuntimeCString(state.last_protocol_conformance_protocol_name);
   snapshot->last_matched_protocol_owner_identity =
-      StableCString(state.last_protocol_conformance_owner_identity);
+      BorrowRuntimeCString(state.last_protocol_conformance_owner_identity);
   snapshot->last_matched_attachment_owner_identity =
-      StableCString(state.last_protocol_conformance_attachment_owner_identity);
+      BorrowRuntimeCString(state.last_protocol_conformance_attachment_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 

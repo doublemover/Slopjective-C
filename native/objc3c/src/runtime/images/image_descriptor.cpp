@@ -14,6 +14,15 @@ std::uint64_t RuntimeDescriptorTotal(
          image->ivar_descriptor_count;
 }
 
+bool RuntimeImageDescriptorHasRequiredIdentity(
+    const objc3_runtime_image_descriptor *image) {
+  return image != nullptr && image->module_name != nullptr &&
+         image->module_name[0] != '\0' &&
+         image->translation_unit_identity_key != nullptr &&
+         image->translation_unit_identity_key[0] != '\0' &&
+         image->registration_order_ordinal != 0;
+}
+
 std::uint64_t RuntimeAggregateCount(
     const objc3_runtime_pointer_aggregate *aggregate) {
   return aggregate == nullptr ? 0 : aggregate->count;
@@ -65,6 +74,11 @@ bool RuntimeImageDescriptorsMatch(
          lhs->category_descriptor_count == rhs->category_descriptor_count &&
          lhs->property_descriptor_count == rhs->property_descriptor_count &&
          lhs->ivar_descriptor_count == rhs->ivar_descriptor_count;
+}
+
+const char *RuntimeImageDescriptorOwnershipModel() {
+  return "public-image-descriptor-strings-borrowed-during-call-then-copied-"
+         "into-runtime-owned-registration-state";
 }
 
 }  // namespace objc3c::runtime

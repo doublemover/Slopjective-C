@@ -22,6 +22,7 @@
 #include "runtime/selectors/selector_table.h"
 #include "runtime/state/runtime_reset.h"
 #include "runtime/state/runtime_state.h"
+#include "runtime/strings/borrowed_string.h"
 #include "runtime/storage/instance_storage.h"
 #include "runtime/storage/ivar_layout.h"
 #include "runtime/storage/property_accessors.h"

@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 typedef struct objc3_runtime_image_descriptor {
+  /* Borrowed by the registration call and copied into runtime-owned storage. */
   const char *module_name;
   const char *translation_unit_identity_key;
   uint64_t registration_order_ordinal;
@@ -21,6 +22,7 @@ typedef struct objc3_runtime_image_descriptor {
 } objc3_runtime_image_descriptor;
 
 typedef struct objc3_runtime_selector_handle {
+  /* Runtime-owned spelling; valid until the selector table is reset/mutated. */
   const char *selector;
   uint64_t stable_id;
 } objc3_runtime_selector_handle;
@@ -31,6 +33,7 @@ typedef struct objc3_runtime_registration_state_snapshot {
   uint64_t next_expected_registration_order_ordinal;
   uint64_t last_successful_registration_order_ordinal;
   int last_registration_status;
+  /* Runtime-owned borrowed snapshot strings; callers must not free them. */
   const char *last_registered_module_name;
   const char *last_registered_translation_unit_identity_key;
   const char *last_rejected_module_name;

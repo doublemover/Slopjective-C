@@ -602,10 +602,6 @@ bool AggregateContainsPointer(const objc3_runtime_pointer_aggregate *aggregate,
   return objc3c::runtime::RuntimeAggregateContainsPointer(aggregate, target);
 }
 
-const char *StableCString(const std::string &text) {
-  return text.empty() ? nullptr : text.c_str();
-}
-
 void MarkRejectedRegistrationUnlocked(
     RuntimeState &state, const objc3_runtime_image_descriptor *image,
     int status) {
@@ -900,11 +896,8 @@ int RegisterImageUnlocked(
   // rejection and out-of-order rejection happen before live counters advance,
   // while successful staged-table consumption is the only path allowed to
   // publish bootstrap-visible image-walk state.
-  if (image == nullptr || image->module_name == nullptr ||
-      image->module_name[0] == '\0' ||
-      image->translation_unit_identity_key == nullptr ||
-      image->translation_unit_identity_key[0] == '\0' ||
-      image->registration_order_ordinal == 0) {
+  (void)objc3c::runtime::RuntimeImageDescriptorOwnershipModel();
+  if (!objc3c::runtime::RuntimeImageDescriptorHasRequiredIdentity(image)) {
     MarkRejectedRegistrationUnlocked(
         state, image, OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR);
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
@@ -1113,9 +1106,9 @@ int objc3_runtime_copy_image_walk_state_for_testing(
   snapshot->last_registration_used_staged_table =
       state.last_registration_used_staged_table ? 1 : 0;
   snapshot->last_walked_module_name =
-      StableCString(state.last_walked_module_name);
+      BorrowRuntimeCString(state.last_walked_module_name);
   snapshot->last_walked_translation_unit_identity_key =
-      StableCString(state.last_walked_translation_unit_identity_key);
+      BorrowRuntimeCString(state.last_walked_translation_unit_identity_key);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -1140,9 +1133,9 @@ int objc3_runtime_copy_reset_replay_state_for_testing(
   snapshot->replay_generation = state.replay_generation;
   snapshot->last_replay_status = state.last_replay_status;
   snapshot->last_replayed_module_name =
-      StableCString(state.last_replayed_module_name);
+      BorrowRuntimeCString(state.last_replayed_module_name);
   snapshot->last_replayed_translation_unit_identity_key =
-      StableCString(state.last_replayed_translation_unit_identity_key);
+      BorrowRuntimeCString(state.last_replayed_translation_unit_identity_key);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -1160,7 +1153,7 @@ int objc3_runtime_copy_selector_lookup_table_state_for_testing(
   snapshot->dynamic_selector_count = state.dynamic_selector_count;
   snapshot->metadata_provider_edge_count = state.metadata_provider_edge_count;
   snapshot->last_materialized_selector =
-      StableCString(state.last_materialized_selector);
+      BorrowRuntimeCString(state.last_materialized_selector);
   snapshot->last_materialized_stable_id = state.last_materialized_stable_id;
   snapshot->last_materialized_registration_order_ordinal =
       state.last_materialized_registration_order_ordinal;
@@ -1243,9 +1236,9 @@ int objc3_runtime_copy_keypath_registry_state_for_testing(
   snapshot->last_query_found = state.last_keypath_query_found ? 1 : 0;
   snapshot->last_query_ambiguous = state.last_keypath_query_ambiguous ? 1 : 0;
   snapshot->last_materialized_profile =
-      StableCString(state.last_materialized_keypath_profile);
+      BorrowRuntimeCString(state.last_materialized_keypath_profile);
   snapshot->last_resolved_profile =
-      StableCString(state.last_resolved_keypath_profile);
+      BorrowRuntimeCString(state.last_resolved_keypath_profile);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -1292,13 +1285,13 @@ int objc3_runtime_copy_keypath_entry_for_testing(
       slot.first_registration_order_ordinal;
   snapshot->last_registration_order_ordinal =
       slot.last_registration_order_ordinal;
-  snapshot->root_name = StableCString(slot.root_name_storage);
-  snapshot->component_path = StableCString(slot.component_path_storage);
-  snapshot->profile = StableCString(slot.profile_storage);
+  snapshot->root_name = BorrowRuntimeCString(slot.root_name_storage);
+  snapshot->component_path = BorrowRuntimeCString(slot.component_path_storage);
+  snapshot->profile = BorrowRuntimeCString(slot.profile_storage);
   snapshot->generic_metadata_replay_key =
       slot.generic_metadata_replay_key_storage.empty()
           ? nullptr
-          : StableCString(slot.generic_metadata_replay_key_storage);
+          : BorrowRuntimeCString(slot.generic_metadata_replay_key_storage);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
@@ -1378,12 +1371,12 @@ int objc3_runtime_copy_method_cache_state_for_testing(
   snapshot->last_dispatch_resolved_live_method =
       state.last_dispatch_resolved_live_method ? 1 : 0;
   snapshot->last_dispatch_strict_error = state.last_dispatch_strict_error ? 1 : 0;
-  snapshot->last_selector = StableCString(state.last_dispatch_selector);
-  snapshot->last_fast_path_reason = StableCString(state.last_fast_path_reason);
+  snapshot->last_selector = BorrowRuntimeCString(state.last_dispatch_selector);
+  snapshot->last_fast_path_reason = BorrowRuntimeCString(state.last_fast_path_reason);
   snapshot->last_resolved_class_name =
-      StableCString(state.last_resolved_class_name);
+      BorrowRuntimeCString(state.last_resolved_class_name);
   snapshot->last_resolved_owner_identity =
-      StableCString(state.last_resolved_owner_identity);
+      BorrowRuntimeCString(state.last_resolved_owner_identity);
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
