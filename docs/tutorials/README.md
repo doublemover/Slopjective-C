@@ -61,6 +61,11 @@ module boundary that sits behind the same teaching path.
   - keep examples compile-coupled to the live toolchain and showcase sources
   - start with `docs/tutorials/objc2_to_objc3_migration.md`
   - then use `docs/tutorials/objc2_swift_cpp_comparison.md` for broader comparison framing
+
+The `objc2_to_objc3_migration.md` path is a stable historical filename. Treat
+the guide as canonicalization and conversion teaching over checked-in examples,
+not a migration lane or retired-source acceptance surface.
+
 - contributor path:
   - use `CONTRIBUTING.md` for repo-change instructions
   - use `docs/runbooks/objc3c_maintainer_workflows.md` only for maintainer-only workflow maps

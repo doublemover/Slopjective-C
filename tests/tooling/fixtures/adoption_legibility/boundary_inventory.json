@@ -26,7 +26,7 @@
   "non_goals": [
     "hosted community or registry service",
     "IDE marketplace integration",
-    "unsupported source-compatibility guarantees",
+    "unsupported retired-source acceptance guarantees",
     "manual adoption metrics without replayable source queries",
     "private maintainer context as an evaluator prerequisite"
   ],

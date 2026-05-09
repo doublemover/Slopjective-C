@@ -61,7 +61,7 @@ def main() -> int:
 
     forbidden_claims = [str(claim).lower() for claim in policy.get("forbidden_claims", [])]
     release_forbidden = [str(claim).lower() for claim in release_claim_policy.get("forbidden_claims", [])]
-    expect(any("cross-major" in claim for claim in forbidden_claims + release_forbidden), "cross-major migration must fail closed", failures)
+    expect(any("cross-major" in claim for claim in forbidden_claims + release_forbidden), "cross-major conversion must fail closed", failures)
     expect(any("forever compatible" in claim for claim in forbidden_claims), "forever compatibility must be forbidden", failures)
     expect(any("performance" in claim for claim in forbidden_claims), "performance overclaim guardrail missing", failures)
 
