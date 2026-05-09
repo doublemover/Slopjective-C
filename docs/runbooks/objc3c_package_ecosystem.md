@@ -32,7 +32,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- build-release-manifest`
 - `npm run objc3c -- build-update-manifest`
 
-Implementation helpers under `scripts/` remain action-catalog-owned anchors for
+Helper implementations remain action-catalog-owned anchors for
 those actions. They are not a second public command surface.
 
 ## Current Boundary

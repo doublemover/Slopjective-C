@@ -23,7 +23,7 @@ The canonical upstream surfaces are:
 - release-operations update manifests, support-window reports, and rollback guidance
 - the existing release-evidence index from `npm run objc3c -- check-release-evidence`
 
-Implementation helper paths under `scripts/` are action-registry anchors, not a
+Helper implementations are action-registry anchors, not a
 second credibility command surface.
 
 No credibility claim may bypass those live outputs. If a trust signal cannot be

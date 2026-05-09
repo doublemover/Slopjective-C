@@ -19,8 +19,8 @@ The canonical payload remains the staged runnable toolchain bundle produced by
 `npm run objc3c -- package-runnable-toolchain` and described by the machine-
 owned release manifest, SBOM, and attestation artifacts.
 
-Packaging-channel commands route through `npm run objc3c -- <action>`;
-implementation helper paths are action-registry anchors only.
+Packaging-channel commands route through `npm run objc3c -- <action>`; helper
+implementations are action-registry anchors only.
 
 Packaging channels are derived views over that payload:
 
@@ -64,7 +64,7 @@ Non-goals for this milestone:
 The trusted packaging-channel boundary is:
 
 - checked-in contracts under `tests/tooling/fixtures/packaging_channels/`
-- checked-in generators under `scripts/`
+- action-catalog-owned generators
 - checked-in schemas under `schemas/`
 - machine-owned outputs under `tmp/artifacts/package-channels/`,
   `tmp/reports/package-channels/`, and `tmp/pkg/`

@@ -202,5 +202,5 @@ That workflow must continue to:
 - prove the exact advanced-helper module subset from
   `stdlib/advanced_helper_package_surface.json`
 - write machine-owned reports under `tmp/reports/stdlib/`
-- preserve the same advanced-helper command surface from the staged runnable
+- preserve the same advanced stdlib command surface from the staged runnable
   toolchain bundle

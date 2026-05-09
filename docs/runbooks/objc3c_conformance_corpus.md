@@ -148,7 +148,7 @@ Current live workflow actions:
 - runnable packaged validation: `npm run objc3c -- validate-runnable-conformance-corpus`
 - nightly umbrella integration: `npm run objc3c -- test-nightly`
 
-Implementation helpers under `scripts/` are action-registry anchors and
+Helper implementations are action-registry anchors and
 historical suite adapters, not public command examples.
 
 Checked-in references:

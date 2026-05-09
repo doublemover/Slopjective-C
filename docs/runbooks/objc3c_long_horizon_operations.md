@@ -28,8 +28,8 @@ Replayable boundary inventory:
 
 - `npm run objc3c -- validate-long-horizon-operations`
 
-Direct helper paths under `scripts/` are implementation anchors for the public
-workflow actions, not separate operator commands.
+Helper implementations behind the workflow actions are not separate operator
+commands.
 
 ## Current Boundary
 

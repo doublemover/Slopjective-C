@@ -27,7 +27,7 @@ The release surface is composed of:
 - the release-evidence index produced by `npm run objc3c -- check-release-evidence`
 - the machine-generated release manifest, SBOM, and attestation artifacts
 
-Implementation helper paths under `scripts/` are action-registry anchors for
+Helper implementations are action-registry anchors for
 these release steps, not separate public commands.
 
 Do not create a second release payload layout or a sidecar installer-shaped
@@ -37,7 +37,7 @@ bundle in this milestone.
 
 The trusted release boundary is repo-relative and machine-generated:
 
-- build and packaging scripts in `scripts/`
+- action-catalog-owned build and packaging implementations
 - checked-in contracts under `tests/tooling/fixtures/release_foundation/`
 - schemas under `schemas/`
 - machine-owned outputs under `tmp/reports/release-foundation/`,

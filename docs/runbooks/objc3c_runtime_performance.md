@@ -152,7 +152,7 @@ Disallowed optimization moves:
 - validate the staged runnable runtime-performance surface:
   - `npm run objc3c -- validate-runnable-runtime-performance`
 
-Implementation helper paths remain action-registry anchors for the public
+Helper implementations remain action-registry anchors for the public
 commands above.
 
 ## Explicit Non-Goals

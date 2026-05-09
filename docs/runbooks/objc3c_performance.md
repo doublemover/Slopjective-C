@@ -122,7 +122,7 @@ The only current claim classes allowed from this surface are:
   - `npm run objc3c -- package-runnable-toolchain`
   - package bridge: `npm run objc3c -- <action>`
 
-Implementation helper paths remain action-registry anchors for the public
+Helper implementations remain action-registry anchors for the public
 commands above.
 
 ## Explicit Non-Goals

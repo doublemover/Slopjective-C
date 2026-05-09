@@ -17,7 +17,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-block-arc-conformance`
 - `npm run objc3c -- validate-runnable-block-arc`
 
-Implementation helpers under `scripts/` are action-registry anchors and
+Helper implementations are action-registry anchors and
 milestone evidence builders, not a separate public command surface.
 
 Current closure scope:

@@ -193,7 +193,7 @@ Disallowed optimization moves:
   - `tests/tooling/fixtures/compiler_throughput/artifact_surface.json`
   - `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
 
-Implementation helper paths remain action-registry anchors for the public
+Helper implementations remain action-registry anchors for the public
 commands above.
 
 ## Exact Live Artifact And Output Paths

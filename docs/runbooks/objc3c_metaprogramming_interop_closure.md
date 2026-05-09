@@ -19,7 +19,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-interop-conformance`
 - `npm run objc3c -- validate-runnable-interop`
 
-Implementation helpers under `scripts/` are action-registry anchors and
+Helper implementations are action-registry anchors and
 milestone evidence builders, not a separate public command surface.
 
 Current closure scope:

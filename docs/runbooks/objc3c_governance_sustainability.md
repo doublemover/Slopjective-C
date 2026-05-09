@@ -99,7 +99,7 @@ Replayable governance enforcement:
 
 - public package command: `npm run objc3c -- validate-governance-sustainability`
 - public package command: `npm run objc3c -- publish-governance-sustainability`
-- implementation helpers under `scripts/` are action-registry anchors, not
+- helper implementations are action-registry anchors, not
   public command surface
 - canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
 - canonical integration summary: `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`

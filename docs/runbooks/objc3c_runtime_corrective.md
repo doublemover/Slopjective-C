@@ -20,7 +20,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- test-runtime-acceptance-fast`
 - `npm run objc3c -- test-execution-replay`
 
-Implementation helpers under `scripts/` remain milestone evidence anchors. They
+Helper implementations remain milestone evidence anchors. They
 are not a separate public command surface.
 
 Current corrective scope:

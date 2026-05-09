@@ -21,7 +21,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-runnable-object-model`
 - `npm run objc3c -- validate-runnable-storage-reflection`
 
-Implementation helpers under `scripts/` are action-registry anchors and
+Helper implementations are action-registry anchors and
 milestone evidence builders, not a separate public command surface.
 
 Current closure scope:

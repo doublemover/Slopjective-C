@@ -143,7 +143,7 @@ real implementation exists.
   - `npm run objc3c -- validate-getting-started`
   - `npm run objc3c -- validate-runnable-bonus-experiences`
 
-Implementation helper paths are action-registry anchors, not separate
+Helper implementations are action-registry anchors, not separate
 current-facing commands.
 
 ## Feasibility And Working Model

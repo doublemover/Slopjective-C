@@ -32,7 +32,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-release-operations`
 - `npm run objc3c -- validate-release-operations-end-to-end`
 
-Implementation helpers under `scripts/` are registry anchors for the workflow
+Helper implementations are registry anchors for the workflow
 actions above, not separate current-facing commands.
 
 ## Exact Live Implementation Paths

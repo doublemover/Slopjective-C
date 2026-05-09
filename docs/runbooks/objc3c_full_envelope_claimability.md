@@ -23,7 +23,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-release-operations`
 - `npm run objc3c -- validate-distribution-credibility`
 
-Implementation helpers under `scripts/` are action-catalog anchors for
+Helper implementations are action-catalog anchors for
 evidence generation and claim classification. They are not separate public
 commands.
 

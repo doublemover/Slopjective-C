@@ -26,7 +26,7 @@ Replayable public workflows:
 - `npm run objc3c -- validate-application-architecture`
 - `npm run objc3c -- validate-runnable-application-architecture`
 
-Implementation helpers remain behind the npm bridge and are not public workflow
+Helper implementations remain behind the npm bridge and are not public workflow
 commands.
 
 ## Current Boundary

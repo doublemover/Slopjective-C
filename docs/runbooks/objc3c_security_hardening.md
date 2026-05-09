@@ -39,7 +39,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- validate-platform-hardening`
 - `npm run objc3c -- test-runtime-acceptance-fast`
 
-Implementation helpers under `scripts/` are action-registry anchors for those
+Helper implementations are action-registry anchors for those
 commands, not a second security command surface.
 
 ## Current Security Posture

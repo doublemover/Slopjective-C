@@ -145,7 +145,7 @@ Downstream work must preserve these rules:
 - stage the runnable package before packaged stress validation:
   - `npm run objc3c -- package-runnable-toolchain`
 
-Implementation helpers listed in live path sections are action-registry anchors.
+Helper implementations listed in live path sections are action-registry anchors.
 Current-facing commands route through `npm run objc3c -- <action>`.
 
 ## Exact Live Paths For Downstream Work

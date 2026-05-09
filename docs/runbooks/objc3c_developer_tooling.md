@@ -27,7 +27,7 @@ Replayable public workflow actions:
 - `npm run objc3c -- trace-compile-stages`
 - `npm run objc3c -- test-capability-routed-source-parity`
 
-Implementation helpers under `scripts/` and native tool binaries are registry
+Helper implementations and native tool binaries are registry
 anchors for those actions, not separate current-facing commands.
 
 ## Exact Live Implementation Paths
