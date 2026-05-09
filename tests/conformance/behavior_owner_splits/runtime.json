@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-conformance-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_surface": "tests/conformance/corpus_surface.json",
+  "support_boundary": "runtime conformance owns live dispatch, object model, storage/reflection-adjacent behavior, ARC, blocks, actors, tasks, package loading, and runtime strict errors",
+  "owned_buckets": [
+    "lowering_abi",
+    "module_roundtrip",
+    "examples"
+  ],
+  "owned_manifest_groups": [
+    {
+      "manifest": "tests/conformance/lowering_abi/manifest.json",
+      "selectors": [
+        "issue_68_suspension_autorelease_pool_contract",
+        "issue_71_defer_normal_and_unwind",
+        "issue_89_resource_cleanup_lowering",
+        "issue_8017_runtime_backed_semantics_closure",
+        "runtime-backed replay rows"
+      ],
+      "disposition": "runtime-backed behavior conformance separate from lowering ownership"
+    },
+    {
+      "manifest": "tests/conformance/module_roundtrip/manifest.json",
+      "selectors": [
+        "runtime package loading",
+        "runtime metadata preservation",
+        "cross-module runtime import rows"
+      ],
+      "disposition": "runtime package and metadata replay conformance"
+    },
+    {
+      "manifest": "tests/conformance/examples/manifest.json",
+      "selectors": [
+        "runtime-backed runnable examples"
+      ],
+      "disposition": "runtime example provenance only after runtime ownership is explicit"
+    }
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime fallback, compatibility interop, unresolved dispatch, and alternate runtime acceptance are strict-error or provenance-only evidence"
+}

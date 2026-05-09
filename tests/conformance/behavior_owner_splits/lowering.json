@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-conformance-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_surface": "tests/conformance/corpus_surface.json",
+  "support_boundary": "lowering conformance owns canonical lowering, ABI handoff, coroutine/task lowering, object-model lowering, and strict link-error evidence for required runtime symbols",
+  "owned_buckets": [
+    "lowering_abi"
+  ],
+  "owned_manifest_groups": [
+    {
+      "manifest": "tests/conformance/lowering_abi/manifest.json",
+      "selectors": [
+        "issue_67_arc_semantic_preservation",
+        "issue_76_throws_abi_stability",
+        "issue_81_async_coroutine_lowering",
+        "issue_82_cancellation_lowering",
+        "issue_83_executor_hop_lowering",
+        "issue_84_actor_isolation_lowering",
+        "issue_89_resource_cleanup_lowering",
+        "issue_90_lifetime_extension_lowering",
+        "issue_101_c_interop_lowering",
+        "issue_102_objcxx_interop_lowering",
+        "m*_lane_c_*",
+        "issue_8016_object_model_ir_lowering_closure",
+        "issue_8018_manifest_object_ir_truth_gate"
+      ],
+      "disposition": "lowering and ABI conformance; runtime-backed rows must still name runtime ownership separately"
+    }
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime dispatch fallback lowering and alternate ABI acceptance are strict-error or rejected conformance"
+}

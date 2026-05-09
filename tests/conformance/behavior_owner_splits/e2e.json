@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-conformance-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/conformance/corpus_surface.json",
+  "support_boundary": "e2e conformance owns deterministic runnable corpus coverage, example parity, module roundtrip execution, package-stage evidence, and release-claim executable proof",
+  "owned_buckets": [
+    "module_roundtrip",
+    "examples"
+  ],
+  "owned_manifest_groups": [
+    {
+      "manifest": "tests/conformance/module_roundtrip/manifest.json",
+      "selectors": [
+        "provider/consumer roundtrip execution",
+        "interface emit/import replay",
+        "metadata preservation across executable roundtrip"
+      ],
+      "disposition": "end-to-end roundtrip execution conformance"
+    },
+    {
+      "manifest": "tests/conformance/examples/manifest.json",
+      "selectors": [
+        "reader-facing examples",
+        "tutorial-backed feature coverage",
+        "showcase parity rows"
+      ],
+      "disposition": "example and tutorial execution conformance"
+    },
+    {
+      "manifest": "tests/conformance/corpus_surface.json",
+      "selectors": [
+        "artifact_surface.package_stage_root",
+        "workflow_surface.runnable_surface_check_action",
+        "claim_policy.release-claimable"
+      ],
+      "disposition": "release-claim executable proof boundaries"
+    }
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "negative execution and retired behavior remain rejection or strict-error evidence, never runnable compatibility support"
+}

@@ -75,6 +75,9 @@ Machine-readable indexes:
   that are not positive compatibility expectations)
 - `tests/conformance/longitudinal_suites.json` (retained regression and adoption basis)
 - `tests/conformance/corpus_surface.json` (taxonomy, audit surface, and gap model)
+- `tests/conformance/behavior_owner_splits/index.json` (behavior-first owner
+  split for broad conformance buckets before parser, semantic, lowering, IR,
+  runtime, e2e, or rejection evidence can be cited)
 - `tests/conformance/COVERAGE_MAP.md` (issue/family traceability map)
 
 ## Hard-Cutover Fixture Policy

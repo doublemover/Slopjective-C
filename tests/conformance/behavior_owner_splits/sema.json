@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-conformance-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/conformance/corpus_surface.json",
+  "support_boundary": "semantic conformance owns type checking, nullability, generics, effects, ownership, concurrency legality, interop semantic diagnostics, and unsupported feature claims",
+  "owned_buckets": [
+    "semantic",
+    "diagnostics"
+  ],
+  "owned_manifest_groups": [
+    {
+      "manifest": "tests/conformance/semantic/manifest.json",
+      "selectors": [
+        "issue_58_*",
+        "issue_59_*",
+        "issue_61_*",
+        "issue_62_*",
+        "issue_64_*",
+        "issue_65_*",
+        "issue_66_*",
+        "issue_70_*",
+        "issue_72_*",
+        "issue_73_*",
+        "issue_75_*",
+        "issue_77_*",
+        "issue_78_*",
+        "issue_80_*",
+        "issue_82_*",
+        "issue_83_*",
+        "issue_84_*",
+        "issue_86_*",
+        "issue_87_*",
+        "issue_89_*",
+        "issue_90_*",
+        "issue_91_*",
+        "issue_93_*",
+        "issue_96_*",
+        "issue_98_*",
+        "issue_99_*",
+        "issue_101_*",
+        "issue_102_*",
+        "issue_103_*",
+        "issue_8013_*",
+        "issue_8014_*",
+        "issue_8015_*",
+        "m*_lane_b_*"
+      ],
+      "disposition": "semantic behavior and semantic diagnostic conformance"
+    },
+    {
+      "manifest": "tests/conformance/diagnostics/manifest.json",
+      "selectors": [
+        "strict nullability",
+        "throws misuse",
+        "await misuse",
+        "isolation",
+        "sendable",
+        "borrowed/resource/capture",
+        "macro sandbox",
+        "diagnostic payload/code mapping"
+      ],
+      "disposition": "diagnostic payload conformance for semantic failures"
+    }
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "retired adapter feature gates and unsupported runnable claims are semantic rejections"
+}

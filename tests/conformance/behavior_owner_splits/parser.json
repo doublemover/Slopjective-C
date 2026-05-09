@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3-conformance-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/conformance/corpus_surface.json",
+  "support_boundary": "parser conformance owns grammar acceptance, grammar rejection, mode selection, feature-test macros, source mapping, and parser-facing diagnostics",
+  "owned_buckets": [
+    "parser",
+    "diagnostics"
+  ],
+  "owned_manifest_groups": [
+    {
+      "manifest": "tests/conformance/parser/manifest.json",
+      "selectors": [
+        "issue_48_cli_mode_selection",
+        "issue_49_source_mode_selection",
+        "issue_50_feature_test_macros",
+        "issue_80_async_await_grammar",
+        "issue_87_d011_await_requirement_parser",
+        "issue_88_part8_canonical_spellings_parser",
+        "issue_93_capture_list_parser",
+        "issue_95_perf_attribute_canonical_spellings_parser",
+        "m*_lane_a_*"
+      ],
+      "disposition": "parser acceptance, source mapping, and grammar diagnostic conformance"
+    },
+    {
+      "manifest": "tests/conformance/diagnostics/manifest.json",
+      "selectors": [
+        "parser-origin diagnostic rows",
+        "strict-mode failure paths rooted in parse or source-form rejection"
+      ],
+      "disposition": "diagnostic payload conformance for parser-owned failures"
+    }
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "retired mode spellings and parser fallback toggles are canonical parser rejections"
+}
