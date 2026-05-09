@@ -26,6 +26,7 @@
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_function_effect_analysis.h"
 #include "ir/objc3_ir_function_definition_emission.h"
+#include "ir/objc3_ir_function_local_flow.h"
 #include "ir/objc3_ir_message_send_emission.h"
 #include "ir/objc3_ir_lowering_extension_metadata_publication.h"
 #include "ir/objc3_ir_message_send_lowering.h"
@@ -2125,6 +2126,11 @@ class Objc3IREmitter {
             }}};
   }
 
+  Objc3IRFunctionLocalFlowContext FunctionLocalFlowContext() const {
+    return Objc3IRFunctionLocalFlowContext{
+        frontend_metadata_.arc_mode_enabled, ScopeCleanupCallbacks()};
+  }
+
   void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
                                         std::size_t target_depth) const {
     EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, target_depth);
@@ -2134,36 +2140,15 @@ class Objc3IREmitter {
     PushObjc3IRScope(ctx);
   }
 
-  void EmitDeferredCleanupTerminalToDepth(FunctionContext &ctx,
-                                          std::size_t target_scope_depth) const {
-    EmitObjc3IRDeferredCleanupTerminalToDepth(
-        ctx, target_scope_depth, ScopeCleanupCallbacks());
-  }
-
   void EmitPendingBlockDisposeUnwindToDepth(FunctionContext &ctx,
                                             std::size_t target_depth) const {
     EmitObjc3IRPendingBlockDisposeUnwindToDepth(ctx, target_depth);
-  }
-
-  void EmitPendingBlockDisposeTerminalCleanupToDepth(
-      const FunctionContext &ctx, std::size_t target_depth,
-      std::vector<std::string> &out_lines) const {
-    EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
-        ctx, target_depth, out_lines);
   }
 
   void EmitOwnershipCleanupUnwindToDepth(FunctionContext &ctx,
                                      std::size_t target_depth) const {
     EmitObjc3IROwnershipCleanupUnwindToDepth(
         ctx, target_depth, ScopeCleanupCallbacks());
-  }
-
-  void EmitOwnershipCleanupTerminalCleanupToDepth(const FunctionContext &ctx,
-                                              std::size_t target_depth,
-                                              std::vector<std::string> &out_lines,
-                                              int &temp_counter) const {
-    EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
-        ctx, target_depth, out_lines, temp_counter);
   }
 
   void PopScope(FunctionContext &ctx, bool emit_cleanup) const {
@@ -2190,20 +2175,6 @@ class Objc3IREmitter {
       return 0;
     }
     return value_it->second;
-  }
-
-  void EmitArcOwnedCleanupUnwindToDepth(FunctionContext &ctx,
-                                        std::size_t target_depth) const {
-    EmitObjc3IRArcOwnedCleanupUnwindToDepth(
-        ctx, target_depth, ScopeCleanupCallbacks());
-  }
-
-  void EmitArcOwnedTerminalCleanupToDepth(const FunctionContext &ctx,
-                                          std::size_t target_depth,
-                                          std::vector<std::string> &out_lines,
-                                          int &temp_counter) const {
-    EmitObjc3IRArcOwnedTerminalCleanupToDepth(
-        ctx, target_depth, out_lines, temp_counter);
   }
 
   std::string EmitIdentifierValue(const std::string &name,
@@ -2282,83 +2253,12 @@ class Objc3IREmitter {
     }
   }
 
-  std::string CoerceI32ToBoolI1(const std::string &i32_value, FunctionContext &ctx) const {
-    const std::string bool_i1 = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + bool_i1 + " = icmp ne i32 " + i32_value + ", 0");
-    return bool_i1;
-  }
-
-  std::string CoerceValueToI32(const std::string &value, ValueType value_type, FunctionContext &ctx) const {
-    if (value_type != ValueType::Bool) {
-      return value;
-    }
-    const std::string widened = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + widened + " = zext i1 " + value + " to i32");
-    return widened;
-  }
-
   const LoweredFunctionSignature *LookupFunctionSignature(const std::string &name) const {
     auto signature_it = function_signatures_.find(name);
     if (signature_it == function_signatures_.end()) {
       return nullptr;
     }
     return &signature_it->second;
-  }
-
-  std::string BuildThrowsErrorSlotAlloca(FunctionContext &ctx,
-                                         const std::string &prefix) const {
-    const std::string slot = "%" + prefix + ".error.addr." +
-                             std::to_string(ctx.temp_counter++);
-    ctx.entry_lines.push_back("  " + slot + " = alloca i32, align 4");
-    return slot;
-  }
-
-  void EmitStoreThrownError(const std::string &error_value,
-                            const std::string &slot,
-                            FunctionContext &ctx) const {
-    if (slot.empty()) {
-      return;
-    }
-    ctx.code_lines.push_back("  call void @" +
-                             std::string(kObjc3RuntimeStoreThrownErrorI32Symbol) +
-                             "(ptr " + slot + ", i32 " + error_value + ")");
-  }
-
-  std::string EmitLoadThrownError(const std::string &slot,
-                                  FunctionContext &ctx) const {
-    if (slot.empty()) {
-      return "0";
-    }
-    const std::string loaded = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + loaded + " = call i32 @" +
-                             std::string(kObjc3RuntimeLoadThrownErrorI32Symbol) +
-                             "(ptr " + slot + ")");
-    return loaded;
-  }
-
-  void EmitPropagateThrownError(const std::string &error_value,
-                                FunctionContext &ctx) const {
-    if (!ctx.error_handler_stack.empty()) {
-      const auto &handler = ctx.error_handler_stack.back();
-      EmitStoreThrownError(error_value, handler.error_slot_ptr, ctx);
-      EmitTerminalCleanupToDepth(ctx, handler.scope_depth,
-                                 handler.autoreleasepool_depth,
-                                 handler.pending_block_dispose_depth,
-                                 handler.ownership_cleanup_depth,
-                                 handler.arc_cleanup_depth);
-      ctx.code_lines.push_back("  br label %" + handler.dispatch_label);
-      ctx.terminated = true;
-      return;
-    }
-    if (!ctx.function_error_out_param.empty()) {
-      EmitStoreThrownError(error_value, ctx.function_error_out_param, ctx);
-      EmitTypedReturn("0", ctx);
-      ctx.terminated = true;
-      return;
-    }
-    ctx.code_lines.push_back("  call void @abort()");
-    ctx.code_lines.push_back("  unreachable");
-    ctx.terminated = true;
   }
 
   std::string EmitDirectFunctionCall(const Expr *expr,
@@ -2377,11 +2277,12 @@ class Objc3IREmitter {
               return NewTemp(callback_ctx);
             },
             [this](const std::string &value, FunctionContext &callback_ctx) {
-              return CoerceI32ToBoolI1(value, callback_ctx);
+              return CoerceObjc3IRI32ToBoolI1(value, callback_ctx);
             },
             [this](const std::string &value, ValueType value_type,
                    FunctionContext &callback_ctx) {
-              return CoerceValueToI32(value, value_type, callback_ctx);
+              return CoerceObjc3IRValueToI32(value, value_type,
+                                             callback_ctx);
             },
             [this](const std::string &function_name) {
               return Objc3IRFunctionMayHaveGlobalSideEffects(
@@ -2405,89 +2306,6 @@ class Objc3IREmitter {
               return LookupFunctionSignature(name);
             }},
         throws_error_slot_ptr, bridge_failed_out, bridge_error_value_out);
-  }
-
-  void RegisterArcOwnedCleanupPtr(const std::string &ptr,
-                                  FunctionContext &ctx) const {
-    RegisterObjc3IRArcOwnedCleanupPtr(ptr, ctx);
-  }
-
-  void EmitArcOwnedCleanupReleases(FunctionContext &ctx) const {
-    EmitObjc3IRArcOwnedCleanupReleases(ctx, ScopeCleanupCallbacks());
-  }
-
-  void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t scope_depth,
-                                  std::size_t autoreleasepool_depth,
-                                  std::size_t pending_block_dispose_depth,
-                                  std::size_t ownership_cleanup_depth,
-                                  std::size_t arc_cleanup_depth) const {
-    EmitObjc3IRTerminalCleanupToDepth(
-        ctx, scope_depth, autoreleasepool_depth, pending_block_dispose_depth,
-        ownership_cleanup_depth, arc_cleanup_depth, ScopeCleanupCallbacks());
-  }
-
-  void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
-    if (ctx.return_type == ValueType::Void) {
-      EmitDeferredCleanupTerminalToDepth(ctx, 0u);
-      EmitOwnershipCleanupTerminalCleanupToDepth(
-          ctx, 0u, ctx.code_lines, ctx.temp_counter);
-      EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
-      EmitArcOwnedTerminalCleanupToDepth(
-          ctx, 0u, ctx.code_lines, ctx.temp_counter);
-      ctx.code_lines.push_back("  ret void");
-      return;
-    }
-    std::string returned_value = i32_value;
-    if (ctx.arc_return_insert_retain) {
-      const std::string retained_value = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + retained_value + " = call i32 @" +
-                               std::string(kObjc3RuntimeRetainI32Symbol) +
-                               "(i32 " + returned_value + ")");
-      returned_value = retained_value;
-    }
-    if (ctx.arc_return_insert_autorelease) {
-      const std::string autoreleased_value = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + autoreleased_value + " = call i32 @" +
-                               std::string(kObjc3RuntimeAutoreleaseI32Symbol) +
-                               "(i32 " + returned_value + ")");
-      returned_value = autoreleased_value;
-    }
-    EmitDeferredCleanupTerminalToDepth(ctx, 0u);
-    EmitOwnershipCleanupTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
-    EmitPendingBlockDisposeTerminalCleanupToDepth(ctx, 0u, ctx.code_lines);
-    EmitArcOwnedTerminalCleanupToDepth(
-        ctx, 0u, ctx.code_lines, ctx.temp_counter);
-    if (ctx.return_type == ValueType::Bool) {
-      const std::string bool_i1 = CoerceI32ToBoolI1(returned_value, ctx);
-      ctx.code_lines.push_back("  ret i1 " + bool_i1);
-      return;
-    }
-    ctx.code_lines.push_back("  ret i32 " + returned_value);
-  }
-
-  void EmitTypedParamStore(const FuncParam &param, std::size_t index, const std::string &ptr, FunctionContext &ctx) const {
-    if (param.type == ValueType::Bool) {
-      const std::string widened = "%arg" + std::to_string(index) + ".zext." + std::to_string(ctx.temp_counter++);
-      ctx.entry_lines.push_back("  " + widened + " = zext i1 %arg" + std::to_string(index) + " to i32");
-      ctx.entry_lines.push_back("  store i32 " + widened + ", ptr " + ptr + ", align 4");
-      return;
-    }
-    std::string stored_value = "%arg" + std::to_string(index);
-    if (EffectiveArcParamInsertRetain(param, frontend_metadata_.arc_mode_enabled)) {
-      const std::string retained_value =
-          "%arg" + std::to_string(index) + ".retained." +
-          std::to_string(ctx.temp_counter++);
-      ctx.entry_lines.push_back("  " + retained_value + " = call i32 @" +
-                                std::string(kObjc3RuntimeRetainI32Symbol) +
-                                "(i32 " + stored_value + ")");
-      stored_value = retained_value;
-    }
-    ctx.entry_lines.push_back("  store i32 " + stored_value + ", ptr " + ptr +
-                              ", align 4");
-    if (EffectiveArcParamInsertRelease(param, frontend_metadata_.arc_mode_enabled)) {
-      RegisterArcOwnedCleanupPtr(ptr, ctx);
-    }
   }
 
   bool IsCompileTimeNilReceiverExprInContext(const Expr *expr, const FunctionContext &ctx) const {
@@ -2824,11 +2642,12 @@ class Objc3IREmitter {
             },
             [this](FunctionContext &callback_ctx,
                    const std::string &prefix) {
-              return BuildThrowsErrorSlotAlloca(callback_ctx, prefix);
+              return BuildObjc3IRThrowsErrorSlotAlloca(callback_ctx, prefix);
             },
             [this](const std::string &error_value,
                    FunctionContext &callback_ctx) {
-              EmitPropagateThrownError(error_value, callback_ctx);
+              EmitObjc3IRPropagateThrownError(
+                  error_value, callback_ctx, FunctionLocalFlowContext());
             },
             [this](const Expr *message_expr, FunctionContext &callback_ctx) {
               return EmitMessageSendExpr(message_expr, callback_ctx);
@@ -2888,28 +2707,30 @@ class Objc3IREmitter {
             },
             [this](const std::string &i32_value,
                    FunctionContext &callback_ctx) {
-              EmitTypedReturn(i32_value, callback_ctx);
+              EmitObjc3IRFunctionLocalTypedReturn(
+                  i32_value, callback_ctx, FunctionLocalFlowContext());
             },
             [this](FunctionContext &callback_ctx, std::size_t scope_depth,
                    std::size_t autoreleasepool_depth,
                    std::size_t pending_block_dispose_depth,
                    std::size_t ownership_cleanup_depth,
                    std::size_t arc_cleanup_depth) {
-              EmitTerminalCleanupToDepth(
+              EmitObjc3IRFunctionLocalTerminalCleanupToDepth(
                   callback_ctx, scope_depth, autoreleasepool_depth,
                   pending_block_dispose_depth, ownership_cleanup_depth,
-                  arc_cleanup_depth);
+                  arc_cleanup_depth, FunctionLocalFlowContext());
             },
             [this](FunctionContext &callback_ctx,
                    const std::string &prefix) {
-              return BuildThrowsErrorSlotAlloca(callback_ctx, prefix);
+              return BuildObjc3IRThrowsErrorSlotAlloca(callback_ctx, prefix);
             },
             [this](const std::string &slot, FunctionContext &callback_ctx) {
-              return EmitLoadThrownError(slot, callback_ctx);
+              return EmitObjc3IRLoadThrownError(slot, callback_ctx);
             },
             [this](const std::string &error_value,
                    FunctionContext &callback_ctx) {
-              EmitPropagateThrownError(error_value, callback_ctx);
+              EmitObjc3IRPropagateThrownError(
+                  error_value, callback_ctx, FunctionLocalFlowContext());
             }});
   }
 
@@ -2965,7 +2786,8 @@ class Objc3IREmitter {
         [this](FunctionContext &ctx) { SeedKnownClassReceiverBindings(ctx); },
         [this](const FuncParam &param, std::size_t index,
                const std::string &ptr, FunctionContext &ctx) {
-          EmitTypedParamStore(param, index, ptr, ctx);
+          EmitObjc3IRFunctionLocalTypedParamStore(
+              param, index, ptr, ctx, FunctionLocalFlowContext());
         },
         [this](const Stmt *stmt, FunctionContext &ctx) {
           EmitStatement(stmt, ctx);
@@ -2974,7 +2796,8 @@ class Objc3IREmitter {
           EmitAutoreleasepoolUnwindToDepth(ctx, depth);
         },
         [this](const std::string &i32_value, FunctionContext &ctx) {
-          EmitTypedReturn(i32_value, ctx);
+          EmitObjc3IRFunctionLocalTypedReturn(
+              i32_value, ctx, FunctionLocalFlowContext());
         },
         [this](const std::string &name) {
           return IsActorImplementation(name);
