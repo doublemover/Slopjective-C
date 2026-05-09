@@ -3,11 +3,14 @@ add_library(objc3c_sema STATIC
   objc3_parser_sema_handoff_scaffold.h
   objc3_semantic_context.cpp
   objc3_semantic_feature_claims.cpp
+  objc3_sema_control_flow_equivalence.cpp
   objc3_sema_diagnostic_contract.cpp
+  objc3_sema_dispatch_ownership_equivalence.cpp
   objc3_semantic_type_helpers.h
   objc3_sema_diagnostics_bus.cpp
   objc3_sema_pass_block_equivalence.cpp
   objc3_sema_pass_flow_scaffold.cpp
+  objc3_sema_symbol_binding_equivalence.cpp
   objc3_sema_type_summary_equivalence.cpp
   objc3_semantic_pass_helpers.cpp
   objc3_semantic_symbol_lookup.cpp
