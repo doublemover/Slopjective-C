@@ -1,5 +1,7 @@
 #include "support/objc3_property_storage_modifier_spelling.h"
 
+#include "support/objc3_property_storage_modifier_flags.h"
+
 namespace objc3c::support {
 
 std::string BuildRuntimeBackedPropertyStorageModifier(
@@ -10,28 +12,10 @@ std::string BuildRuntimeBackedPropertyStorageModifier(
     bool is_unowned,
     bool is_assign,
     bool is_unsafe_unretained) {
-  if (is_copy) {
-    return "copy";
-  }
-  if (is_retain) {
-    return "retain";
-  }
-  if (is_strong) {
-    return "strong";
-  }
-  if (is_weak) {
-    return "weak";
-  }
-  if (is_unowned) {
-    return "unowned";
-  }
-  if (is_unsafe_unretained) {
-    return "unsafe_unretained";
-  }
-  if (is_assign) {
-    return "assign";
-  }
-  return {};
+  return BuildRuntimeBackedPropertyStorageModifier(
+      MakePropertyStorageModifierFlags(is_copy, is_strong, is_retain, is_weak,
+                                       is_unowned, is_assign,
+                                       is_unsafe_unretained));
 }
 
 }  // namespace objc3c::support

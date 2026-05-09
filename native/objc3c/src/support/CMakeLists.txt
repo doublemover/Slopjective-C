@@ -129,6 +129,8 @@ add_library(objc3c_support_properties STATIC
   objc3_property_ownership_profile_tokens.h
   objc3_property_ownership_profiles.h
   objc3_property_profile_tokens.h
+  objc3_property_storage_modifier_flags.cpp
+  objc3_property_storage_modifier_flags.h
   objc3_property_storage_modifier_counts.cpp
   objc3_property_storage_modifier_counts.h
   objc3_property_storage_modifier_spelling.cpp
