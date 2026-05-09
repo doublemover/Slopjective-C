@@ -5,6 +5,13 @@
   "issue": "M321-B003",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_throws_abi_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "runtime",
+    "canonical_rejection"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_error_runtime_abi_cleanup_surface",
     "runtime_error_propagation_catch_cleanup_runtime_implementation_surface",

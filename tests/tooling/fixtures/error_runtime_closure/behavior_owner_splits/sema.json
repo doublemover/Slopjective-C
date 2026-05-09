@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-error-runtime-closure-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_contracts": [
+    "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json",
+    "tests/tooling/fixtures/error_runtime_closure/bridged_error_cross_module_compatibility_policy.json"
+  ],
+  "support_boundary": "semantic ownership covers thrown value storage, catch filtering, finalization ordering, cleanup ordering, bridge normalization, and claim narrowing before lowering or runtime owners cite executable proof",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_error_execution_cleanup_source_surface",
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_catch_filter_finalization_source_surface",
+    "semantic_surface_paths:frontend.pipeline.semantic_surface.objc_error_propagation_cleanup_semantics_surface",
+    "semantic_profile_fields:throws_propagation_summary.contract_violation_sites",
+    "frozen_semantic_models:semantic-claims-stay-narrower-than-private-helper-and-probe-evidence",
+    "claim_narrowing_constraints:no-public-error-runtime-abi-widening",
+    "claim_narrowing_constraints:no-evidence-only-cleanup-ordering-model"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "compatibility-positive bridge semantics, evidence-only cleanup ordering, public ABI widening, unsupported async/interop closure, and semantic shim claims are diagnostics, canonical rejection, or provenance-only evidence"
+}

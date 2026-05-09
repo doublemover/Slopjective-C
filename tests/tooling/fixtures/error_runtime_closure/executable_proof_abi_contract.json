@@ -5,6 +5,13 @@
   "issue": "M321-D001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_executable_proof_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "runtime",
+    "e2e",
+    "canonical_rejection"
+  ],
+  "public_command_behavior_boundary": "public commands and workflows are executable proof routing only and do not widen public runtime ABI or turn report-only/generated-report-only evidence into support",
   "public_commands": [
     "test:objc3c:error-conformance",
     "test:objc3c:runnable-error"

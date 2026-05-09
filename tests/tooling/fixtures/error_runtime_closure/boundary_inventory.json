@@ -5,8 +5,10 @@
   "issue": "M321-A001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "owner_split_contract": "tests/tooling/fixtures/error_runtime_closure/owner_split_contract.json",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/error-runtime-closure/boundary-inventory",
+  "generated_report_behavior_boundary": "generated error-runtime closure reports are provenance-only and cannot establish positive runtime, e2e, compatibility, or public ABI support",
   "focus_tracks": [
     "throw-catch-cleanup-unwind-runtime-closure",
     "nserror-status-result-bridge-runtime-closure",
@@ -71,6 +73,7 @@
     "validate-runnable-error"
   ],
   "fail_closed_boundary_inventory": {
+    "missing_behavior_owner_split": "fail-closed",
     "missing_owner_split_contract": "fail-closed",
     "missing_authoritative_code_path": "fail-closed",
     "missing_authoritative_runtime_symbol": "fail-closed",
@@ -79,6 +82,7 @@
     "missing_public_workflow_action": "fail-closed",
     "missing_executable_proof": "fail-closed"
   },
+  "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "current_gaps": [
     "shared conformance and packaged e2e reports exist, but shared closure artifacts still need to tie semantic, lowering, runtime ABI, and cross-module propagation claims together",
     "public claims must stay narrower than the private runtime helper ABI and snapshot evidence already published",

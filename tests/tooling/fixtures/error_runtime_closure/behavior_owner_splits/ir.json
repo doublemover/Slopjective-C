@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-error-runtime-closure-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_contracts": [
+    "tests/tooling/fixtures/error_runtime_closure/owner_split_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/error_lowering_runtime_artifact_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json"
+  ],
+  "support_boundary": "IR ownership covers compile manifests, runtime-registration packets, generated acceptance summaries, and artifact replay as provenance; generated artifacts do not create positive error runtime behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "canonical_artifacts:tmp/reports/runtime/acceptance/summary.json",
+    "canonical_artifacts:tmp/reports/runtime/architecture-integration/summary.json",
+    "canonical_artifacts:tmp/reports/runtime/runnable-error-conformance/summary.json",
+    "canonical_artifacts:tmp/reports/runtime/runnable-error-e2e/summary.json",
+    "generated_report_root:tmp/reports/error-runtime-closure/boundary-inventory",
+    "machine_owned_output_roots:tmp/reports/error-runtime-closure",
+    "machine_owned_output_roots:tmp/reports/runtime/runnable-error-conformance",
+    "machine_owned_output_roots:tmp/reports/runtime/runnable-error-e2e"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "generated reports, architecture summaries, runnable summaries, manifest replay packets, and runtime-registration artifacts are provenance-only until behavior owners claim support"
+}

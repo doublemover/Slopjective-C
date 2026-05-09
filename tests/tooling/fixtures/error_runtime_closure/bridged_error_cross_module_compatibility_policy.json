@@ -5,6 +5,14 @@
   "issue": "M321-B002",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "sema",
+    "runtime",
+    "e2e",
+    "canonical_rejection"
+  ],
+  "compatibility_behavior_boundary": "bridge compatibility is a narrowed private-helper/runtime-registration replay contract; wider public ABI, foreign-runtime, fallback, shim, or report-only compatibility claims are canonical rejection or provenance-only evidence",
   "canonical_surfaces": [
     "runtime_bridging_filter_unwind_diagnostics_surface",
     "runtime_error_lowering_unwind_bridge_helper_surface",

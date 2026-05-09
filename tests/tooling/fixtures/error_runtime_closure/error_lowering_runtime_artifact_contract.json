@@ -5,6 +5,14 @@
   "issue": "M321-C001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_artifact_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "lowering",
+    "ir",
+    "provenance",
+    "canonical_rejection"
+  ],
+  "artifact_behavior_boundary": "runtime acceptance, architecture integration, runnable error conformance, and runnable error e2e reports are provenance until behavior owners claim support",
   "canonical_artifacts": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/architecture-integration/summary.json",

@@ -5,6 +5,14 @@
   "issue": "M321-B001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
   "summary_implementation_anchor": "scripts/build_error_runtime_closure_semantic_summary.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "parser",
+    "sema",
+    "runtime",
+    "canonical_rejection"
+  ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/error_runtime_closure/behavior_owner_splits/canonical_rejection.json",
   "canonical_surfaces": [
     "runtime_error_execution_cleanup_source_surface",
     "runtime_catch_filter_finalization_source_surface",

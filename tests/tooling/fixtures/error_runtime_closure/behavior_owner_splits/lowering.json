@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-error-runtime-closure-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/error_runtime_closure/throws_abi_helper_semantics_contract.json",
+    "tests/tooling/fixtures/error_runtime_closure/error_lowering_runtime_artifact_contract.json"
+  ],
+  "support_boundary": "lowering ownership covers emitted throw/catch helper packets, cleanup ordering, bridge helper calls, runtime-registration replay preservation, and cross-module manifest coupling before IR or runtime owners cite artifacts",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "canonical_surfaces:runtime_error_lowering_unwind_bridge_helper_surface",
+    "canonical_surfaces:runtime_error_runtime_abi_cleanup_surface",
+    "helper_symbols:objc3_runtime_store_thrown_error_i32",
+    "helper_symbols:objc3_runtime_load_thrown_error_i32",
+    "helper_symbols:objc3_runtime_bridge_status_error_i32",
+    "helper_symbols:objc3_runtime_bridge_nserror_error_i32",
+    "helper_symbols:objc3_runtime_catch_matches_error_i32",
+    "authoritative_case_ids:executable-throw-catch-cleanup-lowering"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "fallback runtime lowering, compatibility shim lowering, public ABI widening through helper calls, missing runtime-registration replay, and lowering report-only success are strict-error, canonical rejection, or provenance-only evidence"
+}

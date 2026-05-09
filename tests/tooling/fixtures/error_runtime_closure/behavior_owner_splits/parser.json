@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-error-runtime-closure-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/error_runtime_closure/boundary_inventory.json",
+    "tests/tooling/fixtures/error_runtime_closure/error_propagation_unwind_cleanup_semantic_model.json"
+  ],
+  "support_boundary": "parser ownership covers checked-in error, catch, bridge attribute, and result-bridge source fixture parsing before semantic, lowering, runtime, or e2e owners claim behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/error_source_closure_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/try_do_catch_semantics_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/error_bridge_marker_surface_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/error_out_abi_positive.objc3",
+    "authoritative_fixture_paths:tests/tooling/fixtures/native/result_bridge_consumer.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser spellings, parser recovery-only evidence, compatibility parser labels, and parser fallback flags are canonical rejection or provenance-only evidence"
+}
