@@ -20,6 +20,7 @@
 #include "artifacts/json/runtime_metadata_manifest_json.h"
 #include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_actor_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
@@ -314,14 +315,6 @@ using objc3::artifacts::frontend::
     BuildOwnershipCleanupResourceCaptureSourceCompletionSummaryJson;
 using objc3::artifacts::frontend::
     BuildOwnershipBorrowedPointerEscapeAnalysisSummaryJson;
-using objc3::artifacts::frontend::BuildBlockAbiInvokeTrampolineLoweringContract;
-using objc3::artifacts::frontend::BuildBlockCopyDisposeLoweringContract;
-using objc3::artifacts::frontend::
-    BuildBlockDeterminismPerfBaselineLoweringContract;
-using objc3::artifacts::frontend::BuildBlockLiteralCaptureLoweringContract;
-using objc3::artifacts::frontend::BuildBlockSourceModelCompletionContract;
-using objc3::artifacts::frontend::BuildBlockSourceStorageAnnotationContract;
-using objc3::artifacts::frontend::BuildBlockStorageEscapeLoweringContract;
 using objc3::artifacts::frontend::
     BuildOwnershipCaptureListRetainableFamilyLegalityCompletionSummaryJson;
 using objc3::artifacts::frontend::
@@ -1367,80 +1360,48 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &ownership_aware_lowering_behavior_scaffold =
           ownership_aware_lowering_plan
               .ownership_aware_lowering_behavior_scaffold;
-  const Objc3BlockLiteralCaptureLoweringContract block_literal_capture_lowering_contract =
-      BuildBlockLiteralCaptureLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3BlockLiteralCaptureLoweringContract(block_literal_capture_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block literal capture lowering contract");
+  const Objc3FrontendArtifactBlockLoweringPlan block_lowering_plan =
+      BuildObjc3FrontendArtifactBlockLoweringPlan(pipeline_result);
+  for (const auto &failure : block_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string block_literal_capture_lowering_replay_key =
-      Objc3BlockLiteralCaptureLoweringReplayKey(block_literal_capture_lowering_contract);
-  // block-source-model-completion anchor: frontend artifacts now
-  // derive the authoritative block signature/capture/invoke source-model
-  // contract directly from the AST so source-only frontend runs can emit a
-  // stable manifest handoff before runnable block lowering exists.
-  const Objc3BlockSourceModelCompletionContract block_source_model_completion_contract =
-      BuildBlockSourceModelCompletionContract(pipeline_result.program.ast);
-  if (!IsValidObjc3BlockSourceModelCompletionContract(
-          block_source_model_completion_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid block source model completion contract");
-  }
-  const std::string block_source_model_completion_replay_key =
-      Objc3BlockSourceModelCompletionReplayKey(
-          block_source_model_completion_contract);
-  // block-source-storage-annotation anchor: frontend artifacts now
-  // publish the truthful byref/helper/escape-shape source inventory directly
-  // from the parser-owned block model so later sema and runtime lanes can
-  // consume something real without rewriting the old synthetic legacy
-  // packets in place.
+  const Objc3BlockLiteralCaptureLoweringContract
+      &block_literal_capture_lowering_contract =
+          block_lowering_plan.block_literal_capture_lowering_contract;
+  const std::string &block_literal_capture_lowering_replay_key =
+      block_lowering_plan.block_literal_capture_lowering_replay_key;
+  const Objc3BlockSourceModelCompletionContract
+      &block_source_model_completion_contract =
+          block_lowering_plan.block_source_model_completion_contract;
+  const std::string &block_source_model_completion_replay_key =
+      block_lowering_plan.block_source_model_completion_replay_key;
   const Objc3BlockSourceStorageAnnotationContract
-      block_source_storage_annotation_contract =
-          BuildBlockSourceStorageAnnotationContract(
-              pipeline_result.program.ast);
-  if (!IsValidObjc3BlockSourceStorageAnnotationContract(
-          block_source_storage_annotation_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid block source storage annotation contract");
-  }
-  const std::string block_source_storage_annotation_replay_key =
-      Objc3BlockSourceStorageAnnotationReplayKey(
-          block_source_storage_annotation_contract);
-  const Objc3BlockAbiInvokeTrampolineLoweringContract block_abi_invoke_trampoline_lowering_contract =
-      BuildBlockAbiInvokeTrampolineLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3BlockAbiInvokeTrampolineLoweringContract(
-          block_abi_invoke_trampoline_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block ABI invoke-trampoline lowering contract");
-  }
-  const std::string block_abi_invoke_trampoline_lowering_replay_key =
-      Objc3BlockAbiInvokeTrampolineLoweringReplayKey(
-          block_abi_invoke_trampoline_lowering_contract);
-  const Objc3BlockStorageEscapeLoweringContract block_storage_escape_lowering_contract =
-      BuildBlockStorageEscapeLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3BlockStorageEscapeLoweringContract(
-          block_storage_escape_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block storage escape lowering contract");
-  }
-  const std::string block_storage_escape_lowering_replay_key =
-      Objc3BlockStorageEscapeLoweringReplayKey(block_storage_escape_lowering_contract);
-  const Objc3BlockCopyDisposeLoweringContract block_copy_dispose_lowering_contract =
-      BuildBlockCopyDisposeLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3BlockCopyDisposeLoweringContract(
-          block_copy_dispose_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block copy-dispose lowering contract");
-  }
-  const std::string block_copy_dispose_lowering_replay_key =
-      Objc3BlockCopyDisposeLoweringReplayKey(block_copy_dispose_lowering_contract);
-  const Objc3BlockDeterminismPerfBaselineLoweringContract block_determinism_perf_baseline_lowering_contract =
-      BuildBlockDeterminismPerfBaselineLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3BlockDeterminismPerfBaselineLoweringContract(
-          block_determinism_perf_baseline_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid block determinism/perf baseline lowering contract");
-  }
-  const std::string block_determinism_perf_baseline_lowering_replay_key =
-      Objc3BlockDeterminismPerfBaselineLoweringReplayKey(
-          block_determinism_perf_baseline_lowering_contract);
+      &block_source_storage_annotation_contract =
+          block_lowering_plan.block_source_storage_annotation_contract;
+  const std::string &block_source_storage_annotation_replay_key =
+      block_lowering_plan.block_source_storage_annotation_replay_key;
+  const Objc3BlockAbiInvokeTrampolineLoweringContract
+      &block_abi_invoke_trampoline_lowering_contract =
+          block_lowering_plan.block_abi_invoke_trampoline_lowering_contract;
+  const std::string &block_abi_invoke_trampoline_lowering_replay_key =
+      block_lowering_plan.block_abi_invoke_trampoline_lowering_replay_key;
+  const Objc3BlockStorageEscapeLoweringContract
+      &block_storage_escape_lowering_contract =
+          block_lowering_plan.block_storage_escape_lowering_contract;
+  const std::string &block_storage_escape_lowering_replay_key =
+      block_lowering_plan.block_storage_escape_lowering_replay_key;
+  const Objc3BlockCopyDisposeLoweringContract
+      &block_copy_dispose_lowering_contract =
+          block_lowering_plan.block_copy_dispose_lowering_contract;
+  const std::string &block_copy_dispose_lowering_replay_key =
+      block_lowering_plan.block_copy_dispose_lowering_replay_key;
+  const Objc3BlockDeterminismPerfBaselineLoweringContract
+      &block_determinism_perf_baseline_lowering_contract =
+          block_lowering_plan
+              .block_determinism_perf_baseline_lowering_contract;
+  const std::string &block_determinism_perf_baseline_lowering_replay_key =
+      block_lowering_plan
+          .block_determinism_perf_baseline_lowering_replay_key;
   const Objc3LightweightGenericsConstraintLoweringContract lightweight_generic_constraint_lowering_contract =
       BuildLightweightGenericsConstraintLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3LightweightGenericsConstraintLoweringContract(
