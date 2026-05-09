@@ -16,6 +16,7 @@
 #include "ir/objc3_ir_block_runtime_contracts.h"
 #include "ir/objc3_ir_canonical_literal_pools.h"
 #include "ir/objc3_ir_concurrency_identity.h"
+#include "ir/objc3_ir_concurrency_runtime_call_emission.h"
 #include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_emission_prologue.h"
@@ -2230,168 +2231,26 @@ class Objc3IREmitter {
 
   bool TryEmitConcurrencyTaskRuntimeLoweringCall(const Expr *expr, FunctionContext &ctx,
                                            std::string &result_out) const {
-    if (expr == nullptr || !ctx.async_runtime_helper_enabled) {
-      return false;
-    }
-
-    const std::string lowered = objc3c::support::LowercaseAscii(expr->ident);
-    const auto emit_unary_runtime_call = [&](const char *symbol) {
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, symbol, {std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-    };
-
-    if (lowered == "task_spawn_child" || lowered == "spawn_task") {
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeSpawnTaskI32Symbol,
-          {"1", std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "detached_task_create") {
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeSpawnTaskI32Symbol,
-          {"2", std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "with_task_group_scope") {
-      emit_unary_runtime_call(kObjc3RuntimeEnterTaskGroupScopeI32Symbol);
-      return true;
-    }
-    if (lowered == "task_group_add_task") {
-      emit_unary_runtime_call(kObjc3RuntimeAddTaskGroupTaskI32Symbol);
-      return true;
-    }
-    if (lowered == "task_group_cancel_all") {
-      emit_unary_runtime_call(kObjc3RuntimeCancelTaskGroupI32Symbol);
-      return true;
-    }
-    if (lowered == "task_runtime_cancelled_value") {
-      emit_unary_runtime_call(kObjc3RuntimeTaskIsCancelledI32Symbol);
-      return true;
-    }
-    if (lowered == "task_runtime_on_cancel") {
-      emit_unary_runtime_call(kObjc3RuntimeTaskOnCancelI32Symbol);
-      return true;
-    }
-    if (lowered == "task_group_wait_next" || lowered == "wait_next") {
-      const std::string waited = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          waited, kObjc3RuntimeWaitTaskGroupNextI32Symbol,
-          {std::to_string(ctx.async_executor_tag)}));
-      const std::string hopped = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          hopped, kObjc3RuntimeExecutorHopI32Symbol,
-          {waited, std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = hopped;
-      return true;
-    }
-    return false;
+    Objc3IRConcurrencyRuntimeCallEmissionCallbacks callbacks{
+        [this](FunctionContext &callback_ctx) { return NewTemp(callback_ctx); },
+        [this, &ctx](const Expr *arg) { return EmitExpr(arg, ctx); },
+        [this](FunctionContext &callback_ctx) {
+          InvalidateGlobalProofState(callback_ctx);
+        }};
+    return TryEmitObjc3IRConcurrencyTaskRuntimeLoweringCall(
+        expr, ctx, callbacks, result_out);
   }
 
   bool TryEmitConcurrencyActorLoweringCall(const Expr *expr, FunctionContext &ctx,
                                      std::string &result_out) const {
-    if (expr == nullptr || !ctx.actor_runtime_helper_enabled) {
-      return false;
-    }
-
-    const std::string lowered = objc3c::support::LowercaseAscii(expr->ident);
-    if (lowered == "actor_enter_isolation_thunk") {
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorEnterIsolationThunkI32Symbol,
-          {std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "actor_nonisolated_entry" &&
-        ctx.actor_nonisolated_entry_enabled) {
-      const std::string value =
-          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorEnterNonisolatedI32Symbol,
-          {value, std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "actor_hop_to_executor") {
-      const std::string value =
-          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorHopToExecutorI32Symbol,
-          {value, std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "actor_bind_executor") {
-      const std::string actor_handle =
-          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorBindExecutorI32Symbol,
-          {actor_handle, std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "actor_mailbox_enqueue") {
-      const std::string actor_handle =
-          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
-      const std::string value = expr->args.size() < 2u
-                                    ? "0"
-                                    : EmitExpr(expr->args[1].get(), ctx);
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorMailboxEnqueueI32Symbol,
-          {actor_handle, value, std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "actor_mailbox_drain_next") {
-      const std::string actor_handle =
-          expr->args.empty() ? "0" : EmitExpr(expr->args.front().get(), ctx);
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorMailboxDrainNextI32Symbol,
-          {actor_handle, std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "replay_proof_step") {
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorRecordReplayProofI32Symbol,
-          {std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-    if (lowered == "race_guard_lock") {
-      const std::string out = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeI32CallLine(
-          out, kObjc3RuntimeActorRecordRaceGuardI32Symbol,
-          {std::to_string(ctx.async_executor_tag)}));
-      InvalidateGlobalProofState(ctx);
-      result_out = out;
-      return true;
-    }
-
-    return false;
+    Objc3IRConcurrencyRuntimeCallEmissionCallbacks callbacks{
+        [this](FunctionContext &callback_ctx) { return NewTemp(callback_ctx); },
+        [this, &ctx](const Expr *arg) { return EmitExpr(arg, ctx); },
+        [this](FunctionContext &callback_ctx) {
+          InvalidateGlobalProofState(callback_ctx);
+        }};
+    return TryEmitObjc3IRConcurrencyActorLoweringCall(
+        expr, ctx, callbacks, result_out);
   }
 
   std::string RuntimeMetadataLinkerAnchorSuffix() const {
