@@ -148,6 +148,10 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildRuntimeAwareImportModuleFrontendClosureSummaryJson;
 using objc3::artifacts::frontend::
+    BuildConcurrencyActorMailboxRuntimeImportSummary;
+using objc3::artifacts::frontend::
+    BuildConcurrencyActorMailboxRuntimeImportSummaryJson;
+using objc3::artifacts::frontend::
     BuildCrossModuleRuntimeMetadataSemanticPreservationReplayKey;
 using objc3::artifacts::frontend::
     BuildCrossModuleRuntimeMetadataSemanticPreservationSummary;
@@ -295,15 +299,6 @@ inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataModel =
     "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
 inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataDeferredModel =
     "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-runtime-work";
-inline constexpr const char *kObjc3ConcurrencyActorMailboxRuntimeImportContractId =
-    "objc3c.concurrency.actor.mailbox.isolation.import.surface.v1";
-inline constexpr const char *kObjc3ConcurrencyActorMailboxRuntimeImportSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_concurrency_actor_mailbox_and_isolation_runtime_import_surface";
-inline constexpr const char *kObjc3ConcurrencyActorMailboxRuntimeImportSourceModel =
-    "runtime-import-surface-preserves-actor-lowering-and-isolation-replay-facts-for-cross-module-runtime-link-planning";
-inline constexpr const char *kObjc3ConcurrencyActorMailboxRuntimeImportFailClosedModel =
-    "missing-or-drifted-actor-mailbox-runtime-import-packets-disable-cross-module-actor-runtime-preservation-claims";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeAbiCompletionContractId =
     "objc3c.concurrency.task.runtime.abi.completion.v1";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath =
@@ -6415,72 +6410,6 @@ BuildExecutableAccessorLayoutLoweringSummary(
   }
   summary.ivar_layout_owner_entries = ivar_layout_owner_identities.size();
   return summary;
-}
-
-struct Objc3ConcurrencyActorMailboxRuntimeImportSummary {
-  std::string contract_id = kObjc3ConcurrencyActorMailboxRuntimeImportContractId;
-  std::string source_contract_id = kObjc3ConcurrencyActorLoweringMetadataContractId;
-  std::string surface_path = kObjc3ConcurrencyActorMailboxRuntimeImportSurfacePath;
-  std::string source_model = kObjc3ConcurrencyActorMailboxRuntimeImportSourceModel;
-  std::string fail_closed_model =
-      kObjc3ConcurrencyActorMailboxRuntimeImportFailClosedModel;
-  bool actor_mailbox_runtime_ready = false;
-  bool deterministic = false;
-  std::string replay_key;
-  std::string actor_lowering_replay_key;
-  std::string actor_isolation_lowering_replay_key;
-};
-
-Objc3ConcurrencyActorMailboxRuntimeImportSummary
-BuildConcurrencyActorMailboxRuntimeImportSummary(
-    const Objc3ActorLoweringMetadataContract &actor_contract,
-    const std::string &actor_lowering_replay_key,
-    const std::string &actor_isolation_lowering_replay_key) {
-  Objc3ConcurrencyActorMailboxRuntimeImportSummary summary;
-  summary.actor_lowering_replay_key = actor_lowering_replay_key;
-  summary.actor_isolation_lowering_replay_key =
-      actor_isolation_lowering_replay_key;
-  const bool actor_sites_present = actor_contract.actor_interface_sites != 0u ||
-                                   actor_contract.actor_method_sites != 0u;
-  summary.actor_mailbox_runtime_ready =
-      actor_sites_present && IsValidObjc3ActorLoweringMetadataContract(actor_contract) &&
-      !actor_lowering_replay_key.empty() &&
-      !actor_isolation_lowering_replay_key.empty();
-  summary.deterministic = actor_contract.deterministic;
-  std::ostringstream replay_key;
-  replay_key << summary.contract_id
-             << ";source_contract_id=" << summary.source_contract_id
-             << ";actor_mailbox_runtime_ready="
-             << (summary.actor_mailbox_runtime_ready ? "true" : "false")
-             << ";deterministic=" << (summary.deterministic ? "true" : "false")
-             << ";actor_lowering_replay_key=" << actor_lowering_replay_key
-             << ";actor_isolation_lowering_replay_key="
-             << actor_isolation_lowering_replay_key;
-  summary.replay_key = replay_key.str();
-  return summary;
-}
-
-std::string BuildConcurrencyActorMailboxRuntimeImportSummaryJson(
-    const Objc3ConcurrencyActorMailboxRuntimeImportSummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"source_contract_id\":\""
-      << EscapeJsonString(summary.source_contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
-      << "\",\"fail_closed_model\":\""
-      << EscapeJsonString(summary.fail_closed_model)
-      << "\",\"actor_mailbox_runtime_ready\":"
-      << (summary.actor_mailbox_runtime_ready ? "true" : "false")
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"actor_lowering_replay_key\":\""
-      << EscapeJsonString(summary.actor_lowering_replay_key)
-      << "\",\"actor_isolation_lowering_replay_key\":\""
-      << EscapeJsonString(summary.actor_isolation_lowering_replay_key)
-      << "\",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\"}";
-  return out.str();
 }
 
 struct Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary {

@@ -4,7 +4,22 @@
 
 #include "pipeline/objc3_frontend_types.h"
 
+struct Objc3ActorLoweringMetadataContract;
+
 namespace objc3::artifacts::frontend {
+
+struct Objc3ConcurrencyActorMailboxRuntimeImportSummary {
+  std::string contract_id;
+  std::string source_contract_id;
+  std::string surface_path;
+  std::string source_model;
+  std::string fail_closed_model;
+  bool actor_mailbox_runtime_ready = false;
+  bool deterministic = false;
+  std::string replay_key;
+  std::string actor_lowering_replay_key;
+  std::string actor_isolation_lowering_replay_key;
+};
 
 [[nodiscard]] std::string BuildRuntimeAwareImportModuleSurfaceReplayKey(
     const Objc3Program &program,
@@ -31,6 +46,15 @@ BuildRuntimeAwareImportModuleFrontendClosureSummary(
 
 [[nodiscard]] std::string BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary);
+
+[[nodiscard]] Objc3ConcurrencyActorMailboxRuntimeImportSummary
+BuildConcurrencyActorMailboxRuntimeImportSummary(
+    const Objc3ActorLoweringMetadataContract &actor_contract,
+    const std::string &actor_lowering_replay_key,
+    const std::string &actor_isolation_lowering_replay_key);
+
+[[nodiscard]] std::string BuildConcurrencyActorMailboxRuntimeImportSummaryJson(
+    const Objc3ConcurrencyActorMailboxRuntimeImportSummary &summary);
 
 [[nodiscard]] std::string
 BuildCrossModuleRuntimeMetadataSemanticPreservationReplayKey(
