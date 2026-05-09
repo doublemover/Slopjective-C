@@ -28,11 +28,11 @@
       "error-identity",
       "result-shape",
       "optional-bridge",
-      "text-data-compatibility"
+      "text-data-shape"
     ],
     "objc3.keypath": [
       "typed-keypath-application",
-      "typed-keypath-text-compatibility",
+      "typed-keypath-text-shape",
       "typed-keypath-metadata",
       "reflection-interop",
       "runtime-composition-adapter"
@@ -82,14 +82,14 @@
       "objc3_errors_result_error_or",
       "objc3_errors_ok_or_code",
       "objc3_errors_or_throw_code",
-      "objc3_errors_text_data_compatibility_score",
-      "objc3_errors_text_data_compatibility_diagnostic"
+      "objc3_errors_text_data_shape_score",
+      "objc3_errors_text_data_shape_diagnostic"
     ],
     "objc3.keypath": [
       "objc3_keypath_apply_index",
       "objc3_keypath_component_count",
-      "objc3_keypath_text_compatibility_score",
-      "objc3_keypath_text_compatibility_diagnostic",
+      "objc3_keypath_text_shape_score",
+      "objc3_keypath_text_shape_diagnostic",
       "objc3_keypath_metadata_token",
       "objc3_keypath_reflection_interop_token",
       "objc3_keypath_runtime_composition_token"
@@ -116,7 +116,7 @@
   "module_roles": {
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
     "objc3.errors": "error identity, result helpers, and optional-to-error bridges",
-    "objc3.keypath": "typed key-path helpers that need text/data compatibility naming stability",
+    "objc3.keypath": "typed key-path helpers that need text/data shape naming stability",
     "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the advanced stdlib contract",
     "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the advanced stdlib contract"
   },

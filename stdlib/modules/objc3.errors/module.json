@@ -17,7 +17,7 @@
     "error-identity",
     "result-shape",
     "optional-bridge",
-    "text-data-compatibility"
+    "text-data-shape"
   ],
   "exports": [
     "Objc3ErrorsResultOkTag",
@@ -31,7 +31,7 @@
     "objc3_errors_result_error_or",
     "objc3_errors_ok_or_code",
     "objc3_errors_or_throw_code",
-    "objc3_errors_text_data_compatibility_score",
-    "objc3_errors_text_data_compatibility_diagnostic"
+    "objc3_errors_text_data_shape_score",
+    "objc3_errors_text_data_shape_diagnostic"
   ]
 }

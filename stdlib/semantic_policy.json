@@ -31,7 +31,7 @@
       "patch": 0
     }
   },
-  "compatibility_rules": [
+  "stability_rules": [
     "required export names remain stable within stdlib major version 1",
     "result tag numeric identity remains stable within stdlib major version 1",
     "text/data helper meaning remains count-and-presence preserving within stdlib major version 1",
@@ -62,14 +62,14 @@
     "result_error_or": "returns code only when tag equals result_err_tag, otherwise the caller-supplied default",
     "ok_or_code": "returns value when nonzero, otherwise the caller-supplied default",
     "or_throw_code": "returns value when nonzero, otherwise the caller-supplied default",
-    "text_data_compatibility_score": "returns unit_count plus byte_count",
-    "text_data_compatibility_diagnostic": "returns 0 when unit_count equals byte_count, otherwise 30602"
+    "text_data_shape_score": "returns unit_count plus byte_count",
+    "text_data_shape_diagnostic": "returns 0 when unit_count equals byte_count, otherwise 30602"
   },
   "keypath_semantics": {
     "apply_index": "returns root plus offset",
     "component_count": "returns root plus offset until runtime-backed keypath storage lands",
-    "text_compatibility_score": "returns component_count plus text_units for canonical text-shape validation",
-    "text_compatibility_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
+    "text_shape_score": "returns component_count plus text_units for canonical text-shape validation",
+    "text_shape_diagnostic": "returns 0 when text_units is at least component_count, otherwise 30603",
     "typed_keypath_metadata": "remains count-and-component preserving until runtime-backed keypath metadata lands",
     "reflection_interop": "must preserve the caller-visible keypath component count and diagnostic behavior across module boundaries",
     "runtime_composition_adapter": "must not invent ownership or allocation semantics beyond the checked-in keypath component and text-shape helpers",
