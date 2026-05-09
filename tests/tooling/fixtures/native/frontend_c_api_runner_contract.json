@@ -2,7 +2,7 @@
   "contract_id": "objc3c.frontend.c_api.runner.contract.v1",
   "surface_kind": "frontend-public-c-api-runner-fixture-contract",
   "runner": "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-  "source_path": "native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp",
+  "source_glob": "native/objc3c/src/tools/objc3c_frontend_c_api_runner*",
   "summary_mode": "objc3c-frontend-c-api-runner-v1",
   "required_summary_fields": [
     "mode",
