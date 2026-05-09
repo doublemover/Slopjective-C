@@ -1,25 +1,3 @@
-      result.parity_surface.parser_sema_advanced_diagnostics_shard2
-          .failed_sync_count == 0u &&
-      result.parity_surface.parser_sema_advanced_diagnostics_shard2
-          .advanced_contract_rejection_shard2_ready &&
-      result.parity_surface.parser_sema_advanced_diagnostics_shard2
-          .pass_manager_contract_surface_sync &&
-      result.parity_surface.parser_sema_advanced_diagnostics_shard2
-          .shard_surface_sync &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .required_sync_count == 3u &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .passed_sync_count ==
-          result.parity_surface.parser_sema_integration_closeout_signoff
-              .required_sync_count &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .failed_sync_count == 0u &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .advanced_diagnostics_shard2_ready &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .pass_manager_contract_surface_sync &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .gate_signoff_surface_sync &&
       result.parity_surface.parser_sema_conformance_matrix
           .top_level_declaration_count_matches &&
       result.parity_surface.parser_sema_conformance_matrix
@@ -166,23 +144,10 @@
       result.parity_surface.arc_diagnostics_fixit_summary.deterministic &&
       result.parity_surface.autoreleasepool_scope_summary.deterministic;
   const bool closeout_parser_sema_ready =
-      result.parity_surface.deterministic_parser_sema_integration_closeout_signoff &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .deterministic &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-              .required_sync_count == 3u &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-              .passed_sync_count ==
-          result.parity_surface.parser_sema_integration_closeout_signoff
-              .required_sync_count &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-              .failed_sync_count == 0u &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .advanced_diagnostics_shard2_ready &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .pass_manager_contract_surface_sync &&
-      result.parity_surface.parser_sema_integration_closeout_signoff
-          .gate_signoff_surface_sync;
+      result.parity_surface
+          .deterministic_parser_sema_contract_readiness_record &&
+      IsReadyObjc3ParserSemaContractReadinessRecord(
+          result.parity_surface.parser_sema_contract_readiness_record);
   const bool closeout_pass_manager_publication_ready =
       result.parity_surface.deterministic_pass_manager_publication_record &&
       IsReadyObjc3SemaPassManagerPublicationRecord(

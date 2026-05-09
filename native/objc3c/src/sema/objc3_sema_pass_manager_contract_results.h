@@ -24,6 +24,9 @@
   bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
   bool deterministic_parser_sema_integration_closeout_signoff = false;
+  Objc3ParserSemaContractReadinessRecord
+      parser_sema_contract_readiness_record;
+  bool deterministic_parser_sema_contract_readiness_record = false;
   Objc3SemanticIntegrationSurface integration_surface;
   std::vector<std::string> diagnostics;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};

@@ -25,6 +25,8 @@ inline constexpr const char *kObjc3ParserSemaSnapshotNormalizationOwner =
     "native.frontend.parser-sema.snapshot-normalization";
 inline constexpr const char *kObjc3ParserSemaCanonicalRejectionOwner =
     "native.frontend.parser-sema.canonical-rejection";
+inline constexpr const char *kObjc3ParserSemaContractReadinessOwner =
+    "native.frontend.parser-sema.contract-readiness";
 inline constexpr const char *kObjc3SemaDiagnosticHandoffOwner =
     "native.frontend.sema.diagnostic-stage";
 inline constexpr const char *kObjc3SemaDiagnosticsPublicationOwner =
@@ -1172,6 +1174,62 @@ struct Objc3ParserSemaIntegrationCloseoutSignoff {
   bool deterministic = false;
 };
 
+struct Objc3ParserSemaContractReadinessRecord {
+  std::string parser_sema_contract_readiness_owner =
+      kObjc3ParserSemaContractReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string parser_sema_contract_handoff_owner =
+      kObjc3ParserSemaContractHandoffOwner;
+  std::string parity_validation_owner = kObjc3SemaParityValidationOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool conformance_matrix_ready = false;
+  bool conformance_corpus_ready = false;
+  bool performance_quality_guardrails_ready = false;
+  bool cross_lane_integration_sync_ready = false;
+  bool docs_runbook_sync_ready = false;
+  bool release_candidate_replay_dry_run_ready = false;
+  bool advanced_core_shard1_ready = false;
+  bool advanced_contract_rejection_shard1_ready = false;
+  bool advanced_diagnostics_shard1_ready = false;
+  bool advanced_conformance_shard1_ready = false;
+  bool advanced_integration_shard1_ready = false;
+  bool advanced_performance_shard1_ready = false;
+  bool advanced_core_shard2_ready = false;
+  bool advanced_contract_rejection_shard2_ready = false;
+  bool advanced_diagnostics_shard2_ready = false;
+  bool integration_closeout_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3ParserSemaContractReadinessRecord(
+    const Objc3ParserSemaContractReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.conformance_matrix_ready && record.conformance_corpus_ready &&
+         record.performance_quality_guardrails_ready &&
+         record.cross_lane_integration_sync_ready &&
+         record.docs_runbook_sync_ready &&
+         record.release_candidate_replay_dry_run_ready &&
+         record.advanced_core_shard1_ready &&
+         record.advanced_contract_rejection_shard1_ready &&
+         record.advanced_diagnostics_shard1_ready &&
+         record.advanced_conformance_shard1_ready &&
+         record.advanced_integration_shard1_ready &&
+         record.advanced_performance_shard1_ready &&
+         record.advanced_core_shard2_ready &&
+         record.advanced_contract_rejection_shard2_ready &&
+         record.advanced_diagnostics_shard2_ready &&
+         record.integration_closeout_ready && record.deterministic;
+}
+
 struct Objc3SemaParityContractSurface {
   Objc3ParserSemaConformanceMatrix parser_sema_conformance_matrix;
   Objc3ParserSemaConformanceCorpus parser_sema_conformance_corpus;
@@ -1189,6 +1247,8 @@ struct Objc3SemaParityContractSurface {
   Objc3ParserSemaAdvancedContractRejectionShard2 parser_sema_advanced_contract_rejection_shard2;
   Objc3ParserSemaAdvancedDiagnosticsShard2 parser_sema_advanced_diagnostics_shard2;
   Objc3ParserSemaIntegrationCloseoutSignoff parser_sema_integration_closeout_signoff;
+  Objc3ParserSemaContractReadinessRecord
+      parser_sema_contract_readiness_record;
   Objc3SemaPassFlowSummary sema_pass_flow_summary;
   Objc3SemaDiagnosticsPublicationRecord diagnostics_publication_record;
   Objc3SemaPassFlowRecoveryRecord pass_flow_recovery_record;
@@ -1623,6 +1683,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_advanced_contract_rejection_shard2 = false;
   bool deterministic_parser_sema_advanced_diagnostics_shard2 = false;
   bool deterministic_parser_sema_integration_closeout_signoff = false;
+  bool deterministic_parser_sema_contract_readiness_record = false;
   bool deterministic_diagnostics_publication_record = false;
   bool deterministic_pass_flow_recovery_record = false;
   bool deterministic_pass_manager_publication_record = false;
@@ -1877,23 +1938,265 @@ BuildObjc3SemaTypeMetadataMappingReadinessRecord(
   return record;
 }
 
+inline bool Objc3ParserSemaSyncCountsReady(
+    std::size_t expected_count,
+    std::size_t required_count,
+    std::size_t passed_count,
+    std::size_t failed_count) {
+  return required_count == expected_count && passed_count == required_count &&
+         failed_count == 0u;
+}
+
+inline Objc3ParserSemaContractReadinessRecord
+BuildObjc3ParserSemaContractReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3ParserSemaContractReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.conformance_matrix_ready =
+      surface.deterministic_parser_sema_conformance_matrix &&
+      surface.parser_sema_conformance_matrix.deterministic;
+  record.conformance_corpus_ready =
+      surface.deterministic_parser_sema_conformance_corpus &&
+      surface.parser_sema_conformance_corpus.deterministic;
+  record.performance_quality_guardrails_ready =
+      surface.deterministic_parser_sema_performance_quality_guardrails &&
+      surface.parser_sema_performance_quality_guardrails.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          7u,
+          surface.parser_sema_performance_quality_guardrails
+              .required_guardrail_count,
+          surface.parser_sema_performance_quality_guardrails
+              .passed_guardrail_count,
+          surface.parser_sema_performance_quality_guardrails
+              .failed_guardrail_count) &&
+      surface.parser_sema_performance_quality_guardrails
+          .conformance_matrix_builder_budget_guarded &&
+      surface.parser_sema_performance_quality_guardrails
+          .conformance_corpus_builder_budget_guarded &&
+      surface.parser_sema_performance_quality_guardrails
+          .handoff_scaffold_builder_budget_guarded &&
+      surface.parser_sema_performance_quality_guardrails
+          .matrix_diagnostic_budget_consistent &&
+      surface.parser_sema_performance_quality_guardrails
+          .matrix_token_top_level_budget_consistent &&
+      surface.parser_sema_performance_quality_guardrails
+          .matrix_subset_budget_consistent &&
+      surface.parser_sema_performance_quality_guardrails
+          .corpus_case_budget_consistent;
+  record.cross_lane_integration_sync_ready =
+      surface.deterministic_parser_sema_cross_lane_integration_sync &&
+      surface.parser_sema_cross_lane_integration_sync.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          4u,
+          surface.parser_sema_cross_lane_integration_sync.required_sync_count,
+          surface.parser_sema_cross_lane_integration_sync.passed_sync_count,
+          surface.parser_sema_cross_lane_integration_sync.failed_sync_count) &&
+      surface.parser_sema_cross_lane_integration_sync.matrix_consistent &&
+      surface.parser_sema_cross_lane_integration_sync.corpus_consistent &&
+      surface.parser_sema_cross_lane_integration_sync
+          .performance_quality_guardrails_consistent &&
+      surface.parser_sema_cross_lane_integration_sync
+          .pass_manager_contract_surface_sync;
+  record.docs_runbook_sync_ready =
+      surface.deterministic_parser_sema_docs_runbook_sync &&
+      surface.parser_sema_docs_runbook_sync.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_docs_runbook_sync.required_sync_count,
+          surface.parser_sema_docs_runbook_sync.passed_sync_count,
+          surface.parser_sema_docs_runbook_sync.failed_sync_count) &&
+      surface.parser_sema_docs_runbook_sync.cross_lane_integration_sync_ready &&
+      surface.parser_sema_docs_runbook_sync.pass_manager_contract_surface_sync &&
+      surface.parser_sema_docs_runbook_sync.parity_surface_sync;
+  record.release_candidate_replay_dry_run_ready =
+      surface.deterministic_parser_sema_release_candidate_replay_dry_run &&
+      surface.parser_sema_release_candidate_replay_dry_run.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_release_candidate_replay_dry_run
+              .required_sync_count,
+          surface.parser_sema_release_candidate_replay_dry_run
+              .passed_sync_count,
+          surface.parser_sema_release_candidate_replay_dry_run
+              .failed_sync_count) &&
+      surface.parser_sema_release_candidate_replay_dry_run
+          .docs_runbook_sync_ready &&
+      surface.parser_sema_release_candidate_replay_dry_run
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_release_candidate_replay_dry_run.replay_surface_sync;
+  record.advanced_core_shard1_ready =
+      surface.deterministic_parser_sema_advanced_core_shard1 &&
+      surface.parser_sema_advanced_core_shard1.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_core_shard1.required_sync_count,
+          surface.parser_sema_advanced_core_shard1.passed_sync_count,
+          surface.parser_sema_advanced_core_shard1.failed_sync_count) &&
+      surface.parser_sema_advanced_core_shard1
+          .release_candidate_replay_dry_run_ready &&
+      surface.parser_sema_advanced_core_shard1
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_core_shard1.shard_surface_sync;
+  record.advanced_contract_rejection_shard1_ready =
+      surface.deterministic_parser_sema_advanced_contract_rejection_shard1 &&
+      surface.parser_sema_advanced_contract_rejection_shard1.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_contract_rejection_shard1
+              .required_sync_count,
+          surface.parser_sema_advanced_contract_rejection_shard1
+              .passed_sync_count,
+          surface.parser_sema_advanced_contract_rejection_shard1
+              .failed_sync_count) &&
+      surface.parser_sema_advanced_contract_rejection_shard1
+          .advanced_core_shard1_ready &&
+      surface.parser_sema_advanced_contract_rejection_shard1
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_contract_rejection_shard1
+          .shard_surface_sync;
+  record.advanced_diagnostics_shard1_ready =
+      surface.deterministic_parser_sema_advanced_diagnostics_shard1 &&
+      surface.parser_sema_advanced_diagnostics_shard1.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_diagnostics_shard1.required_sync_count,
+          surface.parser_sema_advanced_diagnostics_shard1.passed_sync_count,
+          surface.parser_sema_advanced_diagnostics_shard1.failed_sync_count) &&
+      surface.parser_sema_advanced_diagnostics_shard1
+          .advanced_contract_rejection_shard1_ready &&
+      surface.parser_sema_advanced_diagnostics_shard1
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_diagnostics_shard1.shard_surface_sync;
+  record.advanced_conformance_shard1_ready =
+      surface.deterministic_parser_sema_advanced_conformance_shard1 &&
+      surface.parser_sema_advanced_conformance_shard1.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_conformance_shard1.required_sync_count,
+          surface.parser_sema_advanced_conformance_shard1.passed_sync_count,
+          surface.parser_sema_advanced_conformance_shard1.failed_sync_count) &&
+      surface.parser_sema_advanced_conformance_shard1
+          .advanced_diagnostics_shard1_ready &&
+      surface.parser_sema_advanced_conformance_shard1
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_conformance_shard1.shard_surface_sync;
+  record.advanced_integration_shard1_ready =
+      surface.deterministic_parser_sema_advanced_integration_shard1 &&
+      surface.parser_sema_advanced_integration_shard1.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_integration_shard1.required_sync_count,
+          surface.parser_sema_advanced_integration_shard1.passed_sync_count,
+          surface.parser_sema_advanced_integration_shard1.failed_sync_count) &&
+      surface.parser_sema_advanced_integration_shard1
+          .advanced_conformance_shard1_ready &&
+      surface.parser_sema_advanced_integration_shard1
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_integration_shard1.shard_surface_sync;
+  record.advanced_performance_shard1_ready =
+      surface.deterministic_parser_sema_advanced_performance_shard1 &&
+      surface.parser_sema_advanced_performance_shard1.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_performance_shard1.required_sync_count,
+          surface.parser_sema_advanced_performance_shard1.passed_sync_count,
+          surface.parser_sema_advanced_performance_shard1.failed_sync_count) &&
+      surface.parser_sema_advanced_performance_shard1
+          .advanced_integration_shard1_ready &&
+      surface.parser_sema_advanced_performance_shard1
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_performance_shard1.shard_surface_sync;
+  record.advanced_core_shard2_ready =
+      surface.deterministic_parser_sema_advanced_core_shard2 &&
+      surface.parser_sema_advanced_core_shard2.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_core_shard2.required_sync_count,
+          surface.parser_sema_advanced_core_shard2.passed_sync_count,
+          surface.parser_sema_advanced_core_shard2.failed_sync_count) &&
+      surface.parser_sema_advanced_core_shard2
+          .advanced_performance_shard1_ready &&
+      surface.parser_sema_advanced_core_shard2
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_core_shard2.shard_surface_sync;
+  record.advanced_contract_rejection_shard2_ready =
+      surface.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
+      surface.parser_sema_advanced_contract_rejection_shard2.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_contract_rejection_shard2
+              .required_sync_count,
+          surface.parser_sema_advanced_contract_rejection_shard2
+              .passed_sync_count,
+          surface.parser_sema_advanced_contract_rejection_shard2
+              .failed_sync_count) &&
+      surface.parser_sema_advanced_contract_rejection_shard2
+          .advanced_core_shard2_ready &&
+      surface.parser_sema_advanced_contract_rejection_shard2
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_contract_rejection_shard2
+          .shard_surface_sync;
+  record.advanced_diagnostics_shard2_ready =
+      surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&
+      surface.parser_sema_advanced_diagnostics_shard2.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_advanced_diagnostics_shard2.required_sync_count,
+          surface.parser_sema_advanced_diagnostics_shard2.passed_sync_count,
+          surface.parser_sema_advanced_diagnostics_shard2.failed_sync_count) &&
+      surface.parser_sema_advanced_diagnostics_shard2
+          .advanced_contract_rejection_shard2_ready &&
+      surface.parser_sema_advanced_diagnostics_shard2
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_advanced_diagnostics_shard2.shard_surface_sync;
+  record.integration_closeout_ready =
+      surface.deterministic_parser_sema_integration_closeout_signoff &&
+      surface.parser_sema_integration_closeout_signoff.deterministic &&
+      Objc3ParserSemaSyncCountsReady(
+          3u,
+          surface.parser_sema_integration_closeout_signoff.required_sync_count,
+          surface.parser_sema_integration_closeout_signoff.passed_sync_count,
+          surface.parser_sema_integration_closeout_signoff.failed_sync_count) &&
+      surface.parser_sema_integration_closeout_signoff
+          .advanced_diagnostics_shard2_ready &&
+      surface.parser_sema_integration_closeout_signoff
+          .pass_manager_contract_surface_sync &&
+      surface.parser_sema_integration_closeout_signoff.gate_signoff_surface_sync;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.parser_sema_contract_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.parser_sema_contract_handoff_owner) &&
+      Objc3SemaOwnerIsExplicit(record.parity_validation_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.conformance_matrix_ready && record.conformance_corpus_ready &&
+      record.performance_quality_guardrails_ready &&
+      record.cross_lane_integration_sync_ready &&
+      record.docs_runbook_sync_ready &&
+      record.release_candidate_replay_dry_run_ready &&
+      record.advanced_core_shard1_ready &&
+      record.advanced_contract_rejection_shard1_ready &&
+      record.advanced_diagnostics_shard1_ready &&
+      record.advanced_conformance_shard1_ready &&
+      record.advanced_integration_shard1_ready &&
+      record.advanced_performance_shard1_ready &&
+      record.advanced_core_shard2_ready &&
+      record.advanced_contract_rejection_shard2_ready &&
+      record.advanced_diagnostics_shard2_ready &&
+      record.integration_closeout_ready;
+  return record;
+}
+
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
-  return surface.ready && surface.deterministic_parser_sema_conformance_matrix &&
-         surface.deterministic_parser_sema_conformance_corpus &&
-         surface.deterministic_parser_sema_performance_quality_guardrails &&
-         surface.deterministic_parser_sema_cross_lane_integration_sync &&
-         surface.deterministic_parser_sema_docs_runbook_sync &&
-         surface.deterministic_parser_sema_release_candidate_replay_dry_run &&
-         surface.deterministic_parser_sema_advanced_core_shard1 &&
-         surface.deterministic_parser_sema_advanced_contract_rejection_shard1 &&
-         surface.deterministic_parser_sema_advanced_diagnostics_shard1 &&
-         surface.deterministic_parser_sema_advanced_conformance_shard1 &&
-         surface.deterministic_parser_sema_advanced_integration_shard1 &&
-         surface.deterministic_parser_sema_advanced_performance_shard1 &&
-         surface.deterministic_parser_sema_advanced_core_shard2 &&
-         surface.deterministic_parser_sema_advanced_contract_rejection_shard2 &&
-         surface.deterministic_parser_sema_advanced_diagnostics_shard2 &&
-         surface.deterministic_parser_sema_integration_closeout_signoff &&
+  return surface.ready &&
+         surface.deterministic_parser_sema_contract_readiness_record &&
+         IsReadyObjc3ParserSemaContractReadinessRecord(
+             surface.parser_sema_contract_readiness_record) &&
          surface.deterministic_diagnostics_publication_record &&
          surface.deterministic_pass_manager_publication_record &&
          IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary) &&
@@ -1919,22 +2222,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_closeout_signoff_record &&
          IsReadyObjc3SemaCloseoutSignoffRecord(
              surface.closeout_signoff_record) &&
-         surface.parser_sema_conformance_matrix.deterministic &&
-         surface.parser_sema_conformance_corpus.deterministic &&
-         surface.parser_sema_performance_quality_guardrails.deterministic &&
-         surface.parser_sema_cross_lane_integration_sync.deterministic &&
-         surface.parser_sema_docs_runbook_sync.deterministic &&
-         surface.parser_sema_release_candidate_replay_dry_run.deterministic &&
-         surface.parser_sema_advanced_core_shard1.deterministic &&
-         surface.parser_sema_advanced_contract_rejection_shard1.deterministic &&
-         surface.parser_sema_advanced_diagnostics_shard1.deterministic &&
-         surface.parser_sema_advanced_conformance_shard1.deterministic &&
-         surface.parser_sema_advanced_integration_shard1.deterministic &&
-         surface.parser_sema_advanced_performance_shard1.deterministic &&
-         surface.parser_sema_advanced_core_shard2.deterministic &&
-         surface.parser_sema_advanced_contract_rejection_shard2.deterministic &&
-         surface.parser_sema_advanced_diagnostics_shard2.deterministic &&
-         surface.parser_sema_integration_closeout_signoff.deterministic &&
+         surface.deterministic_parser_sema_contract_readiness_record &&
+         IsReadyObjc3ParserSemaContractReadinessRecord(
+             surface.parser_sema_contract_readiness_record) &&
          IsReadyObjc3BootstrapLegalityFailureContractSummary(
              surface.bootstrap_legality_failure_contract_summary) &&
          IsReadyObjc3BootstrapLegalitySemanticsSummary(
@@ -1943,154 +2233,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.bootstrap_failure_restart_semantics_summary) &&
          IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
              surface.compatibility_strictness_claim_semantics_summary) &&
-         surface.parser_sema_performance_quality_guardrails.required_guardrail_count == 7u &&
-         surface.parser_sema_performance_quality_guardrails.passed_guardrail_count ==
-             surface.parser_sema_performance_quality_guardrails.required_guardrail_count &&
-         surface.parser_sema_performance_quality_guardrails.failed_guardrail_count == 0u &&
-         surface.parser_sema_performance_quality_guardrails
-             .conformance_matrix_builder_budget_guarded &&
-         surface.parser_sema_performance_quality_guardrails
-             .conformance_corpus_builder_budget_guarded &&
-         surface.parser_sema_performance_quality_guardrails
-             .handoff_scaffold_builder_budget_guarded &&
-         surface.parser_sema_performance_quality_guardrails
-             .matrix_diagnostic_budget_consistent &&
-         surface.parser_sema_performance_quality_guardrails
-             .matrix_token_top_level_budget_consistent &&
-         surface.parser_sema_performance_quality_guardrails.matrix_subset_budget_consistent &&
-         surface.parser_sema_performance_quality_guardrails.corpus_case_budget_consistent &&
-         surface.parser_sema_cross_lane_integration_sync.required_sync_count == 4u &&
-         surface.parser_sema_cross_lane_integration_sync.passed_sync_count ==
-             surface.parser_sema_cross_lane_integration_sync.required_sync_count &&
-         surface.parser_sema_cross_lane_integration_sync.failed_sync_count == 0u &&
-         surface.parser_sema_cross_lane_integration_sync.matrix_consistent &&
-         surface.parser_sema_cross_lane_integration_sync.corpus_consistent &&
-         surface.parser_sema_cross_lane_integration_sync
-             .performance_quality_guardrails_consistent &&
-         surface.parser_sema_cross_lane_integration_sync
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_docs_runbook_sync.required_sync_count == 3u &&
-         surface.parser_sema_docs_runbook_sync.passed_sync_count ==
-             surface.parser_sema_docs_runbook_sync.required_sync_count &&
-         surface.parser_sema_docs_runbook_sync.failed_sync_count == 0u &&
-         surface.parser_sema_docs_runbook_sync.cross_lane_integration_sync_ready &&
-         surface.parser_sema_docs_runbook_sync
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_docs_runbook_sync.parity_surface_sync &&
-         surface.parser_sema_release_candidate_replay_dry_run.required_sync_count ==
-             3u &&
-         surface.parser_sema_release_candidate_replay_dry_run.passed_sync_count ==
-             surface.parser_sema_release_candidate_replay_dry_run
-                 .required_sync_count &&
-         surface.parser_sema_release_candidate_replay_dry_run.failed_sync_count ==
-             0u &&
-         surface.parser_sema_release_candidate_replay_dry_run
-             .docs_runbook_sync_ready &&
-         surface.parser_sema_release_candidate_replay_dry_run
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_release_candidate_replay_dry_run.replay_surface_sync &&
-         surface.parser_sema_advanced_core_shard1.required_sync_count == 3u &&
-         surface.parser_sema_advanced_core_shard1.passed_sync_count ==
-             surface.parser_sema_advanced_core_shard1.required_sync_count &&
-         surface.parser_sema_advanced_core_shard1.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_core_shard1
-             .release_candidate_replay_dry_run_ready &&
-         surface.parser_sema_advanced_core_shard1
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_core_shard1.shard_surface_sync &&
-         surface.parser_sema_advanced_contract_rejection_shard1.required_sync_count == 3u &&
-         surface.parser_sema_advanced_contract_rejection_shard1
-             .passed_sync_count ==
-             surface.parser_sema_advanced_contract_rejection_shard1
-                 .required_sync_count &&
-         surface.parser_sema_advanced_contract_rejection_shard1
-             .failed_sync_count == 0u &&
-         surface.parser_sema_advanced_contract_rejection_shard1
-             .advanced_core_shard1_ready &&
-         surface.parser_sema_advanced_contract_rejection_shard1
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_contract_rejection_shard1
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_diagnostics_shard1.required_sync_count == 3u &&
-         surface.parser_sema_advanced_diagnostics_shard1.passed_sync_count ==
-             surface.parser_sema_advanced_diagnostics_shard1.required_sync_count &&
-         surface.parser_sema_advanced_diagnostics_shard1.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_diagnostics_shard1
-             .advanced_contract_rejection_shard1_ready &&
-         surface.parser_sema_advanced_diagnostics_shard1
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_diagnostics_shard1
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_conformance_shard1.required_sync_count == 3u &&
-         surface.parser_sema_advanced_conformance_shard1.passed_sync_count ==
-             surface.parser_sema_advanced_conformance_shard1.required_sync_count &&
-         surface.parser_sema_advanced_conformance_shard1.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_conformance_shard1
-             .advanced_diagnostics_shard1_ready &&
-         surface.parser_sema_advanced_conformance_shard1
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_conformance_shard1
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_integration_shard1.required_sync_count == 3u &&
-         surface.parser_sema_advanced_integration_shard1.passed_sync_count ==
-             surface.parser_sema_advanced_integration_shard1.required_sync_count &&
-         surface.parser_sema_advanced_integration_shard1.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_integration_shard1
-             .advanced_conformance_shard1_ready &&
-         surface.parser_sema_advanced_integration_shard1
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_integration_shard1
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_performance_shard1.required_sync_count == 3u &&
-         surface.parser_sema_advanced_performance_shard1.passed_sync_count ==
-             surface.parser_sema_advanced_performance_shard1.required_sync_count &&
-         surface.parser_sema_advanced_performance_shard1.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_performance_shard1
-             .advanced_integration_shard1_ready &&
-         surface.parser_sema_advanced_performance_shard1
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_performance_shard1
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_core_shard2.required_sync_count == 3u &&
-         surface.parser_sema_advanced_core_shard2.passed_sync_count ==
-             surface.parser_sema_advanced_core_shard2.required_sync_count &&
-         surface.parser_sema_advanced_core_shard2.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_core_shard2
-             .advanced_performance_shard1_ready &&
-         surface.parser_sema_advanced_core_shard2
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_core_shard2
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_contract_rejection_shard2.required_sync_count == 3u &&
-         surface.parser_sema_advanced_contract_rejection_shard2.passed_sync_count ==
-             surface.parser_sema_advanced_contract_rejection_shard2.required_sync_count &&
-         surface.parser_sema_advanced_contract_rejection_shard2.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_contract_rejection_shard2
-             .advanced_core_shard2_ready &&
-         surface.parser_sema_advanced_contract_rejection_shard2
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_contract_rejection_shard2
-             .shard_surface_sync &&
-         surface.parser_sema_advanced_diagnostics_shard2.required_sync_count == 3u &&
-         surface.parser_sema_advanced_diagnostics_shard2.passed_sync_count ==
-             surface.parser_sema_advanced_diagnostics_shard2.required_sync_count &&
-         surface.parser_sema_advanced_diagnostics_shard2.failed_sync_count == 0u &&
-         surface.parser_sema_advanced_diagnostics_shard2
-             .advanced_contract_rejection_shard2_ready &&
-         surface.parser_sema_advanced_diagnostics_shard2
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_advanced_diagnostics_shard2
-             .shard_surface_sync &&
-         surface.parser_sema_integration_closeout_signoff.required_sync_count == 3u &&
-         surface.parser_sema_integration_closeout_signoff.passed_sync_count ==
-             surface.parser_sema_integration_closeout_signoff.required_sync_count &&
-         surface.parser_sema_integration_closeout_signoff.failed_sync_count == 0u &&
-         surface.parser_sema_integration_closeout_signoff
-             .advanced_diagnostics_shard2_ready &&
-         surface.parser_sema_integration_closeout_signoff
-             .pass_manager_contract_surface_sync &&
-         surface.parser_sema_integration_closeout_signoff
-             .gate_signoff_surface_sync &&
+         surface.deterministic_parser_sema_contract_readiness_record &&
+         IsReadyObjc3ParserSemaContractReadinessRecord(
+             surface.parser_sema_contract_readiness_record) &&
          surface.parser_sema_conformance_matrix.top_level_declaration_count_matches &&
          surface.parser_sema_conformance_matrix.global_decl_count_matches &&
          surface.parser_sema_conformance_matrix.protocol_decl_count_matches &&
