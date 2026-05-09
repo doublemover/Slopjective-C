@@ -1,9 +1,8 @@
 #pragma once
 
-#include <stddef.h>
-#include <stdint.h>
-
+#include "runtime/public/objc3_runtime_registration.h"
 #include "runtime/public/objc3_runtime_result.h"
+#include "runtime/public/objc3_runtime_selector.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,38 +22,6 @@ extern "C" {
  * individual entrypoint says so. Borrowed output strings are runtime-owned and
  * valid until the owning table/snapshot state is reset or mutated.
  */
-typedef struct objc3_runtime_image_descriptor {
-  /* Borrowed by the registration call and copied into runtime-owned storage. */
-  const char *module_name;
-  const char *translation_unit_identity_key;
-  uint64_t registration_order_ordinal;
-  uint64_t class_descriptor_count;
-  uint64_t protocol_descriptor_count;
-  uint64_t category_descriptor_count;
-  uint64_t property_descriptor_count;
-  uint64_t ivar_descriptor_count;
-} objc3_runtime_image_descriptor;
-
-typedef struct objc3_runtime_selector_handle {
-  /* Runtime-owned spelling; valid until the selector table is reset/mutated. */
-  const char *selector;
-  uint64_t stable_id;
-} objc3_runtime_selector_handle;
-
-typedef struct objc3_runtime_registration_state_snapshot {
-  uint64_t registered_image_count;
-  uint64_t registered_descriptor_total;
-  uint64_t next_expected_registration_order_ordinal;
-  uint64_t last_successful_registration_order_ordinal;
-  int last_registration_status;
-  /* Runtime-owned borrowed snapshot strings; callers must not free them. */
-  const char *last_registered_module_name;
-  const char *last_registered_translation_unit_identity_key;
-  const char *last_rejected_module_name;
-  const char *last_rejected_translation_unit_identity_key;
-  uint64_t last_rejected_registration_order_ordinal;
-} objc3_runtime_registration_state_snapshot;
-
 /*
  * Registers one emitted image descriptor. Returns an
  * objc3_runtime_registration_status_code value.
