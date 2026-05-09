@@ -1,12 +1,12 @@
 {
-  "contract_id": "objc3c.adoption_legibility.migration_playbook_semantics.v1",
+  "contract_id": "objc3c.adoption_legibility.adoption_replay_semantics.v1",
   "schema_version": 1,
-  "owner_section": "migration_playbook",
+  "owner_section": "adoption_replay",
   "owner_contract": {
-    "owner": "migration_playbook_owner",
-    "artifact_section": "migration_playbook",
-    "publication_projection": "evaluator_publication.migration_phases",
-    "blocker_projection": "claim_audit.blocker_metadata.migration_playbook"
+    "owner": "adoption_replay_owner",
+    "artifact_section": "adoption_replay",
+    "publication_projection": "evaluator_publication.adoption_replay_phases",
+    "blocker_projection": "claim_audit.blocker_metadata.adoption_replay"
   },
   "package_bridge": "objc3c",
   "depends_on": [
@@ -16,11 +16,11 @@
     "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json",
     "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
   ],
-  "playbook_phases": [
+  "adoption_replay_phases": [
     {
       "phase_id": "orient",
       "sequence": 1,
-      "description": "Start from evaluator-facing docs and public command discovery before choosing a migration path.",
+      "description": "Start from evaluator-facing docs and public command discovery before choosing an adoption replay path.",
       "required_paths": [
         "README.md",
         "site/index.md",
@@ -51,7 +51,7 @@
     {
       "phase_id": "package-and-application-workspace",
       "sequence": 3,
-      "description": "Move migration examples into deterministic package and canonical application workflow state.",
+      "description": "Move conversion examples into deterministic package and canonical application workflow state.",
       "required_paths": [
         "docs/runbooks/objc3c_package_ecosystem.md",
         "docs/runbooks/objc3c_application_architecture_testing.md",
@@ -85,7 +85,7 @@
       "axis_id": "objc2-object-model",
       "showcase_anchor": "showcase/auroraBoard/main.objc3",
       "runbook_anchor": "docs/runbooks/objc3c_object_model_closure.md",
-      "allowed_guidance": "migrate recognizable interface, implementation, protocol, category, and property shapes only where runnable examples and conformance evidence cover them",
+      "allowed_guidance": "convert recognizable interface, implementation, protocol, category, and property shapes only where runnable examples and conformance evidence cover them",
       "deferred_behavior": [
         "full Objective-C 2 runtime parity",
         "implicit behavior not represented by checked-in examples"
@@ -112,7 +112,7 @@
       ]
     }
   ],
-  "required_migration_replay_fields": [
+  "required_adoption_replay_fields": [
     "source_version",
     "target_version",
     "source_channel",
@@ -123,27 +123,27 @@
     "rollback_target"
   ],
   "hard_cutover_truthfulness": {
-    "source_compatibility_claims_allowed": false,
-    "migration_or_fallback_support_claims_allowed": false,
-    "upgrade_support_report_boundary": "upgrade_support_report is a replay field for risk inventory only, not a source-compatibility guarantee",
-    "rollback_target_boundary": "rollback_target identifies evidence-linked release operations state, not fallback support for retired behavior",
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
+    "upgrade_support_report_boundary": "upgrade_support_report is a replay field for risk inventory only, not a retired source acceptance guarantee",
+    "rollback_target_boundary": "rollback_target identifies evidence-linked release operations state, not alternate support for retired behavior",
     "wrapper_only_publication_allowed": false
   },
   "publication_policy": {
-    "metadata_projection": "evaluator_publication.migration_phases",
+    "metadata_projection": "evaluator_publication.adoption_replay_phases",
     "support_state": "evaluator-ready-with-same-major-porting-orientation-and-evidence-linked-comparison",
-    "blocker_metadata_projection": "claim_audit.blocker_metadata.migration_playbook",
+    "blocker_metadata_projection": "claim_audit.blocker_metadata.adoption_replay",
     "requires_public_actions": [
       "validate-adoption-legibility",
       "publish-adoption-legibility"
     ]
   },
   "fail_closed_conditions": [
-    "playbook phase sequence is missing or out of order",
+    "adoption replay phase sequence is missing or out of order",
     "phase omits concrete paths or workflow actions",
     "interop guidance axis omits a runnable showcase anchor",
     "same-major support or rollback evidence is not named",
-    "migration replay fields drift from long-horizon support semantics",
-    "playbook wording implies source-compatible migration support or fallback support"
+    "adoption replay fields drift from long-horizon support semantics",
+    "adoption replay wording implies retired source acceptance support"
   ]
 }

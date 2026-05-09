@@ -53,8 +53,8 @@ available implementation surface. Any claim that describes production fit,
 conversion safety, ecosystem maturity, performance, conformance, or support must
 name its evidence class and must stay inside the support class published by the
 release, package, conformance, performance, and long-horizon runbooks.
-Conversion wording is evidence and onboarding prose only; it does not create a
-migration lane, compatibility mode, shim, or fallback source surface.
+Conversion wording is evidence and onboarding prose only; it does not create
+retired-source acceptance or alternate old-surface support.
 
 Adoption copy may say that objc3c has a runnable evaluator path only when it
 points to checked-in README, site, tutorial, showcase, public-command,
@@ -88,19 +88,18 @@ claim is backed by conformance, performance, interop, package, release, and
 support evidence. Unsupported or intentionally deferred behavior must remain
 visible in the comparison text.
 
-## Canonical Conversion Playbook And Interop Guidance
+## Canonical Adoption Replay And Interop Guidance
 
-The canonical conversion playbook semantics contract is checked in at:
+The canonical adoption replay semantics contract is checked in at:
 
-- `tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`
+- `tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json`
 
 Replay it with:
 
 - `npm run objc3c -- validate-adoption-legibility`
 
-The fixture keeps its historical migration name, but the public contract is
-canonical conversion over checked-in runnable examples and support evidence.
-Conversion guidance has four ordered phases: orient on public docs, compile the
+The public contract is canonical conversion over checked-in runnable examples
+and support evidence. Adoption replay has four ordered phases: orient on public docs, compile the
 showcase anchors, create or validate package/application workspace state, then
 check support and rollback evidence. Interop guidance is part of that path; it
 must name the runnable example and runbook that prove the current Objective-C 2,
@@ -143,7 +142,7 @@ It generates:
 - `tmp/reports/adoption-legibility/evidence-summary.json`
 
 The generator replays the boundary inventory, public claim policy, comparison
-semantics, conversion playbook semantics, and artifact contract summaries before
+semantics, adoption replay semantics, and artifact contract summaries before
 writing artifacts. Generated evidence is temporary output; checked-in contracts,
 docs, and action-catalog-owned implementations remain the source of truth.
 
@@ -160,7 +159,7 @@ It maps to:
 - `npm run objc3c -- publish-adoption-legibility`
 
 The public workflow validates the generated evidence artifact shape, evaluator
-entrypoints, conversion phases, comparison axes, onboarding workspaces, support
+entrypoints, adoption replay phases, comparison axes, onboarding workspaces, support
 state, and claim-audit blockers.
 
 Evaluator metadata publication emits:

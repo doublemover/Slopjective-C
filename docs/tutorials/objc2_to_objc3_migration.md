@@ -3,11 +3,10 @@
 This file is the live guide for mapping familiar ObjC2 habits onto the current canonical ObjC3 runnable subset.
 
 The checked-in adoption-legibility contract for this guide is
-`tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json`;
+`tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json`;
 replay it through `npm run objc3c -- validate-adoption-legibility`.
-The fixture name is historical; this reader-facing guide is canonicalization
-guidance over runnable examples, not a migration lane that accepts retired
-source forms.
+This reader-facing guide is canonicalization guidance over runnable examples,
+not a retired-source acceptance surface.
 Keep this guide narrower than that contract, never broader.
 
 Use it together with the checked-in showcase examples. The guide is only authoritative where the repo already compiles or validates the behavior it describes.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate adoption, migration, comparison, and onboarding evidence."""
+"""Generate adoption, replay, comparison, and onboarding evidence."""
 
 from __future__ import annotations
 
@@ -21,17 +21,17 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "adoption-legibility" / "evidence-summ
 BOUNDARY_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "boundary_inventory.json"
 PUBLIC_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "public_claim_policy.json"
 COMPARISON_SEMANTICS = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "capability_comparison_semantics.json"
-MIGRATION_SEMANTICS = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "migration_playbook_semantics.json"
+ADOPTION_REPLAY_SEMANTICS = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "adoption_replay_semantics.json"
 ARTIFACT_CONTRACT = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "artifact_contract.json"
 
 BOUNDARY_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "boundary-inventory-summary.json"
 PUBLIC_CLAIM_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "public-claim-policy-summary.json"
 COMPARISON_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "capability-comparison-summary.json"
-MIGRATION_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "migration-playbook-summary.json"
+ADOPTION_REPLAY_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "adoption-replay-summary.json"
 ARTIFACT_CONTRACT_SUMMARY = ROOT / "tmp" / "reports" / "adoption-legibility" / "artifact-contract-summary.json"
 
 CONTRACT_ID = "objc3c.adoption_legibility.evidence.v1"
-SUPPORT_STATE = "evaluator-ready-with-same-major-migration-and-evidence-linked-comparison"
+SUPPORT_STATE = "evaluator-ready-with-same-major-adoption-replay-and-evidence-linked-comparison"
 PACKAGE_BRIDGE = "objc3c"
 PUBLIC_ACTIONS = [
     "validate-adoption-legibility",
@@ -41,7 +41,7 @@ OWNER_SPLIT = {
     "boundary_inventory": "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "artifact_contract": "tests/tooling/fixtures/adoption_legibility/artifact_contract.json",
     "capability_comparison": "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
-    "migration_playbook": "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+    "adoption_replay": "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
     "public_claim_policy": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "metadata_publication": "scripts/publish_objc3c_adoption_legibility_metadata.py",
 }
@@ -58,11 +58,11 @@ OWNER_CONTRACTS = {
         "publication_projection": "evaluator_publication.comparison_axes",
         "blocker_projection": "claim_audit.blocker_metadata.capability_comparison",
     },
-    "migration_playbook_owner": {
-        "source_contract": OWNER_SPLIT["migration_playbook"],
-        "artifact_section": "migration_playbook",
-        "publication_projection": "evaluator_publication.migration_phases",
-        "blocker_projection": "claim_audit.blocker_metadata.migration_playbook",
+    "adoption_replay_owner": {
+        "source_contract": OWNER_SPLIT["adoption_replay"],
+        "artifact_section": "adoption_replay",
+        "publication_projection": "evaluator_publication.adoption_replay_phases",
+        "blocker_projection": "claim_audit.blocker_metadata.adoption_replay",
     },
     "publication_owner": {
         "source_contract": OWNER_SPLIT["metadata_publication"],
@@ -82,9 +82,9 @@ BLOCKER_METADATA = {
         "blocked_when": "comparison wording widens beyond conformance, performance, package, support, and checked-in example evidence",
         "release_blocker_field": "claim_audit.release_blockers",
     },
-    "migration_playbook": {
-        "owner": "migration_playbook_owner",
-        "blocked_when": "same-major adoption playbook lacks replay fields, package bridge, rollback target, or public workflow action",
+    "adoption_replay": {
+        "owner": "adoption_replay_owner",
+        "blocked_when": "same-major adoption replay lacks replay fields, package bridge, rollback target, or public workflow action",
         "release_blocker_field": "claim_audit.release_blockers",
     },
     "metadata_publication": {
@@ -98,7 +98,7 @@ STEPS = [
     ("boundary-inventory", python_script_command("scripts/build_adoption_legibility_boundary_inventory_summary.py")),
     ("public-claim-policy", python_script_command("scripts/build_adoption_legibility_public_claim_policy_summary.py")),
     ("capability-comparison", python_script_command("scripts/build_adoption_legibility_capability_comparison_summary.py")),
-    ("migration-playbook", python_script_command("scripts/build_adoption_legibility_migration_playbook_summary.py")),
+    ("adoption-replay", python_script_command("scripts/build_adoption_legibility_adoption_replay_summary.py")),
     ("artifact-contract", python_script_command("scripts/build_adoption_legibility_artifact_contract_summary.py")),
 ]
 
@@ -140,7 +140,7 @@ def main() -> int:
         "boundary": BOUNDARY_SUMMARY,
         "public_claim": PUBLIC_CLAIM_SUMMARY,
         "comparison": COMPARISON_SUMMARY,
-        "migration": MIGRATION_SUMMARY,
+        "adoption_replay": ADOPTION_REPLAY_SUMMARY,
         "artifact_contract": ARTIFACT_CONTRACT_SUMMARY,
     }
     for name, path in required_reports.items():
@@ -153,7 +153,7 @@ def main() -> int:
     boundary = load_json(BOUNDARY_CONTRACT)
     public_claim_policy = load_json(PUBLIC_CLAIM_POLICY)
     comparison_semantics = load_json(COMPARISON_SEMANTICS)
-    migration_semantics = load_json(MIGRATION_SEMANTICS)
+    adoption_replay_semantics = load_json(ADOPTION_REPLAY_SEMANTICS)
     artifact_contract = load_json(ARTIFACT_CONTRACT)
 
     comparison_axes = [
@@ -169,27 +169,27 @@ def main() -> int:
             for path in axis.get("required_evidence", [])
         }
     )
-    migration_phases = [
+    adoption_replay_phases = [
         str(phase.get("phase_id"))
-        for phase in migration_semantics.get("playbook_phases", [])
+        for phase in adoption_replay_semantics.get("adoption_replay_phases", [])
         if isinstance(phase, dict)
     ]
-    migration_actions = sorted(
+    adoption_replay_actions = sorted(
         {
             str(action)
-            for phase in migration_semantics.get("playbook_phases", [])
+            for phase in adoption_replay_semantics.get("adoption_replay_phases", [])
             if isinstance(phase, dict)
             for action in phase.get("required_actions", [])
         }
     )
     interop_axes = [
         str(axis.get("axis_id"))
-        for axis in migration_semantics.get("interop_guidance_axes", [])
+        for axis in adoption_replay_semantics.get("interop_guidance_axes", [])
         if isinstance(axis, dict)
     ]
     package_actions = [
         action
-        for action in migration_actions
+        for action in adoption_replay_actions
         if "package" in action or "application" in action or "release" in action or "long-horizon" in action
     ]
 
@@ -209,7 +209,7 @@ def main() -> int:
                 repo_rel(BOUNDARY_CONTRACT),
                 repo_rel(PUBLIC_CLAIM_POLICY),
                 repo_rel(COMPARISON_SEMANTICS),
-                repo_rel(MIGRATION_SEMANTICS),
+                repo_rel(ADOPTION_REPLAY_SEMANTICS),
                 repo_rel(ARTIFACT_CONTRACT),
             ],
             "commands": [" ".join(command) for _, command in STEPS],
@@ -248,13 +248,13 @@ def main() -> int:
             "tutorial_doc_count": boundary_summary.get("tutorial_doc_count"),
             "showcase_source_count": boundary_summary.get("showcase_source_count"),
         },
-        "migration_playbook": {
+        "adoption_replay": {
             "status": "PASS" if not release_blockers else "FAIL",
-            "phases": migration_phases,
+            "phases": adoption_replay_phases,
             "interop_axes": interop_axes,
-            "replay_fields": migration_semantics.get("required_migration_replay_fields", []),
-            "package_bridge": migration_semantics.get("package_bridge"),
-            "required_actions": migration_actions,
+            "replay_fields": adoption_replay_semantics.get("required_adoption_replay_fields", []),
+            "package_bridge": adoption_replay_semantics.get("package_bridge"),
+            "required_actions": adoption_replay_actions,
         },
         "comparison_matrix": {
             "status": "PASS" if not release_blockers else "FAIL",
@@ -279,13 +279,13 @@ def main() -> int:
             "support_state": SUPPORT_STATE,
             "earned_claims": [
                 "external evaluator path links README, site, tutorials, showcase, workflow actions, package workflows, and support evidence",
-                "Objective-C 2 migration guidance is same-major scoped and package/support-window aware",
+                "Objective-C 2 conversion guidance is same-major scoped and package/support-window aware",
                 "Swift and C++ comparison guidance is evidence-linked and parity-claim guarded",
                 "onboarding uses checked-in tutorials, showcase workspaces, and objc3c workflow actions",
             ],
             "demoted_or_out_of_scope_claims": [
                 "drop-in Objective-C 2 replacement",
-                "zero-risk migration",
+                "zero-risk conversion",
                 "performance leadership",
                 "hosted registry or IDE marketplace parity",
                 "private maintainer context as an evaluator prerequisite",
@@ -300,7 +300,7 @@ def main() -> int:
     publication = dict(artifact)
     publication["publication_view"] = {
         "entrypoints": artifact["evaluator_path"]["entrypoints"],
-        "migration_phases": migration_phases,
+        "adoption_replay_phases": adoption_replay_phases,
         "comparison_axes": comparison_axes,
         "support_state": SUPPORT_STATE,
         "artifact_contract": repo_rel(ARTIFACT_CONTRACT),
@@ -326,7 +326,7 @@ def main() -> int:
         "report_count": len(required_reports),
         "evaluator_entrypoint_count": len(artifact["evaluator_path"]["entrypoints"]),
         "required_action_count": len(artifact["evaluator_path"]["required_actions"]),
-        "migration_phase_count": len(migration_phases),
+        "adoption_replay_phase_count": len(adoption_replay_phases),
         "interop_axis_count": len(interop_axes),
         "comparison_axis_count": len(comparison_axes),
         "onboarding_tutorial_count": len(artifact["onboarding"]["tutorials"]),

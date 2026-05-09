@@ -260,7 +260,7 @@ $requiredRelativeFiles = @(
   "scripts/build_adoption_legibility_boundary_inventory_summary.py",
   "scripts/build_adoption_legibility_public_claim_policy_summary.py",
   "scripts/build_adoption_legibility_capability_comparison_summary.py",
-  "scripts/build_adoption_legibility_migration_playbook_summary.py",
+  "scripts/build_adoption_legibility_adoption_replay_summary.py",
   "scripts/build_adoption_legibility_artifact_contract_summary.py",
   "scripts/build_objc3c_adoption_legibility_evidence.py",
   "scripts/check_objc3c_adoption_legibility_integration.py",
@@ -417,7 +417,7 @@ $requiredRelativeFiles = @(
   "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
   "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
   "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
-  "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+  "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
   "tests/tooling/fixtures/adoption_legibility/artifact_contract.json",
   "tests/tooling/fixtures/governance_sustainability/anti_regression_reporting_contract.json",
   "tests/tooling/fixtures/governance_sustainability/artifact_contract.json",
@@ -732,7 +732,7 @@ $manifestPayload = [ordered]@{
     boundary_inventory = "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json"
     public_claim_policy = "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json"
     capability_comparison_semantics = "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json"
-    migration_playbook_semantics = "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json"
+    adoption_replay_semantics = "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json"
     evidence_generator = "scripts/build_objc3c_adoption_legibility_evidence.py"
     integration_validation = "scripts/check_objc3c_adoption_legibility_integration.py"
     evaluator_publication = "scripts/publish_objc3c_adoption_legibility_metadata.py"

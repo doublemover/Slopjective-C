@@ -31,7 +31,7 @@ EXPECTED_OWNER_SECTIONS = [
     "boundary_inventory",
     "artifact_contract",
     "evaluator_path",
-    "migration_playbook",
+    "adoption_replay",
     "comparison_matrix",
     "onboarding",
     "candidate_claims",
@@ -84,7 +84,7 @@ def main() -> int:
     boundary_inventory = artifact.get("boundary_inventory", {}) if isinstance(artifact.get("boundary_inventory"), dict) else {}
     artifact_contract = artifact.get("artifact_contract", {}) if isinstance(artifact.get("artifact_contract"), dict) else {}
     evaluator_path = artifact.get("evaluator_path", {}) if isinstance(artifact.get("evaluator_path"), dict) else {}
-    migration = artifact.get("migration_playbook", {}) if isinstance(artifact.get("migration_playbook"), dict) else {}
+    adoption_replay = artifact.get("adoption_replay", {}) if isinstance(artifact.get("adoption_replay"), dict) else {}
     comparison = artifact.get("comparison_matrix", {}) if isinstance(artifact.get("comparison_matrix"), dict) else {}
     onboarding = artifact.get("onboarding", {}) if isinstance(artifact.get("onboarding"), dict) else {}
     claim_audit = artifact.get("claim_audit", {}) if isinstance(artifact.get("claim_audit"), dict) else {}
@@ -92,12 +92,12 @@ def main() -> int:
     blocker_metadata = claim_audit.get("blocker_metadata", {}) if isinstance(claim_audit.get("blocker_metadata"), dict) else {}
 
     expect(
-        {"public_claim_owner", "adoption_comparison_owner", "migration_playbook_owner", "publication_owner"}.issubset(owner_contracts),
+        {"public_claim_owner", "adoption_comparison_owner", "adoption_replay_owner", "publication_owner"}.issubset(owner_contracts),
         "adoption owner contracts are incomplete",
         failures,
     )
     expect(
-        {"public_claim_policy", "capability_comparison", "migration_playbook", "metadata_publication"}.issubset(blocker_metadata),
+        {"public_claim_policy", "capability_comparison", "adoption_replay", "metadata_publication"}.issubset(blocker_metadata),
         "adoption blocker metadata is incomplete",
         failures,
     )
@@ -109,8 +109,8 @@ def main() -> int:
     expect(len(evaluator_path.get("entrypoints", [])) >= 8, "evaluator entrypoint surface is too narrow", failures)
     expect(evaluator_path.get("package_bridge") == "objc3c", "evaluator path package bridge drifted", failures)
     expect(len(evaluator_path.get("required_actions", [])) >= 10, "workflow action surface is too narrow", failures)
-    expect(len(migration.get("phases", [])) >= 4, "migration playbook phase coverage is too narrow", failures)
-    expect(len(migration.get("interop_axes", [])) >= 3, "interop axis coverage is too narrow", failures)
+    expect(len(adoption_replay.get("phases", [])) >= 4, "adoption replay phase coverage is too narrow", failures)
+    expect(len(adoption_replay.get("interop_axes", [])) >= 3, "interop axis coverage is too narrow", failures)
     expect(len(comparison.get("axes", [])) >= 3, "comparison axis coverage is too narrow", failures)
     expect(len(comparison.get("evidence_paths", [])) >= 10, "comparison evidence path coverage is too narrow", failures)
     expect(len(onboarding.get("tutorials", [])) >= 4, "onboarding tutorial coverage is too narrow", failures)
@@ -136,8 +136,8 @@ def main() -> int:
         "artifact_generated_artifact_count": len(artifact_contract.get("generated_artifacts", [])),
         "evaluator_entrypoint_count": len(evaluator_path.get("entrypoints", [])),
         "required_action_count": len(evaluator_path.get("required_actions", [])),
-        "migration_phase_count": len(migration.get("phases", [])),
-        "interop_axis_count": len(migration.get("interop_axes", [])),
+        "adoption_replay_phase_count": len(adoption_replay.get("phases", [])),
+        "interop_axis_count": len(adoption_replay.get("interop_axes", [])),
         "comparison_axis_count": len(comparison.get("axes", [])),
         "onboarding_tutorial_count": len(onboarding.get("tutorials", [])),
         "showcase_workspace_count": len(onboarding.get("showcase_workspaces", [])),

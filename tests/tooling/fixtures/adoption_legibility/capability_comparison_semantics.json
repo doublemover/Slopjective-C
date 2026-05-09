@@ -18,9 +18,9 @@
   ],
   "comparison_axes": [
     {
-      "axis_id": "objc2-migration",
+      "axis_id": "objc2-conversion",
       "adjacent_ecosystem": "Objective-C 2",
-      "allowed_claim_shape": "migration-oriented comparison over runnable ObjC3 examples, package locks, support windows, and explicitly named deferred behavior",
+      "allowed_claim_shape": "conversion-oriented comparison over runnable ObjC3 examples, package locks, support windows, and explicitly named deferred behavior",
       "required_evidence": [
         "docs/tutorials/objc2_to_objc3_migration.md",
         "docs/tutorials/objc2_swift_cpp_comparison.md",
@@ -29,8 +29,8 @@
         "docs/runbooks/objc3c_long_horizon_operations.md"
       ],
       "forbidden_claim_shapes": [
-        "drop-in source compatibility",
-        "automatic cross-major migration",
+        "drop-in retired-source acceptance",
+        "automatic cross-major conversion",
         "full runtime parity without live runtime evidence"
       ]
     },

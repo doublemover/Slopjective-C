@@ -7,19 +7,19 @@
     "boundary_inventory": "primary evaluator surface and substrate inventory",
     "artifact_contract": "generated adoption evidence and evaluator publication artifact contract",
     "capability_comparison": "Objective-C 2, Swift, and C++ comparison semantics",
-    "migration_playbook": "same-major migration phases and replay fields",
+    "adoption_replay": "same-major adoption replay phases and fields",
     "public_claim_policy": "candidate claim classes and forbidden public wording",
     "metadata_publication": "evaluator-facing metadata projection"
   },
   "owner_contracts": {
     "public_claim_owner": "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "adoption_comparison_owner": "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
-    "migration_playbook_owner": "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+    "adoption_replay_owner": "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
     "publication_owner": "scripts/publish_objc3c_adoption_legibility_metadata.py"
   },
   "working_scope": [
     "external evaluator entrypoints across README, site, tutorials, showcase, and public command surfaces",
-    "migration guidance from Objective-C 2 and adjacent Swift/C++ ecosystems grounded in checked-in support evidence",
+    "conversion guidance from Objective-C 2 and adjacent Swift/C++ ecosystems grounded in checked-in support evidence",
     "capability narrative and comparison wording constrained by public conformance, performance, package, release, and long-horizon evidence",
     "onboarding paths that reuse templates, package locks, canonical apps, and public workflow commands"
   ],

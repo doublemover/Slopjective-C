@@ -32,7 +32,7 @@ def main() -> int:
         required_fields = schema.get("required", [])
         for field in (
             "evaluator_path",
-            "migration_playbook",
+            "adoption_replay",
             "comparison_matrix",
             "onboarding",
             "candidate_claims",

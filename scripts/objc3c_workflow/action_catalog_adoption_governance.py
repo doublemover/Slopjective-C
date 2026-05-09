@@ -10,8 +10,8 @@ LONG_HORIZON_ACTION_SPECS: dict[str, ActionSpec] = {
 }
 
 ADOPTION_LEGIBILITY_ACTION_SPECS: dict[str, ActionSpec] = {
-    "validate-adoption-legibility": ActionSpec("validate-adoption-legibility", "validate adoption boundary inventory, artifact contract, capability comparison, migration playbook, onboarding, and public claim policy evidence", "python:scripts/check_objc3c_adoption_legibility_integration.py", validation_tier="repo", guarantee_owner="external evaluator, migration, comparison, onboarding, and public claim surfaces stay generated from adoption-legibility contracts"),
-    "publish-adoption-legibility": ActionSpec("publish-adoption-legibility", "publish evaluator-facing adoption metadata from generated boundary, comparison, migration, onboarding, and claim-policy evidence", "python:scripts/publish_objc3c_adoption_legibility_metadata.py", validation_tier="release", guarantee_owner="evaluator-facing adoption metadata stays generated from adoption evidence and blocks when claim audit reports release blockers"),
+    "validate-adoption-legibility": ActionSpec("validate-adoption-legibility", "validate adoption boundary inventory, artifact contract, capability comparison, adoption replay, onboarding, and public claim policy evidence", "python:scripts/check_objc3c_adoption_legibility_integration.py", validation_tier="repo", guarantee_owner="external evaluator, adoption replay, comparison, onboarding, and public claim surfaces stay generated from adoption-legibility contracts"),
+    "publish-adoption-legibility": ActionSpec("publish-adoption-legibility", "publish evaluator-facing adoption metadata from generated boundary, comparison, adoption replay, onboarding, and claim-policy evidence", "python:scripts/publish_objc3c_adoption_legibility_metadata.py", validation_tier="release", guarantee_owner="evaluator-facing adoption metadata stays generated from adoption evidence and blocks when claim audit reports release blockers"),
 }
 
 GOVERNANCE_SUSTAINABILITY_ACTION_SPECS: dict[str, ActionSpec] = {

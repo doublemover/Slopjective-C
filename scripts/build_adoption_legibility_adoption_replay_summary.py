@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the adoption migration playbook semantics summary."""
+"""Build the adoption replay semantics summary."""
 
 from __future__ import annotations
 
@@ -11,10 +11,10 @@ from objc3c_tooling.public_runner import public_workflow_action_names
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SEMANTICS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "migration_playbook_semantics.json"
+SEMANTICS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "adoption_replay_semantics.json"
 PACKAGE_JSON = ROOT / "package.json"
-LONG_HORIZON_MIGRATION = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "migration_rollback_support_window_semantics.json"
-SUMMARY_PATH = ROOT / "tmp" / "reports" / "adoption-legibility" / "migration-playbook-summary.json"
+LONG_HORIZON_REPLAY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "migration_rollback_support_window_semantics.json"
+SUMMARY_PATH = ROOT / "tmp" / "reports" / "adoption-legibility" / "adoption-replay-summary.json"
 
 
 
@@ -27,7 +27,7 @@ def expect(condition: bool, message: str, failures: list[str]) -> None:
 def main() -> int:
     semantics = load_json(SEMANTICS_PATH)
     package = load_json(PACKAGE_JSON)
-    long_horizon = load_json(LONG_HORIZON_MIGRATION)
+    long_horizon = load_json(LONG_HORIZON_REPLAY)
     package_scripts = package.get("scripts", {})
     if not isinstance(package_scripts, dict):
         raise RuntimeError("package.json scripts field drifted from an object")
@@ -40,16 +40,16 @@ def main() -> int:
     for raw_path in dependencies:
         expect((ROOT / raw_path).is_file(), f"missing dependency {raw_path}", failures)
 
-    phases = semantics.get("playbook_phases", [])
-    expect(isinstance(phases, list) and len(phases) >= 4, "migration playbook must have at least four phases", failures)
+    phases = semantics.get("adoption_replay_phases", [])
+    expect(isinstance(phases, list) and len(phases) >= 4, "adoption replay must have at least four phases", failures)
     phase_sequences = [int(phase.get("sequence", -1)) for phase in phases if isinstance(phase, dict)]
-    expect(phase_sequences == sorted(phase_sequences) == list(range(1, len(phase_sequences) + 1)), "playbook phase sequence drifted", failures)
+    expect(phase_sequences == sorted(phase_sequences) == list(range(1, len(phase_sequences) + 1)), "adoption replay phase sequence drifted", failures)
     missing_paths: list[str] = []
     missing_actions: list[str] = []
     phase_ids: list[str] = []
     for phase in phases if isinstance(phases, list) else []:
         if not isinstance(phase, dict):
-            failures.append("playbook phase entry must be an object")
+            failures.append("adoption replay phase entry must be an object")
             continue
         phase_id = str(phase.get("phase_id"))
         phase_ids.append(phase_id)
@@ -73,25 +73,25 @@ def main() -> int:
         expect((ROOT / runbook_anchor).is_file(), f"{axis_id} missing runbook anchor", failures)
         expect(len(axis.get("deferred_behavior", [])) >= 2, f"{axis_id} must name deferred behavior", failures)
 
-    required_replay_fields = [str(field) for field in semantics.get("required_migration_replay_fields", [])]
+    required_replay_fields = [str(field) for field in semantics.get("required_adoption_replay_fields", [])]
     long_horizon_fields = [str(field) for field in long_horizon.get("migration_replay_requirements", [])]
-    expect(required_replay_fields == long_horizon_fields, "migration replay fields drift from long-horizon support semantics", failures)
+    expect(required_replay_fields == long_horizon_fields, "adoption replay fields drift from long-horizon support semantics", failures)
     if missing_paths:
-        failures.append("playbook phases reference missing paths")
+        failures.append("adoption replay phases reference missing paths")
     if not package_bridge_exists:
-        failures.append("migration playbook package bridge is missing")
+        failures.append("adoption replay package bridge is missing")
     if missing_actions:
-        failures.append("playbook phases reference missing workflow actions")
+        failures.append("adoption replay phases reference missing workflow actions")
 
     payload = {
-        "contract_id": "objc3c.adoption_legibility.migration_playbook.summary.v1",
+        "contract_id": "objc3c.adoption_legibility.adoption_replay.summary.v1",
         "status": "PASS" if not failures else "FAIL",
         "semantics": repo_rel(SEMANTICS_PATH),
-        "long_horizon_migration_semantics": repo_rel(LONG_HORIZON_MIGRATION),
+        "long_horizon_replay_semantics": repo_rel(LONG_HORIZON_REPLAY),
         "phase_count": len(phases) if isinstance(phases, list) else 0,
         "phase_ids": phase_ids,
         "interop_axis_count": len(axes) if isinstance(axes, list) else 0,
-        "required_migration_replay_fields": required_replay_fields,
+        "required_adoption_replay_fields": required_replay_fields,
         "missing_paths": sorted(set(missing_paths)),
         "package_bridge": package_bridge,
         "package_bridge_count": 1 if package_bridge_exists else 0,
@@ -103,7 +103,7 @@ def main() -> int:
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     write_json_file(SUMMARY_PATH, payload)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
-    print("adoption-legibility-migration-playbook: PASS" if not failures else "adoption-legibility-migration-playbook: FAIL")
+    print("adoption-legibility-adoption-replay: PASS" if not failures else "adoption-legibility-adoption-replay: FAIL")
     return 0 if not failures else 1
 
 

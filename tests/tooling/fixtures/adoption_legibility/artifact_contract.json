@@ -9,7 +9,7 @@
     "boundary_inventory",
     "artifact_contract",
     "evaluator_path",
-    "migration_playbook",
+    "adoption_replay",
     "comparison_matrix",
     "onboarding",
     "candidate_claims",
@@ -28,11 +28,11 @@
       "publication_projection": "evaluator_publication.comparison_axes",
       "blocker_projection": "claim_audit.blocker_metadata.capability_comparison"
     },
-    "migration_playbook_owner": {
-      "source_contract": "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
-      "artifact_section": "migration_playbook",
-      "publication_projection": "evaluator_publication.migration_phases",
-      "blocker_projection": "claim_audit.blocker_metadata.migration_playbook"
+    "adoption_replay_owner": {
+      "source_contract": "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
+      "artifact_section": "adoption_replay",
+      "publication_projection": "evaluator_publication.adoption_replay_phases",
+      "blocker_projection": "claim_audit.blocker_metadata.adoption_replay"
     },
     "publication_owner": {
       "source_contract": "scripts/publish_objc3c_adoption_legibility_metadata.py",
@@ -42,8 +42,8 @@
     }
   },
   "hard_cutover_claim_policy": {
-    "source_compatibility_claims_allowed": false,
-    "migration_or_fallback_support_claims_allowed": false,
+    "retired_source_acceptance_claims_allowed": false,
+    "retired_surface_acceptance_claims_allowed": false,
     "manual_adoption_metrics_allowed": false,
     "report_only_allowed": false,
     "wrapper_only_publication_allowed": false,
@@ -53,7 +53,7 @@
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
-    "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json"
+    "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json"
   ],
   "artifact_root": "tmp/artifacts/adoption-legibility/",
   "report_root": "tmp/reports/adoption-legibility/",
@@ -73,28 +73,28 @@
     "tmp/reports/adoption-legibility/boundary-inventory-summary.json",
     "tmp/reports/adoption-legibility/public-claim-policy-summary.json",
     "tmp/reports/adoption-legibility/capability-comparison-summary.json",
-    "tmp/reports/adoption-legibility/migration-playbook-summary.json",
+    "tmp/reports/adoption-legibility/adoption-replay-summary.json",
     "tmp/reports/adoption-legibility/artifact-contract-summary.json"
   ],
   "claim_rules": [
     "All adoption machine-owned artifacts must be regenerated from checked-in source contracts.",
     "tmp/ artifacts and reports are replay outputs, never canonical source authority.",
-    "Evaluator, migration, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
+    "Evaluator, adoption replay, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
     "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims.",
-    "Public-claim, comparison, playbook, and publication blockers must project through claim_audit.blocker_metadata.",
+    "Public-claim, comparison, adoption replay, and publication blockers must project through claim_audit.blocker_metadata.",
     "Adoption publication actions must have owner contracts and may not be wrapper-only.",
-    "Adoption claims must not imply Objective-C 2 source compatibility, automatic migration, fallback support, or adoption counts."
+    "Adoption claims must not imply Objective-C 2 retired-source acceptance, automatic conversion, alternate old-surface support, or adoption counts."
   ],
   "metadata_publication_rules": [
     "Publication consumes the generated evidence artifact and does not widen public claims.",
-    "Publication exposes boundary inventory, migration phases, comparison axes, onboarding surfaces, and forbidden claim wording together.",
+    "Publication exposes boundary inventory, adoption replay phases, comparison axes, onboarding surfaces, and forbidden claim wording together.",
     "Publication keeps validate-adoption-legibility and publish-adoption-legibility as the only public adoption action names."
   ],
   "required_generation_scripts": [
     "scripts/build_adoption_legibility_boundary_inventory_summary.py",
     "scripts/build_adoption_legibility_public_claim_policy_summary.py",
     "scripts/build_adoption_legibility_capability_comparison_summary.py",
-    "scripts/build_adoption_legibility_migration_playbook_summary.py",
+    "scripts/build_adoption_legibility_adoption_replay_summary.py",
     "scripts/build_adoption_legibility_artifact_contract_summary.py",
     "scripts/build_objc3c_adoption_legibility_evidence.py"
   ]

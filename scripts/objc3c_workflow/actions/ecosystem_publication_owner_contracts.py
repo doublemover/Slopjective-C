@@ -16,8 +16,8 @@ class EcosystemPublicationOwnerContract:
     forbidden_claims: tuple[str, ...]
     report_only_allowed: bool = False
     wrapper_only_allowed: bool = False
-    source_compatibility_claim_allowed: bool = False
-    migration_fallback_claim_allowed: bool = False
+    retired_source_acceptance_claim_allowed: bool = False
+    retired_surface_claim_allowed: bool = False
 
 
 PACKAGE_SOURCE_CONTRACTS = (
@@ -39,12 +39,12 @@ ADOPTION_SOURCE_CONTRACTS = (
     "tests/tooling/fixtures/adoption_legibility/artifact_contract.json",
     "tests/tooling/fixtures/adoption_legibility/public_claim_policy.json",
     "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
-    "tests/tooling/fixtures/adoption_legibility/migration_playbook_semantics.json",
+    "tests/tooling/fixtures/adoption_legibility/adoption_replay_semantics.json",
 )
 ADOPTION_FORBIDDEN_CLAIMS = (
-    "drop-in Objective-C 2 source compatibility",
-    "automatic migration",
-    "fallback support path",
+    "drop-in Objective-C 2 retired source acceptance",
+    "automatic conversion",
+    "retired source acceptance path",
     "manual adoption metric",
     "publication wider than checked-in evidence",
 )
@@ -74,7 +74,7 @@ def _adoption_contract(action_name: str, claim_boundary: str) -> EcosystemPublic
         evidence_contracts=(
             "objc3c.adoption_legibility.artifact_contract.v1",
             "objc3c.adoption_legibility.public_claim_policy.v1",
-            "objc3c.adoption_legibility.migration_playbook_semantics.v1",
+            "objc3c.adoption_legibility.adoption_replay_semantics.v1",
         ),
         claim_boundary=claim_boundary,
         forbidden_claims=ADOPTION_FORBIDDEN_CLAIMS,
@@ -109,7 +109,7 @@ ECOSYSTEM_PUBLICATION_OWNER_CONTRACTS: dict[str, EcosystemPublicationOwnerContra
     ),
     "validate-adoption-legibility": _adoption_contract(
         "validate-adoption-legibility",
-        "validates evaluator adoption evidence without widening into source-compatibility or migration-support promises",
+        "validates evaluator adoption evidence without widening into retired source acceptance promises",
     ),
     "publish-adoption-legibility": _adoption_contract(
         "publish-adoption-legibility",
@@ -140,10 +140,10 @@ def require_ecosystem_publication_owner_contract(action_name: str) -> EcosystemP
         raise RuntimeError(f"{action_name} is report-only")
     if contract.wrapper_only_allowed:
         raise RuntimeError(f"{action_name} is wrapper-only")
-    if contract.source_compatibility_claim_allowed:
-        raise RuntimeError(f"{action_name} allows source-compatibility overclaims")
-    if contract.migration_fallback_claim_allowed:
-        raise RuntimeError(f"{action_name} allows migration or fallback support claims")
+    if contract.retired_source_acceptance_claim_allowed:
+        raise RuntimeError(f"{action_name} allows retired source acceptance overclaims")
+    if contract.retired_surface_claim_allowed:
+        raise RuntimeError(f"{action_name} allows retired source acceptance claims")
     return contract
 
 

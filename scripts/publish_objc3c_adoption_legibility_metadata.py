@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish evaluator-facing adoption and migration metadata."""
+"""Publish evaluator-facing adoption and replay metadata."""
 
 from __future__ import annotations
 
@@ -64,7 +64,7 @@ def main() -> int:
     boundary_inventory = evidence.get("boundary_inventory", {}) if isinstance(evidence.get("boundary_inventory"), dict) else {}
     artifact_contract = evidence.get("artifact_contract", {}) if isinstance(evidence.get("artifact_contract"), dict) else {}
     public_workflow = evidence.get("public_workflow", {}) if isinstance(evidence.get("public_workflow"), dict) else {}
-    migration = evidence.get("migration_playbook", {}) if isinstance(evidence.get("migration_playbook"), dict) else {}
+    adoption_replay = evidence.get("adoption_replay", {}) if isinstance(evidence.get("adoption_replay"), dict) else {}
     comparison = evidence.get("comparison_matrix", {}) if isinstance(evidence.get("comparison_matrix"), dict) else {}
     onboarding = evidence.get("onboarding", {}) if isinstance(evidence.get("onboarding"), dict) else {}
     candidate_claims = evidence.get("candidate_claims", {}) if isinstance(evidence.get("candidate_claims"), dict) else {}
@@ -84,8 +84,8 @@ def main() -> int:
         "required_actions": evaluator_path.get("required_actions", []),
         "boundary_inventory": boundary_inventory,
         "artifact_contract": artifact_contract,
-        "migration_phases": migration.get("phases", []),
-        "interop_axes": migration.get("interop_axes", []),
+        "adoption_replay_phases": adoption_replay.get("phases", []),
+        "interop_axes": adoption_replay.get("interop_axes", []),
         "comparison_axes": comparison.get("axes", []),
         "onboarding_tutorials": onboarding.get("tutorials", []),
         "showcase_workspaces": onboarding.get("showcase_workspaces", []),
@@ -110,7 +110,7 @@ def main() -> int:
         "package_bridge": PACKAGE_BRIDGE,
         "entrypoint_count": len(publication["evaluator_publication"]["entrypoints"]),
         "boundary_surface_count": len(boundary_inventory.get("primary_evaluator_surfaces", [])),
-        "migration_phase_count": len(publication["evaluator_publication"]["migration_phases"]),
+        "adoption_replay_phase_count": len(publication["evaluator_publication"]["adoption_replay_phases"]),
         "comparison_axis_count": len(publication["evaluator_publication"]["comparison_axes"]),
         "owner_contract_count": len(owner_contracts),
         "blocker_metadata_count": len(claim_audit.get("blocker_metadata", {})) if isinstance(claim_audit.get("blocker_metadata"), dict) else 0,

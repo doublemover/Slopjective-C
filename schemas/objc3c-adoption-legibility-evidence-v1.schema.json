@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://objc3c.dev/schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
   "title": "objc3c Adoption And Legibility Evidence",
-  "description": "Evidence envelope for current adoption, onboarding, comparison, and replay support. Section identifiers do not create compatibility, fallback, migration-lane, or report-only support claims.",
+  "description": "Evidence envelope for current adoption, onboarding, comparison, and replay support. Section identifiers do not create retired-surface acceptance, alternate old-surface support, or report-only support claims.",
   "type": "object",
   "required": [
     "contract_id",
@@ -13,7 +13,7 @@
     "boundary_inventory",
     "artifact_contract",
     "evaluator_path",
-    "migration_playbook",
+    "adoption_replay",
     "comparison_matrix",
     "onboarding",
     "candidate_claims",
@@ -161,9 +161,9 @@
       },
       "additionalProperties": false
     },
-    "migration_playbook": {
+    "adoption_replay": {
       "type": "object",
-      "description": "Current-support adoption replay evidence. This section records upgrade/replay obligations for supported flows and does not authorize old syntax, compatibility shims, fallback lanes, or migration-only support.",
+      "description": "Current-support adoption replay evidence. This section records upgrade/replay obligations for supported flows and does not authorize old syntax, retired-source acceptance, alternate old-surface support, or replay-only support claims.",
       "required": ["status", "phases", "interop_axes", "replay_fields", "package_bridge", "required_actions"],
       "properties": {
         "status": {"enum": ["PASS", "FAIL", "DEFERRED"]},
