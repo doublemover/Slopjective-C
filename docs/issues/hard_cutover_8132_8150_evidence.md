@@ -15,6 +15,8 @@ Canonical behavior and no-compatibility indexes:
 - `docs/support/evidence_map.json`
 - `tests/conformance/hard_cutover_acceptance_area_owners.json`
 - `tests/conformance/hard_cutover_positive_residue_audit.json`
+- `tests/conformance/hard_cutover_behavior_evidence_topology.json`
+- `docs/issues/hard_cutover_behavior_evidence_topology.md`
 
 Retired hard-cutover surfaces are documented this way:
 
@@ -32,6 +34,10 @@ in `tests/conformance/hard_cutover_positive_residue_audit.json` records that the
 remaining positive-fixture lexical hits for `fallback`, `shim`, and `migrator`
 are ordinary variable/function/symbol names or diagnostic inventory labels, not
 old-mode, compatibility-shim, fallback-dispatch, or migration-lane acceptance.
+The phase/family topology in
+`tests/conformance/hard_cutover_behavior_evidence_topology.json` makes the
+behavior-first split explicit for parser, sema, lowering, IR, runtime, e2e, and
+generated-boundary evidence.
 
 Additional local commits folded into this evidence map after the first index
 pass:

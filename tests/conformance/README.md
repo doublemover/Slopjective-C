@@ -50,6 +50,9 @@ Machine-readable indexes:
 - `tests/conformance/hard_cutover_acceptance_area_owners.json` (acceptance-area
   ownership index tying compiler/runtime/workflow/docs areas to code paths,
   behavior fixtures, and hard-cutover issues)
+- `tests/conformance/hard_cutover_behavior_evidence_topology.json` (behavior-first
+  phase/family topology connecting native fixtures, strict-error coverage,
+  generated-boundary status, and issue closeout artifacts)
 - `tests/conformance/hard_cutover_retired_surface_absence.json` (retired
   old-mode, shim, fallback, compatibility, and migration-lane surfaces mapped
   to rejection, strict-error, or absent support)

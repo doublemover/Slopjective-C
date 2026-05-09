@@ -19,7 +19,9 @@
     "docs/support/capability_matrix.json",
     "docs/support/evidence_map.json",
     "tests/conformance/hard_cutover_acceptance_area_owners.json",
-    "tests/conformance/hard_cutover_positive_residue_audit.json"
+    "tests/conformance/hard_cutover_positive_residue_audit.json",
+    "tests/conformance/hard_cutover_behavior_evidence_topology.json",
+    "docs/issues/hard_cutover_behavior_evidence_topology.md"
   ],
   "post_index_local_commit_refresh": [
     {

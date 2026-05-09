@@ -13,6 +13,7 @@
     "native_behavior_manifest": "tests/fixtures/canonical/manifest.json",
     "issue_evidence_index": "tests/conformance/hard_cutover_issue_index.json",
     "acceptance_area_owner_index": "tests/conformance/hard_cutover_acceptance_area_owners.json",
+    "behavior_evidence_topology": "tests/conformance/hard_cutover_behavior_evidence_topology.json",
     "retired_surface_absence_index": "tests/conformance/hard_cutover_retired_surface_absence.json",
     "positive_residue_audit": "tests/conformance/hard_cutover_positive_residue_audit.json",
     "public_command_bridge": "npm run objc3c -- <action>",
