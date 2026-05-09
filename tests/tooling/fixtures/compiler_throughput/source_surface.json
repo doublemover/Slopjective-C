@@ -7,10 +7,52 @@
   "native_build_action": "build-native-binaries",
   "behavior_owner_split_index": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/index.json",
   "behavior_boundary": {
-    "primary_axis": "behavior phase before throughput workload bucket",
-    "support_authority": "throughput sources and scripts are timing, provenance, and runner evidence only until a behavior owner split claims the phase",
-    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, and alternate acceptance path evidence is canonical rejection, strict-error, or provenance-only evidence"
+    "primary_axis": "behavior phase before throughput workload bucket, workflow label, cache proof, generated artifact, report-only row, migration-only row, docs output, command-surface output, package artifact, or retired-surface claim",
+    "support_authority": "throughput sources and scripts are timing, provenance, cache, generated-output, package, and runner evidence only until a behavior owner split claims the phase",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, generated-only, report-only, migration-only, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
   },
+  "behavior_phase_split_indexes": [
+    {
+      "phase": "parser",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/parser.json",
+      "boundary": "parser source-form acceptance and rejection reached through compile workload wrappers"
+    },
+    {
+      "phase": "sema",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/sema.json",
+      "boundary": "semantic diagnostics and source validation surfaced during compile workloads"
+    },
+    {
+      "phase": "lowering",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/lowering.json",
+      "boundary": "canonical lowering outcomes reached by compile and execution-replay workloads"
+    },
+    {
+      "phase": "ir",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/ir.json",
+      "boundary": "canonical IR emission, metadata, cache proof, docs, command-surface, and artifact provenance"
+    },
+    {
+      "phase": "runtime",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/runtime.json",
+      "boundary": "runtime-acceptance subsurface evidence and macro-host cache publication"
+    },
+    {
+      "phase": "e2e",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/e2e.json",
+      "boundary": "whole-pipeline timing, runner overlap, tmp package, and executable proof boundaries"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/canonical_rejection.json",
+      "boundary": "recovery, cache reuse, runner-only, docs-only, command-surface-only, package-only, old-mode, shim, fallback, compatibility, generated-only, report-only, migration-only, unsupported, and alternate acceptance rows"
+    },
+    {
+      "phase": "compiler_throughput_provenance",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/compiler_throughput_provenance.json",
+      "boundary": "source-surface rows, workload rows, artifact rows, optimization policy rows, validation tier rows, workflow labels, generated outputs, cache proofs, reports, packages, and owner split routing metadata"
+    }
+  ],
   "heavy_validation_actions": [
     "test-execution-smoke",
     "test-recovery",

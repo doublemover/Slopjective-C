@@ -3,10 +3,10 @@
   "schema_version": 1,
   "behavior_owner_split_index": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/index.json",
   "workload_boundary_policy": {
-    "primary_axis": "behavior owner before workload kind",
-    "support_authority": "workloads are measurement and provenance rows; canonical support must be cited through owner_splits",
-    "generated_artifact_rule": "docs, command-surface, reports, and cache package workloads are generated or provenance-only unless a phase owner claims behavior",
-    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, and alternate acceptance rows map to canonical_rejection"
+    "primary_axis": "behavior owner before workload kind, workflow label, cache mode, generated artifact, report-only row, migration-only row, package artifact, or runner bucket",
+    "support_authority": "workloads are measurement and provenance rows; canonical support must be cited through owner_splits and never through workload names alone",
+    "generated_artifact_rule": "docs, command-surface, reports, cache proof, perf summary, runner package, generated-only, report-only, and migration-only workloads are generated or provenance-only unless a phase owner claims behavior",
+    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, alternate acceptance, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, generated-only, report-only, and migration-only rows map to canonical_rejection or compiler_throughput_provenance"
   },
   "workloads": [
     {

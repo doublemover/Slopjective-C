@@ -5,7 +5,7 @@
   "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
   "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
   "artifact_surface": "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
-  "support_boundary": "throughput rows mentioning recovery, cache reuse, runtime acceptance, docs generation, command-surface generation, or runner overlap are non-positive unless canonical behavior owners claim support",
+  "support_boundary": "throughput rows mentioning recovery, cache reuse, runtime acceptance, docs generation, command-surface generation, runner overlap, generated-only outputs, report-only outputs, migration-only rows, cache-only proof, runner-only proof, docs-only proof, command-surface-only proof, package-only proof, timing-only proof, fallback, shim, old-mode, compatibility, unsupported, or alternate acceptance are non-positive unless canonical behavior owners claim support",
   "phase_support_claim_authority": false,
   "selectors": [
     "heavy_validation_actions:test-negative-expectations",
@@ -19,8 +19,26 @@
     "*old_mode*",
     "*old-mode*",
     "*legacy*",
-    "*recovery*"
+    "*recovery*",
+    "*generated-only*",
+    "*generated_only*",
+    "*report-only*",
+    "*report_only*",
+    "*migration-only*",
+    "*migration_only*",
+    "*cache-only*",
+    "*cache_only*",
+    "*runner-only*",
+    "*runner_only*",
+    "*docs-only*",
+    "*docs_only*",
+    "*command-surface-only*",
+    "*command_surface_only*",
+    "*package-only*",
+    "*package_only*",
+    "*timing-only*",
+    "*timing_only*"
   ],
   "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
-  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, recovery-positive, and alternate acceptance path evidence is canonical rejection, strict-error, or provenance-only evidence"
+  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, recovery-positive, generated-only, report-only, migration-only, cache-only, runner-only, docs-only, command-surface-only, package-only, timing-only, and alternate acceptance path evidence is canonical rejection, strict-error, absent-support, or provenance-only evidence"
 }
