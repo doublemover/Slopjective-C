@@ -176,7 +176,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_live_state_reset.h
   state/runtime_reset_policy.cpp
   state/runtime_reset_policy.h
-  state/runtime_state_clear.cpp
+  state/runtime_class_graph_state_clear.cpp
+  state/runtime_class_graph_state_clear.h
+  state/runtime_dispatch_state_clear.cpp
+  state/runtime_dispatch_state_clear.h
+  state/runtime_instance_state_clear.cpp
+  state/runtime_instance_state_clear.h
   state/runtime_state_clear.h
   state/runtime_state.cpp
   state/runtime_state.h

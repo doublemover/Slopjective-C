@@ -1,11 +1,5 @@
 #pragma once
 
-#include "runtime/state/runtime_state_records.h"
-
-namespace objc3c::runtime {
-
-void ClearMethodCacheStateUnlocked(RuntimeState &state);
-void ClearRealizedClassGraphUnlocked(RuntimeState &state);
-void ClearRuntimeInstanceStateUnlocked(RuntimeState &state);
-
-}  // namespace objc3c::runtime
+#include "runtime/state/runtime_class_graph_state_clear.h"
+#include "runtime/state/runtime_dispatch_state_clear.h"
+#include "runtime/state/runtime_instance_state_clear.h"
