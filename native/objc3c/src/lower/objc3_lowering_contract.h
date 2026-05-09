@@ -6,160 +6,13 @@
 #include "lower/contracts/lowering_diagnostics.h"
 #include "lower/contracts/lowering_phase_io.h"
 #include "lower/contracts/runtime_dispatch_lowering_contracts.h"
+#include "lower/contracts/runtime_metadata_emission_contracts.h"
 #include "lower/contracts/runtime_metadata_handoff.h"
 
-
-#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <string>
 
-// emitted metadata inventory freeze anchor: lowering contracts do
-// not own or infer object-file metadata inventory. The emitted inventory
-// remains the frontend ABI/scaffold/object-inspection boundary for image-info
-// plus class/protocol/category/property/ivar descriptor sections until later
-// issues extend it explicitly.
-// source-to-section matrix anchor: interface/implementation/
-// metaclass/method rows stay explicit no-standalone-emission entries until
-// later payload work extends them.
-// layout/visibility policy anchor: lowering contracts freeze one
-// emitted metadata layout policy without inferring a second model. Image-info
-// emits first; descriptor families follow class/protocol/category/property/ivar
-// order; descriptor ordinals ascend before the family aggregate; emitted
-// metadata remains local-linkage/no-COMDAT; explicit hidden visibility is not
-// spelled on IR globals because local linkage already keeps them non-exported;
-// llvm.used preserves retention order; and object-format-specific variants stay
-// deferred until the next runtime step.
-inline constexpr const char *kObjc3RuntimeMetadataLayoutOrderingVisibilityPolicyContractId =
-    "objc3c.runtime.metadata.layout.ordering.visibility.policy.freeze.v1";
-inline constexpr const char *kObjc3RuntimeMetadataLayoutFamilyOrderingModel =
-    "image-info-then-class-protocol-category-property-ivar";
-inline constexpr const char *kObjc3RuntimeMetadataDescriptorOrderingModel =
-    "ascending-descriptor-ordinal-then-family-aggregate";
-inline constexpr const char *kObjc3RuntimeMetadataAggregateRelocationPolicy =
-    "zero-sentinel-or-count-plus-pointer-vector";
-inline constexpr const char *kObjc3RuntimeMetadataComdatPolicy = "disabled";
-inline constexpr const char *kObjc3RuntimeMetadataVisibilitySpellingPolicy =
-    "local-linkage-omits-explicit-ir-visibility";
-inline constexpr const char *kObjc3RuntimeMetadataRetentionOrderingModel =
-    "llvm.used-emission-order";
-inline constexpr const char *kObjc3RuntimeMetadataObjectFormatPolicyModel =
-    "object-format-neutral-until-next-runtime-phase";
-// object-format policy expansion anchor: B001/B002 keep the neutral
-// model frozen for historical replay, while lowering now also carries the
-// explicit COFF/ELF/Mach-O mapping surface for emitted section spellings and
-// retention-anchor behavior.
-inline constexpr const char
-    *kObjc3RuntimeMetadataObjectFormatSurfaceContractId =
-        "objc3c.runtime.metadata.object.format.policy.v1";
-inline constexpr const char *kObjc3RuntimeMetadataObjectFormatCoff = "coff";
-inline constexpr const char *kObjc3RuntimeMetadataObjectFormatElf = "elf";
-inline constexpr const char *kObjc3RuntimeMetadataObjectFormatMachO = "mach-o";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionSpellingModelCoff =
-        "coff-logical-section-spellings";
-inline constexpr const char *kObjc3RuntimeMetadataSectionSpellingModelElf =
-    "elf-logical-section-spellings";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionSpellingModelMachO =
-        "mach-o-data-segment-comma-section-spellings";
-inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelCoff =
-    "llvm.used-appending-global+coff-timestamp-normalization";
-inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelElf =
-    "llvm.used-appending-global+elf-stable-sections";
-inline constexpr const char *kObjc3RuntimeMetadataRetentionAnchorModelMachO =
-    "llvm.used-appending-global+mach-o-data-segment-sections";
-// metadata section emission freeze anchor: native object files now
-// carry real metadata sections through an explicit owner/publication contract.
-// Zero payload bytes are a recorded lowering-owned object-file decision, not a
-// placeholder shape owned by the emitter.
-inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionContractId =
-    "objc3c.runtime.metadata.section.emission.freeze.v1";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionEmissionOwnerContractId =
-        "objc3c.runtime.metadata.section.emission.owner.record.v1";
-inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionPayloadModel =
-    "lowering-owned-zero-payload-section-records";
-inline constexpr const char *kObjc3RuntimeMetadataSectionEmissionOwnerModel =
-    "native.lower.runtime-metadata-publishes-section-records-native.ir-consumes-object-payloads";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionEmissionInventoryModel =
-        "image-info-plus-class-protocol-category-property-ivar-sections";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionEmissionDescriptorPayloadModel =
-        "private-[1xi8]-zeroinitializer-per-descriptor";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionEmissionAggregatePayloadModel =
-        "i64-count-plus-pointer-vector-aggregates";
-inline constexpr const char
-    *kObjc3RuntimeMetadataSectionEmissionImageInfoPayloadModel =
-        "internal-{i32,i32}-zeroinitializer-image-info";
-// class/metaclass data emission anchor: lane-C begins replacing the
-// class-family placeholder byte model with real class descriptor bundles while
-// keeping metaclass payloads inline with their class bundles and deferring real
-// method/property/ivar lists plus selector/string pools to later issues.
-// dispatch-control lowering anchor: class/metaclass payloads now
-// preserve objc_final/objc_sealed container intent as explicit metadata bits.
-inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionContractId =
-    "objc3c.runtime.class.metaclass.data.emission.v1";
-inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionPayloadModel =
-    "class-source-record-descriptor-bundles-with-inline-metaclass-records-and-final-sealed-flags";
-inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionNameModel =
-    "shared-class-name-cstring-per-bundle";
-inline constexpr const char *kObjc3RuntimeClassMetaclassEmissionSuperLinkModel =
-    "nullable-super-source-record-bundle-pointer";
-inline constexpr const char
-    *kObjc3RuntimeClassMetaclassEmissionMethodListReferenceModel =
-        "count-plus-owner-identity-pointer-method-list-ref";
-// protocol/category data emission anchor: lane-C next replaces the
-// protocol/category family placeholder byte models with real descriptor bundles
-// while keeping cross-protocol references and category attachments explicit and
-// fail-closed without claiming that selector/string pools or standalone
-// property/ivar payload sections already exist.
-inline constexpr const char *kObjc3RuntimeProtocolCategoryEmissionContractId =
-    "objc3c.runtime.protocol.category.data.emission.v1";
-inline constexpr const char *kObjc3RuntimeProtocolEmissionPayloadModel =
-    "protocol-descriptor-bundles-with-inherited-protocol-ref-lists";
-inline constexpr const char *kObjc3RuntimeCategoryEmissionPayloadModel =
-    "category-descriptor-bundles-with-attachment-and-protocol-ref-lists";
-inline constexpr const char *kObjc3RuntimeProtocolReferenceModel =
-    "count-plus-descriptor-pointer-protocol-ref-lists";
-inline constexpr const char *kObjc3RuntimeCategoryAttachmentModel =
-    "count-plus-owner-identity-pointer-attachment-lists";
-// member-table data emission anchor: lane-C now adds real
-// owner-scoped method-table payloads plus real property/ivar descriptor bytes
-// without reopening the C002/C003 descriptor-family shapes. Class refs keep
-// their historical prefix stable while protocol/category descriptor bundles
-// remain shape-stable and gain adjacent emitted member-table payloads.
-// dispatch-control lowering anchor: method-table payloads now carry
-// effective direct-dispatch and objc_final intent bits alongside callable
-// implementation pointers.
-inline constexpr const char *kObjc3RuntimeMemberTableEmissionContractId =
-    "objc3c.runtime.member.table.emission.v1";
-inline constexpr const char *kObjc3RuntimeMethodListEmissionPayloadModel =
-    "owner-scoped-method-table-globals-with-inline-entry-records-and-direct-final-flags";
-inline constexpr const char *kObjc3RuntimeMethodListEmissionGroupingModel =
-    "declaration-owner-plus-class-kind-lexicographic";
-inline constexpr const char *kObjc3RuntimePropertyDescriptorEmissionPayloadModel =
-    "property-descriptor-records-with-accessor-binding-and-sema-ivar-layout-fields";
-inline constexpr const char *kObjc3RuntimeIvarDescriptorEmissionPayloadModel =
-    "ivar-descriptor-records-with-property-binding-layout-replay-key-and-offset-global";
-// selector/string pool expansion anchor: runtime-adjacent selector
-// globals now expand into canonical selector and string pool families with
-// stable ordinal aggregates, while existing descriptor bundles remain shape
-// stable and keep their current inline cstring payloads.
-inline constexpr const char *kObjc3RuntimeSelectorStringPoolEmissionContractId =
-    "objc3c.runtime.selector.string.pool.emission.v1";
-inline constexpr const char *kObjc3RuntimeSelectorPoolEmissionPayloadModel =
-    "canonical-selector-cstring-pool-with-stable-ordinal-aggregate";
-inline constexpr const char *kObjc3RuntimeStringPoolEmissionPayloadModel =
-    "canonical-runtime-string-cstring-pool-with-stable-ordinal-aggregate";
-inline constexpr const char *kObjc3RuntimeSelectorPoolLogicalSection =
-    "objc3.runtime.selector_pool";
-inline constexpr const char *kObjc3RuntimeStringPoolLogicalSection =
-    "objc3.runtime.string_pool";
-inline constexpr const char *kObjc3RuntimeKeypathDescriptorLogicalSection =
-    "objc3.runtime.keypath_descriptors";
 // executable object artifact lowering freeze anchor: lane-C now
 // freezes the current binding surface where realized class/category metadata
 // records consume owner-scoped method-list refs and implementation-backed
@@ -1199,26 +1052,6 @@ inline constexpr const char
         "tooling-release-evidence-packaging-remains-bounded-to-emitted-report-payloads-checklist-refs-and-stable-conformance-bucket-manifests";
 inline constexpr const char *kObjc3RuntimeCapabilityModuleFormatVersion =
     "objc3c-runtime-metadata-v1";
-// metadata-emission gate anchor: lane-E now freezes the upstream
-// object-emission evidence contract over A002/B003/C006/D003 so later closeout
-// work must fail closed if the source-to-section matrix, object-format policy,
-// binary inspection corpus, or archive/static-link discovery proof drifts.
-inline constexpr const char *kObjc3RuntimeMetadataEmissionGateContractId =
-    "objc3c.runtime.metadata.emission.gate.v1";
-inline constexpr const char *kObjc3RuntimeMetadataEmissionGateEvidenceModel =
-    "source-sema-ir-runtime-summary-chain";
-inline constexpr const char *kObjc3RuntimeMetadataEmissionGateFailureModel =
-    "fail-closed-on-upstream-summary-drift";
-// cross-lane object-emission closeout anchor: lane-E now freezes one
-// integrated closeout over the E001 summary chain plus fresh native object
-// probes so later startup-registration work can trust the same emitted objects
-// on the class/category/message-send paths.
-inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutContractId =
-    "objc3c.runtime.cross.lane.object.emission.closeout.v1";
-inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutEvidenceModel =
-    "integrated-summary-plus-native-object-emission-probes";
-inline constexpr const char *kObjc3RuntimeMetadataObjectEmissionCloseoutFailureModel =
-    "fail-closed-on-summary-or-integrated-probe-drift";
 // manifest/object/IR truth gate anchor: this binds the compiler sidecar
 // manifest, emitted LLVM IR, native object, runtime registration artifacts,
 // and release-claim sidecars into one deterministic evidence boundary.
@@ -1236,24 +1069,6 @@ inline constexpr const char *kObjc3ManifestObjectIrTruthGateClaimModel =
     "versioned-conformance-and-runtime-capability-sidecars-are-bound-to-the-same-replay-key-and-remain-narrower-than-evidence";
 inline constexpr const char *kObjc3ManifestObjectIrTruthGateFailureModel =
     "missing-artifact-hash-drift-object-section-drift-or-unsupported-negative-emission-fails-closed";
-// normalized layout policy anchor: semantic finalization of runtime
-// metadata ordering, visibility, relocation, and retention now flows through
-// one lowering-owned normalized policy packet before the IR emitter materializes
-// globals. The emitter consumes the normalized plan directly instead of
-// hardcoding family order or relocation semantics ad hoc.
-inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyContractId =
-    "objc3c.runtime.metadata.layout.policy.v1";
-inline constexpr std::size_t kObjc3RuntimeMetadataLayoutPolicyFamilyCount = 5u;
-inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyClassFamily =
-    "class";
-inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyProtocolFamily =
-    "protocol";
-inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyCategoryFamily =
-    "category";
-inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyPropertyFamily =
-    "property";
-inline constexpr const char *kObjc3RuntimeMetadataLayoutPolicyIvarFamily =
-    "ivar";
 inline constexpr const char *kObjc3MethodLookupOverrideConflictLaneContract =
     "objc3c.method.lookup.override.conflict.v1";
 inline constexpr const char *kObjc3PropertySynthesisIvarBindingLaneContract =
@@ -1717,82 +1532,6 @@ struct Objc3LoweringIRBoundary {
   std::size_t runtime_dispatch_arg_slots = kObjc3RuntimeDispatchDefaultArgs;
   std::string runtime_dispatch_symbol = kObjc3RuntimeDispatchSymbol;
   std::string selector_global_ordering = kObjc3SelectorGlobalOrdering;
-};
-
-struct Objc3RuntimeMetadataLayoutPolicyFamilyInput {
-  std::string kind;
-  std::string section_name;
-  std::string aggregate_symbol_name;
-  std::size_t descriptor_count = 0;
-};
-
-struct Objc3RuntimeMetadataLayoutPolicyInput {
-  std::string abi_contract_id;
-  std::string scaffold_contract_id;
-  bool section_boundary_ready = false;
-  bool runtime_export_ready = false;
-  bool scaffold_emitted = false;
-  bool scaffold_fail_closed = false;
-  bool uses_llvm_used = false;
-  bool image_info_emitted = false;
-  std::string image_info_symbol;
-  std::string image_info_section;
-  std::string descriptor_symbol_prefix;
-  std::string descriptor_linkage;
-  std::string aggregate_linkage;
-  std::string metadata_visibility;
-  std::string retention_root;
-  std::size_t total_retained_global_count = 0;
-  std::array<Objc3RuntimeMetadataLayoutPolicyFamilyInput,
-             kObjc3RuntimeMetadataLayoutPolicyFamilyCount>
-      families;
-};
-
-struct Objc3RuntimeMetadataLayoutPolicyFamily {
-  std::string kind;
-  std::string logical_section_name;
-  std::string emitted_section_name;
-  std::string aggregate_symbol_name;
-  std::size_t descriptor_count = 0;
-};
-
-struct Objc3RuntimeMetadataLayoutPolicy {
-  std::string contract_id = kObjc3RuntimeMetadataLayoutPolicyContractId;
-  std::string abi_contract_id;
-  std::string scaffold_contract_id;
-  std::string family_ordering_model =
-      kObjc3RuntimeMetadataLayoutFamilyOrderingModel;
-  std::string descriptor_ordering_model =
-      kObjc3RuntimeMetadataDescriptorOrderingModel;
-  std::string aggregate_relocation_policy =
-      kObjc3RuntimeMetadataAggregateRelocationPolicy;
-  std::string comdat_policy = kObjc3RuntimeMetadataComdatPolicy;
-  std::string visibility_spelling_policy =
-      kObjc3RuntimeMetadataVisibilitySpellingPolicy;
-  std::string retention_ordering_model =
-      kObjc3RuntimeMetadataRetentionOrderingModel;
-  std::string object_format_policy_model =
-      kObjc3RuntimeMetadataObjectFormatPolicyModel;
-  std::string object_format_surface_contract_id =
-      kObjc3RuntimeMetadataObjectFormatSurfaceContractId;
-  std::string object_format;
-  std::string section_spelling_model;
-  std::string retention_anchor_model;
-  std::string image_info_symbol;
-  std::string logical_image_info_section;
-  std::string emitted_image_info_section;
-  std::string descriptor_symbol_prefix;
-  std::string descriptor_linkage;
-  std::string aggregate_linkage;
-  std::string metadata_visibility;
-  std::string retention_root;
-  std::size_t total_retained_global_count = 0;
-  bool ready = false;
-  bool fail_closed = false;
-  std::array<Objc3RuntimeMetadataLayoutPolicyFamily,
-             kObjc3RuntimeMetadataLayoutPolicyFamilyCount>
-      families;
-  std::string failure_reason;
 };
 
 struct Objc3MethodLookupOverrideConflictContract {
@@ -2522,18 +2261,6 @@ bool RequiresFailClosedObjc3RuntimeDispatchError(
 const char *Objc3DispatchSurfaceRuntimeEntrypointSymbol(
     const std::string &dispatch_surface_family);
 std::string Objc3RuntimeDispatchDeclarationReplayKey(const Objc3LoweringIRBoundary &boundary);
-bool TryBuildObjc3RuntimeMetadataLayoutPolicy(
-    const Objc3RuntimeMetadataLayoutPolicyInput &input,
-    Objc3RuntimeMetadataLayoutPolicy &policy, std::string &error);
-bool IsReadyObjc3RuntimeMetadataLayoutPolicy(
-    const Objc3RuntimeMetadataLayoutPolicy &policy);
-std::string Objc3RuntimeMetadataLayoutPolicyReplayKey(
-    const Objc3RuntimeMetadataLayoutPolicy &policy);
-std::string Objc3RuntimeMetadataSectionEmissionBoundarySummary();
-std::string Objc3RuntimeMetadataClassMetaclassEmissionSummary();
-std::string Objc3RuntimeMetadataProtocolCategoryEmissionSummary();
-std::string Objc3RuntimeMetadataMemberTableEmissionSummary();
-std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3ExecutableObjectArtifactLoweringSummary();
 std::string Objc3ExecutablePropertyAccessorLayoutLoweringSummary();
 std::string Objc3ExecutableIvarLayoutEmissionSummary();
@@ -2621,15 +2348,9 @@ std::string Objc3RuntimeClassRealizationSummary();
 std::string Objc3RuntimeMetaclassGraphRootClassSummary();
 std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary();
 std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary();
-std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
-std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
-std::string Objc3RuntimeMetadataLinkerRetentionSummary();
-std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
 std::string Objc3RuntimeBootstrapLoweringBoundarySummary();
 std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary();
 std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
-std::string Objc3RuntimeMetadataEmissionGateSummary();
-std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3ManifestObjectIrTruthGateSummary();
 std::string Objc3ToolingMachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary();
@@ -2638,12 +2359,6 @@ std::string Objc3VersionedConformanceReportLoweringContractSummary();
 std::string Objc3RuntimeCapabilityReportingContractSummary();
 std::string Objc3OwnershipSystemHelperRuntimeContractSummary();
 std::string Objc3OwnershipLiveCleanupRetainableIntegrationSummary();
-std::string Objc3RuntimeMetadataSectionForObjectFormat(
-    const std::string &object_format, const std::string &logical_section);
-std::string Objc3RuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
-    const std::string &object_format, const std::string &symbol_name);
-std::string Objc3RuntimeMetadataHostSectionForLogicalName(
-    const std::string &logical_section);
 bool IsValidObjc3MethodLookupOverrideConflictContract(const Objc3MethodLookupOverrideConflictContract &contract);
 std::string Objc3MethodLookupOverrideConflictReplayKey(const Objc3MethodLookupOverrideConflictContract &contract);
 Objc3PropertySynthesisIvarBindingContract Objc3DefaultPropertySynthesisIvarBindingContract(
