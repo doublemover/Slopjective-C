@@ -32,6 +32,7 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_conformance_publication.cpp
   objc3_frontend_artifacts.cpp
   objc3_frontend_feature_claim_artifacts.cpp
+  objc3_frontend_runtime_capability_artifacts.cpp
   objc3_frontend_runtime_import_artifacts.cpp
   objc3_runtime_state_publication_paths.cpp
 )
