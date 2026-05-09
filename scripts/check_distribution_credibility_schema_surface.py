@@ -19,18 +19,20 @@ SUMMARY_PATH = ROOT / "tmp" / "reports" / "distribution-credibility" / "schema-s
 SUMMARY_CONTRACT_ID = "objc3c.distribution.credibility.schema.surface.summary.v1"
 JSON_SCHEMA_DRAFT = "https://json-schema.org/draft/2020-12/schema"
 
-EXPECTED_SCHEMAS = {
-    "dashboard_schema": (
+EXPECTED_SCHEMAS = (
+    (
+        "dashboard_schema",
         "objc3c-distribution-credibility-dashboard-v1",
         "https://schemas.doublemover.dev/objc3c-distribution-credibility-dashboard-v1.schema.json",
         "objc3c.distribution.credibility.dashboard.summary.v1",
     ),
-    "trust_report_schema": (
+    (
+        "trust_report_schema",
         "objc3c-distribution-trust-report-v1",
         "https://schemas.doublemover.dev/objc3c-distribution-trust-report-v1.schema.json",
         "objc3c.distribution.trust.report.v1",
     ),
-}
+)
 
 
 def fail(message: str) -> int:
@@ -60,11 +62,12 @@ def main() -> int:
     schema_paths: list[str] = []
     schema_ids: list[str] = []
     schema_refs: dict[str, str] = {}
-    for surface_key, (
+    for (
+        surface_key,
         schema_id,
         expected_schema_id,
         expected_contract_id,
-    ) in EXPECTED_SCHEMAS.items():
+    ) in EXPECTED_SCHEMAS:
         raw_path = surface.get(surface_key)
         expected_path = repo_rel(schema_path(schema_id))
         if raw_path != expected_path:
