@@ -41,6 +41,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   classes/metaclass_graph.h
   classes/protocol_conformance.cpp
   classes/protocol_conformance.h
+  classes/protocol_conformance_snapshots.cpp
   concurrency/actor.cpp
   concurrency/actor.h
   concurrency/actor_isolation.cpp
