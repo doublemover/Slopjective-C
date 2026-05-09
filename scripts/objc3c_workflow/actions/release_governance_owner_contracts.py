@@ -18,15 +18,19 @@ class ReleaseGateOwner:
     owned_actions: tuple[str, ...]
     upstream_owner_actions: tuple[str, ...] = ()
     workflow_child_actions: tuple[str, ...] = ()
+    hard_cutover_guardrails: tuple[tuple[str, object], ...] = ()
 
     def owner_policy(self) -> dict[str, object]:
-        return {
+        policy: dict[str, object] = {
             "source_owner": self.source_owner,
             "gate_owner": self.gate_owner,
             "blocker_owner": self.blocker_owner,
             "report_only_allowed": False,
             "owned_actions": list(self.owned_actions),
         }
+        if self.hard_cutover_guardrails:
+            policy["hard_cutover_guardrails"] = dict(self.hard_cutover_guardrails)
+        return policy
 
     def workflow_owner_policy(self) -> dict[str, object]:
         policy = self.owner_policy()
@@ -126,6 +130,18 @@ RELEASE_GATE_OWNERS: dict[str, ReleaseGateOwner] = {
             "build-package-channels",
             "build-platform-support-matrix",
         ),
+        hard_cutover_guardrails=(
+            ("unsupported_host_success_allowed", False),
+            ("supported_host_claim_owner", "platform-hardening-support-source"),
+            (
+                "toolchain_archive_claim_owner",
+                "platform-hardening-build-package-validation",
+            ),
+            ("toolchain_archive_claim_requires_owner", True),
+            ("package_payload_owner_action", "package-runnable-toolchain"),
+            ("report_only_release_claim_allowed", False),
+            ("wrapper_only_action_surface_allowed", False),
+        ),
     ),
     "release-operations": ReleaseGateOwner(
         gate_id="release-operations",
@@ -152,6 +168,15 @@ RELEASE_GATE_OWNERS: dict[str, ReleaseGateOwner] = {
             "check-release-operations-schema-surface",
             "build-update-manifest",
             "publish-release-operations",
+        ),
+        hard_cutover_guardrails=(
+            ("missing_upstream_artifact_behavior", "fail-closed"),
+            ("compatibility_update_fallback_allowed", False),
+            ("update_fallback_support_allowed", False),
+            ("publication_claim_owner", "release-operations-gate"),
+            ("blocker_owner_required_before_publication", True),
+            ("report_only_release_claim_allowed", False),
+            ("wrapper_only_action_surface_allowed", False),
         ),
     ),
     "public-conformance-reporting": ReleaseGateOwner(
@@ -446,6 +471,10 @@ def release_gate_child_actions(gate_id: str) -> tuple[str, ...]:
     return release_gate_owner(gate_id).workflow_child_actions
 
 
+def release_gate_hard_cutover_guardrails(gate_id: str) -> dict[str, object]:
+    return dict(release_gate_owner(gate_id).hard_cutover_guardrails)
+
+
 def release_action_owner_map() -> dict[str, dict[str, str]]:
     owner_map: dict[str, dict[str, str]] = {}
     for owner in RELEASE_GATE_OWNERS.values():
@@ -469,6 +498,7 @@ __all__ = [
     "release_action_owner_map",
     "release_action_specs",
     "release_gate_child_actions",
+    "release_gate_hard_cutover_guardrails",
     "release_gate_owner",
     "release_gate_public_actions",
 ]

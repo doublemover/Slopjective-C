@@ -43,7 +43,16 @@
       "check-release-operations-schema-surface",
       "build-update-manifest",
       "publish-release-operations"
-    ]
+    ],
+    "hard_cutover_guardrails": {
+      "missing_upstream_artifact_behavior": "fail-closed",
+      "compatibility_update_fallback_allowed": false,
+      "update_fallback_support_allowed": false,
+      "publication_claim_owner": "release-operations-gate",
+      "blocker_owner_required_before_publication": true,
+      "report_only_release_claim_allowed": false,
+      "wrapper_only_action_surface_allowed": false
+    }
   },
   "upstream_validate_actions": [
     "validate-release-foundation",

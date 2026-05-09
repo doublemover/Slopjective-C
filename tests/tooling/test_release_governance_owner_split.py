@@ -26,10 +26,22 @@ from scripts.objc3c_workflow.actions.release_governance_owner_contracts import (
     RELEASE_GATE_OWNERS,
     RELEASE_OPERATIONS_ACTION_CONTRACTS,
     release_action_specs,
+    release_gate_hard_cutover_guardrails,
 )
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW_ROOT = ROOT / "scripts" / "objc3c_workflow"
+PLATFORM_HARDENING_FIXTURES = (
+    "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
+    "tests/tooling/fixtures/platform_hardening/build_package_validation_contract.json",
+    "tests/tooling/fixtures/platform_hardening/install_matrix_integration_contract.json",
+    "tests/tooling/fixtures/platform_hardening/packaged_smoke_integration_contract.json",
+    "tests/tooling/fixtures/platform_hardening/platform_matrix_artifact_contract.json",
+    "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json",
+    "tests/tooling/fixtures/platform_hardening/toolchain_range_replay_contract.json",
+    "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",
+)
 
 
 def _load_fixture(relative_path: str) -> dict[str, object]:
@@ -104,6 +116,86 @@ def test_release_channel_catalogs_are_contract_facades() -> None:
     )
     assert RELEASE_OPERATIONS_ACTION_SPECS == release_action_specs(
         RELEASE_OPERATIONS_ACTION_CONTRACTS
+    )
+
+
+def test_packaging_and_release_operations_publish_hard_cutover_guardrails() -> None:
+    packaging_guardrails = release_gate_hard_cutover_guardrails("packaging-channels")
+    assert packaging_guardrails == {
+        "unsupported_host_success_allowed": False,
+        "supported_host_claim_owner": "platform-hardening-support-source",
+        "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+        "toolchain_archive_claim_requires_owner": True,
+        "package_payload_owner_action": "package-runnable-toolchain",
+        "report_only_release_claim_allowed": False,
+        "wrapper_only_action_surface_allowed": False,
+    }
+
+    operations_guardrails = release_gate_hard_cutover_guardrails("release-operations")
+    assert operations_guardrails == {
+        "missing_upstream_artifact_behavior": "fail-closed",
+        "compatibility_update_fallback_allowed": False,
+        "update_fallback_support_allowed": False,
+        "publication_claim_owner": "release-operations-gate",
+        "blocker_owner_required_before_publication": True,
+        "report_only_release_claim_allowed": False,
+        "wrapper_only_action_surface_allowed": False,
+    }
+
+    for gate_id in ("packaging-channels", "release-operations"):
+        owner = RELEASE_GATE_OWNERS[gate_id]
+        guardrails = release_gate_hard_cutover_guardrails(gate_id)
+        for relative_path in (owner.source_surface, owner.workflow_surface):
+            surface = _load_fixture(relative_path)
+            assert surface["owner_policy"]["hard_cutover_guardrails"] == guardrails
+            assert surface["owner_policy"]["report_only_allowed"] is False
+
+
+def test_packaging_and_release_operations_action_specs_are_not_report_only_claims() -> None:
+    for specs in (PACKAGING_CHANNEL_ACTION_SPECS, RELEASE_OPERATIONS_ACTION_SPECS):
+        for action, spec in specs.items():
+            assert "report-only" not in spec.guarantee_owner
+            assert "wrapper" not in spec.backend
+            assert RELEASE_GATE_OWNERS[
+                RELEASE_CHANNEL_ACTION_OWNER_MAP[action]["gate_owner"].removesuffix("-gate")
+            ]
+
+
+def test_platform_hardening_fixtures_pin_archive_and_unsupported_host_owners() -> None:
+    expected_owner_policy = {
+        "channel_owner": "packaging-channels-source",
+        "platform_support_owner": "platform-hardening-support-source",
+        "installer_validation_owner": "platform-hardening-install-validation",
+        "build_package_validation_owner": "platform-hardening-build-package-validation",
+        "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+        "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
+        "blocker_owner": "platform-hardening-blockers",
+        "source_authority": "checked-in-platform-hardening-contracts",
+        "report_only_allowed": False,
+    }
+
+    for relative_path in PLATFORM_HARDENING_FIXTURES:
+        payload = _load_fixture(relative_path)
+        assert payload["owner_policy"] == expected_owner_policy
+        assert payload["blocker_metadata"]["blocker_owner"] == "platform-hardening-blockers"
+
+    unsupported_host_policy = _load_fixture(
+        "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json"
+    )
+    assert all(
+        failure_class["required_behavior"] == "fail-closed"
+        for failure_class in unsupported_host_policy["hard_fail_classes"]
+    )
+
+    archive_claim_policy = _load_fixture(
+        "tests/tooling/fixtures/platform_hardening/toolchain_archive_claim_policy.json"
+    )
+    assert "toolchain archive claim outside checked-in package channel set" in (
+        archive_claim_policy["blocker_metadata"]["blocking_conditions"]
+    )
+    assert (
+        "toolchain presence does not widen archive or install claims by itself"
+        in archive_claim_policy["claim_boundary_rules"]
     )
 
 

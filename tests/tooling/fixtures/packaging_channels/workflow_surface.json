@@ -37,7 +37,16 @@
       "check-packaging-channels-schema-surface",
       "build-package-channels",
       "build-platform-support-matrix"
-    ]
+    ],
+    "hard_cutover_guardrails": {
+      "unsupported_host_success_allowed": false,
+      "supported_host_claim_owner": "platform-hardening-support-source",
+      "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
+      "toolchain_archive_claim_requires_owner": true,
+      "package_payload_owner_action": "package-runnable-toolchain",
+      "report_only_release_claim_allowed": false,
+      "wrapper_only_action_surface_allowed": false
+    }
   },
   "channel_owner_contract": {
     "channel_owner": "packaging-channels-source",

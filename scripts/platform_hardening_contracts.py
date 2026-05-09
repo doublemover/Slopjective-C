@@ -83,6 +83,7 @@ PLATFORM_HARDENING_OWNER_POLICY: dict[str, object] = {
     "platform_support_owner": "platform-hardening-support-source",
     "installer_validation_owner": "platform-hardening-install-validation",
     "build_package_validation_owner": "platform-hardening-build-package-validation",
+    "toolchain_archive_claim_owner": "platform-hardening-build-package-validation",
     "unsupported_host_failure_owner": "platform-hardening-unsupported-host-fail-closed",
     "blocker_owner": "platform-hardening-blockers",
     "source_authority": "checked-in-platform-hardening-contracts",
