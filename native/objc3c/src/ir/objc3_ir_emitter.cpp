@@ -9,13 +9,9 @@
 #include <vector>
 
 #include "ast/objc3_ast.h"
-#include "ir/objc3_ir_canonical_literal_pools.h"
-#include "ir/objc3_ir_class_receiver_bindings.h"
-#include "ir/objc3_ir_concurrency_identity.h"
-#include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_emitter_service_contexts.h"
-#include "ir/objc3_ir_function_effect_analysis.h"
+#include "ir/objc3_ir_emitter_state_initialization.h"
 #include "ir/objc3_ir_function_signature_model.h"
 #include "ir/objc3_ir_method_definition_plan.h"
 #include "ir/objc3_ir_module_body_orchestration.h"
@@ -30,61 +26,9 @@ class Objc3IREmitter {
                  const Objc3LoweringContract &lowering_contract,
                  const Objc3IRFrontendMetadata &frontend_metadata)
       : program_(program),
-        frontend_metadata_(frontend_metadata),
-        runtime_metadata_symbols_(
-            BuildObjc3IRRuntimeMetadataSymbols(program.module_name,
-                                               frontend_metadata)) {
-    if (!TryBuildObjc3LoweringIRBoundary(lowering_contract, lowering_ir_boundary_, boundary_error_)) {
-      return;
-    }
-    vector_signature_function_count_ = CountVectorSignatureFunctions(program_);
-    for (const auto &global : program_.globals) {
-      globals_.insert(global.name);
-    }
-    for (const auto &fn : program_.functions) {
-      function_arity_[fn.name] = fn.params.size();
-      if (fn.is_pure) {
-        declared_pure_functions_.insert(fn.name);
-      }
-      if (!fn.is_prototype && defined_functions_.insert(fn.name).second) {
-        function_definitions_.push_back(&fn);
-      }
-    }
-    Objc3IRMethodDefinitionPlan method_definition_plan =
-        BuildObjc3IRMethodDefinitionPlan(program_, frontend_metadata_);
-    if (!method_definition_plan.error.empty()) {
-      boundary_error_ = method_definition_plan.error;
-      return;
-    }
-    method_definitions_ = method_definition_plan.method_definitions;
-    direct_dispatch_symbols_by_key_ =
-        method_definition_plan.direct_dispatch_symbols_by_key;
-    metaprogramming_global_artifacts_ =
-        method_definition_plan.metaprogramming_global_artifacts;
-    synthesized_property_accessor_count_ =
-        method_definition_plan.synthesized_property_accessor_count;
-    metaprogramming_derived_method_count_ =
-        method_definition_plan.metaprogramming_derived_method_count;
-    function_signatures_ = BuildLoweredFunctionSignatures(program_);
-    class_receiver_constants_ =
-        BuildObjc3IRKnownClassReceiverConstants(program_);
-    Objc3IRCanonicalLiteralPools canonical_literal_pools =
-        BuildObjc3IRCanonicalLiteralPools(program_, frontend_metadata_);
-    selector_pool_globals_ =
-        std::move(canonical_literal_pools.selector_pool_globals);
-    runtime_string_pool_globals_ =
-        std::move(canonical_literal_pools.runtime_string_pool_globals);
-    typed_keypath_artifacts_ =
-        std::move(canonical_literal_pools.typed_keypath_artifacts);
-    Objc3IRFunctionEffectAnalysis function_effect_analysis =
-        BuildObjc3IRFunctionEffectAnalysis(
-            Objc3IRFunctionEffectAnalysisOptions{
-                function_definitions_, globals_, defined_functions_,
-                declared_pure_functions_});
-    mutable_global_symbols_ =
-        std::move(function_effect_analysis.mutable_global_symbols);
-    function_effects_ = std::move(function_effect_analysis.function_effects);
-    impure_functions_ = std::move(function_effect_analysis.impure_functions);
+        frontend_metadata_(frontend_metadata) {
+    ApplyStateInitialization(BuildObjc3IREmitterStateInitialization(
+        program_, lowering_contract, frontend_metadata_));
   }
 
   bool Emit(std::string &ir, std::string &error) {
@@ -141,6 +85,44 @@ class Objc3IREmitter {
   }
 
  private:
+  void ApplyStateInitialization(
+      Objc3IREmitterStateInitialization initialization) {
+    runtime_metadata_symbols_ =
+        std::move(initialization.runtime_metadata_symbols);
+    lowering_ir_boundary_ = std::move(initialization.lowering_ir_boundary);
+    boundary_error_ = std::move(initialization.boundary_error);
+    globals_ = std::move(initialization.globals);
+    mutable_global_symbols_ =
+        std::move(initialization.mutable_global_symbols);
+    defined_functions_ = std::move(initialization.defined_functions);
+    declared_pure_functions_ =
+        std::move(initialization.declared_pure_functions);
+    function_definitions_ = std::move(initialization.function_definitions);
+    method_definitions_ = std::move(initialization.method_definitions);
+    synthesized_property_accessor_count_ =
+        initialization.synthesized_property_accessor_count;
+    metaprogramming_global_artifacts_ =
+        std::move(initialization.metaprogramming_global_artifacts);
+    metaprogramming_derived_method_count_ =
+        initialization.metaprogramming_derived_method_count;
+    function_effects_ = std::move(initialization.function_effects);
+    impure_functions_ = std::move(initialization.impure_functions);
+    function_arity_ = std::move(initialization.function_arity);
+    function_signatures_ = std::move(initialization.function_signatures);
+    direct_dispatch_symbols_by_key_ =
+        std::move(initialization.direct_dispatch_symbols_by_key);
+    selector_pool_globals_ =
+        std::move(initialization.selector_pool_globals);
+    runtime_string_pool_globals_ =
+        std::move(initialization.runtime_string_pool_globals);
+    typed_keypath_artifacts_ =
+        std::move(initialization.typed_keypath_artifacts);
+    class_receiver_constants_ =
+        std::move(initialization.class_receiver_constants);
+    vector_signature_function_count_ =
+        initialization.vector_signature_function_count;
+  }
+
   Objc3IREmitterServiceContextState ServiceContextState() {
     return Objc3IREmitterServiceContextState{
         program_,
