@@ -42,6 +42,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   classes/protocol_conformance.cpp
   classes/protocol_conformance.h
   classes/protocol_conformance_snapshots.cpp
+  classes/receiver_identity.cpp
+  classes/receiver_identity.h
   concurrency/actor.cpp
   concurrency/actor.h
   concurrency/actor_isolation.cpp
@@ -92,6 +94,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/dispatch_status.cpp
   dispatch/dispatch_api.cpp
   dispatch/dispatch_api.h
+  dispatch/dispatch_resolution_state.cpp
+  dispatch/dispatch_resolution_state.h
   dispatch/dispatch_state_snapshots.cpp
   dispatch/dispatch_target_resolution.cpp
   dispatch/dispatch_target_resolution.h

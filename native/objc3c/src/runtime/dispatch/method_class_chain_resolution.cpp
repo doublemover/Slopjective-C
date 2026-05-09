@@ -1,6 +1,6 @@
 #include "runtime/dispatch/method_class_chain_resolution.h"
 
-#include "runtime/classes/class_graph.h"
+#include "runtime/classes/receiver_identity.h"
 #include "runtime/dispatch/dispatch_family.h"
 #include "runtime/dispatch/method_resolution_tables.h"
 #include "runtime/dispatch/runtime_resolution_records.h"

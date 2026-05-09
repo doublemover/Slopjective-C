@@ -1,6 +1,6 @@
 #include "runtime/memory/runtime_instance_destroy_plan.h"
 
-#include "runtime/classes/class_graph.h"
+#include "runtime/classes/receiver_identity.h"
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/storage/property_accessors.h"

@@ -1,6 +1,6 @@
 #include "runtime/dispatch/builtin_methods.h"
 
-#include "runtime/classes/class_graph.h"
+#include "runtime/classes/receiver_identity.h"
 #include "runtime/dispatch/runtime_method_return.h"
 #include "runtime/dispatch/typed_dispatch_result.h"
 #include "runtime/memory/arc.h"

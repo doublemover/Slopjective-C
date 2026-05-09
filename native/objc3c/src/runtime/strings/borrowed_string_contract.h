@@ -17,7 +17,7 @@ inline const char *RuntimeCStringSnapshotOwnershipModelLiteral() {
 }
 
 inline const char *RuntimeStringPoolSnapshotBorrowingModelLiteral() {
-  return "image-backed-string-pools-feed-runtime-owned-snapshot-fields-without-fallback-copies";
+  return "image-backed-string-pools-feed-runtime-owned-snapshot-fields-without-secondary-copies";
 }
 
 inline const char *RuntimeCStringNullSnapshotModelLiteral() {

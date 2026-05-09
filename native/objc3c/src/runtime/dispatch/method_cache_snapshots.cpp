@@ -1,6 +1,6 @@
 #include "runtime/dispatch/method_cache.h"
 
-#include "runtime/classes/class_graph.h"
+#include "runtime/classes/receiver_identity.h"
 #include "runtime/dispatch/dispatch_family.h"
 #include "runtime/dispatch/runtime_resolution_records.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
