@@ -7,8 +7,12 @@ from pathlib import Path
 
 from ..case_result import CaseResult
 from ..commands import run
+from .release_claims_publication_shutdown_assertions import (
+    expect_final_publication_artifact_wiring,
+    expect_live_compile_artifacts,
+    expect_live_validate_artifacts,
+)
 from ..core import (
-    DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
     NATIVE_EXE,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     ROOT,
@@ -26,23 +30,7 @@ def check_final_claim_publication_deprecated_path_shutdown_case(
     compile_dir = case_dir / "compile"
     compile_fixture_with_args(fixture, compile_dir)
     compile_artifacts = sorted(path.name for path in compile_dir.glob("module.objc3-*.json"))
-    expect(
-        compile_artifacts
-        == [
-            "module.objc3-advanced-feature-gate.json",
-            "module.objc3-conformance-publication.json",
-            "module.objc3-conformance-report.json",
-            "module.objc3-release-candidate-matrix.json",
-        ],
-        "expected native compile to publish only the live claim publication and release-candidate sidecars",
-    )
-    expect(
-        all(
-            not (compile_dir / filename).exists()
-            for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES
-        ),
-        "expected native compile to stop emitting every deprecated claim/scaffold sidecar filename",
-    )
+    expect_live_compile_artifacts(compile_dir, compile_artifacts)
 
     report_path = compile_dir / "module.objc3-conformance-report.json"
     validate_dir = case_dir / "validate"
@@ -66,24 +54,7 @@ def check_final_claim_publication_deprecated_path_shutdown_case(
     )
 
     validate_artifacts = sorted(path.name for path in validate_dir.glob("module.objc3-*.json"))
-    expect(
-        validate_artifacts
-        == [
-            "module.objc3-advanced-feature-gate.json",
-            "module.objc3-conformance-validation.json",
-            "module.objc3-dashboard-status.json",
-            "module.objc3-release-candidate-matrix.json",
-            "module.objc3-release-evidence-operation.json",
-        ],
-        "expected conformance validation to publish the final post-publication release artifacts and no deprecated sidecars",
-    )
-    expect(
-        all(
-            not (validate_dir / filename).exists()
-            for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES
-        ),
-        "expected conformance validation to keep deprecated claim/scaffold sidecar paths shut down",
-    )
+    expect_live_validate_artifacts(validate_dir, validate_artifacts)
 
     release_evidence_operation = json.loads(
         (validate_dir / "module.objc3-release-evidence-operation.json").read_text(
@@ -100,27 +71,8 @@ def check_final_claim_publication_deprecated_path_shutdown_case(
             encoding="utf-8"
         )
     )
-    expect(
-        release_evidence_operation.get("operation_model")
-        == "validation-publishes-release-evidence-command-surface-and-dashboard-status-over-the-final-claim-publication-artifact-set",
-        "expected release evidence operation artifact to describe the final claim publication bundle instead of the retired dashboard-ready summary path",
-    )
-    expect(
-        advanced_feature_gate.get("surface_kind") == "native-cli-validation"
-        and release_candidate_matrix.get("surface_kind") == "native-cli-validation",
-        "expected validation-emitted gate and matrix artifacts to identify the live validation publication path",
-    )
-    expect(
-        advanced_feature_gate.get("dashboard_artifact_expected")
-        == "module.objc3-dashboard-status.json"
-        and release_candidate_matrix.get("advanced_feature_gate_artifact")
-        == "module.objc3-advanced-feature-gate.json",
-        "expected validation-emitted release artifacts to preserve the final live artifact wiring",
-    )
-    expect(
-        release_candidate_matrix.get("matrix_model")
-        == "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set",
-        "expected release candidate matrix to describe the final claim publication artifact set instead of emitted sidecars generically",
+    expect_final_publication_artifact_wiring(
+        release_evidence_operation, advanced_feature_gate, release_candidate_matrix
     )
 
     return CaseResult(

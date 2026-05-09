@@ -8,14 +8,16 @@ from pathlib import Path
 from ..case_result import CaseResult
 from ..commands import run
 from ..probes import compile_probe, parse_key_value_output, run_probe
+from .release_claims_runtime_evidence_assertions import (
+    expect_final_release_implementation_surface,
+    expect_final_release_probe_payload,
+    expect_final_release_validate_artifacts,
+)
 from ..core import (
     NATIVE_EXE,
-    PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
     RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE,
     RELEASE_CLAIMABLE_SURFACE_FIXTURE,
     ROOT,
-    RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
-    RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
     compile_fixture_with_args,
     expect,
 )
@@ -54,51 +56,10 @@ def check_final_release_evidence_descaffolding_implementation_case(
     implementation_surface = manifest.get(
         "runtime_final_release_evidence_descaffolding_implementation_surface"
     )
-    expect(
-        isinstance(implementation_surface, dict),
-        "expected compiled fixture manifest to publish runtime_final_release_evidence_descaffolding_implementation_surface",
-    )
-    expect(
-        implementation_surface.get("contract_id")
-        == RUNTIME_FINAL_RELEASE_EVIDENCE_DESCAFFOLDING_IMPLEMENTATION_SURFACE_CONTRACT_ID,
-        "expected compiled fixture manifest to publish the final release evidence descaffolding implementation surface contract",
-    )
-    expect(
-        implementation_surface.get("runtime_release_candidate_claim_abi_surface_contract_id")
-        == RUNTIME_RELEASE_CANDIDATE_CLAIM_ABI_SURFACE_CONTRACT_ID,
-        "expected final release evidence implementation surface to depend on the release-candidate claim ABI surface",
-    )
-    expect(
-        implementation_surface.get("private_release_candidate_evidence_testing_boundary")
-        == PRIVATE_RELEASE_CANDIDATE_EVIDENCE_RUNTIME_BOUNDARY,
-        "expected final release evidence implementation surface to preserve the private evidence snapshot boundary",
-    )
-    expect(
-        implementation_surface.get("validation_artifact_name")
-        == "module.objc3-conformance-validation.json"
-        and implementation_surface.get("release_evidence_operation_artifact_name")
-        == "module.objc3-release-evidence-operation.json"
-        and implementation_surface.get("dashboard_status_artifact_name")
-        == "module.objc3-dashboard-status.json"
-        and implementation_surface.get("advanced_feature_gate_artifact_name")
-        == "module.objc3-advanced-feature-gate.json"
-        and implementation_surface.get("release_candidate_matrix_artifact_name")
-        == "module.objc3-release-candidate-matrix.json",
-        "expected final release evidence implementation surface to publish the final artifact inventory",
-    )
+    expect_final_release_implementation_surface(implementation_surface)
 
     validate_artifacts = sorted(path.name for path in validate_dir.glob("module.objc3-*.json"))
-    expect(
-        validate_artifacts
-        == [
-            "module.objc3-advanced-feature-gate.json",
-            "module.objc3-conformance-validation.json",
-            "module.objc3-dashboard-status.json",
-            "module.objc3-release-candidate-matrix.json",
-            "module.objc3-release-evidence-operation.json",
-        ],
-        "expected validation output to preserve the final release evidence artifact inventory",
-    )
+    expect_final_release_validate_artifacts(validate_artifacts)
 
     probe = ROOT / Path(RELEASE_CANDIDATE_EVIDENCE_RUNTIME_PROBE)
     exe_path = case_dir / "release_candidate_evidence_runtime_probe.exe"
@@ -106,30 +67,7 @@ def check_final_release_evidence_descaffolding_implementation_case(
     payload = parse_key_value_output(
         run_probe(exe_path), "release-candidate evidence runtime probe"
     )
-    expect(
-        payload.get("copy_status") == 0
-        and payload.get("validation_artifact_ready") == 1
-        and payload.get("release_evidence_operation_ready") == 1
-        and payload.get("dashboard_status_ready") == 1
-        and payload.get("advanced_feature_gate_ready") == 1
-        and payload.get("release_candidate_matrix_ready") == 1
-        and payload.get("deprecated_paths_shutdown") == 1
-        and payload.get("deterministic") == 1,
-        "expected final release evidence runtime probe to publish a ready deterministic implementation snapshot",
-    )
-    expect(
-        payload.get("validation_artifact_name")
-        == "module.objc3-conformance-validation.json"
-        and payload.get("release_evidence_operation_artifact_name")
-        == "module.objc3-release-evidence-operation.json"
-        and payload.get("dashboard_status_artifact_name")
-        == "module.objc3-dashboard-status.json"
-        and payload.get("advanced_feature_gate_artifact_name")
-        == "module.objc3-advanced-feature-gate.json"
-        and payload.get("release_candidate_matrix_artifact_name")
-        == "module.objc3-release-candidate-matrix.json",
-        "expected final release evidence runtime probe to preserve the final artifact inventory",
-    )
+    expect_final_release_probe_payload(payload)
 
     return CaseResult(
         case_id="final-release-evidence-descaffolding-implementation",

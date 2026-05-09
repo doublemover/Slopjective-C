@@ -6,6 +6,7 @@ from pathlib import Path
 
 from ..case_result import CaseResult
 from ..commands import run
+from .release_claims_deprecated_sidecars import write_deprecated_claim_sidecars
 from ..core import (
     DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES,
     NATIVE_EXE,
@@ -24,8 +25,7 @@ def check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
 
     compile_deprecated_dir = case_dir / "compile-deprecated"
     compile_deprecated_dir.mkdir(parents=True, exist_ok=True)
-    for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES:
-        (compile_deprecated_dir / filename).write_text("{}", encoding="utf-8")
+    write_deprecated_claim_sidecars(compile_deprecated_dir)
     compile_reject = run(
         [
             str(NATIVE_EXE),
@@ -50,8 +50,7 @@ def check_scaffold_retirement_deprecated_sidecar_compatibility_diagnostics_case(
     validate_compile_dir = case_dir / "validate-source"
     compile_fixture_with_args(fixture, validate_compile_dir)
     report_path = validate_compile_dir / "module.objc3-conformance-report.json"
-    for filename in DEPRECATED_CLAIM_COMPATIBILITY_SIDECAR_FILENAMES:
-        (validate_compile_dir / filename).write_text("{}", encoding="utf-8")
+    write_deprecated_claim_sidecars(validate_compile_dir)
     validate_dir = case_dir / "validate-output"
     validate_dir.mkdir(parents=True, exist_ok=True)
     validate_reject = run(

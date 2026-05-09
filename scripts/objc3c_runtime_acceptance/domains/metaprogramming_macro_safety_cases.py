@@ -7,8 +7,16 @@ from pathlib import Path
 
 from objc3c_runtime_acceptance.assertions import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.domains.metaprogramming_macro_safety_assertions import (
+    expect_macro_host_cache_surface,
+    expect_macro_runtime_import_surface,
+    expect_macro_safety_surface,
+)
+from objc3c_runtime_acceptance.domains.metaprogramming_macro_safety_negative_cases import (
+    build_macro_safety_negative_expectations,
+    summarize_negative_batch,
+)
 from objc3c_runtime_acceptance.native_build import (
-    NegativeDiagnosticExpectation,
     compile_fixture_outputs,
     compile_negative_diagnostic_batch,
 )
@@ -38,37 +46,7 @@ def check_metaprogramming_macro_safety_cache_diagnostics_case(
         .get("semantic_surface", {})
         .get("objc_metaprogramming_macro_safety_sandbox_and_determinism_semantics", {})
     )
-    expect(
-        macro_safety_surface.get("contract_id")
-        == "objc3c.metaprogramming.macro.safety.sandbox.determinism.semantics.v1",
-        "expected macro host process provider fixture to preserve the macro safety semantic contract",
-    )
-    expect(
-        macro_safety_surface.get("macro_marker_sites") == 1
-        and macro_safety_surface.get("macro_package_sites") == 1
-        and macro_safety_surface.get("macro_provenance_sites") == 1
-        and macro_safety_surface.get("expansion_visible_macro_sites") == 1,
-        "expected macro host process provider fixture to preserve macro metadata counts",
-    )
-    expect(
-        macro_safety_surface.get("safe_macro_callable_sites") == 1
-        and macro_safety_surface.get("incomplete_macro_metadata_sites") == 0
-        and macro_safety_surface.get("orphan_macro_metadata_sites") == 0
-        and macro_safety_surface.get("invalid_package_sites") == 0
-        and macro_safety_surface.get("invalid_provenance_sites") == 0
-        and macro_safety_surface.get("nondeterministic_callable_sites") == 0
-        and macro_safety_surface.get("unsupported_callable_topology_sites") == 0,
-        "expected macro host process provider fixture to preserve fail-closed macro safety counts",
-    )
-    expect(
-        macro_safety_surface.get("metadata_completeness_enforced") is True
-        and macro_safety_surface.get("sandbox_namespace_enforced") is True
-        and macro_safety_surface.get("provenance_determinism_enforced") is True
-        and macro_safety_surface.get("callable_determinism_enforced") is True
-        and macro_safety_surface.get("deterministic") is True
-        and macro_safety_surface.get("ready_for_lowering_and_runtime") is True,
-        "expected macro host process provider fixture to preserve deterministic fail-closed enforcement flags",
-    )
+    expect_macro_safety_surface(macro_safety_surface)
 
     host_cache_path = (
         case_dir / "positive" / "compile" / "module.metaprogramming-macro-host-cache.json"
@@ -78,29 +56,7 @@ def check_metaprogramming_macro_safety_cache_diagnostics_case(
         "expected macro host process provider fixture to publish module.metaprogramming-macro-host-cache.json",
     )
     host_cache_surface = json.loads(host_cache_path.read_text(encoding="utf-8"))
-    expect(
-        host_cache_surface.get("contract_id")
-        == "objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1",
-        "expected macro host process provider fixture to publish the metaprogramming host-cache integration contract",
-    )
-    expect(
-        host_cache_surface.get("source_contract_id")
-        == "objc3c.metaprogramming.expansion.host.runtime.boundary.v1",
-        "expected macro host process provider fixture to preserve the host runtime boundary source contract",
-    )
-    expect(
-        host_cache_surface.get("host_executable_relative_path")
-        == "artifacts/bin/objc3c-frontend-c-api-runner.exe"
-        and host_cache_surface.get("cache_root_relative_path")
-        == "tmp/artifacts/objc3c-native/cache/metaprogramming",
-        "expected macro host process provider fixture to preserve host executable and cache root compatibility paths",
-    )
-    expect(
-        host_cache_surface.get("deterministic") is True
-        and host_cache_surface.get("host_process_exit_code") == 0
-        and isinstance(host_cache_surface.get("cache_hit"), bool),
-        "expected macro host process provider fixture to preserve deterministic host-cache readiness",
-    )
+    expect_macro_host_cache_surface(host_cache_surface)
 
     runtime_import_path = case_dir / "positive" / "compile" / "module.runtime-import-surface.json"
     expect(
@@ -111,102 +67,14 @@ def check_metaprogramming_macro_safety_cache_diagnostics_case(
     host_cache_import_surface = runtime_import_surface.get(
         "objc_metaprogramming_macro_host_process_and_cache_runtime_integration", {}
     )
-    expect(
-        host_cache_import_surface.get("contract_id")
-        == "objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1",
-        "expected runtime import surface to preserve the metaprogramming host-cache integration contract",
-    )
-    expect(
-        host_cache_import_surface.get("runtime_import_artifact_ready") is True
-        and host_cache_import_surface.get("separate_compilation_ready") is True
-        and host_cache_import_surface.get("deterministic") is True,
-        "expected runtime import surface to preserve host-cache compatibility readiness",
-    )
+    expect_macro_runtime_import_surface(host_cache_import_surface)
 
-    negative_fixtures = {
-        "missing_metadata": (
-            ROOT
-            / "tests"
-            / "tooling"
-            / "fixtures"
-            / "native"
-            / "macro_safety_sandbox_negative_missing_metadata.objc3",
-            "O3S320",
-            "requires both objc_macro_package and objc_macro_provenance",
-        ),
-        "orphan_metadata": (
-            ROOT
-            / "tests"
-            / "tooling"
-            / "fixtures"
-            / "native"
-            / "macro_safety_sandbox_negative_orphan_metadata.objc3",
-            "O3S321",
-            "macro package/provenance markers require objc_macro",
-        ),
-        "invalid_package": (
-            ROOT
-            / "tests"
-            / "tooling"
-            / "fixtures"
-            / "native"
-            / "macro_safety_sandbox_negative_invalid_package.objc3",
-            "O3S322",
-            "macro sandbox rejected package 'thirdparty.runtime'",
-        ),
-        "invalid_provenance": (
-            ROOT
-            / "tests"
-            / "tooling"
-            / "fixtures"
-            / "native"
-            / "macro_safety_sandbox_negative_invalid_provenance.objc3",
-            "O3S323",
-            "macro provenance must be a lowercase sha256 digest",
-        ),
-        "nonpure_callable": (
-            ROOT
-            / "tests"
-            / "tooling"
-            / "fixtures"
-            / "native"
-            / "macro_safety_sandbox_negative_nonpure.objc3",
-            "O3S324",
-            "must be pure, body-backed, non-async, and non-throws",
-        ),
-        "method_topology": (
-            ROOT
-            / "tests"
-            / "tooling"
-            / "fixtures"
-            / "native"
-            / "macro_safety_sandbox_negative_method_topology.objc3",
-            "O3S325",
-            "not sandbox-admitted",
-        ),
-    }
     negative_batch = compile_negative_diagnostic_batch(
         case_id="metaprogramming-macro-safety-cache-diagnostics",
         out_dir=case_dir / "negative-diagnostics-batch",
-        expectations=[
-            NegativeDiagnosticExpectation(
-                key=negative_key,
-                fixture=fixture_path,
-                expected_snippets=[expected_message],
-                expected_codes=[expected_code],
-            )
-            for negative_key, (fixture_path, expected_code, expected_message) in negative_fixtures.items()
-        ],
+        expectations=build_macro_safety_negative_expectations(ROOT),
     )
-    negative_summary = {
-        entry["key"]: {
-            "fixture": entry["fixture"],
-            "diagnostics": entry["diagnostics"],
-            "expected_code": entry["expected_codes"][0],
-            "duration_seconds": entry["duration_seconds"],
-        }
-        for entry in negative_batch["results"]
-    }
+    negative_summary = summarize_negative_batch(negative_batch)
 
     return CaseResult(
         case_id="metaprogramming-macro-safety-cache-diagnostics",

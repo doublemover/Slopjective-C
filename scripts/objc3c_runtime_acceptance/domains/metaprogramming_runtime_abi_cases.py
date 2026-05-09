@@ -5,8 +5,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from objc3c_runtime_acceptance.assertions import expect
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.domains.metaprogramming_runtime_abi_assertions import (
+    BOUNDARY_EXPECTED_PAYLOAD,
+    HOST_CACHE_EXPECTED_PAYLOAD,
+    expect_host_cache_artifact_surface,
+    expect_runtime_abi_payload,
+)
 from objc3c_runtime_acceptance.native_build import compile_fixture_outputs
 from objc3c_runtime_acceptance.probes import compile_probe
 from objc3c_runtime_acceptance.probes import parse_key_value_output
@@ -39,26 +44,9 @@ def check_metaprogramming_runtime_abi_cache_surface_case(
     boundary_payload = parse_key_value_output(
         run_probe(boundary_exe), "metaprogramming runtime ABI expansion boundary probe"
     )
-    for field_name, expected_value in {
-        "copy_status": 0,
-        "property_runtime_ready": 1,
-        "macro_host_execution_ready": 0,
-        "macro_host_process_launch_ready": 0,
-        "runtime_package_loader_ready": 0,
-        "deterministic": 1,
-        "runtime_support_library_archive_relative_path": "artifacts/lib/objc3_runtime.lib",
-        "property_behavior_runtime_model": (
-            "supported-property-behavior-lowering-reuses-existing-private-runtime-property-accessor-layout-and-current-property-hooks"
-        ),
-        "macro_expansion_host_model": (
-            "macro-host-execution-process-launch-and-runtime-package-loading-remain-disabled-and-fail-closed"
-        ),
-        "fail_closed_model": "no-live-macro-expansion-host-or-runtime-package-loader-is-claimed-yet",
-    }.items():
-        expect(
-            boundary_payload.get(field_name) == expected_value,
-            f"expected metaprogramming runtime ABI expansion boundary probe to preserve {field_name}",
-        )
+    expect_runtime_abi_payload(
+        boundary_payload, BOUNDARY_EXPECTED_PAYLOAD, "expansion boundary"
+    )
 
     host_fixture = (
         ROOT
@@ -83,32 +71,9 @@ def check_metaprogramming_runtime_abi_cache_surface_case(
     host_cache_payload = parse_key_value_output(
         run_probe(host_cache_exe), "metaprogramming runtime ABI host-cache probe"
     )
-    for field_name, expected_value in {
-        "copy_status": 0,
-        "property_runtime_ready": 1,
-        "macro_host_execution_ready": 1,
-        "macro_host_process_launch_ready": 1,
-        "runtime_package_loader_ready": 0,
-        "deterministic": 1,
-        "host_executable_relative_path": "artifacts/bin/objc3c-frontend-c-api-runner.exe",
-        "cache_root_relative_path": "tmp/artifacts/objc3c-native/cache/metaprogramming",
-        "host_model": (
-            "native-driver-launches-objc3c-frontend-c-api-runner-for-supported-metaprogramming-expansion-cache-materialization"
-        ),
-        "toolchain_model": (
-            "frontend-runner-executes-with-manifest-enabled-and-ir-object-emission-disabled-for-deterministic-cache-materialization"
-        ),
-        "cache_model": (
-            "cache-entry-path-is-derived-from-a-stable-fnv1a64-key-over-the-metaprogramming-replay-surface-and-reused-on-subsequent-runs"
-        ),
-        "fail_closed_model": (
-            "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims"
-        ),
-    }.items():
-        expect(
-            host_cache_payload.get(field_name) == expected_value,
-            f"expected metaprogramming runtime ABI host-cache probe to preserve {field_name}",
-        )
+    expect_runtime_abi_payload(
+        host_cache_payload, HOST_CACHE_EXPECTED_PAYLOAD, "host-cache"
+    )
 
     host_cache_artifact_path = (
         case_dir / "host-cache" / "compile" / "module.metaprogramming-macro-host-cache.json"
@@ -119,29 +84,8 @@ def check_metaprogramming_runtime_abi_cache_surface_case(
     host_cache_import_surface = runtime_import_surface.get(
         "objc_metaprogramming_macro_host_process_and_cache_runtime_integration", {}
     )
-    expect(
-        host_cache_artifact.get("contract_id")
-        == "objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1"
-        and host_cache_import_surface.get("contract_id")
-        == "objc3c.metaprogramming.macro.host.process.cache.runtime.integration.v1",
-        "expected metaprogramming runtime ABI host-cache artifact and runtime import surface to preserve the host-cache integration contract",
-    )
-    for field_name in (
-        "host_executable_relative_path",
-        "cache_root_relative_path",
-        "deterministic",
-        "replay_key",
-    ):
-        expect(
-            host_cache_artifact.get(field_name) == host_cache_import_surface.get(field_name),
-            f"expected metaprogramming runtime ABI host-cache artifact and runtime import surface to preserve {field_name}",
-        )
-    expect(
-        host_cache_artifact.get("host_executable_relative_path")
-        == host_cache_payload.get("host_executable_relative_path")
-        and host_cache_artifact.get("cache_root_relative_path")
-        == host_cache_payload.get("cache_root_relative_path"),
-        "expected metaprogramming runtime ABI host-cache artifact to stay aligned with the runtime snapshot paths",
+    expect_host_cache_artifact_surface(
+        host_cache_artifact, host_cache_import_surface, host_cache_payload
     )
 
     return CaseResult(
