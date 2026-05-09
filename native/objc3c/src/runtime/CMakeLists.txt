@@ -195,10 +195,13 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_registration.h
   public/objc3_runtime_registration_status.h
   public/objc3_runtime_result.h
-  public/objc3_runtime_result_builder.cpp
-  public/objc3_runtime_result_builder.h
+  public/objc3_runtime_result_code_contract.h
   public/objc3_runtime_result_contract.cpp
   public/objc3_runtime_result_contract.h
+  public/objc3_runtime_result_materialization_contract.h
+  public/objc3_runtime_result_message_contract.h
+  public/objc3_runtime_result_status_contract.h
+  public/objc3_runtime_result_value_contract.h
   public/objc3_runtime_result_diagnostics.cpp
   public/objc3_runtime_result_ownership.cpp
   public/objc3_runtime_result_ownership.h

@@ -8,8 +8,7 @@ extern "C" {
 
 typedef struct objc3_runtime_dispatch_i32_result {
   /*
-   * OK means value is populated. Any other status means value is zeroed and the
-   * diagnostic fields identify the rejected dispatch shape or runtime state.
+   * OK means value is populated. Any other status means value is zeroed.
    */
   objc3_runtime_dispatch_status_code status_code;
   int value;
@@ -19,6 +18,11 @@ typedef struct objc3_runtime_dispatch_i32_result {
    */
   const char *diagnostic_code;
   const char *diagnostic_message;
+  /*
+   * Runtime-owned provenance fields for the diagnostic and fail-closed
+   * ownership model. fallback_path_allowed is a fixed runtime contract flag,
+   * not a compatibility escape hatch.
+   */
   const char *diagnostic_owner_model;
   const char *fail_closed_ownership_model;
   int fallback_path_allowed;
