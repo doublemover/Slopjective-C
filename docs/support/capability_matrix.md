@@ -13,6 +13,7 @@ Machine-readable truth is split deliberately:
 - local schema mirror: `docs/support/capability_matrix.schema.json`
 - evidence rows: `docs/support/evidence_map.json`
 - evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
+- schema examples: `docs/support/capability_schema_examples.md`
 
 Command and evidence truth is hard-cut to the current surfaces:
 
@@ -66,3 +67,5 @@ Command rule:
   surface.
 - Compatibility shims, fallback paths, migration lanes, old modes, and
   prose-only capability claims are not alternate support states.
+
+Schema examples live in `docs/support/capability_schema_examples.md`.

@@ -10,6 +10,8 @@ actions.
 The machine-readable evidence map is `docs/support/evidence_map.json`; its
 schema is `schemas/objc3c-capability-evidence-map-v1.schema.json`. The
 capability matrix schema is `schemas/objc3c-capability-matrix-v1.schema.json`.
+Example rows and anti-examples live in
+`docs/support/capability_schema_examples.md`.
 
 | Capability ID                                | Support claim                                      | Evidence kind | Path                                                                                                      | Command                                  |
 | -------------------------------------------- | -------------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------- |

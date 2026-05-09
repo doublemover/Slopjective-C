@@ -21,3 +21,6 @@ matrix:
   evidence only,
 - runtime dispatch claims must remain tied to the strict public C API result
   surface and the canonical `objc3_runtime_dispatch_i32` dispatch symbol.
+
+Schema examples and anti-examples are maintained in
+`docs/support/capability_schema_examples.md`.
