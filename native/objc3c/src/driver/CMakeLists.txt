@@ -11,6 +11,9 @@ add_library(objc3c_driver STATIC
   objc3_driver_cross_module_imported_input_metaprogramming.cpp
   objc3_driver_cross_module_imported_input_storage.cpp
   objc3_driver_cross_module_imported_input.cpp
+  objc3_driver_cross_module_link_plan_base_inputs.cpp
+  objc3_driver_cross_module_link_plan_expected_contracts.cpp
+  objc3_driver_cross_module_link_plan_local_feature_inputs.cpp
   objc3_driver_cross_module_link_publication.cpp
   objc3_driver_cross_module_link_plan_inputs.cpp
   objc3_driver_command_dispatch.cpp
