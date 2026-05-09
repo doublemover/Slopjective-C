@@ -65,6 +65,7 @@ add_library(objc3c_ir_publication_surface STATIC
   objc3_ir_frontend_metadata_publication.cpp
   objc3_ir_lowering_extension_metadata_publication.cpp
   objc3_ir_module_emission_surface.cpp
+  objc3_ir_property_metadata_comment_emission.cpp
   objc3_ir_static_data_emission.cpp
   objc3_ir_surface_serialization.cpp
 )
