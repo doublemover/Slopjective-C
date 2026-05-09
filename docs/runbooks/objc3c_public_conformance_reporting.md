@@ -111,9 +111,12 @@ Checked-in schema anchors:
 - public scorecard schema: `schemas/objc3c-public-conformance-scorecard-v1.schema.json`
 - public summary schema: `schemas/objc3c-public-conformance-summary-v1.schema.json`
 - release-evidence bundle schema: `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 
 The public report may widen fields later, but it must stay schema-shaped and
-traceable to registry-backed checked-in contracts.
+traceable to registry-backed checked-in contracts. This runbook must not copy
+public-conformance JSON Schema fragments or treat generated public reports as
+support truth outside the capability matrix and evidence map.
 
 ## Explicit Non-Goals
 

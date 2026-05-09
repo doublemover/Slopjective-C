@@ -138,6 +138,11 @@ The checked-in contract and schema surface for those outputs is:
 - `tests/tooling/fixtures/full_envelope_claimability/dashboard_reporting_contract.json`
 - `schemas/objc3c-full-envelope-dashboard-summary-v1.schema.json`
 
+This runbook cites the checked-in schema file as the dashboard shape owner. It
+does not define a local dashboard schema fragment, and generated dashboard
+summaries remain projections over canonical support/evidence inputs rather than
+standalone support claims.
+
 The envelope dashboard is a projection over the support matrix, claim policy,
 release-blocker summary, rollout-readiness summary, and the live conformance,
 performance, release, and trust integration reports. Its claim class, blocker

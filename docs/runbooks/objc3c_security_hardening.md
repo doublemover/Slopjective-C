@@ -246,6 +246,11 @@ Those artifacts must stay validated by checked-in schema and contract surfaces:
 - `schemas/objc3c-security-posture-v1.schema.json`
 - `schemas/objc3c-security-advisory-index-v1.schema.json`
 - `tests/tooling/fixtures/security_hardening/artifact_reporting_contract.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
+
+Security posture and advisory schemas are registry-backed owner surfaces, not
+local runbook schema definitions. The runbook must not copy their JSON shape or
+promote generated security reports into support claims.
 
 The canonical supply-chain audit summary for this milestone is:
 

@@ -80,7 +80,12 @@ Machine-owned governance schema surface:
 - `schemas/objc3c-governance-budget-summary-v1.schema.json`
 - `schemas/objc3c-governance-anti-regression-summary-v1.schema.json`
 - `schemas/objc3c-governance-sustainability-evidence-v1.schema.json`
+- registry owner: `scripts/objc3c_shared/schema_registry.py`
 - `npm run objc3c -- validate-governance-sustainability`
+
+This runbook cites registry-backed schema files only; it must not duplicate
+governance JSON Schema fragments or turn generated governance summaries into
+support claims.
 
 Machine-owned governance artifact contract:
 
