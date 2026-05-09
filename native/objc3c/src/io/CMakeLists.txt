@@ -56,6 +56,7 @@ add_library(objc3c_runtime_abi STATIC
   objc3_cross_module_imported_modules_document.cpp
   objc3_cross_module_runtime_link_plan_artifact.cpp
   objc3_cross_module_runtime_link_plan_inputs.cpp
+  objc3_cross_module_runtime_link_plan_ordering.cpp
   objc3_dashboard_status_renderers.cpp
   objc3_metaprogramming_macro_host_cache_artifact.cpp
   objc3_metaprogramming_macro_host_cache_document.cpp

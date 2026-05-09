@@ -1,6 +1,7 @@
 #include "io/objc3_process_internal.h"
 #include "io/objc3_cross_module_imported_modules_document.h"
 #include "io/objc3_cross_module_runtime_link_plan_inputs.h"
+#include "io/objc3_cross_module_runtime_link_plan_ordering.h"
 
 bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     const Objc3CrossModuleRuntimeLinkPlanArtifactInputs &inputs,
@@ -16,22 +17,10 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
     return false;
   }
 
-  std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput> imported_inputs =
-      inputs.imported_inputs;
-  std::sort(imported_inputs.begin(), imported_inputs.end(),
-            [](const auto &lhs, const auto &rhs) {
-              if (lhs.translation_unit_registration_order_ordinal !=
-                  rhs.translation_unit_registration_order_ordinal) {
-                return lhs.translation_unit_registration_order_ordinal <
-                       rhs.translation_unit_registration_order_ordinal;
-              }
-              if (lhs.translation_unit_identity_key !=
-                  rhs.translation_unit_identity_key) {
-                return lhs.translation_unit_identity_key <
-                       rhs.translation_unit_identity_key;
-              }
-              return lhs.module_name < rhs.module_name;
-            });
+  const std::vector<Objc3CrossModuleRuntimeLinkPlanImportedInput>
+      imported_inputs =
+          BuildOrderedObjc3CrossModuleRuntimeLinkPlanImportedInputs(
+              inputs.imported_inputs);
 
   std::unordered_set<std::string> seen_translation_unit_identity_keys;
   std::unordered_set<std::uint64_t> seen_registration_ordinals;
@@ -79,10 +68,9 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       0;
   std::size_t imported_storage_reflection_ivar_layout_entries = 0;
   std::size_t imported_storage_reflection_ivar_layout_owner_entries = 0;
-  std::vector<std::string> direct_import_surface_artifact_paths =
-      inputs.direct_import_surface_artifact_paths;
-  std::sort(direct_import_surface_artifact_paths.begin(),
-            direct_import_surface_artifact_paths.end());
+  const std::vector<std::string> direct_import_surface_artifact_paths =
+      BuildOrderedObjc3CrossModuleDirectImportSurfaceArtifactPaths(
+          inputs.direct_import_surface_artifact_paths);
 
   seen_translation_unit_identity_keys.insert(
       inputs.local_translation_unit_identity_key);
@@ -1240,10 +1228,8 @@ bool TryBuildObjc3CrossModuleRuntimeLinkPlanArtifact(
       << "}\n";
   plan_json = out.str();
 
-  std::ostringstream response_out;
-  for (const auto &flag : merged_driver_linker_flags) {
-    response_out << flag << "\n";
-  }
-  linker_response_payload = response_out.str();
+  linker_response_payload =
+      BuildObjc3CrossModuleRuntimeLinkerResponsePayload(
+          merged_driver_linker_flags);
   return true;
 }
