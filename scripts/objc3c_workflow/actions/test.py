@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from ..registry_views import actions_by_category
+from .command_facades_inventory import category_action_names
 
 CATEGORY = "test"
 
 
 def action_names() -> list[str]:
-    return actions_by_category(CATEGORY)
+    return category_action_names(CATEGORY)

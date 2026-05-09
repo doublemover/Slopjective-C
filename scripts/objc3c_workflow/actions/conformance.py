@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from ..registry_views import actions_matching
+from .command_facades_inventory import matching_action_names
 
 
 def action_names() -> list[str]:
-    return actions_matching(lambda action, _: "conformance" in action)
+    return matching_action_names(lambda action, _: "conformance" in action)

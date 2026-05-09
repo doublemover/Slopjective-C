@@ -2,13 +2,10 @@
 
 from __future__ import annotations
 
-from ..registry_views import actions_by_category
+from .command_facades_inventory import category_group_action_names
 
 CATEGORIES = ("package", "packaging")
 
 
 def action_names() -> list[str]:
-    names: list[str] = []
-    for category in CATEGORIES:
-        names.extend(actions_by_category(category))
-    return names
+    return category_group_action_names(CATEGORIES)
