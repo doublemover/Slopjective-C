@@ -9,8 +9,11 @@ GUARDRAIL_IDENTIFIERS: tuple[str, ...] = (
 )
 
 GUARDRAIL_PHRASES: tuple[str, ...] = (
+    "absent support",
     "are not support claims",
     "as public command surface",
+    "cannot create",
+    "cannot itself create",
     "do not advertise",
     "do not claim",
     "do not describe",
@@ -20,16 +23,27 @@ GUARDRAIL_PHRASES: tuple[str, ...] = (
     "forbidden",
     "instead of",
     "is not allowed",
+    "is absent",
     "may not become",
     "must not",
+    "never authorize",
     "not a public",
     "not public",
     "not support claims",
     "not user-facing",
+    "non-goal",
+    "non-goals",
+    "no accepted public surface",
     "removed from",
+    "reject",
+    "rejects",
+    "rejected",
+    "rejection",
     "retired",
     "stay out",
     "stays out",
+    "strict-error",
+    "unsupported",
     "without becoming public",
 )
 
@@ -47,7 +61,7 @@ def is_guardrail_statement(*lines: str) -> bool:
     return any(phrase in text for phrase in GUARDRAIL_PHRASES)
 
 
-def is_allowed_guardrail_context(
+def is_canonical_guardrail_context(
     repo_path: str,
     previous_line: str,
     line: str,

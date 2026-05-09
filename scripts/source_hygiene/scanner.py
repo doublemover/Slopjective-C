@@ -13,7 +13,8 @@ from .config import (
 )
 from .files import is_excluded, iter_scan_files, normalize_path
 from .generated_reports import tracked_generated_reports
-from .guardrails import is_allowed_guardrail_context
+from .guardrails import is_canonical_guardrail_context
+from .pattern_model import ForbiddenPattern
 from .patterns import FORBIDDEN_PATTERNS
 from .report_writer import write_reports
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
@@ -30,6 +31,14 @@ __all__ = [
     "tracked_generated_reports",
     "write_reports",
 ]
+
+
+def _is_pattern_in_scope(pattern: ForbiddenPattern, repo_path: str) -> bool:
+    if pattern.include_paths and not is_excluded(repo_path, pattern.include_paths):
+        return False
+    if pattern.exclude_paths and is_excluded(repo_path, pattern.exclude_paths):
+        return False
+    return True
 
 
 def scan_forbidden_patterns(
@@ -53,8 +62,10 @@ def scan_forbidden_patterns(
             previous_line = lines[index - 1] if index > 0 else ""
             next_line = lines[index + 1] if index + 1 < len(lines) else ""
             for pattern, regex in compiled:
+                if not _is_pattern_in_scope(pattern, repo_path):
+                    continue
                 if regex.search(line):
-                    if is_allowed_guardrail_context(
+                    if is_canonical_guardrail_context(
                         repo_path,
                         previous_line,
                         line,
