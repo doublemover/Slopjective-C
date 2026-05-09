@@ -35,26 +35,29 @@ def main() -> None:
     runner = load_runner()
     action_specs = runner.ACTION_SPECS
 
-    category_counts = Counter(category_for_script(name) for name in scripts)
+    package_bridge_names = sorted(name for name in scripts if name == "objc3c")
+    category_counts = Counter(category_for_script(name) for name in package_bridge_names)
     public_actions = sorted(action_specs)
     internal_actions: list[str] = []
-    orphan_public_scripts = sorted(name for name in scripts if name != "objc3c")
+    unmapped_package_scripts = sorted(name for name in scripts if name != "objc3c")
 
     payload = {
         'issue': 'workflow-command-surface-inventory',
         'generated_at': datetime.now(timezone.utc).isoformat(),
         'package_script_count': len(scripts),
+        'package_bridge_count': len(package_bridge_names),
         'workflow_action_count': len(action_specs),
         'public_action_count': len(public_actions),
         'internal_action_count': len(internal_actions),
-        'orphan_public_script_count': len(orphan_public_scripts),
+        'unmapped_package_script_count': len(unmapped_package_scripts),
         'category_counts': dict(sorted(category_counts.items())),
         'orchestration_model': {
-            'public_entrypoint_owner': 'package.json objc3c bridge -> scripts.objc3c_workflow',
+            'package_bridge_owner': 'package.json scripts.objc3c -> scripts.objc3c_workflow',
             'internal_action_owner': 'ACTION_SPECS actions are reached through the objc3c package bridge',
             'appendix_generator': 'scripts/render_objc3c_public_command_surface.py',
         },
-        'orphan_public_scripts': orphan_public_scripts,
+        'package_bridges': package_bridge_names,
+        'unmapped_package_scripts': unmapped_package_scripts,
         'next_issue': 'workflow-simplification-policy',
     }
     write_json_file(OUTPUT_JSON_PATH, payload)
@@ -63,17 +66,21 @@ def main() -> None:
         '# workflow-command-surface-inventory Command Surface Inventory',
         '',
         f"- package_script_count: `{payload['package_script_count']}`",
+        f"- package_bridge_count: `{payload['package_bridge_count']}`",
         f"- workflow_action_count: `{payload['workflow_action_count']}`",
         f"- public_action_count: `{payload['public_action_count']}`",
         f"- internal_action_count: `{payload['internal_action_count']}`",
-        f"- orphan_public_script_count: `{payload['orphan_public_script_count']}`",
+        f"- unmapped_package_script_count: `{payload['unmapped_package_script_count']}`",
         '',
-        '## Script category counts',
+        '## Package bridge category counts',
     ]
     for key, count in payload['category_counts'].items():
         lines.append(f"- `{key}`: `{count}`")
-    lines.extend(['', '## Orphan public scripts'])
-    for script_name in orphan_public_scripts:
+    lines.extend(['', '## Package bridges'])
+    for script_name in package_bridge_names:
+        lines.append(f"- `{script_name}`")
+    lines.extend(['', '## Unmapped package scripts'])
+    for script_name in unmapped_package_scripts:
         lines.append(f"- `{script_name}`")
     lines.extend(['', 'Next issue: `workflow-simplification-policy`', ''])
     write_text(OUTPUT_MD_PATH, '\n'.join(lines))
