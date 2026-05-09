@@ -233,7 +233,39 @@
         "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
         "tests/native/sema/concurrency/throws_feature_claim_rejected.objc3"
       ],
-      "retired_disposition": "retired adapter gates and unsupported feature claims are semantic diagnostics"
+      "retired_disposition": "sema behavior rows are resolved through sema-family owner splits before any sema fixture is cited; canonical sema positives remain hand-authored semantic fixtures, canonical semantic negatives remain diagnostic rejection evidence, and old-mode, shim, fallback, generated-only, report-only, or migration-only sema claims remain rejection or provenance-only rather than positive behavior truth"
+    },
+    {
+      "family": "sema_behavior_owner_split_indexes",
+      "kind": "behavior_provenance_split_index_family",
+      "source": "tests/native/sema/behavior_owner_splits",
+      "acceptance_area": "semantic_diagnostics",
+      "owning_issues": [
+        "#8135",
+        "#8144",
+        "#8145",
+        "#8146",
+        "#8147"
+      ],
+      "owned_boundaries": [
+        "sema",
+        "docs_evidence",
+        "rejection_provenance"
+      ],
+      "omitted_boundaries": [
+        "parser",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e"
+      ],
+      "index_evidence": [
+        "tests/native/sema/behavior_owner_splits/index.json",
+        "tests/native/sema/behavior_owner_splits/sema.json",
+        "tests/native/sema/behavior_owner_splits/docs_evidence.json",
+        "tests/native/sema/behavior_owner_splits/rejection_provenance.json"
+      ],
+      "retired_disposition": "sema fixture positives, sema diagnostic negatives, semantic conformance pointers, and sema-family index rows are split into sema behavior, docs/evidence provenance, and rejection/provenance boundaries; old-mode, shim, fallback, generated-only, report-only, and migration-only sema claims remain rejection or provenance-only rather than positive behavior truth"
     },
     {
       "family": "lowering_behavior",
@@ -987,6 +1019,10 @@
     "tests/native/parser/behavior_owner_splits/parser.json",
     "tests/native/parser/behavior_owner_splits/docs_evidence.json",
     "tests/native/parser/behavior_owner_splits/rejection_provenance.json",
+    "tests/native/sema/behavior_owner_splits/index.json",
+    "tests/native/sema/behavior_owner_splits/sema.json",
+    "tests/native/sema/behavior_owner_splits/docs_evidence.json",
+    "tests/native/sema/behavior_owner_splits/rejection_provenance.json",
     "tests/native/retired_surface_owner_splits/index.json",
     "tests/native/retired_surface_owner_splits/old_mode_parser_rejection.json",
     "tests/native/retired_surface_owner_splits/shim_compatibility_rejection.json",
