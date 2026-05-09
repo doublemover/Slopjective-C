@@ -22,9 +22,15 @@ remote-deferred status of these payloads.
 
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces. The
-current covered head is `97df6515a` (`HC extract IR lowering extension publication`).
-Prior covered heads were `b3361c3d4` (`HC move block lowering contract builders`)
-and `4fddfacb7` (`HC split frontend result API owners`). The
+current covered head is `71a5061ce` (`HC extract runtime export enforcement module`).
+Prior covered heads were `e8b4d5d45` (`HC split conformance behavior owners`),
+`b8491e5b4` (`HC move block source artifact builders`),
+`2506e3519` (`refactor(ir): extract entry point emission`), `8eb0db7a6`
+(`HC split stress fixture behavior owners`), `bddd95a7e`
+(`HC extract frontend phase publication module`), `97df6515a`
+(`HC extract IR lowering extension publication`), `b3361c3d4`
+(`HC move block lowering contract builders`), and `4fddfacb7`
+(`HC split frontend result API owners`). The
 baseline refresh through `98d10a61c` covered 186 committed owner/evidence
 commits after `9676679c2`, and later docs-only refreshes fold committed owner
 work forward to the current head. `tmp/` reports, generated summaries, and
@@ -135,8 +141,14 @@ commits that landed after the first docs commit.
 | Issue Area | Local Commits | Closeout Meaning |
 | --- | --- | --- |
 | `#8136`, `#8137`, `#8138`, `#8141`, `#8147`, `#8150` | `1b588a61c`, `3a20d7886`, `ac55f3ae0`, `82a293066`, `b3361c3d4`, `97df6515a` | Lowering, IR, interop, ownership, block contract, and lowering-extension publication owner splits refresh compiler pipeline, artifact, and deep handoff evidence. |
+| `#8137`, `#8147`, `#8150` | `2506e3519` | IR entry point emission ownership refreshes local IR/deep handoff evidence. |
+| `#8138`, `#8140`, `#8147`, `#8150` | `bddd95a7e` | Frontend phase publication ownership refreshes local pipeline/frontend publication evidence. |
+| `#8138`, `#8140`, `#8143`, `#8150` | `71a5061ce` | Runtime export enforcement ownership refreshes local pipeline/frontend/runtime evidence. |
+| `#8138`, `#8147`, `#8150` | `b8491e5b4` | Block source artifact ownership refreshes local artifact/deep handoff evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
+| `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
+| `#8144`, `#8150` | `e8b4d5d45` | Conformance behavior owner splits refresh local behavior-corpus ownership evidence without asserting a test run. |
 
 ## #8132
 
@@ -438,15 +450,16 @@ are retired from public claims.
 
 ## #8150
 
-Final closure evidence is branch-committed and evidence-ready, including the follow-up
-committed owner wave through `f4bf6228e` and the post-`f4bf6228e` owner wave
-through `89959f6cc`, plus the post-`89959f6cc` owner wave through `e760e3450`.
-It also includes the post-`e760e3450` owner wave through `0350f4a4a`. Remote
-issue closure, push, and validation remain deferred under the current worker
-constraints. The post-`0350f4a4a` owner wave through `0d2111b18` is also folded
-into these branch-committed payloads, along with the post-`0d2111b18` owner wave through
-`2fb0664e0`, the post-`2fb0664e0` owner wave through `6efdaf8f9`, and the
-current committed branch owner wave through `98d10a61c`.
+Local closeout evidence is branch-committed and indexed through `71a5061ce`.
+That local-only evidence includes the follow-up committed owner wave through
+`f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
+post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
+wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
+the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
+owner wave through `6efdaf8f9`, the committed branch owner wave through
+`98d10a61c`, and the latest local implementation slices through `71a5061ce`.
+This is not validation, pushed-state evidence, GitHub issue editing, or remote
+closure.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,
@@ -455,5 +468,6 @@ Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `16e517982`, `e5b988129`, `a87b2c92e`, `709148d75`, `016683b19`,
 `645e9c25f`.
 
-Retired-surface state: closure is blocked only on allowed validation/GitHub/push
-steps, not on missing local issue evidence indexes.
+Retired-surface state: local issue evidence indexes are current through the
+committed head named above; validation, GitHub issue action, and push state
+remain outside this local-only payload.
