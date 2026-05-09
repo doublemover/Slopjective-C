@@ -22,6 +22,7 @@ extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     int receiver, const char *selector, int a0, int a1, int a2, int a3) {
   using objc3c::runtime::InvokeRuntimeBuiltinMethod;
   using objc3c::runtime::InvokeRuntimeMethodImplementation;
+  using objc3c::runtime::NormalizeRuntimeTypedDispatchResult;
   using objc3c::runtime::PopRuntimeDispatchFrameAutoreleaseValues;
   using objc3c::runtime::ProcessRuntimeState;
   using objc3c::runtime::PushRuntimeDispatchFrame;
@@ -47,9 +48,10 @@ extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
       dispatch_target.implementation != nullptr) {
     PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
                              dispatch_target.runtime_property_accessor);
-    const RuntimeTypedDispatchResult result = InvokeRuntimeMethodImplementation(
-        dispatch_target.implementation, dispatch_target.return_kind,
-        dispatch_target.parameter_count, a0, a1, a2, a3);
+    const RuntimeTypedDispatchResult result =
+        NormalizeRuntimeTypedDispatchResult(InvokeRuntimeMethodImplementation(
+            dispatch_target.implementation, dispatch_target.return_kind,
+            dispatch_target.parameter_count, a0, a1, a2, a3));
     const std::vector<int> autorelease_values =
         PopRuntimeDispatchFrameAutoreleaseValues();
     if (!autorelease_values.empty()) {
@@ -73,10 +75,11 @@ extern "C" objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
       dispatch_target.builtin_kind != RuntimeBuiltinKind::None) {
     PushRuntimeDispatchFrame(receiver, dispatch_target.receiver_base_identity,
                              dispatch_target.runtime_property_accessor);
-    const RuntimeTypedDispatchResult result = InvokeRuntimeBuiltinMethod(
-        state, dispatch_target.builtin_kind, receiver,
-        dispatch_target.receiver_base_identity,
-        dispatch_target.runtime_property_accessor, a0, a1, a2, a3);
+    const RuntimeTypedDispatchResult result =
+        NormalizeRuntimeTypedDispatchResult(InvokeRuntimeBuiltinMethod(
+            state, dispatch_target.builtin_kind, receiver,
+            dispatch_target.receiver_base_identity,
+            dispatch_target.runtime_property_accessor, a0, a1, a2, a3));
     const std::vector<int> autorelease_values =
         PopRuntimeDispatchFrameAutoreleaseValues();
     if (!autorelease_values.empty()) {

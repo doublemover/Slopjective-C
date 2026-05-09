@@ -191,6 +191,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/runtime_instance_lifetime.h
   metadata/runtime_capability_contracts.h
   metadata/runtime_emitted_records.h
+  metadata/runtime_release_candidate_acceptance.cpp
   metadata/runtime_snapshot_helpers.cpp
   metadata/runtime_registration_records.h
   metadata/runtime_realized_records.h

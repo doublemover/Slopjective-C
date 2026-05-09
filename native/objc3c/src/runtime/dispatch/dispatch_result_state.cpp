@@ -1,6 +1,7 @@
 #include "runtime/dispatch/dispatch_result_state.h"
 
 #include "runtime/dispatch/runtime_method_return.h"
+#include "runtime/dispatch/typed_dispatch_result.h"
 #include "runtime/public/objc3_runtime_result_contract.h"
 #include "runtime/state/runtime_state_records.h"
 
@@ -18,9 +19,8 @@ void StoreDispatchResultContractUnlocked(
   state.last_dispatch_diagnostic_message =
       RuntimeDispatchDiagnosticMessage(status_code);
   state.last_dispatch_result_contract =
-      status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK
-          ? "typed-dispatch-value-result"
-          : "typed-dispatch-strict-error-result";
+      RuntimeTypedDispatchContractName(
+          RuntimeTypedDispatchContractForStatus(status_code));
 }
 
 void RecordTypedDispatchSuccess(RuntimeState &state,
