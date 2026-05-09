@@ -63,8 +63,9 @@ That manifest is part of the live showcase surface and should stay aligned with:
 - `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/build_run_verify.md`
 
-The bounded validation surface for this walkthrough is `scripts/check_getting_started_surface.py`.
-The live smoke integration for the same walkthrough is `scripts/check_getting_started_integration.py`.
+The bounded validation surface for this walkthrough is
+`npm run objc3c -- validate-getting-started`.
+The live smoke integration for the same walkthrough uses the same action.
 Use `npm run objc3c -- validate-getting-started` when you want the public integrated entrypoint for that same flow.
 
 ## Canonical Inputs
@@ -76,8 +77,7 @@ Use `npm run objc3c -- validate-getting-started` when you want the public integr
 - `showcase/auroraBoard/main.objc3`
 - `showcase/signalMesh/main.objc3`
 - `showcase/patchKit/main.objc3`
-- `scripts/check_getting_started_surface.py`
-- `scripts/check_getting_started_integration.py`
+- `npm run objc3c -- validate-getting-started`
 - `docs/runbooks/objc3c_public_command_surface.md`
 
 ## Exact Live Paths For Downstream Work
@@ -96,9 +96,8 @@ Use `npm run objc3c -- validate-getting-started` when you want the public integr
   - `showcase/patchKit/main.objc3`
 - command truth and validation:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/check_getting_started_surface.py`
-  - `scripts/check_getting_started_integration.py`
-  - `scripts/check_showcase_surface.py`
+  - `npm run objc3c -- validate-getting-started`
+  - `npm run objc3c -- check-showcase-surface`
 
 ## Explicit Non-Goals
 

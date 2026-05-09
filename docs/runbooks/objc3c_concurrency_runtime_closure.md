@@ -12,20 +12,14 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/concurrency_runtime_closure/lowering_runtime_abi_contract.json`
 - `tests/tooling/fixtures/concurrency_runtime_closure/executable_proof_abi_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_concurrency_runtime_closure_boundary_inventory_summary.py`
-- `python scripts/build_concurrency_runtime_closure_semantic_summary.py`
-- `python scripts/build_concurrency_runtime_closure_scheduler_policy_summary.py`
-- `python scripts/build_concurrency_runtime_closure_task_lifecycle_summary.py`
-- `python scripts/build_concurrency_runtime_closure_actor_semantics_summary.py`
-- `python scripts/build_concurrency_runtime_closure_artifact_summary.py`
-- `python scripts/check_concurrency_runtime_closure_task_lowering.py`
-- `python scripts/check_concurrency_runtime_closure_actor_lowering.py`
-- `python scripts/build_concurrency_runtime_closure_executable_proof_summary.py`
-- `python scripts/check_concurrency_runtime_closure_live_task_runtime.py`
-- `python scripts/check_concurrency_runtime_closure_live_actor_runtime.py`
-- `python scripts/check_objc3c_runnable_concurrency_end_to_end.py`
+- `npm run objc3c -- test-runtime-acceptance-concurrency`
+- `npm run objc3c -- validate-concurrency-conformance`
+- `npm run objc3c -- validate-runnable-concurrency`
+
+Implementation helpers under `scripts/` are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -66,7 +60,7 @@ Actor isolation, sendability, and hop semantics:
 
 Lowering and runtime artifact contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
+- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-concurrency`
 - the canonical concurrency surfaces for this milestone are `runtime_unified_concurrency_source_surface`, `runtime_async_task_actor_normalization_completion_surface`, `runtime_unified_concurrency_lowering_metadata_surface`, and `runtime_unified_concurrency_runtime_abi_surface`
 - release-scope checks must consume those emitted surfaces instead of recreating parallel concurrency manifest truth
 
@@ -100,9 +94,9 @@ Authoritative live surfaces:
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_concurrency_conformance.py`
-  - `scripts/check_objc3c_runnable_concurrency_end_to_end.py`
+  - `npm run objc3c -- test-runtime-acceptance-concurrency`
+  - `npm run objc3c -- validate-concurrency-conformance`
+  - `npm run objc3c -- validate-runnable-concurrency`
   - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`

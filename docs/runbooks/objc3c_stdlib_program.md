@@ -56,13 +56,16 @@ of inventing a second examples tree inside `stdlib/`.
 ## Exact Live Implementation Paths
 
 - `stdlib/program_surface.json`
-- `scripts/check_stdlib_surface.py`
-- `scripts/check_documentation_surface.py`
-- `scripts/check_showcase_surface.py`
-- `scripts/check_showcase_integration.py`
-- `scripts/check_getting_started_integration.py`
 - package bridge: `npm run objc3c -- <action>`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
+- public actions:
+  - `npm run objc3c -- check-stdlib-surface`
+  - `npm run objc3c -- check-documentation-surface`
+  - `npm run objc3c -- check-showcase-surface`
+  - `npm run objc3c -- validate-getting-started`
+  - `npm run objc3c -- validate-showcase`
+  - `npm run objc3c -- validate-stdlib-program`
+  - `npm run objc3c -- validate-runnable-stdlib-program`
+  - `npm run objc3c -- package-runnable-toolchain`
 - `package.json`
 - `showcase/portfolio.json`
 - `showcase/auroraBoard/main.objc3`

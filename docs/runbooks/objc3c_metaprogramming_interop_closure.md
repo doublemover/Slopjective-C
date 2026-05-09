@@ -12,20 +12,15 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/metaprogramming_interop_closure/executable_proof_abi_contract.json`
 - `tests/tooling/fixtures/metaprogramming_interop_closure/packaged_interop_proof_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_semantic_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_property_behavior_policy_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_interop_policy_summary.py`
-- `python scripts/build_metaprogramming_interop_closure_artifact_summary.py`
-- `python scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py`
-- `python scripts/check_metaprogramming_interop_closure_interop_lowering.py`
-- `python scripts/build_metaprogramming_interop_closure_executable_proof_summary.py`
-- `python scripts/check_metaprogramming_interop_closure_live_metaprogramming_runtime.py`
-- `python scripts/check_metaprogramming_interop_closure_live_interop_runtime.py`
-- `python scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py`
-- `python scripts/check_objc3c_runnable_metaprogramming_end_to_end.py`
+- `npm run objc3c -- validate-metaprogramming-conformance`
+- `npm run objc3c -- validate-runnable-metaprogramming`
+- `npm run objc3c -- validate-interop-conformance`
+- `npm run objc3c -- validate-runnable-interop`
+
+Implementation helpers under `scripts/` are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -61,7 +56,7 @@ Current closure constraints:
 
 ## Lowering and Runtime Artifact Surface
 
-- the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
+- the canonical compile-manifest and runtime-registration truth for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-fast`
 - the canonical metaprogramming surfaces for this milestone are the published `runtime_metaprogramming_*` and `runtime_cross_module_metaprogramming_artifact_preservation_surface` packets
 - the canonical interop surfaces for this milestone are the published `runtime_*interop*` and package-loader bridge surfaces
 - release-scope checks must consume those emitted surfaces instead of creating parallel manifest truth
@@ -92,11 +87,11 @@ Authoritative live surfaces:
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_metaprogramming_conformance.py`
-  - `scripts/check_objc3c_runnable_metaprogramming_end_to_end.py`
-  - `scripts/check_objc3c_runnable_interop_conformance.py`
-  - `scripts/check_objc3c_runnable_interop_end_to_end.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - `npm run objc3c -- validate-metaprogramming-conformance`
+  - `npm run objc3c -- validate-runnable-metaprogramming`
+  - `npm run objc3c -- validate-interop-conformance`
+  - `npm run objc3c -- validate-runnable-interop`
   - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`

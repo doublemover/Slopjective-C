@@ -21,16 +21,15 @@ Canonical checked-in boundary surfaces:
 - `docs/runbooks/objc3c_performance_governance.md`
 - `docs/runbooks/objc3c_package_ecosystem.md`
 - `docs/runbooks/objc3c_application_architecture_testing.md`
-- `scripts/build_objc3c_update_manifest.py`
-- `scripts/publish_objc3c_release_operations_metadata.py`
-- `scripts/check_objc3c_release_operations_integration.py`
-- `scripts/check_objc3c_release_operations_end_to_end.py`
-- `scripts/check_objc3c_package_ecosystem_integration.py`
-- `scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
+- package bridge: `npm run objc3c -- <action>`
+- action registry: `scripts/objc3c_workflow/registry.py`
 
 Replayable boundary inventory:
 
-- `python scripts/build_long_horizon_operations_boundary_inventory_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
+
+Direct helper paths under `scripts/` are implementation anchors for the public
+workflow actions, not separate operator commands.
 
 ## Current Boundary
 
@@ -79,7 +78,7 @@ The canonical policy contract is checked in at:
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_deprecation_policy_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 Compatibility maintenance is a support-window promise over generated release
 metadata, not a forever-compatible language/runtime claim. Deprecations must:
@@ -101,12 +100,12 @@ The canonical semantics contract is checked in at:
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_migration_rollback_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 Migration and rollback are operator-visible behaviors. The replay path uses:
 
-- `scripts/build_objc3c_update_manifest.py`
-- `scripts/publish_objc3c_release_operations_metadata.py`
+- `npm run objc3c -- build-update-manifest`
+- `npm run objc3c -- publish-release-operations`
 
 Generated evidence is valid only when the update manifest and compatibility
 report agree on the current version, supported platform ids, support windows,
@@ -123,7 +122,7 @@ The canonical criteria contract is checked in at:
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_aging_cadence_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 A release cadence is supportable only when aging evidence is fresh enough to
 trust and broad enough to cover the public claim. This boundary consumes existing
@@ -153,7 +152,7 @@ Schema surface:
 
 Replay it with:
 
-- `python scripts/build_long_horizon_operations_artifact_contract_summary.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 Generated machine-owned outputs stay under:
 
@@ -167,7 +166,7 @@ checked-in policy contracts and validated through this artifact contract.
 
 The canonical evidence generator is:
 
-- `python scripts/build_objc3c_long_horizon_operations_evidence.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 It generates:
 
@@ -190,9 +189,7 @@ The repo-scope long-horizon workflow is:
 It maps to:
 
 - `npm run objc3c -- validate-long-horizon-operations`
-- `python scripts/check_objc3c_long_horizon_operations_integration.py`
 - `npm run objc3c -- publish-long-horizon-operations`
-- `python scripts/publish_objc3c_long_horizon_operations_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, claim
 audit, migration evidence, rollback channel coverage, and soak evidence family
@@ -207,7 +204,7 @@ Support-window publication emits:
 
 The closeout gate is:
 
-- `python scripts/check_objc3c_long_horizon_operations_integration.py`
+- `npm run objc3c -- validate-long-horizon-operations`
 
 It replays all long-horizon summaries, integration, support-window publication, public
 command rendering, documentation/repository surface checks, and source hygiene.

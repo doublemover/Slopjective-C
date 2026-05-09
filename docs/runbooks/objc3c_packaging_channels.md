@@ -16,8 +16,11 @@ platform notarization/signing claim.
 
 The packaging-channel surface layers distribution channels on top of the release-foundation surface.
 The canonical payload remains the staged runnable toolchain bundle produced by
-`scripts/package_objc3c_runnable_toolchain.ps1` and described by the machine-
+`npm run objc3c -- package-runnable-toolchain` and described by the machine-
 owned release manifest, SBOM, and attestation artifacts.
+
+Packaging-channel commands route through `npm run objc3c -- <action>`;
+implementation helper paths are action-registry anchors only.
 
 Packaging channels are derived views over that payload:
 

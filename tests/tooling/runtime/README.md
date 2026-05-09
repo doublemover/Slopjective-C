@@ -5,6 +5,7 @@ The live runtime test surface exists to prove the shipped runtime library and em
 Authoritative runtime entrypoints:
 
 - `objc3_runtime_lookup_selector`
+- `objc3_runtime_dispatch_i32_checked`
 - `objc3_runtime_dispatch_i32`
 - `objc3_runtime_register_image`
 - `objc3_runtime_reset_for_testing`
@@ -26,7 +27,8 @@ What does not count as proof:
 
 Current corrective focus:
 
-- keep dispatch proof tied to `objc3_runtime_dispatch_i32`
+- keep dispatch proof tied to checked strict-result dispatch and the canonical
+  `objc3_runtime_dispatch_i32` lowering entrypoint
 - prove synthesized accessors through emitted objects and runtime probes
 - treat native-output provenance as part of the test surface, not separate ceremony
 
@@ -48,23 +50,26 @@ Representative live proof paths:
   - `tests/tooling/runtime/runtime_backed_storage_ownership_reflection_probe.cpp`
 
 - integrated runtime architecture packet:
-  - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
+  - `npm run objc3c -- proof-runtime-architecture`
   - `tmp/reports/runtime/architecture-proof/summary.json`
 - integrated runtime architecture validation:
-  - `scripts/check_objc3c_runtime_architecture_integration.py`
+  - `npm run objc3c -- validate-runtime-architecture`
   - `tmp/reports/runtime/architecture-integration/summary.json`
 
 Use the runtime probes and native object fixtures as the truth source for runtime behavior. Historical milestone-by-milestone closeout notes belong under `tmp/archive/`, not here.
 
 Fast helper-only checks:
 
-- `python scripts/check_objc3c_runtime_acceptance.py --case runtime-probe-helper-support`
-- `python scripts/check_objc3c_runtime_acceptance.py --suite helpers`
-- `python scripts/check_objc3c_runtime_acceptance.py --suite fast`
+- `npm run objc3c -- test-runtime-acceptance-fast`
+- `npm run objc3c -- test-runtime-acceptance-diagnostics`
+- `npm run objc3c -- test-runtime-acceptance-cross-module`
 
 The helper-only case compiles and runs the JSON writer, snapshot stabilizer,
 dispatch expectation, and representative helper-output equivalence tests. It is
 the preferred first check for changes under `tests/tooling/runtime/support/`.
+
+Direct runtime-acceptance helper scripts are implementation anchors behind the
+workflow actions, not public command surface.
 
 The runtime execution architecture published in `docs/objc3c-native.md` is the
 operator-facing boundary for what these probes may claim.

@@ -2,7 +2,7 @@
 
 ## Generated Documentation Surface
 
-Use the generators directly for documentation surfaces that are supposed to be
+Use the package bridge for documentation surfaces that are supposed to be
 checked into the repo:
 
 - public site:
@@ -21,6 +21,8 @@ checked into the repo:
 
 Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
 `tmp/artifacts/` as canonical documentation.
+Direct helper paths in this section are implementation anchors for registry
+actions, not an additional public command surface.
 
 ## Superclean Working Boundary
 
@@ -66,8 +68,8 @@ Developer-tooling entrypoint:
   live inspection, debug, and explainability work
 - developer ergonomics changes must stay on the existing native tooling,
   runtime ABI, and `npm run objc3c -- <action>` bridge surfaces named there
-- use the direct commands in that runbook when you need compile summaries,
-  runtime debug-state inspection, or parity validation without inventing a
+- use the package-bridge actions in that runbook when you need compile
+  summaries, runtime debug-state inspection, or parity validation without inventing a
   sidecar workflow
 
 Bonus-experience entrypoint:
@@ -114,14 +116,10 @@ Governance-sustainability entrypoint:
   repo-superclean, documentation-surface, dependency-boundary, and public
   workflow-runner surfaces instead of inventing sidecar milestone wrappers,
   duplicate planning roots, or spreadsheet-only waiver tracking
-- use the replayable governance summaries before widening package scripts,
-  runbooks, schemas, checker surfaces, or publication workflows:
-  - `python scripts/build_governance_budget_inventory_summary.py`
-  - `python scripts/build_governance_policy_summary.py`
-  - `python scripts/build_governance_maintainer_review_summary.py`
-  - `python scripts/build_governance_stewardship_semantics_summary.py`
-  - `python scripts/check_governance_sustainability_budget_enforcement.py`
-  - `python scripts/build_governance_anti_regression_summary.py`
+- use `npm run objc3c -- validate-governance-sustainability` before widening
+  package scripts, runbooks, schemas, checker surfaces, or publication workflows
+- use `npm run objc3c -- publish-governance-sustainability` when publication
+  metadata must be refreshed
 
 Release-foundation entrypoint:
 
@@ -273,7 +271,7 @@ npm run objc3c -- validate-repo-superclean
 - repo superclean surface: `npm run objc3c -- check-repo-superclean-surface`
 - repo superclean integration: `npm run objc3c -- validate-repo-superclean`
 - docs stitch/check: `npm run objc3c -- check-native-docs`
-- parity source check: `python scripts/check_objc3c_library_cli_parity.py ...`
+- parity source check: `npm run objc3c -- test-capability-routed-source-parity`
 - developer tooling boundary: `docs/runbooks/objc3c_developer_tooling.md`
 - bonus experiences boundary: `docs/runbooks/objc3c_bonus_experiences.md`
 - performance benchmark boundary: `docs/runbooks/objc3c_performance.md`

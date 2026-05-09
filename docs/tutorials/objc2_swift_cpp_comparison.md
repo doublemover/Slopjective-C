@@ -99,7 +99,7 @@ Downstream comparison and canonicalization work should use these live inputs dir
   - `tests/tooling/fixtures/performance/baselines/cpp_reference_workload.cpp`
 - command truth and validation references:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/check_documentation_surface.py`
+  - `npm run objc3c -- check-documentation-surface`
 
 ## Explicit Non-Goals
 

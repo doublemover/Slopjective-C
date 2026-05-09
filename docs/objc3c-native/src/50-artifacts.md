@@ -46,7 +46,7 @@ Use these live paths:
   - `docs/objc3c-native.md`
 - generated operator and machine-facing appendix:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-public-command-surface`
 - generated proof/report outputs:
   - `tmp/reports/`
   - `tmp/artifacts/`

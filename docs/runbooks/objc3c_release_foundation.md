@@ -16,16 +16,19 @@ or auto-updating channels. Those belong to later distribution milestones.
 ## Canonical Release Shape
 
 The canonical release payload is the existing staged runnable toolchain bundle
-produced by `scripts/package_objc3c_runnable_toolchain.ps1`.
+produced by `npm run objc3c -- package-runnable-toolchain`.
 
 The release surface is composed of:
 
 - the staged runnable package root under `tmp/pkg/`
 - the runnable package manifest emitted inside that package root
 - the checked-in repo-superclean source-of-truth artifact emitted by
-  `scripts/build_objc3c_native.ps1`
-- the release-evidence index produced by `scripts/check_release_evidence.py`
+  `npm run objc3c -- build-native-binaries`
+- the release-evidence index produced by `npm run objc3c -- check-release-evidence`
 - the machine-generated release manifest, SBOM, and attestation artifacts
+
+Implementation helper paths under `scripts/` are action-registry anchors for
+these release steps, not separate public commands.
 
 Do not create a second release payload layout or a sidecar installer-shaped
 bundle in this milestone.

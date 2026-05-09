@@ -22,7 +22,7 @@ Use these checked-in surfaces directly:
 - checked-in schema and release-evidence anchors:
   - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
   - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
-  - `scripts/check_release_evidence.py`
+  - `npm run objc3c -- check-release-evidence`
 
 Machine-owned public-reporting outputs must stay under:
 
@@ -111,12 +111,12 @@ Later public-conformance reporting work must stay on these paths:
   - `docs/runbooks/objc3c_conformance_corpus.md`
   - `docs/runbooks/objc3c_external_validation.md`
 - existing evidence generation and validation scripts:
-  - `scripts/generate_conformance_corpus_index.py`
-  - `scripts/check_objc3c_conformance_corpus_integration.py`
-  - `scripts/run_objc3c_external_validation_replay.py`
-  - `scripts/publish_objc3c_external_repro_corpus.py`
-  - `scripts/check_objc3c_external_validation_integration.py`
-  - `scripts/check_release_evidence.py`
+  - `npm run objc3c -- validate-conformance-corpus`
+  - `npm run objc3c -- validate-external-validation`
+  - `npm run objc3c -- test-external-validation-replay`
+  - `npm run objc3c -- publish-external-repro-corpus`
+  - `npm run objc3c -- validate-external-validation-integration`
+  - `npm run objc3c -- check-release-evidence`
 - checked-in schema surfaces:
   - `schemas/objc3-conformance-dashboard-status-v1.schema.json`
   - `schemas/objc3-conformance-evidence-bundle-v1.schema.json`
@@ -127,14 +127,17 @@ it must stay on this boundary.
 ## Current Checked-In Source Surface
 
 - contract root: `tests/tooling/fixtures/public_conformance_reporting/`
-- source check: `python scripts/check_public_conformance_reporting_source_surface.py`
+- source check: `npm run objc3c -- check-public-conformance-reporting-surface`
 - source summary: `tmp/reports/public-conformance/source-surface-summary.json`
-- schema check: `python scripts/check_public_conformance_schema_surface.py`
+- schema check: `npm run objc3c -- check-public-conformance-schema-surface`
 - schema summary: `tmp/reports/public-conformance/schema-surface-summary.json`
-- scorecard builder: `python scripts/build_objc3c_public_conformance_scorecard.py`
+- scorecard builder: `npm run objc3c -- build-public-conformance-scorecard`
 - scorecard summary: `tmp/reports/public-conformance/scorecard-summary.json`
-- publication builder: `python scripts/publish_objc3c_public_conformance_report.py`
+- publication builder: `npm run objc3c -- publish-public-conformance-report`
 - public summary: `tmp/reports/public-conformance/public-summary.json`
 - published scorecard artifact: `tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json`
 - published badge artifact: `tmp/artifacts/public-conformance/badge/public-conformance-badge.json`
 - published Markdown report: `tmp/artifacts/public-conformance/report/public-conformance-report.md`
+
+Implementation helper paths under `scripts/` are owned by the action registry.
+They are not a separate public reporting command surface.

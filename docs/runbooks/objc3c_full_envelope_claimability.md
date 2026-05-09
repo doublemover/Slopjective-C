@@ -13,20 +13,19 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/full_envelope_claimability/release_blocker_rollout_policy.json`
 - `tests/tooling/fixtures/full_envelope_claimability/dashboard_reporting_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_objc3c_support_classification.py`
-- `python scripts/check_objc3c_public_claim_drift.py`
-- `python scripts/build_objc3c_claimability_dashboard_release_blocker_contract.py`
-- `python scripts/build_full_envelope_claimability_support_matrix_summary.py`
-- `python scripts/build_full_envelope_claimability_claim_policy_summary.py`
-- `python scripts/build_full_envelope_claimability_release_blocker_summary.py`
-- `python scripts/check_full_envelope_claimability_rollout_readiness.py`
-- `python scripts/build_full_envelope_claimability_dashboard_contract_summary.py`
-- `python scripts/build_full_envelope_claimability_dashboard.py`
-- `python scripts/check_full_envelope_claimability_soak_external_validation.py`
-- `python scripts/check_full_envelope_claimability_release_candidate_evidence.py`
-- `python scripts/check_objc3c_runnable_release_candidate_end_to_end.py`
+- `npm run objc3c -- validate-release-candidate-conformance`
+- `npm run objc3c -- validate-runnable-release-candidate`
+- `npm run objc3c -- validate-public-conformance-reporting`
+- `npm run objc3c -- validate-performance-governance`
+- `npm run objc3c -- validate-release-foundation`
+- `npm run objc3c -- validate-release-operations`
+- `npm run objc3c -- validate-distribution-credibility`
+
+Implementation helpers under `scripts/` are action-registry anchors for
+evidence generation and claim classification. They are not separate public
+commands.
 
 ## Claim Taxonomy
 
@@ -46,23 +45,10 @@ These classes apply to public and internal claim surfaces equally. No release
 note, dashboard, tutorial, showcase, or README statement may imply a wider
 class than the checked-in matrix.
 
-The durable support-classification generator is
-`scripts/build_objc3c_support_classification.py`. It validates the checked-in
-taxonomy, rejects unknown support classes or missing source-truth paths, and
-emits the stable classification summary under
-`reports/claimability/support-classification/`. Evidence-family reports may be
-generated under `tmp/`, but they are not source-of-truth inputs for class
-definition, public-claim surface enumeration, or checked-in runtime boundary
-classification.
-
-The public claim drift gate is `scripts/check_objc3c_public_claim_drift.py`. It
-consumes the durable support-classification summary, scans the public claim
-surfaces plus fail-closed runtime-boundary runbooks, maps claim-bearing lines to
-their checked-in evidence families, and rejects unguarded public wording that
-would imply unsupported runtime ABI widening, foreign topology support, or
-full-envelope completeness. The release-evidence gate runs this checker in
-`--check` mode, so public docs and release evidence cannot drift apart without
-updating `reports/claimability/public-claim-drift/` in the same change.
+Support classification and public-claim drift are registry-owned evidence
+steps inside the full-envelope workflow. They validate the checked-in taxonomy,
+reject unsupported claim widening, and emit machine-owned summaries under
+`tmp/`/`reports/` without becoming public commands themselves.
 
 ## Production-Strength Claim And Support-Window Policy
 
@@ -158,7 +144,7 @@ performance, release, and trust integration reports. It is not allowed to
 become a separate manual truth source.
 
 The dashboard must carry the `dashboard_release_blocker_projection` emitted by
-`scripts/build_full_envelope_claimability_release_blocker_summary.py`. The
+the full-envelope release-blocker summary step in the workflow. The
 projection names the dashboard/public-summary output paths, required dashboard
 fields, current rollout class, public claim class, and whether the dashboard
 blocks production-strength release claims. The dashboard builder fails if its

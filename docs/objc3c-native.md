@@ -1836,7 +1836,7 @@ replay of registered images from the retained catalog.
 ## Acceptance Suite Surface
 
 - authoritative suite:
-  - `scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
 - authoritative report:
   - `tmp/reports/runtime/acceptance/summary.json`
 - machine-readable key:
@@ -1869,7 +1869,7 @@ summary that points back to those child executable reports.
 ## Integrated Evidence Bundle
 
 - runner:
-  - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
+  - `npm run objc3c -- proof-runtime-architecture`
 - public action:
   - `npm run objc3c -- proof-runtime-architecture`
 - packet path:
@@ -1884,7 +1884,7 @@ runtime installation ABI surface, and runtime loader lifecycle surface.
 ## Integrated Validation Path
 
 - runner:
-  - `scripts/check_objc3c_runtime_architecture_integration.py`
+  - `npm run objc3c -- validate-runtime-architecture`
 - public action:
   - `npm run objc3c -- validate-runtime-architecture`
 - summary path:
@@ -1896,6 +1896,9 @@ stay aligned with the runtime architecture evidence bundle and the direct runtim
 acceptance report. It fails closed if the full workflow drops the smoke,
 runtime-acceptance, or replay child steps, or if any published runtime
 architecture surface drifts between the full workflow and the evidence bundle.
+
+Direct helper paths named in this runtime architecture chapter are
+implementation anchors for the workflow actions, not public commands.
 
 ## Claim Boundary
 
@@ -1983,7 +1986,7 @@ Use these live paths:
   - `docs/objc3c-native.md`
 - generated operator and machine-facing appendix:
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-public-command-surface`
 - generated proof/report outputs:
   - `tmp/reports/`
   - `tmp/artifacts/`

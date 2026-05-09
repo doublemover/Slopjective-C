@@ -16,11 +16,19 @@ Canonical checked-in boundary and contract surfaces:
 
 - `tests/tooling/fixtures/developer_tooling/boundary_inventory.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_developer_tooling_boundary_inventory_summary.py`
-- `python scripts/check_objc3c_developer_tooling_integration.py`
-- `python scripts/check_objc3c_developer_tooling_integration.py`
+- `npm run objc3c -- validate-developer-tooling`
+- `npm run objc3c -- validate-runnable-developer-tooling`
+- `npm run objc3c -- inspect-compile-observability`
+- `npm run objc3c -- inspect-runtime-inspector`
+- `npm run objc3c -- inspect-capability-explorer`
+- `npm run objc3c -- inspect-editor-tooling`
+- `npm run objc3c -- trace-compile-stages`
+- `npm run objc3c -- test-capability-routed-source-parity`
+
+Implementation helpers under `scripts/` and native tool binaries are registry
+anchors for those actions, not separate current-facing commands.
 
 ## Exact Live Implementation Paths
 
@@ -33,7 +41,7 @@ Replayable generators and validators:
 - native tooling target wiring:
   - `native/objc3c/CMakeLists.txt`
 - native build/publish surface:
-  - `scripts/build_objc3c_native.ps1`
+  - `npm run objc3c -- build-native-binaries`
   - published binary: `artifacts/bin/objc3c-frontend-c-api-runner.exe`
 - public command and workflow surface:
   - package bridge: `npm run objc3c -- <action>`
@@ -49,9 +57,9 @@ Replayable generators and validators:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - live validation and parity paths:
-  - `scripts/check_objc3c_library_cli_parity.py`
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_repo_superclean_surface.py`
+  - `npm run objc3c -- test-capability-routed-source-parity`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - `npm run objc3c -- check-repo-superclean-surface`
 - live runtime probes:
   - `tests/tooling/runtime/arc_debug_instrumentation_probe.cpp`
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
@@ -108,40 +116,30 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3`
 - materialize a runnable workspace with editor/debug drill references:
   - `npm run objc3c -- materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
-  - `npm run objc3c -- materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
 - inspect the direct compiler/summary boundary:
-  - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 --summary-out tmp/reports/objc3c-public-workflow/frontend-c-api-runner-summary.json`
+  - `npm run objc3c -- inspect-compile-observability tests/tooling/fixtures/native/hello.objc3`
 - dump the structured developer observability object through the public command surface:
-  - `npm run objc3c -- inspect-compile-observability`
   - `npm run objc3c -- inspect-compile-observability`
 - dump the structured runtime inspector object through the public command surface:
   - `npm run objc3c -- inspect-runtime-inspector`
-  - `npm run objc3c -- inspect-runtime-inspector`
 - dump the live capability-explorer object through the public command surface:
-  - `npm run objc3c -- inspect-capability-explorer`
   - `npm run objc3c -- inspect-capability-explorer`
 - benchmark the runtime-inspector and capability-explorer workflow through the public command surface:
   - `npm run objc3c -- benchmark-runtime-inspector`
-  - `npm run objc3c -- benchmark-runtime-inspector`
 - dump the structured compile-stage trace through the public command surface:
-  - `npm run objc3c -- trace-compile-stages`
   - `npm run objc3c -- trace-compile-stages`
 - inspect the combined editor tooling surface:
   - `npm run objc3c -- inspect-editor-tooling`
-  - `npm run objc3c -- inspect-editor-tooling`
 - format one supported objc3c source through the preview formatter subset:
   - `npm run objc3c -- format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
-  - `npm run objc3c -- format-objc3c tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
 - run the integrated developer-tooling validation flow:
-  - `npm run objc3c -- validate-developer-tooling`
   - `npm run objc3c -- validate-developer-tooling`
 - run the packaged developer-tooling validation flow against the staged runnable bundle:
   - `npm run objc3c -- validate-runnable-developer-tooling`
-  - `npm run objc3c -- validate-runnable-developer-tooling`
 - validate compiler/library parity:
-  - `python scripts/check_objc3c_library_cli_parity.py`
+  - `npm run objc3c -- test-capability-routed-source-parity`
 - validate runtime/debug ABI and emitted source surfaces:
-  - `python scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
 
 ## Runtime Introspection Primitives
 
@@ -151,7 +149,7 @@ Downstream issues must extend these exact surfaces before inventing new ones.
   - `arc_debug_state_snapshot_symbol`
   - `runtime_metadata_object_inspection_uses_llvm_objdump`
 - live capability-explorer probe contract:
-  - `scripts/probe_objc3c_llvm_capabilities.py`
+  - `npm run objc3c -- inspect-capability-explorer`
   - `tmp/reports/objc3c-public-workflow/capability-explorer.json`
   - `capability_demo_compatibility`
   - `stdlib/program_surface.json`
@@ -281,9 +279,9 @@ The canonical generated surface must group:
 The authoritative report family lives under `tmp/reports/developer-tooling/`
 and must be produced by the public runner plus replayable checked-in scripts.
 
-The current generator for the combined surface is:
+The current generator for the combined surface is reached through:
 
-- `python scripts/build_objc3c_editor_tooling_surface.py`
+- `npm run objc3c -- inspect-editor-tooling`
 
 The current and follow-on public entrypoints for the surface converge on:
 
@@ -301,7 +299,7 @@ Exact implementation anchors for the current formatter/debug/workspace slice:
 - `tests/tooling/fixtures/developer_tooling/workspace_editor_debug_integration_contract.json`
 - `tests/tooling/fixtures/developer_tooling/packaged_cli_to_editor_contract.json`
 
-The npm entrypoints must route to the same action family once implemented:
+The npm entrypoints route to the same action family:
 
 - `npm run objc3c -- inspect-editor-tooling`
 - `npm run objc3c -- format-objc3c <source>`

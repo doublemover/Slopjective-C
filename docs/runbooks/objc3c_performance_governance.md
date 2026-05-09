@@ -145,15 +145,15 @@ The performance program assumes one checked-in lab contract:
 ## Live Paths Later Issues Must Reuse
 
 - benchmark and comparison roots:
-  - `scripts/benchmark_objc3c_performance.py`
-  - `scripts/run_objc3c_comparative_baselines.py`
-  - `scripts/check_objc3c_compiler_throughput_integration.py`
-  - `scripts/check_objc3c_runtime_performance_integration.py`
+  - `npm run objc3c -- benchmark-performance`
+  - `npm run objc3c -- benchmark-comparative-baselines`
+  - `npm run objc3c -- validate-compiler-throughput`
+  - `npm run objc3c -- validate-runtime-performance`
 - package and workflow surfaces:
   - package bridge: `npm run objc3c -- <action>`
   - `package.json`
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- package-runnable-toolchain`
 - public workflow documentation:
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `docs/runbooks/objc3c_maintainer_workflows.md`

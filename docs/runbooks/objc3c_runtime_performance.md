@@ -102,13 +102,13 @@ Disallowed optimization moves:
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/runtime/ARCHITECTURE.md`
 - compile/build/runtime harness:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/benchmark_objc3c_runtime_performance.py`
-  - `scripts/check_objc3c_runtime_performance_integration.py`
-  - `scripts/check_objc3c_runnable_runtime_performance_end_to_end.py`
-  - `scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- benchmark-runtime-performance`
+  - `npm run objc3c -- validate-runtime-performance`
+  - `npm run objc3c -- validate-runnable-runtime-performance`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
   - package bridge: `npm run objc3c -- <action>`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- package-runnable-toolchain`
 - authoritative live runtime probes:
   - `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
   - `tests/tooling/runtime/live_dispatch_fast_path_probe.cpp`
@@ -138,19 +138,17 @@ Disallowed optimization moves:
 
 - build the native runtime surface before measuring:
   - `npm run objc3c -- build-native-binaries`
-  - `npm run objc3c -- build-native-binaries`
 - inspect the live runtime boundary already used by developer tooling:
-  - `npm run objc3c -- inspect-runtime-inspector`
   - `npm run objc3c -- inspect-runtime-inspector`
 - benchmark the runtime hot-path surface:
   - `npm run objc3c -- benchmark-runtime-performance`
-  - `npm run objc3c -- benchmark-runtime-performance`
 - validate the integrated runtime-performance surface:
-  - `npm run objc3c -- validate-runtime-performance`
   - `npm run objc3c -- validate-runtime-performance`
 - validate the staged runnable runtime-performance surface:
   - `npm run objc3c -- validate-runnable-runtime-performance`
-  - `npm run objc3c -- validate-runnable-runtime-performance`
+
+Implementation helper paths remain action-registry anchors for the public
+commands above.
 
 ## Explicit Non-Goals
 

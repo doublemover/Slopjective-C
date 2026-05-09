@@ -27,10 +27,14 @@ Exact live implementation paths for downstream work:
 - `stdlib/modules/objc3.core/module.json`
 - `stdlib/modules/objc3.errors/module.json`
 - `stdlib/modules/objc3.keypath/module.json`
-- `scripts/check_stdlib_surface.py`
-- `scripts/materialize_objc3c_stdlib_workspace.py`
-- `scripts/run_objc3c_stdlib_workspace_smoke.py`
 - package bridge: `npm run objc3c -- <action>`
+- public actions:
+  - `npm run objc3c -- check-stdlib-surface`
+  - `npm run objc3c -- materialize-stdlib-workspace`
+  - `npm run objc3c -- validate-stdlib-foundation`
+
+Stdlib helper scripts are implementation anchors owned by the action registry,
+not separate current-facing commands.
 
 ## Core family split
 

@@ -8,7 +8,7 @@ Canonical checked-in governance inventory contract:
 
 Replayable inventory generator:
 
-- `python scripts/build_governance_budget_inventory_summary.py`
+- `npm run objc3c -- validate-governance-sustainability`
 
 Governance focus:
 
@@ -46,15 +46,14 @@ Canonical checked-in policy contracts:
 
 Replayable policy summary:
 
-- `python scripts/build_governance_policy_summary.py`
+- `npm run objc3c -- validate-governance-sustainability`
 
 Extension, RFC, and compatibility review policy:
 
 - `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json`
 - `tests/tooling/fixtures/governance_sustainability/new_work_proposal_template.json`
-- `python scripts/build_governance_extension_review_policy_summary.py`
-- `python scripts/build_governance_extension_review_workflow_summary.py`
-- `python scripts/publish_new_work_proposal.py`
+- public validation: `npm run objc3c -- validate-governance-sustainability`
+- publication: `npm run objc3c -- publish-governance-sustainability`
 
 Extension review is allowed to advance only when the proposal names its
 language surface, review class, compatibility classification, evidence
@@ -66,7 +65,7 @@ hardening evidence instead of standing on prose-only review.
 Maintainer, contributor, and package stewardship semantics:
 
 - `tests/tooling/fixtures/governance_sustainability/stewardship_semantics.json`
-- `python scripts/build_governance_stewardship_semantics_summary.py`
+- `npm run objc3c -- validate-governance-sustainability`
 
 Stewardship review keeps normal contributors on `CONTRIBUTING.md`, maintainers
 on `docs/runbooks/objc3c_maintainer_workflows.md`, and package-governance
@@ -81,12 +80,12 @@ Machine-owned governance schema surface:
 - `schemas/objc3c-governance-budget-summary-v1.schema.json`
 - `schemas/objc3c-governance-anti-regression-summary-v1.schema.json`
 - `schemas/objc3c-governance-sustainability-evidence-v1.schema.json`
-- `python scripts/check_governance_sustainability_schema_surface.py`
+- `npm run objc3c -- validate-governance-sustainability`
 
 Machine-owned governance artifact contract:
 
 - `tests/tooling/fixtures/governance_sustainability/artifact_contract.json`
-- `python scripts/build_governance_artifact_contract_summary.py`
+- `npm run objc3c -- validate-governance-sustainability`
 - canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
 - canonical publication artifacts:
   - `tmp/artifacts/governance-sustainability/stewardship-publication.json`
@@ -98,13 +97,10 @@ replayable outputs only and must never become implementation inputs.
 
 Replayable governance enforcement:
 
-- `python scripts/check_objc3c_governance_sustainability_integration.py`
-- `python scripts/build_objc3c_governance_sustainability_evidence.py`
-- `python scripts/publish_objc3c_governance_sustainability_metadata.py`
-- `python scripts/check_governance_sustainability_budget_enforcement.py`
-- `python scripts/ci/run_task_hygiene_gate.py`
 - public package command: `npm run objc3c -- validate-governance-sustainability`
 - public package command: `npm run objc3c -- publish-governance-sustainability`
+- implementation helpers under `scripts/` are action-registry anchors, not
+  public command surface
 - canonical enforcement summary: `tmp/reports/governance-sustainability/budget-enforcement/governance_budget_enforcement_summary.json`
 - canonical integration summary: `tmp/reports/governance-sustainability/integration/governance_sustainability_integration_summary.json`
 - canonical evidence artifact: `tmp/artifacts/governance-sustainability/governance-sustainability-evidence.json`
@@ -112,22 +108,21 @@ Replayable governance enforcement:
 
 Long-horizon anti-regression reporting:
 
-- `python scripts/build_governance_anti_regression_summary.py`
+- `npm run objc3c -- validate-governance-sustainability`
 - canonical history artifact: `tmp/artifacts/governance-sustainability/anti-regression-history.json`
 - canonical anti-regression summary: `tmp/reports/governance-sustainability/anti-regression/governance_anti_regression_summary.json`
 
 Closeout gate:
 
-- `python scripts/check_governance_sustainability_closeout_gate.py`
+- `npm run objc3c -- validate-governance-sustainability`
 - canonical closeout summary: `tmp/reports/governance-sustainability/closeout-gate/governance_sustainability_closeout_gate.json`
 
 Current governance entry surfaces:
 
-- `scripts/ci/check_task_hygiene.py`
-- `scripts/ci/run_task_hygiene_gate.py`
-- `scripts/check_repo_superclean_surface.py`
-- `scripts/check_documentation_surface.py`
-- `scripts/check_objc3c_dependency_boundaries.py`
+- `npm run objc3c -- check-task-hygiene`
+- `npm run objc3c -- check-repo-superclean-surface`
+- `npm run objc3c -- check-documentation-surface`
+- `npm run objc3c -- check-dependency-boundaries`
 - `docs/runbooks/objc3c_maintainer_workflows.md`
 - `docs/runbooks/objc3c_public_command_surface.md`
 - package bridge: `npm run objc3c -- <action>`

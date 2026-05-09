@@ -202,7 +202,7 @@ Not supported in this boundary:
 
 This boundary consumes:
 
-- public command discovery from `scripts/render_objc3c_public_command_surface.py`
+- public command discovery from `npm run objc3c -- build-public-command-surface`
 - package workflow evidence from `docs/runbooks/objc3c_package_ecosystem.md`
 - release and compatibility evidence from `docs/runbooks/objc3c_release_operations.md`
 - conformance scorecard evidence from

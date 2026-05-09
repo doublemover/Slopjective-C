@@ -17,8 +17,8 @@ Canonical checked-in boundary surfaces:
 - `tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json`
 - `showcase/portfolio.json`
 - `stdlib/workspace.json`
-- `scripts/materialize_objc3c_project_template.py`
-- `scripts/materialize_objc3c_stdlib_workspace.py`
+- `npm run objc3c -- materialize-project-template`
+- `npm run objc3c -- materialize-stdlib-workspace`
 
 Replayable public workflows:
 
@@ -37,8 +37,8 @@ The current checked-in boundary is narrower than a full application framework.
   - `showcase/*/workspace.json`
   - `stdlib/workspace.json`
 - machine-owned template/workspace materialization already exists in:
-  - `scripts/materialize_objc3c_project_template.py`
-  - `scripts/materialize_objc3c_stdlib_workspace.py`
+  - `npm run objc3c -- materialize-project-template`
+  - `npm run objc3c -- materialize-stdlib-workspace`
 - current runnable examples are still centered on:
   - showcase examples
   - stdlib program surfaces

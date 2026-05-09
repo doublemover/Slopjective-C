@@ -49,9 +49,9 @@ The current truthful compiler-throughput workload families are:
 The current audit inventory is:
 
 - compiler/tooling throughput:
-  - `scripts/objc3c_native_compile.ps1`
+  - `npm run objc3c -- compile-objc3c`
   - `artifacts/bin/objc3c-native.exe`
-  - `scripts/build_objc3c_native.ps1`
+  - `npm run objc3c -- build-native-binaries`
   - package bridge: `npm run objc3c -- <action>`
 - incremental build and invalidation:
   - wrapper `--use-cache`
@@ -64,9 +64,9 @@ The current audit inventory is:
   - `tests/tooling/runtime/macro_host_process_cache_integration_probe.cpp`
   - `module.metaprogramming-macro-host-cache.json`
 - docs-generation paths:
-  - `scripts/build_objc3c_native_docs.py`
-  - `scripts/render_objc3c_public_command_surface.py`
-  - `scripts/build_site_index.py`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
+  - `npm run objc3c -- build-site`
 
 ## Workload Manifest
 
@@ -168,21 +168,21 @@ Disallowed optimization moves:
 ## Exact Live Implementation Paths
 
 - compile/build wrappers:
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/build_objc3c_native.ps1`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- build-native-binaries`
   - package bridge: `npm run objc3c -- <action>`
-  - `scripts/check_objc3c_native_perf_budget.ps1`
-  - `scripts/check_objc3c_compiler_throughput_integration.py`
+  - `npm run objc3c -- benchmark-compiler-throughput`
+  - `npm run objc3c -- validate-compiler-throughput`
 - heavyweight validation suites:
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-  - `scripts/check_objc3c_native_recovery_contract.ps1`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/run_objc3c_native_fixture_matrix.ps1`
-  - `scripts/check_objc3c_negative_fixture_expectations.ps1`
-  - `scripts/check_objc3c_runtime_acceptance.py`
+  - `npm run objc3c -- test-execution-smoke`
+  - `npm run objc3c -- test-recovery`
+  - `npm run objc3c -- test-execution-replay`
+  - `npm run objc3c -- test-fixture-matrix`
+  - `npm run objc3c -- test-negative-expectations`
+  - `npm run objc3c -- test-runtime-acceptance`
 - compile-coupled docs and command surfaces:
-  - `scripts/build_objc3c_native_docs.py`
-  - `scripts/render_objc3c_public_command_surface.py`
+  - `npm run objc3c -- build-native-docs`
+  - `npm run objc3c -- build-public-command-surface`
   - `docs/objc3c-native/src/60-tests.md`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - checked-in throughput metadata:
@@ -192,6 +192,9 @@ Disallowed optimization moves:
   - `tests/tooling/fixtures/compiler_throughput/optimization_policy.json`
   - `tests/tooling/fixtures/compiler_throughput/artifact_surface.json`
   - `schemas/objc3c-compiler-throughput-summary-v1.schema.json`
+
+Implementation helper paths remain action-registry anchors for the public
+commands above.
 
 ## Exact Live Artifact And Output Paths
 

@@ -44,8 +44,8 @@ real implementation exists.
   - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - native build and package wiring:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- package-runnable-toolchain`
 - showcase and tutorial roots:
   - `showcase/README.md`
   - `showcase/portfolio.json`
@@ -57,13 +57,13 @@ real implementation exists.
   - `docs/tutorials/guided_walkthrough.md`
 - current developer-tooling boundary:
   - `docs/runbooks/objc3c_developer_tooling.md`
-  - `scripts/check_objc3c_developer_tooling_integration.py`
-  - `scripts/check_objc3c_bonus_experience_integration.py`
+  - `npm run objc3c -- validate-developer-tooling`
+  - `npm run objc3c -- validate-bonus-experiences`
 - current showcase/tutorial validation paths:
-  - `scripts/check_showcase_integration.py`
-  - `scripts/check_objc3c_runnable_showcase_end_to_end.py`
-  - `scripts/check_getting_started_integration.py`
-  - `scripts/check_objc3c_runnable_bonus_experience_end_to_end.py`
+  - `npm run objc3c -- validate-showcase`
+  - `npm run objc3c -- validate-runnable-showcase`
+  - `npm run objc3c -- validate-getting-started`
+  - `npm run objc3c -- validate-runnable-bonus-experiences`
 
 ## Exact Playground Inspector And Template Paths
 
@@ -78,7 +78,7 @@ real implementation exists.
   - `tests/tooling/runtime/block_arc_runtime_abi_probe.cpp`
   - `tests/tooling/runtime/task_runtime_hardening_probe.cpp`
 - template and demo-harness source roots:
-  - `scripts/materialize_objc3c_project_template.py`
+  - `npm run objc3c -- materialize-project-template`
   - `showcase/README.md`
   - `showcase/portfolio.json`
   - `showcase/tutorial_walkthrough.json`
@@ -114,48 +114,37 @@ real implementation exists.
 
 - compile one checked-in source through the public compiler path:
   - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
-  - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
 - materialize a machine-owned playground workspace for one source:
-  - `npm run objc3c -- materialize-playground-workspace showcase/auroraBoard/main.objc3`
   - `npm run objc3c -- materialize-playground-workspace showcase/auroraBoard/main.objc3`
 - materialize a machine-owned project template and demo harness from one showcase example:
   - `npm run objc3c -- materialize-project-template --example auroraBoard`
-  - `npm run objc3c -- materialize-project-template --example auroraBoard`
 - stage the runnable toolchain and package manifest surface:
-  - `npm run objc3c -- package-runnable-toolchain`
   - `npm run objc3c -- package-runnable-toolchain`
 - inspect the live integrated bonus-tool surface:
   - `npm run objc3c -- inspect-bonus-tool-integration`
-  - `npm run objc3c -- inspect-bonus-tool-integration`
 - dump the live playground and repro payload:
-  - `npm run objc3c -- inspect-playground-repro`
   - `npm run objc3c -- inspect-playground-repro`
 - dump the current playground/repro observability payload:
   - `npm run objc3c -- inspect-compile-observability`
-  - `npm run objc3c -- inspect-compile-observability`
 - dump the current runtime-inspector payload:
-  - `npm run objc3c -- inspect-runtime-inspector`
   - `npm run objc3c -- inspect-runtime-inspector`
 - dump the current capability-explorer payload:
   - `npm run objc3c -- inspect-capability-explorer`
-  - `npm run objc3c -- inspect-capability-explorer`
 - benchmark the runtime-inspector and capability-explorer workflow:
-  - `npm run objc3c -- benchmark-runtime-inspector`
   - `npm run objc3c -- benchmark-runtime-inspector`
 - dump the current stage-trace payload:
   - `npm run objc3c -- trace-compile-stages`
-  - `npm run objc3c -- trace-compile-stages`
 - validate the current developer-tooling integration surface:
   - `npm run objc3c -- validate-developer-tooling`
-  - `npm run objc3c -- validate-developer-tooling`
 - validate showcase/tutorial-backed bonus experience flows:
-  - `npm run objc3c -- validate-bonus-experiences`
   - `npm run objc3c -- validate-bonus-experiences`
   - `npm run objc3c -- validate-showcase`
   - `npm run objc3c -- validate-runnable-showcase`
   - `npm run objc3c -- validate-getting-started`
   - `npm run objc3c -- validate-runnable-bonus-experiences`
-  - `npm run objc3c -- validate-runnable-bonus-experiences`
+
+Implementation helper paths are action-registry anchors, not separate
+current-facing commands.
 
 ## Feasibility And Working Model
 

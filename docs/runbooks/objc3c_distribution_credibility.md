@@ -21,7 +21,10 @@ The canonical upstream surfaces are:
 - release-foundation manifests, SBOMs, and provenance attestations
 - packaging-channel payloads, install receipts, and rollback proofs
 - release-operations update manifests, compatibility reports, and rollback guidance
-- the existing release-evidence index from `scripts/check_release_evidence.py`
+- the existing release-evidence index from `npm run objc3c -- check-release-evidence`
+
+Implementation helper paths under `scripts/` are action-registry anchors, not a
+second credibility command surface.
 
 No credibility claim may bypass those live outputs. If a trust signal cannot be
 derived from a checked-in contract and executable artifact, it is out of scope.

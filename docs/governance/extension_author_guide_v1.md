@@ -14,12 +14,15 @@ Primary references:
 
 Current review policy:
 
-- replay with `python scripts/build_governance_extension_review_policy_summary.py`
+- replay with `npm run objc3c -- validate-governance-sustainability`
 - route compatibility-impacting changes through release operations,
   long-horizon support, package ecosystem, adoption-legibility, and security
   hardening evidence
 - block proposal publication when required evidence, owners, rollback path, or
   deferred-behavior demotion is missing
+
+The underlying governance helpers are implementation anchors owned by the
+workflow action registry, not public command examples.
 
 ## 2. End-to-End Workflow (`ONB-01`..`ONB-09`)
 

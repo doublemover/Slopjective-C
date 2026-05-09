@@ -53,7 +53,8 @@ If you want the ordered example sequence after these commands are clear, continu
 
 ## Validation Surface
 
-The bounded getting-started validation contract is implemented in `scripts/check_getting_started_surface.py`.
+The bounded getting-started validation contract is reached through
+`npm run objc3c -- validate-getting-started`.
 The public integrated entrypoint for the same tutorial and onboarding flow is `npm run objc3c -- validate-getting-started`.
 
 That surface proves:
@@ -63,7 +64,8 @@ That surface proves:
 - the walkthrough-selected examples still compile through the normal public compiler path
 - the public tutorial and onboarding command surface still runs end to end
 
-The live smoke integration for that same surface is implemented in `scripts/check_getting_started_integration.py`.
+The live smoke integration for that same surface is reached through
+`npm run objc3c -- validate-getting-started`.
 
 ## Artifact And Report Expectations
 
@@ -80,8 +82,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
 - `docs/tutorials/getting_started.md`
-- `scripts/check_getting_started_surface.py`
-- `scripts/check_getting_started_integration.py`
+- `npm run objc3c -- validate-getting-started`
 - `docs/tutorials/objc2_to_objc3_migration.md`
 - `showcase/README.md`
 - `showcase/portfolio.json`
@@ -104,8 +105,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
   - `docs/runbooks/objc3c_public_command_surface.md`
   - `npm run objc3c -- <action>`
 - bounded tutorial validation:
-  - `scripts/check_getting_started_surface.py`
-  - `scripts/check_getting_started_integration.py`
+  - `npm run objc3c -- validate-getting-started`
 - machine-owned outputs:
   - `tmp/artifacts/showcase/`
   - `tmp/reports/showcase/`

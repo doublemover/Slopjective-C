@@ -31,7 +31,6 @@ Authoritative inputs:
 - `docs/runbooks/objc3c_stdlib_advanced.md`
 - `docs/runbooks/objc3c_stdlib_program.md`
 - package bridge: `npm run objc3c -- <action>`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
 
 ## Non-goals
 
@@ -70,13 +69,13 @@ and identifier-safe implementation module declarations.
 
 ## Exact Live Implementation Paths
 
-- `scripts/check_stdlib_surface.py`
-- `scripts/materialize_objc3c_stdlib_workspace.py`
-- `scripts/run_objc3c_stdlib_workspace_smoke.py`
-- `scripts/check_objc3c_stdlib_foundation_integration.py`
-- `scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
 - package bridge: `npm run objc3c -- <action>`
+- public actions:
+  - `npm run objc3c -- check-stdlib-surface`
+  - `npm run objc3c -- materialize-stdlib-workspace`
+  - `npm run objc3c -- validate-stdlib-foundation`
+  - `npm run objc3c -- validate-runnable-stdlib-foundation`
+  - `npm run objc3c -- package-runnable-toolchain`
 - `stdlib/advanced_architecture.json`
 - `stdlib/advanced_helper_package_surface.json`
 - `stdlib/program_surface.json`
@@ -96,15 +95,13 @@ and identifier-safe implementation module declarations.
 ## Exact Live Commands
 
 - `npm run objc3c -- check-stdlib-surface`
-- `npm run objc3c -- check-stdlib-surface`
-- `npm run objc3c -- materialize-stdlib-workspace`
 - `npm run objc3c -- materialize-stdlib-workspace`
 - `npm run objc3c -- validate-stdlib-foundation`
-- `npm run objc3c -- validate-stdlib-foundation`
-- `npm run objc3c -- validate-runnable-stdlib-foundation`
 - `npm run objc3c -- validate-runnable-stdlib-foundation`
 - `npm run objc3c -- package-runnable-toolchain`
-- `npm run objc3c -- package-runnable-toolchain`
+
+Stdlib helper scripts are implementation anchors owned by the action registry,
+not separate current-facing commands.
 
 ## Public actions
 

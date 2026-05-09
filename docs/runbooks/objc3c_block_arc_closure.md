@@ -11,19 +11,14 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/block_arc_closure/block_arc_lowering_runtime_abi_contract.json`
 - `tests/tooling/fixtures/block_arc_closure/executable_proof_abi_contract.json`
 
-Replayable generators and validators:
+Replayable public workflow actions:
 
-- `python scripts/build_block_arc_closure_boundary_inventory_summary.py`
-- `python scripts/build_block_arc_closure_semantic_summary.py`
-- `python scripts/build_block_arc_closure_arc_policy_summary.py`
-- `python scripts/build_block_arc_closure_byref_summary.py`
-- `python scripts/build_block_arc_closure_lowering_abi_summary.py`
-- `python scripts/check_block_arc_closure_escaping_block_lowering.py`
-- `python scripts/check_block_arc_closure_arc_lifetime_lowering.py`
-- `python scripts/build_block_arc_closure_executable_proof_summary.py`
-- `python scripts/check_block_arc_closure_live_block_runtime.py`
-- `python scripts/check_block_arc_closure_live_arc_runtime.py`
-- `python scripts/check_objc3c_runnable_block_arc_end_to_end.py`
+- `npm run objc3c -- test-runtime-acceptance-block-arc`
+- `npm run objc3c -- validate-block-arc-conformance`
+- `npm run objc3c -- validate-runnable-block-arc`
+
+Implementation helpers under `scripts/` are action-registry anchors and
+milestone evidence builders, not a separate public command surface.
 
 Current closure scope:
 
@@ -57,7 +52,7 @@ Byref promotion, copy/dispose, and forwarding implementation:
 
 Lowering and runtime ABI contract:
 
-- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `scripts/check_objc3c_runtime_acceptance.py`
+- the canonical compile-manifest and runtime-registration surface for this milestone is the shared acceptance output published by `npm run objc3c -- test-runtime-acceptance-block-arc`
 - the four required block/ARC surfaces are `runtime_block_arc_unified_source_surface`, `runtime_ownership_transfer_capture_family_source_surface`, `runtime_block_arc_lowering_helper_surface`, and `runtime_block_arc_runtime_abi_surface`
 - release-scope checks must consume those emitted surfaces instead of recreating parallel manifest truth
 
@@ -91,9 +86,9 @@ Authoritative live surfaces:
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
   - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
 - acceptance and public workflow:
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_block_arc_conformance.py`
-  - `scripts/check_objc3c_runnable_block_arc_end_to_end.py`
+  - `npm run objc3c -- test-runtime-acceptance-block-arc`
+  - `npm run objc3c -- validate-block-arc-conformance`
+  - `npm run objc3c -- validate-runnable-block-arc`
   - package bridge: `npm run objc3c -- <action>`
 - public claims:
   - `README.md`

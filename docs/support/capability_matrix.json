@@ -171,7 +171,7 @@
       "id": "runtime.public-c-api.strict-result",
       "title": "Public C runtime dispatch result surface",
       "state": "internal",
-      "summary": "The public C runtime API owns image registration, selector lookup, checked i32 dispatch results, plain i32 dispatch abort semantics, and testing snapshots through the strict runtime public headers.",
+      "summary": "The public C runtime API owns image registration, selector lookup, checked i32 dispatch results, the narrow plain i32 lowering entrypoint, and testing snapshots through the strict runtime public headers. It does not create a fallback dispatch mode.",
       "evidence": [
         {
           "kind": "source",

@@ -19,25 +19,21 @@ Canonical checked-in boundary surfaces:
 - `stdlib/workspace.json`
 - `stdlib/package_surface.json`
 - `stdlib/advanced_helper_package_surface.json`
-- `scripts/package_objc3c_runnable_toolchain.ps1`
-- `scripts/build_objc3c_package_channels.py`
-- `scripts/build_objc3c_release_manifest.py`
-- `scripts/build_objc3c_update_manifest.py`
 
-Replayable boundary inventory:
+Replayable public workflow actions:
 
-- `python scripts/build_package_ecosystem_boundary_inventory_summary.py`
-- `python scripts/build_package_ecosystem_dependency_lock_policy_summary.py`
-- `python scripts/build_package_ecosystem_local_workspace_mirror_summary.py`
-- `python scripts/build_package_ecosystem_registry_publication_summary.py`
-- `python scripts/build_package_ecosystem_artifact_contract_summary.py`
-- `python scripts/build_objc3c_package_lock.py`
-- `python scripts/check_objc3c_package_authoring_workflow.py`
-- `python scripts/build_objc3c_package_mirror.py`
-- `python scripts/check_objc3c_package_registry_mirror_reproducibility.py`
-- `python scripts/check_objc3c_package_ecosystem_integration.py`
-- `python scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py`
-- `python scripts/check_objc3c_package_ecosystem_integration.py`
+- `npm run objc3c -- build-package-lock`
+- `npm run objc3c -- validate-package-authoring`
+- `npm run objc3c -- validate-package-mirror`
+- `npm run objc3c -- validate-package-ecosystem`
+- `npm run objc3c -- validate-runnable-package-ecosystem`
+- `npm run objc3c -- package-runnable-toolchain`
+- `npm run objc3c -- build-package-channels`
+- `npm run objc3c -- build-release-manifest`
+- `npm run objc3c -- build-update-manifest`
+
+Implementation helpers under `scripts/` remain registry-owned anchors for those
+actions. They are not a second public command surface.
 
 ## Current Boundary
 
@@ -166,8 +162,11 @@ The local package authoring workflow is checked in at:
 
 The replayable implementation is:
 
-- `scripts/build_objc3c_package_lock.py`
-- `scripts/check_objc3c_package_authoring_workflow.py`
+- `npm run objc3c -- build-package-lock`
+- `npm run objc3c -- validate-package-authoring`
+
+Implementation anchors: `scripts/build_objc3c_package_lock.py` and
+`scripts/check_objc3c_package_authoring_workflow.py`.
 
 The lock generator derives packages from `stdlib/module_inventory.json` and
 `showcase/portfolio.json`, emits a deterministic lock under
@@ -182,8 +181,10 @@ The mirror/registry reproducibility workflow is checked in at:
 
 The replayable implementation is:
 
-- `scripts/build_objc3c_package_mirror.py`
-- `scripts/check_objc3c_package_registry_mirror_reproducibility.py`
+- `npm run objc3c -- validate-package-mirror`
+
+Implementation anchors: `scripts/build_objc3c_package_mirror.py` and
+`scripts/check_objc3c_package_registry_mirror_reproducibility.py`.
 
 The mirror generator consumes the generated lock, writes an offline mirror index,
 local registry index, and publication metadata under

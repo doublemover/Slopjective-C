@@ -67,24 +67,24 @@ Downstream work must preserve these rules:
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native build and compile roots:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- package-runnable-toolchain`
   - `artifacts/bin/objc3c-native.exe`
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe`
   - `artifacts/lib/objc3_runtime.lib`
 - existing live validation roots that downstream work must extend instead of
   duplicating:
-  - `scripts/run_objc3c_fuzz_safety.py`
-  - `scripts/run_objc3c_lowering_runtime_stress.py`
-  - `scripts/run_objc3c_mixed_module_differential.py`
-  - `scripts/run_objc3c_stress_minimization.py`
-  - `scripts/run_objc3c_stress_crash_triage.py`
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts/check_objc3c_runtime_acceptance.py`
-  - `scripts/check_objc3c_runnable_interop_conformance.py`
-  - `scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py`
+  - `npm run objc3c -- test-fuzz-safety`
+  - `npm run objc3c -- test-lowering-runtime-stress`
+  - `npm run objc3c -- test-mixed-module-differential`
+  - `npm run objc3c -- test-stress-minimization`
+  - `npm run objc3c -- test-stress-crash-triage`
+  - `npm run objc3c -- test-execution-smoke`
+  - `npm run objc3c -- test-execution-replay`
+  - `npm run objc3c -- test-runtime-acceptance-fast`
+  - `npm run objc3c -- validate-interop-conformance`
+  - `npm run objc3c -- validate-runnable-conformance-corpus`
 - checked-in fixture families that already hold the live stress corpus:
   - `tests/tooling/fixtures/stress/source_surface.json`
   - `tests/tooling/fixtures/stress/README.md`
@@ -124,19 +124,18 @@ Downstream work must preserve these rules:
 
 - build the native toolchain before stress validation:
   - `npm run objc3c -- build-native-binaries`
-  - `npm run objc3c -- build-native-binaries`
 - run the current parser/sema malformed-input gate:
-  - `python scripts/run_objc3c_fuzz_safety.py`
+  - `npm run objc3c -- test-fuzz-safety`
 - run the bounded lowering/runtime stress harness:
-  - `python scripts/run_objc3c_lowering_runtime_stress.py`
+  - `npm run objc3c -- test-lowering-runtime-stress`
 - run the mixed-module and import/export differential stress harness:
-  - `python scripts/run_objc3c_mixed_module_differential.py`
+  - `npm run objc3c -- test-mixed-module-differential`
 - run the deterministic reducer/minimization pass over failing checked-in seeds:
-  - `python scripts/run_objc3c_stress_minimization.py`
+  - `npm run objc3c -- test-stress-minimization`
 - build crash-signature indexes and replay requests from the current minimized corpus:
-  - `python scripts/run_objc3c_stress_crash_triage.py`
+  - `npm run objc3c -- test-stress-crash-triage`
 - validate the checked-in stress source contract:
-  - `python scripts/check_stress_source_surface.py`
+  - `npm run objc3c -- check-stress-surface`
 - run the current executable smoke and replay evidence paths:
   - `npm run objc3c -- test-execution-smoke`
   - `npm run objc3c -- test-execution-replay`
@@ -145,7 +144,9 @@ Downstream work must preserve these rules:
   - `npm run objc3c -- validate-runnable-conformance-corpus`
 - stage the runnable package before packaged stress validation:
   - `npm run objc3c -- package-runnable-toolchain`
-  - `npm run objc3c -- package-runnable-toolchain`
+
+Implementation helpers listed in live path sections are action-registry anchors.
+Current-facing commands route through `npm run objc3c -- <action>`.
 
 ## Exact Live Paths For Downstream Work
 
@@ -162,12 +163,12 @@ Downstream work must preserve these rules:
   - `tests/conformance/corpus_surface.json`
   - `tests/conformance/README.md`
 - compile and runtime execution roots:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/check_objc3c_native_execution_smoke.ps1`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- test-execution-smoke`
+  - `npm run objc3c -- test-execution-replay`
   - package bridge: `npm run objc3c -- <action>`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- package-runnable-toolchain`
 
 ## Explicit Non-Goals
 

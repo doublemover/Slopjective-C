@@ -62,9 +62,9 @@ The only current claim classes allowed from this surface are:
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime and build roots:
   - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- package-runnable-toolchain`
 - checked-in objc3c workloads:
   - `showcase/portfolio.json`
   - `showcase/auroraBoard/main.objc3`
@@ -93,24 +93,17 @@ The only current claim classes allowed from this surface are:
 
 - build the native toolchain before measuring:
   - `npm run objc3c -- build-native-binaries`
-  - `npm run objc3c -- build-native-binaries`
 - compile one checked-in objc3c workload through the public compile path:
-  - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
   - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
 - benchmark the live objc3 showcase workloads:
   - `npm run objc3c -- benchmark-performance`
-  - `npm run objc3c -- benchmark-performance`
 - benchmark the checked-in ObjC2 Swift and C++ baselines:
-  - `npm run objc3c -- benchmark-comparative-baselines`
   - `npm run objc3c -- benchmark-comparative-baselines`
 - validate the staged runnable benchmark bundle:
   - `npm run objc3c -- validate-runnable-performance`
-  - `npm run objc3c -- validate-runnable-performance`
 - run the integrated benchmark foundation validation flow:
   - `npm run objc3c -- validate-performance-foundation`
-  - `npm run objc3c -- validate-performance-foundation`
 - stage the runnable toolchain before packaged benchmark validation:
-  - `npm run objc3c -- package-runnable-toolchain`
   - `npm run objc3c -- package-runnable-toolchain`
 
 ## Exact Live Paths For Downstream Work
@@ -124,10 +117,13 @@ The only current claim classes allowed from this surface are:
   - `showcase/portfolio.json`
   - `docs/tutorials/objc2_swift_cpp_comparison.md`
 - executable build/package paths:
-  - `scripts/build_objc3c_native.ps1`
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/package_objc3c_runnable_toolchain.ps1`
+  - `npm run objc3c -- build-native-binaries`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- package-runnable-toolchain`
   - package bridge: `npm run objc3c -- <action>`
+
+Implementation helper paths remain action-registry anchors for the public
+commands above.
 
 ## Explicit Non-Goals
 

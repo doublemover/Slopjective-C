@@ -14,20 +14,14 @@ Canonical checked-in boundary contract:
 - `tests/tooling/fixtures/runtime_corrective/synthesized_accessor_lowering_implementation_contract.json`
 - `tests/tooling/fixtures/runtime_corrective/executable_proof_abi_contract.json`
 
-Replayable summary generator:
+Replayable public workflow actions:
 
-- `python scripts/build_runtime_corrective_boundary_inventory_summary.py`
-- `python scripts/build_runtime_corrective_dispatch_summary.py`
-- `python scripts/build_runtime_corrective_synthesized_accessor_summary.py`
-- `python scripts/build_runtime_corrective_native_output_truth_summary.py`
-- `python scripts/build_runtime_corrective_acceptance_workload_summary.py`
-- `python scripts/build_runtime_corrective_lowering_provenance_summary.py`
-- `python scripts/build_runtime_corrective_executable_proof_summary.py`
-- `python scripts/check_runtime_corrective_dispatch_lowering.py`
-- `python scripts/check_runtime_corrective_synthesized_accessor_lowering.py`
-- `python scripts/check_runtime_corrective_live_dispatch_runtime.py`
-- `python scripts/check_runtime_corrective_synthesized_accessor_runtime.py`
-- `python scripts/check_runtime_corrective_closeout_gate.py`
+- `npm run objc3c -- compile-objc3c`
+- `npm run objc3c -- test-runtime-acceptance-fast`
+- `npm run objc3c -- test-execution-replay`
+
+Implementation helpers under `scripts/` remain milestone evidence anchors. They
+are not a separate public command surface.
 
 Current corrective scope:
 
@@ -66,8 +60,8 @@ Authoritative live surfaces:
   - `native/objc3c/src/lower/objc3_lowering_contract.h`
   - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
 - proof and provenance:
-  - `scripts/objc3c_native_compile.ps1`
-  - `scripts/check_objc3c_execution_replay_proof.ps1`
+  - `npm run objc3c -- compile-objc3c`
+  - `npm run objc3c -- test-execution-replay`
   - `scripts/shared_compiler_runtime_acceptance_harness.py`
 - claims:
   - `docs/objc3c-native.md`
