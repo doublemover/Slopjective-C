@@ -16,6 +16,17 @@ struct Objc3IRRuntimeBootstrapGlobalEmissionOptions {
   bool emit_registration_descriptor_image_root = false;
 };
 
+struct Objc3IRRuntimeBootstrapMetadataCommentOptions {
+  bool selector_pool_globals_empty = true;
+  bool runtime_string_pool_globals_empty = true;
+};
+
+void EmitObjc3IRRuntimeBootstrapMetadataComments(
+    const Objc3IRFrontendMetadata &frontend_metadata,
+    const Objc3IRRuntimeMetadataSymbols &runtime_metadata_symbols,
+    const Objc3IRRuntimeBootstrapMetadataCommentOptions &options,
+    std::ostringstream &out);
+
 void EmitObjc3IRRuntimeBootstrapGlobals(
     const Objc3IRFrontendMetadata &frontend_metadata,
     const Objc3IRRuntimeMetadataSymbols &runtime_metadata_symbols,

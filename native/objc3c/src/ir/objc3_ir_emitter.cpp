@@ -2926,30 +2926,6 @@ class Objc3IREmitter {
         frontend_metadata_);
   }
 
-  std::string RuntimeBootstrapImageDescriptorSymbol() const {
-    return runtime_metadata_symbols_.image_descriptor_symbol;
-  }
-
-  std::string RuntimeBootstrapRegistrationDescriptorSymbol() const {
-    return runtime_metadata_symbols_.registration_descriptor_symbol;
-  }
-
-  std::string RuntimeBootstrapImageRootSymbol() const {
-    return runtime_metadata_symbols_.image_root_symbol;
-  }
-
-  std::string RuntimeBootstrapInitStubSymbol() const {
-    return runtime_metadata_symbols_.init_stub_symbol;
-  }
-
-  std::string RuntimeBootstrapRegistrationTableSymbol() const {
-    return runtime_metadata_symbols_.registration_table_symbol;
-  }
-
-  std::string RuntimeBootstrapImageLocalInitStateSymbol() const {
-    return runtime_metadata_symbols_.image_local_init_state_symbol;
-  }
-
   void EmitFrontendMetadata(std::ostringstream &out) const {
     // executable source-closure freeze anchor: IR currently
     // publishes interface/protocol/category/linking metadata as the canonical
@@ -7207,101 +7183,14 @@ class Objc3IREmitter {
           << frontend_metadata_.versioned_conformance_report_lowering_replay_key
           << "\n";
     }
-    if (ShouldEmitRuntimeBootstrapLowering()) {
-      out << "; runtime_bootstrap_ctor_init_emission = "
-          << "contract=objc3c.runtime.constructor.init.stub.emission.v1"
-          << ";constructor_root_symbol="
-          << frontend_metadata_.runtime_bootstrap_lowering_constructor_root_symbol
-          << ";constructor_init_stub_symbol=" << RuntimeBootstrapInitStubSymbol()
-          << ";registration_table_symbol="
-          << RuntimeBootstrapRegistrationTableSymbol()
-          << ";image_descriptor_symbol="
-          << RuntimeBootstrapImageDescriptorSymbol()
-          << ";registration_entrypoint_symbol="
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_entrypoint_symbol
-          << ";global_ctor_list_model="
-          << frontend_metadata_.runtime_bootstrap_lowering_global_ctor_list_model
-          << ";happy_path=register-before-user-main\n";
-      out << "; runtime_registration_table_image_local_initialization = "
-          << "contract=objc3c.runtime.registration.table.image.local.initialization.v1"
-          << ";registration_table_symbol="
-          << RuntimeBootstrapRegistrationTableSymbol()
-          << ";registration_table_layout_model="
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_table_layout_model
-          << ";registration_table_abi_version="
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_table_abi_version
-          << ";registration_table_pointer_field_count="
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_registration_table_pointer_field_count
-          << ";class_section_root_symbol=__objc3_sec_class_descriptors"
-          << ";protocol_section_root_symbol=__objc3_sec_protocol_descriptors"
-          << ";category_section_root_symbol=__objc3_sec_category_descriptors"
-          << ";property_section_root_symbol=__objc3_sec_property_descriptors"
-          << ";ivar_section_root_symbol=__objc3_sec_ivar_descriptors"
-          << ";selector_pool_symbol="
-          << (selector_pool_globals_.empty() ? "null"
-                                             : "@__objc3_sec_selector_pool")
-          << ";string_pool_symbol="
-          << (runtime_string_pool_globals_.empty() ? "null"
-                                                   : "@__objc3_sec_string_pool")
-          << ";image_local_init_state_symbol="
-          << RuntimeBootstrapImageLocalInitStateSymbol()
-          << ";image_local_initialization_model="
-          << frontend_metadata_
-                 .runtime_bootstrap_lowering_image_local_initialization_model
-          << ";happy_path=guarded-once-before-runtime-registration\n";
-      out << "; runtime_bootstrap_registrar_image_walk = "
-          << "contract=" << kObjc3RuntimeBootstrapRegistrarContractId
-          << ";stage_registration_table_symbol="
-          << kObjc3RuntimeBootstrapStageRegistrationTableSymbol
-          << ";image_walk_snapshot_symbol="
-          << kObjc3RuntimeBootstrapImageWalkSnapshotSymbol
-          << ";image_walk_model="
-          << kObjc3RuntimeBootstrapImageWalkModel
-          << ";selector_pool_interning_model="
-          << kObjc3RuntimeBootstrapSelectorPoolInterningModel
-          << ";realization_staging_model="
-          << kObjc3RuntimeBootstrapRealizationStagingModel << "\n";
-    }
-    if (ShouldEmitRuntimeBootstrapRegistrationDescriptorImageRootLowering()) {
-      // registration-descriptor/image-root lowering anchor: the IR
-      // boundary now advertises the concrete identifier-driven globals and
-      // sections that the native bootstrap path materializes.
-      out << "; runtime_registration_descriptor_image_root_lowering = "
-          << Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary()
-          << ";registration_descriptor_identifier="
-          << frontend_metadata_
-                 .runtime_bootstrap_registration_descriptor_identifier
-          << ";image_root_identifier="
-          << frontend_metadata_.runtime_bootstrap_image_root_identifier
-          << ";registration_descriptor_symbol="
-          << RuntimeBootstrapRegistrationDescriptorSymbol()
-          << ";image_root_symbol=" << RuntimeBootstrapImageRootSymbol()
-          << "\n";
-      if (frontend_metadata_.runtime_metadata_archive_static_link_discovery_ready) {
-        // archive/static-link bootstrap replay corpus anchor: the
-        // IR boundary now advertises the retained archive replay proof surface
-        // that composes the D003 merge model with the live bootstrap replay
-        // runtime over emitted C002 registration-descriptor/image-root globals.
-        out << "; runtime_bootstrap_archive_static_link_replay_corpus = "
-            << Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary()
-            << ";translation_unit_identity_key="
-            << frontend_metadata_
-                   .runtime_metadata_archive_static_link_translation_unit_identity_key
-            << ";registration_descriptor_identifier="
-            << frontend_metadata_
-                   .runtime_bootstrap_registration_descriptor_identifier
-            << ";image_root_identifier="
-            << frontend_metadata_.runtime_bootstrap_image_root_identifier
-            << ";replay_registered_images_symbol="
-            << kObjc3RuntimeBootstrapReplayRegisteredImagesSymbol
-            << ";reset_replay_state_snapshot_symbol="
-            << kObjc3RuntimeBootstrapResetReplayStateSnapshotSymbol << "\n";
-      }
-    }
+    Objc3IRRuntimeBootstrapMetadataCommentOptions bootstrap_comment_options;
+    bootstrap_comment_options.selector_pool_globals_empty =
+        selector_pool_globals_.empty();
+    bootstrap_comment_options.runtime_string_pool_globals_empty =
+        runtime_string_pool_globals_.empty();
+    EmitObjc3IRRuntimeBootstrapMetadataComments(
+        frontend_metadata_, runtime_metadata_symbols_, bootstrap_comment_options,
+        out);
     const bool emit_class_metaclass_bundle_payloads =
         frontend_metadata_.runtime_metadata_class_metaclass_emission_ready &&
         frontend_metadata_.runtime_metadata_class_metaclass_emission_fail_closed &&
