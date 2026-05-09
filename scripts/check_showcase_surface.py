@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from objc3c_tooling.json_io import write_report_json
 from objc3c_tooling.subprocesses import run_completed
 
 
@@ -373,7 +374,7 @@ def main() -> int:
         "examples": compile_results,
     }
     summary_path = machine_report_root / "summary.json"
-    summary_path.write_text(json.dumps(summary_payload, indent=2) + "\n", encoding="utf-8")
+    write_report_json(summary_path, summary_payload, sort_keys=False)
 
     selected_ids = ", ".join(
         entry["id"] for entry in selected_examples if isinstance(entry.get("id"), str)
