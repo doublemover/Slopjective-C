@@ -72,11 +72,17 @@ def test_action_registry_payload_publishes_schema_index_and_capability_truth() -
     assert schema_index["schema_id"] == WORKFLOW_SCHEMA_INDEX_SCHEMA_ID
     assert set(schema_index["capability_truth_schema_ids"]) == set(capability_truth_schema_ids())
     indexed_schema_ids = {entry["schema_id"] for entry in schema_index["schemas"]}
+    indexed_payload_surfaces = {
+        entry["schema_id"]: entry["payload_surface"] for entry in schema_index["schemas"]
+    }
     assert {
         "objc3c-capability-matrix-v1",
         "objc3c-capability-evidence-map-v1",
         ACTION_REGISTRY_SCHEMA_ID,
     }.issubset(indexed_schema_ids)
+    assert indexed_payload_surfaces[WORKFLOW_SCHEMA_INDEX_SCHEMA_ID] == (
+        "embedded in npm run objc3c -- --list-json"
+    )
     assert payload["capability_truth"]["machine_readable"] is True
     assert payload["capability_truth"]["action_payload_schema_ref"] == (
         f"{ACTION_REGISTRY_SCHEMA_ID}#/$defs/action"

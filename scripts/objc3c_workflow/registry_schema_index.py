@@ -44,7 +44,7 @@ WORKFLOW_SCHEMA_SPECS: tuple[WorkflowSchemaSpec, ...] = (
     WorkflowSchemaSpec(
         schema_id=WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
         schema_path=WORKFLOW_SCHEMA_INDEX_SCHEMA_PATH,
-        payload_surface="npm run objc3c -- --list-json.schema_index",
+        payload_surface="embedded in npm run objc3c -- --list-json",
         owner_surface="scripts/objc3c_workflow/registry_schema_index.py",
         capability_truth_scope="workflow-schema-index",
         public_contract=True,
