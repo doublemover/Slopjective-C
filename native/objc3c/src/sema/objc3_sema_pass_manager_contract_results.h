@@ -12,6 +12,9 @@
   Objc3SemaCoreSemanticParityPublicationReadinessRecord
       core_semantic_parity_publication_readiness_record;
   bool deterministic_core_semantic_parity_publication_readiness_record = false;
+  Objc3SemaCoreSemanticSummaryReadinessRecord
+      core_semantic_summary_readiness_record;
+  bool deterministic_core_semantic_summary_readiness_record = false;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;

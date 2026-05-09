@@ -35,6 +35,8 @@ inline constexpr const char *kObjc3ParserSemaParityPublicationReadinessOwner =
     "native.frontend.parser-sema.parity-publication-readiness";
 inline constexpr const char *kObjc3SemaCoreSemanticParityPublicationReadinessOwner =
     "native.frontend.sema.core-semantic-parity-publication-readiness";
+inline constexpr const char *kObjc3SemaCoreSemanticSummaryReadinessOwner =
+    "native.frontend.sema.core-semantic-summary-readiness";
 inline constexpr const char *kObjc3SemaModuleSemanticParityPublicationReadinessOwner =
     "native.frontend.sema.module-semantic-parity-publication-readiness";
 inline constexpr const char *kObjc3SemaIntermoduleFlowParityPublicationReadinessOwner =
@@ -1132,6 +1134,41 @@ inline bool IsReadyObjc3SemaCloseoutSurfaceReadinessRecord(
          record.deterministic;
 }
 
+struct Objc3SemaCoreSemanticSummaryReadinessRecord {
+  std::string core_semantic_summary_readiness_owner =
+      kObjc3SemaCoreSemanticSummaryReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool interface_implementation_symbols_ready = false;
+  bool interface_implementation_handoff_ready = false;
+  bool protocol_category_composition_symbols_ready = false;
+  bool protocol_category_composition_handoff_ready = false;
+  bool class_protocol_category_linking_symbols_ready = false;
+  bool class_protocol_category_linking_handoff_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaCoreSemanticSummaryReadinessRecord(
+    const Objc3SemaCoreSemanticSummaryReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.core_semantic_summary_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.interface_implementation_symbols_ready &&
+         record.interface_implementation_handoff_ready &&
+         record.protocol_category_composition_symbols_ready &&
+         record.protocol_category_composition_handoff_ready &&
+         record.class_protocol_category_linking_symbols_ready &&
+         record.class_protocol_category_linking_handoff_ready &&
+         record.deterministic;
+}
+
 struct Objc3ParserSemaConformanceMatrix {
   std::size_t parser_top_level_declaration_count = 0;
   std::size_t ast_top_level_declaration_count = 0;
@@ -2067,6 +2104,8 @@ struct Objc3SemaParityContractSurface {
       parser_sema_parity_publication_readiness_record;
   Objc3SemaCoreSemanticParityPublicationReadinessRecord
       core_semantic_parity_publication_readiness_record;
+  Objc3SemaCoreSemanticSummaryReadinessRecord
+      core_semantic_summary_readiness_record;
   Objc3SemaModuleSemanticParityPublicationReadinessRecord
       module_semantic_parity_publication_readiness_record;
   Objc3SemaIntermoduleFlowParityPublicationReadinessRecord
@@ -2526,6 +2565,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_parser_sema_handoff_publication_transfer_record = false;
   bool deterministic_parser_sema_parity_publication_readiness_record = false;
   bool deterministic_core_semantic_parity_publication_readiness_record = false;
+  bool deterministic_core_semantic_summary_readiness_record = false;
   bool deterministic_module_semantic_parity_publication_readiness_record = false;
   bool deterministic_intermodule_flow_parity_publication_readiness_record = false;
   bool deterministic_concurrency_parity_publication_readiness_record = false;
@@ -2654,6 +2694,100 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_vector_type_lowering = false;
   bool ready = false;
 };
+
+inline Objc3SemaCoreSemanticSummaryReadinessRecord
+BuildObjc3SemaCoreSemanticSummaryReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaCoreSemanticSummaryReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.interface_implementation_symbols_ready =
+      surface.interface_implementation_summary.interface_method_symbols ==
+          surface.interface_method_symbols_total &&
+      surface.interface_implementation_summary.implementation_method_symbols ==
+          surface.implementation_method_symbols_total &&
+      surface.interface_implementation_summary.linked_implementation_symbols ==
+          surface.linked_implementation_symbols_total;
+  record.interface_implementation_handoff_ready =
+      surface.interface_implementation_summary.deterministic &&
+      surface.deterministic_interface_implementation_handoff;
+  record.protocol_category_composition_symbols_ready =
+      surface.protocol_category_composition_summary.protocol_composition_sites ==
+          surface.protocol_composition_sites_total &&
+      surface.protocol_category_composition_summary
+              .protocol_composition_symbols ==
+          surface.protocol_composition_symbols_total &&
+      surface.protocol_category_composition_summary.category_composition_sites ==
+          surface.category_composition_sites_total &&
+      surface.protocol_category_composition_summary
+              .category_composition_symbols ==
+          surface.category_composition_symbols_total &&
+      surface.protocol_category_composition_summary
+              .invalid_protocol_composition_sites ==
+          surface.invalid_protocol_composition_sites_total &&
+      surface.protocol_category_composition_summary
+              .invalid_protocol_composition_sites <=
+          surface.protocol_category_composition_summary
+              .total_composition_sites();
+  record.protocol_category_composition_handoff_ready =
+      surface.protocol_category_composition_summary.deterministic &&
+      surface.deterministic_protocol_category_composition_handoff;
+  record.class_protocol_category_linking_symbols_ready =
+      surface.class_protocol_category_linking_summary.declared_interfaces ==
+          surface.interface_implementation_summary.declared_interfaces &&
+      surface.class_protocol_category_linking_summary.resolved_interfaces ==
+          surface.interface_implementation_summary.resolved_interfaces &&
+      surface.class_protocol_category_linking_summary.declared_implementations ==
+          surface.interface_implementation_summary.declared_implementations &&
+      surface.class_protocol_category_linking_summary.resolved_implementations ==
+          surface.interface_implementation_summary.resolved_implementations &&
+      surface.class_protocol_category_linking_summary.interface_method_symbols ==
+          surface.interface_method_symbols_total &&
+      surface.class_protocol_category_linking_summary
+              .implementation_method_symbols ==
+          surface.implementation_method_symbols_total &&
+      surface.class_protocol_category_linking_summary
+              .linked_implementation_symbols ==
+          surface.linked_implementation_symbols_total &&
+      surface.class_protocol_category_linking_summary
+              .protocol_composition_sites ==
+          surface.protocol_composition_sites_total &&
+      surface.class_protocol_category_linking_summary
+              .protocol_composition_symbols ==
+          surface.protocol_composition_symbols_total &&
+      surface.class_protocol_category_linking_summary.category_composition_sites ==
+          surface.category_composition_sites_total &&
+      surface.class_protocol_category_linking_summary
+              .category_composition_symbols ==
+          surface.category_composition_symbols_total &&
+      surface.class_protocol_category_linking_summary
+              .invalid_protocol_composition_sites ==
+          surface.invalid_protocol_composition_sites_total &&
+      surface.class_protocol_category_linking_summary
+              .invalid_protocol_composition_sites <=
+          surface.class_protocol_category_linking_summary.total_composition_sites();
+  record.class_protocol_category_linking_handoff_ready =
+      surface.class_protocol_category_linking_summary.deterministic &&
+      surface.deterministic_class_protocol_category_linking_handoff;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.core_semantic_summary_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.interface_implementation_symbols_ready &&
+      record.interface_implementation_handoff_ready &&
+      record.protocol_category_composition_symbols_ready &&
+      record.protocol_category_composition_handoff_ready &&
+      record.class_protocol_category_linking_symbols_ready &&
+      record.class_protocol_category_linking_handoff_ready;
+  return record;
+}
 
 inline Objc3SemaTypedSemanticHandoffRecord
 BuildObjc3SemaTypedSemanticHandoffRecord(
@@ -5714,55 +5848,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
              surface.bootstrap_failure_restart_semantics_summary) &&
          IsReadyObjc3CompatibilityStrictnessClaimSemanticsSummary(
              surface.compatibility_strictness_claim_semantics_summary) &&
-         surface.interface_implementation_summary.interface_method_symbols == surface.interface_method_symbols_total &&
-         surface.interface_implementation_summary.implementation_method_symbols ==
-             surface.implementation_method_symbols_total &&
-         surface.interface_implementation_summary.linked_implementation_symbols ==
-             surface.linked_implementation_symbols_total &&
-         surface.interface_implementation_summary.deterministic &&
-         surface.deterministic_interface_implementation_handoff &&
-         surface.protocol_category_composition_summary.protocol_composition_sites ==
-             surface.protocol_composition_sites_total &&
-         surface.protocol_category_composition_summary.protocol_composition_symbols ==
-             surface.protocol_composition_symbols_total &&
-         surface.protocol_category_composition_summary.category_composition_sites ==
-             surface.category_composition_sites_total &&
-         surface.protocol_category_composition_summary.category_composition_symbols ==
-             surface.category_composition_symbols_total &&
-         surface.protocol_category_composition_summary.invalid_protocol_composition_sites ==
-             surface.invalid_protocol_composition_sites_total &&
-         surface.protocol_category_composition_summary.invalid_protocol_composition_sites <=
-             surface.protocol_category_composition_summary.total_composition_sites() &&
-         surface.protocol_category_composition_summary.deterministic &&
-         surface.deterministic_protocol_category_composition_handoff &&
-         surface.class_protocol_category_linking_summary.declared_interfaces ==
-             surface.interface_implementation_summary.declared_interfaces &&
-         surface.class_protocol_category_linking_summary.resolved_interfaces ==
-             surface.interface_implementation_summary.resolved_interfaces &&
-         surface.class_protocol_category_linking_summary.declared_implementations ==
-             surface.interface_implementation_summary.declared_implementations &&
-         surface.class_protocol_category_linking_summary.resolved_implementations ==
-             surface.interface_implementation_summary.resolved_implementations &&
-         surface.class_protocol_category_linking_summary.interface_method_symbols ==
-             surface.interface_method_symbols_total &&
-         surface.class_protocol_category_linking_summary.implementation_method_symbols ==
-             surface.implementation_method_symbols_total &&
-         surface.class_protocol_category_linking_summary.linked_implementation_symbols ==
-             surface.linked_implementation_symbols_total &&
-         surface.class_protocol_category_linking_summary.protocol_composition_sites ==
-             surface.protocol_composition_sites_total &&
-         surface.class_protocol_category_linking_summary.protocol_composition_symbols ==
-             surface.protocol_composition_symbols_total &&
-         surface.class_protocol_category_linking_summary.category_composition_sites ==
-             surface.category_composition_sites_total &&
-         surface.class_protocol_category_linking_summary.category_composition_symbols ==
-             surface.category_composition_symbols_total &&
-         surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites ==
-             surface.invalid_protocol_composition_sites_total &&
-         surface.class_protocol_category_linking_summary.invalid_protocol_composition_sites <=
-             surface.class_protocol_category_linking_summary.total_composition_sites() &&
-         surface.class_protocol_category_linking_summary.deterministic &&
-         surface.deterministic_class_protocol_category_linking_handoff &&
+         surface.deterministic_core_semantic_summary_readiness_record &&
+         IsReadyObjc3SemaCoreSemanticSummaryReadinessRecord(
+             surface.core_semantic_summary_readiness_record) &&
          surface.selector_normalization_summary.methods_total == surface.selector_normalization_methods_total &&
          surface.selector_normalization_summary.normalized_methods ==
              surface.selector_normalization_normalized_methods_total &&
