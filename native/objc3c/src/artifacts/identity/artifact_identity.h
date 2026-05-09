@@ -3,8 +3,6 @@
 #include <filesystem>
 #include <string>
 
-#include "pipeline/results/phase_result.h"
-
 namespace objc3::artifacts::identity {
 
 struct Objc3TranslationUnitIdentityEvidence {
@@ -15,9 +13,5 @@ struct Objc3TranslationUnitIdentityEvidence {
 
 [[nodiscard]] std::string BuildObjc3TranslationUnitIdentityKey(
     const Objc3TranslationUnitIdentityEvidence &evidence);
-
-[[nodiscard]] std::string BuildObjc3TranslationUnitIdentityKey(
-    const std::filesystem::path &input_path,
-    const Objc3ParseLoweringReadinessSurface &parse_lowering_readiness_surface);
 
 }  // namespace objc3::artifacts::identity

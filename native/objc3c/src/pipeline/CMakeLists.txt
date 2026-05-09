@@ -10,10 +10,12 @@ add_library(objc3c_pipeline STATIC
   frontend_pipeline_stage_sequence.cpp
   frontend_pipeline_stage_runner.cpp
   runtime_import_preservation.cpp
-  frontend_pipeline_phase_io.h
+  frontend_pipeline_defaults.h
   frontend_pipeline_result_contract.h
   frontend_pipeline_result_handoff.h
   frontend_pipeline_sema_stage_runner.h
+  frontend_pipeline_stage_inputs.h
+  frontend_pipeline_stage_outputs.h
   frontend_pipeline_stage_contract.h
   frontend_pipeline_stage_runner.h
   parse_lowering_artifact_keys.h

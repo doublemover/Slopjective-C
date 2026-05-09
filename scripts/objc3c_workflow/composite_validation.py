@@ -6,6 +6,10 @@ from collections.abc import Sequence
 from time import perf_counter
 
 from .actions.validation_timing import load_latest_report_payload
+from .composite_progress import (
+    print_composite_step_done,
+    print_composite_step_start,
+)
 from .composite_reports import write_composite_validation_report
 from .composite_steps import run_composite_step
 from .environment import ROOT
@@ -16,18 +20,21 @@ def run_composite_validation(action: str, steps: list[tuple[str, Sequence[str]]]
     workflow_started_at = perf_counter()
     for index, (step_action, command) in enumerate(steps, start=1):
         previous = str(results[-1]["action"]) if results else "none"
-        print(
-            f"public-workflow-progress: [{index}/{len(steps)}] START action={step_action} "
-            f"elapsed={perf_counter() - workflow_started_at:.3f}s last={previous}",
-            flush=True,
+        print_composite_step_start(
+            index=index,
+            total=len(steps),
+            action=step_action,
+            previous_action=previous,
+            workflow_started_at=workflow_started_at,
         )
         step = run_composite_step(step_action, command)
         results.append(step)
-        print(
-            f"public-workflow-progress: [{index}/{len(steps)}] DONE action={step_action} "
-            f"duration={float(step.get('duration_seconds', 0.0)):.3f}s "
-            f"elapsed={perf_counter() - workflow_started_at:.3f}s exit={step['exit_code']}",
-            flush=True,
+        print_composite_step_done(
+            index=index,
+            total=len(steps),
+            action=step_action,
+            step=step,
+            workflow_started_at=workflow_started_at,
         )
         if step["exit_code"] != 0:
             report_path = write_composite_validation_report(

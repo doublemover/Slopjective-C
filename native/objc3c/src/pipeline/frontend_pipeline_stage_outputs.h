@@ -1,0 +1,56 @@
+#pragma once
+
+#include <cstddef>
+#include <string>
+
+#include "pipeline/frontend_pipeline_defaults.h"
+
+namespace objc3c::pipeline {
+
+struct LexStageOutput {
+  std::size_t token_count = 0;
+  bool eof_token_present = false;
+};
+
+struct ParseStageOutput {
+  std::size_t ast_node_count = 0;
+  std::size_t declared_globals = 0;
+  std::size_t declared_functions = 0;
+  bool module_declaration_present = false;
+};
+
+struct FunctionSignatureSurface {
+  std::size_t scalar_return_i32 = 0;
+  std::size_t scalar_return_bool = 0;
+  std::size_t scalar_return_void = 0;
+  std::size_t scalar_param_i32 = 0;
+  std::size_t scalar_param_bool = 0;
+};
+
+struct SemaStageOutput {
+  bool semantic_surface_built = false;
+  bool semantic_skipped = false;
+  std::size_t resolved_global_symbols = 0;
+  std::size_t resolved_function_symbols = 0;
+  FunctionSignatureSurface function_signature_surface;
+};
+
+struct LowerStageOutput {
+  bool ir_emitted = false;
+  std::string ir_path;
+  std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
+  std::size_t runtime_dispatch_arg_slots = kRuntimeDispatchDefaultArgs;
+  std::string selector_global_ordering = "lexicographic";
+};
+
+struct EmitStageOutput {
+  bool diagnostics_written = false;
+  bool manifest_written = false;
+  bool object_written = false;
+  std::string diagnostics_path;
+  std::string manifest_path;
+  std::string object_path;
+  int compiler_exit_code = 0;
+};
+
+}  // namespace objc3c::pipeline

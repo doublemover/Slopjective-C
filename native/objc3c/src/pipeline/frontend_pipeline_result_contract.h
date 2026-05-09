@@ -1,6 +1,8 @@
 #pragma once
 
-#include "pipeline/frontend_pipeline_phase_io.h"
+#include "pipeline/frontend_pipeline_stage_contract.h"
+#include "pipeline/frontend_pipeline_stage_inputs.h"
+#include "pipeline/frontend_pipeline_stage_outputs.h"
 
 namespace objc3c::pipeline {
 

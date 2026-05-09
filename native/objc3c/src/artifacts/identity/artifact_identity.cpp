@@ -9,14 +9,4 @@ std::string BuildObjc3TranslationUnitIdentityKey(
          evidence.lowering_boundary_replay_key;
 }
 
-std::string BuildObjc3TranslationUnitIdentityKey(
-    const std::filesystem::path &input_path,
-    const Objc3ParseLoweringReadinessSurface &parse_lowering_readiness_surface) {
-  return BuildObjc3TranslationUnitIdentityKey({
-      input_path,
-      parse_lowering_readiness_surface.parse_artifact_replay_key,
-      parse_lowering_readiness_surface.lowering_boundary_replay_key,
-  });
-}
-
 }  // namespace objc3::artifacts::identity

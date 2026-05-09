@@ -33,6 +33,18 @@ add_library(objc3c_pipeline_results INTERFACE)
 target_link_libraries(objc3c_pipeline_results INTERFACE
   objc3c_build_defaults
 )
+target_sources(objc3c_pipeline_results INTERFACE
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/canonical_literal_rejection_counts.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/capability_status.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/compile_options.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/compile_result.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/evidence_record.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_parse_contract_result.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_result.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_semantic_lowering_result.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/phase_toolchain_runtime_result.h
+  ${CMAKE_CURRENT_LIST_DIR}/../pipeline/results/report_dto.h
+)
 
 add_library(objc3c_sema_model INTERFACE)
 target_link_libraries(objc3c_sema_model INTERFACE

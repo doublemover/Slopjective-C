@@ -16,6 +16,7 @@
 #include "ir/objc3_ir_block_runtime_contracts.h"
 #include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
+#include "ir/objc3_ir_emission_prologue.h"
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_message_send_lowering.h"
@@ -178,10 +179,11 @@ class Objc3IREmitter {
     }
 
     std::ostringstream out;
-    out << "; objc3c native frontend IR\n";
-    out << "; lowering_ir_boundary = " << Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_) << "\n";
-    out << "; runtime_dispatch_decl = " << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_) << "\n";
-    out << "; simd_vector_lowering = " << Objc3SimdVectorTypeLoweringReplayKey() << "\n";
+    out << BuildObjc3IRModulePrologue(Objc3IRModulePrologue{
+        Objc3LoweringIRBoundaryReplayKey(lowering_ir_boundary_),
+        Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_),
+        Objc3SimdVectorTypeLoweringReplayKey(),
+    });
     if (!frontend_metadata_.lowering_property_synthesis_ivar_binding_replay_key.empty()) {
       // property-ivar executable-source-closure anchor:
       // preserve the source freeze as a lowering-only replay marker.

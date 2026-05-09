@@ -3,6 +3,7 @@ add_library(objc3c_ir STATIC
   objc3_ir_c_string.cpp
   objc3_ir_control_flow_ops.cpp
   objc3_ir_deterministic_publication.cpp
+  objc3_ir_emission_prologue.cpp
   objc3_ir_function_signature_model.cpp
   objc3_ir_frontend_metadata_publication.cpp
   objc3_ir_literal_parsing.cpp

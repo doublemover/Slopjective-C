@@ -61,6 +61,7 @@ using objc3::artifacts::evidence::
 using objc3::artifacts::evidence::
     BuildErrorHandlingResultAndBridgingArtifactReplayJson;
 using objc3::artifacts::identity::BuildObjc3TranslationUnitIdentityKey;
+using objc3::artifacts::identity::Objc3TranslationUnitIdentityEvidence;
 using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
 using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
 using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
@@ -15281,8 +15282,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
               runtime_registration_descriptor_image_root_source_surface,
               runtime_translation_unit_registration_manifest);
   const std::string translation_unit_identity_key =
-      BuildObjc3TranslationUnitIdentityKey(
-          input_path, pipeline_result.parse_lowering_readiness_surface);
+      BuildObjc3TranslationUnitIdentityKey(Objc3TranslationUnitIdentityEvidence{
+          input_path,
+          pipeline_result.parse_lowering_readiness_surface.parse_artifact_replay_key,
+          pipeline_result.parse_lowering_readiness_surface.lowering_boundary_replay_key,
+      });
   const Objc3RuntimeStartupBootstrapInvariantSummary
       runtime_startup_bootstrap_invariants =
           BuildRuntimeStartupBootstrapInvariantSummary(
@@ -25410,8 +25414,11 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       true;
   ir_frontend_metadata
       .runtime_metadata_archive_static_link_translation_unit_identity_key =
-      BuildObjc3TranslationUnitIdentityKey(
-          input_path, bundle.parse_lowering_readiness_surface);
+      BuildObjc3TranslationUnitIdentityKey(Objc3TranslationUnitIdentityEvidence{
+          input_path,
+          bundle.parse_lowering_readiness_surface.parse_artifact_replay_key,
+          bundle.parse_lowering_readiness_surface.lowering_boundary_replay_key,
+      });
   // bootstrap materialization anchor: the native IR emitter consumes
   // this lowering packet directly when it materializes the ctor root, derived
   // init stub, registration table, and image descriptor. Driver/process code
