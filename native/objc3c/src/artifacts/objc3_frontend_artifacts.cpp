@@ -30,6 +30,7 @@
 #include "artifacts/objc3_frontend_artifact_object_inspection_metadata.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_preservation_plan.h"
+#include "artifacts/objc3_frontend_artifact_runtime_bootstrap_metadata.h"
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_import_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
@@ -10902,72 +10903,10 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   // packet now also carries the self-describing registration-table layout,
   // ABI/version counts, and image-local init-state model that the emitter,
   // manifest writers, and later runtime image-walk code must preserve exactly.
-  ir_frontend_metadata.runtime_bootstrap_lowering_contract_id =
-      bundle.runtime_bootstrap_lowering_summary.contract_id;
-  ir_frontend_metadata.runtime_bootstrap_lowering_boundary_model =
-      bundle.runtime_bootstrap_lowering_summary.lowering_boundary_model;
-  ir_frontend_metadata.runtime_bootstrap_lowering_constructor_root_symbol =
-      bundle.runtime_bootstrap_lowering_summary.constructor_root_symbol;
-  ir_frontend_metadata.runtime_bootstrap_lowering_init_stub_symbol_prefix =
-      bundle.runtime_bootstrap_lowering_summary
-          .constructor_init_stub_symbol_prefix;
-  ir_frontend_metadata
-      .runtime_bootstrap_lowering_registration_table_symbol_prefix =
-      bundle.runtime_bootstrap_lowering_summary
-          .registration_table_symbol_prefix;
-  ir_frontend_metadata
-      .runtime_bootstrap_lowering_image_local_init_state_symbol_prefix =
-      bundle.runtime_bootstrap_lowering_summary
-          .image_local_init_state_symbol_prefix;
-  ir_frontend_metadata.runtime_bootstrap_lowering_registration_entrypoint_symbol =
-      bundle.runtime_bootstrap_lowering_summary.registration_entrypoint_symbol;
-  ir_frontend_metadata.runtime_bootstrap_lowering_global_ctor_list_model =
-      bundle.runtime_bootstrap_lowering_summary.global_ctor_list_model;
-  ir_frontend_metadata.runtime_bootstrap_lowering_registration_table_layout_model =
-      bundle.runtime_bootstrap_lowering_summary.registration_table_layout_model;
-  ir_frontend_metadata.runtime_bootstrap_lowering_image_local_initialization_model =
-      bundle.runtime_bootstrap_lowering_summary
-          .image_local_initialization_model;
-  ir_frontend_metadata.runtime_bootstrap_lowering_registration_table_abi_version =
-      bundle.runtime_bootstrap_lowering_summary
-          .registration_table_abi_version;
-  ir_frontend_metadata
-      .runtime_bootstrap_lowering_registration_table_pointer_field_count =
-      bundle.runtime_bootstrap_lowering_summary
-          .registration_table_pointer_field_count;
-  ir_frontend_metadata.runtime_bootstrap_lowering_constructor_root_emission_state =
-      bundle.runtime_bootstrap_lowering_summary.constructor_root_emission_state;
-  ir_frontend_metadata.runtime_bootstrap_lowering_init_stub_emission_state =
-      bundle.runtime_bootstrap_lowering_summary.init_stub_emission_state;
-  ir_frontend_metadata
-      .runtime_bootstrap_lowering_registration_table_emission_state =
-      bundle.runtime_bootstrap_lowering_summary
-          .registration_table_emission_state;
-  ir_frontend_metadata
-      .runtime_bootstrap_lowering_bootstrap_ir_materialization_landed =
-      bundle.runtime_bootstrap_lowering_summary
-          .bootstrap_ir_materialization_landed;
-  ir_frontend_metadata
-      .runtime_bootstrap_lowering_image_local_initialization_landed =
-      bundle.runtime_bootstrap_lowering_summary
-          .image_local_initialization_landed;
-  ir_frontend_metadata
-      .runtime_bootstrap_registration_descriptor_image_root_lowering_contract_id =
-      kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId;
-  ir_frontend_metadata.runtime_bootstrap_registration_descriptor_identifier =
-      bundle.runtime_registration_descriptor_frontend_closure_summary
-          .registration_descriptor_identifier;
-  ir_frontend_metadata.runtime_bootstrap_image_root_identifier =
-      bundle.runtime_registration_descriptor_frontend_closure_summary
-          .image_root_identifier;
-  ir_frontend_metadata.runtime_bootstrap_registration_order_ordinal =
-      bundle.runtime_translation_unit_registration_manifest_summary
-          .translation_unit_registration_order_ordinal;
-  ir_frontend_metadata.runtime_bootstrap_lowering_ready =
-      bundle.runtime_bootstrap_lowering_summary
-          .ready_for_bootstrap_materialization;
-  ir_frontend_metadata.runtime_bootstrap_lowering_fail_closed =
-      bundle.runtime_bootstrap_lowering_summary.fail_closed;
+  objc3::artifacts::frontend::ApplyObjc3FrontendRuntimeBootstrapMetadata(
+      ir_frontend_metadata, bundle.runtime_bootstrap_lowering_summary,
+      bundle.runtime_registration_descriptor_frontend_closure_summary,
+      bundle.runtime_translation_unit_registration_manifest_summary);
   {
     const bool typed_handoff_ready =
         IsReadyObjc3ExecutableMetadataTypedLoweringHandoff(
