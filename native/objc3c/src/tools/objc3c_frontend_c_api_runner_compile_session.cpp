@@ -1,6 +1,7 @@
 #include "tools/objc3c_frontend_c_api_runner_compile_session.h"
 
-#include "tools/objc3c_frontend_c_api_runner_invocation.h"
+#include "tools/objc3c_frontend_c_api_runner_compile_options.h"
+#include "tools/objc3c_frontend_c_api_runner_context.h"
 
 FrontendCApiRunnerCompileSession::FrontendCApiRunnerCompileSession()
     : result_guard{&result} {}

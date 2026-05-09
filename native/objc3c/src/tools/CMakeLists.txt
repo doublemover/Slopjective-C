@@ -1,11 +1,12 @@
 add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_bonus_experiences_json.cpp
   objc3c_frontend_c_api_runner_c_string.cpp
+  objc3c_frontend_c_api_runner_compile_options.cpp
   objc3c_frontend_c_api_runner_compile_session.cpp
+  objc3c_frontend_c_api_runner_context.cpp
   objc3c_frontend_c_api_runner_dump_actions.cpp
   objc3c_frontend_c_api_runner_dump_emitter.cpp
   objc3c_frontend_c_api_runner_dump_options.cpp
-  objc3c_frontend_c_api_runner_invocation.cpp
   objc3c_frontend_c_api_runner_object_inspection_command.cpp
   objc3c_frontend_c_api_runner_observability_json.cpp
   objc3c_frontend_c_api_runner_option_values.cpp
