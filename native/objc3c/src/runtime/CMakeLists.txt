@@ -41,6 +41,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor.cpp
   concurrency/actor.h
   concurrency/actor_isolation.cpp
+  concurrency/actor_isolation_operations.cpp
+  concurrency/actor_isolation_operations.h
   concurrency/actor_mailbox.cpp
   concurrency/actor_mailbox_state.cpp
   concurrency/actor_mailbox_state.h
