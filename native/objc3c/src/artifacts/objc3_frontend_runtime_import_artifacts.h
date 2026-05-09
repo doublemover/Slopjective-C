@@ -56,6 +56,9 @@ BuildImportedRuntimeMetadataSemanticRulesSummary(
     const std::vector<Objc3ImportedRuntimeModuleSurface> &imported_surfaces,
     std::size_t imported_input_path_count);
 
+[[nodiscard]] std::string BuildImportedRuntimeMetadataSemanticRulesSummaryJson(
+    const Objc3ImportedRuntimeMetadataSemanticRulesSummary &summary);
+
 [[nodiscard]] std::string BuildSerializedRuntimeMetadataImportLoweringReplayKey(
     const Objc3SerializedRuntimeMetadataImportLoweringSummary &summary);
 
