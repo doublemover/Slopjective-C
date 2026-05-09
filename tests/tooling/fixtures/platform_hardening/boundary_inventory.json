@@ -22,7 +22,7 @@
   "policy_contract_paths": [
     "tests/tooling/fixtures/packaging_channels/supported_platforms.json",
     "tests/tooling/fixtures/packaging_channels/installer_policy.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/platform_hardening/platform_support_tier_policy.json",
     "tests/tooling/fixtures/platform_hardening/unsupported_host_fail_closed_policy.json",

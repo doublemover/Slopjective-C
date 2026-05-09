@@ -13,7 +13,7 @@ from objc3c_tooling.public_runner import public_workflow_action_names
 ROOT = Path(__file__).resolve().parents[1]
 SEMANTICS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "adoption_replay_semantics.json"
 PACKAGE_JSON = ROOT / "package.json"
-LONG_HORIZON_REPLAY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "migration_rollback_support_window_semantics.json"
+LONG_HORIZON_REPLAY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "conversion_replay_revert_support_window_semantics.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "adoption-legibility" / "adoption-replay-summary.json"
 
 

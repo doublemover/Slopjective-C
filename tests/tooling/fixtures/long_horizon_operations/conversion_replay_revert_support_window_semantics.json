@@ -11,7 +11,7 @@
     "tests/tooling/fixtures/release_operations/versioning_model.json",
     "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
-    "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json"
+    "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json"
   ],
   "package_bridge": "objc3c",
   "generation_actions": [

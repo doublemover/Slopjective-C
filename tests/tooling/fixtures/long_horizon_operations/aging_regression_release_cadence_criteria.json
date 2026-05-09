@@ -11,7 +11,7 @@
   "depends_on": [
     "tests/tooling/fixtures/performance_governance/budget_model.json",
     "tests/tooling/fixtures/full_envelope_claimability/soak_external_validation_contract.json",
-    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
   ],
   "cadence_classes": [
     {

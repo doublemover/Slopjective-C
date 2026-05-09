@@ -10,9 +10,9 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 
 
 ROOT = Path(__file__).resolve().parents[1]
-POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_compatibility_policy.json"
+POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_support_policy.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
-UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
+UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_support_claim_policy.json"
 UPDATE_CHANNEL_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "update_channel_policy.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "deprecation-support-policy-summary.json"
 

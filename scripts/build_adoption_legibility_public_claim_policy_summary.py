@@ -12,9 +12,9 @@ from objc3c_tooling.json_io import load_json_object as load_json, write_json_fil
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "public_claim_policy.json"
 BOUNDARY_PATH = ROOT / "tests" / "tooling" / "fixtures" / "adoption_legibility" / "boundary_inventory.json"
-RELEASE_UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "compatibility_claim_policy.json"
+RELEASE_UPGRADE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "upgrade_support_claim_policy.json"
 PERFORMANCE_CLAIM_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "performance_governance" / "claim_policy.json"
-LONG_HORIZON_DEPRECATION_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_compatibility_policy.json"
+LONG_HORIZON_DEPRECATION_POLICY = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "deprecation_support_policy.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "adoption-legibility" / "public-claim-policy-summary.json"
 
 

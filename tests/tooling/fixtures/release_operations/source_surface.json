@@ -14,9 +14,9 @@
     "docs/tutorials/guided_walkthrough.md",
     "docs/tutorials/objc2_to_objc3_migration.md",
     "docs/runbooks/objc3c_maintainer_workflows.md",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
-    "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+    "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
     "tests/tooling/fixtures/release_operations/metadata_surface.json",
     "tests/tooling/fixtures/release_operations/schema_surface.json",
     "scripts/objc3c_workflow",
@@ -93,12 +93,12 @@
   "hard_cutover_policy": {
     "upstream_artifacts": "required-before-publication",
     "missing_artifact_behavior": "fail-closed",
-    "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+    "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
     "public_action_names": "preserved"
   },
-  "upgrade_claim_policy": "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+  "upgrade_claim_policy": "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
   "update_channel_policy": "tests/tooling/fixtures/release_operations/update_channel_policy.json",
-  "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fallback_diagnostics_policy.json",
+  "fail_closed_diagnostics_policy": "tests/tooling/fixtures/release_operations/fail_closed_diagnostics_policy.json",
   "metadata_surface": "tests/tooling/fixtures/release_operations/metadata_surface.json",
   "schema_surface": "tests/tooling/fixtures/release_operations/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/release_operations/workflow_surface.json"

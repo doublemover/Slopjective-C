@@ -101,7 +101,7 @@
   ],
   "policy_contract_paths": [
     "tests/tooling/fixtures/release_foundation/provenance_policy.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/distribution_credibility/operator_release_policy.json",
     "tests/tooling/fixtures/distribution_credibility/release_drill_policy.json",
     "tests/tooling/fixtures/external_validation/trust_policy.json"

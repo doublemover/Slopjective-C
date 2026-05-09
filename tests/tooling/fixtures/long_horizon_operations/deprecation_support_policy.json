@@ -9,7 +9,7 @@
   },
   "depends_on": [
     "tests/tooling/fixtures/release_operations/versioning_model.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json"
   ],
   "support_policy": {

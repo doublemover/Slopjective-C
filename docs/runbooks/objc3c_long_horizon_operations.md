@@ -72,14 +72,12 @@ Not supported in this boundary:
 
 ## Deprecation And Support-Window Maintenance Policy
 
-The canonical deprecation support policy contract is checked in at this
-historically named path:
+The canonical deprecation support policy contract is checked in at this path:
 
-- `tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json`
+- `tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json`
 
-The file path is retained as a checked-in fixture address only; the live
-contract ID and fields own support-window truth and do not publish compatibility
-support.
+The file path is a checked-in fixture address; the live contract ID and fields
+own support-window truth and do not publish alternate old-surface support.
 
 Replay it with:
 
@@ -93,20 +91,19 @@ forever-supported language/runtime claim. Deprecations must:
 - stay tied to existing release-operation warning classes from
   `tests/tooling/fixtures/release_operations/update_channel_policy.json`
 - fail closed when a public claim uses forbidden upgrade/support phrases from
-  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
+  `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
 - remain demoted until conversion replay and revert evidence exists for the
   affected package/application path
 
 ## Conversion, Revert, And Support Windows
 
-The canonical conversion/revert semantics contract is checked in at this
-historically named path:
+The canonical conversion/replay/revert semantics contract is checked in at this
+path:
 
-- `tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json`
+- `tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json`
 
-The filename is historical. The live contract fields use conversion replay and
-revert readiness terminology, and they reject compatibility or fallback support
-claims.
+The live contract fields use conversion replay and revert readiness terminology,
+and they reject alternate old-surface support claims.
 
 Replay it with:
 

@@ -10,11 +10,11 @@
   },
   "depends_on": [
     "tests/tooling/fixtures/adoption_legibility/boundary_inventory.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/performance_governance/claim_policy.json",
     "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
-    "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+    "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
   ],
   "claim_classes": [
     {

@@ -41,8 +41,8 @@
       "required_evidence_surfaces": [
         "docs/runbooks/objc3c_release_operations.md",
         "docs/runbooks/objc3c_long_horizon_operations.md",
-        "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
-        "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+        "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
+        "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
       ]
     },
     {

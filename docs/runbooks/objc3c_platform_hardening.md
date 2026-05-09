@@ -18,8 +18,8 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/packaging_channels/supported_platforms.json`
 - `tests/tooling/fixtures/packaging_channels/installer_policy.json`
 - release operations upgrade-claim policy:
-  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
-  (historical filename; live contract fields are upgrade/support-scoped)
+  `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
+  (live contract fields are upgrade/support-scoped)
 
 Replayable public workflow actions:
 

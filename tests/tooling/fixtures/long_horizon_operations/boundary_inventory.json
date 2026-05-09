@@ -6,8 +6,8 @@
   "owner_split": {
     "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
     "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
-    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json",
     "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
     "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py"
   },
@@ -34,7 +34,7 @@
   "substrate_fixture_surfaces": [
     "tests/tooling/fixtures/release_operations/versioning_model.json",
     "tests/tooling/fixtures/release_operations/upgrade_path_surface.json",
-    "tests/tooling/fixtures/release_operations/compatibility_claim_policy.json",
+    "tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json",
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/package_ecosystem/boundary_inventory.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",

@@ -14,7 +14,7 @@
     "tests/tooling/fixtures/adoption_legibility/capability_comparison_semantics.json",
     "tests/tooling/fixtures/package_ecosystem/package_authoring_workflow_contract.json",
     "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json",
-    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
   ],
   "adoption_replay_phases": [
     {
@@ -71,7 +71,7 @@
       "required_paths": [
         "docs/runbooks/objc3c_release_operations.md",
         "docs/runbooks/objc3c_long_horizon_operations.md",
-        "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json"
+        "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json"
       ],
       "required_actions": [
         "validate-release-operations",

@@ -15,13 +15,13 @@
   ],
   "owner_contracts": {
     "deprecation_owner": {
-      "source_contract": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
+      "source_contract": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
       "artifact_section": "claim_audit",
       "publication_projection": "operator_publication.support_window_summary",
       "blocker_projection": "claim_audit.blocker_metadata.deprecation_support_policy"
     },
     "revert_owner": {
-      "source_contract": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+      "source_contract": "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json",
       "artifact_section": "revert_readiness",
       "publication_projection": "operator_publication.revert_channels",
       "blocker_projection": "claim_audit.blocker_metadata.revert_readiness"
@@ -41,8 +41,8 @@
   },
   "source_contracts": [
     "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
-    "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json",
     "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json"
   ],
   "artifact_root": "tmp/artifacts/long-horizon-operations/",
@@ -76,7 +76,7 @@
   "required_generation_implementation_anchors": [
     "scripts/build_long_horizon_operations_boundary_inventory_summary.py",
     "scripts/build_long_horizon_operations_deprecation_policy_summary.py",
-    "scripts/build_long_horizon_operations_migration_rollback_summary.py",
+    "scripts/build_long_horizon_operations_conversion_replay_revert_summary.py",
     "scripts/build_long_horizon_operations_aging_cadence_summary.py",
     "scripts/build_long_horizon_operations_artifact_contract_summary.py"
   ]

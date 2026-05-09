@@ -81,8 +81,8 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
             "owner_contracts": OWNER_CONTRACTS,
             "contracts": [
                 "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
-                "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-                "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+                "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+                "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json",
                 "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
                 "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
             ],

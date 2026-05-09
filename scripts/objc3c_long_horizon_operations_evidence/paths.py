@@ -12,8 +12,8 @@ SUMMARY_CONTRACT_ID = "objc3c.long_horizon_operations.evidence.summary.v1"
 OWNER_SPLIT = {
     "boundary_inventory": "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
     "artifact_contract": "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json",
-    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json",
-    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/migration_rollback_support_window_semantics.json",
+    "deprecation_support_policy": "tests/tooling/fixtures/long_horizon_operations/deprecation_support_policy.json",
+    "conversion_replay_revert_support_window": "tests/tooling/fixtures/long_horizon_operations/conversion_replay_revert_support_window_semantics.json",
     "aging_release_cadence": "tests/tooling/fixtures/long_horizon_operations/aging_regression_release_cadence_criteria.json",
     "metadata_publication": "scripts/publish_objc3c_long_horizon_operations_metadata.py",
 }
@@ -135,7 +135,7 @@ class LongHorizonEvidencePaths:
         return (
             EvidenceStep("boundary-inventory", python_script_command("scripts/build_long_horizon_operations_boundary_inventory_summary.py")),
             EvidenceStep("deprecation-policy", python_script_command("scripts/build_long_horizon_operations_deprecation_policy_summary.py")),
-            EvidenceStep("conversion-replay-revert-support-window", python_script_command("scripts/build_long_horizon_operations_migration_rollback_summary.py")),
+            EvidenceStep("conversion-replay-revert-support-window", python_script_command("scripts/build_long_horizon_operations_conversion_replay_revert_summary.py")),
             EvidenceStep("aging-cadence", python_script_command("scripts/build_long_horizon_operations_aging_cadence_summary.py")),
             EvidenceStep("artifact-contract", python_script_command("scripts/build_long_horizon_operations_artifact_contract_summary.py")),
             EvidenceStep("package-ecosystem-integration", python_script_command("scripts/check_objc3c_package_ecosystem_integration.py")),

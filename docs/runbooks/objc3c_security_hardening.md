@@ -19,8 +19,8 @@ Canonical checked-in boundary and contract surfaces:
 - `tests/tooling/fixtures/security_hardening/boundary_inventory.json`
 - `tests/tooling/fixtures/release_foundation/provenance_policy.json`
 - release operations upgrade-claim policy:
-  `tests/tooling/fixtures/release_operations/compatibility_claim_policy.json`
-  (historical filename; live contract fields are upgrade/support-scoped)
+  `tests/tooling/fixtures/release_operations/upgrade_support_claim_policy.json`
+  (live contract fields are upgrade/support-scoped)
 - `tests/tooling/fixtures/distribution_credibility/operator_release_policy.json`
 - `tests/tooling/fixtures/external_validation/trust_policy.json`
 
