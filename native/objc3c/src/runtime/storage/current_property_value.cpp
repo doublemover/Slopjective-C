@@ -1,6 +1,6 @@
 #include "runtime/storage/current_property_context.h"
 
-#include "runtime/memory/arc_debug_state.h"
+#include "runtime/memory/arc_debug_events.h"
 #include "runtime/memory/autorelease_pool.h"
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/objc3_runtime_bootstrap_internal.h"
@@ -15,12 +15,10 @@ namespace objc3c::runtime {
 
 int ReadCurrentPropertyI32() {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
-  RuntimeArcDebugState &arc_debug = RuntimeArcDebugStateForCurrentThread();
-  ++arc_debug.current_property_read_count;
-  RecordRuntimeArcDebugPropertyContext(frame);
+  RecordRuntimeArcCurrentPropertyReadCall(frame);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
-    arc_debug.last_property_read_value = 0;
+    RecordRuntimeArcLastPropertyReadValue(0);
     return 0;
   }
   RuntimeState &state = ProcessRuntimeState();
@@ -28,7 +26,7 @@ int ReadCurrentPropertyI32() {
   const auto instance_it =
       state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
-    arc_debug.last_property_read_value = 0;
+    RecordRuntimeArcLastPropertyReadValue(0);
     return 0;
   }
   int value = 0;
@@ -37,16 +35,13 @@ int ReadCurrentPropertyI32() {
           state, instance_it->second, *frame->runtime_property_accessor, value)
           ? value
           : 0;
-  arc_debug.last_property_read_value = result;
+  RecordRuntimeArcLastPropertyReadValue(result);
   return result;
 }
 
 void WriteCurrentPropertyI32(int value) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
-  RuntimeArcDebugState &arc_debug = RuntimeArcDebugStateForCurrentThread();
-  ++arc_debug.current_property_write_count;
-  arc_debug.last_property_written_value = value;
-  RecordRuntimeArcDebugPropertyContext(frame);
+  RecordRuntimeArcCurrentPropertyWriteCall(frame, value);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
     return;
@@ -64,13 +59,10 @@ void WriteCurrentPropertyI32(int value) {
 
 int ExchangeCurrentPropertyI32(int value) {
   RuntimeDispatchFrame *frame = CurrentRuntimeDispatchFrame();
-  RuntimeArcDebugState &arc_debug = RuntimeArcDebugStateForCurrentThread();
-  ++arc_debug.current_property_exchange_count;
-  arc_debug.last_property_exchange_new_value = value;
-  RecordRuntimeArcDebugPropertyContext(frame);
+  RecordRuntimeArcCurrentPropertyExchangeCall(frame, value);
   if (frame == nullptr || frame->runtime_property_accessor == nullptr ||
       frame->receiver == 0) {
-    arc_debug.last_property_exchange_previous_value = 0;
+    RecordRuntimeArcLastPropertyExchangePreviousValue(0);
     return 0;
   }
   RuntimeState &state = ProcessRuntimeState();
@@ -78,7 +70,7 @@ int ExchangeCurrentPropertyI32(int value) {
   const auto instance_it =
       state.runtime_instances_by_receiver.find(frame->receiver);
   if (instance_it == state.runtime_instances_by_receiver.end()) {
-    arc_debug.last_property_exchange_previous_value = 0;
+    RecordRuntimeArcLastPropertyExchangePreviousValue(0);
     return 0;
   }
   int previous_value = 0;
@@ -88,7 +80,7 @@ int ExchangeCurrentPropertyI32(int value) {
           previous_value)
           ? previous_value
           : 0;
-  arc_debug.last_property_exchange_previous_value = result;
+  RecordRuntimeArcLastPropertyExchangePreviousValue(result);
   return result;
 }
 
