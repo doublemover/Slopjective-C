@@ -24,8 +24,8 @@
 #include "ir/objc3_ir_runtime_dispatch_declarations.h"
 #include "ir/objc3_ir_runtime_dispatch_state.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
+#include "ir/objc3_ir_synthesized_property_accessors.h"
 #include "parse/objc3_parse_support.h"
-#include "support/objc3_property_storage_profile_helpers.h"
 #include "support/objc3_string_predicates.h"
 
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
@@ -13372,89 +13372,26 @@ class Objc3IREmitter {
       out << "}\n";
       return;
     }
-    if ((method_def.synthetic_method_kind !=
-         Objc3IRSyntheticMethodKind::PropertyGetter &&
-         method_def.synthetic_method_kind !=
-             Objc3IRSyntheticMethodKind::PropertySetter)) {
+    Objc3IRSynthesizedPropertyAccessorEmissionStats property_stats;
+    if (!EmitObjc3IRSynthesizedPropertyAccessorMethod(method_def, out,
+                                                      property_stats)) {
       return;
     }
-    const bool uses_weak_runtime_hooks =
-        objc3c::support::UsesWeakCurrentPropertyRuntimeHelper(
-            method_def.synthesized_ownership_runtime_hook_profile);
-    const bool uses_strong_runtime_hooks =
-        objc3c::support::UsesStrongOwnedCurrentPropertyExchange(
-            method_def.synthesized_ownership_lifetime_profile,
-            method_def.synthesized_accessor_ownership_profile);
-    const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
-    if (method_def.synthetic_method_kind ==
-        Objc3IRSyntheticMethodKind::PropertyGetter) {
-      ++synthesized_getter_definition_count_;
-      out << "define " << llvm_value_type << " @" << method_def.symbol << "() {\n";
-      out << "entry:\n";
-      const std::string loaded_value = "%objc3_property_slot";
-      out << "  " << loaded_value << " = call i32 @"
-          << (uses_weak_runtime_hooks ? kObjc3RuntimeLoadWeakCurrentPropertyI32Symbol
-                                      : kObjc3RuntimeReadCurrentPropertyI32Symbol)
-          << "()\n";
-      if (uses_weak_runtime_hooks) {
-        ++weak_current_property_load_helper_call_count_;
-      } else {
-        ++current_property_read_helper_call_count_;
-      }
-      std::string returned_value = loaded_value;
-      if (uses_strong_runtime_hooks) {
-        const std::string retained_value = "%objc3_property_retained";
-        const std::string autoreleased_value = "%objc3_property_autoreleased";
-        out << "  " << retained_value << " = call i32 @"
-            << kObjc3RuntimeRetainI32Symbol << "(i32 " << loaded_value << ")\n";
-        out << "  " << autoreleased_value << " = call i32 @"
-            << kObjc3RuntimeAutoreleaseI32Symbol << "(i32 " << retained_value
-            << ")\n";
-        ++retain_helper_call_count_;
-        ++autorelease_helper_call_count_;
-        returned_value = autoreleased_value;
-      }
-      if (method_def.synthesized_value_type == ValueType::Bool) {
-        out << "  %objc3_property_value = icmp ne i32 %objc3_property_slot, 0\n";
-        out << "  ret i1 %objc3_property_value\n";
-      } else {
-        out << "  ret i32 " << returned_value << "\n";
-      }
-      out << "}\n";
-      return;
-    }
-
-    ++synthesized_setter_definition_count_;
-    out << "define void @" << method_def.symbol << "(" << llvm_value_type
-        << " %arg0) {\n";
-    out << "entry:\n";
-    std::string stored_value = "%arg0";
-    if (method_def.synthesized_value_type == ValueType::Bool) {
-      out << "  %objc3_property_value = zext i1 %arg0 to i32\n";
-      stored_value = "%objc3_property_value";
-    }
-    if (uses_weak_runtime_hooks) {
-      out << "  call void @" << kObjc3RuntimeStoreWeakCurrentPropertyI32Symbol
-          << "(i32 " << stored_value << ")\n";
-      ++weak_current_property_store_helper_call_count_;
-    } else if (uses_strong_runtime_hooks) {
-      out << "  %objc3_property_retained = call i32 @"
-          << kObjc3RuntimeRetainI32Symbol << "(i32 " << stored_value << ")\n";
-      out << "  %objc3_property_previous = call i32 @"
-          << kObjc3RuntimeExchangeCurrentPropertyI32Symbol << "(i32 %objc3_property_retained)\n";
-      out << "  %objc3_property_release = call i32 @"
-          << kObjc3RuntimeReleaseI32Symbol
-          << "(i32 %objc3_property_previous)\n";
-      ++retain_helper_call_count_;
-      ++current_property_exchange_helper_call_count_;
-      ++release_helper_call_count_;
-    } else {
-      out << "  call void @" << kObjc3RuntimeWriteCurrentPropertyI32Symbol
-          << "(i32 " << stored_value << ")\n";
-      ++current_property_write_helper_call_count_;
-    }
-    out << "  ret void\n";
-    out << "}\n";
+    synthesized_getter_definition_count_ += property_stats.getter_definition_count;
+    synthesized_setter_definition_count_ += property_stats.setter_definition_count;
+    current_property_read_helper_call_count_ +=
+        property_stats.current_property_read_helper_call_count;
+    current_property_write_helper_call_count_ +=
+        property_stats.current_property_write_helper_call_count;
+    current_property_exchange_helper_call_count_ +=
+        property_stats.current_property_exchange_helper_call_count;
+    weak_current_property_load_helper_call_count_ +=
+        property_stats.weak_current_property_load_helper_call_count;
+    weak_current_property_store_helper_call_count_ +=
+        property_stats.weak_current_property_store_helper_call_count;
+    retain_helper_call_count_ += property_stats.retain_helper_call_count;
+    release_helper_call_count_ += property_stats.release_helper_call_count;
+    autorelease_helper_call_count_ += property_stats.autorelease_helper_call_count;
   }
 
   void EmitEntryPoint(std::ostringstream &out) const {

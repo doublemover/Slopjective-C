@@ -14,6 +14,7 @@ add_library(objc3c_ir STATIC
   objc3_ir_runtime_dispatch_state.cpp
   objc3_ir_runtime_metadata_emission.cpp
   objc3_ir_symbol_model.cpp
+  objc3_ir_synthesized_property_accessors.cpp
   objc3_ir_type_model.cpp
   objc3_ir_emitter.cpp
 )
