@@ -15,7 +15,12 @@ bool TryBuildObjc3RuntimeTranslationUnitRegistrationManifestArtifact(
     return false;
   }
 
+  const Objc3RuntimeRegistrationSymbolOwnerRecord symbol_owner_record =
+      objc3c::io::BuildRuntimeTranslationUnitRegistrationSymbolOwnerRecord(
+          inputs, linker_retention_artifacts);
+
   manifest_json = BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
-      inputs, linker_retention_artifacts, runtime_metadata_binary_byte_count);
+      inputs, linker_retention_artifacts, symbol_owner_record,
+      runtime_metadata_binary_byte_count);
   return true;
 }

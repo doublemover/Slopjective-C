@@ -1,8 +1,58 @@
 #include "io/objc3_runtime_artifact_contracts.h"
 
+#include "io/objc3_process_internal.h"
 #include "runtime/metadata/runtime_ownership_contracts.h"
 
 namespace objc3c::io {
+
+namespace {
+
+Objc3RuntimeRegistrationSymbolOwnerRecord BuildRuntimeRegistrationSymbolOwnerRecord(
+    const std::string &constructor_root_symbol,
+    const std::string &constructor_init_stub_symbol_prefix,
+    const std::string &bootstrap_registration_table_symbol_prefix,
+    const std::string &bootstrap_image_local_init_state_symbol_prefix,
+    const std::string &translation_unit_identity_model,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts
+        &linker_retention_artifacts) {
+  const std::string safe_identity_suffix =
+      objc3c::support::MakeIdentifierSafeSuffix(
+          linker_retention_artifacts.translation_unit_identity_key,
+          "translation_unit");
+  return Objc3RuntimeRegistrationSymbolOwnerRecord{
+      constructor_root_symbol,
+      constructor_init_stub_symbol_prefix + safe_identity_suffix,
+      bootstrap_registration_table_symbol_prefix + safe_identity_suffix,
+      bootstrap_image_local_init_state_symbol_prefix + safe_identity_suffix,
+      translation_unit_identity_model,
+      linker_retention_artifacts.translation_unit_identity_key};
+}
+
+}  // namespace
+
+Objc3RuntimeRegistrationSymbolOwnerRecord
+BuildRuntimeTranslationUnitRegistrationSymbolOwnerRecord(
+    const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts
+        &linker_retention_artifacts) {
+  return BuildRuntimeRegistrationSymbolOwnerRecord(
+      inputs.constructor_root_symbol, inputs.constructor_init_stub_symbol_prefix,
+      inputs.bootstrap_registration_table_symbol_prefix,
+      inputs.bootstrap_image_local_init_state_symbol_prefix,
+      inputs.translation_unit_identity_model, linker_retention_artifacts);
+}
+
+Objc3RuntimeRegistrationSymbolOwnerRecord
+BuildRuntimeRegistrationDescriptorSymbolOwnerRecord(
+    const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts
+        &linker_retention_artifacts) {
+  return BuildRuntimeRegistrationSymbolOwnerRecord(
+      inputs.constructor_root_symbol, inputs.constructor_init_stub_symbol_prefix,
+      inputs.bootstrap_registration_table_symbol_prefix,
+      inputs.bootstrap_image_local_init_state_symbol_prefix,
+      inputs.translation_unit_identity_model, linker_retention_artifacts);
+}
 
 bool ValidateRuntimeTranslationUnitRegistrationManifestArtifactInputs(
     const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
@@ -149,12 +199,19 @@ bool ValidateRuntimeRegistrationDescriptorArtifactInputs(
       inputs.backend_artifact_relative_path.empty() ||
       !objc3c::runtime::RuntimeOwnerSplitContractIsReady() ||
       linker_retention_artifacts.translation_unit_identity_key.empty() ||
+      linker_retention_artifacts.translation_unit_identity_model.empty() ||
       linker_retention_artifacts.object_format.empty() ||
       linker_retention_artifacts.linker_anchor_symbol.empty() ||
       linker_retention_artifacts.discovery_root_symbol.empty()) {
     error =
         "runtime registration descriptor artifact inputs incomplete for " +
         inputs.artifact_relative_path;
+    return false;
+  }
+  if (linker_retention_artifacts.translation_unit_identity_model !=
+      inputs.translation_unit_identity_model) {
+    error =
+        "runtime registration descriptor identity model drifted from linker-retention artifacts";
     return false;
   }
   return true;

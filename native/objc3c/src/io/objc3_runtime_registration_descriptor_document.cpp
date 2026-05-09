@@ -8,9 +8,7 @@
 std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
     const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
     const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,
-    const std::string &constructor_init_stub_symbol,
-    const std::string &bootstrap_registration_table_symbol,
-    const std::string &bootstrap_image_local_init_state_symbol) {
+    const Objc3RuntimeRegistrationSymbolOwnerRecord &symbol_owner_record) {
   std::ostringstream out;
   JsonObjectWriter descriptor(out);
   descriptor.StringField("contract_id", inputs.contract_id);
@@ -48,10 +46,10 @@ std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
   descriptor.StringField("artifact", inputs.artifact_relative_path);
   descriptor.StringField("authority_model", inputs.authority_model);
   descriptor.StringField("translation_unit_identity_model",
-                         inputs.translation_unit_identity_model);
+                         symbol_owner_record.translation_unit_identity_model);
   descriptor.StringField(
       "translation_unit_identity_key",
-      linker_retention_artifacts.translation_unit_identity_key);
+      symbol_owner_record.translation_unit_identity_key);
   descriptor.StringField("payload_ownership_model",
                          inputs.payload_ownership_model);
   descriptor.StringField("runtime_support_library_archive_relative_path",
@@ -74,13 +72,14 @@ std::string BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
   descriptor.StringField("bootstrap_visible_metadata_ownership_model",
                          inputs.bootstrap_visible_metadata_ownership_model);
   descriptor.StringField("constructor_root_symbol",
-                         inputs.constructor_root_symbol);
+                         symbol_owner_record.constructor_root_symbol);
   descriptor.StringField("constructor_init_stub_symbol",
-                         constructor_init_stub_symbol);
+                         symbol_owner_record.constructor_init_stub_symbol);
   descriptor.StringField("bootstrap_registration_table_symbol",
-                         bootstrap_registration_table_symbol);
+                         symbol_owner_record.bootstrap_registration_table_symbol);
   descriptor.StringField("bootstrap_image_local_init_state_symbol",
-                         bootstrap_image_local_init_state_symbol);
+                         symbol_owner_record
+                             .bootstrap_image_local_init_state_symbol);
   descriptor.StringField("bootstrap_registration_table_layout_model",
                          inputs.bootstrap_registration_table_layout_model);
   descriptor.StringField("bootstrap_image_local_initialization_model",

@@ -9,6 +9,24 @@ DIAG_HEADER = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_diagnostics_art
 DIAG_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_diagnostics_artifacts.cpp"
 MANIFEST_HEADER = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_manifest_artifacts.h"
 MANIFEST_SOURCE = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_manifest_artifacts.cpp"
+RUNTIME_ARTIFACT_CONTRACTS_HEADER = (
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_runtime_artifact_contracts.h"
+)
+RUNTIME_ARTIFACT_CONTRACTS_SOURCE = (
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_runtime_artifact_contracts.cpp"
+)
+RUNTIME_REGISTRATION_DESCRIPTOR_ARTIFACT = (
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_runtime_registration_descriptor_artifact.cpp"
+)
+RUNTIME_REGISTRATION_DESCRIPTOR_DOCUMENT = (
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_runtime_registration_descriptor_document.cpp"
+)
+RUNTIME_REGISTRATION_MANIFEST_ARTIFACT = (
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_runtime_registration_manifest_artifact.cpp"
+)
+RUNTIME_REGISTRATION_MANIFEST_DOCUMENT = (
+    ROOT / "native" / "objc3c" / "src" / "io" / "objc3_runtime_registration_manifest_document.cpp"
+)
 MAIN_CPP = ROOT / "native" / "objc3c" / "src" / "main.cpp"
 DRIVER_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_compilation_driver.cpp"
 DRIVER_OBJC3_PATH_CPP = ROOT / "native" / "objc3c" / "src" / "driver" / "objc3_objc3_path.cpp"
@@ -79,3 +97,45 @@ def test_io_process_exposes_llc_direct_object_emission_path() -> None:
     assert "llc executable not found" in io_source
     assert "-cc1" not in io_source
     assert "OBJC3C_ENABLE_LLVM_DIRECT_OBJECT_EMISSION" in cmake
+
+
+def test_runtime_registration_symbol_json_uses_owner_record_contract() -> None:
+    io_header = _read(IO_HEADER)
+    contracts_header = _read(RUNTIME_ARTIFACT_CONTRACTS_HEADER)
+    contracts_source = _read(RUNTIME_ARTIFACT_CONTRACTS_SOURCE)
+    descriptor_artifact = _read(RUNTIME_REGISTRATION_DESCRIPTOR_ARTIFACT)
+    descriptor_document = _read(RUNTIME_REGISTRATION_DESCRIPTOR_DOCUMENT)
+    manifest_artifact = _read(RUNTIME_REGISTRATION_MANIFEST_ARTIFACT)
+    manifest_document = _read(RUNTIME_REGISTRATION_MANIFEST_DOCUMENT)
+
+    assert "struct Objc3RuntimeRegistrationSymbolOwnerRecord" in io_header
+    assert "constructor_root_symbol;" in io_header
+    assert "constructor_init_stub_symbol;" in io_header
+    assert "bootstrap_registration_table_symbol;" in io_header
+    assert "bootstrap_image_local_init_state_symbol;" in io_header
+
+    assert "BuildRuntimeTranslationUnitRegistrationSymbolOwnerRecord" in contracts_header
+    assert "BuildRuntimeRegistrationDescriptorSymbolOwnerRecord" in contracts_header
+    assert "BuildRuntimeRegistrationSymbolOwnerRecord(" in contracts_source
+    assert "MakeIdentifierSafeSuffix(" in contracts_source
+    assert "translation_unit_identity_model !=" in contracts_source
+    assert "inputs.translation_unit_identity_model" in contracts_source
+
+    assert "BuildRuntimeRegistrationDescriptorSymbolOwnerRecord" in descriptor_artifact
+    assert "BuildRuntimeTranslationUnitRegistrationSymbolOwnerRecord" in manifest_artifact
+    assert "MakeIdentifierSafeSuffix(" not in descriptor_artifact
+    assert "MakeIdentifierSafeSuffix(" not in manifest_document
+    assert "constructor_init_stub_symbol =" not in descriptor_artifact
+    assert "bootstrap_registration_table_symbol =" not in descriptor_artifact
+
+    assert "const Objc3RuntimeRegistrationSymbolOwnerRecord &symbol_owner_record" in descriptor_document
+    assert "const Objc3RuntimeRegistrationSymbolOwnerRecord &symbol_owner_record" in manifest_document
+    assert 'StringField("constructor_root_symbol",' in descriptor_document
+    assert "symbol_owner_record.constructor_root_symbol" in descriptor_document
+    assert "symbol_owner_record.constructor_init_stub_symbol" in descriptor_document
+    assert "symbol_owner_record.bootstrap_registration_table_symbol" in descriptor_document
+    assert "symbol_owner_record.bootstrap_image_local_init_state_symbol" in descriptor_document
+    assert "EscapeJsonString(symbol_owner_record.constructor_root_symbol)" in manifest_document
+    assert "EscapeJsonString(symbol_owner_record.constructor_init_stub_symbol)" in manifest_document
+    assert "symbol_owner_record.bootstrap_registration_table_symbol" in manifest_document
+    assert "symbol_owner_record.bootstrap_image_local_init_state_symbol" in manifest_document

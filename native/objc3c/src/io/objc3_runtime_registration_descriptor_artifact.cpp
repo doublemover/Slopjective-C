@@ -1,4 +1,3 @@
-#include "io/objc3_process_internal.h"
 #include "io/objc3_runtime_artifact_contracts.h"
 #include "io/objc3_runtime_registration_descriptor_document.h"
 
@@ -15,21 +14,11 @@ bool TryBuildObjc3RuntimeRegistrationDescriptorArtifact(
     return false;
   }
 
-  const std::string safe_identity_suffix =
-      objc3c::support::MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key,
-          "translation_unit");
-  const std::string constructor_init_stub_symbol =
-      inputs.constructor_init_stub_symbol_prefix + safe_identity_suffix;
-  const std::string bootstrap_registration_table_symbol =
-      inputs.bootstrap_registration_table_symbol_prefix + safe_identity_suffix;
-  const std::string bootstrap_image_local_init_state_symbol =
-      inputs.bootstrap_image_local_init_state_symbol_prefix +
-      safe_identity_suffix;
+  const Objc3RuntimeRegistrationSymbolOwnerRecord symbol_owner_record =
+      objc3c::io::BuildRuntimeRegistrationDescriptorSymbolOwnerRecord(
+          inputs, linker_retention_artifacts);
 
   descriptor_json = BuildObjc3RuntimeRegistrationDescriptorArtifactDocumentJson(
-      inputs, linker_retention_artifacts, constructor_init_stub_symbol,
-      bootstrap_registration_table_symbol,
-      bootstrap_image_local_init_state_symbol);
+      inputs, linker_retention_artifacts, symbol_owner_record);
   return true;
 }

@@ -7,22 +7,8 @@ std::string BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
     const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
     const Objc3RuntimeMetadataLinkerRetentionArtifacts
         &linker_retention_artifacts,
+    const Objc3RuntimeRegistrationSymbolOwnerRecord &symbol_owner_record,
     std::size_t runtime_metadata_binary_byte_count) {
-  const std::string constructor_init_stub_symbol =
-      inputs.constructor_init_stub_symbol_prefix +
-      objc3c::support::MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key,
-          "translation_unit");
-  const std::string bootstrap_registration_table_symbol =
-      inputs.bootstrap_registration_table_symbol_prefix +
-      objc3c::support::MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key,
-          "translation_unit");
-  const std::string bootstrap_image_local_init_state_symbol =
-      inputs.bootstrap_image_local_init_state_symbol_prefix +
-      objc3c::support::MakeIdentifierSafeSuffix(
-          linker_retention_artifacts.translation_unit_identity_key,
-          "translation_unit");
   // bootstrap-invariant anchor: later startup registration must
   // preserve one init-stub/root identity per translation unit, reject
   // duplicate registration on the same identity key, and fail closed before
@@ -139,20 +125,22 @@ std::string BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
       << "  \"registration_entrypoint_symbol\": \""
       << EscapeJsonString(inputs.registration_entrypoint_symbol) << "\",\n"
       << "  \"constructor_root_symbol\": \""
-      << EscapeJsonString(inputs.constructor_root_symbol) << "\",\n"
+      << EscapeJsonString(symbol_owner_record.constructor_root_symbol) << "\",\n"
       << "  \"constructor_root_ownership_model\": \""
       << EscapeJsonString(inputs.constructor_root_ownership_model) << "\",\n"
       << "  \"manifest_authority_model\": \""
       << EscapeJsonString(inputs.manifest_authority_model) << "\",\n"
       << "  \"constructor_init_stub_symbol\": \""
-      << EscapeJsonString(constructor_init_stub_symbol) << "\",\n"
+      << EscapeJsonString(symbol_owner_record.constructor_init_stub_symbol)
+      << "\",\n"
       << "  \"constructor_init_stub_ownership_model\": \""
       << EscapeJsonString(inputs.constructor_init_stub_ownership_model)
       << "\",\n"
       << "  \"constructor_priority_policy\": \""
       << EscapeJsonString(inputs.constructor_priority_policy) << "\",\n"
       << "  \"translation_unit_identity_model\": \""
-      << EscapeJsonString(inputs.translation_unit_identity_model) << "\",\n"
+      << EscapeJsonString(symbol_owner_record.translation_unit_identity_model)
+      << "\",\n"
       << "  \"runtime_library_resolution_model\": \""
       << EscapeJsonString(inputs.runtime_library_resolution_model) << "\",\n"
       << "  \"cleanup_unwind_runtime_link_model\": \""
@@ -542,9 +530,12 @@ std::string BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
              inputs.bootstrap_image_local_init_state_symbol_prefix)
       << "\",\n"
       << "  \"bootstrap_registration_table_symbol\": \""
-      << EscapeJsonString(bootstrap_registration_table_symbol) << "\",\n"
+      << EscapeJsonString(
+             symbol_owner_record.bootstrap_registration_table_symbol)
+      << "\",\n"
       << "  \"bootstrap_image_local_init_state_symbol\": \""
-      << EscapeJsonString(bootstrap_image_local_init_state_symbol)
+      << EscapeJsonString(
+             symbol_owner_record.bootstrap_image_local_init_state_symbol)
       << "\",\n"
       << "  \"bootstrap_registration_table_abi_version\": "
       << inputs.bootstrap_registration_table_abi_version << ",\n"
@@ -560,8 +551,7 @@ std::string BuildObjc3RuntimeTranslationUnitRegistrationManifestDocumentJson(
       << "  \"translation_unit_registration_order_ordinal\": "
       << inputs.translation_unit_registration_order_ordinal << ",\n"
       << "  \"translation_unit_identity_key\": \""
-      << EscapeJsonString(
-             linker_retention_artifacts.translation_unit_identity_key)
+      << EscapeJsonString(symbol_owner_record.translation_unit_identity_key)
       << "\",\n"
       << "  \"object_format\": \""
       << EscapeJsonString(linker_retention_artifacts.object_format)

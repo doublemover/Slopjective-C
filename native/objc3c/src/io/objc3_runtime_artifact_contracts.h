@@ -7,6 +7,18 @@
 
 namespace objc3c::io {
 
+Objc3RuntimeRegistrationSymbolOwnerRecord
+BuildRuntimeTranslationUnitRegistrationSymbolOwnerRecord(
+    const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts
+        &linker_retention_artifacts);
+
+Objc3RuntimeRegistrationSymbolOwnerRecord
+BuildRuntimeRegistrationDescriptorSymbolOwnerRecord(
+    const Objc3RuntimeRegistrationDescriptorArtifactInputs &inputs,
+    const Objc3RuntimeMetadataLinkerRetentionArtifacts
+        &linker_retention_artifacts);
+
 bool ValidateRuntimeTranslationUnitRegistrationManifestArtifactInputs(
     const Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs &inputs,
     const Objc3RuntimeMetadataLinkerRetentionArtifacts &linker_retention_artifacts,

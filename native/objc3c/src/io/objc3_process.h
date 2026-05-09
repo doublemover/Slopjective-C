@@ -24,6 +24,15 @@ struct Objc3RuntimeMetadataLinkerRetentionArtifacts {
   std::string driver_linker_flag;
 };
 
+struct Objc3RuntimeRegistrationSymbolOwnerRecord {
+  std::string constructor_root_symbol;
+  std::string constructor_init_stub_symbol;
+  std::string bootstrap_registration_table_symbol;
+  std::string bootstrap_image_local_init_state_symbol;
+  std::string translation_unit_identity_model;
+  std::string translation_unit_identity_key;
+};
+
 struct Objc3RuntimeTranslationUnitRegistrationManifestArtifactInputs {
   std::string contract_id;
   std::string translation_unit_registration_contract_id;
