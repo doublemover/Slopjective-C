@@ -73,6 +73,19 @@ Its stable input/output contract remains:
 - release label: `v0.11`,
 - generated timestamp: explicit RFC3339 UTC value or `SOURCE_DATE_EPOCH`.
 
+The public helper remains a stable script entrypoint, while the implementation
+is split by owner responsibility under `scripts/conformance_evidence_index/`:
+
+- `cli.py`: argument parsing, repository path resolution, output writing.
+- `manifest.py`: manifest/profile/release inference and strict
+  `generated_at` handling.
+- `builder.py`: artifact record construction plus profile/release index and
+  replay envelope rendering.
+- `paths.py`: deterministic repository path, glob, media type, hashing, and
+  JSON-loading helpers.
+- `timestamps.py`: RFC3339 and `SOURCE_DATE_EPOCH` timestamp canonicalization.
+- `model.py`: typed artifact record payload shape.
+
 ## Exit Behavior
 
 - exits `0` on success,
