@@ -16,9 +16,8 @@
 #include "pipeline/readiness/objc3_parse_lowering_conformance_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_parser_behavior_readiness.h"
 #include "pipeline/readiness/objc3_typed_sema_lowering_readiness.h"
-#include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_advanced_readiness_keys.h"
+#include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.h"
-#include "support/objc3_string_predicates.h"
 
 inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurface(
     const Objc3FrontendPipelineResult &pipeline_result,
@@ -685,401 +684,14 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
   surface.long_tail_grammar_conformance_matrix_key +=
       ";toolchain_runtime_ga_operations_cross_lane_integration_key=" +
       toolchain_runtime_ga_operations_cross_lane_integration_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_conformance_matrix_ready &&
-      surface.parse_lowering_conformance_corpus_consistent &&
-      surface.parse_lowering_performance_quality_guardrails_consistent &&
-      toolchain_runtime_ga_operations_cross_lane_integration_consistent &&
-      surface.long_tail_grammar_recovery_determinism_ready &&
-      !surface.long_tail_grammar_conformance_matrix_key.empty() &&
-      !surface.parse_lowering_conformance_corpus_key.empty() &&
-      !surface.parse_lowering_performance_quality_guardrails_key.empty();
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_cross_lane_integration_ready &&
-      diagnostics_clear &&
-      sema_handoff_ready &&
-      surface.lowering_boundary_ready &&
-      !surface.parse_artifact_replay_key.empty() &&
-      !surface.lowering_boundary_replay_key.empty();
-  surface.long_tail_grammar_integration_closeout_key =
-      BuildObjc3LongTailGrammarIntegrationCloseoutKey(
-          surface.long_tail_grammar_conformance_matrix_ready,
-          surface.parse_lowering_conformance_corpus_consistent,
-          surface.parse_lowering_performance_quality_guardrails_consistent,
-          toolchain_runtime_ga_operations_cross_lane_integration_consistent,
-          toolchain_runtime_ga_operations_cross_lane_integration_ready,
-          surface.long_tail_grammar_recovery_determinism_ready,
-          sema_handoff_ready,
-          surface.lowering_boundary_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready);
-  const bool toolchain_runtime_ga_operations_docs_runbook_sync_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncConsistent(
-          toolchain_runtime_ga_operations_cross_lane_integration_consistent,
-          toolchain_runtime_ga_operations_cross_lane_integration_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_docs_runbook_sync_ready =
-      IsObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncReady(
-          toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_docs_runbook_sync_key =
-      BuildObjc3ToolchainRuntimeGaOperationsDocsRunbookSyncKey(
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
-          toolchain_runtime_ga_operations_docs_runbook_sync_ready);
-  surface.toolchain_runtime_ga_operations_docs_runbook_sync_consistent =
-      toolchain_runtime_ga_operations_docs_runbook_sync_consistent;
-  surface.toolchain_runtime_ga_operations_docs_runbook_sync_ready =
-      toolchain_runtime_ga_operations_docs_runbook_sync_ready;
-  surface.toolchain_runtime_ga_operations_docs_runbook_sync_key =
-      toolchain_runtime_ga_operations_docs_runbook_sync_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_docs_runbook_sync_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_docs_runbook_sync_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_docs_runbook_sync_key=" +
-      toolchain_runtime_ga_operations_docs_runbook_sync_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_docs_runbook_sync_key=" +
-      toolchain_runtime_ga_operations_docs_runbook_sync_key;
-  const bool toolchain_runtime_ga_operations_advanced_core_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreConsistent(
-          toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
-          toolchain_runtime_ga_operations_docs_runbook_sync_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_docs_runbook_sync_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_core_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreReady(
-          toolchain_runtime_ga_operations_advanced_core_consistent,
-          toolchain_runtime_ga_operations_docs_runbook_sync_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_core_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedCoreKey(
-          toolchain_runtime_ga_operations_docs_runbook_sync_consistent,
-          toolchain_runtime_ga_operations_docs_runbook_sync_ready,
-          toolchain_runtime_ga_operations_docs_runbook_sync_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_core_consistent,
-          toolchain_runtime_ga_operations_advanced_core_ready);
-  surface.toolchain_runtime_ga_operations_advanced_core_consistent =
-      toolchain_runtime_ga_operations_advanced_core_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_core_ready =
-      toolchain_runtime_ga_operations_advanced_core_ready;
-  surface.toolchain_runtime_ga_operations_advanced_core_key =
-      toolchain_runtime_ga_operations_advanced_core_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_core_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_core_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_core_key=" +
-      toolchain_runtime_ga_operations_advanced_core_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_core_key=" +
-      toolchain_runtime_ga_operations_advanced_core_key;
-  const bool toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityConsistent(
-          toolchain_runtime_ga_operations_advanced_core_consistent,
-          toolchain_runtime_ga_operations_advanced_core_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_core_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_edge_compatibility_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityReady(
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent,
-          toolchain_runtime_ga_operations_advanced_core_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_edge_compatibility_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedEdgeCompatibilityKey(
-          toolchain_runtime_ga_operations_advanced_core_consistent,
-          toolchain_runtime_ga_operations_advanced_core_ready,
-          toolchain_runtime_ga_operations_advanced_core_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_ready);
-  surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent =
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_ready =
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_ready;
-  surface.toolchain_runtime_ga_operations_advanced_edge_compatibility_key =
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_edge_compatibility_key=" +
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_edge_compatibility_key=" +
-      toolchain_runtime_ga_operations_advanced_edge_compatibility_key;
-  const bool toolchain_runtime_ga_operations_advanced_diagnostics_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedDiagnosticsConsistent(
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_diagnostics_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedDiagnosticsReady(
-          toolchain_runtime_ga_operations_advanced_diagnostics_consistent,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_diagnostics_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedDiagnosticsKey(
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_ready,
-          toolchain_runtime_ga_operations_advanced_edge_compatibility_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_diagnostics_consistent,
-          toolchain_runtime_ga_operations_advanced_diagnostics_ready);
-  surface.toolchain_runtime_ga_operations_advanced_diagnostics_consistent =
-      toolchain_runtime_ga_operations_advanced_diagnostics_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_diagnostics_ready =
-      toolchain_runtime_ga_operations_advanced_diagnostics_ready;
-  surface.toolchain_runtime_ga_operations_advanced_diagnostics_key =
-      toolchain_runtime_ga_operations_advanced_diagnostics_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_diagnostics_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_diagnostics_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_diagnostics_key=" +
-      toolchain_runtime_ga_operations_advanced_diagnostics_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_diagnostics_key=" +
-      toolchain_runtime_ga_operations_advanced_diagnostics_key;
-  const bool toolchain_runtime_ga_operations_advanced_conformance_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedConformanceConsistent(
-          toolchain_runtime_ga_operations_advanced_diagnostics_consistent,
-          toolchain_runtime_ga_operations_advanced_diagnostics_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_diagnostics_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_conformance_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedConformanceReady(
-          toolchain_runtime_ga_operations_advanced_conformance_consistent,
-          toolchain_runtime_ga_operations_advanced_diagnostics_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_conformance_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedConformanceKey(
-          toolchain_runtime_ga_operations_advanced_diagnostics_consistent,
-          toolchain_runtime_ga_operations_advanced_diagnostics_ready,
-          toolchain_runtime_ga_operations_advanced_diagnostics_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_conformance_consistent,
-          toolchain_runtime_ga_operations_advanced_conformance_ready);
-  surface.toolchain_runtime_ga_operations_advanced_conformance_consistent =
-      toolchain_runtime_ga_operations_advanced_conformance_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_conformance_ready =
-      toolchain_runtime_ga_operations_advanced_conformance_ready;
-  surface.toolchain_runtime_ga_operations_advanced_conformance_key =
-      toolchain_runtime_ga_operations_advanced_conformance_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_conformance_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_conformance_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_conformance_key=" +
-      toolchain_runtime_ga_operations_advanced_conformance_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_conformance_key=" +
-      toolchain_runtime_ga_operations_advanced_conformance_key;
-  const bool toolchain_runtime_ga_operations_advanced_integration_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedIntegrationConsistent(
-          toolchain_runtime_ga_operations_advanced_conformance_consistent,
-          toolchain_runtime_ga_operations_advanced_conformance_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_conformance_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_integration_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedIntegrationReady(
-          toolchain_runtime_ga_operations_advanced_integration_consistent,
-          toolchain_runtime_ga_operations_advanced_conformance_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_integration_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedIntegrationKey(
-          toolchain_runtime_ga_operations_advanced_conformance_consistent,
-          toolchain_runtime_ga_operations_advanced_conformance_ready,
-          toolchain_runtime_ga_operations_advanced_conformance_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_integration_consistent,
-          toolchain_runtime_ga_operations_advanced_integration_ready);
-  surface.toolchain_runtime_ga_operations_advanced_integration_consistent =
-      toolchain_runtime_ga_operations_advanced_integration_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_integration_ready =
-      toolchain_runtime_ga_operations_advanced_integration_ready;
-  surface.toolchain_runtime_ga_operations_advanced_integration_key =
-      toolchain_runtime_ga_operations_advanced_integration_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_integration_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_integration_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_integration_key=" +
-      toolchain_runtime_ga_operations_advanced_integration_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_integration_key=" +
-      toolchain_runtime_ga_operations_advanced_integration_key;
-  const bool toolchain_runtime_ga_operations_advanced_performance_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedPerformanceConsistent(
-          toolchain_runtime_ga_operations_advanced_integration_consistent,
-          toolchain_runtime_ga_operations_advanced_integration_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_integration_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_performance_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedPerformanceReady(
-          toolchain_runtime_ga_operations_advanced_performance_consistent,
-          toolchain_runtime_ga_operations_advanced_integration_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_performance_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedPerformanceKey(
-          toolchain_runtime_ga_operations_advanced_integration_consistent,
-          toolchain_runtime_ga_operations_advanced_integration_ready,
-          toolchain_runtime_ga_operations_advanced_integration_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_performance_consistent,
-          toolchain_runtime_ga_operations_advanced_performance_ready);
-  surface.toolchain_runtime_ga_operations_advanced_performance_consistent =
-      toolchain_runtime_ga_operations_advanced_performance_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_performance_ready =
-      toolchain_runtime_ga_operations_advanced_performance_ready;
-  surface.toolchain_runtime_ga_operations_advanced_performance_key =
-      toolchain_runtime_ga_operations_advanced_performance_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_performance_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_performance_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_performance_key=" +
-      toolchain_runtime_ga_operations_advanced_performance_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_performance_key=" +
-      toolchain_runtime_ga_operations_advanced_performance_key;
-  const bool toolchain_runtime_ga_operations_advanced_core_shard2_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreShard2Consistent(
-          toolchain_runtime_ga_operations_advanced_performance_consistent,
-          toolchain_runtime_ga_operations_advanced_performance_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_performance_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_advanced_core_shard2_ready =
-      IsObjc3ToolchainRuntimeGaOperationsAdvancedCoreShard2Ready(
-          toolchain_runtime_ga_operations_advanced_core_shard2_consistent,
-          toolchain_runtime_ga_operations_advanced_performance_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_advanced_core_shard2_key =
-      BuildObjc3ToolchainRuntimeGaOperationsAdvancedCoreShard2Key(
-          toolchain_runtime_ga_operations_advanced_performance_consistent,
-          toolchain_runtime_ga_operations_advanced_performance_ready,
-          toolchain_runtime_ga_operations_advanced_performance_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_advanced_core_shard2_consistent,
-          toolchain_runtime_ga_operations_advanced_core_shard2_ready);
-  surface.toolchain_runtime_ga_operations_advanced_core_shard2_consistent =
-      toolchain_runtime_ga_operations_advanced_core_shard2_consistent;
-  surface.toolchain_runtime_ga_operations_advanced_core_shard2_ready =
-      toolchain_runtime_ga_operations_advanced_core_shard2_ready;
-  surface.toolchain_runtime_ga_operations_advanced_core_shard2_key =
-      toolchain_runtime_ga_operations_advanced_core_shard2_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_advanced_core_shard2_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_advanced_core_shard2_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_advanced_core_shard2_key=" +
-      toolchain_runtime_ga_operations_advanced_core_shard2_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_advanced_core_shard2_key=" +
-      toolchain_runtime_ga_operations_advanced_core_shard2_key;
-  const bool toolchain_runtime_ga_operations_integration_closeout_signoff_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffConsistent(
-          toolchain_runtime_ga_operations_advanced_core_shard2_consistent,
-          toolchain_runtime_ga_operations_advanced_core_shard2_ready,
-          surface.long_tail_grammar_integration_closeout_consistent,
-          surface.long_tail_grammar_gate_signoff_ready,
-          toolchain_runtime_ga_operations_advanced_core_shard2_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key);
-  const bool toolchain_runtime_ga_operations_integration_closeout_signoff_ready =
-      IsObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffReady(
-          toolchain_runtime_ga_operations_integration_closeout_signoff_consistent,
-          toolchain_runtime_ga_operations_advanced_core_shard2_key,
-          surface.long_tail_grammar_integration_closeout_key);
-  const std::string toolchain_runtime_ga_operations_integration_closeout_signoff_key =
-      BuildObjc3ToolchainRuntimeGaOperationsIntegrationCloseoutSignoffKey(
-          toolchain_runtime_ga_operations_advanced_core_shard2_consistent,
-          toolchain_runtime_ga_operations_advanced_core_shard2_ready,
-          toolchain_runtime_ga_operations_advanced_core_shard2_key,
-          surface.long_tail_grammar_integration_closeout_key,
-          surface.parse_lowering_performance_quality_guardrails_key,
-          toolchain_runtime_ga_operations_integration_closeout_signoff_consistent,
-          toolchain_runtime_ga_operations_integration_closeout_signoff_ready);
-  surface.toolchain_runtime_ga_operations_integration_closeout_signoff_consistent =
-      toolchain_runtime_ga_operations_integration_closeout_signoff_consistent;
-  surface.toolchain_runtime_ga_operations_integration_closeout_signoff_ready =
-      toolchain_runtime_ga_operations_integration_closeout_signoff_ready;
-  surface.toolchain_runtime_ga_operations_integration_closeout_signoff_key =
-      toolchain_runtime_ga_operations_integration_closeout_signoff_key;
-  surface.long_tail_grammar_integration_closeout_consistent =
-      surface.long_tail_grammar_integration_closeout_consistent &&
-      toolchain_runtime_ga_operations_integration_closeout_signoff_consistent;
-  surface.long_tail_grammar_gate_signoff_ready =
-      surface.long_tail_grammar_gate_signoff_ready &&
-      toolchain_runtime_ga_operations_integration_closeout_signoff_ready;
-  surface.long_tail_grammar_integration_closeout_key +=
-      ";toolchain_runtime_ga_operations_integration_closeout_signoff_key=" +
-      toolchain_runtime_ga_operations_integration_closeout_signoff_key;
-  surface.parse_lowering_performance_quality_guardrails_key +=
-      ";toolchain_runtime_ga_operations_integration_closeout_signoff_key=" +
-      toolchain_runtime_ga_operations_integration_closeout_signoff_key;
+  const Objc3ToolchainRuntimeGaOperationsCloseoutReadinessRecord
+      toolchain_runtime_ga_operations_closeout_readiness =
+          ApplyObjc3ToolchainRuntimeGaOperationsCloseoutReadiness(
+              surface,
+              diagnostics_clear,
+              sema_handoff_ready,
+              toolchain_runtime_ga_operations_cross_lane_integration_consistent,
+              toolchain_runtime_ga_operations_cross_lane_integration_ready);
   surface.ready_for_lowering = diagnostics_clear &&
                                parse_snapshot_replay_ready &&
                                sema_handoff_ready &&
@@ -2080,109 +1692,127 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_docs_runbook_sync_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .docs_runbook_sync_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations docs and runbook synchronization is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_docs_runbook_sync_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .docs_runbook_sync_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations docs and runbook synchronization is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_core_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_core_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced core workpack is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_core_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_core_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced core workpack is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_edge_compatibility_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_edge_compatibility_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced edge compatibility workpack is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_edge_compatibility_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_edge_compatibility_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced edge compatibility workpack is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_diagnostics_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_diagnostics_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced diagnostics workpack is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_diagnostics_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_diagnostics_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced diagnostics workpack is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_conformance_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_conformance_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced conformance workpack is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_conformance_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_conformance_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced conformance workpack is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_integration_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_integration_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced integration workpack is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_integration_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_integration_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced integration workpack is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_performance_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_performance_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced performance workpack is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_performance_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_performance_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced performance workpack is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_core_shard2_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_core_shard2_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced core workpack (shard 2) is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_advanced_core_shard2_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .advanced_core_shard2_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations advanced core workpack (shard 2) is not ready";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_integration_closeout_signoff_consistent) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .integration_closeout_signoff_consistent) {
     surface.failure_reason =
         "toolchain/runtime GA operations integration closeout and sign-off is inconsistent";
     return surface;
   }
 
-  if (!toolchain_runtime_ga_operations_integration_closeout_signoff_ready) {
+  if (!toolchain_runtime_ga_operations_closeout_readiness
+           .integration_closeout_signoff_ready) {
     surface.failure_reason =
         "toolchain/runtime GA operations integration closeout and sign-off is not ready";
     return surface;
