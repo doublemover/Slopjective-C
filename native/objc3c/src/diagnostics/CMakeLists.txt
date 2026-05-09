@@ -1,5 +1,6 @@
 add_library(objc3c_diagnostics_modes STATIC
-  modes/objc3_removed_mode_options.cpp
+  modes/objc3_removed_mode_option_classifier.cpp
+  modes/objc3_removed_mode_option_messages.cpp
 )
 target_sources(objc3c_diagnostics_modes PUBLIC
   ${CMAKE_CURRENT_LIST_DIR}/modes/objc3_mode_option_diagnostic.h
