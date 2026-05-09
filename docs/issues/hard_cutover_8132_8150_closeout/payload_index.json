@@ -16,8 +16,9 @@
   "latest_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_docs_issue_commit": "abc203478",
-    "through_commit": "3dcf928fe",
-    "commit_count": 80,
+    "through_commit": "6d6fa804d",
+    "commit_count": 90,
+    "count_policy": "counts owner commits folded into this evidence and excludes docs/issues evidence refresh commits",
     "issue_owner_buckets": [
       {
         "issues": [
@@ -39,7 +40,9 @@
           "fb54d008b",
           "e1576ff03",
           "64bf96d9b",
-          "578ade056"
+          "578ade056",
+          "6a2b0336f",
+          "df2577005"
         ]
       },
       {
@@ -75,7 +78,9 @@
           "f4a067c57",
           "377d2abbc",
           "f03cba094",
-          "3dcf928fe"
+          "3dcf928fe",
+          "9cf3601b5",
+          "4307f5156"
         ]
       },
       {
@@ -110,7 +115,10 @@
           "4219dd9e9",
           "2af7ffd1b",
           "a7a353c87",
-          "3dcf928fe"
+          "3dcf928fe",
+          "c8060c3e3",
+          "531b53843",
+          "6d6fa804d"
         ]
       },
       {
@@ -143,7 +151,12 @@
           "0fb5ce0a0",
           "699408fb7",
           "a7a353c87",
-          "a16fd3725"
+          "a16fd3725",
+          "1f419a98c",
+          "beeb1b22c",
+          "531b53843",
+          "c8060c3e3",
+          "3d90deeaf"
         ]
       }
     ]

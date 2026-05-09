@@ -22,6 +22,7 @@
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
 #include "artifacts/objc3_frontend_feature_claim_artifacts.h"
+#include "artifacts/objc3_frontend_feature_claim_truth_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_capability_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
@@ -63,10 +64,9 @@ using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
 using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
 using objc3::artifacts::BuildRunnableFeatureClaimIds;
 using objc3::artifacts::BuildSourceOnlyFeatureClaimIds;
-using objc3::artifacts::BuildSupportedSelectionSurfaceIds;
-using objc3::artifacts::BuildSuppressedMacroClaimIds;
 using objc3::artifacts::BuildUnsupportedFeatureClaimIds;
-using objc3::artifacts::BuildUnsupportedSelectionSurfaceIds;
+using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceJson;
+using objc3::artifacts::frontend::BuildFeatureClaimStrictnessTruthSurfaceReplayKey;
 using objc3::artifacts::frontend::BuildPublicConformanceReportJson;
 using objc3::artifacts::frontend::BuildRuntimeCapabilityReportJson;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
@@ -8900,79 +8900,6 @@ std::string BuildRuntimeAwareImportModuleArtifactJson(
       << "  \"replay_key\": \"" << EscapeJsonString(summary.replay_key)
       << "\"\n"
       << "}\n";
-  return out.str();
-}
-
-std::string BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
-    const Objc3FrontendOptions &options,
-    const Objc3FrontendPipelineResult &pipeline_result) {
-  std::ostringstream out;
-  out << kObjc3FeatureClaimStrictnessTruthSurfaceContractId
-      << ";language_mode=" << kObjc3RunnableFeatureClaimModeName
-      << ";language_version=" << static_cast<unsigned>(options.language_version)
-      << ";language_profile=" << LanguageProfileName(options.language_profile)
-      << ";supported_selection_surfaces=2"
-      << ";unsupported_selection_surfaces=3"
-      << ";suppressed_macro_claims=3"
-      << ";parser_declared_protocols=" << pipeline_result.program.ast.protocols.size()
-      << ";parser_declared_interfaces=" << pipeline_result.program.ast.interfaces.size()
-      << ";parser_declared_implementations=" << pipeline_result.program.ast.implementations.size();
-  return out.str();
-}
-
-std::string BuildFeatureClaimStrictnessTruthSurfaceJson(
-    const Objc3FrontendOptions &options,
-    const Objc3FrontendPipelineResult &pipeline_result) {
-  const std::vector<std::string> supported_selection_surface_ids =
-      BuildSupportedSelectionSurfaceIds();
-  const std::vector<std::string> unsupported_selection_surface_ids =
-      BuildUnsupportedSelectionSurfaceIds();
-  const std::vector<std::string> suppressed_macro_claim_ids =
-      BuildSuppressedMacroClaimIds();
-  const std::vector<std::string> supported_language_profiles = {
-      "canonical",
-  };
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\""
-      << kObjc3FeatureClaimStrictnessTruthSurfaceContractId
-      << "\",\"runnable_feature_claim_inventory_contract_id\":\""
-      << kObjc3RunnableFeatureClaimInventoryContractId
-      << "\",\"language_mode\":\"" << kObjc3RunnableFeatureClaimModeName
-      << "\",\"language_version\":" << static_cast<unsigned>(options.language_version)
-      << ",\"effective_language_profile\":\""
-      << LanguageProfileName(options.language_profile)
-      << "\",\"default_language_profile\":\"canonical\""
-      << ",\"canonical_literal_rejection_diagnostics_enabled\":"
-      << "true"
-      << ",\"driver_surface_model\":\""
-      << kObjc3FeatureClaimStrictnessTruthDriverSurfaceModel
-      << "\",\"language_version_selection_supported\":true"
-      << ",\"language_profile_selection_supported\":true"
-      << ",\"canonical_rejection_diagnostics_selection_supported\":false"
-      << ",\"canonical_literal_rejection_diagnostics_hard_error\":true"
-      << ",\"strictness_selection_supported\":false"
-      << ",\"strict_concurrency_selection_supported\":false"
-      << ",\"feature_macro_surface_supported\":false"
-      << ",\"claim_truth_fail_closed\":true"
-      << ",\"supported_language_profiles\":"
-      << BuildStringArrayJson(supported_language_profiles)
-      << ",\"supported_selection_surface_ids\":"
-      << BuildStringArrayJson(supported_selection_surface_ids)
-      << ",\"unsupported_selection_surface_ids\":"
-      << BuildStringArrayJson(unsupported_selection_surface_ids)
-      << ",\"suppressed_macro_claim_ids\":"
-      << BuildStringArrayJson(suppressed_macro_claim_ids)
-      << ",\"declared_protocol_count\":"
-      << pipeline_result.program.ast.protocols.size()
-      << ",\"declared_interface_count\":"
-      << pipeline_result.program.ast.interfaces.size()
-      << ",\"declared_implementation_count\":"
-      << pipeline_result.program.ast.implementations.size()
-      << ",\"replay_key\":\""
-      << EscapeJsonString(BuildFeatureClaimStrictnessTruthSurfaceReplayKey(
-             options, pipeline_result))
-      << "\"}";
   return out.str();
 }
 

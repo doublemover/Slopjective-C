@@ -21,7 +21,7 @@ performed while preparing it.
 
 The latest docs/issues-only refresh for these ownership areas is
 `docs/issues/hard_cutover_latest_local_commit_refresh.md`. It folds in the local
-owner wave after `abc203478` through `3dcf928fe` and keeps the same acceptance
+owner wave after `abc203478` through `6d6fa804d` and keeps the same acceptance
 boundaries: new owner modules are evidence of canonical ownership, while
 old-mode, shim, fallback, compatibility, and migration-lane support remain
 rejection, strict-error, or absent evidence.

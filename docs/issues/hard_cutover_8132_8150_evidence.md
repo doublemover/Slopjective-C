@@ -144,8 +144,8 @@ pass:
 
 Latest local owner refresh after the docs/issues outcome-index pass:
 
-- `docs/issues/hard_cutover_latest_local_commit_refresh.md` folds in the 80
-  local commits after `abc203478` through `3dcf928fe` without running
+- `docs/issues/hard_cutover_latest_local_commit_refresh.md` folds in the 90
+  local owner commits after `abc203478` through `6d6fa804d` without running
   validation, GitHub commands, push, or remote issue edits.
 - Parser, AST, ObjC reference, and type-surface owner splits refresh `#8132`,
   `#8134`, `#8146`, and `#8147`.
@@ -158,6 +158,12 @@ Latest local owner refresh after the docs/issues outcome-index pass:
 - Diagnostic, stdlib/support docs, workflow, source-hygiene, control-plane, and
   retired-surface fixture contract owners refresh `#8135`, `#8142`, `#8144`,
   `#8145`, `#8149`, and `#8150`.
+- Newer task/task-group support symbol, frontend diagnostic slice, runtime state
+  clear, CLI option family, and property snapshot wiring commits are folded into
+  those same owner buckets.
+- The latest parser actor-isolation sendability, runbook native-owner, rejected
+  canonical literal table, and runtime capability artifact commits are folded
+  into the same local-only evidence map.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
@@ -179,7 +185,7 @@ Latest local owner refresh after the docs/issues outcome-index pass:
 | `#8147` | evidence-ready | Deep sema/lowering/runtime metadata split evidence is indexed with canonical ownership and strict unsupported-feature behavior. |
 | `#8148` | evidence-ready | JSON/schema infrastructure evidence is indexed, including schema registry id normalization. |
 | `#8149` | evidence-ready | Source hygiene and command-surface guardrails are indexed with allowlist/report-only surfaces retired. |
-| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the latest 80-commit owner refresh. Remote issue closure, push, and validation are deferred by current constraints. |
+| `#8150` | local-evidence-ready-not-remotely-closed | Closure evidence is local and now includes the latest 90-owner-commit refresh. Remote issue closure, push, and validation are deferred by current constraints. |
 
 Primary local commit evidence is enumerated per issue in
 `docs/issues/hard_cutover_8132_8150_evidence.json` and mirrored into

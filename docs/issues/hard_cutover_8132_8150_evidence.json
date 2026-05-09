@@ -578,8 +578,9 @@
   "latest_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_docs_issue_commit": "abc203478",
-    "through_commit": "3dcf928fe",
-    "commit_count": 80,
+    "through_commit": "6d6fa804d",
+    "commit_count": 90,
+    "count_policy": "counts owner commits folded into this evidence and excludes docs/issues evidence refresh commits",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -604,7 +605,9 @@
           "fb54d008b",
           "e1576ff03",
           "64bf96d9b",
-          "578ade056"
+          "578ade056",
+          "6a2b0336f",
+          "df2577005"
         ],
         "owner_boundary": "parser profiles, AST/type surfaces, block/signature/scope owners, and ObjC reference support are compiler ownership evidence; old-mode and parser fallback remain rejection evidence"
       },
@@ -654,7 +657,9 @@
           "f4a067c57",
           "377d2abbc",
           "f03cba094",
-          "3dcf928fe"
+          "3dcf928fe",
+          "9cf3601b5",
+          "4307f5156"
         ],
         "owner_boundary": "runtime state, dispatch, concurrency, block, storage, ARC, selector/keypath, and snapshot owners are runtime acceptance evidence; fallback dispatch remains strict-error evidence"
       },
@@ -675,7 +680,10 @@
           "f0f063934",
           "13269c328",
           "5cc21d8b1",
-          "3dcf928fe"
+          "3dcf928fe",
+          "c8060c3e3",
+          "531b53843",
+          "6d6fa804d"
         ],
         "owner_boundary": "driver, frontend, publication, registration input, runtime result, and borrowed-string owners are strict public contract evidence"
       },
@@ -695,7 +703,8 @@
           "2af7ffd1b",
           "a7a353c87",
           "8e9465994",
-          "3dcf928fe"
+          "3dcf928fe",
+          "531b53843"
         ],
         "owner_boundary": "contract, config, diagnostic lookup, pipeline result, workflow payload, and deterministic publication owners classify canonical and rejected states without fallback support"
       },
@@ -712,7 +721,9 @@
           "fda259576",
           "372de733d",
           "2b62a9872",
-          "86c31c6dc"
+          "86c31c6dc",
+          "1f419a98c",
+          "beeb1b22c"
         ],
         "owner_boundary": "shared support helpers own canonical property, method-family, type consistency, and ObjC reference surfaces without widening retired compatibility behavior"
       },
@@ -732,7 +743,8 @@
           "0da6806ec",
           "4b41eeefc",
           "9d337d188",
-          "578ade056"
+          "578ade056",
+          "3d90deeaf"
         ],
         "owner_boundary": "diagnostic, removed-mode, stdlib, docs, and runbook truth owns rejection and capability evidence without compatibility claims"
       },
@@ -749,7 +761,8 @@
           "0fb5ce0a0",
           "699408fb7",
           "a7a353c87",
-          "a16fd3725"
+          "a16fd3725",
+          "c8060c3e3"
         ],
         "owner_boundary": "fixture contracts, workflow, source hygiene, control-plane, and generated-report boundary evidence remain local evidence until validation and remote closeout are allowed"
       }
