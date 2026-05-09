@@ -12,7 +12,7 @@
     "stdlib/modules/objc3.system/module.objc3",
     "scripts/check_stdlib_surface.py",
     "scripts/materialize_objc3c_stdlib_workspace.py",
-    "scripts/run_objc3c_stdlib_workspace_smoke.py",
+    "scripts/objc3c_workflow/actions/application_stdlib_integrations.py",
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "package.json#scripts.objc3c"
   ],
