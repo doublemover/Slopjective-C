@@ -233,7 +233,6 @@ std::string Objc3RuntimeMetadataSelectorStringPoolEmissionSummary();
 std::string Objc3RuntimeMetadataBinaryInspectionHarnessSummary();
 std::string Objc3RuntimeMetadataObjectPackagingRetentionSummary();
 std::string Objc3RuntimeMetadataLinkerRetentionSummary();
-std::string Objc3RuntimeMetadataArchiveStaticLinkDiscoverySummary();
 std::string Objc3RuntimeMetadataEmissionGateSummary();
 std::string Objc3RuntimeMetadataObjectEmissionCloseoutSummary();
 std::string Objc3RuntimeMetadataSectionForObjectFormat(

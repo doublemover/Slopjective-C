@@ -6,11 +6,11 @@
 #include "lower/contracts/lowering_diagnostics.h"
 #include "lower/contracts/lowering_phase_io.h"
 #include "lower/contracts/runtime_dispatch_lowering_contracts.h"
+#include "lower/contracts/runtime_bootstrap_lowering_contracts.h"
 #include "lower/contracts/runtime_metadata_emission_contracts.h"
 #include "lower/contracts/runtime_metadata_handoff.h"
 
 #include <cstddef>
-#include <cstdint>
 #include <string>
 
 // executable object artifact lowering freeze anchor: lane-C now
@@ -834,103 +834,6 @@ inline constexpr const char *kObjc3RuntimeLinkerRetentionElfFlagModel =
     "-Wl,--undefined=<symbol>";
 inline constexpr const char *kObjc3RuntimeLinkerRetentionMachOFlagModel =
     "-Wl,-u,_<symbol>";
-// archive/static-link discovery anchor: lane-D now closes the
-// remaining multi-archive fan-in and cross-translation-unit discovery path by
-// making linker-anchor identity translation-unit-stable and by standardizing
-// one merged discovery/response artifact pair for downstream archive link
-// orchestration.
-inline constexpr const char *kObjc3RuntimeArchiveStaticLinkDiscoveryContractId =
-    "objc3c.runtime.metadata.archive.and.static.link.discovery.v1";
-inline constexpr const char *kObjc3RuntimeArchiveStaticLinkAnchorSeedModel =
-    "module-and-metadata-replay-plus-translation-unit-identity";
-inline constexpr const char *kObjc3RuntimeArchiveStaticLinkTranslationUnitIdentityModel =
-    "input-path-plus-parse-and-lowering-replay";
-inline constexpr const char *kObjc3RuntimeArchiveStaticLinkMergeModel =
-    "deduplicated-driver-flag-fan-in";
-inline constexpr const char *kObjc3RuntimeMergedLinkerResponseArtifactSuffix =
-    ".merged.runtime-metadata-linker-options.rsp";
-inline constexpr const char *kObjc3RuntimeMergedDiscoveryArtifactSuffix =
-    ".merged.runtime-metadata-discovery.json";
-// constructor-root/init-array lowering freeze anchor: the existing
-// bootstrap-lowering surface is now the canonical live lowering contract for
-// constructor roots, derived init stubs, registration tables, and
-// llvm.global_ctors participation. The registration-descriptor artifact plus
-// the emitted registration manifest remain the authoritative lowering inputs
-// that later multi-image work must preserve rather than reconstructing symbol
-// names ad hoc in IR emission or the driver.
-inline constexpr const char *kObjc3RuntimeBootstrapLoweringContractId =
-    "objc3c.runtime.constructor.root.init.array.lowering.v1";
-inline constexpr const char *kObjc3RuntimeBootstrapLoweringBoundaryModel =
-    "registration-descriptor-and-registration-manifest-drive-constructor-root-init-stub-registration-table-and-platform-init-array-lowering";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorHandoffContractId =
-        "objc3c.runtime.registration.descriptor.frontend.closure.v1";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorArtifact =
-        "module.runtime-registration-descriptor.json";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorHandoffModel =
-        "registration-descriptor-artifact-and-registration-manifest-are-authoritative-lowering-inputs";
-inline constexpr const char *kObjc3RuntimeBootstrapConstructorRootEmissionState =
-    "materialized-before-user-main-via-llvm-global-ctors-single-root";
-inline constexpr const char *kObjc3RuntimeBootstrapInitStubEmissionState =
-    "materialized-before-user-main-via-derived-init-stub";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationTableEmissionState =
-        "materialized-in-native-object-artifact";
-inline constexpr const char *kObjc3RuntimeBootstrapGlobalCtorListModel =
-    "llvm.global_ctors-single-root-priority-65535";
-inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableSymbolPrefix =
-    "__objc3_runtime_registration_table_";
-inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitStateSymbolPrefix =
-    "__objc3_runtime_image_local_init_state_";
-// registration-descriptor/image-root lowering anchor: lane-C now
-// materializes the registration-descriptor and image-root identities as real
-// emitted globals in dedicated object sections so later multi-image runtime
-// bootstrap can consume binary artifacts instead of only sidecar manifests.
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringContractId =
-        "objc3c.runtime.registration.descriptor.and.image.root.lowering.v1";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringModel =
-        "frontend-identifiers-drive-emitted-registration-descriptor-and-image-root-globals";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorLogicalSection =
-        "objc3.runtime.registration_descriptor";
-inline constexpr const char *kObjc3RuntimeBootstrapImageRootLogicalSection =
-    "objc3.runtime.image_root";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorSymbolPrefix =
-        "__objc3_runtime_registration_descriptor_";
-inline constexpr const char *kObjc3RuntimeBootstrapImageRootSymbolPrefix =
-    "__objc3_runtime_image_root_";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapRegistrationDescriptorPayloadModel =
-        "registration-descriptor-record-points-at-image-root-image-descriptor-registration-table-linker-anchor-and-init-state";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapImageRootPayloadModel =
-        "image-root-record-points-at-module-name-image-descriptor-registration-table-and-discovery-root";
-// archive/static-link bootstrap replay corpus anchor: lane-C now
-// binds the earlier archive/static-link retention/discovery proof to the live
-// bootstrap replay runtime so archive-linked images are validated through one
-// retained-binary corpus instead of section-only inspection.
-inline constexpr const char
-    *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusContractId =
-        "objc3c.runtime.bootstrap.archive.static.link.replay.corpus.v1";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusModel =
-        "merged-archive-static-link-discovery-artifacts-drive-live-bootstrap-replay-probes";
-inline constexpr const char
-    *kObjc3RuntimeBootstrapArchiveStaticLinkReplayCorpusBinaryProofModel =
-        "plain-link-omits-bootstrap-images-retained-link-replays-them";
-inline constexpr const char *kObjc3RuntimeBootstrapRegistrationTableLayoutModel =
-    "abi-version-field-count-image-descriptor-discovery-root-linker-anchor-family-aggregates-selector-string-pools-keypath-descriptors-image-local-init-state";
-inline constexpr const char *kObjc3RuntimeBootstrapImageLocalInitializationModel =
-    "guarded-once-per-image-local-state-cell";
-inline constexpr std::uint64_t kObjc3RuntimeBootstrapRegistrationTableAbiVersion =
-    2u;
-inline constexpr std::uint64_t
-    kObjc3RuntimeBootstrapRegistrationTablePointerFieldCount = 12u;
 // versioned conformance-report lowering freeze anchor: lane-C
 // lowers the truthful runnable/source-only/unsupported claim packets into one
 // emitted machine-readable sidecar artifact. Later runtime capability and
@@ -2348,9 +2251,6 @@ std::string Objc3RuntimeClassRealizationSummary();
 std::string Objc3RuntimeMetaclassGraphRootClassSummary();
 std::string Objc3RuntimeCategoryAttachmentProtocolConformanceSummary();
 std::string Objc3RuntimeCanonicalRunnableObjectSampleSupportSummary();
-std::string Objc3RuntimeBootstrapLoweringBoundarySummary();
-std::string Objc3RuntimeBootstrapRegistrationDescriptorImageRootLoweringSummary();
-std::string Objc3RuntimeBootstrapArchiveStaticLinkReplayCorpusSummary();
 std::string Objc3ManifestObjectIrTruthGateSummary();
 std::string Objc3ToolingMachineReadableConformanceReportContractLoweringSummary();
 std::string Objc3ToolingFeatureAwareConformanceReportEmissionLoweringSummary();
