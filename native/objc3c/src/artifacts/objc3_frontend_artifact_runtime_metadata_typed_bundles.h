@@ -17,4 +17,11 @@ void ApplyObjc3FrontendRuntimeMetadataClassMetaclassBundles(
     const Objc3RuntimeMetadataSectionPublicationSummary
         &runtime_metadata_section_publication);
 
+void ApplyObjc3FrontendRuntimeMetadataMemberTableBundles(
+    Objc3IRFrontendMetadata &ir_frontend_metadata,
+    const Objc3ExecutableMetadataSourceGraph &source_graph,
+    const Objc3RuntimeMetadataSectionPublicationSummary
+        &runtime_metadata_section_publication,
+    bool protocol_category_payload_complete);
+
 }  // namespace objc3::artifacts::frontend
