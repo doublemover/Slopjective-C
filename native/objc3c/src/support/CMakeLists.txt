@@ -13,7 +13,10 @@ add_library(objc3c_support STATIC
   objc3_concurrency_task_symbols.h
   objc3_file_reading.cpp
   objc3_file_reading.h
-  objc3_identifier_safe_suffix.cpp
+  objc3_identifier_safe_suffix_builder.cpp
+  objc3_identifier_safe_suffix_builder.h
+  objc3_identifier_safe_suffix_characters.cpp
+  objc3_identifier_safe_suffix_characters.h
   objc3_identifier_safe_suffix.h
   objc3_ir_object_backend_token.cpp
   objc3_ir_object_backend_token.h
