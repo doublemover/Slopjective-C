@@ -445,6 +445,45 @@
         "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.cpp",
         "native/objc3c/src/pipeline/frontend_pipeline_stage_contract.h"
       ]
+    },
+    {
+      "ref": "be79d15ce",
+      "summary": "HC rename stdlib text shape surfaces",
+      "issues": [
+        "#8145"
+      ],
+      "evidence_paths": [
+        "stdlib/advanced_architecture.json",
+        "stdlib/core_architecture.json",
+        "stdlib/program_surface.json",
+        "stdlib/semantic_policy.json"
+      ]
+    },
+    {
+      "ref": "e23236ea0",
+      "summary": "HC split concurrency support profile owners",
+      "issues": [
+        "#8138",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_concurrency_cancellation_symbols.cpp",
+        "native/objc3c/src/support/objc3_concurrency_profile_tokens.cpp",
+        "native/objc3c/src/support/objc3_concurrency_task_group_symbols.h",
+        "native/objc3c/src/support/objc3_concurrency_task_symbols.cpp"
+      ]
+    },
+    {
+      "ref": "5354a91b0",
+      "summary": "HC split config feature state owners",
+      "issues": [
+        "#8138",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/config/objc3_feature_state_names.cpp",
+        "native/objc3c/src/config/objc3_feature_state_query.cpp"
+      ]
     }
   ],
   "global_policy": {

@@ -297,6 +297,29 @@
         "#8138",
         "#8140"
       ]
+    },
+    {
+      "ref": "be79d15ce",
+      "summary": "HC rename stdlib text shape surfaces",
+      "issues": [
+        "#8145"
+      ]
+    },
+    {
+      "ref": "e23236ea0",
+      "summary": "HC split concurrency support profile owners",
+      "issues": [
+        "#8138",
+        "#8147"
+      ]
+    },
+    {
+      "ref": "5354a91b0",
+      "summary": "HC split config feature state owners",
+      "issues": [
+        "#8138",
+        "#8148"
+      ]
     }
   ],
   "hard_cutover_disposition": {

@@ -79,6 +79,12 @@ pass:
   `#8148`.
 - `2f1a954ad` adds frontend pipeline stage contract evidence for `#8138` and
   `#8140`.
+- `be79d15ce` renames stdlib text shape surfaces as docs/support evidence for
+  `#8145`.
+- `e23236ea0` adds concurrency support profile owner evidence for `#8138` and
+  `#8147`.
+- `5354a91b0` adds config feature-state owner evidence for `#8138` and
+  `#8148`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
