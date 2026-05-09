@@ -1,6 +1,7 @@
 #include "artifacts/json/artifact_schema_registry.h"
 
 #include <array>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -60,6 +61,44 @@ std::vector<ArtifactSchemaContract> ListArtifactSchemaContracts() {
   return std::vector<ArtifactSchemaContract>(kSchemas.begin(), kSchemas.end());
 }
 
+std::vector<ArtifactSchemaContract> ListArtifactSchemaContractsByFamily(
+    std::string_view artifact_family) {
+  std::vector<ArtifactSchemaContract> contracts;
+  for (const ArtifactSchemaContract &contract : kSchemas) {
+    if (contract.artifact_family == artifact_family) {
+      contracts.push_back(contract);
+    }
+  }
+  return contracts;
+}
+
+ArtifactSchemaRegistrySummary BuildArtifactSchemaRegistrySummary() {
+  ArtifactSchemaRegistrySummary summary;
+  std::set<std::string> schema_ids;
+  std::set<std::string> payload_ids;
+  std::set<std::string> artifact_families;
+  summary.schema_paths_present = true;
+  for (const ArtifactSchemaContract &contract : kSchemas) {
+    schema_ids.insert(std::string(contract.schema_id));
+    payload_ids.insert(std::string(contract.payload_id_value));
+    artifact_families.insert(std::string(contract.artifact_family));
+    summary.schema_paths_present =
+        summary.schema_paths_present && !contract.schema_path.empty() &&
+        !contract.schema_uri.empty();
+  }
+  summary.schema_count = kSchemas.size();
+  summary.artifact_family_count = artifact_families.size();
+  summary.schema_ids_lexicographic.assign(schema_ids.begin(), schema_ids.end());
+  summary.payload_ids_lexicographic.assign(payload_ids.begin(), payload_ids.end());
+  summary.artifact_families_lexicographic.assign(artifact_families.begin(),
+                                                 artifact_families.end());
+  summary.schema_ids_unique =
+      summary.schema_ids_lexicographic.size() == kSchemas.size();
+  summary.payload_ids_unique =
+      summary.payload_ids_lexicographic.size() == kSchemas.size();
+  return summary;
+}
+
 std::optional<ArtifactSchemaContract> LookupArtifactSchemaContract(std::string_view schema_id) {
   for (const ArtifactSchemaContract &contract : kSchemas) {
     if (contract.schema_id == schema_id) {
@@ -79,12 +118,43 @@ std::optional<ArtifactSchemaContract> LookupArtifactSchemaContractByPayloadId(
   return std::nullopt;
 }
 
+std::optional<ArtifactSchemaContract> LookupArtifactSchemaContractByFamilyAndPayloadId(
+    std::string_view artifact_family,
+    std::string_view payload_id) {
+  for (const ArtifactSchemaContract &contract : kSchemas) {
+    if (contract.artifact_family == artifact_family &&
+        contract.payload_id_value == payload_id) {
+      return contract;
+    }
+  }
+  return std::nullopt;
+}
+
 std::optional<std::string> LookupArtifactSchemaPath(std::string_view schema_id) {
   const std::optional<ArtifactSchemaContract> contract = LookupArtifactSchemaContract(schema_id);
   if (contract.has_value()) {
     return std::string(contract->schema_path);
   }
   return std::nullopt;
+}
+
+bool RequireArtifactSchemaRegistryIntegrity(std::string &error) {
+  const ArtifactSchemaRegistrySummary summary =
+      BuildArtifactSchemaRegistrySummary();
+  if (!summary.schema_ids_unique) {
+    error = "artifact schema registry contains duplicate schema_id values";
+    return false;
+  }
+  if (!summary.payload_ids_unique) {
+    error = "artifact schema registry contains duplicate payload id values";
+    return false;
+  }
+  if (!summary.schema_paths_present) {
+    error = "artifact schema registry contains schema entries without schema paths";
+    return false;
+  }
+  error.clear();
+  return true;
 }
 
 bool RequireArtifactSchemaContract(std::string_view schema_id,

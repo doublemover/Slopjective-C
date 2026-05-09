@@ -20,7 +20,9 @@ add_library(objc3c_artifacts STATIC
   json/program_manifest_json.cpp
   json/runtime_metadata_manifest_json.cpp
   json/semantic_type_manifest_json.cpp
+  objc3_frontend_conformance_artifacts.cpp
   objc3_frontend_artifacts.cpp
+  objc3_frontend_runtime_import_artifacts.cpp
 )
 objc3c_apply_build_defaults(objc3c_artifacts)
 objc3c_apply_llvm_direct_config(objc3c_artifacts)

@@ -17,6 +17,8 @@
 #include "artifacts/json/program_manifest_json.h"
 #include "artifacts/json/runtime_metadata_manifest_json.h"
 #include "artifacts/json/semantic_type_manifest_json.h"
+#include "artifacts/objc3_frontend_conformance_artifacts.h"
+#include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "diag/objc3_diag_utils.h"
 #include "ir/objc3_ir_emitter.h"
@@ -10493,95 +10495,17 @@ std::string BuildVersionedConformanceReportArtifactJson(
         &feature_summary,
     const Objc3ToolingCorpusShardingReleaseEvidencePackagingSummary
         &packaging_summary) {
-  std::ostringstream out;
-  out << "{\n"
-      << "  \"schema_id\": \"" << EscapeJsonString(summary.artifact_schema_id)
-      << "\",\n"
-      << "  \"contract_id\": \"" << EscapeJsonString(summary.contract_id)
-      << "\",\n"
-      << "  \"semantic_contract_id\": \""
-      << EscapeJsonString(summary.semantic_contract_id) << "\",\n"
-      << "  \"runnable_feature_claim_inventory_contract_id\": \""
-      << EscapeJsonString(summary.runnable_feature_claim_inventory_contract_id)
-      << "\",\n"
-      << "  \"feature_claim_truth_surface_contract_id\": \""
-      << EscapeJsonString(summary.feature_claim_truth_surface_contract_id)
-      << "\",\n"
-      << "  \"frontend_surface_path\": \""
-      << EscapeJsonString(summary.frontend_surface_path) << "\",\n"
-      << "  \"payload_model\": \""
-      << EscapeJsonString(summary.payload_model) << "\",\n"
-      << "  \"authority_model\": \""
-      << EscapeJsonString(summary.authority_model) << "\",\n"
-      << "  \"known_unsupported_model\": \""
-      << EscapeJsonString(summary.known_unsupported_model) << "\",\n"
-      << "  \"selection_model\": \""
-      << EscapeJsonString(summary.selection_model) << "\",\n"
-      << "  \"canonical_interface_mode\": \""
-      << EscapeJsonString(summary.canonical_interface_mode) << "\",\n"
-      << "  \"publication_model\": \""
-      << EscapeJsonString(summary.publication_model) << "\",\n"
-      << "  \"language_mode\": \"" << kObjc3RunnableFeatureClaimModeName
-      << "\",\n"
-      << "  \"language_version\": "
-      << static_cast<unsigned>(options.language_version) << ",\n"
-      << "  \"effective_language_profile\": \""
-      << EscapeJsonString(summary.effective_language_profile) << "\",\n"
-      << "  \"canonical_literal_rejection_diagnostics_enabled\": "
-      << (summary.canonical_literal_rejection_diagnostics_enabled ? "true" : "false") << ",\n"
-      << "  \"runnable_feature_claim_ids\": "
-      << BuildStringArrayJson(summary.runnable_feature_claim_ids) << ",\n"
-      << "  \"source_only_feature_claim_ids\": "
-      << BuildStringArrayJson(summary.source_only_feature_claim_ids) << ",\n"
-      << "  \"unsupported_feature_claim_ids\": "
-      << BuildStringArrayJson(summary.unsupported_feature_claim_ids) << ",\n"
-      << "  \"suppressed_macro_claim_ids\": "
-      << BuildStringArrayJson(summary.suppressed_macro_claim_ids) << ",\n"
-      << "  \"live_unsupported_feature_family_count\": "
-      << summary.live_unsupported_feature_family_count << ",\n"
-      << "  \"live_unsupported_feature_site_count\": "
-      << summary.live_unsupported_feature_site_count << ",\n"
-      << "  \"live_unsupported_feature_diagnostic_count\": "
-      << summary.live_unsupported_feature_diagnostic_count << ",\n"
-      << "  \"ready\": "
-      << (IsReadyObjc3VersionedConformanceReportLoweringSummary(summary)
-              ? "true"
-              : "false")
-      << ",\n"
-      << "  \"runnable_feature_claim_inventory\": "
-      << BuildRunnableFeatureClaimInventoryJson(options, pipeline_result)
-      << ",\n"
-      << "  \"feature_claim_truth_surface\": "
-      << BuildFeatureClaimStrictnessTruthSurfaceJson(options, pipeline_result)
-      << ",\n"
-      << "  \"compatibility_strictness_claim_semantics\": "
-      << BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
-             semantic_summary)
-      << ",\n"
-      << "  \"runtime_capability_report\": "
-      << BuildRuntimeCapabilityReportJson(summary)
-      << ",\n"
-      << "  \"public_conformance_report\": "
-      << BuildPublicConformanceReportJson(summary)
-      << ",\n"
-      << "  \"advanced_feature_reporting\": "
-      << BuildToolingAdvancedFeatureReportingJson(feature_summary)
-      << ",\n"
-      << "  \"advanced_feature_release_evidence\": "
-      << BuildToolingAdvancedFeatureReleaseEvidenceJson(packaging_summary)
-      << ",\n"
-      << "  \"runnable_feature_claim_inventory_replay_key\": \""
-      << EscapeJsonString(summary.runnable_feature_claim_inventory_replay_key)
-      << "\",\n"
-      << "  \"feature_claim_truth_surface_replay_key\": \""
-      << EscapeJsonString(summary.feature_claim_truth_surface_replay_key)
-      << "\",\n"
-      << "  \"semantic_boundary_replay_key\": \""
-      << EscapeJsonString(summary.semantic_boundary_replay_key) << "\",\n"
-      << "  \"replay_key\": \"" << EscapeJsonString(summary.replay_key)
-      << "\"\n"
-      << "}\n";
-  return out.str();
+  return objc3::artifacts::frontend::RenderVersionedConformanceReportArtifactJson(
+      summary,
+      static_cast<unsigned>(options.language_version),
+      BuildRunnableFeatureClaimInventoryJson(options, pipeline_result),
+      BuildFeatureClaimStrictnessTruthSurfaceJson(options, pipeline_result),
+      BuildFrontendCompatibilityStrictnessClaimSemanticsSummaryJson(
+          semantic_summary),
+      BuildRuntimeCapabilityReportJson(summary),
+      BuildPublicConformanceReportJson(summary),
+      BuildToolingAdvancedFeatureReportingJson(feature_summary),
+      BuildToolingAdvancedFeatureReleaseEvidenceJson(packaging_summary));
 }
 
 std::string BuildExecutableMetadataSemanticValidationSurfaceJson(
@@ -25083,7 +25007,7 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   if (IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
           runtime_aware_import_module_frontend_closure)) {
     bundle.runtime_aware_import_module_artifact_json =
-        BuildRuntimeAwareImportModuleArtifactJson(
+        objc3::artifacts::frontend::RenderRuntimeAwareImportModuleArtifactJson(
             runtime_aware_import_module_frontend_closure,
             runtime_metadata_source_records,
             BuildTypeSystemOptionalKeypathLoweringContractJson(

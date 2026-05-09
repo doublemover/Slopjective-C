@@ -5,12 +5,10 @@
 #include <utility>
 #include <vector>
 
-#include "io/objc3_json.h"
+#include "io/json/json_writer.h"
 
 namespace objc3::artifacts::interop {
 namespace {
-
-using objc3::io::EscapeJsonString;
 
 std::string BuildInteropBridgeCType(ValueType type, unsigned pointer_depth,
                                     bool object_pointer_type_spelling) {
@@ -243,63 +241,54 @@ std::string BuildInteropBridgeModuleArtifactText(
 std::string BuildInteropBridgeArtifactJson(
     const Objc3InteropBridgeArtifactInputs &inputs) {
   std::ostringstream callables;
-  callables << "[";
+  objc3::io::json::JsonArrayWriter callable_array(callables);
   for (std::size_t index = 0; index < inputs.foreign_callables.size();
        ++index) {
     const Objc3InteropBridgeCallableArtifact &callable =
         inputs.foreign_callables[index];
-    callables << "{"
-              << "\"name\":\"" << EscapeJsonString(callable.name) << "\""
-              << ",\"return_type\":\""
-              << EscapeJsonString(callable.return_type) << "\""
-              << ",\"parameter_count\":" << callable.parameters.size()
-              << ",\"objc_import_module_name\":\""
-              << EscapeJsonString(callable.objc_import_module_name) << "\""
-              << ",\"objc_header_name\":\""
-              << EscapeJsonString(callable.objc_header_name) << "\""
-              << ",\"objc_cxx_name\":\""
-              << EscapeJsonString(callable.objc_cxx_name) << "\""
-              << ",\"objc_swift_name\":\""
-              << EscapeJsonString(callable.objc_swift_name) << "\""
-              << ",\"objc_export_header_name\":\""
-              << EscapeJsonString(callable.objc_export_header_name) << "\""
-              << ",\"objc_abi_alignment_bytes\":"
-              << callable.objc_abi_alignment_bytes
-              << ",\"objc_foreign_type_name\":\""
-              << EscapeJsonString(callable.objc_foreign_type_name) << "\""
-              << ",\"objc_mixed_image_name\":\""
-              << EscapeJsonString(callable.objc_mixed_image_name) << "\""
-              << ",\"objc_package_entry_name\":\""
-              << EscapeJsonString(callable.objc_package_entry_name) << "\""
-              << "}";
-    if (index + 1 != inputs.foreign_callables.size()) {
-      callables << ",";
-    }
+    std::ostringstream callable_json;
+    objc3::io::json::JsonObjectWriter callable_object(callable_json);
+    callable_object.StringField("name", callable.name);
+    callable_object.StringField("return_type", callable.return_type);
+    callable_object.SizeField("parameter_count", callable.parameters.size());
+    callable_object.StringField("objc_import_module_name",
+                                callable.objc_import_module_name);
+    callable_object.StringField("objc_header_name", callable.objc_header_name);
+    callable_object.StringField("objc_cxx_name", callable.objc_cxx_name);
+    callable_object.StringField("objc_swift_name", callable.objc_swift_name);
+    callable_object.StringField("objc_export_header_name",
+                                callable.objc_export_header_name);
+    callable_object.SizeField("objc_abi_alignment_bytes",
+                              callable.objc_abi_alignment_bytes);
+    callable_object.StringField("objc_foreign_type_name",
+                                callable.objc_foreign_type_name);
+    callable_object.StringField("objc_mixed_image_name",
+                                callable.objc_mixed_image_name);
+    callable_object.StringField("objc_package_entry_name",
+                                callable.objc_package_entry_name);
+    callable_object.End();
+    callable_array.RawJsonValue(callable_json.str());
   }
-  callables << "]";
+  callable_array.End();
 
   std::ostringstream out;
-  out << "{\n"
-      << "  \"contract_id\": \"" << EscapeJsonString(inputs.contract_id)
-      << "\",\n"
-      << "  \"module_name\": \"" << EscapeJsonString(inputs.module_name)
-      << "\",\n"
-      << "  \"header_artifact_relative_path\": \""
-      << EscapeJsonString(inputs.header_artifact_relative_path) << "\",\n"
-      << "  \"module_artifact_relative_path\": \""
-      << EscapeJsonString(inputs.module_artifact_relative_path) << "\",\n"
-      << "  \"bridge_artifact_relative_path\": \""
-      << EscapeJsonString(inputs.bridge_artifact_relative_path) << "\",\n"
-      << "  \"runtime_generation_ready\": "
-      << (inputs.runtime_generation_ready ? "true" : "false") << ",\n"
-      << "  \"cross_module_packaging_ready\": "
-      << (inputs.cross_module_packaging_ready ? "true" : "false") << ",\n"
-      << "  \"deterministic\": "
-      << (inputs.deterministic ? "true" : "false") << ",\n"
-      << "  \"replay_key\": \"" << EscapeJsonString(inputs.replay_key)
-      << "\",\n"
-      << "  \"foreign_callables\": " << callables.str() << "\n"
-      << "}\n";
+  objc3::io::json::JsonObjectWriter object(out);
+  object.StringField("contract_id", inputs.contract_id);
+  object.StringField("module_name", inputs.module_name);
+  object.StringField("header_artifact_relative_path",
+                     inputs.header_artifact_relative_path);
+  object.StringField("module_artifact_relative_path",
+                     inputs.module_artifact_relative_path);
+  object.StringField("bridge_artifact_relative_path",
+                     inputs.bridge_artifact_relative_path);
+  object.BoolField("runtime_generation_ready",
+                   inputs.runtime_generation_ready);
+  object.BoolField("cross_module_packaging_ready",
+                   inputs.cross_module_packaging_ready);
+  object.BoolField("deterministic", inputs.deterministic);
+  object.StringField("replay_key", inputs.replay_key);
+  object.RawJsonField("foreign_callables", callables.str());
+  object.End();
   return out.str();
 }
 

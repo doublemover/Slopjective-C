@@ -17,28 +17,68 @@ std::string RenderArtifactJson(const ArtifactJsonDocument &document) {
   return out.str();
 }
 
-bool TryRenderRegisteredArtifactJson(const ArtifactJsonDocument &document,
-                                     std::string &artifact_json,
-                                     std::string &error) {
-  artifact_json.clear();
-  ArtifactSchemaContract contract;
-  if (!RequireArtifactSchemaContract(document.schema_id, contract, error)) {
+bool TryBuildRegisteredArtifactJsonDocument(
+    const ArtifactJsonPublicationRequest &request,
+    ArtifactJsonDocument &document,
+    ArtifactSchemaContract &contract,
+    std::string &payload_id,
+    std::string &error) {
+  document = {};
+  payload_id.clear();
+  if (!RequireArtifactSchemaContract(request.schema_id, contract, error)) {
     return false;
   }
-  if (!document.payload.IsObject()) {
-    error = "artifact payload for schema_id " + document.schema_id +
+  if (!request.payload.IsObject()) {
+    error = "artifact payload for schema_id " + request.schema_id +
             " is not a JSON object";
     return false;
   }
-  const std::optional<std::string> payload_id =
-      document.payload.GetString(contract.payload_id_field);
-  if (!payload_id.has_value() || *payload_id != contract.payload_id_value) {
-    error = "artifact payload id for schema_id " + document.schema_id +
+  const std::optional<std::string> resolved_payload_id =
+      request.payload.GetString(contract.payload_id_field);
+  if (!resolved_payload_id.has_value() ||
+      *resolved_payload_id != contract.payload_id_value) {
+    error = "artifact payload id for schema_id " + request.schema_id +
             " does not match registered " +
             std::string(contract.payload_id_field);
     return false;
   }
-  artifact_json = RenderArtifactJson(document);
+  payload_id = *resolved_payload_id;
+  document.schema_id = std::string(contract.schema_id);
+  document.payload = request.payload;
+  error.clear();
+  return true;
+}
+
+ArtifactJsonPublicationResult PublishRegisteredArtifactJson(
+    const ArtifactJsonPublicationRequest &request) {
+  ArtifactJsonPublicationResult result;
+  ArtifactJsonDocument document;
+  if (!TryBuildRegisteredArtifactJsonDocument(request, document,
+                                              result.schema_contract,
+                                              result.payload_id,
+                                              result.error)) {
+    return result;
+  }
+  result.artifact_json = RenderArtifactJson(document);
+  result.ok = true;
+  result.error.clear();
+  return result;
+}
+
+bool TryRenderRegisteredArtifactJson(const ArtifactJsonDocument &document,
+                                     std::string &artifact_json,
+                                     std::string &error) {
+  artifact_json.clear();
+  ArtifactJsonPublicationRequest request;
+  request.schema_id = document.schema_id;
+  request.payload = document.payload;
+  const ArtifactJsonPublicationResult publication =
+      PublishRegisteredArtifactJson(request);
+  if (!publication.ok) {
+    error = publication.error;
+    return false;
+  }
+  artifact_json = publication.artifact_json;
   error.clear();
   return true;
 }
