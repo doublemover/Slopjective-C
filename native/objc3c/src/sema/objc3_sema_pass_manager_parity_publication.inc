@@ -836,213 +836,33 @@
       result.parity_surface
           .intermodule_flow_parity_publication_readiness_record
           .throws_propagation_ready;
+  result.concurrency_parity_publication_readiness_record =
+      BuildObjc3SemaConcurrencyParityPublicationReadinessRecord(
+          input,
+          result.parity_surface,
+          result.deterministic_actor_isolation_sendability_handoff,
+          result.deterministic_task_runtime_cancellation_handoff,
+          result.deterministic_concurrency_replay_race_guard_handoff);
+  result.deterministic_concurrency_parity_publication_readiness_record =
+      IsReadyObjc3SemaConcurrencyParityPublicationReadinessRecord(
+          result.concurrency_parity_publication_readiness_record);
+  result.parity_surface.concurrency_parity_publication_readiness_record =
+      result.concurrency_parity_publication_readiness_record;
+  result.parity_surface
+      .deterministic_concurrency_parity_publication_readiness_record =
+      result.deterministic_concurrency_parity_publication_readiness_record;
   result.parity_surface.deterministic_actor_isolation_sendability_handoff =
-      result.deterministic_actor_isolation_sendability_handoff &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites ==
-          result.parity_surface.actor_isolation_sendability_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_decl_sites ==
-          result.parity_surface.actor_isolation_decl_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary.actor_hop_sites ==
-          result.parity_surface.actor_hop_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .sendable_annotation_sites ==
-          result.parity_surface.sendable_annotation_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .non_sendable_crossing_sites ==
-          result.parity_surface.non_sendable_crossing_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .isolation_boundary_sites ==
-          result.parity_surface
-              .actor_isolation_sendability_isolation_boundary_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .normalized_sites ==
-          result.parity_surface
-              .actor_isolation_sendability_normalized_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .gate_blocked_sites ==
-          result.parity_surface
-              .actor_isolation_sendability_gate_blocked_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .contract_violation_sites ==
-          result.parity_surface
-              .actor_isolation_sendability_contract_violation_sites_total &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_decl_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .actor_hop_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .sendable_annotation_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .non_sendable_crossing_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .isolation_boundary_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .normalized_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .gate_blocked_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .gate_blocked_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .non_sendable_crossing_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .contract_violation_sites <=
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary
-              .normalized_sites +
-              result.parity_surface.actor_isolation_sendability_summary
-                  .gate_blocked_sites ==
-          result.parity_surface.actor_isolation_sendability_summary
-              .actor_isolation_sendability_sites &&
-      result.parity_surface.actor_isolation_sendability_summary.deterministic;
+      result.parity_surface
+          .concurrency_parity_publication_readiness_record
+          .actor_isolation_sendability_ready;
   result.parity_surface.deterministic_task_runtime_cancellation_handoff =
-      result.deterministic_task_runtime_cancellation_handoff &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites ==
-          result.parity_surface.task_runtime_cancellation_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .runtime_hook_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_runtime_hook_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_check_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_cancellation_check_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_handler_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_cancellation_handler_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .suspension_point_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_suspension_point_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_propagation_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_cancellation_propagation_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .normalized_sites ==
-          result.parity_surface.task_runtime_cancellation_normalized_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .gate_blocked_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_gate_blocked_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .contract_violation_sites ==
-          result.parity_surface
-              .task_runtime_cancellation_contract_violation_sites_total &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .runtime_hook_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_check_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_handler_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .suspension_point_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_propagation_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_check_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_propagation_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_handler_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .normalized_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .gate_blocked_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .gate_blocked_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .cancellation_propagation_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .contract_violation_sites <=
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary
-              .normalized_sites +
-              result.parity_surface.task_runtime_cancellation_summary
-                  .gate_blocked_sites ==
-          result.parity_surface.task_runtime_cancellation_summary
-              .task_runtime_interop_sites &&
-      result.parity_surface.task_runtime_cancellation_summary.deterministic;
+      result.parity_surface
+          .concurrency_parity_publication_readiness_record
+          .task_runtime_cancellation_ready;
   result.parity_surface.deterministic_concurrency_replay_race_guard_handoff =
-      result.deterministic_concurrency_replay_race_guard_handoff &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_race_guard_sites ==
-          result.parity_surface.concurrency_replay_race_guard_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_concurrency_replay_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .replay_proof_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_replay_proof_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .race_guard_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_race_guard_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .task_handoff_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_task_handoff_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .actor_isolation_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_actor_isolation_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .deterministic_schedule_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_deterministic_schedule_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .guard_blocked_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_guard_blocked_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .contract_violation_sites ==
-          result.parity_surface
-              .concurrency_replay_race_guard_contract_violation_sites_total &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_race_guard_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .replay_proof_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_race_guard_sites &&
-      result.parity_surface.concurrency_replay_race_guard_summary
-              .race_guard_sites <=
-          result.parity_surface.concurrency_replay_race_guard_summary
-              .concurrency_replay_race_guard_sites &&
+      result.parity_surface
+          .concurrency_parity_publication_readiness_record
+          .concurrency_replay_race_guard_ready &&
       result.parity_surface.concurrency_replay_race_guard_summary
               .task_handoff_sites <=
           result.parity_surface.concurrency_replay_race_guard_summary
