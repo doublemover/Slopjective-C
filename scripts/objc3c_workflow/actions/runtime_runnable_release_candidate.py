@@ -19,3 +19,11 @@ def action_validate_release_candidate_conformance(_: list[str]) -> int:
 
 def action_validate_runnable_release_candidate(_: list[str]) -> int:
     return run_python_check(RUNNABLE_RELEASE_CANDIDATE_E2E_PY)
+
+
+__all__ = [
+    "RUNNABLE_RELEASE_CANDIDATE_CONFORMANCE_PY",
+    "RUNNABLE_RELEASE_CANDIDATE_E2E_PY",
+    "action_validate_release_candidate_conformance",
+    "action_validate_runnable_release_candidate",
+]

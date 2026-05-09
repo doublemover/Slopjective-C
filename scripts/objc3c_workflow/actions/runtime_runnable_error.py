@@ -17,3 +17,11 @@ def action_validate_error_conformance(_: list[str]) -> int:
 
 def action_validate_runnable_error(_: list[str]) -> int:
     return run_python_check(RUNNABLE_ERROR_E2E_PY)
+
+
+__all__ = [
+    "RUNNABLE_ERROR_CONFORMANCE_PY",
+    "RUNNABLE_ERROR_E2E_PY",
+    "action_validate_error_conformance",
+    "action_validate_runnable_error",
+]

@@ -19,3 +19,11 @@ def action_validate_object_model_conformance(_: list[str]) -> int:
 
 def action_validate_runnable_object_model(_: list[str]) -> int:
     return run_python_check(RUNNABLE_OBJECT_MODEL_E2E_PY)
+
+
+__all__ = [
+    "RUNNABLE_OBJECT_MODEL_CONFORMANCE_PY",
+    "RUNNABLE_OBJECT_MODEL_E2E_PY",
+    "action_validate_object_model_conformance",
+    "action_validate_runnable_object_model",
+]

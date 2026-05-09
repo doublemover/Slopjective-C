@@ -19,3 +19,11 @@ def action_validate_concurrency_conformance(_: list[str]) -> int:
 
 def action_validate_runnable_concurrency(_: list[str]) -> int:
     return run_python_check(RUNNABLE_CONCURRENCY_E2E_PY)
+
+
+__all__ = [
+    "RUNNABLE_CONCURRENCY_CONFORMANCE_PY",
+    "RUNNABLE_CONCURRENCY_E2E_PY",
+    "action_validate_concurrency_conformance",
+    "action_validate_runnable_concurrency",
+]

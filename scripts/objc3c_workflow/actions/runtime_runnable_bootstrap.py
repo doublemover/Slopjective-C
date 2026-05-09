@@ -12,3 +12,9 @@ RUNNABLE_BOOTSTRAP_E2E_PY = (
 
 def action_validate_runnable_bootstrap(_: list[str]) -> int:
     return run_python_check(RUNNABLE_BOOTSTRAP_E2E_PY)
+
+
+__all__ = [
+    "RUNNABLE_BOOTSTRAP_E2E_PY",
+    "action_validate_runnable_bootstrap",
+]

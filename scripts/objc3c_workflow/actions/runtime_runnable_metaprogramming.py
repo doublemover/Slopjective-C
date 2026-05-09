@@ -19,3 +19,11 @@ def action_validate_metaprogramming_conformance(_: list[str]) -> int:
 
 def action_validate_runnable_metaprogramming(_: list[str]) -> int:
     return run_python_check(RUNNABLE_METAPROGRAMMING_E2E_PY)
+
+
+__all__ = [
+    "RUNNABLE_METAPROGRAMMING_CONFORMANCE_PY",
+    "RUNNABLE_METAPROGRAMMING_E2E_PY",
+    "action_validate_metaprogramming_conformance",
+    "action_validate_runnable_metaprogramming",
+]
