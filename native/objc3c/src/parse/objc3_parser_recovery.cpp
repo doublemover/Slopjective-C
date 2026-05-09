@@ -1,6 +1,7 @@
 #include "parse/objc3_parser_recovery.h"
 
 #include "parse/objc3_parser_cursor.h"
+#include "parse/objc3_parser_recovery_boundaries.h"
 #include "parse/objc3_parser_statement_surface.h"
 
 namespace objc3c::parse {
@@ -35,16 +36,7 @@ void SynchronizeObjc3ParserTopLevel(
     if (Match(tokens, index, TokenKind::Semicolon)) {
       return;
     }
-    if (At(tokens, index, TokenKind::KwModule) ||
-        At(tokens, index, TokenKind::KwLet) ||
-        At(tokens, index, TokenKind::KwFn) ||
-        At(tokens, index, TokenKind::KwPure) ||
-        At(tokens, index, TokenKind::KwExtern) ||
-        At(tokens, index, TokenKind::KwAsync) ||
-        At(tokens, index, TokenKind::KwAtInterface) ||
-        At(tokens, index, TokenKind::KwAtImplementation) ||
-        At(tokens, index, TokenKind::KwAtProtocol) ||
-        At(tokens, index, TokenKind::KwAtProperty)) {
+    if (IsObjc3TopLevelRecoveryBoundaryToken(PeekToken(tokens, index).kind)) {
       return;
     }
     Advance(tokens, index);
@@ -82,23 +74,10 @@ void SynchronizeObjc3ParserStatement(
     if (Match(tokens, index, TokenKind::Semicolon)) {
       return;
     }
-    if (At(tokens, index, TokenKind::KwLet) ||
-        At(tokens, index, TokenKind::KwReturn) ||
-        At(tokens, index, TokenKind::KwIf) ||
-        At(tokens, index, TokenKind::KwGuard) ||
-        At(tokens, index, TokenKind::KwDefer) ||
-        At(tokens, index, TokenKind::KwDo) ||
-        At(tokens, index, TokenKind::KwMatch) ||
-        At(tokens, index, TokenKind::KwFor) ||
-        At(tokens, index, TokenKind::KwSwitch) ||
-        At(tokens, index, TokenKind::KwWhile) ||
-        At(tokens, index, TokenKind::KwBreak) ||
-        At(tokens, index, TokenKind::KwContinue) ||
-        At(tokens, index, TokenKind::KwAtAutoreleasePool) ||
+    if (IsObjc3StatementRecoveryBoundaryToken(PeekToken(tokens, index).kind) ||
         IsObjc3IdentifierAssignmentStatementLead(tokens, index) ||
         IsObjc3IdentifierUpdateStatementLead(tokens, index) ||
-        IsObjc3PrefixUpdateStatementLead(tokens, index) ||
-        At(tokens, index, TokenKind::RBrace)) {
+        IsObjc3PrefixUpdateStatementLead(tokens, index)) {
       return;
     }
     Advance(tokens, index);

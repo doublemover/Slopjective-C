@@ -19,7 +19,8 @@ target_link_libraries(objc3c_ast_declarations INTERFACE
 
 add_library(objc3c_ast STATIC
   objc3_ast_block_surface.cpp
-  objc3_ast_decl_surface.cpp
+  objc3_ast_scope_surface.cpp
+  objc3_ast_signature_surface.cpp
   objc3_ast_type_surface.cpp
 )
 objc3c_apply_build_defaults(objc3c_ast)
