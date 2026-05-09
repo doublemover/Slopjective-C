@@ -14,7 +14,7 @@
     "scripts/materialize_objc3c_stdlib_workspace.py",
     "scripts/run_objc3c_stdlib_workspace_smoke.py",
     "scripts/package_objc3c_runnable_toolchain.ps1",
-    "scripts.objc3c_workflow"
+    "package.json#scripts.objc3c"
   ],
   "api_families": {
     "objc3.concurrency": [

@@ -102,7 +102,7 @@ Those paths are machine-owned. They support the tutorial, but they are not the t
 - command truth:
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
-  - `scripts.objc3c_workflow`
+  - `npm run objc3c -- <action>`
 - bounded tutorial validation:
   - `scripts/check_getting_started_surface.py`
   - `scripts/check_getting_started_integration.py`

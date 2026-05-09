@@ -32,7 +32,7 @@ Owned code paths:
 - acceptance and replay reporting:
   - `scripts/check_objc3c_runtime_acceptance.py`
   - `scripts/check_objc3c_execution_replay_proof.ps1`
-  - `scripts.objc3c_workflow`
+  - `npm run objc3c -- <action>`
 
 Allowed subsystem dependencies:
 

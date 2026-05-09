@@ -61,7 +61,7 @@ Canonical checked-in inputs:
 Shared live tooling:
 
 - `package.json`
-- `scripts.objc3c_workflow`
+- `npm run objc3c -- <action>`
 - `docs/tutorials/build_run_verify.md`
 - `docs/tutorials/guided_walkthrough.md`
 - `scripts/objc3c_native_compile.ps1`
@@ -96,9 +96,9 @@ Selection model:
 
 - compile the full portfolio with `npm run objc3c -- check-showcase-surface`
 - compile one named example with
-  `python -m scripts.objc3c_workflow check-showcase-surface --example auroraBoard`
+  `npm run objc3c -- check-showcase-surface --example auroraBoard`
 - compile by story capability with
-  `python -m scripts.objc3c_workflow check-showcase-surface --capability actor-shaped-messaging`
+  `npm run objc3c -- check-showcase-surface --capability actor-shaped-messaging`
 
 ## Build Run Package Surface
 
@@ -122,7 +122,7 @@ Runtime-backed shared commands used by the showcase surface:
 
 - `npm run objc3c -- test-execution-smoke`
 - `npm run objc3c -- test-execution-replay`
-- `python -m scripts.objc3c_workflow validate-showcase-runtime`
+- `npm run objc3c -- validate-showcase-runtime`
 
 The live compile path emits object and manifest artifacts under
 `tmp/artifacts/showcase/<example-id>/` with the fixed emit prefix `module`.
