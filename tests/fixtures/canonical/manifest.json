@@ -32,6 +32,12 @@
       "tests/fixtures/canonical/phase_splits/ir.json",
       "tests/fixtures/canonical/phase_splits/runtime.json",
       "tests/fixtures/canonical/phase_splits/e2e.json"
+    ],
+    "behavior_split_indexes": [
+      "tests/fixtures/canonical/behavior_splits/positive.json",
+      "tests/fixtures/canonical/behavior_splits/diagnostic_negative.json",
+      "tests/fixtures/canonical/behavior_splits/canonical_rejection.json",
+      "tests/fixtures/canonical/behavior_splits/strict_error.json"
     ]
   },
   "support_claims": [

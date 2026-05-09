@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "catalog": "canonical-native-behavior-outcome-split",
+  "behavior_outcome": "diagnostic_negative_behavior",
+  "source_manifest": "tests/fixtures/canonical/manifest.json",
+  "owner_rule": "ordinary negative diagnostics stay separate from retired-surface rejection and strict-error evidence",
+  "fixtures": [
+    {
+      "path": "tests/native/sema/negative/return_void_with_value_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "negative",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/return_value_from_void_strict_error.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/errors/return_nonvoid_missing_value_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "errors",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S211"
+    },
+    {
+      "path": "tests/native/sema/types/assignment_unknown_target_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "types",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S214"
+    },
+    {
+      "path": "tests/native/sema/control_flow/continue_outside_loop_rejected.objc3",
+      "owner_phase": "sema",
+      "behavior_family": "control_flow",
+      "fixture_kind": "negative",
+      "expected_diagnostic_code": "O3S213"
+    }
+  ],
+  "retired_surface_rule": "retired adapter, compatibility, fallback, unsupported-feature, and runtime-dispatch residues are intentionally absent from this split"
+}

@@ -15,6 +15,13 @@ phase-local ownership checks. Those files do not replace `manifest.json`; they
 make the parser, sema, lowering, IR, runtime, and e2e portions of the canonical
 manifest citable without treating the full manifest as one mixed fixture bucket.
 
+The behavior outcome grouping is extracted into `behavior_splits/*.json` for
+positive, diagnostic-negative, canonical-rejection, and strict-error ownership
+checks. Those indexes are outcome-first: a fixture with compatibility, shim,
+fallback, unsupported-feature, old-mode, or runtime-dispatch residue is owned by
+rejection or strict-error metadata even when its path sits beside ordinary
+negative diagnostics.
+
 The manifest mirrors each fixture sidecar instead of replacing it. A canonical
 positive must have no diagnostic code or retired-surface tag. A canonical
 rejection or strict-error fixture must declare the stable diagnostic code and,
