@@ -142,6 +142,8 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildConcurrencyActorIsolationSendableSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
+    BuildConcurrencyActorLoweringMetadataContractJson;
+using objc3::artifacts::frontend::
     BuildConcurrencyActorRaceHazardEscapeDiagnosticsSummaryJson;
 using objc3::artifacts::frontend::
     BuildConcurrencyActorMemberIsolationSourceClosureSummaryJson;
@@ -440,15 +442,6 @@ inline constexpr const char *kObjc3ConcurrencyTaskRuntimeLoweringConcurrencyMode
     "scheduler-visible-task-handoff-and-cancellation-guard-proof-points-now-lower-through-deterministic-concurrency-replay-profiles";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeLoweringDeferredModel =
     "native-task-spawn-executor-hop-cancellation-runtime-entrypoints-and-task-group-abi-completion-remain-later-runtime-work";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataContractId =
-    "objc3c.concurrency.actor.lowering.and.metadata.contract.v1";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_concurrency_actor_lowering_and_metadata_contract";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataModel =
-    "actor-member-semantic-and-hazard-packets-now-lower-through-one-deterministic-actor-metadata-isolation-thunk-and-hop-artifact-contract";
-inline constexpr const char *kObjc3ConcurrencyActorLoweringMetadataDeferredModel =
-    "live-actor-thunk-bodies-mailbox-runtime-entrypoints-and-runnable-cross-actor-scheduling-remain-later-runtime-work";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeAbiCompletionContractId =
     "objc3c.concurrency.task.runtime.abi.completion.v1";
 inline constexpr const char *kObjc3ConcurrencyTaskRuntimeAbiCompletionSurfacePath =
@@ -1232,62 +1225,6 @@ BuildMetaprogrammingSynthesizedArtifactEmissionContract(
       contract.emitted_property_behavior_artifact_sites <=
           dependency_contract.property_behavior_sites;
   return contract;
-}
-
-std::string BuildConcurrencyActorLoweringMetadataContractJson(
-    const Objc3FrontendConcurrencyActorMemberIsolationSourceClosureSummary
-        &source_summary,
-    const Objc3ConcurrencyActorIsolationSendabilityEnforcementSummary
-        &enforcement_summary,
-    const Objc3ConcurrencyActorRaceHazardEscapeDiagnosticsSummary &hazard_summary,
-    const Objc3ActorLoweringMetadataContract &contract,
-    const std::string &replay_key) {
-  const bool ready_for_ir_emission =
-      contract.deterministic &&
-      IsValidObjc3ActorLoweringMetadataContract(contract);
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyActorLoweringMetadataContractId)
-      << "\",\"surface_path\":\""
-      << EscapeJsonString(kObjc3ConcurrencyActorLoweringMetadataSurfacePath)
-      << "\",\"source_contract_id\":\""
-      << EscapeJsonString(source_summary.contract_id)
-      << "\",\"semantic_contract_id\":\""
-      << EscapeJsonString(enforcement_summary.contract_id)
-      << "\",\"hazard_contract_id\":\""
-      << EscapeJsonString(hazard_summary.contract_id)
-      << "\",\"lane_contract_id\":\""
-      << EscapeJsonString(kObjc3ConcurrencyActorLoweringMetadataLaneContract)
-      << "\",\"metadata_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyActorLoweringMetadataModel)
-      << "\",\"deferred_model\":\""
-      << EscapeJsonString(kObjc3ConcurrencyActorLoweringMetadataDeferredModel)
-      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
-      << "\",\"actor_interface_sites\":" << contract.actor_interface_sites
-      << ",\"actor_method_sites\":" << contract.actor_method_sites
-      << ",\"actor_metadata_record_sites\":"
-      << contract.actor_metadata_record_sites
-      << ",\"nonisolated_entry_sites\":" << contract.nonisolated_entry_sites
-      << ",\"executor_affinity_sites\":" << contract.executor_affinity_sites
-      << ",\"actor_hop_artifact_sites\":"
-      << contract.actor_hop_artifact_sites
-      << ",\"actor_isolation_thunk_sites\":"
-      << contract.actor_isolation_thunk_sites
-      << ",\"replay_proof_dependency_sites\":"
-      << contract.replay_proof_dependency_sites
-      << ",\"race_guard_dependency_sites\":"
-      << contract.race_guard_dependency_sites
-      << ",\"task_handoff_sites\":" << contract.task_handoff_sites
-      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
-      << ",\"contract_violation_sites\":"
-      << contract.contract_violation_sites
-      << ",\"deterministic_handoff\":"
-      << (contract.deterministic ? "true" : "false")
-      << ",\"ready_for_ir_emission\":"
-      << (ready_for_ir_emission ? "true" : "false")
-      << "}";
-  return out.str();
 }
 
 std::string BuildMetaprogrammingExpansionLoweringContractJson(
