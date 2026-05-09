@@ -1,16 +1,6 @@
-             surface.protocol_qualified_object_type_pointer_declarator_sites_total &&
-         surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites ==
-             surface.protocol_qualified_object_type_normalized_protocol_composition_sites_total &&
-         surface.protocol_qualified_object_type_summary.contract_violation_sites ==
-             surface.protocol_qualified_object_type_contract_violation_sites_total &&
-         surface.protocol_qualified_object_type_summary.terminated_protocol_composition_sites <=
-             surface.protocol_qualified_object_type_summary.protocol_composition_sites &&
-         surface.protocol_qualified_object_type_summary.normalized_protocol_composition_sites <=
-             surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
-         surface.protocol_qualified_object_type_summary.contract_violation_sites <=
-             surface.protocol_qualified_object_type_summary.protocol_qualified_object_type_sites &&
-         surface.protocol_qualified_object_type_summary.deterministic &&
-         surface.deterministic_protocol_qualified_object_type_handoff &&
+             surface.deterministic_type_boundary_summary_readiness_record &&
+         IsReadyObjc3SemaTypeBoundarySummaryReadinessRecord(
+             surface.type_boundary_summary_readiness_record) &&
          surface.deterministic_module_type_abi_summary_readiness_record &&
          IsReadyObjc3SemaModuleTypeAbiSummaryReadinessRecord(
              surface.module_type_abi_summary_readiness_record) &&
