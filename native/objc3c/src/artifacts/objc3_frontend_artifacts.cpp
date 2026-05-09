@@ -23,6 +23,7 @@
 #include "artifacts/objc3_frontend_artifact_block_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_error_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_function_manifest.h"
+#include "artifacts/objc3_frontend_artifact_interop_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_metadata_mode.h"
 #include "artifacts/objc3_frontend_artifact_module_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_ownership_lowering_plan.h"
@@ -86,8 +87,6 @@ namespace {
 using objc3::io::EscapeJsonString;
 using objc3::io::json::JsonObjectWriter;
 using objc3::artifacts::evidence::
-    BuildErrorHandlingResultAndBridgingArtifactReplayEvidence;
-using objc3::artifacts::evidence::
     BuildErrorHandlingResultAndBridgingArtifactReplayJson;
 using objc3::artifacts::identity::BuildObjc3TranslationUnitIdentityKey;
 using objc3::artifacts::identity::Objc3TranslationUnitIdentityEvidence;
@@ -128,18 +127,10 @@ using objc3::artifacts::frontend::BuildInteropInteropRuntimeParitySummaryJson;
 using objc3::artifacts::frontend::
     BuildInteropForeignCallLifetimeLoweringContractJson;
 using objc3::artifacts::frontend::
-    BuildInteropFfiMetadataInterfacePreservationContract;
-using objc3::artifacts::frontend::
     BuildInteropFfiMetadataInterfacePreservationContractJson;
-using objc3::artifacts::frontend::
-    BuildInteropForeignSurfaceInterfacePreservationSummary;
 using objc3::artifacts::frontend::BuildInteropInteropSemanticModelSummaryJson;
-using objc3::artifacts::frontend::BuildInteropInteropLoweringContract;
 using objc3::artifacts::frontend::BuildInteropInteropLoweringContractJson;
 using objc3::artifacts::frontend::BuildInteropSwiftInteropIsolationSummaryJson;
-using objc3::artifacts::frontend::
-    BuildInteropForeignCallLifetimeLoweringContract;
-using objc3::artifacts::frontend::BuildInteropHeaderModuleBridgeGenerationSummary;
 using objc3::artifacts::frontend::
     BuildMetaprogrammingDeriveExpansionInventorySummaryJson;
 using objc3::artifacts::frontend::BuildMetaprogrammingDerivedMethodBundles;
@@ -1501,75 +1492,59 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
       &error_handling_throws_abi_propagation_lowering_replay_key =
           error_lowering_plan
               .error_handling_throws_abi_propagation_lowering_replay_key;
-  const auto error_handling_result_and_bridging_artifact_replay_summary =
-      BuildErrorHandlingResultAndBridgingArtifactReplayEvidence(
+  const bool runtime_import_artifact_ready =
+      IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
+          runtime_aware_import_module_frontend_closure);
+  const Objc3FrontendArtifactInteropLoweringPlan interop_lowering_plan =
+      BuildObjc3FrontendArtifactInteropLoweringPlan(
+          program,
+          interop_foreign_import_source_closure_summary,
+          interop_cpp_swift_interop_annotation_source_completion_summary,
+          interop_interop_semantic_model_summary,
+          interop_interop_runtime_parity_summary,
+          interop_cpp_interop_interaction_summary,
+          interop_swift_interop_isolation_summary,
           error_handling_throws_abi_propagation_lowering_replay_key,
           throws_propagation_lowering_replay_key,
           result_like_lowering_replay_key,
           ns_error_bridging_lowering_replay_key,
           unwind_cleanup_lowering_replay_key,
           deterministic_error_handling_throws_abi_propagation_lowering,
-          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-              runtime_aware_import_module_frontend_closure),
+          runtime_import_artifact_ready,
           imported_runtime_module_surfaces);
-  const auto interop_foreign_surface_interface_preservation_summary =
-      BuildInteropForeignSurfaceInterfacePreservationSummary(
-          program, interop_foreign_import_source_closure_summary,
-          interop_cpp_swift_interop_annotation_source_completion_summary,
-          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-              runtime_aware_import_module_frontend_closure),
-          imported_runtime_module_surfaces);
-  const Objc3InteropInteropLoweringContract interop_interop_lowering_contract =
-      BuildInteropInteropLoweringContract(
-          interop_interop_semantic_model_summary,
-          interop_interop_runtime_parity_summary,
-          interop_cpp_interop_interaction_summary,
-          interop_swift_interop_isolation_summary,
-          interop_foreign_surface_interface_preservation_summary);
-  if (!IsValidObjc3InteropInteropLoweringContract(
-          interop_interop_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 11 interop lowering contract");
+  for (const auto &failure : interop_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string interop_interop_lowering_replay_key =
-      Objc3InteropInteropLoweringReplayKey(interop_interop_lowering_contract);
-  const auto interop_foreign_call_lifetime_lowering_contract =
-      BuildInteropForeignCallLifetimeLoweringContract(
-          program, interop_interop_lowering_contract,
-          interop_cpp_interop_interaction_summary,
-          interop_foreign_surface_interface_preservation_summary);
-  if (!IsValidObjc3InteropForeignCallLifetimeLoweringContract(
-          interop_foreign_call_lifetime_lowering_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 11 foreign call and lifetime lowering contract");
-  }
-  const std::string interop_foreign_call_lifetime_lowering_replay_key =
-      Objc3InteropForeignCallLifetimeLoweringReplayKey(
-          interop_foreign_call_lifetime_lowering_contract);
-  std::string interop_ffi_metadata_interface_preservation_replay_key;
-  const auto interop_ffi_metadata_interface_preservation_contract =
-      BuildInteropFfiMetadataInterfacePreservationContract(
-          interop_foreign_call_lifetime_lowering_contract,
-          interop_foreign_call_lifetime_lowering_replay_key,
-          interop_foreign_surface_interface_preservation_summary,
-          imported_runtime_module_surfaces,
-          IsReadyObjc3RuntimeAwareImportModuleFrontendClosureSummary(
-              runtime_aware_import_module_frontend_closure),
-          interop_ffi_metadata_interface_preservation_replay_key);
-  if (!IsValidObjc3InteropFfiMetadataInterfacePreservationContract(
-          interop_ffi_metadata_interface_preservation_contract)) {
-    record_post_pipeline_failure(
-        "O3L300",
-        "LLVM IR emission failed: invalid Part 11 ffi metadata/interface preservation contract");
-  }
-  const auto interop_header_module_bridge_generation_summary =
-      BuildInteropHeaderModuleBridgeGenerationSummary(
-          program, interop_foreign_surface_interface_preservation_summary,
-          interop_ffi_metadata_interface_preservation_contract,
-          interop_ffi_metadata_interface_preservation_replay_key,
-          imported_runtime_module_surfaces);
+  const auto &error_handling_result_and_bridging_artifact_replay_summary =
+      interop_lowering_plan
+          .error_handling_result_and_bridging_artifact_replay_summary;
+  const Objc3InteropForeignSurfaceInterfacePreservationSummary
+      &interop_foreign_surface_interface_preservation_summary =
+          interop_lowering_plan
+              .interop_foreign_surface_interface_preservation_summary;
+  const Objc3InteropInteropLoweringContract
+      &interop_interop_lowering_contract =
+          interop_lowering_plan.interop_interop_lowering_contract;
+  const std::string &interop_interop_lowering_replay_key =
+      interop_lowering_plan.interop_interop_lowering_replay_key;
+  const Objc3InteropForeignCallLifetimeLoweringContract
+      &interop_foreign_call_lifetime_lowering_contract =
+          interop_lowering_plan
+              .interop_foreign_call_lifetime_lowering_contract;
+  const std::string &interop_foreign_call_lifetime_lowering_replay_key =
+      interop_lowering_plan
+          .interop_foreign_call_lifetime_lowering_replay_key;
+  const std::string &interop_ffi_metadata_interface_preservation_replay_key =
+      interop_lowering_plan
+          .interop_ffi_metadata_interface_preservation_replay_key;
+  const Objc3InteropFfiMetadataInterfacePreservationContract
+      &interop_ffi_metadata_interface_preservation_contract =
+          interop_lowering_plan
+              .interop_ffi_metadata_interface_preservation_contract;
+  const Objc3InteropHeaderModuleBridgeGenerationSummary
+      &interop_header_module_bridge_generation_summary =
+          interop_lowering_plan
+              .interop_header_module_bridge_generation_summary;
   const auto dispatch_dispatch_metadata_interface_preservation_summary =
       BuildDispatchDispatchMetadataInterfacePreservationSummary(
           runtime_metadata_source_records, dispatch_dispatch_control_lowering_replay_key,
