@@ -3,6 +3,7 @@
 #include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
 #include "lower/metadata/lowering_metadata_helpers.h"
 
+#include <sstream>
 #include <string>
 
 bool IsValidObjc3TypeSystemOptionalKeypathLoweringContract(
@@ -70,6 +71,54 @@ std::string Objc3TypeSystemOptionalKeypathLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" +
          kObjc3TypeSystemOptionalKeypathLoweringLaneContract;
+}
+
+std::string Objc3TypeSystemOptionalKeypathLoweringSummary() {
+  std::ostringstream out;
+  // optional chaining lowering anchor: `?.member` now desugars onto
+  // the same optional-send ABI and nil-short-circuit path already used by
+  // bracketed optional sends, so the live lowering packet truthfully covers
+  // optional-member access. The later lowering step now widens the same packet
+  // to cover validated typed key-path descriptor emission and stable runtime
+  // handles without claiming full key-path application/runtime evaluation yet.
+  out << "contract_id=" << kObjc3TypeSystemOptionalKeypathLoweringContractId
+      << ";optional_model="
+      << kObjc3TypeSystemOptionalKeypathLoweringOptionalModel
+      << ";typed_keypath_model="
+      << kObjc3TypeSystemOptionalKeypathLoweringTypedKeypathModel
+      << ";authority_model="
+      << kObjc3TypeSystemOptionalKeypathLoweringAuthorityModel
+      << ";fail_closed_model="
+      << kObjc3TypeSystemOptionalKeypathLoweringFailClosedModel
+      << ";lane_contract="
+      << kObjc3TypeSystemOptionalKeypathLoweringLaneContract;
+  return out.str();
+}
+
+std::string Objc3TypeSystemOptionalKeypathRuntimeHelperContractSummary() {
+  std::ostringstream out;
+  // live-optional-send-and-keypath-runtime-support anchor: optional
+  // sends stay on the public selector lookup/dispatch ABI while validated
+  // single-component typed key-path handles now feed the private runtime
+  // registry/testing helper surface without falsely claiming full
+  // multi-component key-path evaluation.
+  out << "contract_id=" << kObjc3TypeSystemOptionalKeypathRuntimeHelperContractId
+      << ";surface_path=" << kObjc3TypeSystemOptionalKeypathRuntimeHelperSurfacePath
+      << ";optional_model="
+      << kObjc3TypeSystemOptionalKeypathRuntimeHelperOptionalModel
+      << ";typed_keypath_model="
+      << kObjc3TypeSystemOptionalKeypathRuntimeHelperTypedKeypathModel
+      << ";diagnostic_model="
+      << kObjc3TypeSystemOptionalKeypathRuntimeHelperDiagnosticModel
+      << ";lookup_selector_symbol="
+      << kObjc3RuntimeSupportLibraryLookupSelectorSymbol
+      << ";dispatch_i32_symbol="
+      << kObjc3RuntimeSupportLibraryDispatchI32Symbol
+      << ";keypath_descriptor_section="
+      << kObjc3RuntimeKeypathDescriptorLogicalSection
+      << ";keypath_descriptor_aggregate=__objc3_sec_keypath_descriptors"
+      << ";typed_keypath_runtime_execution_helper_landed=true";
+  return out.str();
 }
 
 bool IsValidObjc3LightweightGenericsConstraintLoweringContract(

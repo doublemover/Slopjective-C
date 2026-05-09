@@ -2,6 +2,7 @@
 
 #include "lower/metadata/lowering_metadata_helpers.h"
 
+#include <sstream>
 #include <string>
 
 bool IsValidObjc3ControlFlowControlFlowSafetyLoweringContract(
@@ -72,4 +73,21 @@ std::string Objc3ControlFlowControlFlowSafetyLoweringReplayKey(
          ";deterministic=" + BoolToken(contract.deterministic) +
          ";lane_contract=" +
          kObjc3ControlFlowControlFlowSafetyLoweringLaneContract;
+}
+
+std::string Objc3ControlFlowControlFlowSafetyLoweringSummary() {
+  std::ostringstream out;
+  out << "contract_id=" << kObjc3ControlFlowControlFlowSafetyLoweringContractId
+      << ";surface_path="
+      << kObjc3ControlFlowControlFlowSafetyLoweringSurfacePath
+      << ";guard_model=" << kObjc3ControlFlowControlFlowSafetyLoweringGuardModel
+      << ";match_model=" << kObjc3ControlFlowControlFlowSafetyLoweringMatchModel
+      << ";defer_model=" << kObjc3ControlFlowControlFlowSafetyLoweringDeferModel
+      << ";authority_model="
+      << kObjc3ControlFlowControlFlowSafetyLoweringAuthorityModel
+      << ";fail_closed_model="
+      << kObjc3ControlFlowControlFlowSafetyLoweringFailClosedModel
+      << ";lane_contract="
+      << kObjc3ControlFlowControlFlowSafetyLoweringLaneContract;
+  return out.str();
 }
