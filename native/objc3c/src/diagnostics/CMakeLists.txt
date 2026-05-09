@@ -1,0 +1,5 @@
+add_library(objc3c_diagnostics_modes STATIC
+  modes/objc3_removed_mode_options.cpp
+)
+objc3c_apply_build_defaults(objc3c_diagnostics_modes)
+objc3c_apply_llvm_direct_config(objc3c_diagnostics_modes)

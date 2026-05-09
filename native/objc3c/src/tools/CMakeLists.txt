@@ -1,0 +1,15 @@
+add_executable(objc3c_tools_frontend_c_api_runner
+  objc3c_frontend_c_api_runner.cpp
+)
+objc3c_apply_build_defaults(objc3c_tools_frontend_c_api_runner)
+objc3c_apply_llvm_direct_config(objc3c_tools_frontend_c_api_runner)
+objc3c_apply_runtime_output(objc3c_tools_frontend_c_api_runner)
+set_target_properties(objc3c_tools_frontend_c_api_runner PROPERTIES
+  OUTPUT_NAME objc3c-frontend-c-api-runner
+)
+target_link_libraries(objc3c_tools_frontend_c_api_runner PRIVATE
+  objc3c_frontend
+  objc3c_driver
+  objc3c_diagnostics_modes
+  objc3c_json
+)

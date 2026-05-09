@@ -29,24 +29,8 @@ objc3c_apply_build_defaults(objc3c-native)
 objc3c_apply_llvm_direct_config(objc3c-native)
 objc3c_apply_runtime_output(objc3c-native)
 
-# Placeholder interface targets so boundary rules can map to concrete target
-# names before extraction work lands.
-add_library(objc3c_lex STATIC
-  lex/objc3_lexer.cpp
-)
-objc3c_apply_build_defaults(objc3c_lex)
-objc3c_apply_llvm_direct_config(objc3c_lex)
-
-add_library(objc3c_diag STATIC
-  diag/objc3_diag_utils.cpp
-)
-objc3c_apply_build_defaults(objc3c_diag)
-objc3c_apply_llvm_direct_config(objc3c_diag)
-
-target_link_libraries(objc3c_lex PUBLIC
-  objc3c_config
-  objc3c_diag
-)
+add_subdirectory(diag)
+add_subdirectory(lex)
 
 add_subdirectory(parse)
 add_subdirectory(sema)
@@ -63,11 +47,7 @@ add_subdirectory(artifacts)
 
 add_subdirectory(runtime)
 
-add_library(objc3c_diagnostics_modes STATIC
-  diagnostics/modes/objc3_removed_mode_options.cpp
-)
-objc3c_apply_build_defaults(objc3c_diagnostics_modes)
-objc3c_apply_llvm_direct_config(objc3c_diagnostics_modes)
+add_subdirectory(diagnostics)
 
 add_subdirectory(libobjc3c_frontend)
 
@@ -77,18 +57,4 @@ target_link_libraries(objc3c-native PRIVATE
   objc3c_driver
 )
 
-add_executable(objc3c_tools_frontend_c_api_runner
-  tools/objc3c_frontend_c_api_runner.cpp
-)
-objc3c_apply_build_defaults(objc3c_tools_frontend_c_api_runner)
-objc3c_apply_llvm_direct_config(objc3c_tools_frontend_c_api_runner)
-objc3c_apply_runtime_output(objc3c_tools_frontend_c_api_runner)
-set_target_properties(objc3c_tools_frontend_c_api_runner PROPERTIES
-  OUTPUT_NAME objc3c-frontend-c-api-runner
-)
-target_link_libraries(objc3c_tools_frontend_c_api_runner PRIVATE
-  objc3c_frontend
-  objc3c_driver
-  objc3c_diagnostics_modes
-  objc3c_json
-)
+add_subdirectory(tools)
