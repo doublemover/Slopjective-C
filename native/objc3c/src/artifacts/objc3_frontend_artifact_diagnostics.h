@@ -1,0 +1,27 @@
+#pragma once
+
+#include <string>
+
+#include "pipeline/objc3_frontend_types.h"
+#include "pipeline/objc3_ir_emission_core_feature_implementation_surface.h"
+#include "pipeline/objc3_parse_lowering_readiness_surface.h"
+
+namespace objc3::artifacts::frontend {
+
+struct Objc3FrontendArtifactPostPipelineFailure {
+  bool present = false;
+  std::string code;
+  std::string message;
+
+  [[nodiscard]] bool empty() const { return !present; }
+};
+
+Objc3FrontendArtifactPostPipelineFailure
+BuildObjc3FrontendArtifactInitialPostPipelineFailure(
+    const Objc3FrontendPipelineResult &pipeline_result,
+    const Objc3ParseLoweringReadinessSurface &parse_lowering_readiness_surface,
+    const Objc3IREmissionCoreFeatureImplementationSurface
+        &ir_emission_core_feature_impl_surface,
+    bool metadata_only_ir_emission_mode);
+
+}  // namespace objc3::artifacts::frontend
