@@ -12,9 +12,31 @@ Objc3IRMessageSendLoweringPlan BuildObjc3IRMessageSendLoweringPlan(
   plan.direct_call_symbol = direct_call_symbol;
   plan.uses_canonical_runtime_entrypoint =
       UsesCanonicalObjc3RuntimeDispatchEntrypoint(dispatch_surface_family);
+  plan.owns_dispatch_result = Objc3LoweringStrictOwnerModelIsReady(
+      plan.dispatch_result_owner, plan.dispatch_result_owner_model,
+      plan.strict_no_fallback, plan.strict_no_compatibility);
+  plan.hard_cutover_dispatch_target =
+      plan.uses_canonical_runtime_entrypoint &&
+      plan.dispatch_symbol ==
+          kObjc3RuntimeDispatchLoweringCanonicalEntrypointSymbol;
 
   if (!plan.direct_call_symbol.empty()) {
     plan.emits_direct_dispatch = true;
+    plan.hard_cutover_dispatch_target = true;
+    return plan;
+  }
+
+  if (!plan.hard_cutover_dispatch_target) {
+    plan.fail_closed = true;
+    plan.failure_reason =
+        "runtime dispatch lowering requires the canonical hard-cutover entrypoint";
+    return plan;
+  }
+
+  if (!plan.owns_dispatch_result) {
+    plan.fail_closed = true;
+    plan.failure_reason =
+        "runtime dispatch result is missing explicit IR ownership";
     return plan;
   }
 

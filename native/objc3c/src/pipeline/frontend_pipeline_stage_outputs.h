@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 
+#include "lower/contracts/lowering_ir_handoff.h"
 #include "pipeline/frontend_pipeline_defaults.h"
 #include "pipeline/frontend_pipeline_stage_contract.h"
 
@@ -43,11 +44,21 @@ struct SemaStageOutput {
 struct LowerStageOutput {
   std::string stage_output_owner = kFrontendPipelineStageOutputOwner;
   std::string runtime_dispatch_lowering_owner = "native.lower.runtime-dispatch";
+  std::string lower_to_ir_handoff_owner = kObjc3LoweringIRHandoffOwner;
+  std::string ir_artifact_owner = kObjc3IRModuleArtifactOwner;
+  std::string runtime_dispatch_result_owner =
+      kObjc3IRRuntimeDispatchResultOwner;
+  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
+  Objc3LoweringIRHandoff lower_to_ir_handoff;
   bool ir_emitted = false;
+  bool lower_to_ir_handoff_ready = false;
+  bool typed_dispatch_result_ownership_ready = false;
   std::string ir_path;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
   std::size_t runtime_dispatch_arg_slots = kRuntimeDispatchDefaultArgs;
   std::string selector_global_ordering = "lexicographic";
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
 };
 
 struct EmitStageOutput {

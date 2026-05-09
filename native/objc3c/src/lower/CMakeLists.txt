@@ -14,6 +14,7 @@ add_library(objc3c_lower STATIC
   contracts/lowering_diagnostic_contract.cpp
   contracts/lowering_diagnostics.cpp
   contracts/lowering_error_diagnostic_contracts.cpp
+  contracts/lowering_ir_handoff.cpp
   contracts/lowering_phase_io.cpp
   contracts/lowering_runtime_bootstrap_summaries.cpp
   contracts/lowering_contract_validators.cpp

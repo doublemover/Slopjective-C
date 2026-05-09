@@ -10,10 +10,18 @@ inline constexpr const char *kObjc3LoweringArtifactPublicationOwner =
     "native.lower.artifact-publication";
 inline constexpr const char *kObjc3LoweringDiagnosticHandoffOwner =
     "native.lower.diagnostic-handoff";
+inline constexpr const char *kObjc3LoweringIRHandoffOwner =
+    "native.lower.ir-handoff";
 inline constexpr const char *kObjc3RuntimeDispatchLoweringOwner =
     "native.lower.runtime-dispatch";
 inline constexpr const char *kObjc3LoweringBackendHandoffOwner =
     "native.lower.backend-handoff";
+inline constexpr const char *kObjc3IRModuleArtifactOwner =
+    "native.ir.module-artifact";
+inline constexpr const char *kObjc3IRRuntimeDispatchResultOwner =
+    "native.ir.runtime-dispatch-result";
+inline constexpr const char *kObjc3IRDirectDispatchResultOwner =
+    "native.ir.direct-dispatch-result";
 inline constexpr const char *kObjc3LoweringNoFallbackOwnerModel =
     "strict-hard-cutover-no-fallback-no-compatibility-shim";
 

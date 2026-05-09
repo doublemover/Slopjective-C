@@ -17,6 +17,7 @@ Objc3LoweringPhaseInput Objc3BuildLoweringPhaseInput(
   input.runtime_metadata_handoff =
       Objc3BuildRuntimeMetadataLoweringHandoff(program);
   input.backend_handoff = Objc3BuildLoweringBackendHandoff(artifacts);
+  input.lower_to_ir_handoff = Objc3BuildLoweringIRHandoff(artifacts);
   input.owner_split_explicit =
       Objc3LoweringStrictOwnerModelIsReady(
           input.stage_input_owner,
@@ -40,6 +41,7 @@ bool Objc3LoweringPhaseInputIsReady(const Objc3LoweringPhaseInput &input) {
   return input.program != nullptr && !input.module_name.empty() &&
          Objc3TypedSemaToLoweringBoundaryIsReady(input.typed_boundary) &&
          Objc3LoweringBackendHandoffIsReady(input.backend_handoff) &&
+         Objc3LoweringIRHandoffIsReady(input.lower_to_ir_handoff) &&
          input.owner_split_explicit &&
          (!input.artifacts.emit_ir || !input.artifacts.ir_relative_path.empty()) &&
          (!input.artifacts.emit_object ||
@@ -66,6 +68,8 @@ std::string Objc3LoweringPhaseInputReplayKey(
              input.runtime_metadata_handoff)
       << ";backend_handoff="
       << Objc3LoweringBackendHandoffReplayKey(input.backend_handoff)
+      << ";lower_to_ir_handoff="
+      << Objc3LoweringIRHandoffReplayKey(input.lower_to_ir_handoff)
       << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(input.artifacts)
       << ";owner_split_explicit="
       << (input.owner_split_explicit ? "true" : "false")
@@ -86,6 +90,8 @@ std::string Objc3LoweringPhaseOutputReplayKey(
   out << "ready=" << (output.ready ? "true" : "false")
       << ";diagnostics=" << output.diagnostics.size()
       << ";artifacts=" << Objc3LoweringArtifactPlanReplayKey(output.artifacts)
+      << ";lower_to_ir_handoff="
+      << Objc3LoweringIRHandoffReplayKey(output.lower_to_ir_handoff)
       << ";stage_output_owner=" << output.stage_output_owner
       << ";diagnostic_handoff_owner=" << output.diagnostic_handoff_owner
       << ";owner_model=" << output.owner_model

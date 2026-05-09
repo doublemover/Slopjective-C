@@ -4,6 +4,7 @@
 #include "lower/contracts/lowering_backend_handoff.h"
 #include "lower/contracts/lowering_artifact_publication.h"
 #include "lower/contracts/lowering_diagnostics.h"
+#include "lower/contracts/lowering_ir_handoff.h"
 #include "lower/contracts/runtime_metadata_handoff.h"
 #include "lower/contracts/typed_sema_lowering_boundary.h"
 
@@ -19,6 +20,7 @@ struct Objc3LoweringPhaseInput {
   Objc3TypedSemaToLoweringBoundary typed_boundary;
   Objc3RuntimeMetadataLoweringHandoff runtime_metadata_handoff;
   Objc3LoweringBackendHandoff backend_handoff;
+  Objc3LoweringIRHandoff lower_to_ir_handoff;
   std::string stage_input_owner = kObjc3TypedSemanticHandoffOwner;
   std::string stage_output_owner = kObjc3LoweringArtifactPublicationOwner;
   std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
@@ -32,6 +34,7 @@ struct Objc3LoweringPhaseOutput {
   bool ready = false;
   std::vector<Objc3LoweringDiagnostic> diagnostics;
   Objc3LoweringArtifactPlan artifacts;
+  Objc3LoweringIRHandoff lower_to_ir_handoff;
   std::string stage_output_owner = kObjc3LoweringArtifactPublicationOwner;
   std::string diagnostic_handoff_owner = kObjc3LoweringDiagnosticHandoffOwner;
   std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;

@@ -11473,11 +11473,16 @@ class Objc3IREmitter {
       // sends that target effective objc_direct methods now lower as exact LLVM
       // direct calls instead of routing through the runtime dispatch entrypoint.
       const std::string direct_value = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3IRDirectDispatchCall(
-          Objc3IRDirectDispatchCallRequest{direct_value,
-                                           plan.direct_call_symbol,
-                                           lowered.args,
-                                           lowered.explicit_arg_count}));
+      Objc3IRDirectDispatchCallRequest request;
+      request.result_value = direct_value;
+      request.callee_symbol = plan.direct_call_symbol;
+      request.args = lowered.args;
+      request.explicit_arg_count = lowered.explicit_arg_count;
+      if (!Objc3IRDirectDispatchCallRequestOwnsResult(request)) {
+        return EmitUnsupportedI32Value(
+            "direct dispatch result is missing explicit IR ownership");
+      }
+      ctx.code_lines.push_back(BuildObjc3IRDirectDispatchCall(request));
       runtime_dispatch_call_state_.NoteDirectDispatchCall();
       InvalidateGlobalProofState(ctx);
       return direct_value;
@@ -11528,11 +11533,9 @@ class Objc3IREmitter {
       // join instance/class/super on objc3_runtime_dispatch_i32, nil semantics
       // for canonical surfaces stay runtime-owned, and reserved direct dispatch
       // surfaces still fail closed before IR emission.
-      // live-dispatch gate anchor: supported live sends must
-      // continue to emit only objc3_runtime_dispatch_i32 calls here. The
-      // non-authoritative test surface remains exported only as evidence/test surface, and
-      // E002 is the first issue allowed to replace non-authoritative smoke/closeout
-      // assumptions with the integrated live-dispatch gate.
+      // live-dispatch gate anchor: supported live sends emit only
+      // objc3_runtime_dispatch_i32 calls here; any missing owner or
+      // non-canonical target fails closed before IR call construction.
       // live-dispatch smoke/replay closeout anchor: smoke and replay
       // now treat canonical runtime dispatch evidence as authoritative, so
       // emitted live sends must continue to surface objc3_runtime_dispatch_i32
@@ -11540,22 +11543,34 @@ class Objc3IREmitter {
       // lookup/dispatch runtime freeze anchor: emitted IR still
       // targets only the canonical lookup/dispatch boundary and does not
       // materialize runtime selector-table, method-cache, or slow-path helper
-      // symbols. Those runtime-owned details stay behind the frozen
-      // objc3_runtime_lookup_selector / objc3_runtime_dispatch_i32 surface
-      // until later lane-D issues extend them explicitly.
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeDispatchCall(
-          Objc3IRRuntimeDispatchCallRequest{dispatch_value,
-                                            plan.dispatch_symbol,
-                                            lowered.receiver,
-                                            selector_ptr,
-                                            lowered.args}));
+      // symbols. Runtime-owned details stay behind the explicit
+      // objc3_runtime_lookup_selector / objc3_runtime_dispatch_i32 boundary.
+      Objc3IRRuntimeDispatchCallRequest request;
+      request.result_value = dispatch_value;
+      request.result_owner = plan.dispatch_result_owner;
+      request.result_owner_model = plan.dispatch_result_owner_model;
+      request.dispatch_symbol = plan.dispatch_symbol;
+      request.receiver = lowered.receiver;
+      request.selector_ptr = selector_ptr;
+      request.args = lowered.args;
+      request.strict_no_fallback = plan.strict_no_fallback;
+      request.strict_no_compatibility = plan.strict_no_compatibility;
+      if (!Objc3IRRuntimeDispatchCallRequestOwnsResult(request)) {
+        unsupported_fail_closed_path_reason_ =
+            "runtime dispatch result is missing explicit IR ownership";
+        return false;
+      }
+      ctx.code_lines.push_back(BuildObjc3IRRuntimeDispatchCall(request));
       runtime_dispatch_call_state_.NoteRuntimeDispatchCall(
           plan.dispatch_symbol);
+      return true;
     };
 
     if (plan.receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
       const std::string dispatch_value = NewTemp(ctx);
-      emit_dispatch_call(dispatch_value);
+      if (!emit_dispatch_call(dispatch_value)) {
+        return EmitUnsupportedI32Value(unsupported_fail_closed_path_reason_);
+      }
       InvalidateGlobalProofState(ctx);
       return dispatch_value;
     }
@@ -11572,7 +11587,9 @@ class Objc3IREmitter {
     ctx.code_lines.push_back(BuildObjc3IRLabelLine(nil_label));
     ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
     ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
-    emit_dispatch_call(dispatch_value);
+    if (!emit_dispatch_call(dispatch_value)) {
+      return EmitUnsupportedI32Value(unsupported_fail_closed_path_reason_);
+    }
     ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
     ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
     ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(

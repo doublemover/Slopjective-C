@@ -2,6 +2,20 @@
 
 #include <sstream>
 
+bool Objc3IRRuntimeDispatchCallRequestOwnsResult(
+    const Objc3IRRuntimeDispatchCallRequest &request) {
+  return Objc3LoweringStrictOwnerModelIsReady(
+      request.result_owner, request.result_owner_model,
+      request.strict_no_fallback, request.strict_no_compatibility);
+}
+
+bool Objc3IRDirectDispatchCallRequestOwnsResult(
+    const Objc3IRDirectDispatchCallRequest &request) {
+  return Objc3LoweringStrictOwnerModelIsReady(
+      request.result_owner, request.result_owner_model,
+      request.strict_no_fallback, request.strict_no_compatibility);
+}
+
 std::string BuildObjc3IRRuntimeDispatchCall(
     const Objc3IRRuntimeDispatchCallRequest &request) {
   std::ostringstream call;

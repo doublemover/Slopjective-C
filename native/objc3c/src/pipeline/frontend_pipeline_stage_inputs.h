@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <string>
 
+#include "lower/contracts/lowering_ir_handoff.h"
 #include "pipeline/frontend_pipeline_defaults.h"
 #include "pipeline/frontend_pipeline_stage_contract.h"
 
@@ -41,16 +42,25 @@ struct SemaStageInput {
 
 struct LowerStageInput {
   std::string stage_input_owner = kFrontendPipelineStageInputOwner;
+  std::string typed_semantic_handoff_owner = kObjc3TypedSemanticHandoffOwner;
+  std::string lower_to_ir_handoff_owner = kObjc3LoweringIRHandoffOwner;
+  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
   std::size_t declared_globals = 0;
   std::size_t declared_functions = 0;
   std::size_t runtime_dispatch_arg_slots = kRuntimeDispatchDefaultArgs;
   std::string runtime_dispatch_symbol = kRuntimeDispatchDefaultSymbol;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
 };
 
 struct EmitStageInput {
   std::string stage_input_owner = kFrontendPipelineStageInputOwner;
+  std::string ir_artifact_owner = kObjc3IRModuleArtifactOwner;
+  std::string owner_model = kObjc3LoweringNoFallbackOwnerModel;
   std::string ir_path;
   std::string clang_path = "clang";
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
 };
 
 }  // namespace objc3c::pipeline
