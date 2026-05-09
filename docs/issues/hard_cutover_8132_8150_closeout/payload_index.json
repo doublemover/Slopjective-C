@@ -21,8 +21,8 @@
       "remote closure claims without tracker edits",
       "validation claims without an allowed validation run"
     ],
-    "current_head": "1c5747bb5",
-    "current_head_summary": "refactor(ir): extract expression emission",
+    "current_head": "9e36fd3fe",
+    "current_head_summary": "HC extract sema type boundary readiness builder",
     "current_head_role": "latest committed source evidence folded into this docs-only closeout map"
   },
   "current_branch_owner_refresh": {
@@ -196,7 +196,7 @@
   "post_4fdd_local_owner_refresh": {
     "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
     "since_commit": "4fddfacb7",
-    "through_commit": "1c5747bb5",
+    "through_commit": "9e36fd3fe",
     "validation": "not run",
     "github": "not called",
     "push": "not performed",
@@ -764,6 +764,79 @@
         ],
         "primary_commits": [
           "1c5747bb5"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "7240cad24"
+        ]
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "19ac96484"
+        ]
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8136",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "85081c4d5"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "4915a9844"
+        ]
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8140",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "2a512bc77"
+        ]
+      },
+      {
+        "issues": [
+          "#8135",
+          "#8136",
+          "#8146",
+          "#8147",
+          "#8150"
+        ],
+        "primary_commits": [
+          "9e36fd3fe"
         ]
       },
       {
@@ -1736,7 +1809,13 @@
         "64f73e8b1",
         "69aaa347c",
         "ba8b86d4c",
-        "1c5747bb5"
+        "1c5747bb5",
+        "7240cad24",
+        "19ac96484",
+        "85081c4d5",
+        "4915a9844",
+        "2a512bc77",
+        "9e36fd3fe"
       ]
     }
   ]
