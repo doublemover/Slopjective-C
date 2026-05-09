@@ -28,12 +28,12 @@
   ],
   "generated_inputs": [
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",
-    "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json",
+    "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json",
     "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json"
   ],
   "support_window_rules": [
     "Support windows are inherited from tests/tooling/fixtures/release_operations/versioning_model.json.",
-    "Generated compatibility reports must preserve every channel support window from the versioning model.",
+    "Generated upgrade support reports must preserve every channel support window from the versioning model.",
     "A public support claim must name a channel and a same-major supported line.",
     "Expired support windows become release-blocking when advertised as supported."
   ],
@@ -44,29 +44,29 @@
     "target_channel",
     "package_lock",
     "canonical_application_workspace",
-    "compatibility_report",
+    "upgrade_support_report",
     "rollback_target"
   ],
   "rollback_rules": [
     {
       "channel_id": "stable",
       "rollback_transport": "local-installer",
-      "required_evidence": "compatibility_report.rollback_guidance"
+      "required_evidence": "upgrade_support_report.revert_guidance"
     },
     {
       "channel_id": "candidate",
       "rollback_transport": "local-installer",
-      "required_evidence": "compatibility_report.rollback_guidance"
+      "required_evidence": "upgrade_support_report.revert_guidance"
     },
     {
       "channel_id": "preview",
       "rollback_transport": "offline-bundle",
-      "required_evidence": "compatibility_report.rollback_guidance"
+      "required_evidence": "upgrade_support_report.revert_guidance"
     }
   ],
   "fail_closed_conditions": [
     "update manifest missing support window or platform support matrix",
-    "compatibility report missing rollback guidance",
+    "upgrade support report missing revert guidance",
     "release channel catalog disagrees with update manifest default channel",
     "cross-major target advertised without generated migration replay evidence",
     "rollback transport not named for an advertised channel"

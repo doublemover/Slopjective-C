@@ -32,11 +32,11 @@ def present_existing_paths(paths: tuple[Path, ...]) -> list[Path]:
     return [path for path in paths if path.is_file()]
 
 
-def rollback_channels(compatibility_report: dict[str, Any]) -> list[str]:
-    rollback_guidance = compatibility_report.get("rollback_guidance", [])
+def rollback_channels(upgrade_support_report: dict[str, Any]) -> list[str]:
+    revert_guidance = upgrade_support_report.get("revert_guidance", [])
     return [
         str(entry.get("channel_id"))
-        for entry in rollback_guidance
+        for entry in revert_guidance
         if isinstance(entry, dict)
     ]
 
@@ -61,13 +61,13 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
     reports = inputs.reports
     failures = inputs.failures
     update_manifest = inputs.update_manifest
-    compatibility_report = inputs.compatibility_report
-    rollback_channel_ids = rollback_channels(compatibility_report)
+    upgrade_support_report = inputs.upgrade_support_report
+    rollback_channel_ids = rollback_channels(upgrade_support_report)
     migration_summary = reports.get("migration", {})
     aging_summary = reports.get("aging", {})
     soak_reports = paths.soak_report_paths()
     evidence_paths = present_existing_paths(
-        paths.package_and_app_evidence_paths() + soak_reports + (paths.compatibility_report,)
+        paths.package_and_app_evidence_paths() + soak_reports + (paths.upgrade_support_report,)
     )
 
     return {
@@ -107,7 +107,7 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
         "rollback": {
             "status": "PASS" if rollback_channel_ids and not failures else "FAIL",
             "channels": rollback_channel_ids,
-            "evidence_paths": [rel(paths, paths.compatibility_report), rel(paths, paths.migration_summary)],
+            "evidence_paths": [rel(paths, paths.upgrade_support_report), rel(paths, paths.migration_summary)],
         },
         "soak": {
             "status": "PASS" if all(path.is_file() for path in soak_reports) and not failures else "FAIL",
@@ -136,7 +136,7 @@ def build_artifact(paths: LongHorizonEvidencePaths, inputs: LongHorizonEvidenceI
             "earned_claims": [
                 "same-major support windows are generated from release operations metadata",
                 "migration replay evidence composes release, package, and canonical application reports",
-                "rollback guidance is read from the generated compatibility report",
+                "revert guidance is read from the generated upgrade support report",
                 "soak and aging evidence consume conformance, stress, external-validation, public-conformance, and performance governance reports",
             ],
             "demoted_or_out_of_scope_claims": [

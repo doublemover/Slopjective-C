@@ -16,7 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SEMANTICS_PATH = ROOT / "tests" / "tooling" / "fixtures" / "long_horizon_operations" / "migration_rollback_support_window_semantics.json"
 VERSIONING_MODEL = ROOT / "tests" / "tooling" / "fixtures" / "release_operations" / "versioning_model.json"
 UPDATE_MANIFEST = ROOT / "tmp" / "artifacts" / "release-operations" / "update-manifest" / "objc3c-update-manifest.json"
-COMPATIBILITY_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-compatibility-report.json"
+UPGRADE_SUPPORT_REPORT = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-upgrade-support-report.json"
 CHANNEL_CATALOG = ROOT / "tmp" / "artifacts" / "release-operations" / "publication" / "objc3c-release-channel-catalog.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "long-horizon-operations" / "migration-rollback-support-window-summary.json"
 
@@ -60,38 +60,38 @@ def main() -> int:
         expect((ROOT / str(raw_path)).is_file(), f"missing generated input {raw_path}", failures)
 
     update_manifest = load_json(UPDATE_MANIFEST) if UPDATE_MANIFEST.is_file() else {}
-    compatibility_report = load_json(COMPATIBILITY_REPORT) if COMPATIBILITY_REPORT.is_file() else {}
+    upgrade_support_report = load_json(UPGRADE_SUPPORT_REPORT) if UPGRADE_SUPPORT_REPORT.is_file() else {}
     channel_catalog = load_json(CHANNEL_CATALOG) if CHANNEL_CATALOG.is_file() else {}
     version_support_windows = versioning.get("support_windows", {})
 
     expect(update_manifest.get("current_version") == versioning.get("current_stable_version"), "update manifest current_version drifted", failures)
-    expect(compatibility_report.get("current_version") == update_manifest.get("current_version"), "compatibility report current_version drifted", failures)
+    expect(upgrade_support_report.get("current_version") == update_manifest.get("current_version"), "upgrade support report current_version drifted", failures)
     expect(channel_catalog.get("default_channel") == update_manifest.get("default_channel"), "channel catalog default_channel drifted", failures)
     expect(
-        compatibility_report.get("support_windows") == version_support_windows,
-        "compatibility report support windows drifted from versioning model",
+        upgrade_support_report.get("support_windows") == version_support_windows,
+        "upgrade support report support windows drifted from versioning model",
         failures,
     )
     expect(
-        compatibility_report.get("supported_platform_ids") == update_manifest.get("supported_platform_ids"),
-        "compatibility report supported platforms drifted from update manifest",
+        upgrade_support_report.get("supported_platform_ids") == update_manifest.get("supported_platform_ids"),
+        "upgrade support report supported platforms drifted from update manifest",
         failures,
     )
 
     rollback_rules = semantics.get("rollback_rules", [])
-    rollback_guidance = compatibility_report.get("rollback_guidance", [])
-    rollback_channels = {str(entry.get("channel_id")) for entry in rollback_guidance if isinstance(entry, dict)}
+    revert_guidance = upgrade_support_report.get("revert_guidance", [])
+    rollback_channels = {str(entry.get("channel_id")) for entry in revert_guidance if isinstance(entry, dict)}
     for rule in rollback_rules if isinstance(rollback_rules, list) else []:
         if not isinstance(rule, dict):
             failures.append("rollback rule must be an object")
             continue
         channel_id = str(rule.get("channel_id"))
-        expect(channel_id in rollback_channels, f"missing rollback guidance for {channel_id}", failures)
-        matching = [entry for entry in rollback_guidance if isinstance(entry, dict) and entry.get("channel_id") == channel_id]
+        expect(channel_id in rollback_channels, f"missing revert guidance for {channel_id}", failures)
+        matching = [entry for entry in revert_guidance if isinstance(entry, dict) and entry.get("channel_id") == channel_id]
         if matching:
             expect(
-                matching[0].get("recommended_transport") == rule.get("rollback_transport"),
-                f"rollback transport drifted for {channel_id}",
+                isinstance(matching[0].get("instruction"), str) and bool(matching[0].get("instruction")),
+                f"revert instruction missing for {channel_id}",
                 failures,
             )
 
@@ -104,12 +104,12 @@ def main() -> int:
         "semantics": repo_rel(SEMANTICS_PATH),
         "versioning_model": repo_rel(VERSIONING_MODEL),
         "update_manifest": repo_rel(UPDATE_MANIFEST),
-        "compatibility_report": repo_rel(COMPATIBILITY_REPORT),
+        "upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT),
         "channel_catalog": repo_rel(CHANNEL_CATALOG),
         "step_count": len(steps),
         "steps": steps,
         "support_window_count": len(version_support_windows) if isinstance(version_support_windows, dict) else 0,
-        "upgrade_path_count": len(compatibility_report.get("upgrade_paths", [])) if isinstance(compatibility_report.get("upgrade_paths"), list) else 0,
+        "upgrade_path_count": len(upgrade_support_report.get("upgrade_paths", [])) if isinstance(upgrade_support_report.get("upgrade_paths"), list) else 0,
         "rollback_rule_count": len(rollback_rules) if isinstance(rollback_rules, list) else 0,
         "rollback_channel_count": len(rollback_channels),
         "migration_replay_requirements": replay_requirements,

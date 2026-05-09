@@ -19,7 +19,7 @@ class LongHorizonEvidenceInputs:
     steps: list[dict[str, object]]
     reports: dict[str, dict[str, Any]]
     update_manifest: dict[str, Any]
-    compatibility_report: dict[str, Any]
+    upgrade_support_report: dict[str, Any]
     failures: list[str]
 
 
@@ -70,14 +70,20 @@ def load_long_horizon_inputs(paths: LongHorizonEvidencePaths) -> LongHorizonEvid
     reports = load_required_reports(paths, failures)
 
     update_manifest = load_optional_json(paths.update_manifest)
-    compatibility_report = load_optional_json(paths.compatibility_report)
+    upgrade_support_report = load_optional_json(paths.upgrade_support_report)
     require_support_artifact(paths.update_manifest, update_manifest, "update manifest", failures, root=paths.root)
-    require_support_artifact(paths.compatibility_report, compatibility_report, "compatibility report", failures, root=paths.root)
+    require_support_artifact(
+        paths.upgrade_support_report,
+        upgrade_support_report,
+        "upgrade support report",
+        failures,
+        root=paths.root,
+    )
 
     return LongHorizonEvidenceInputs(
         steps=steps,
         reports=reports,
         update_manifest=update_manifest,
-        compatibility_report=compatibility_report,
+        upgrade_support_report=upgrade_support_report,
         failures=failures,
     )

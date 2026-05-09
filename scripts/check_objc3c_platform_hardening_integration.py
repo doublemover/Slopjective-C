@@ -13,7 +13,6 @@ from platform_hardening_contracts import (
     BUILD_PACKAGE_VALIDATION_SCRIPT,
     BUILD_PACKAGE_VALIDATION_SUMMARY_PATH,
     CHANNEL_CATALOG_PATH,
-    COMPATIBILITY_REPORT_PATH,
     INSTALL_MATRIX_INTEGRATION_SCRIPT,
     INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH,
     PACKAGE_CHANNELS_SUMMARY_PATH,
@@ -27,6 +26,7 @@ from platform_hardening_contracts import (
     SUPPORT_MATRIX_ARTIFACT_PATH,
     TOOLCHAIN_RANGE_REPLAY_SCRIPT,
     TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
+    UPGRADE_SUPPORT_REPORT_PATH,
     UPDATE_MANIFEST_PATH,
     platform_hardening_owner_payload,
     summary_passes,
@@ -130,7 +130,7 @@ def main() -> int:
         PACKAGE_CHANNELS_SUMMARY_PATH,
         RELEASE_PUBLICATION_SUMMARY_PATH,
         UPDATE_MANIFEST_PATH,
-        COMPATIBILITY_REPORT_PATH,
+        UPGRADE_SUPPORT_REPORT_PATH,
         CHANNEL_CATALOG_PATH,
     )
     for path in required_paths:
@@ -142,7 +142,7 @@ def main() -> int:
     install_matrix_summary = load_json(INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH) if INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH.is_file() else {}
     package_channels_summary = load_json(PACKAGE_CHANNELS_SUMMARY_PATH) if PACKAGE_CHANNELS_SUMMARY_PATH.is_file() else {}
     update_manifest = load_json(UPDATE_MANIFEST_PATH) if UPDATE_MANIFEST_PATH.is_file() else {}
-    compatibility_report = load_json(COMPATIBILITY_REPORT_PATH) if COMPATIBILITY_REPORT_PATH.is_file() else {}
+    upgrade_support_report = load_json(UPGRADE_SUPPORT_REPORT_PATH) if UPGRADE_SUPPORT_REPORT_PATH.is_file() else {}
     channel_catalog = load_json(CHANNEL_CATALOG_PATH) if CHANNEL_CATALOG_PATH.is_file() else {}
 
     publication_surface = support_matrix.get("publication_surface", {})
@@ -169,10 +169,10 @@ def main() -> int:
     expect(update_manifest.get("default_platform_id") == support_matrix.get("default_platform_id"), "update manifest default_platform_id drifted", failures)
     expect(update_manifest.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "update manifest supported_platform_ids drifted", failures)
     expect(update_manifest.get("support_tiers") == support_matrix.get("tiers"), "update manifest support tiers drifted", failures)
-    expect(compatibility_report.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "compatibility report missing platform support matrix link", failures)
-    expect(compatibility_report.get("default_platform_id") == support_matrix.get("default_platform_id"), "compatibility report default platform drifted", failures)
-    expect(compatibility_report.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "compatibility report supported platform ids drifted", failures)
-    expect(compatibility_report.get("support_tiers") == support_matrix.get("tiers"), "compatibility report support tiers drifted", failures)
+    expect(upgrade_support_report.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "upgrade support report missing platform support matrix link", failures)
+    expect(upgrade_support_report.get("default_platform_id") == support_matrix.get("default_platform_id"), "upgrade support report default platform drifted", failures)
+    expect(upgrade_support_report.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "upgrade support report supported platform ids drifted", failures)
+    expect(upgrade_support_report.get("support_tiers") == support_matrix.get("tiers"), "upgrade support report support tiers drifted", failures)
     expect(channel_catalog.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH), "channel catalog missing platform support matrix link", failures)
     expect(channel_catalog.get("default_platform_id") == support_matrix.get("default_platform_id"), "channel catalog default platform drifted", failures)
     expect(channel_catalog.get("supported_platform_ids") == support_matrix.get("claim_boundary", {}).get("supported_platform_ids"), "channel catalog supported platform ids drifted", failures)
@@ -202,7 +202,7 @@ def main() -> int:
             "install_matrix_integration": repo_rel(INSTALL_MATRIX_INTEGRATION_SUMMARY_PATH),
             "package_channels": repo_rel(PACKAGE_CHANNELS_SUMMARY_PATH),
             "update_manifest": repo_rel(UPDATE_MANIFEST_PATH),
-            "compatibility_report": repo_rel(COMPATIBILITY_REPORT_PATH),
+            "upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT_PATH),
             "channel_catalog": repo_rel(CHANNEL_CATALOG_PATH),
         },
     }

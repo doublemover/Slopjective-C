@@ -46,7 +46,7 @@
     }
   ],
   "claim_guardrails": [
-    "Claims must cite a generated update manifest, compatibility report, or long-horizon operations summary.",
+    "Claims must cite a generated update manifest, upgrade support report, or long-horizon operations summary.",
     "Claims may not use release-operation forbidden phrases or imply evergreen support.",
     "Preview compatibility remains blocked until the generated publication surface contains migration and rollback evidence.",
     "Cross-major compatibility stays blocked unless a migration replay artifact names the source and target versions."

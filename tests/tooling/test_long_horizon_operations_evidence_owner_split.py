@@ -80,8 +80,8 @@ def test_long_horizon_model_preserves_public_contract(tmp_path: Path) -> None:
                 {"channel_id": "candidate", "version": "3.0.1-rc.1"},
             ],
         },
-        compatibility_report={
-            "rollback_guidance": [{"channel_id": "stable"}],
+        upgrade_support_report={
+            "revert_guidance": [{"channel_id": "stable"}],
         },
         failures=[],
     )
@@ -108,7 +108,7 @@ def test_long_horizon_rendering_preserves_console_contract(tmp_path: Path) -> No
         steps=[],
         reports={},
         update_manifest={},
-        compatibility_report={},
+        upgrade_support_report={},
         failures=["missing update manifest"],
     )
     model = build_long_horizon_model(paths, inputs)

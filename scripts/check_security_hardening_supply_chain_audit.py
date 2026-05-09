@@ -68,14 +68,14 @@ def main() -> int:
 
     release_evidence = read_json(ROOT / "tmp/reports/release_evidence/evidence-index.json") if (ROOT / "tmp/reports/release_evidence/evidence-index.json").is_file() else {}
     update_manifest = read_json(ROOT / "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json") if (ROOT / "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json").is_file() else {}
-    compatibility_report = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json").is_file() else {}
+    upgrade_support_report = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json").is_file() else {}
     channel_catalog = read_json(ROOT / "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json") if (ROOT / "tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json").is_file() else {}
     trust_report = read_json(ROOT / "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json") if (ROOT / "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json").is_file() else {}
 
     checks = {
         "release_evidence_schema_matches": release_evidence.get("schema_id") == "objc3-conformance-evidence-index/v1",
         "update_manifest_has_platform_support_matrix": isinstance(update_manifest.get("platform_support_matrix"), str) and bool(update_manifest.get("platform_support_matrix")),
-        "compatibility_report_has_platform_support_matrix": isinstance(compatibility_report.get("platform_support_matrix"), str) and bool(compatibility_report.get("platform_support_matrix")),
+        "upgrade_support_report_has_platform_support_matrix": isinstance(upgrade_support_report.get("platform_support_matrix"), str) and bool(upgrade_support_report.get("platform_support_matrix")),
         "channel_catalog_has_platform_support_matrix": isinstance(channel_catalog.get("platform_support_matrix"), str) and bool(channel_catalog.get("platform_support_matrix")),
         "trust_report_passes": trust_report.get("status") == "PASS",
         "trust_report_references_release_operations": any("release-operations" in str(path) for path in trust_report.get("evidence_paths", [])),

@@ -313,7 +313,7 @@ release/update metadata surfaces:
 - update metadata:
   - `tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json`
 - support publication:
-  - `tmp/artifacts/release-operations/publication/objc3c-compatibility-report.json`
+  - `tmp/artifacts/release-operations/publication/objc3c-upgrade-support-report.json`
   - `tmp/artifacts/release-operations/publication/objc3c-release-channel-catalog.json`
 
 These surfaces must publish the same support tiers and supported platform ids as

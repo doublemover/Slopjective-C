@@ -1080,7 +1080,7 @@ function Write-RepoSupercleanSourceOfTruthArtifact {
       workflow_surface = "tests/tooling/fixtures/release_operations/workflow_surface.json"
       schema_surface = "tests/tooling/fixtures/release_operations/schema_surface.json"
       update_manifest_schema = "schemas/objc3c-update-manifest-v1.schema.json"
-      compatibility_report_schema = "schemas/objc3c-compatibility-report-v1.schema.json"
+      upgrade_support_report_schema = "schemas/objc3c-upgrade-support-report-v1.schema.json"
       source_roots = @(
         "scripts/check_release_operations_source_surface.py",
         "scripts/check_release_operations_schema_surface.py",

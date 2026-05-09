@@ -348,7 +348,7 @@ $requiredRelativeFiles = @(
   "schemas/objc3c-adoption-legibility-evidence-v1.schema.json",
   "schemas/objc3c-governance-sustainability-evidence-v1.schema.json",
   "schemas/objc3c-update-manifest-v1.schema.json",
-  "schemas/objc3c-compatibility-report-v1.schema.json",
+  "schemas/objc3c-upgrade-support-report-v1.schema.json",
   "schemas/objc3c-release-manifest-v1.schema.json",
   "schemas/objc3c-release-sbom-v1.schema.json",
   "schemas/objc3c-release-attestation-v1.schema.json",

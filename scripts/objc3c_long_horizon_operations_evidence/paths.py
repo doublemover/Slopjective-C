@@ -90,7 +90,7 @@ class LongHorizonEvidencePaths:
     aging_summary: Path
     artifact_contract_summary: Path
     update_manifest: Path
-    compatibility_report: Path
+    upgrade_support_report: Path
     package_integration: Path
     package_lock_summary: Path
     application_architecture_integration: Path
@@ -115,7 +115,10 @@ class LongHorizonEvidencePaths:
             aging_summary=long_horizon_reports / "aging-regression-release-cadence-summary.json",
             artifact_contract_summary=long_horizon_reports / "artifact-contract-summary.json",
             update_manifest=artifacts / "release-operations" / "update-manifest" / "objc3c-update-manifest.json",
-            compatibility_report=artifacts / "release-operations" / "publication" / "objc3c-compatibility-report.json",
+            upgrade_support_report=artifacts
+            / "release-operations"
+            / "publication"
+            / "objc3c-upgrade-support-report.json",
             package_integration=reports / "package-ecosystem" / "integration-summary.json",
             package_lock_summary=reports / "package-ecosystem" / "package-lock-summary.json",
             application_architecture_integration=reports

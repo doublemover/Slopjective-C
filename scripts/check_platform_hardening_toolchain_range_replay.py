@@ -9,13 +9,13 @@ from objc3c_tooling.paths import repo_rel
 from platform_hardening_contracts import (
     BUILD_PLATFORM_SUPPORT_MATRIX_SCRIPT,
     CHANNEL_CATALOG_PATH,
-    COMPATIBILITY_REPORT_PATH,
     PUBLICATION_SURFACE,
     RELEASE_PUBLICATION_SUMMARY_PATH,
     ROOT,
     SUPPORT_MATRIX_ARTIFACT_PATH,
     TOOLCHAIN_RANGE_REPLAY_CONTRACT_PATH,
     TOOLCHAIN_RANGE_REPLAY_SUMMARY_PATH,
+    UPGRADE_SUPPORT_REPORT_PATH,
     UPDATE_MANIFEST_PATH,
     load_json_object,
     platform_hardening_owner_payload,
@@ -73,7 +73,7 @@ def main() -> int:
     matrix = load_json_object(SUPPORT_MATRIX_ARTIFACT_PATH)
     capabilities = load_json_object(probe_summary)
     update_manifest = load_json_object(UPDATE_MANIFEST_PATH)
-    compatibility_report = load_json_object(COMPATIBILITY_REPORT_PATH)
+    upgrade_support_report = load_json_object(UPGRADE_SUPPORT_REPORT_PATH)
     publication_summary = load_json_object(RELEASE_PUBLICATION_SUMMARY_PATH)
     channel_catalog = load_json_object(CHANNEL_CATALOG_PATH)
     stable = next(entry for entry in update_manifest["channels"] if entry["channel_id"] == "stable")
@@ -84,7 +84,7 @@ def main() -> int:
         "toolchain_parity_ready": capabilities.get("sema_type_system_parity", {}).get("parity_ready") is True,
         "release_update_manifest_published": summary_passes(publication_summary),
         "release_metadata_uses_platform_support_matrix": update_manifest.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
-        "compatibility_report_uses_platform_support_matrix": compatibility_report.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
+        "upgrade_support_report_uses_platform_support_matrix": upgrade_support_report.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
         "channel_catalog_uses_platform_support_matrix": channel_catalog.get("platform_support_matrix") == repo_rel(SUPPORT_MATRIX_ARTIFACT_PATH),
         "stable_artifacts_published": len(stable.get("artifacts", {})) >= 3,
     }
@@ -98,7 +98,7 @@ def main() -> int:
         "toolchain_probe_summary": repo_rel(probe_summary),
         "release_operations_update_manifest": repo_rel(UPDATE_MANIFEST_PATH),
         "release_operations_publication_summary": repo_rel(RELEASE_PUBLICATION_SUMMARY_PATH),
-        "release_operations_compatibility_report": repo_rel(COMPATIBILITY_REPORT_PATH),
+        "release_operations_upgrade_support_report": repo_rel(UPGRADE_SUPPORT_REPORT_PATH),
         "release_operations_channel_catalog": repo_rel(CHANNEL_CATALOG_PATH),
         "required_toolchain_claims": contract["required_toolchain_claims"],
         "required_steps": step_results,

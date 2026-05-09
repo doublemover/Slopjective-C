@@ -56,7 +56,7 @@ PACKAGE_CHANNELS_SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / 
 PACKAGE_CHANNELS_END_TO_END_SUMMARY_PATH = ROOT / "tmp" / "reports" / "package-channels" / "end-to-end-summary.json"
 RELEASE_PUBLICATION_SUMMARY_PATH = ROOT / "tmp" / "reports" / "release-operations" / "publication-summary.json"
 UPDATE_MANIFEST_PATH = RELEASE_OPERATIONS_ROOT / "update-manifest" / "objc3c-update-manifest.json"
-COMPATIBILITY_REPORT_PATH = RELEASE_OPERATIONS_ROOT / "publication" / "objc3c-compatibility-report.json"
+UPGRADE_SUPPORT_REPORT_PATH = RELEASE_OPERATIONS_ROOT / "publication" / "objc3c-upgrade-support-report.json"
 CHANNEL_CATALOG_PATH = RELEASE_OPERATIONS_ROOT / "publication" / "objc3c-release-channel-catalog.json"
 PACKAGE_MANIFEST_PATH = ROOT / "artifacts" / "package" / "objc3c-runnable-toolchain-package.json"
 
