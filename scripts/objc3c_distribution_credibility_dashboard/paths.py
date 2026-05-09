@@ -19,6 +19,7 @@ class DistributionCredibilityDashboardPaths:
     release_drill_policy: Path
     schema_surface: Path
     artifact_surface: Path
+    workflow_surface: Path
     release_foundation_manifest: Path
     package_channels_end_to_end: Path
     release_operations_publication: Path
@@ -40,6 +41,7 @@ class DistributionCredibilityDashboardPaths:
             release_drill_policy=policy_root / "release_drill_policy.json",
             schema_surface=policy_root / "schema_surface.json",
             artifact_surface=policy_root / "artifact_surface.json",
+            workflow_surface=policy_root / "workflow_surface.json",
             release_foundation_manifest=(
                 root
                 / "tmp"

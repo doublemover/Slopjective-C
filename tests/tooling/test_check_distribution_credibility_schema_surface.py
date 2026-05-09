@@ -53,8 +53,8 @@ def test_distribution_credibility_schema_surface_uses_registered_schemas() -> No
             schema_path("objc3c-distribution-trust-report-v1").relative_to(ROOT).as_posix(),
         ]
         assert summary["schema_ids"] == [
-            "https://schemas.doublemover.dev/objc3c-distribution-credibility-dashboard-v1.schema.json",
-            "https://schemas.doublemover.dev/objc3c-distribution-trust-report-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-distribution-credibility-dashboard-v1.schema.json",
+            "https://objc3c.dev/schemas/objc3c-distribution-trust-report-v1.schema.json",
         ]
     finally:
         checker.SUMMARY_PATH.unlink(missing_ok=True)
@@ -105,7 +105,7 @@ def test_distribution_credibility_schema_surface_rejects_broken_registered_schem
         payload = deepcopy(original_load_schema(schema_id))
         if schema_id == "objc3c-distribution-trust-report-v1":
             payload["$id"] = (
-                "https://schemas.doublemover.dev/objc3c-distribution-trust-report-broken.schema.json"
+                "https://objc3c.dev/schemas/objc3c-distribution-trust-report-broken.schema.json"
             )
         return payload
 

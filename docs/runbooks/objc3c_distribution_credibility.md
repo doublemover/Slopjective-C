@@ -78,6 +78,14 @@ These outputs must live under `tmp/reports/distribution-credibility/` and
 `tmp/artifacts/distribution-credibility/` and stay validated by checked-in schema
 contracts.
 
+The checked-in artifact surface is exhaustive for this owner. Source-surface,
+schema-surface, dashboard, publication, integration, and end-to-end summaries
+all resolve under `tmp/reports/distribution-credibility/`; the copied dashboard
+artifact and trust report outputs resolve under `tmp/artifacts/distribution-credibility/`.
+The publication script is only an entrypoint. Report construction, evidence path
+selection, markdown rendering, and artifact publication live in the distribution
+credibility owner package.
+
 ## Operator Release Policy
 
 Credibility publication is operator-gated:
@@ -127,6 +135,18 @@ The live workflow for this milestone must expose:
 These entrypoints must stay on the shared `npm run objc3c -- <action>` bridge and reuse the
 existing release-foundation, packaging-channel, release-operations, and release-evidence
 surfaces instead of inventing a milestone-only drill lane.
+
+The integrated workflow steps are fixed:
+
+- `validate-release-operations`
+- `check-distribution-credibility-surface`
+- `check-distribution-credibility-schema-surface`
+- `build-distribution-credibility-dashboard`
+- `publish-distribution-credibility`
+
+Integration and end-to-end summaries must prove that the dashboard artifact,
+trust report JSON, markdown report, trust signals, release drill steps, and
+operator actions all match the checked-in contract surfaces.
 
 ## Non-Goals
 

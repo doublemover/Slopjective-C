@@ -12,6 +12,21 @@
     "validate-distribution-credibility",
     "validate-distribution-credibility-end-to-end"
   ],
+  "integrated_required_steps": [
+    "validate-release-operations",
+    "check-distribution-credibility-surface",
+    "check-distribution-credibility-schema-surface",
+    "build-distribution-credibility-dashboard",
+    "publish-distribution-credibility"
+  ],
+  "required_report_contracts": [
+    "objc3c.distribution.credibility.source.surface.summary.v1",
+    "objc3c.distribution.credibility.schema.surface.summary.v1",
+    "objc3c.distribution.credibility.dashboard.summary.v1",
+    "objc3c.distribution.credibility.public.summary.v1",
+    "objc3c.distribution.credibility.integration.summary.v1",
+    "objc3c.distribution.credibility.end-to-end.summary.v1"
+  ],
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels",

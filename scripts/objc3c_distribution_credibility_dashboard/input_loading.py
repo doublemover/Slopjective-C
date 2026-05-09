@@ -20,6 +20,7 @@ class DistributionCredibilityDashboardInputs:
     release_drill_policy: dict[str, Any]
     schema_surface: dict[str, Any]
     artifact_surface: dict[str, Any]
+    workflow_surface: dict[str, Any]
     release_manifest: dict[str, Any]
     package_channels: dict[str, Any]
     release_operations_publication: dict[str, Any]
@@ -52,6 +53,7 @@ def load_dashboard_inputs(
         release_drill_policy=require_json(paths.release_drill_policy, kind="release drill policy"),
         schema_surface=require_json(paths.schema_surface, kind="schema surface"),
         artifact_surface=require_json(paths.artifact_surface, kind="artifact surface"),
+        workflow_surface=require_json(paths.workflow_surface, kind="workflow surface"),
         release_manifest=require_json(paths.release_foundation_manifest, kind="release-foundation manifest"),
         package_channels=require_json(paths.package_channels_end_to_end, kind="package-channels end-to-end summary"),
         release_operations_publication=require_json(

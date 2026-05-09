@@ -15,6 +15,7 @@ WORKFLOW_REPORT = ROOT / "tmp" / "reports" / "objc3c-public-workflow" / "validat
 WORKFLOW_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "distribution_credibility" / "workflow_surface.json"
 DASHBOARD_SUMMARY = ROOT / "tmp" / "reports" / "distribution-credibility" / "dashboard-summary.json"
 PUBLICATION_SUMMARY = ROOT / "tmp" / "reports" / "distribution-credibility" / "publication-summary.json"
+ARTIFACT_SURFACE = ROOT / "tests" / "tooling" / "fixtures" / "distribution_credibility" / "artifact_surface.json"
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "distribution-credibility" / "integration-summary.json"
 
 REQUIRED_STEPS = [
@@ -23,6 +24,13 @@ REQUIRED_STEPS = [
     "check-distribution-credibility-schema-surface",
     "build-distribution-credibility-dashboard",
     "publish-distribution-credibility",
+]
+
+REQUIRED_SIGNAL_IDS = [
+    "release-foundation-lineage",
+    "package-channel-install-smoke",
+    "release-operations-metadata",
+    "release-evidence-gate",
 ]
 
 
@@ -34,7 +42,7 @@ def fail(message: str) -> int:
 
 
 def main() -> int:
-    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, DASHBOARD_SUMMARY, PUBLICATION_SUMMARY):
+    for path in (WORKFLOW_REPORT, WORKFLOW_SURFACE, DASHBOARD_SUMMARY, PUBLICATION_SUMMARY, ARTIFACT_SURFACE):
         if not path.is_file():
             return fail(f"missing required artifact {repo_rel(path)}")
 
@@ -42,6 +50,7 @@ def main() -> int:
     workflow_surface = load_json(WORKFLOW_SURFACE)
     dashboard_summary = load_json(DASHBOARD_SUMMARY)
     publication_summary = load_json(PUBLICATION_SUMMARY)
+    artifact_surface = load_json(ARTIFACT_SURFACE)
 
     if workflow_report.get("status") != "PASS":
         return fail("workflow report did not pass")
@@ -53,10 +62,22 @@ def main() -> int:
         return fail(f"workflow steps drifted: {step_actions}")
     if workflow_surface.get("validate_action") != "validate-distribution-credibility":
         return fail("workflow surface drifted from validate-distribution-credibility")
+    if workflow_surface.get("integrated_required_steps") != REQUIRED_STEPS:
+        return fail("workflow surface integrated steps drifted")
     if dashboard_summary.get("status") != "PASS":
         return fail("dashboard summary did not pass")
     if publication_summary.get("status") != "PASS":
         return fail("distribution-credibility publication summary did not pass")
+    trust_signals = dashboard_summary.get("trust_signals")
+    signal_ids = [signal.get("signal_id") for signal in trust_signals if isinstance(signal, dict)] if isinstance(trust_signals, list) else []
+    if signal_ids != REQUIRED_SIGNAL_IDS:
+        return fail(f"dashboard trust signal order drifted: {signal_ids}")
+    if publication_summary.get("published_dashboard") != artifact_surface.get("dashboard_artifact"):
+        return fail("publication summary dashboard artifact path drifted")
+    if publication_summary.get("trust_report_json") != artifact_surface.get("trust_report_json"):
+        return fail("publication summary trust report JSON path drifted")
+    if publication_summary.get("trust_report_markdown") != artifact_surface.get("trust_report_markdown"):
+        return fail("publication summary trust report markdown path drifted")
 
     SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
     summary = {
@@ -68,6 +89,8 @@ def main() -> int:
         "publication_summary": repo_rel(PUBLICATION_SUMMARY),
         "trust_state": dashboard_summary.get("trust_state"),
         "trust_report_json": publication_summary.get("trust_report_json"),
+        "published_dashboard": publication_summary.get("published_dashboard"),
+        "validated_signal_ids": signal_ids,
     }
     write_json_file(SUMMARY_PATH, summary)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")

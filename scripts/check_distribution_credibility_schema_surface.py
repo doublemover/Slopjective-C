@@ -23,13 +23,13 @@ EXPECTED_SCHEMAS = (
     (
         "dashboard_schema",
         "objc3c-distribution-credibility-dashboard-v1",
-        "https://schemas.doublemover.dev/objc3c-distribution-credibility-dashboard-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-distribution-credibility-dashboard-v1.schema.json",
         "objc3c.distribution.credibility.dashboard.summary.v1",
     ),
     (
         "trust_report_schema",
         "objc3c-distribution-trust-report-v1",
-        "https://schemas.doublemover.dev/objc3c-distribution-trust-report-v1.schema.json",
+        "https://objc3c.dev/schemas/objc3c-distribution-trust-report-v1.schema.json",
         "objc3c.distribution.trust.report.v1",
     ),
 )

@@ -26,10 +26,111 @@ EXPECTED_CONTRACT_IDS = {
     "workflow_surface": "objc3c.distribution.credibility.workflow.surface.v1",
 }
 
+EXPECTED_TRUST_SIGNAL_IDS = [
+    "release-foundation-lineage",
+    "package-channel-install-smoke",
+    "release-operations-metadata",
+    "release-evidence-gate",
+]
+
+EXPECTED_WORKFLOW_ACTIONS = [
+    "check-distribution-credibility-surface",
+    "check-distribution-credibility-schema-surface",
+    "build-distribution-credibility-dashboard",
+    "publish-distribution-credibility",
+    "validate-distribution-credibility",
+    "validate-distribution-credibility-end-to-end",
+]
+
+EXPECTED_INTEGRATED_STEPS = [
+    "validate-release-operations",
+    "check-distribution-credibility-surface",
+    "check-distribution-credibility-schema-surface",
+    "build-distribution-credibility-dashboard",
+    "publish-distribution-credibility",
+]
+
+EXPECTED_OUTPUTS = {
+    "source_surface_summary": "tmp/reports/distribution-credibility/source-surface-summary.json",
+    "schema_surface_summary": "tmp/reports/distribution-credibility/schema-surface-summary.json",
+    "dashboard_summary": "tmp/reports/distribution-credibility/dashboard-summary.json",
+    "publication_summary": "tmp/reports/distribution-credibility/publication-summary.json",
+    "integration_summary": "tmp/reports/distribution-credibility/integration-summary.json",
+    "end_to_end_summary": "tmp/reports/distribution-credibility/end-to-end-summary.json",
+    "dashboard_artifact": "tmp/artifacts/distribution-credibility/dashboard/distribution-credibility-dashboard.json",
+    "trust_report_json": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.json",
+    "trust_report_markdown": "tmp/artifacts/distribution-credibility/report/objc3c-distribution-trust-report.md",
+}
+
 
 def fail(message: str) -> int:
     print(f"distribution-credibility-source-surface: {message}", file=sys.stderr)
     return 1
+
+
+def signal_ids(payload: dict[str, object]) -> list[str]:
+    signals = payload.get("trust_signals")
+    if not isinstance(signals, list):
+        return []
+    return [signal.get("signal_id") for signal in signals if isinstance(signal, dict)]
+
+
+def require_string_list(payload: dict[str, object], field_name: str, *, minimum: int) -> list[str]:
+    values = payload.get(field_name)
+    if not isinstance(values, list) or len(values) < minimum:
+        raise RuntimeError(f"{field_name} must contain at least {minimum} entries")
+    rendered = [value for value in values if isinstance(value, str) and value]
+    if len(rendered) != len(values):
+        raise RuntimeError(f"{field_name} contained an invalid entry")
+    return rendered
+
+
+def validate_contract_payload(field_name: str, payload: dict[str, object]) -> None:
+    if field_name == "trust_signal_architecture":
+        if payload.get("upstream_surfaces") != [
+            "release-foundation",
+            "packaging-channels",
+            "release-operations",
+            "release-evidence",
+        ]:
+            raise RuntimeError("trust_signal_architecture upstream surfaces drifted")
+        if signal_ids(payload) != EXPECTED_TRUST_SIGNAL_IDS:
+            raise RuntimeError("trust_signal_architecture signal order drifted")
+        if payload.get("required_signal_order") != EXPECTED_TRUST_SIGNAL_IDS:
+            raise RuntimeError("trust_signal_architecture required signal order drifted")
+        for signal in payload.get("trust_signals", []):
+            if not isinstance(signal, dict) or not signal.get("artifact_source") or not signal.get("claim_boundary"):
+                raise RuntimeError("trust_signal_architecture contained an incomplete signal")
+    elif field_name == "install_release_doc_surface":
+        require_string_list(payload, "primary_docs", minimum=3)
+        require_string_list(payload, "release_docs", minimum=3)
+        require_string_list(payload, "trust_report_inputs", minimum=4)
+    elif field_name == "operator_release_policy":
+        if payload.get("states") != ["ready", "degraded", "blocked"]:
+            raise RuntimeError("operator_release_policy states drifted")
+        require_string_list(payload, "blocking_conditions", minimum=4)
+        require_string_list(payload, "degraded_conditions", minimum=3)
+    elif field_name == "release_drill_policy":
+        if payload.get("required_drill_steps") != [
+            "stage-package-channels",
+            "verify-install-smoke",
+            "verify-rollback-guidance",
+            "verify-update-manifest-coherence",
+            "verify-release-evidence-index",
+        ]:
+            raise RuntimeError("release_drill_policy required drill steps drifted")
+        require_string_list(payload, "required_upstream_reports", minimum=3)
+    elif field_name == "artifact_surface":
+        for output_name, expected_path in EXPECTED_OUTPUTS.items():
+            if payload.get(output_name) != expected_path:
+                raise RuntimeError(f"artifact_surface {output_name} drifted")
+    elif field_name == "workflow_surface":
+        if payload.get("required_actions") != EXPECTED_WORKFLOW_ACTIONS:
+            raise RuntimeError("workflow_surface required actions drifted")
+        if payload.get("integrated_required_steps") != EXPECTED_INTEGRATED_STEPS:
+            raise RuntimeError("workflow_surface integrated steps drifted")
+        if payload.get("validate_action") != "validate-distribution-credibility":
+            raise RuntimeError("workflow_surface validate action drifted")
 
 
 
@@ -56,6 +157,10 @@ def main() -> int:
         payload = load_json(target)
         if payload.get("contract_id") != expected_contract_id:
             return fail(f"{field_name} drifted from expected contract id {expected_contract_id}")
+        try:
+            validate_contract_payload(field_name, payload)
+        except RuntimeError as exc:
+            return fail(str(exc))
         checked_paths.append(raw_path)
 
     runbook = source_surface.get("runbook")

@@ -7,6 +7,22 @@
     "release-operations",
     "release-evidence"
   ],
+  "status_values": [
+    "PASS",
+    "WARN",
+    "FAIL"
+  ],
+  "state_resolution": {
+    "ready": "all required trust signals pass on the live shipped release surface",
+    "degraded": "one or more non-blocking trust signals warn while required release drill evidence remains present",
+    "blocked": "any required trust signal fails or any checked-in source contract drifts"
+  },
+  "required_signal_order": [
+    "release-foundation-lineage",
+    "package-channel-install-smoke",
+    "release-operations-metadata",
+    "release-evidence-gate"
+  ],
   "trust_signals": [
     {
       "signal_id": "release-foundation-lineage",
