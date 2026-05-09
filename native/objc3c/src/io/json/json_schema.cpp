@@ -6,6 +6,8 @@
 
 #include "io/json/json_equivalence.h"
 #include "io/json/json_pointer.h"
+#include "io/json/json_schema_composition_contract_validation.h"
+#include "io/json/json_schema_contract_validation.h"
 #include "io/json/json_schema_errors.h"
 #include "io/json/json_schema_validation.h"
 
@@ -123,40 +125,6 @@ void ValidateJsonSchemaNonnegativeNumberKeyword(const JsonValue &schema,
   }
 }
 
-void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
-                                    const JsonValue &schema,
-                                    const std::string &schema_path,
-                                    JsonSchemaResult &result);
-
-void ValidateJsonSchemaArrayOfSchemas(const JsonValue &schema_root,
-                                      const JsonValue &schema,
-                                      std::string_view keyword,
-                                      const std::string &schema_path,
-                                      JsonSchemaResult &result) {
-  const JsonValue *array = schema.Find(keyword);
-  if (array == nullptr) {
-    return;
-  }
-  if (!array->IsArray()) {
-    AddJsonSchemaContractError(
-        result, "invalid_schema_array",
-        JsonSchemaKeywordPath(schema_path, keyword),
-        std::string(keyword) + " must be an array of schema objects");
-    return;
-  }
-  if (array->AsArray().empty()) {
-    AddJsonSchemaContractError(
-        result, "empty_schema_array",
-        JsonSchemaKeywordPath(schema_path, keyword),
-        std::string(keyword) + " must contain at least one schema");
-  }
-  for (std::size_t i = 0; i < array->AsArray().size(); ++i) {
-    ValidateJsonSchemaNodeContract(
-        schema_root, array->AsArray()[i],
-        JsonSchemaArrayElementPath(schema_path, keyword, i), result);
-  }
-}
-
 void ValidateJsonSchemaObjectOfSchemas(const JsonValue &schema_root,
                                        const JsonValue &container,
                                        const std::string &schema_path,
@@ -221,6 +189,8 @@ void ValidateJsonSchemaRequiredContract(const JsonValue &required,
   }
 }
 
+}  // namespace
+
 void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
                                     const JsonValue &schema,
                                     const std::string &schema_path,
@@ -264,10 +234,8 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
                                    JsonSchemaKeywordPath(schema_path, "type"),
                                    result);
   }
-  ValidateJsonSchemaArrayOfSchemas(schema_root, schema, "allOf", schema_path,
-                                   result);
-  ValidateJsonSchemaArrayOfSchemas(schema_root, schema, "anyOf", schema_path,
-                                   result);
+  ValidateJsonSchemaCompositionContracts(schema_root, schema, schema_path,
+                                         result);
   if (const JsonValue *properties = schema.Find("properties");
       properties != nullptr) {
     ValidateJsonSchemaObjectOfSchemas(
@@ -353,8 +321,6 @@ void ValidateJsonSchemaNodeContract(const JsonValue &schema_root,
     }
   }
 }
-
-}  // namespace
 
 JsonSchemaResult ValidateJsonSchema(const JsonValue &schema,
                                     const JsonValue &payload) {
