@@ -1,4 +1,4 @@
-#include "runtime/storage/property_registry_snapshot_fields.h"
+#include "runtime/reflection/property_registry_snapshot_fields.h"
 
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/state/runtime_state_records.h"

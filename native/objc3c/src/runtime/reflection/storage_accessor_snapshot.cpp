@@ -30,10 +30,10 @@ extern "C" int objc3_runtime_copy_storage_accessor_implementation_snapshot_for_t
   snapshot->weak_current_property_store_symbol =
       "objc3_runtime_store_weak_current_property_i32";
   snapshot->implementation_model =
-      "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-without-storage-rederivation";
+      "runtime-registration-realizes-property-accessor-records-from-emitted-descriptors-and-ivar-layout-through-runtime-storage-owners";
   snapshot->reflection_model =
       "private-property-registry-and-entry-snapshots-publish-runtime-owned-accessor-layout-and-ownership-facts";
   snapshot->fail_closed_model =
-      "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-storage-fallback-synthesis";
+      "missing-realized-layout-or-accessor-records-produce-no-reflection-hit-and-no-synthetic-storage-path";
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }

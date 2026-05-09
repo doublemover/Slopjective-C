@@ -1,4 +1,4 @@
-#include "runtime/storage/property_entry_descriptor_snapshot_fields.h"
+#include "runtime/reflection/property_entry_descriptor_snapshot_fields.h"
 
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_realized_records.h"

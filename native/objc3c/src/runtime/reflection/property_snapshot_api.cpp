@@ -1,9 +1,10 @@
 #include "runtime/storage/property_accessors.h"
 
 #include "runtime/objc3_runtime_bootstrap_internal.h"
+#include "runtime/reflection/property_entry_snapshot_fields.h"
+#include "runtime/reflection/property_registry_snapshot_fields.h"
 #include "runtime/state/runtime_state_records.h"
 #include "runtime/state/runtime_state_store.h"
-#include "runtime/storage/property_snapshot_fields.h"
 #include "runtime/strings/borrowed_string.h"
 
 #include <cstddef>
@@ -33,7 +34,7 @@ extern "C" int objc3_runtime_copy_property_entry_for_testing(
     objc3_runtime_property_entry_snapshot *snapshot) {
   // property-metadata-reflection anchor: the private per-property snapshot
   // exposes runtime-owned accessor/layout facts by class/property name without
-  // widening the public ABI or rederiving metadata from source.
+  // widening the public ABI or synthesizing metadata from source.
   if (snapshot == nullptr) {
     return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
   }

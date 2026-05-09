@@ -1,10 +1,10 @@
-#include "runtime/storage/property_entry_snapshot_fields.h"
+#include "runtime/reflection/property_entry_snapshot_fields.h"
 
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/state/runtime_state_records.h"
-#include "runtime/storage/property_entry_descriptor_snapshot_fields.h"
-#include "runtime/storage/property_entry_layout_snapshot_fields.h"
+#include "runtime/reflection/property_entry_descriptor_snapshot_fields.h"
+#include "runtime/reflection/property_entry_layout_snapshot_fields.h"
 #include "runtime/strings/borrowed_string.h"
 
 namespace objc3c::runtime {

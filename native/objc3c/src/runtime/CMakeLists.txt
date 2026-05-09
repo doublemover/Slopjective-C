@@ -175,6 +175,16 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_contract.cpp
   public/objc3_runtime_result_contract.h
   public/objc3_runtime_selector.h
+  reflection/property_entry_descriptor_snapshot_fields.cpp
+  reflection/property_entry_descriptor_snapshot_fields.h
+  reflection/property_entry_layout_snapshot_fields.cpp
+  reflection/property_entry_layout_snapshot_fields.h
+  reflection/property_entry_snapshot_fields.cpp
+  reflection/property_entry_snapshot_fields.h
+  reflection/property_registry_snapshot_fields.cpp
+  reflection/property_registry_snapshot_fields.h
+  reflection/property_snapshot_api.cpp
+  reflection/storage_accessor_snapshot.cpp
   selectors/keypath_table.cpp
   selectors/keypath_table.h
   selectors/selector_materialization.cpp
@@ -235,20 +245,9 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_layout_rules.h
   storage/property_lookup.cpp
   storage/property_lookup.h
-  storage/property_entry_descriptor_snapshot_fields.cpp
-  storage/property_entry_descriptor_snapshot_fields.h
-  storage/property_entry_layout_snapshot_fields.cpp
-  storage/property_entry_layout_snapshot_fields.h
-  storage/property_entry_snapshot_fields.cpp
-  storage/property_entry_snapshot_fields.h
-  storage/property_registry_snapshot_fields.cpp
-  storage/property_registry_snapshot_fields.h
-  storage/property_snapshot.cpp
-  storage/property_snapshot_fields.h
   storage/property_value_storage.cpp
   storage/property_value_storage.h
   storage/runtime_instance_records.h
-  storage/storage_accessor_snapshot.cpp
   storage/weak_slot_ref_match.cpp
   storage/weak_slot_ref_match.h
   storage/weak_slot_registry.cpp
