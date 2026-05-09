@@ -2,6 +2,8 @@ add_library(objc3c_config STATIC
   objc3_config_parsing.cpp
   objc3_config_validation.cpp
   objc3_feature_state_catalog.cpp
+  objc3_feature_state_names.cpp
+  objc3_feature_state_query.cpp
   objc3_feature_state_tables.cpp
   objc3_language_profile.cpp
   objc3_language_version.cpp
