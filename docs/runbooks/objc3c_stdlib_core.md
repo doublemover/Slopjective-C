@@ -52,11 +52,11 @@ not separate current-facing commands.
 - error identity tags and error-domain/category helpers
 - result tags and result inspection helpers
 - optional-to-result and optional-to-throw bridge helpers
-- compatibility entrypoints that preserve payload identity across
+- bridge-shape entrypoints that preserve payload identity across
   module/import boundaries
 
 `objc3.keypath` remains in scope only where typed key-path helpers need
-text/data compatibility adapters or metadata naming stability.
+text/data shape adapters or metadata naming stability.
 
 `objc3.concurrency` and `objc3.system` remain part of the shared stdlib
 inventory, but their advanced helper-family ownership lives in
@@ -78,10 +78,10 @@ The checked-in architecture contract requires these families to stay visible:
   - `error-identity`
   - `result-shape`
   - `optional-bridge`
-  - `text-data-compatibility`
+  - `text-data-shape`
 - `objc3.keypath`
   - `typed-keypath-application`
-  - `typed-keypath-text-compatibility`
+  - `typed-keypath-text-shape`
 
 Downstream implementation issues may add concrete helpers inside these families,
 but they should not invent a second family split or move ownership between
@@ -120,15 +120,15 @@ modules without updating the checked-in architecture contract.
 - `objc3_errors_result_error_or`
 - `objc3_errors_ok_or_code`
 - `objc3_errors_or_throw_code`
-- `objc3_errors_text_data_compatibility_score`
-- `objc3_errors_text_data_compatibility_diagnostic`
+- `objc3_errors_text_data_shape_score`
+- `objc3_errors_text_data_shape_diagnostic`
 
 `objc3.keypath` exports:
 
 - `objc3_keypath_apply_index`
 - `objc3_keypath_component_count`
-- `objc3_keypath_text_compatibility_score`
-- `objc3_keypath_text_compatibility_diagnostic`
+- `objc3_keypath_text_shape_score`
+- `objc3_keypath_text_shape_diagnostic`
 
 ## Semantic guarantees
 
@@ -144,9 +144,9 @@ modules without updating the checked-in architecture contract.
 - text/data helpers preserve the caller-provided counts instead of claiming
   allocation, ownership, or transcoding semantics, and prefix helpers clamp to
   the caller-provided count instead of widening it
-- text/data compatibility diagnostics return `0` on compatible shapes and
+- text/data shape diagnostics return `0` on compatible shapes and
   stable mismatch codes `30602` and `30603` for error-bridge and keypath
-  compatibility failures
+  shape failures
 - module semver metadata stays `1.0.0` for the initial core stdlib surface
 - additive helper growth is allowed, but moving helper families between modules
   is a breaking change

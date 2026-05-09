@@ -96,7 +96,7 @@ Implemented in parser, semantic passes, and emitted metadata:
 - object-model legality checks,
 - class, metaclass, protocol, category, property, and ivar descriptor families,
 - registration/bootstrap metadata and related artifact plumbing.
-- include-sharded native ownership split across compiler, runtime, pipeline,
+- split native ownership across compiler, runtime, pipeline,
   artifacts, and IO modules for lowering, IR, JSON/schema artifacts, dispatch
   classification, and public runtime C API boundaries.
 

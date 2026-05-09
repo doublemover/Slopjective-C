@@ -79,7 +79,7 @@ The checked-in architecture contract requires these families to stay visible:
   - `executor-hop`
 - `objc3.keypath`
   - `typed-keypath-application`
-  - `typed-keypath-text-compatibility`
+  - `typed-keypath-text-shape`
   - `typed-keypath-metadata`
   - `reflection-interop`
   - `runtime-composition-adapter`
@@ -111,8 +111,8 @@ the checked-in architecture contract.
 
 - `objc3_keypath_apply_index`
 - `objc3_keypath_component_count`
-- `objc3_keypath_text_compatibility_score`
-- `objc3_keypath_text_compatibility_diagnostic`
+- `objc3_keypath_text_shape_score`
+- `objc3_keypath_text_shape_diagnostic`
 - `objc3_keypath_metadata_token`
 - `objc3_keypath_reflection_interop_token`
 - `objc3_keypath_runtime_composition_token`
@@ -156,7 +156,7 @@ pending_messages` for nonnegative message counts and otherwise preserves the
   actor seed
 - `objc3_concurrency_cancellation_checkpoint` returns `1` only when the
   provided cancellation flag is nonzero
-- key-path helpers preserve caller-visible component counts and compatibility
+- key-path helpers preserve caller-visible component counts and shape
   diagnostics instead of inventing reflection-owned storage
 - `objc3_keypath_metadata_token` returns `root + component_count`, while
   `objc3_keypath_reflection_interop_token` and
