@@ -591,8 +591,8 @@
       stmt->let_stmt = std::make_unique<LetStmt>();
       const Token &name_token = Peek();
       if (!Match(TokenKind::Identifier)) {
-        diagnostics_.push_back(MakeDiag(name_token.line, name_token.column, "O3P101",
-                                        "invalid declaration identifier"));
+        diagnostics_.push_back(
+            BuildObjc3InvalidDeclarationIdentifierDiagnostic(name_token));
         return nullptr;
       }
       stmt->let_stmt->name = Previous().text;
@@ -639,8 +639,8 @@
 
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104",
-                                        "missing ';' after declaration"));
+        diagnostics_.push_back(
+            BuildObjc3MissingSemicolonDiagnostic(token, "declaration"));
         return nullptr;
       }
       return stmt;
@@ -664,7 +664,8 @@
       }
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after return"));
+        diagnostics_.push_back(
+            BuildObjc3MissingSemicolonDiagnostic(token, "return"));
         return nullptr;
       }
       return stmt;

@@ -47,18 +47,18 @@
     block->block_dispose_helper_intent_required =
         block->block_byref_capture_count > 0u;
     block->block_escape_shape_symbol =
-        BuildBlockEscapeShapeSymbol(source_use_kind);
+        BuildObjc3BlockEscapeShapeSymbol(source_use_kind);
     block->block_escape_shape_promotes_to_heap_candidate =
-        BlockEscapeShapePromotesToHeapCandidate(source_use_kind);
+        Objc3BlockEscapeShapePromotesToHeapCandidate(source_use_kind);
     block->block_helper_intent_profile =
-        BuildBlockHelperIntentProfile(
+        BuildObjc3BlockHelperIntentProfile(
             block->block_mutated_capture_count,
             block->block_byref_capture_count,
             block->block_copy_helper_intent_required,
             block->block_dispose_helper_intent_required,
             source_use_kind);
     block->block_escape_shape_profile =
-        BuildBlockEscapeShapeProfile(
+        BuildObjc3BlockEscapeShapeProfile(
             source_use_kind,
             block->block_escape_shape_promotes_to_heap_candidate,
             block->block_capture_count,

@@ -660,15 +660,7 @@ class Objc3Parser {
  public:
   explicit Objc3Parser(const std::vector<Token> &tokens) : tokens_(tokens) {}
 
-  enum class BlockLiteralSourceUseKind {
-    ExpressionSite,
-    GlobalInitializer,
-    LocalBindingInitializer,
-    AssignmentValue,
-    ReturnValue,
-    CallArgument,
-    MessageArgument,
-  };
+  using BlockLiteralSourceUseKind = Objc3BlockLiteralSourceUseKind;
 
   struct ScopedBlockLiteralSourceUse {
     explicit ScopedBlockLiteralSourceUse(std::vector<BlockLiteralSourceUseKind> &stack,

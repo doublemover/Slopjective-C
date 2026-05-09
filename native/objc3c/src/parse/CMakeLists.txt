@@ -6,12 +6,15 @@ add_library(objc3c_parse STATIC
   objc3_message_send_profiles.cpp
   objc3_parse_phase_io.cpp
   objc3_parse_support.cpp
+  objc3_parser_block_literal_source.cpp
   objc3_parser_cstyle_type_parser.cpp
   objc3_parser_cursor.cpp
   objc3_parser_declaration_surface.cpp
   objc3_parser_diagnostics.cpp
+  objc3_parser_expression_nodes.cpp
   objc3_parser_expression_surface.cpp
   objc3_parser_profile_helpers.cpp
+  objc3_parser_statement_nodes.cpp
   objc3_parser_statement_surface.cpp
   objc3_parser_token_metadata.cpp
   objc3_parser_type_surface.cpp

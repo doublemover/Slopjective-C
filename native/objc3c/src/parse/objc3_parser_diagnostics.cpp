@@ -11,6 +11,19 @@ std::string BuildObjc3ParserDiagnostic(
   return MakeDiag(token.line, token.column, code, message);
 }
 
+std::string BuildObjc3MissingSemicolonDiagnostic(
+    const Objc3LexToken &token,
+    const std::string &context) {
+  return BuildObjc3ParserDiagnostic(
+      token, "O3P104", "missing ';' after " + context);
+}
+
+std::string BuildObjc3InvalidDeclarationIdentifierDiagnostic(
+    const Objc3LexToken &token) {
+  return BuildObjc3ParserDiagnostic(
+      token, "O3P101", "invalid declaration identifier");
+}
+
 std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
     const Objc3LexToken &token) {
   return BuildObjc3ParserDiagnostic(

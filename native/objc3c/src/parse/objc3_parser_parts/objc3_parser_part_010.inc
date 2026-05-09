@@ -1,51 +1,40 @@
-      auto stmt = std::make_unique<Stmt>();
-      stmt->kind = Stmt::Kind::Continue;
-      stmt->line = Previous().line;
-      stmt->column = Previous().column;
+      auto stmt = BuildObjc3LoopControlStatement(Stmt::Kind::Continue, Previous());
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after continue"));
+        diagnostics_.push_back(
+            BuildObjc3MissingSemicolonDiagnostic(token, "continue"));
         return nullptr;
       }
       return stmt;
     }
 
     if (AtIdentifierAssignment() || AtIdentifierUpdate()) {
-      auto stmt = std::make_unique<Stmt>();
-      stmt->kind = Stmt::Kind::Assign;
-      stmt->assign_stmt = std::make_unique<AssignStmt>();
       const Token name = Advance();
       std::string op = "=";
       if (!MatchAssignmentOperator(op)) {
         (void)MatchUpdateOperator(op);
       }
-      stmt->line = name.line;
-      stmt->column = name.column;
-      stmt->assign_stmt->line = name.line;
-      stmt->assign_stmt->column = name.column;
-      stmt->assign_stmt->name = name.text;
-      stmt->assign_stmt->op = op;
+      std::unique_ptr<Expr> value;
       if (op == "++" || op == "--") {
-        stmt->assign_stmt->value = nullptr;
+        value = nullptr;
       } else {
-        stmt->assign_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+        value = ParseExpressionWithBlockLiteralSourceUse(
             BlockLiteralSourceUseKind::AssignmentValue);
-        if (stmt->assign_stmt->value == nullptr) {
+        if (value == nullptr) {
           return nullptr;
         }
       }
+      auto stmt = BuildObjc3AssignmentStatement(name, op, std::move(value));
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after assignment"));
+        diagnostics_.push_back(
+            BuildObjc3MissingSemicolonDiagnostic(token, "assignment"));
         return nullptr;
       }
       return stmt;
     }
 
     if (AtPrefixUpdate()) {
-      auto stmt = std::make_unique<Stmt>();
-      stmt->kind = Stmt::Kind::Assign;
-      stmt->assign_stmt = std::make_unique<AssignStmt>();
       std::string op = "++";
       const Token op_token = Peek();
       (void)MatchUpdateOperator(op);
@@ -54,36 +43,27 @@
         diagnostics_.push_back(MakeDiag(op_token.line, op_token.column, "O3P101", "invalid assignment target"));
         return nullptr;
       }
-      stmt->line = name.line;
-      stmt->column = name.column;
-      stmt->assign_stmt->line = name.line;
-      stmt->assign_stmt->column = name.column;
-      stmt->assign_stmt->name = name.text;
-      stmt->assign_stmt->op = op;
-      stmt->assign_stmt->value = nullptr;
+      auto stmt = BuildObjc3AssignmentStatement(name, op, nullptr);
       if (!Match(TokenKind::Semicolon)) {
         const Token &token = Peek();
-        diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after assignment"));
+        diagnostics_.push_back(
+            BuildObjc3MissingSemicolonDiagnostic(token, "assignment"));
         return nullptr;
       }
       return stmt;
     }
 
-    auto stmt = std::make_unique<Stmt>();
-    stmt->kind = Stmt::Kind::Expr;
-    stmt->expr_stmt = std::make_unique<ExprStmt>();
-    stmt->line = Peek().line;
-    stmt->column = Peek().column;
-    stmt->expr_stmt->line = Peek().line;
-    stmt->expr_stmt->column = Peek().column;
-    stmt->expr_stmt->value = ParseExpressionWithBlockLiteralSourceUse(
+    const Token expr_anchor = Peek();
+    auto expr = ParseExpressionWithBlockLiteralSourceUse(
         BlockLiteralSourceUseKind::ExpressionSite);
-    if (stmt->expr_stmt->value == nullptr) {
+    if (expr == nullptr) {
       return nullptr;
     }
+    auto stmt = BuildObjc3ExpressionStatement(expr_anchor, std::move(expr));
     if (!Match(TokenKind::Semicolon)) {
       const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104", "missing ';' after expression"));
+      diagnostics_.push_back(
+          BuildObjc3MissingSemicolonDiagnostic(token, "expression"));
       return nullptr;
     }
     return stmt;
@@ -361,14 +341,8 @@
       return nullptr;
     }
 
-    auto node = std::make_unique<Expr>();
-    node->kind = Expr::Kind::Conditional;
-    node->line = question.line;
-    node->column = question.column;
-    node->left = std::move(expr);
-    node->right = std::move(when_true);
-    node->third = std::move(when_false);
-    return node;
+    return BuildObjc3ConditionalExpr(
+        question, std::move(expr), std::move(when_true), std::move(when_false));
   }
 
   std::unique_ptr<Expr> ParseNilCoalescing() {
@@ -384,14 +358,7 @@
     if (rhs == nullptr) {
       return nullptr;
     }
-    auto node = std::make_unique<Expr>();
-    node->kind = Expr::Kind::Binary;
-    node->op = op.text;
-    node->line = op.line;
-    node->column = op.column;
-    node->left = std::move(expr);
-    node->right = std::move(rhs);
-    return node;
+    return BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
   }
 
   std::unique_ptr<Expr> ParseLogicalOr() {
@@ -402,14 +369,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -422,14 +382,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -442,14 +395,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -462,14 +408,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -482,14 +421,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -502,14 +434,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -524,14 +449,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -544,14 +462,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -564,14 +475,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -584,14 +488,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = op.text;
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(expr);
-      node->right = std::move(rhs);
-      expr = std::move(node);
+      expr = BuildObjc3BinaryExpr(op, std::move(expr), std::move(rhs));
     }
     return expr;
   }
@@ -612,19 +509,8 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto expr = std::make_unique<Expr>();
-      expr->kind = Expr::Kind::Call;
-      expr->ident = "__objc3_try_expr";
-      expr->line = try_token.line;
-      expr->column = try_token.column;
-      expr->try_expression_enabled = true;
-      expr->try_operator_kind = try_kind;
-      expr->try_expression_requires_throwing_context =
-          requires_throwing_context;
-      expr->try_expression_is_normalized = true;
-      expr->args.push_back(std::move(rhs));
-      expr->try_expression_profile = BuildTryExpressionProfile(*expr);
-      return expr;
+      return BuildObjc3TryExpression(
+          try_token, try_kind, requires_throwing_context, std::move(rhs));
     }
     if (Match(TokenKind::KwAwait)) {
       const Token await_token = Previous();
@@ -647,20 +533,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto zero = std::make_unique<Expr>();
-      zero->kind = Expr::Kind::Number;
-      zero->number = 0;
-      zero->line = op.line;
-      zero->column = op.column;
-
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = "==";
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(rhs);
-      node->right = std::move(zero);
-      return node;
+      return BuildObjc3LogicalNotExpr(op, std::move(rhs));
     }
     if (Match(TokenKind::Plus)) {
       const Token op = Previous();
@@ -668,20 +541,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto zero = std::make_unique<Expr>();
-      zero->kind = Expr::Kind::Number;
-      zero->number = 0;
-      zero->line = op.line;
-      zero->column = op.column;
-
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = "+";
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(zero);
-      node->right = std::move(rhs);
-      return node;
+      return BuildObjc3UnaryLoweringBinaryExpr(op, "+", 0, std::move(rhs));
     }
     if (Match(TokenKind::Minus)) {
       const Token op = Previous();
@@ -689,20 +549,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto zero = std::make_unique<Expr>();
-      zero->kind = Expr::Kind::Number;
-      zero->number = 0;
-      zero->line = op.line;
-      zero->column = op.column;
-
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = "-";
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(zero);
-      node->right = std::move(rhs);
-      return node;
+      return BuildObjc3UnaryLoweringBinaryExpr(op, "-", 0, std::move(rhs));
     }
     if (Match(TokenKind::Tilde)) {
       const Token op = Previous();
@@ -710,20 +557,7 @@
       if (rhs == nullptr) {
         return nullptr;
       }
-      auto minus_one = std::make_unique<Expr>();
-      minus_one->kind = Expr::Kind::Number;
-      minus_one->number = -1;
-      minus_one->line = op.line;
-      minus_one->column = op.column;
-
-      auto node = std::make_unique<Expr>();
-      node->kind = Expr::Kind::Binary;
-      node->op = "^";
-      node->line = op.line;
-      node->column = op.column;
-      node->left = std::move(rhs);
-      node->right = std::move(minus_one);
-      return node;
+      return BuildObjc3BitwiseNotExpr(op, std::move(rhs));
     }
     return ParsePostfix();
   }
@@ -825,361 +659,6 @@
       break;
     }
     return expr;
-  }
-
-  void CollectBlockLiteralExprIdentifiers(const Expr *expr, std::vector<std::string> &used_identifiers) {
-    if (expr == nullptr) {
-      return;
-    }
-    switch (expr->kind) {
-    case Expr::Kind::Identifier:
-      if (!expr->ident.empty()) {
-        used_identifiers.push_back(expr->ident);
-      }
-      return;
-    case Expr::Kind::Binary:
-      CollectBlockLiteralExprIdentifiers(expr->left.get(), used_identifiers);
-      CollectBlockLiteralExprIdentifiers(expr->right.get(), used_identifiers);
-      return;
-    case Expr::Kind::Conditional:
-      CollectBlockLiteralExprIdentifiers(expr->left.get(), used_identifiers);
-      CollectBlockLiteralExprIdentifiers(expr->right.get(), used_identifiers);
-      CollectBlockLiteralExprIdentifiers(expr->third.get(), used_identifiers);
-      return;
-    case Expr::Kind::Call:
-      for (const auto &arg : expr->args) {
-        CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
-      }
-      return;
-    case Expr::Kind::MessageSend:
-      CollectBlockLiteralExprIdentifiers(expr->receiver.get(), used_identifiers);
-      for (const auto &arg : expr->args) {
-        CollectBlockLiteralExprIdentifiers(arg.get(), used_identifiers);
-      }
-      return;
-    case Expr::Kind::BlockLiteral:
-      return;
-    case Expr::Kind::Number:
-    case Expr::Kind::BoolLiteral:
-    case Expr::Kind::NilLiteral:
-    default:
-      return;
-    }
-  }
-
-  void CollectBlockLiteralForClauseIdentifiers(const ForClause &clause,
-                                               std::vector<std::string> &used_identifiers,
-                                               std::vector<std::string> &declared_identifiers) {
-    if (clause.kind == ForClause::Kind::Let && !clause.name.empty()) {
-      declared_identifiers.push_back(clause.name);
-    } else if ((clause.kind == ForClause::Kind::Assign || clause.kind == ForClause::Kind::Expr) &&
-               !clause.name.empty()) {
-      used_identifiers.push_back(clause.name);
-    }
-    CollectBlockLiteralExprIdentifiers(clause.value.get(), used_identifiers);
-  }
-
-  void CollectBlockLiteralStmtIdentifiers(const Stmt *stmt,
-                                          std::vector<std::string> &used_identifiers,
-                                          std::vector<std::string> &declared_identifiers) {
-    if (stmt == nullptr) {
-      return;
-    }
-    switch (stmt->kind) {
-    case Stmt::Kind::Let:
-      if (stmt->let_stmt != nullptr) {
-        if (!stmt->let_stmt->name.empty()) {
-          declared_identifiers.push_back(stmt->let_stmt->name);
-        }
-        CollectBlockLiteralExprIdentifiers(stmt->let_stmt->value.get(), used_identifiers);
-      }
-      return;
-    case Stmt::Kind::Assign:
-      if (stmt->assign_stmt != nullptr) {
-        if (!stmt->assign_stmt->name.empty()) {
-          used_identifiers.push_back(stmt->assign_stmt->name);
-        }
-        CollectBlockLiteralExprIdentifiers(stmt->assign_stmt->value.get(), used_identifiers);
-      }
-      return;
-    case Stmt::Kind::Return:
-      if (stmt->return_stmt != nullptr) {
-        CollectBlockLiteralExprIdentifiers(stmt->return_stmt->value.get(), used_identifiers);
-      }
-      return;
-    case Stmt::Kind::Expr:
-      if (stmt->expr_stmt != nullptr) {
-        CollectBlockLiteralExprIdentifiers(stmt->expr_stmt->value.get(), used_identifiers);
-      }
-      return;
-    case Stmt::Kind::If:
-      if (stmt->if_stmt != nullptr) {
-        CollectBlockLiteralExprIdentifiers(stmt->if_stmt->condition.get(), used_identifiers);
-        for (const auto &then_stmt : stmt->if_stmt->then_body) {
-          CollectBlockLiteralStmtIdentifiers(then_stmt.get(), used_identifiers, declared_identifiers);
-        }
-        for (const auto &else_stmt : stmt->if_stmt->else_body) {
-          CollectBlockLiteralStmtIdentifiers(else_stmt.get(), used_identifiers, declared_identifiers);
-        }
-      }
-      return;
-    case Stmt::Kind::DoWhile:
-      if (stmt->do_while_stmt != nullptr) {
-        for (const auto &body_stmt : stmt->do_while_stmt->body) {
-          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
-        }
-        CollectBlockLiteralExprIdentifiers(stmt->do_while_stmt->condition.get(), used_identifiers);
-      }
-      return;
-    case Stmt::Kind::For:
-      if (stmt->for_stmt != nullptr) {
-        CollectBlockLiteralForClauseIdentifiers(stmt->for_stmt->init, used_identifiers, declared_identifiers);
-        CollectBlockLiteralExprIdentifiers(stmt->for_stmt->condition.get(), used_identifiers);
-        CollectBlockLiteralForClauseIdentifiers(stmt->for_stmt->step, used_identifiers, declared_identifiers);
-        for (const auto &body_stmt : stmt->for_stmt->body) {
-          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
-        }
-      }
-      return;
-    case Stmt::Kind::Switch:
-      if (stmt->switch_stmt != nullptr) {
-        CollectBlockLiteralExprIdentifiers(stmt->switch_stmt->condition.get(), used_identifiers);
-        for (const auto &switch_case : stmt->switch_stmt->cases) {
-          for (const auto &case_stmt : switch_case.body) {
-            CollectBlockLiteralStmtIdentifiers(case_stmt.get(), used_identifiers, declared_identifiers);
-          }
-        }
-      }
-      return;
-    case Stmt::Kind::While:
-      if (stmt->while_stmt != nullptr) {
-        CollectBlockLiteralExprIdentifiers(stmt->while_stmt->condition.get(), used_identifiers);
-        for (const auto &body_stmt : stmt->while_stmt->body) {
-          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
-        }
-      }
-      return;
-    case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-      if (stmt->block_stmt != nullptr) {
-        for (const auto &body_stmt : stmt->block_stmt->body) {
-          CollectBlockLiteralStmtIdentifiers(body_stmt.get(), used_identifiers, declared_identifiers);
-        }
-      }
-      return;
-    case Stmt::Kind::Break:
-    case Stmt::Kind::Continue:
-    case Stmt::Kind::Empty:
-      return;
-    }
-  }
-
-  std::vector<std::string> BuildBlockLiteralCaptureSet(const std::vector<std::unique_ptr<Stmt>> &body,
-                                                       const std::vector<std::string> &parameter_names,
-                                                       bool &deterministic) {
-    deterministic = true;
-    std::unordered_set<std::string> parameter_name_set;
-    for (const auto &name : parameter_names) {
-      if (!parameter_name_set.insert(name).second) {
-        deterministic = false;
-      }
-    }
-
-    std::vector<std::string> used_identifiers;
-    std::vector<std::string> declared_identifiers = parameter_names;
-    for (const auto &stmt : body) {
-      CollectBlockLiteralStmtIdentifiers(stmt.get(), used_identifiers, declared_identifiers);
-    }
-
-    std::unordered_set<std::string> declared_name_set;
-    for (const auto &name : declared_identifiers) {
-      if (!name.empty()) {
-        declared_name_set.insert(name);
-      }
-    }
-
-    std::vector<std::string> capture_names;
-    capture_names.reserve(used_identifiers.size());
-    for (const auto &used_name : used_identifiers) {
-      if (used_name.empty() || declared_name_set.count(used_name) != 0u) {
-        continue;
-      }
-      capture_names.push_back(used_name);
-    }
-    return BuildSortedUniqueStrings(std::move(capture_names));
-  }
-
-  static std::string BuildBlockEscapeShapeSymbol(BlockLiteralSourceUseKind use_kind) {
-    switch (use_kind) {
-      case BlockLiteralSourceUseKind::ExpressionSite:
-        return "expression-site";
-      case BlockLiteralSourceUseKind::GlobalInitializer:
-        return "global-initializer";
-      case BlockLiteralSourceUseKind::LocalBindingInitializer:
-        return "binding-initializer";
-      case BlockLiteralSourceUseKind::AssignmentValue:
-        return "assignment-value";
-      case BlockLiteralSourceUseKind::ReturnValue:
-        return "return-value";
-      case BlockLiteralSourceUseKind::CallArgument:
-        return "call-argument";
-      case BlockLiteralSourceUseKind::MessageArgument:
-        return "message-argument";
-    }
-    return "expression-site";
-  }
-
-  static bool BlockEscapeShapePromotesToHeapCandidate(
-      BlockLiteralSourceUseKind use_kind) {
-    return use_kind != BlockLiteralSourceUseKind::ExpressionSite;
-  }
-
-  static std::string BuildBlockHelperIntentProfile(
-      std::size_t mutated_capture_count,
-      std::size_t byref_capture_count,
-      bool copy_helper_intent_required,
-      bool dispose_helper_intent_required,
-      BlockLiteralSourceUseKind use_kind) {
-    std::ostringstream out;
-    out << "block-helper-intent:mutable-captures=" << mutated_capture_count
-        << ";byref-captures=" << byref_capture_count
-        << ";copy-helper="
-        << (copy_helper_intent_required ? "candidate" : "elided")
-        << ";dispose-helper="
-        << (dispose_helper_intent_required ? "candidate" : "elided")
-        << ";escape-shape=" << BuildBlockEscapeShapeSymbol(use_kind);
-    return out.str();
-  }
-
-  static std::string BuildBlockEscapeShapeProfile(
-      BlockLiteralSourceUseKind use_kind,
-      bool promotes_to_heap_candidate,
-      std::size_t capture_count,
-      std::size_t byref_capture_count) {
-    std::ostringstream out;
-    out << "block-escape-shape:site=" << BuildBlockEscapeShapeSymbol(use_kind)
-        << ";heap-candidate="
-        << (promotes_to_heap_candidate ? "true" : "false")
-        << ";captures=" << capture_count
-        << ";byref-captures=" << byref_capture_count;
-    return out.str();
-  }
-
-  void CollectBlockLiteralMutatedIdentifiersFromForClause(
-      const ForClause &clause,
-      std::vector<std::string> &mutated_identifiers) {
-    if (clause.kind == ForClause::Kind::Assign && !clause.name.empty()) {
-      mutated_identifiers.push_back(clause.name);
-    }
-  }
-
-  void CollectBlockLiteralMutatedIdentifiersFromStatement(
-      const Stmt *stmt,
-      std::vector<std::string> &mutated_identifiers) {
-    if (stmt == nullptr) {
-      return;
-    }
-    switch (stmt->kind) {
-      case Stmt::Kind::Let:
-      case Stmt::Kind::Return:
-      case Stmt::Kind::Expr:
-      case Stmt::Kind::Break:
-      case Stmt::Kind::Continue:
-      case Stmt::Kind::Empty:
-        return;
-      case Stmt::Kind::Assign:
-        if (stmt->assign_stmt != nullptr &&
-            !stmt->assign_stmt->name.empty()) {
-          mutated_identifiers.push_back(stmt->assign_stmt->name);
-        }
-        return;
-      case Stmt::Kind::If:
-        if (stmt->if_stmt != nullptr) {
-          for (const auto &then_stmt : stmt->if_stmt->then_body) {
-            CollectBlockLiteralMutatedIdentifiersFromStatement(
-                then_stmt.get(), mutated_identifiers);
-          }
-          for (const auto &else_stmt : stmt->if_stmt->else_body) {
-            CollectBlockLiteralMutatedIdentifiersFromStatement(
-                else_stmt.get(), mutated_identifiers);
-          }
-        }
-        return;
-      case Stmt::Kind::DoWhile:
-        if (stmt->do_while_stmt != nullptr) {
-          for (const auto &body_stmt : stmt->do_while_stmt->body) {
-            CollectBlockLiteralMutatedIdentifiersFromStatement(
-                body_stmt.get(), mutated_identifiers);
-          }
-        }
-        return;
-      case Stmt::Kind::For:
-        if (stmt->for_stmt != nullptr) {
-          CollectBlockLiteralMutatedIdentifiersFromForClause(
-              stmt->for_stmt->init, mutated_identifiers);
-          CollectBlockLiteralMutatedIdentifiersFromForClause(
-              stmt->for_stmt->step, mutated_identifiers);
-          for (const auto &body_stmt : stmt->for_stmt->body) {
-            CollectBlockLiteralMutatedIdentifiersFromStatement(
-                body_stmt.get(), mutated_identifiers);
-          }
-        }
-        return;
-      case Stmt::Kind::Switch:
-        if (stmt->switch_stmt != nullptr) {
-          for (const auto &switch_case : stmt->switch_stmt->cases) {
-            for (const auto &case_stmt : switch_case.body) {
-              CollectBlockLiteralMutatedIdentifiersFromStatement(
-                  case_stmt.get(), mutated_identifiers);
-            }
-          }
-        }
-        return;
-      case Stmt::Kind::While:
-        if (stmt->while_stmt != nullptr) {
-          for (const auto &body_stmt : stmt->while_stmt->body) {
-            CollectBlockLiteralMutatedIdentifiersFromStatement(
-                body_stmt.get(), mutated_identifiers);
-          }
-        }
-        return;
-      case Stmt::Kind::Block:
-  case Stmt::Kind::Defer:
-        if (stmt->block_stmt != nullptr) {
-          for (const auto &body_stmt : stmt->block_stmt->body) {
-            CollectBlockLiteralMutatedIdentifiersFromStatement(
-                body_stmt.get(), mutated_identifiers);
-          }
-        }
-        return;
-    }
-  }
-
-  std::vector<std::string> BuildBlockLiteralMutatedCaptureSet(
-      const std::vector<std::unique_ptr<Stmt>> &body,
-      const std::vector<std::string> &capture_names) {
-    std::vector<std::string> mutated_identifiers;
-    for (const auto &stmt : body) {
-      CollectBlockLiteralMutatedIdentifiersFromStatement(
-          stmt.get(), mutated_identifiers);
-    }
-
-    std::unordered_set<std::string> capture_name_set;
-    for (const auto &capture_name : capture_names) {
-      if (!capture_name.empty()) {
-        capture_name_set.insert(capture_name);
-      }
-    }
-
-    std::vector<std::string> mutated_capture_names;
-    mutated_capture_names.reserve(mutated_identifiers.size());
-    for (const auto &mutated_identifier : mutated_identifiers) {
-      if (!mutated_identifier.empty() &&
-          capture_name_set.count(mutated_identifier) != 0u) {
-        mutated_capture_names.push_back(mutated_identifier);
-      }
-    }
-    return BuildSortedUniqueStrings(std::move(mutated_capture_names));
   }
 
   std::unique_ptr<Expr> ParseBlockLiteralExpression() {
@@ -1317,7 +796,7 @@
         block->block_parameter_count - block->block_explicit_typed_parameter_count;
     block->block_signature_profile = BuildBlockSignatureProfile(parameters);
     block->block_capture_names_lexicographic =
-        BuildBlockLiteralCaptureSet(body, parameter_names, deterministic_capture_set);
+        BuildObjc3BlockLiteralCaptureSet(body, parameter_names, deterministic_capture_set);
     block->block_capture_count = block->block_capture_names_lexicographic.size();
     block->block_capture_inventory_entries_lexicographic =
         BuildBlockCaptureInventoryEntriesLexicographic(
@@ -1355,7 +834,7 @@
     block->block_byvalue_readonly_capture_count =
         block->block_capture_count;
     block->block_mutated_capture_names_lexicographic =
-        BuildBlockLiteralMutatedCaptureSet(
+        BuildObjc3BlockLiteralMutatedCaptureSet(
             body, block->block_capture_names_lexicographic);
     block->block_mutated_capture_count =
         block->block_mutated_capture_names_lexicographic.size();

@@ -319,20 +319,15 @@
   }
 
   std::unique_ptr<GlobalDecl> ParseGlobalLet() {
-    auto decl = std::make_unique<GlobalDecl>();
     const Token &name_token = Peek();
     if (!Match(TokenKind::Identifier)) {
-      diagnostics_.push_back(MakeDiag(name_token.line, name_token.column, "O3P101",
-                                      "invalid declaration identifier"));
+      diagnostics_.push_back(
+          BuildObjc3InvalidDeclarationIdentifierDiagnostic(name_token));
       SynchronizeTopLevel();
       return nullptr;
     }
-    decl->name = Previous().text;
-    decl->scope_owner_symbol = BuildObjcContainerScopeOwner("protocol", decl->name, false, "");
-    decl->scope_path_lexicographic = BuildScopePathLexicographic(decl->scope_owner_symbol, "protocol:" + decl->name);
-    decl->semantic_link_symbol = "protocol:" + decl->name;
-    decl->line = Previous().line;
-    decl->column = Previous().column;
+    auto decl = std::make_unique<GlobalDecl>(
+        BuildObjc3GlobalLetDeclarationIdentity(Previous()));
 
     if (!Match(TokenKind::Equal)) {
       const Token &token = Peek();
@@ -350,8 +345,8 @@
 
     if (!Match(TokenKind::Semicolon)) {
       const Token &token = Peek();
-      diagnostics_.push_back(MakeDiag(token.line, token.column, "O3P104",
-                                      "missing ';' after declaration"));
+      diagnostics_.push_back(
+          BuildObjc3MissingSemicolonDiagnostic(token, "declaration"));
       SynchronizeTopLevel();
       return nullptr;
     }

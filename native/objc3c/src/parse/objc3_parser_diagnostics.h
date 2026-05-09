@@ -10,6 +10,11 @@ std::string BuildObjc3ParserDiagnostic(
     const Objc3LexToken &token,
     const char *code,
     const std::string &message);
+std::string BuildObjc3MissingSemicolonDiagnostic(
+    const Objc3LexToken &token,
+    const std::string &context);
+std::string BuildObjc3InvalidDeclarationIdentifierDiagnostic(
+    const Objc3LexToken &token);
 std::string BuildObjc3RemovedOptionalTemplateAliasDiagnostic(
     const Objc3LexToken &token);
 std::string BuildObjc3UnsupportedTopLevelDiagnostic(
