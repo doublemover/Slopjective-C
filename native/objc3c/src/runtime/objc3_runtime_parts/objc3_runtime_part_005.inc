@@ -495,9 +495,9 @@ void StoreDispatchResultContractUnlocked(
   state.last_dispatch_status_code = status_code;
   state.last_dispatch_return_kind = RuntimeMethodReturnKindName(return_kind);
   state.last_dispatch_diagnostic_code =
-      objc3c::runtime::DispatchDiagnosticCode(status_code);
+      objc3c::runtime::RuntimeDispatchDiagnosticCode(status_code);
   state.last_dispatch_diagnostic_message =
-      objc3c::runtime::DispatchDiagnosticMessage(status_code);
+      objc3c::runtime::RuntimeDispatchDiagnosticMessage(status_code);
   state.last_dispatch_result_contract =
       status_code == OBJC3_RUNTIME_DISPATCH_STATUS_OK
           ? "typed-dispatch-value-result"
@@ -757,15 +757,16 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     StoreDispatchResultContractUnlocked(
         state, OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER,
         RuntimeMethodReturnKind::Unsupported);
-    return objc3c::runtime::MakeDispatchI32Result(
+    return objc3c::runtime::MakeRuntimeDispatchI32Result(
         OBJC3_RUNTIME_DISPATCH_STATUS_NIL_RECEIVER, 0);
   }
   if (resolved_live_method && resolved_implementation != nullptr) {
     PushRuntimeDispatchFrame(receiver, receiver_base_identity,
                              resolved_runtime_property_accessor);
     const RuntimeTypedDispatchResult result =
-        InvokeResolvedMethod(resolved_implementation, resolved_return_kind,
-                            resolved_parameter_count, a0, a1, a2, a3);
+        objc3c::runtime::InvokeRuntimeMethodImplementation(
+            resolved_implementation, resolved_return_kind,
+            resolved_parameter_count, a0, a1, a2, a3);
     const std::vector<int> autorelease_values =
         PopRuntimeDispatchFrameAutoreleaseValues();
     if (!autorelease_values.empty()) {
@@ -778,10 +779,11 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
       RecordPostResolutionStrictDispatchFailure(
           state, result.status_code, result.return_kind,
           "resolved-method-invocation-error");
-      return objc3c::runtime::MakeDispatchI32Result(result.status_code, 0);
+      return objc3c::runtime::MakeRuntimeDispatchI32Result(result.status_code,
+                                                          0);
     }
     RecordTypedDispatchSuccess(state, result.return_kind);
-    return objc3c::runtime::MakeDispatchI32Result(
+    return objc3c::runtime::MakeRuntimeDispatchI32Result(
         OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value);
   }
   if (resolved_live_method && resolved_builtin_kind != RuntimeBuiltinKind::None) {
@@ -802,17 +804,18 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
       RecordPostResolutionStrictDispatchFailure(
           state, result.status_code, result.return_kind,
           "runtime-builtin-invocation-error");
-      return objc3c::runtime::MakeDispatchI32Result(result.status_code, 0);
+      return objc3c::runtime::MakeRuntimeDispatchI32Result(result.status_code,
+                                                          0);
     }
     RecordTypedDispatchSuccess(state, result.return_kind);
-    return objc3c::runtime::MakeDispatchI32Result(
+    return objc3c::runtime::MakeRuntimeDispatchI32Result(
         OBJC3_RUNTIME_DISPATCH_STATUS_OK, result.value);
   }
   if (resolved_live_method) {
     RecordPostResolutionStrictDispatchFailure(
         state, OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA,
         resolved_return_kind, "resolved-method-missing-callable-error");
-    return objc3c::runtime::MakeDispatchI32Result(
+    return objc3c::runtime::MakeRuntimeDispatchI32Result(
         OBJC3_RUNTIME_DISPATCH_STATUS_MALFORMED_METADATA, 0);
   }
   {
@@ -820,7 +823,7 @@ objc3_runtime_dispatch_i32_result objc3_runtime_dispatch_i32_checked(
     StoreDispatchResultContractUnlocked(
         state, dispatch_status, RuntimeMethodReturnKind::Unsupported);
   }
-  return objc3c::runtime::MakeDispatchI32Result(dispatch_status, 0);
+  return objc3c::runtime::MakeRuntimeDispatchI32Result(dispatch_status, 0);
 }
 
 int objc3_runtime_dispatch_i32(int receiver, const char *selector, int a0,

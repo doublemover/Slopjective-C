@@ -1,4 +1,4 @@
-#include "runtime/dispatch/method_lookup.h"
+#include "runtime/dispatch/runtime_method_return.h"
 
 #include <string>
 
@@ -31,9 +31,6 @@ RuntimeMethodReturnKind ClassifyRuntimeReturnType(
   }
   if (type_name == "Protocol") {
     return RuntimeMethodReturnKind::ProtocolReference;
-  }
-  if (type_name.empty()) {
-    return RuntimeMethodReturnKind::Unsupported;
   }
   return RuntimeMethodReturnKind::Unsupported;
 }
@@ -75,44 +72,6 @@ bool RuntimeMethodReturnKindIsDispatchResultSupported(
       return false;
   }
   return false;
-}
-
-objc3_runtime_dispatch_status_code RuntimeMethodShapeStatus(
-    const char *return_type_name, std::uint64_t parameter_count) {
-  if (parameter_count > 4) {
-    return OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_ARGUMENT_LAYOUT;
-  }
-  const RuntimeMethodReturnKind return_kind =
-      ClassifyRuntimeReturnType(return_type_name);
-  if (!RuntimeMethodReturnKindIsDispatchResultSupported(return_kind)) {
-    return OBJC3_RUNTIME_DISPATCH_STATUS_UNSUPPORTED_RETURN_TYPE;
-  }
-  return OBJC3_RUNTIME_DISPATCH_STATUS_OK;
-}
-
-bool IsSupportedRuntimeMethodShape(
-    const char *return_type_name, std::uint64_t parameter_count) {
-  return RuntimeMethodShapeStatus(return_type_name, parameter_count) ==
-         OBJC3_RUNTIME_DISPATCH_STATUS_OK;
-}
-
-RuntimeTypedDispatchResult RuntimeTypedDispatchSuccess(
-    RuntimeMethodReturnKind return_kind, int value) {
-  RuntimeTypedDispatchResult result;
-  result.status_code = OBJC3_RUNTIME_DISPATCH_STATUS_OK;
-  result.return_kind = return_kind;
-  result.value = value;
-  return result;
-}
-
-RuntimeTypedDispatchResult RuntimeTypedDispatchFailure(
-    objc3_runtime_dispatch_status_code status_code,
-    RuntimeMethodReturnKind return_kind) {
-  RuntimeTypedDispatchResult result;
-  result.status_code = status_code;
-  result.return_kind = return_kind;
-  result.value = 0;
-  return result;
 }
 
 }  // namespace objc3c::runtime

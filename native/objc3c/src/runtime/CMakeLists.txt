@@ -33,18 +33,22 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/task.h
   dispatch/builtin_methods.cpp
   dispatch/builtin_methods.h
+  dispatch/dispatch_family.cpp
+  dispatch/dispatch_family.h
   dispatch/dispatch_api.cpp
   dispatch/dispatch_api.h
-  dispatch/dispatch_errors.cpp
-  dispatch/dispatch_errors.h
+  dispatch/method_invocation.cpp
+  dispatch/method_invocation.h
   dispatch/method_cache.cpp
   dispatch/method_cache.h
-  dispatch/method_lookup.cpp
-  dispatch/method_lookup.h
+  dispatch/runtime_method_return.cpp
+  dispatch/runtime_method_return.h
+  dispatch/runtime_method_shape.cpp
+  dispatch/runtime_method_shape.h
+  dispatch/typed_dispatch_result.cpp
+  dispatch/typed_dispatch_result.h
   errors/catch_filter.cpp
   errors/catch_filter.h
-  errors/runtime_error.cpp
-  errors/runtime_error.h
   images/image_descriptor.cpp
   images/image_descriptor.h
   images/multi_image_ordering.cpp
@@ -58,6 +62,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   objc3_runtime.cpp
   public/objc3_runtime_api.h
   public/objc3_runtime_result.h
+  public/objc3_runtime_result_contract.cpp
+  public/objc3_runtime_result_contract.h
   selectors/keypath_table.cpp
   selectors/keypath_table.h
   selectors/selector_table.cpp
