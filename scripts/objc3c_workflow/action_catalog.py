@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from .action_catalog_sections import merge_action_catalog_sections
 from .action_spec import ActionSpec
 
-ACTION_SPECS: dict[str, ActionSpec] = {
+CORE_ACTION_SPECS: dict[str, ActionSpec] = {
     "build-default": ActionSpec("build-default", "default public build entrypoint", "runner-internal"),
     "build-native-binaries": ActionSpec("build-native-binaries", "build native binaries", "pwsh:scripts/build_objc3c_native.ps1"),
     "build-native-contracts": ActionSpec("build-native-contracts", "build native contracts/binaries contract-artifact surface", "pwsh:scripts/build_objc3c_native.ps1"),
@@ -41,6 +42,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-documentation-surface": ActionSpec("validate-documentation-surface", "run the full documentation build and reader-surface validation flow", "runner-internal + generated documentation checks", validation_tier="docs", guarantee_owner="site output, native docs, command appendix, and reader-facing onboarding remain buildable, in sync, and explicit"),
     "validate-repo-superclean": ActionSpec("validate-repo-superclean", "build the canonical repo surface and run the integrated hygiene/docs/superclean checks", "runner-internal + native build contracts + task hygiene gate", validation_tier="repo", guarantee_owner="repo roots, checked-in docs, generated outputs, and machine-owned boundaries remain canonical and enforced"),
     "compile-objc3c": ActionSpec("compile-objc3c", "compile one Objective-C 3 fixture through the native compiler", "pwsh:scripts/objc3c_native_compile.ps1", pass_through_args=True),
+}
+
+APPLICATION_AND_ECOSYSTEM_ACTION_SPECS: dict[str, ActionSpec] = {
     "materialize-playground-workspace": ActionSpec("materialize-playground-workspace", "compile one source through the live frontend runner and materialize a machine-owned playground workspace contract under tmp", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", validation_tier="repo", guarantee_owner="playground workspaces stay machine-owned, compile-coupled, and rooted in tmp outputs with editor/debug drill references instead of shared evidence-only buckets", pass_through_args=True),
     "materialize-stdlib-workspace": ActionSpec("materialize-stdlib-workspace", "copy the checked-in stdlib workspace and lowering/import contracts into a machine-owned artifact root under tmp", "python:scripts/materialize_objc3c_stdlib_workspace.py", validation_tier="repo", guarantee_owner="stdlib workspace materializations stay machine-owned and derived from the checked-in stdlib root plus lowering/import contract surface", pass_through_args=True),
     "materialize-canonical-application-workspace": ActionSpec("materialize-canonical-application-workspace", "materialize the canonical application workspace from the checked-in showcase and stdlib surfaces", "python:scripts/materialize_objc3c_canonical_application_workspace.py", validation_tier="repo", guarantee_owner="canonical application workspace materialization stays derived from the checked-in showcase and stdlib contracts", pass_through_args=True),
@@ -66,6 +70,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-runnable-stdlib-foundation": ActionSpec("validate-runnable-stdlib-foundation", "validate runnable stdlib foundation packaging and smoke compilation end to end from the package root", "python:scripts/check_objc3c_runnable_stdlib_foundation_end_to_end.py", validation_tier="full", guarantee_owner="packaged stdlib boundary contracts, lowering/import artifact metadata, module smoke compilation, and runtime-archive linkage stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-stdlib-program": ActionSpec("validate-runnable-stdlib-program", "validate the staged runnable stdlib program docs/example package surface end to end", "python:scripts/check_objc3c_runnable_stdlib_program_end_to_end.py", validation_tier="full", guarantee_owner="packaged stdlib program docs, showcase examples, and publish-input metadata stay reproducible from the staged runnable toolchain bundle"),
     "validate-runnable-developer-tooling": ActionSpec("validate-runnable-developer-tooling", "validate packaged editor, formatter, debug, workspace, and integrated developer-tooling behavior from the staged runnable toolchain bundle", "python:scripts/check_objc3c_runnable_developer_tooling_end_to_end.py", validation_tier="full", guarantee_owner="packaged editor, formatter, debug anchors, workspace drills, and integrated developer-tooling validation stay reproducible from the staged runnable toolchain bundle"),
+}
+
+DEVELOPER_AND_PERFORMANCE_ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-capability-explorer": ActionSpec("inspect-capability-explorer", "probe LLVM and backend-routing capability state through the live capability explorer surface", "python:scripts/probe_objc3c_llvm_capabilities.py", validation_tier="repo", guarantee_owner="capability explorer payloads stay tied to the live LLVM probe and backend-routing contracts", pass_through_args=True),
     "inspect-playground-repro": ActionSpec("inspect-playground-repro", "compile one source through the frontend C API runner and dump the playground and repro object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", validation_tier="repo", guarantee_owner="playground and repro payloads stay tied to the real frontend runner summary, emitted artifacts, and executable replay command", pass_through_args=True),
     "inspect-compile-observability": ActionSpec("inspect-compile-observability", "compile one source through the frontend C API runner and dump the structured observability object", "runner-internal + artifacts/bin/objc3c-frontend-c-api-runner.exe", validation_tier="repo", guarantee_owner="developer-facing compile observability stays tied to the real frontend runner summary and emitted artifacts", pass_through_args=True),
@@ -83,6 +90,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "benchmark-comparative-baselines": ActionSpec("benchmark-comparative-baselines", "measure the checked-in ObjC2 Swift and C++ baseline workloads and write reproducible comparison telemetry packets", "python:scripts/run_objc3c_comparative_baselines.py", validation_tier="repo", guarantee_owner="comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states", pass_through_args=True),
     "validate-runnable-performance": ActionSpec("validate-runnable-performance", "validate the staged runnable toolchain performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_performance_end_to_end.py", validation_tier="full", guarantee_owner="packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
     "validate-performance-foundation": ActionSpec("validate-performance-foundation", "run the integrated benchmark and comparative baseline validation flow", "python:scripts/check_objc3c_performance_integration.py", validation_tier="repo", guarantee_owner="benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle"),
+}
+
+STRESS_REPORTING_AND_RELEASE_ACTION_SPECS: dict[str, ActionSpec] = {
     "validate-conformance-corpus": ActionSpec("validate-conformance-corpus", "run the integrated conformance corpus taxonomy indexing and current gate-surface validation flow", "python:scripts/check_objc3c_conformance_corpus_integration.py", validation_tier="repo", guarantee_owner="conformance corpus taxonomy, retained longitudinal suites, coverage indexing, and current gate surfaces stay executable on the live public workflow"),
     "check-conformance-minima": ActionSpec("check-conformance-minima", "verify conformance suite minima and required families", "pwsh:scripts/check_conformance_suite.ps1", validation_tier="ci", guarantee_owner="conformance minima stay routed through the public workflow bridge"),
     "validate-runnable-conformance-corpus": ActionSpec("validate-runnable-conformance-corpus", "validate the staged runnable conformance corpus package surface end to end", "python:scripts/check_objc3c_runnable_conformance_corpus_end_to_end.py", validation_tier="full", guarantee_owner="packaged conformance corpus contracts, retained longitudinal suites, and current gate surfaces stay reproducible from the staged runnable toolchain bundle"),
@@ -145,6 +155,9 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "publish-security-advisories": ActionSpec("publish-security-advisories", "publish the machine-owned security advisory artifacts", "python:scripts/publish_objc3c_security_advisories.py", validation_tier="repo", guarantee_owner="security advisory publication stays traceable to the live posture and checked-in hardening policies"),
     "validate-security-hardening": ActionSpec("validate-security-hardening", "run the integrated security-hardening publication workflow", "runner-internal security-hardening child actions", validation_tier="nightly", guarantee_owner="security posture and advisory publication stay executable on the live release, trust, and hardening surfaces"),
     "validate-security-hardening-end-to-end": ActionSpec("validate-security-hardening-end-to-end", "validate security-hardening entrypoints, command-surface sync, and publication artifacts end to end", "python:scripts/check_objc3c_security_hardening_end_to_end.py", validation_tier="full", guarantee_owner="security-hardening entrypoints and publication artifacts stay coherent with the live command and evidence surfaces"),
+}
+
+TOOLING_AND_TEST_ACTION_SPECS: dict[str, ActionSpec] = {
     "inspect-bonus-tool-integration": ActionSpec("inspect-bonus-tool-integration", "emit the live bonus-tool integration surface from the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts", "runner-internal + tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json", validation_tier="repo", guarantee_owner="bonus-tool integration stays rooted in the build-owned source-of-truth artifact and checked-in showcase/tutorial contracts"),
     "inspect-validation-timing": ActionSpec("inspect-validation-timing", "build the local validation-speed dashboard from latest generated timing reports", "runner-internal + tmp timing reports", validation_tier="repo", guarantee_owner="validation timing, warning budgets, child reports, and issue-specific profiles stay explainable from generated suite reports"),
     "materialize-project-template": ActionSpec("materialize-project-template", "materialize a machine-owned project template from the checked-in showcase portfolio and drive the live bonus-tool demo harness against it", "python:scripts/materialize_objc3c_project_template.py", validation_tier="repo", guarantee_owner="starter-template and demo-harness outputs stay derived from checked-in showcase sources and executable public actions", pass_through_args=True),
@@ -196,3 +209,11 @@ ACTION_SPECS: dict[str, ActionSpec] = {
     "package-runnable-toolchain": ActionSpec("package-runnable-toolchain", "package the runnable native toolchain", "pwsh:scripts/package_objc3c_runnable_toolchain.ps1"),
     "proof-objc3c": ActionSpec("proof-objc3c", "run the native compile proof workflow", "pwsh:scripts/run_objc3c_native_compile_proof.ps1"),
 }
+
+ACTION_SPECS: dict[str, ActionSpec] = merge_action_catalog_sections(
+    CORE_ACTION_SPECS,
+    APPLICATION_AND_ECOSYSTEM_ACTION_SPECS,
+    DEVELOPER_AND_PERFORMANCE_ACTION_SPECS,
+    STRESS_REPORTING_AND_RELEASE_ACTION_SPECS,
+    TOOLING_AND_TEST_ACTION_SPECS,
+)
