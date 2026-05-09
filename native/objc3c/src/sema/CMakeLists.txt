@@ -20,6 +20,7 @@ target_sources(objc3c_sema_model INTERFACE
 add_library(objc3c_sema_contract_flow STATIC
   objc3_sema_pass_manager_contract_flow.cpp
   objc3_sema_pass_manager_summary_readiness.cpp
+  objc3_sema_pass_manager_type_metadata_flow.cpp
 )
 objc3c_apply_build_defaults(objc3c_sema_contract_flow)
 objc3c_apply_llvm_direct_config(objc3c_sema_contract_flow)
