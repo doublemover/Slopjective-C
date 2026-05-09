@@ -2,22 +2,41 @@
 
 from __future__ import annotations
 
+from .action_catalog_public_test_composites import (
+    PUBLIC_TEST_COMPOSITE_ACTION_SPECS,
+)
+from .action_catalog_public_test_fixtures import PUBLIC_TEST_FIXTURE_ACTION_SPECS
+from .action_catalog_public_test_native import PUBLIC_TEST_NATIVE_ACTION_SPECS
 from .action_spec import ActionSpec
 
 PUBLIC_TEST_ACTION_SPECS: dict[str, ActionSpec] = {
-    "test-default": ActionSpec("test-default", "default public test entrypoint", "runner-internal smoke validation"),
-    "test-behavior-matrix": ActionSpec("test-behavior-matrix", "behavior-first native fixture matrix", "python:scripts/check_objc3c_behavior_matrix.py", validation_tier="smoke", guarantee_owner="parser, sema, lowering, IR, runtime, and e2e behavior fixtures execute from tests/native"),
-    "test-smoke": ActionSpec("test-smoke", "smoke public validation entrypoint", "runner-internal + behavior matrix + runtime acceptance + replay", validation_tier="smoke", guarantee_owner="behavior matrix, runtime acceptance, and canonical replay through the public workflow"),
-    "test-ci": ActionSpec("test-ci", "CI-oriented public validation entrypoint", "runner-internal + task hygiene", validation_tier="ci", guarantee_owner="task hygiene, developer-tooling integration, bonus-experience validation, stdlib validation, performance governance reporting, runtime acceptance, canonical replay, and full execution smoke validation"),
-    "test-recovery": ActionSpec("test-recovery", "native recovery contract suite", "pwsh:scripts/check_objc3c_native_recovery_contract.ps1", validation_tier="recovery", guarantee_owner="recovery compile success and deterministic recovery diagnostics", pass_through_args=True),
-    "test-compile-wrapper-self-audit": ActionSpec("test-compile-wrapper-self-audit", "native compile wrapper self-audit", "python:scripts/check_objc3c_compile_wrapper_self_audit.py", validation_tier="fast", guarantee_owner="one wrapper compile proves invariant compile-output provenance, truthfulness, registration digest binding, and required artifact publication"),
-    "test-llvm-capability-routing": ActionSpec("test-llvm-capability-routing", "targeted llvm capability routing and library/CLI parity unit tests", "python -m pytest tests/tooling/test_probe_objc3c_llvm_capabilities.py tests/tooling/test_objc3c_library_cli_parity.py::<capability-routing-cases> tests/tooling/test_objc3c_driver_llvm_capability_routing_extraction.py tests/tooling/test_objc3c_driver_cli_extraction.py -q", validation_tier="ci", guarantee_owner="capability routing tests stay represented as a named public workflow action"),
-    "test-execution-smoke": ActionSpec("test-execution-smoke", "native execution smoke suite", "pwsh:scripts/check_objc3c_native_execution_smoke.ps1", validation_tier="smoke", guarantee_owner="compile/link/run execution behavior", pass_through_args=True),
-    "test-hosted-execution-smoke": ActionSpec("test-hosted-execution-smoke", "hosted-runner execution smoke suite gated by the live LLVM capability summary", "runner-internal + pwsh:scripts/check_objc3c_native_execution_smoke.ps1", validation_tier="ci", guarantee_owner="GitHub Actions execution smoke routing stays inside the public workflow bridge and skips only when hosted llc object emission is unavailable"),
-    "test-execution-replay": ActionSpec("test-execution-replay", "native execution replay proof suite", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1", validation_tier="full", guarantee_owner="replay and native-output truth", pass_through_args=True),
-    "test-execution-replay-focused": ActionSpec("test-execution-replay-focused", "focused native execution replay proof slice", "pwsh:scripts/check_objc3c_execution_replay_proof.ps1 -Limit 1", validation_tier="fast", guarantee_owner="one canonical replay case for ordinary developer validation while exhaustive replay remains available"),
-    "test-fixture-matrix": ActionSpec("test-fixture-matrix", "broad positive dispatch fixture matrix sweep", "pwsh:scripts/run_objc3c_native_fixture_matrix.ps1", validation_tier="nightly", guarantee_owner="broad positive dispatch and artifact sanity", pass_through_args=True),
-    "test-negative-expectations": ActionSpec("test-negative-expectations", "static negative fixture expectation enforcement", "pwsh:scripts/check_objc3c_negative_fixture_expectations.ps1", validation_tier="nightly", guarantee_owner="negative expectation header and token enforcement", pass_through_args=True),
-    "test-full": ActionSpec("test-full", "full developer validation entrypoint with bounded smoke slice", "runner-internal + runtime acceptance + replay + smoke -Limit 24", validation_tier="full", guarantee_owner="runtime acceptance, canonical replay, and a deterministic 24-fixture smoke slice; use test-smoke or test-nightly for exhaustive smoke"),
-    "test-nightly": ActionSpec("test-nightly", "exhaustive validation entrypoint", "runner-internal nightly child actions", validation_tier="nightly", guarantee_owner="full validation plus performance governance reporting, release-foundation publication, conformance corpus indexing, recovery, and broad corpus sweeps"),
+    "test-default": PUBLIC_TEST_COMPOSITE_ACTION_SPECS["test-default"],
+    "test-behavior-matrix": PUBLIC_TEST_NATIVE_ACTION_SPECS["test-behavior-matrix"],
+    "test-smoke": PUBLIC_TEST_COMPOSITE_ACTION_SPECS["test-smoke"],
+    "test-ci": PUBLIC_TEST_COMPOSITE_ACTION_SPECS["test-ci"],
+    "test-recovery": PUBLIC_TEST_NATIVE_ACTION_SPECS["test-recovery"],
+    "test-compile-wrapper-self-audit": PUBLIC_TEST_NATIVE_ACTION_SPECS[
+        "test-compile-wrapper-self-audit"
+    ],
+    "test-llvm-capability-routing": PUBLIC_TEST_NATIVE_ACTION_SPECS[
+        "test-llvm-capability-routing"
+    ],
+    "test-execution-smoke": PUBLIC_TEST_NATIVE_ACTION_SPECS["test-execution-smoke"],
+    "test-hosted-execution-smoke": PUBLIC_TEST_NATIVE_ACTION_SPECS[
+        "test-hosted-execution-smoke"
+    ],
+    "test-execution-replay": PUBLIC_TEST_NATIVE_ACTION_SPECS[
+        "test-execution-replay"
+    ],
+    "test-execution-replay-focused": PUBLIC_TEST_NATIVE_ACTION_SPECS[
+        "test-execution-replay-focused"
+    ],
+    "test-fixture-matrix": PUBLIC_TEST_FIXTURE_ACTION_SPECS["test-fixture-matrix"],
+    "test-negative-expectations": PUBLIC_TEST_FIXTURE_ACTION_SPECS[
+        "test-negative-expectations"
+    ],
+    "test-full": PUBLIC_TEST_COMPOSITE_ACTION_SPECS["test-full"],
+    "test-nightly": PUBLIC_TEST_COMPOSITE_ACTION_SPECS["test-nightly"],
 }
+
+__all__ = ["PUBLIC_TEST_ACTION_SPECS"]
