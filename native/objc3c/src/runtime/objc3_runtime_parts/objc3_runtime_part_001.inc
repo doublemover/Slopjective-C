@@ -31,6 +31,7 @@
 #include "runtime/metadata/runtime_realized_records.h"
 #include "runtime/storage/runtime_instance_records.h"
 #include "runtime/state/runtime_state_records.h"
+#include "runtime/state/runtime_thread_records.h"
 
 #if defined(_WIN32)
 #include <windows.h>
@@ -61,6 +62,8 @@ using objc3c::runtime::RuntimeBlockInvokeFn;
 using objc3c::runtime::RuntimeBlockRecord;
 using objc3c::runtime::RuntimeInstanceRecord;
 using objc3c::runtime::RuntimeState;
+using objc3c::runtime::RuntimeAutoreleasePoolFrame;
+using objc3c::runtime::RuntimeDispatchFrame;
 using objc3c::runtime::RuntimeWeakSlotRef;
 using objc3c::runtime::SelectorSlot;
 using objc3c::runtime::SlowPathResolution;
@@ -148,17 +151,6 @@ RuntimeState &State() {
 }
 
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(const char *selector);
-
-struct RuntimeDispatchFrame {
-  int receiver = 0;
-  std::uint64_t base_identity = 0;
-  const RealizedPropertyAccessor *runtime_property_accessor = nullptr;
-  std::vector<int> autorelease_values;
-};
-
-struct RuntimeAutoreleasePoolFrame {
-  std::vector<int> values;
-};
 
 thread_local std::vector<RuntimeDispatchFrame> g_runtime_dispatch_frames;
 thread_local RuntimeDispatchFrame g_runtime_testing_dispatch_frame;
