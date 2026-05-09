@@ -15,6 +15,7 @@ add_library(objc3c_json STATIC
   json/json_schema_numeric_constraint_validation.cpp
   json/json_schema_object_validation.cpp
   json/json_schema_scalar_validation.cpp
+  json/json_schema_string_constraint_validation.cpp
   json/json_schema_subschema.cpp
   json/json_schema_validation.cpp
   json/json_schema_type.cpp
