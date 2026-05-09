@@ -65,7 +65,7 @@
         "HC-GATE-01.json"
       ],
       "hard_cutover": {
-        "positive_fixture_policy": "no semantic compatibility-shim positives",
+        "positive_fixture_policy": "no semantic compatibility-shim or migration-lane positives",
         "replacement_behavior": "strict semantic diagnostic before any shimmed behavior can be claimed"
       }
     },
