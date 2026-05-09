@@ -43,6 +43,9 @@
     "tmp/reports/developer-tooling/workspace-integration-summary.json",
     "tmp/reports/runtime/runnable-developer-tooling-e2e/summary.json"
   ],
+  "owner_contract_paths": [
+    "tests/tooling/fixtures/developer_tooling/hosted_llvm_tool_capability_owner_contract.json"
+  ],
   "supported_capabilities": [
     "compile-observability",
     "runtime-inspector",
@@ -57,7 +60,14 @@
     "integrated-developer-tooling-validation",
     "packaged-cli-to-editor-contract"
   ],
+  "capability_truth_boundaries": [
+    "hosted LLVM capability truth requires hosted clang plus llc object-emission summary evidence",
+    "local LLVM probe output is diagnostic only and does not prove hosted execution support",
+    "language-server fallback capabilities remain unpublished until implemented by owned action surfaces"
+  ],
   "gap_capabilities": [
+    "hosted-execution-without-llc-object-emission",
+    "local-only-hosted-proof",
     "source-map-debug-info-stepping",
     "references-rename-semantic-tokens-code-actions"
   ],

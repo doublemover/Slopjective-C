@@ -1,0 +1,67 @@
+{
+  "contract_id": "objc3c.developer.tooling.hosted.llvm.tool.capability.owner.contract.v1",
+  "surface_kind": "developer-tooling-owner-contract",
+  "milestone": "M325",
+  "issue": "M325-B002",
+  "summary_implementation_anchor": "scripts.objc3c_workflow.actions.developer_tooling_llvm_contracts",
+  "owner_contracts": [
+    {
+      "action": "check-llvm-capabilities",
+      "owner": "developer-tooling.llvm.local-probe",
+      "proof_source": "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
+      "claim_scope": "local probe output records the current machine only and is never hosted-execution capability truth",
+      "requires_hosted_probe_summary": false,
+      "fails_closed_without_live_capability": true,
+      "unsupported_claims": [
+        "hosted LLVM availability",
+        "hosted source parity",
+        "language-server execution fallback"
+      ]
+    },
+    {
+      "action": "check-hosted-llvm-capabilities",
+      "owner": "developer-tooling.hosted-llvm.probe",
+      "proof_source": "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json",
+      "claim_scope": "hosted LLVM capability truth requires the hosted summary to report clang plus llc object-emission support",
+      "requires_hosted_probe_summary": true,
+      "fails_closed_without_live_capability": true,
+      "unsupported_claims": [
+        "clang-only hosted execution",
+        "local-only hosted execution proof",
+        "hosted object parity without llc --filetype=obj"
+      ]
+    },
+    {
+      "action": "test-capability-routed-source-parity",
+      "owner": "developer-tooling.hosted-llvm.parity",
+      "proof_source": "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json",
+      "claim_scope": "capability-routed parity may run only from hosted LLVM probe truth that exposes native object emission",
+      "requires_hosted_probe_summary": true,
+      "fails_closed_without_live_capability": true,
+      "unsupported_claims": [
+        "parity success when the hosted route was skipped",
+        "local-only source parity as hosted capability proof",
+        "fallback language-server parity"
+      ]
+    },
+    {
+      "action": "inspect-capability-explorer",
+      "owner": "developer-tooling.capability-explorer",
+      "proof_source": "capability-explorer.json",
+      "claim_scope": "explorer payloads expose probe state only and do not upgrade unsupported language-server or hosted execution claims",
+      "requires_hosted_probe_summary": false,
+      "fails_closed_without_live_capability": true,
+      "unsupported_claims": [
+        "rename/reference/semantic-token language-server support",
+        "hosted execution support",
+        "wrapper-only action capability"
+      ]
+    }
+  ],
+  "global_claim_boundaries": [
+    "language-server fallback claims are unpublished until backed by first-class implementation contracts",
+    "hosted execution support is unavailable without a hosted LLVM summary that records object emission",
+    "local-only probe summaries are diagnostics and never CI capability truth",
+    "workflow actions must publish owner contracts for the capability they expose"
+  ]
+}

@@ -39,6 +39,9 @@ PARITY_SUMMARY_OUT: Final[str] = (
 DEFAULT_LLVM_CAPABILITIES_SUMMARY_OUT: Final[str] = (
     "tmp/artifacts/objc3c-native/llvm_capabilities/summary.json"
 )
+HOSTED_LLVM_CAPABILITIES_SUMMARY_OUT: Final[str] = (
+    "tmp/artifacts/objc3c-native/m144/llvm_capabilities/summary.json"
+)
 SUMMARY_OUT_FLAG: Final[str] = "--summary-out"
 SOURCE_FLAG: Final[str] = "--source"
 CLI_BIN_FLAG: Final[str] = "--cli-bin"
@@ -60,6 +63,17 @@ class CapabilityExplorerContract:
     pass_through_args: bool = True
 
 
+@dataclass(frozen=True)
+class ToolCapabilityOwnerContract:
+    action: str
+    owner: str
+    proof_source: str
+    claim_scope: str
+    unsupported_claims: tuple[str, ...]
+    requires_hosted_probe_summary: bool
+    fails_closed_without_live_capability: bool
+
+
 CAPABILITY_EXPLORER_CONTRACT: Final[CapabilityExplorerContract] = (
     CapabilityExplorerContract(
         action=CAPABILITY_EXPLORER_ACTION,
@@ -73,6 +87,75 @@ CAPABILITY_EXPLORER_CONTRACT: Final[CapabilityExplorerContract] = (
             "backend-routing contracts"
         ),
     )
+)
+
+LLVM_TOOL_CAPABILITY_OWNER_CONTRACTS: Final[
+    tuple[ToolCapabilityOwnerContract, ...]
+] = (
+    ToolCapabilityOwnerContract(
+        action=CHECK_LLVM_CAPABILITIES_ACTION,
+        owner="developer-tooling.llvm.local-probe",
+        proof_source="tmp/artifacts/objc3c-native/llvm_capabilities/summary.json",
+        claim_scope=(
+            "local probe output records the current machine only and is never "
+            "hosted-execution capability truth"
+        ),
+        unsupported_claims=(
+            "hosted LLVM availability",
+            "hosted source parity",
+            "language-server execution fallback",
+        ),
+        requires_hosted_probe_summary=False,
+        fails_closed_without_live_capability=True,
+    ),
+    ToolCapabilityOwnerContract(
+        action=CHECK_HOSTED_LLVM_CAPABILITIES_ACTION,
+        owner="developer-tooling.hosted-llvm.probe",
+        proof_source=HOSTED_LLVM_CAPABILITIES_SUMMARY_OUT,
+        claim_scope=(
+            "hosted LLVM capability truth requires the hosted summary to report "
+            "clang plus llc object-emission support"
+        ),
+        unsupported_claims=(
+            "clang-only hosted execution",
+            "local-only hosted execution proof",
+            "hosted object parity without llc --filetype=obj",
+        ),
+        requires_hosted_probe_summary=True,
+        fails_closed_without_live_capability=True,
+    ),
+    ToolCapabilityOwnerContract(
+        action=CAPABILITY_ROUTED_PARITY_ACTION,
+        owner="developer-tooling.hosted-llvm.parity",
+        proof_source=HOSTED_LLVM_CAPABILITIES_SUMMARY_OUT,
+        claim_scope=(
+            "capability-routed parity may run only from hosted LLVM probe truth "
+            "that exposes native object emission"
+        ),
+        unsupported_claims=(
+            "parity success when the hosted route was skipped",
+            "local-only source parity as hosted capability proof",
+            "fallback language-server parity",
+        ),
+        requires_hosted_probe_summary=True,
+        fails_closed_without_live_capability=True,
+    ),
+    ToolCapabilityOwnerContract(
+        action=CAPABILITY_EXPLORER_ACTION,
+        owner="developer-tooling.capability-explorer",
+        proof_source=CAPABILITY_EXPLORER_DUMP_FILENAME,
+        claim_scope=(
+            "explorer payloads expose probe state only and do not upgrade "
+            "unsupported language-server or hosted execution claims"
+        ),
+        unsupported_claims=(
+            "rename/reference/semantic-token language-server support",
+            "hosted execution support",
+            "wrapper-only action capability",
+        ),
+        requires_hosted_probe_summary=False,
+        fails_closed_without_live_capability=True,
+    ),
 )
 
 
