@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "lower/contracts/interop_foreign_call_lowering_contracts.h"
 #include "pipeline/objc3_frontend_types.h"
 
 namespace objc3::artifacts::frontend {
@@ -24,5 +25,23 @@ BuildInteropForeignSurfaceInterfacePreservationSummaryJson(
 
 [[nodiscard]] std::string BuildInteropHeaderModuleBridgeGenerationSummaryJson(
     const Objc3InteropHeaderModuleBridgeGenerationSummary &summary);
+
+[[nodiscard]] std::string BuildInteropInteropLoweringContractJson(
+    const Objc3InteropInteropSemanticModelSummary &semantic_summary,
+    const Objc3InteropInteropRuntimeParitySummary &runtime_parity_summary,
+    const Objc3InteropCppInteropInteractionSummary &cpp_summary,
+    const Objc3InteropSwiftInteropIsolationSummary &swift_summary,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3InteropInteropLoweringContract &contract,
+    const std::string &replay_key);
+
+[[nodiscard]] std::string BuildInteropForeignCallLifetimeLoweringContractJson(
+    const Objc3InteropInteropLoweringContract &dependency_contract,
+    const Objc3InteropCppInteropInteractionSummary &cpp_summary,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3InteropForeignCallLifetimeLoweringContract &contract,
+    const std::string &replay_key);
 
 }  // namespace objc3::artifacts::frontend

@@ -376,4 +376,115 @@ std::string BuildInteropHeaderModuleBridgeGenerationSummaryJson(
   return out.str();
 }
 
+std::string BuildInteropInteropLoweringContractJson(
+    const Objc3InteropInteropSemanticModelSummary &semantic_summary,
+    const Objc3InteropInteropRuntimeParitySummary &runtime_parity_summary,
+    const Objc3InteropCppInteropInteractionSummary &cpp_summary,
+    const Objc3InteropSwiftInteropIsolationSummary &swift_summary,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3InteropInteropLoweringContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3InteropInteropLoweringContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3InteropInteropLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3InteropInteropLoweringSurfacePath)
+      << "\",\"semantic_contract_id\":\""
+      << EscapeJsonString(semantic_summary.contract_id)
+      << "\",\"runtime_parity_contract_id\":\""
+      << EscapeJsonString(runtime_parity_summary.contract_id)
+      << "\",\"cpp_interaction_contract_id\":\""
+      << EscapeJsonString(cpp_summary.contract_id)
+      << "\",\"swift_isolation_contract_id\":\""
+      << EscapeJsonString(swift_summary.contract_id)
+      << "\",\"preservation_contract_id\":\""
+      << EscapeJsonString(preservation_summary.contract_id)
+      << "\",\"lane_contract_id\":\""
+      << EscapeJsonString(kObjc3InteropInteropLoweringLaneContract)
+      << "\",\"lowering_model\":\""
+      << EscapeJsonString(kObjc3InteropInteropLoweringModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3InteropInteropLoweringDeferredModel)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"foreign_callable_sites\":" << contract.foreign_callable_sites
+      << ",\"c_foreign_callable_sites\":" << contract.c_foreign_callable_sites
+      << ",\"objc_runtime_parity_callable_sites\":"
+      << contract.objc_runtime_parity_callable_sites
+      << ",\"ownership_bridge_callable_sites\":"
+      << contract.ownership_bridge_callable_sites
+      << ",\"error_surface_sites\":" << contract.error_surface_sites
+      << ",\"async_boundary_sites\":" << contract.async_boundary_sites
+      << ",\"swift_concurrency_metadata_sites\":"
+      << contract.swift_concurrency_metadata_sites
+      << ",\"interface_preserved_foreign_callable_sites\":"
+      << contract.interface_preserved_foreign_callable_sites
+      << ",\"interface_preserved_metadata_annotation_sites\":"
+      << contract.interface_preserved_metadata_annotation_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
+std::string BuildInteropForeignCallLifetimeLoweringContractJson(
+    const Objc3InteropInteropLoweringContract &dependency_contract,
+    const Objc3InteropCppInteropInteractionSummary &cpp_summary,
+    const Objc3InteropForeignSurfaceInterfacePreservationSummary
+        &preservation_summary,
+    const Objc3InteropForeignCallLifetimeLoweringContract &contract,
+    const std::string &replay_key) {
+  const bool ready_for_ir_emission =
+      contract.deterministic &&
+      IsValidObjc3InteropForeignCallLifetimeLoweringContract(contract);
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\""
+      << EscapeJsonString(kObjc3InteropForeignCallLifetimeLoweringContractId)
+      << "\",\"surface_path\":\""
+      << EscapeJsonString(kObjc3InteropForeignCallLifetimeLoweringSurfacePath)
+      << "\",\"interop_contract_id\":\""
+      << EscapeJsonString(kObjc3InteropInteropLoweringContractId)
+      << "\",\"bridge_dependency_contract_id\":\""
+      << EscapeJsonString(kObjc3InteropCppInteropInteractionSummaryContractId)
+      << "\",\"preservation_contract_id\":\""
+      << EscapeJsonString(preservation_summary.contract_id)
+      << "\",\"dependency_replay_key\":\""
+      << EscapeJsonString(Objc3InteropInteropLoweringReplayKey(
+             dependency_contract))
+      << "\",\"cpp_dependency_replay_key\":\""
+      << EscapeJsonString(cpp_summary.replay_key)
+      << "\",\"replay_key\":\"" << EscapeJsonString(replay_key)
+      << "\",\"lowering_model\":\""
+      << EscapeJsonString(kObjc3InteropForeignCallLifetimeLoweringModel)
+      << "\",\"deferred_model\":\""
+      << EscapeJsonString(kObjc3InteropForeignCallLifetimeLoweringDeferredModel)
+      << "\",\"foreign_callable_sites\":" << contract.foreign_callable_sites
+      << ",\"c_foreign_callable_sites\":" << contract.c_foreign_callable_sites
+      << ",\"objc_runtime_parity_callable_sites\":"
+      << contract.objc_runtime_parity_callable_sites
+      << ",\"ownership_bridge_sites\":" << contract.ownership_bridge_sites
+      << ",\"lifetime_bridge_sites\":" << contract.lifetime_bridge_sites
+      << ",\"metadata_preservation_sites\":"
+      << contract.metadata_preservation_sites
+      << ",\"guard_blocked_sites\":" << contract.guard_blocked_sites
+      << ",\"contract_violation_sites\":"
+      << contract.contract_violation_sites
+      << ",\"deterministic_handoff\":"
+      << (contract.deterministic ? "true" : "false")
+      << ",\"ready_for_ir_emission\":"
+      << (ready_for_ir_emission ? "true" : "false")
+      << "}";
+  return out.str();
+}
+
 }  // namespace objc3::artifacts::frontend
