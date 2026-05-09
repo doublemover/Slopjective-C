@@ -1,5 +1,5 @@
 {
-  "contract_id": "objc3c.security.hardening.runtime.hardening.contract.v1",
+  "contract_id": "objc3c.security.hardening.runtime.contract.v1",
   "surface_kind": "security-runtime-hardening-contract",
   "required_validate_actions": [
     "test-runtime-acceptance",

@@ -20,7 +20,7 @@
     "scripts/check_objc3c_release_operations_integration.py",
     "scripts/check_objc3c_release_operations_end_to_end.py",
     "scripts/check_objc3c_platform_hardening_integration.py",
-    "scripts.objc3c_workflow",
+    "scripts/objc3c_workflow",
     "native/objc3c/src/sema/objc3_semantic_passes.cpp",
     "native/objc3c/src/pipeline/frontend_pipeline_orchestration.cpp",
     "native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp",

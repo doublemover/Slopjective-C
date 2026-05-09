@@ -33,7 +33,9 @@
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
     "scripts/check_objc3c_security_hardening_integration.py",
-    "scripts.objc3c_workflow",
+    "scripts/check_objc3c_security_hardening_end_to_end.py",
+    "scripts/objc3c_workflow",
+    "scripts/objc3c_workflow/actions/release_governance_security_targets.py",
     "package.json"
   ],
   "implementation_anchors": [
@@ -43,7 +45,8 @@
     "scripts/publish_objc3c_security_advisories.py",
     "scripts/check_security_hardening_response_drill.py",
     "scripts/check_security_hardening_runtime_hardening.py",
-    "scripts/check_objc3c_security_hardening_integration.py"
+    "scripts/check_objc3c_security_hardening_integration.py",
+    "scripts/check_objc3c_security_hardening_end_to_end.py"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/security-hardening",

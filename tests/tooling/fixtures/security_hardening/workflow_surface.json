@@ -14,6 +14,14 @@
     "validate-security-hardening",
     "validate-security-hardening-end-to-end"
   ],
+  "validation_child_actions": [
+    "check-security-response-drill",
+    "check-security-runtime-hardening",
+    "check-security-hardening-surface",
+    "check-security-hardening-schema-surface",
+    "build-security-posture",
+    "publish-security-advisories"
+  ],
   "upstream_validate_actions": [
     "validate-release-operations",
     "validate-distribution-credibility",
