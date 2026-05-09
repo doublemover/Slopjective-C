@@ -3,7 +3,7 @@
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
 #include "io/objc3_cli_reporting_output_contract_core_feature_surface.h"
 #include "io/objc3_cli_reporting_output_contract_diagnostics_hardening_surface.h"
-#include "io/objc3_cli_reporting_output_contract_edge_case_compatibility_surface.h"
+#include "io/objc3_cli_reporting_output_contract_edge_case_consistency_surface.h"
 #include "io/objc3_cli_reporting_output_contract_edge_case_expansion_and_robustness_surface.h"
 #include "io/objc3_cli_reporting_output_contract_recovery_determinism_hardening_surface.h"
 #include "io/objc3_cli_reporting_output_contract_scaffold.h"
@@ -78,23 +78,23 @@ bool BuildFrontendCApiRunnerOutputContract(
                               error);
   }
 
-  const Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface
-      edge_case_compatibility =
-          BuildObjc3CliReportingOutputContractEdgeCaseCompatibilitySurface(
+  const Objc3CliReportingOutputContractEdgeCaseConsistencySurface
+      edge_case_consistency =
+          BuildObjc3CliReportingOutputContractEdgeCaseConsistencySurface(
               core_feature_expansion);
-  std::string edge_case_compatibility_reason;
-  if (!IsObjc3CliReportingOutputContractEdgeCaseCompatibilitySurfaceReady(
-          edge_case_compatibility,
-          edge_case_compatibility_reason)) {
-    return FailOutputContract("edge-case compatibility",
-                              edge_case_compatibility_reason,
+  std::string edge_case_consistency_reason;
+  if (!IsObjc3CliReportingOutputContractEdgeCaseConsistencySurfaceReady(
+          edge_case_consistency,
+          edge_case_consistency_reason)) {
+    return FailOutputContract("edge-case consistency",
+                              edge_case_consistency_reason,
                               error);
   }
 
   const Objc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurface
       edge_case_robustness =
           BuildObjc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurface(
-              edge_case_compatibility);
+              edge_case_consistency);
   std::string edge_case_robustness_reason;
   if (!IsObjc3CliReportingOutputContractEdgeCaseExpansionAndRobustnessSurfaceReady(
           edge_case_robustness,

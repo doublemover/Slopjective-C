@@ -7,7 +7,7 @@
 
 #include "io/objc3_cli_reporting_output_contract_core_feature_expansion_surface.h"
 
-struct Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface {
+struct Objc3CliReportingOutputContractEdgeCaseConsistencySurface {
   bool core_feature_expansion_ready = false;
   bool summary_output_path_contract_consistent = false;
   bool diagnostics_output_path_contract_consistent = false;
@@ -16,13 +16,13 @@ struct Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface {
   bool diagnostics_output_suffix_compatible = false;
   bool case_folded_paths_distinct = false;
   bool output_paths_control_char_free = false;
-  bool edge_case_compatibility_consistent = false;
-  bool edge_case_compatibility_ready = false;
+  bool edge_case_consistency_contract_consistent = false;
+  bool edge_case_consistency_contract_ready = false;
   bool core_feature_impl_ready = false;
   std::string scaffold_key;
   std::string core_feature_key;
   std::string core_feature_expansion_key;
-  std::string edge_case_compatibility_key;
+  std::string edge_case_consistency_contract_key;
   std::string summary_output_path;
   std::string diagnostics_output_path;
   std::string failure_reason;
@@ -57,10 +57,10 @@ inline std::string Objc3CliReportingOutputContractToCaseFoldedAscii(
   return value;
 }
 
-inline std::string BuildObjc3CliReportingOutputContractEdgeCaseCompatibilityKey(
-    const Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface &surface) {
+inline std::string BuildObjc3CliReportingOutputContractEdgeCaseConsistencyKey(
+    const Objc3CliReportingOutputContractEdgeCaseConsistencySurface &surface) {
   std::ostringstream key;
-  key << "cli-reporting-output-contract-edge-case-compatibility:v1:"
+  key << "cli-reporting-output-contract-edge-case-consistency:v1:"
       << "core_feature_expansion_ready="
       << (surface.core_feature_expansion_ready ? "true" : "false")
       << ";summary_output_extension_compatible="
@@ -71,21 +71,21 @@ inline std::string BuildObjc3CliReportingOutputContractEdgeCaseCompatibilityKey(
       << (surface.case_folded_paths_distinct ? "true" : "false")
       << ";output_paths_control_char_free="
       << (surface.output_paths_control_char_free ? "true" : "false")
-      << ";edge_case_compatibility_consistent="
-      << (surface.edge_case_compatibility_consistent ? "true" : "false")
-      << ";edge_case_compatibility_ready="
-      << (surface.edge_case_compatibility_ready ? "true" : "false")
+      << ";edge_case_consistency_contract_consistent="
+      << (surface.edge_case_consistency_contract_consistent ? "true" : "false")
+      << ";edge_case_consistency_contract_ready="
+      << (surface.edge_case_consistency_contract_ready ? "true" : "false")
       << ";core_feature_impl_ready="
       << (surface.core_feature_impl_ready ? "true" : "false")
       << ";core_feature_expansion_key=" << surface.core_feature_expansion_key;
   return key.str();
 }
 
-inline Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface
-BuildObjc3CliReportingOutputContractEdgeCaseCompatibilitySurface(
+inline Objc3CliReportingOutputContractEdgeCaseConsistencySurface
+BuildObjc3CliReportingOutputContractEdgeCaseConsistencySurface(
     const Objc3CliReportingOutputContractCoreFeatureExpansionSurface
         &core_feature_expansion_surface) {
-  Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface surface;
+  Objc3CliReportingOutputContractEdgeCaseConsistencySurface surface;
   surface.core_feature_expansion_ready =
       core_feature_expansion_surface.core_feature_expansion_ready;
   surface.summary_output_path_contract_consistent =
@@ -125,20 +125,20 @@ BuildObjc3CliReportingOutputContractEdgeCaseCompatibilitySurface(
       !Objc3CliReportingOutputContractContainsControlCharacters(
           surface.diagnostics_output_path);
 
-  surface.edge_case_compatibility_consistent =
+  surface.edge_case_consistency_contract_consistent =
       surface.summary_output_extension_compatible &&
       surface.diagnostics_output_suffix_compatible &&
       surface.case_folded_paths_distinct &&
       surface.output_paths_control_char_free;
-  surface.edge_case_compatibility_key =
-      BuildObjc3CliReportingOutputContractEdgeCaseCompatibilityKey(surface);
-  surface.edge_case_compatibility_ready =
+  surface.edge_case_consistency_contract_key =
+      BuildObjc3CliReportingOutputContractEdgeCaseConsistencyKey(surface);
+  surface.edge_case_consistency_contract_ready =
       surface.core_feature_expansion_ready &&
-      surface.edge_case_compatibility_consistent &&
-      !surface.edge_case_compatibility_key.empty();
+      surface.edge_case_consistency_contract_consistent &&
+      !surface.edge_case_consistency_contract_key.empty();
   surface.core_feature_impl_ready =
       surface.core_feature_impl_ready &&
-      surface.edge_case_compatibility_ready;
+      surface.edge_case_consistency_contract_ready;
 
   if (surface.core_feature_impl_ready) {
     return surface;
@@ -151,28 +151,28 @@ BuildObjc3CliReportingOutputContractEdgeCaseCompatibilitySurface(
             : core_feature_expansion_surface.failure_reason;
   } else if (!surface.summary_output_extension_compatible) {
     surface.failure_reason =
-        "summary output path does not satisfy edge-case compatibility";
+        "summary output path does not satisfy edge-case consistency contract";
   } else if (!surface.diagnostics_output_suffix_compatible) {
     surface.failure_reason =
-        "diagnostics output path does not satisfy edge-case compatibility";
+        "diagnostics output path does not satisfy edge-case consistency contract";
   } else if (!surface.case_folded_paths_distinct) {
     surface.failure_reason =
         "summary and diagnostics output paths must remain distinct after case folding";
   } else if (!surface.output_paths_control_char_free) {
     surface.failure_reason =
         "summary and diagnostics output paths must not include control characters";
-  } else if (surface.edge_case_compatibility_key.empty()) {
-    surface.failure_reason = "edge-case compatibility key is empty";
+  } else if (surface.edge_case_consistency_contract_key.empty()) {
+    surface.failure_reason = "edge-case consistency contract key is empty";
   } else {
     surface.failure_reason =
-        "cli/reporting output edge-case compatibility is not ready";
+        "cli/reporting output edge-case consistency contract is not ready";
   }
 
   return surface;
 }
 
-inline bool IsObjc3CliReportingOutputContractEdgeCaseCompatibilitySurfaceReady(
-    const Objc3CliReportingOutputContractEdgeCaseCompatibilitySurface &surface,
+inline bool IsObjc3CliReportingOutputContractEdgeCaseConsistencySurfaceReady(
+    const Objc3CliReportingOutputContractEdgeCaseConsistencySurface &surface,
     std::string &reason) {
   if (surface.core_feature_impl_ready) {
     reason.clear();
@@ -180,7 +180,7 @@ inline bool IsObjc3CliReportingOutputContractEdgeCaseCompatibilitySurfaceReady(
   }
 
   reason = surface.failure_reason.empty()
-               ? "cli/reporting output edge-case compatibility surface not ready"
+               ? "cli/reporting output edge-case consistency surface not ready"
                : surface.failure_reason;
   return false;
 }

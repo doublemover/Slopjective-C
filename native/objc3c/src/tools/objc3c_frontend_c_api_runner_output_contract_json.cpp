@@ -24,8 +24,8 @@ void WriteFrontendCApiRunnerOutputContractJson(
       << EscapeJsonString(matrix.core_feature_key) << "\",\n";
   out << child_indent << "\"core_feature_expansion_key\": \""
       << EscapeJsonString(matrix.core_feature_expansion_key) << "\",\n";
-  out << child_indent << "\"edge_case_compatibility_key\": \""
-      << EscapeJsonString(matrix.edge_case_compatibility_key) << "\",\n";
+  out << child_indent << "\"edge_case_consistency_contract_key\": \""
+      << EscapeJsonString(matrix.edge_case_consistency_contract_key) << "\",\n";
   out << child_indent << "\"edge_case_robustness_key\": \""
       << EscapeJsonString(matrix.edge_case_robustness_key) << "\",\n";
   out << child_indent << "\"diagnostics_hardening_key\": \""
@@ -60,11 +60,12 @@ void WriteFrontendCApiRunnerOutputContractJson(
       << (matrix.case_folded_paths_distinct ? "true" : "false") << ",\n";
   out << child_indent << "\"output_paths_control_char_free\": "
       << (matrix.output_paths_control_char_free ? "true" : "false") << ",\n";
-  out << child_indent << "\"edge_case_compatibility_consistent\": "
-      << (matrix.edge_case_compatibility_consistent ? "true" : "false")
+  out << child_indent << "\"edge_case_consistency_contract_consistent\": "
+      << (matrix.edge_case_consistency_contract_consistent ? "true" : "false")
       << ",\n";
-  out << child_indent << "\"edge_case_compatibility_ready\": "
-      << (matrix.edge_case_compatibility_ready ? "true" : "false") << ",\n";
+  out << child_indent << "\"edge_case_consistency_contract_ready\": "
+      << (matrix.edge_case_consistency_contract_ready ? "true" : "false")
+      << ",\n";
   out << child_indent << "\"summary_output_parent_present\": "
       << (matrix.summary_output_parent_present ? "true" : "false") << ",\n";
   out << child_indent << "\"diagnostics_output_parent_present\": "

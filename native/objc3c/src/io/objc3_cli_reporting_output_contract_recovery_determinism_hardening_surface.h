@@ -14,8 +14,8 @@ struct Objc3CliReportingOutputContractRecoveryDeterminismHardeningSurface {
   bool diagnostics_output_suffix_compatible = false;
   bool case_folded_paths_distinct = false;
   bool output_paths_control_char_free = false;
-  bool edge_case_compatibility_consistent = false;
-  bool edge_case_compatibility_ready = false;
+  bool edge_case_consistency_contract_consistent = false;
+  bool edge_case_consistency_contract_ready = false;
   bool summary_output_parent_present = false;
   bool diagnostics_output_parent_present = false;
   bool output_paths_within_length_budget = false;
@@ -33,7 +33,7 @@ struct Objc3CliReportingOutputContractRecoveryDeterminismHardeningSurface {
   std::string scaffold_key;
   std::string core_feature_key;
   std::string core_feature_expansion_key;
-  std::string edge_case_compatibility_key;
+  std::string edge_case_consistency_contract_key;
   std::string edge_case_robustness_key;
   std::string diagnostics_hardening_key;
   std::string recovery_determinism_key;
@@ -93,10 +93,10 @@ BuildObjc3CliReportingOutputContractRecoveryDeterminismHardeningSurface(
   surface.case_folded_paths_distinct = diagnostics_surface.case_folded_paths_distinct;
   surface.output_paths_control_char_free =
       diagnostics_surface.output_paths_control_char_free;
-  surface.edge_case_compatibility_consistent =
-      diagnostics_surface.edge_case_compatibility_consistent;
-  surface.edge_case_compatibility_ready =
-      diagnostics_surface.edge_case_compatibility_ready;
+  surface.edge_case_consistency_contract_consistent =
+      diagnostics_surface.edge_case_consistency_contract_consistent;
+  surface.edge_case_consistency_contract_ready =
+      diagnostics_surface.edge_case_consistency_contract_ready;
   surface.summary_output_parent_present =
       diagnostics_surface.summary_output_parent_present;
   surface.diagnostics_output_parent_present =
@@ -119,7 +119,8 @@ BuildObjc3CliReportingOutputContractRecoveryDeterminismHardeningSurface(
   surface.scaffold_key = diagnostics_surface.scaffold_key;
   surface.core_feature_key = diagnostics_surface.core_feature_key;
   surface.core_feature_expansion_key = diagnostics_surface.core_feature_expansion_key;
-  surface.edge_case_compatibility_key = diagnostics_surface.edge_case_compatibility_key;
+  surface.edge_case_consistency_contract_key =
+      diagnostics_surface.edge_case_consistency_contract_key;
   surface.edge_case_robustness_key = diagnostics_surface.edge_case_robustness_key;
   surface.diagnostics_hardening_key = diagnostics_surface.diagnostics_hardening_key;
   surface.summary_output_path = diagnostics_surface.summary_output_path;
