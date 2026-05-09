@@ -37,7 +37,7 @@
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "ir/objc3_ir_runtime_metadata_scaffold_emission.h"
 #include "ir/objc3_ir_scope_cleanup_emission.h"
-#include "ir/objc3_ir_statement_emission.h"
+#include "ir/objc3_ir_statement_orchestration.h"
 #include "ir/objc3_ir_static_data_emission.h"
 #include "ir/objc3_ir_synthetic_method_emission.h"
 #include "ir/objc3_ir_value_materialization.h"
@@ -2048,19 +2048,6 @@ class Objc3IREmitter {
     return prefix + std::to_string(ctx.label_counter++);
   }
 
-  Objc3IRScopeCleanupEmissionCallbacks ScopeCleanupCallbacks() const {
-    return Objc3IRScopeCleanupEmissionCallbacks{
-        [this](FunctionContext &callback_ctx) {
-          return NewTemp(callback_ctx);
-        },
-        [this](FunctionContext &callback_ctx, const std::string &prefix) {
-          return NewLabel(callback_ctx, prefix);
-        },
-        [this](const Stmt *stmt, FunctionContext &callback_ctx) {
-          EmitStatement(stmt, callback_ctx);
-        }};
-  }
-
   Objc3IRBlockLoweringContext BlockLoweringContext() const {
     return Objc3IRBlockLoweringContext{
         Objc3IRBlockLoweringState{
@@ -2068,7 +2055,8 @@ class Objc3IREmitter {
             &emitted_block_invoke_symbols_,
             &emitted_block_copy_helper_symbols_,
             &emitted_block_dispose_helper_symbols_},
-        ScopeCleanupCallbacks(),
+        BuildObjc3IRStatementOrchestrationScopeCleanupCallbacks(
+            StatementOrchestrationOptions()),
         Objc3IRBlockLoweringCallbacks{
             [this](const std::string &reason) {
               return EmitUnsupportedI32Value(reason);
@@ -2078,7 +2066,8 @@ class Objc3IREmitter {
                   expr, callback_ctx, ExpressionCallEmissionOptions());
             },
             [this](const Stmt *stmt, FunctionContext &callback_ctx) {
-              EmitStatement(stmt, callback_ctx);
+              EmitObjc3IRStatementOrchestration(
+                  stmt, callback_ctx, StatementOrchestrationOptions());
             },
             [this](const FunctionContext &callback_ctx,
                    const std::string &name) {
@@ -2089,11 +2078,6 @@ class Objc3IREmitter {
               return EmitObjc3IRIdentifierValue(
                   name, callback_ctx, ValueMaterializationContext());
             }}};
-  }
-
-  Objc3IRFunctionLocalFlowContext FunctionLocalFlowContext() const {
-    return Objc3IRFunctionLocalFlowContext{
-        frontend_metadata_.arc_mode_enabled, ScopeCleanupCallbacks()};
   }
 
   Objc3IRCompileTimeProofAnalysisContext CompileTimeProofAnalysisContext()
@@ -2119,6 +2103,29 @@ class Objc3IREmitter {
           return EmitUnsupportedI32Value(reason);
         },
         [this]() { return BlockLoweringContext(); }};
+  }
+
+  Objc3IRStatementOrchestrationOptions StatementOrchestrationOptions() const {
+    return Objc3IRStatementOrchestrationOptions{
+        frontend_metadata_.arc_mode_enabled,
+        Objc3IRStatementOrchestrationServices{
+            [this](const Expr *expr, FunctionContext &callback_ctx) {
+              return EmitObjc3IRExpressionCall(
+                  expr, callback_ctx, ExpressionCallEmissionOptions());
+            },
+            [this](FunctionContext &callback_ctx) {
+              return NewTemp(callback_ctx);
+            },
+            [this](FunctionContext &callback_ctx,
+                   const std::string &prefix) {
+              return NewLabel(callback_ctx, prefix);
+            },
+            [this](const std::string &reason) {
+              return EmitUnsupportedI32Value(reason);
+            },
+            [this]() { return BlockLoweringContext(); },
+            [this]() { return ValueMaterializationContext(); },
+            [this]() { return CompileTimeProofAnalysisContext(); }}};
   }
 
   Objc3IRExpressionCallEmissionOptions ExpressionCallEmissionOptions() const {
@@ -2163,32 +2170,11 @@ class Objc3IREmitter {
               return &signature_it->second;
             },
             [this]() { return BlockLoweringContext(); },
-            [this]() { return FunctionLocalFlowContext(); },
+            [this]() {
+              return BuildObjc3IRStatementOrchestrationFunctionLocalContext(
+                  StatementOrchestrationOptions());
+            },
             [this]() { return CompileTimeProofAnalysisContext(); }}};
-  }
-
-  void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
-                                        std::size_t target_depth) const {
-    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, target_depth);
-  }
-
-  void PushScope(FunctionContext &ctx) const {
-    PushObjc3IRScope(ctx);
-  }
-
-  void EmitPendingBlockDisposeUnwindToDepth(FunctionContext &ctx,
-                                            std::size_t target_depth) const {
-    EmitObjc3IRPendingBlockDisposeUnwindToDepth(ctx, target_depth);
-  }
-
-  void EmitOwnershipCleanupUnwindToDepth(FunctionContext &ctx,
-                                     std::size_t target_depth) const {
-    EmitObjc3IROwnershipCleanupUnwindToDepth(
-        ctx, target_depth, ScopeCleanupCallbacks());
-  }
-
-  void PopScope(FunctionContext &ctx, bool emit_cleanup) const {
-    PopObjc3IRScope(ctx, emit_cleanup, ScopeCleanupCallbacks());
   }
 
   std::string EmitUnsupportedI32Value(const std::string &reason) const {
@@ -2197,81 +2183,6 @@ class Objc3IREmitter {
       unsupported_fail_closed_path_reason_ = reason;
     }
     return "poison";
-  }
-
-  void EmitStatement(const Stmt *stmt, FunctionContext &ctx) const {
-    EmitObjc3IRStatement(
-        stmt, ctx,
-        Objc3IRStatementEmissionCallbacks{
-            [this](const Expr *expr, FunctionContext &callback_ctx) {
-              return EmitObjc3IRExpressionCall(
-                  expr, callback_ctx, ExpressionCallEmissionOptions());
-            },
-            [this](const Expr &expr, FunctionContext &callback_ctx) {
-              return EmitObjc3IRBlockLiteralStorage(
-                  expr, callback_ctx, BlockLoweringContext());
-            },
-            [this](FunctionContext &callback_ctx) {
-              return NewTemp(callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return NewLabel(callback_ctx, prefix);
-            },
-            [this](const FunctionContext &callback_ctx,
-                   const std::string &name) {
-              return LookupObjc3IRVarPtr(
-                  callback_ctx, name, ValueMaterializationContext());
-            },
-            [this](const Expr *expr, const FunctionContext &callback_ctx,
-                   int &value) {
-              return TryGetObjc3IRCompileTimeI32ExprInContext(
-                  expr, callback_ctx, value,
-                  CompileTimeProofAnalysisContext());
-            },
-            [this](const Expr *expr, const FunctionContext &callback_ctx) {
-              return IsObjc3IRCompileTimeNilReceiverExprInContext(
-                  expr, callback_ctx, CompileTimeProofAnalysisContext());
-            },
-            [this](const std::string &reason) {
-              return EmitUnsupportedI32Value(reason);
-            },
-            [this](FunctionContext &callback_ctx) {
-              PushScope(callback_ctx);
-            },
-            [this](FunctionContext &callback_ctx, bool emit_cleanup) {
-              PopScope(callback_ctx, emit_cleanup);
-            },
-            [this](FunctionContext &callback_ctx, std::size_t target_depth) {
-              EmitAutoreleasepoolUnwindToDepth(callback_ctx, target_depth);
-            },
-            [this](const std::string &i32_value,
-                   FunctionContext &callback_ctx) {
-              EmitObjc3IRFunctionLocalTypedReturn(
-                  i32_value, callback_ctx, FunctionLocalFlowContext());
-            },
-            [this](FunctionContext &callback_ctx, std::size_t scope_depth,
-                   std::size_t autoreleasepool_depth,
-                   std::size_t pending_block_dispose_depth,
-                   std::size_t ownership_cleanup_depth,
-                   std::size_t arc_cleanup_depth) {
-              EmitObjc3IRFunctionLocalTerminalCleanupToDepth(
-                  callback_ctx, scope_depth, autoreleasepool_depth,
-                  pending_block_dispose_depth, ownership_cleanup_depth,
-                  arc_cleanup_depth, FunctionLocalFlowContext());
-            },
-            [this](FunctionContext &callback_ctx,
-                   const std::string &prefix) {
-              return BuildObjc3IRThrowsErrorSlotAlloca(callback_ctx, prefix);
-            },
-            [this](const std::string &slot, FunctionContext &callback_ctx) {
-              return EmitObjc3IRLoadThrownError(slot, callback_ctx);
-            },
-            [this](const std::string &error_value,
-                   FunctionContext &callback_ctx) {
-              EmitObjc3IRPropagateThrownError(
-                  error_value, callback_ctx, FunctionLocalFlowContext());
-            }});
   }
 
   void EmitPrototypeDeclarations(std::ostringstream &out) const {
@@ -2297,24 +2208,29 @@ class Objc3IREmitter {
   Objc3IRFunctionDefinitionEmissionCallbacks
   BuildFunctionDefinitionEmissionCallbacks() const {
     return Objc3IRFunctionDefinitionEmissionCallbacks{
-        [this](FunctionContext &ctx) { PushScope(ctx); },
+        [](FunctionContext &ctx) { PushObjc3IRScope(ctx); },
         [this](FunctionContext &ctx) {
           SeedObjc3IRKnownClassReceiverBindings(class_receiver_constants_, ctx);
         },
         [this](const FuncParam &param, std::size_t index,
                const std::string &ptr, FunctionContext &ctx) {
           EmitObjc3IRFunctionLocalTypedParamStore(
-              param, index, ptr, ctx, FunctionLocalFlowContext());
+              param, index, ptr, ctx,
+              BuildObjc3IRStatementOrchestrationFunctionLocalContext(
+                  StatementOrchestrationOptions()));
         },
         [this](const Stmt *stmt, FunctionContext &ctx) {
-          EmitStatement(stmt, ctx);
+          EmitObjc3IRStatementOrchestration(
+              stmt, ctx, StatementOrchestrationOptions());
         },
         [this](FunctionContext &ctx, std::size_t depth) {
-          EmitAutoreleasepoolUnwindToDepth(ctx, depth);
+          EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, depth);
         },
         [this](const std::string &i32_value, FunctionContext &ctx) {
           EmitObjc3IRFunctionLocalTypedReturn(
-              i32_value, ctx, FunctionLocalFlowContext());
+              i32_value, ctx,
+              BuildObjc3IRStatementOrchestrationFunctionLocalContext(
+                  StatementOrchestrationOptions()));
         },
         [this](const std::string &name) {
           return IsActorImplementation(name);

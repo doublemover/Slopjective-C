@@ -52,7 +52,9 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_scope_cleanup_emission.cpp
   objc3_ir_runtime_bootstrap_global_emission.cpp
   objc3_ir_runtime_metadata_emission.cpp
+  objc3_ir_statement_flow_context.cpp
   objc3_ir_statement_emission.cpp
+  objc3_ir_statement_orchestration.cpp
   objc3_ir_synthetic_method_emission.cpp
   objc3_ir_synthesized_property_accessors.cpp
   objc3_ir_value_materialization.cpp
