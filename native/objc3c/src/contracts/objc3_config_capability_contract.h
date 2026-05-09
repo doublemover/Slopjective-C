@@ -1,10 +1,19 @@
 #pragma once
 
+#include "contracts/objc3_native_contract_ids.h"
+
 namespace objc3c::contracts {
 
+inline constexpr Objc3NativeContractId kObjc3CanonicalLanguageProfileContract =
+    Objc3NativeContractId::kCanonicalLanguageProfileV1;
+inline constexpr Objc3NativeContractId
+    kObjc3CanonicalFeatureStateCatalogContract =
+        Objc3NativeContractId::kCanonicalFeatureStateCatalogV1;
 inline constexpr const char *kObjc3CanonicalLanguageProfileContractId =
-    "objc3c.config.language_profile.canonical.v1";
+    Objc3NativeContractIdSpelling(kObjc3CanonicalLanguageProfileContract)
+        .data();
 inline constexpr const char *kObjc3CanonicalFeatureStateCatalogContractId =
-    "objc3c.config.feature_state_catalog.canonical.v1";
+    Objc3NativeContractIdSpelling(kObjc3CanonicalFeatureStateCatalogContract)
+        .data();
 
 }  // namespace objc3c::contracts

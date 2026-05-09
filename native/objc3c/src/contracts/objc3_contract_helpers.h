@@ -21,7 +21,10 @@ inline constexpr Objc3NativeContractDescriptor DescribeObjc3NativeContract(
     case Objc3NativeContractId::kFrontendDiagnosticsBusV1:
       return {contract_id, Objc3NativeContractIdSpelling(contract_id),
               "frontend-diagnostics-bus", "v1", true};
-    case Objc3NativeContractId::kCanonicalLanguageConfigV1:
+    case Objc3NativeContractId::kCanonicalLanguageProfileV1:
+      return {contract_id, Objc3NativeContractIdSpelling(contract_id),
+              "config", "v1", true};
+    case Objc3NativeContractId::kCanonicalFeatureStateCatalogV1:
       return {contract_id, Objc3NativeContractIdSpelling(contract_id),
               "config", "v1", true};
     case Objc3NativeContractId::kRemovedOptionValidationV1:
