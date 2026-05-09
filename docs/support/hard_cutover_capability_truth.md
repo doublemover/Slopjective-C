@@ -29,7 +29,7 @@ Authoritative inputs:
 | Parser, typed sema, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke | `implemented` where the matrix has behavior rows | Claim only the named support claim and its linked evidence. |
 | Native module decomposition, public C runtime API shape, workflow bridge, and JSON/schema helpers | `internal` | Treat as owner/evidence surfaces, not language features. |
 | Full object-model runtime realization | `reserved` until a matrix row changes | Describe as unclaimed; link evidence owners instead of promising runtime behavior. |
-| Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure | `reserved` unless separately implemented | Describe as unavailable or future-spec surface, not runnable support. |
+| Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, property behaviors, and broad interop closure | `reserved` unless separately implemented | Describe as unavailable or reserved spec surface, not runnable support. |
 | Old modes, compatibility modes, aliases, fallback paths, shims, migration lanes, direct helper commands, and report-only completion | unsupported/retired wording | Mention only as negative evidence, source-hygiene data, or rejection inventory. |
 
 ## Documentation Rule
@@ -41,5 +41,5 @@ evidence.
 
 When a feature is partially present in parser, metadata, emitted artifacts, or
 runtime owner modules, docs must name the owner surface and matrix state. They
-must not round that into full runtime behavior, compatibility support, or a
-projected completion claim.
+must not round that into full runtime behavior, compatibility support, or an
+unsupported completion claim.

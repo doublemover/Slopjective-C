@@ -34,7 +34,7 @@ Generation input ownership is deterministic and ordered:
 
 Public site content must optimize for first-read comprehension:
 
-- lead with current status before future intent,
+- lead with current status before implementation direction,
 - use plain language before implementation jargon,
 - define specialist terms by context instead of assuming prior repo knowledge,
 - prefer short lists and comparison tables over dense paragraphs,

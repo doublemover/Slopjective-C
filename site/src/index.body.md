@@ -120,7 +120,7 @@ executable evidence:
 4. Complete reflective/runtime consumption of property and layout metadata.
 5. Close cross-module runtime import and packaging semantics.
 6. Finish blocks, captures, byref state, and ARC automation.
-7. Then extend outward into `throws`, richer error propagation, async/await, tasks, actors, metaprogramming, and interop closure.
+7. Keep `throws`, richer error propagation, async/await, tasks, actors, metaprogramming, and interop closure reserved until exact evidence lands.
 
 ## Specification Map {#toc-front-matter}
 

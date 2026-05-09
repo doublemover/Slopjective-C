@@ -12,7 +12,7 @@ but they must not widen it beyond these files.
 | `capability_matrix.md` | Human-readable projection of the capability matrix. |
 | `evidence_map.json` | Machine-readable flattened capability-to-evidence rows. |
 | `evidence_map.md` | Human-readable evidence table. |
-| `capability_matrix.schema.json` | Local mirror for consumers that historically read the schema from this directory. |
+| `capability_matrix.schema.json` | Local schema mirror for support-directory consumers. |
 | `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
 | `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 

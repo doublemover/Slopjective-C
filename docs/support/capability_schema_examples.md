@@ -65,8 +65,8 @@ Rules shown by this entry:
 
 - Reserved is an unavailable state, not a fallback mode.
 - A reserved row can point to docs or diagnostics instead of runnable tests.
-- A future implementation must add or update a matrix row before docs can claim
-  public support.
+- A row that moves this capability out of `reserved` must carry evidence before
+  docs can claim public support.
 
 ## Retired Surface Term
 

@@ -29,6 +29,8 @@ from scripts.objc3c_workflow.registry_schema_index import (
     WORKFLOW_SCHEMA_INDEX_SCHEMA_ID,
     capability_truth_schema_ids,
 )
+from scripts.objc3c_workflow.registry_lookup import catalog_action_spec as owned_catalog_action_spec
+from scripts.objc3c_workflow.registry_store import catalog_action_spec
 from scripts.objc3c_workflow.reports import emit_json, write_json_report
 
 
@@ -118,6 +120,7 @@ def test_dispatch_resolution_returns_metadata_without_running_handlers() -> None
 def test_handler_registry_matches_action_catalog() -> None:
     assert len(ACTION_CATALOG_SECTION_GROUPS) == 5
     assert len(ACTION_HANDLER_SECTION_GROUPS) == 5
+    assert catalog_action_spec is owned_catalog_action_spec
     assert action_handler_registry_is_complete()
     assert missing_action_handlers() == []
     assert orphan_action_handlers() == []

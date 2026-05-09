@@ -41,8 +41,9 @@ Command and evidence truth is hard-cut to the current surfaces:
   matrix row links executable evidence for the exact behavior.
 - The hard-cutover matrix rejects shims, fallback paths, migration lanes,
   direct helper commands, and compatibility-mode labels as public support
-  surfaces. Report-only completion is also not support evidence. Future rows
-  must use canonical feature names with evidence, not revive those labels.
+  surfaces. Report-only completion is also not support evidence. Rows that
+  change support state must use canonical feature names with evidence, not
+  revive those labels.
 
 | Capability                                  | State       | Support claim                                      | Evidence                                                                                                       |
 | ------------------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |

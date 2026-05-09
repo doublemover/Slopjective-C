@@ -10,6 +10,38 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 VALIDATOR_PATH = ROOT / "scripts" / "validate_capability_docs.py"
 
+PUBLIC_CAPABILITY_DOCS = (
+    ROOT / "README.md",
+    ROOT / "docs" / "support" / "README.md",
+    ROOT / "docs" / "support" / "capability_matrix.md",
+    ROOT / "docs" / "support" / "hard_cutover_capability_truth.md",
+    ROOT / "docs" / "support" / "evidence_map.md",
+    ROOT / "docs" / "workflows" / "commands.md",
+    ROOT / "docs" / "workflows" / "validation.md",
+    ROOT / "docs" / "workflows" / "ci.md",
+    ROOT / "site" / "src" / "README.md",
+    ROOT / "site" / "src" / "OWNERSHIP.md",
+    ROOT / "site" / "src" / "index.body.md",
+    ROOT / "site" / "index.md",
+)
+
+FORBIDDEN_PUBLIC_DOC_SNIPPETS = (
+    "lint-default",
+    "python -m scripts.objc3c_workflow",
+    "python scripts/objc3c_workflow",
+    "npm run lint",
+    "npm run build",
+    "supported through a shim",
+    "accepted by parser fallback",
+    "available in compatibility mode",
+    "migration lane accepts old syntax",
+    "implemented because a roadmap says it is planned",
+    "complete because a generated report says so without a matching implemented row",
+    "future support rows",
+    "future-spec surface",
+    "projected completion claim",
+)
+
 PARSER_CLAIM = {
     "claim_id": "objc3c.behavior.parser.canonical-syntax",
     "owner_phase": "parser",
@@ -51,6 +83,13 @@ def _manifest(*claims: dict[str, str]) -> dict[str, Any]:
             for claim in claims
         ],
     }
+
+
+def test_public_capability_docs_reject_retired_public_surface_claims() -> None:
+    for path in PUBLIC_CAPABILITY_DOCS:
+        text = path.read_text(encoding="utf-8")
+        for snippet in FORBIDDEN_PUBLIC_DOC_SNIPPETS:
+            assert snippet not in text, f"{path.relative_to(ROOT)} contains {snippet!r}"
 
 
 def _parser_row() -> dict[str, Any]:
