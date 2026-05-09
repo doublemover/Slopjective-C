@@ -3,15 +3,14 @@
 #include "io/json/json_equivalence.h"
 #include "io/json/json_pointer.h"
 #include "io/json/json_schema_array_validation.h"
+#include "io/json/json_schema_composition_validation.h"
 #include "io/json/json_schema_errors.h"
 #include "io/json/json_schema_object_validation.h"
 #include "io/json/json_schema_scalar_validation.h"
 #include "io/json/json_schema_subschema.h"
 #include "io/json/json_schema_type.h"
 
-#include <cstddef>
 #include <sstream>
-#include <utility>
 
 namespace objc3::io::json {
 
@@ -45,62 +44,8 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
                            ref->AsString(), result);
     return;
   }
-  const JsonValue *all_of = schema.Find("allOf");
-  if (all_of != nullptr) {
-    if (!all_of->IsArray()) {
-      AddJsonSchemaContractError(
-          result, "invalid_all_of", JsonSchemaKeywordPath(schema_path, "allOf"),
-          "allOf must be an array of schema objects");
-    } else {
-      const JsonValue::Array &candidates = all_of->AsArray();
-      for (std::size_t i = 0; i < candidates.size(); ++i) {
-        ValidateJsonSchemaNode(schema_root, candidates[i], payload,
-                               instance_path,
-                               JsonSchemaArrayElementPath(schema_path, "allOf",
-                                                          i),
-                               result);
-      }
-    }
-  }
-  const JsonValue *any_of = schema.Find("anyOf");
-  if (any_of != nullptr) {
-    if (!any_of->IsArray()) {
-      AddJsonSchemaContractError(
-          result, "invalid_any_of", JsonSchemaKeywordPath(schema_path, "anyOf"),
-          "anyOf must be an array of schema objects");
-    } else {
-      bool matched = false;
-      bool schema_failed = false;
-      const JsonValue::Array &candidates = any_of->AsArray();
-      for (std::size_t i = 0; i < candidates.size(); ++i) {
-        JsonSchemaResult probe;
-        ValidateJsonSchemaNode(schema_root, candidates[i], payload,
-                               instance_path,
-                               JsonSchemaArrayElementPath(schema_path, "anyOf",
-                                                          i),
-                               probe);
-        if (HasJsonSchemaContractIssue(probe)) {
-          schema_failed = true;
-          for (JsonSchemaIssue &issue : probe.errors) {
-            if (issue.domain == "schema") {
-              AppendJsonSchemaIssue(result, std::move(issue));
-            }
-          }
-          continue;
-        }
-        if (probe.ok) {
-          matched = true;
-          break;
-        }
-      }
-      if (!matched && !schema_failed) {
-        AddJsonSchemaPayloadError(
-            result, "any_of", instance_path,
-            JsonSchemaKeywordPath(schema_path, "anyOf"),
-            "value did not match any allowed schema");
-      }
-    }
-  }
+  ValidateJsonSchemaCompositionKeywords(schema_root, schema, payload,
+                                        instance_path, schema_path, result);
   if (const JsonValue *schema_type = schema.Find("type");
       schema_type != nullptr) {
     if (!JsonSchemaMatchesType(*schema_type, payload)) {

@@ -9,6 +9,7 @@ add_library(objc3c_json STATIC
   json/json_pointer_tokens.cpp
   json/json_schema.cpp
   json/json_schema_array_validation.cpp
+  json/json_schema_composition_validation.cpp
   json/json_schema_errors.cpp
   json/json_schema_object_validation.cpp
   json/json_schema_scalar_validation.cpp
