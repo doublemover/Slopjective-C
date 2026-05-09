@@ -64,7 +64,7 @@ body:
       options:
         - shared_acceptance_harness
         - static_policy_guard
-        - migration_bridge
+        - hard_cutover_rejection_surface
         - generator_contract_only
     validations:
       required: true

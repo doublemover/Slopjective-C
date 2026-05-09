@@ -1,33 +1,4 @@
-#include "tools/objc3c_frontend_c_api_runner_result.h"
-
-#include <cstddef>
-
-FrontendCApiCompileResultGuard::~FrontendCApiCompileResultGuard() {
-  objc3c_frontend_c_result_destroy(result);
-}
-
-std::string OptionalFrontendCApiString(
-    const objc3c_frontend_c_string_t *value) {
-  const objc3c_frontend_c_string_view_t view =
-      objc3c_frontend_c_string_view(value);
-  if (view.data == nullptr || view.size == 0) {
-    return "";
-  }
-  return std::string(view.data, view.size);
-}
-
-std::string FrontendCApiResultArtifactPath(
-    const objc3c_frontend_c_compile_result_t &result,
-    objc3c_frontend_c_artifact_kind_t artifact_kind) {
-  return OptionalFrontendCApiString(
-      objc3c_frontend_c_result_artifact_path(&result, artifact_kind));
-}
-
-std::string FrontendCApiResultErrorMessage(
-    const objc3c_frontend_c_compile_result_t &result) {
-  return OptionalFrontendCApiString(
-      objc3c_frontend_c_result_error_message(&result));
-}
+#include "tools/objc3c_frontend_c_api_runner_stage_report.h"
 
 bool FrontendCApiStageSummaryShapeReady(
     const objc3c_frontend_c_stage_summary_t &summary,
@@ -48,44 +19,6 @@ bool FrontendCApiStageReportShapeReady(
                                            OBJC3C_FRONTEND_STAGE_LOWER) &&
          FrontendCApiStageSummaryShapeReady(result.emit,
                                            OBJC3C_FRONTEND_STAGE_EMIT);
-}
-
-bool ValidateFrontendCApiResultAccessors(
-    objc3c_frontend_c_status_t status,
-    const objc3c_frontend_c_compile_result_t &result,
-    const std::string &last_error,
-    const std::string &result_error_message,
-    std::string &reason) {
-  if (result.status != status) {
-    reason = "compile status does not match result.status";
-    return false;
-  }
-  if (status == OBJC3C_FRONTEND_STATUS_OK && result.success == 0u) {
-    reason = "successful compile did not set result.success";
-    return false;
-  }
-  if (status != OBJC3C_FRONTEND_STATUS_OK && result.success != 0u) {
-    reason = "failing compile left result.success set";
-    return false;
-  }
-  if (status == OBJC3C_FRONTEND_STATUS_OK && !result_error_message.empty()) {
-    reason = "successful compile published a result-owned error message";
-    return false;
-  }
-  if (status == OBJC3C_FRONTEND_STATUS_OK && !last_error.empty()) {
-    reason = "successful compile published a context last_error";
-    return false;
-  }
-  if (status != OBJC3C_FRONTEND_STATUS_OK && result_error_message.empty()) {
-    reason = "failing compile published no result-owned error message";
-    return false;
-  }
-  if (!last_error.empty() && !result_error_message.empty() &&
-      last_error != result_error_message) {
-    reason = "context last_error and result-owned error_message differ";
-    return false;
-  }
-  return true;
 }
 
 namespace {
@@ -208,23 +141,4 @@ int FrontendCApiExitCodeFromStatus(
     default:
       return result.process_exit_code != 0 ? result.process_exit_code : 2;
   }
-}
-
-std::string ReadFrontendCApiLastError(
-    const objc3c_frontend_c_context_t *context) {
-  const std::size_t required =
-      objc3c_frontend_c_copy_last_error(context, nullptr, 0);
-  if (required == 0) {
-    return "";
-  }
-  std::string message(required, '\0');
-  const std::size_t written = objc3c_frontend_c_copy_last_error(
-      context, message.data(), message.size());
-  if (written == 0) {
-    return "";
-  }
-  if (!message.empty() && message.back() == '\0') {
-    message.pop_back();
-  }
-  return message;
 }

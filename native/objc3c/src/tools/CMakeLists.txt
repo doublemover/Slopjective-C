@@ -1,5 +1,6 @@
 add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_bonus_experiences_json.cpp
+  objc3c_frontend_c_api_runner_c_string.cpp
   objc3c_frontend_c_api_runner_commands.cpp
   objc3c_frontend_c_api_runner_dump_actions.cpp
   objc3c_frontend_c_api_runner_invocation.cpp
@@ -8,10 +9,12 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_output_contract.cpp
   objc3c_frontend_c_api_runner_output_contract_json.cpp
   objc3c_frontend_c_api_runner_playground_repro_json.cpp
-  objc3c_frontend_c_api_runner_result.cpp
+  objc3c_frontend_c_api_runner_result_contract.cpp
+  objc3c_frontend_c_api_runner_result_lifetime.cpp
   objc3c_frontend_c_api_runner_runtime_inspector_json.cpp
   objc3c_frontend_c_api_runner_session.cpp
   objc3c_frontend_c_api_runner_stage_trace_json.cpp
+  objc3c_frontend_c_api_runner_stage_report.cpp
   objc3c_frontend_c_api_runner_summary_io.cpp
   objc3c_frontend_c_api_runner_summary_json.cpp
   objc3c_frontend_c_api_runner.cpp

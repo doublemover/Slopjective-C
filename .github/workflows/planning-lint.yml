@@ -1,4 +1,4 @@
-name: Planning Lint (Legacy Manual)
+name: Planning Lint (Manual)
 
 on:
   workflow_dispatch:
@@ -7,10 +7,10 @@ permissions:
   contents: read
 
 jobs:
-  legacy-planning-note:
+  planning-source-note:
     runs-on: ubuntu-latest
     steps:
-      - name: Explain legacy workflow status
+      - name: Explain planning source status
         run: |
-          echo "This legacy local-planning workflow is manual-only."
+          echo "This local-planning workflow is manual-only."
           echo "Planning source of truth now lives primarily in GitHub milestones and issues."
