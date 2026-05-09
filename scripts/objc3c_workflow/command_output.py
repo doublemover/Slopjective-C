@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
+from .command_output_lines import extract_prefixed_value
+
 
 def extract_output_line(stdout: str, prefix: str) -> str:
-    for raw_line in stdout.splitlines():
-        line = raw_line.strip()
-        if line.startswith(prefix):
-            return line.split(":", 1)[1].strip()
-    return ""
+    return extract_prefixed_value(stdout, prefix)
 
 
 __all__ = ["extract_output_line"]
