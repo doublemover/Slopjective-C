@@ -16,7 +16,7 @@ sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_JSON = ROOT / 'package.json'
-RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
+DISPATCH_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'action_dispatch.py'
 SCHEMA_PATH = ROOT / 'schemas' / 'objc3c-public-command-contract-v1.schema.json'
 DEFAULT_OUTPUT = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 
@@ -31,8 +31,8 @@ def parse_args(argv: Sequence[str]) -> argparse.Namespace:
 
 def load_runner() -> Any:
     return load_public_workflow_runner(
-        runner_path=RUNNER_PATH,
-        module_name='scripts.objc3c_workflow.runner',
+        runner_path=DISPATCH_PATH,
+        module_name='scripts.objc3c_workflow.action_dispatch',
     )
 
 

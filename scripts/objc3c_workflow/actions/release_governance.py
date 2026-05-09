@@ -5,6 +5,7 @@ from __future__ import annotations
 import sys
 
 from ..commands import run, workflow_command
+from ..composite_validation import run_composite_validation
 from ..environment import ROOT
 from .schema_surfaces import (
     DISTRIBUTION_CREDIBILITY_SCHEMA_SURFACE_PY,
@@ -107,8 +108,6 @@ def action_publish_public_conformance_report(_: list[str]) -> int:
 
 
 def action_validate_public_conformance_reporting(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-public-conformance-reporting",
         [
@@ -153,8 +152,6 @@ def action_publish_release_provenance(_: list[str]) -> int:
 
 
 def action_validate_release_foundation(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-release-foundation",
         [
@@ -194,8 +191,6 @@ def action_build_platform_support_matrix(_: list[str]) -> int:
 
 
 def action_validate_packaging_channels(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-packaging-channels",
         [
@@ -238,8 +233,6 @@ def action_publish_release_operations(_: list[str]) -> int:
 
 
 def action_validate_release_operations(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     rc = run_composite_validation(
         "validate-release-operations",
         [
@@ -281,8 +274,6 @@ def action_publish_distribution_credibility(_: list[str]) -> int:
 
 
 def action_validate_distribution_credibility(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-distribution-credibility",
         [
@@ -324,8 +315,6 @@ def action_publish_security_advisories(_: list[str]) -> int:
 
 
 def action_validate_security_hardening(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-security-hardening",
         [

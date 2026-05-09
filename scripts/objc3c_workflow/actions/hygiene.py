@@ -6,6 +6,7 @@ import sys
 from collections.abc import Sequence
 
 from ..commands import run
+from ..composite_validation import run_composite_validation
 from ..environment import PWSH, ROOT
 from .native_build import BUILD_PS1
 
@@ -19,22 +20,13 @@ TASK_HYGIENE_PY = ROOT / "scripts" / "ci" / "run_task_hygiene_gate.py"
 
 
 def _run_steps(actions: Sequence[str]) -> int:
-    from scripts.objc3c_workflow.runner import execute_registered_action
+    from scripts.objc3c_workflow.action_dispatch import execute_registered_action
 
     for action in actions:
         rc = execute_registered_action(action, [])
         if rc != 0:
             return rc
     return 0
-
-
-def _run_composite_validation(
-    action: str,
-    steps: list[tuple[str, Sequence[str]]],
-) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
-    return run_composite_validation(action, steps)
 
 
 def action_check_dependency_boundaries(_: list[str]) -> int:
@@ -62,7 +54,7 @@ def action_check_repo_superclean_surface(_: list[str]) -> int:
 
 
 def action_validate_repo_superclean(_: list[str]) -> int:
-    return _run_composite_validation(
+    return run_composite_validation(
         "validate-repo-superclean",
         [
             (

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 
+from ..composite_validation import run_composite_validation
 from ..commands import run
 from ..environment import ROOT
 from ..registry import ACTION_SPECS
@@ -47,8 +48,6 @@ def action_test_stress_crash_triage(rest: list[str]) -> int:
 
 
 def action_validate_stress(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-stress",
         [

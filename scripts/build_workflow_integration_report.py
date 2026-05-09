@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLAN_DIR = ROOT / 'tmp' / 'planning' / 'workflow_simplification'
 REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm314' / 'workflow-integration'
 RUNNER_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
+DISPATCH_PATH = ROOT / 'scripts' / 'objc3c_workflow' / 'action_dispatch.py'
 CONTRACT_BUILDER = ROOT / 'scripts' / 'build_objc3c_public_command_contract.py'
 DEFAULT_CONTRACT_PATH = ROOT / 'tmp' / 'artifacts' / 'public-command-surface' / 'objc3c-public-command-contract.json'
 MAINTAINER_RUNBOOK_PATH = ROOT / 'docs' / 'runbooks' / 'objc3c_maintainer_workflows.md'
@@ -25,7 +26,7 @@ REPORT_MD_PATH = REPORT_DIR / 'workflow_integration_report.md'
 
 def load_runner() -> Any:
     return load_public_workflow_runner(
-        runner_path=RUNNER_PATH,
+        runner_path=DISPATCH_PATH,
         module_name='objc3c_workflow_runner_m314_d001',
     )
 

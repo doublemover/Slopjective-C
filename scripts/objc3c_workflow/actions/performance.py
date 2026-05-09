@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 
+from ..composite_validation import run_composite_validation
 from ..commands import pwsh_file, run
 from ..environment import ROOT
 
@@ -111,8 +112,6 @@ def action_publish_performance_report(_: list[str]) -> int:
 
 
 def action_validate_performance_governance(_: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
     return run_composite_validation(
         "validate-performance-governance",
         [

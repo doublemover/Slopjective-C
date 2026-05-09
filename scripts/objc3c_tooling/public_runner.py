@@ -1,4 +1,4 @@
-"""Helpers for loading the canonical objc3c workflow runner."""
+"""Helpers for loading the canonical objc3c workflow public surface."""
 
 from __future__ import annotations
 
@@ -9,10 +9,12 @@ from typing import Any
 from objc3c_tooling.paths import ROOT
 
 WORKFLOW_MODULE = "scripts.objc3c_workflow"
-WORKFLOW_RUNNER_MODULE = "scripts.objc3c_workflow.runner"
-DEFAULT_RUNNER_PATH = ROOT / "scripts" / "objc3c_workflow" / "runner.py"
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+WORKFLOW_DISPATCH_MODULE = "scripts.objc3c_workflow.action_dispatch"
+DEFAULT_DISPATCH_PATH = ROOT / "scripts" / "objc3c_workflow" / "action_dispatch.py"
+SCRIPT_ROOT = ROOT / "scripts"
+for import_root in (ROOT, SCRIPT_ROOT):
+    if str(import_root) not in sys.path:
+        sys.path.insert(0, str(import_root))
 
 
 def public_workflow_command(*args: str) -> list[str]:
@@ -21,13 +23,13 @@ def public_workflow_command(*args: str) -> list[str]:
 
 def load_public_workflow_runner(
     *,
-    runner_path: Path = DEFAULT_RUNNER_PATH,
-    module_name: str = WORKFLOW_RUNNER_MODULE,
+    runner_path: Path = DEFAULT_DISPATCH_PATH,
+    module_name: str = WORKFLOW_DISPATCH_MODULE,
 ) -> Any:
-    if runner_path == DEFAULT_RUNNER_PATH and module_name == WORKFLOW_RUNNER_MODULE:
-        from scripts.objc3c_workflow import runner
+    if runner_path == DEFAULT_DISPATCH_PATH and module_name == WORKFLOW_DISPATCH_MODULE:
+        from scripts.objc3c_workflow import action_dispatch
 
-        return runner
+        return action_dispatch
 
     import importlib.util
 

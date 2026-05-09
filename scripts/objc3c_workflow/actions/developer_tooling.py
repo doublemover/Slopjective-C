@@ -51,7 +51,7 @@ SHOWCASE_TUTORIAL_WALKTHROUGH_JSON = ROOT / "showcase" / "tutorial_walkthrough.j
 
 
 def _execute_registered_action(action: str, rest: list[str]) -> int:
-    from scripts.objc3c_workflow.runner import execute_registered_action
+    from scripts.objc3c_workflow.action_dispatch import execute_registered_action
 
     return execute_registered_action(action, rest)
 

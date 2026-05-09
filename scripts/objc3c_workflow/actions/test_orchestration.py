@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 import sys
-from collections.abc import Sequence
 
 from ..commands import pwsh_file, run, workflow_command
+from ..composite_validation import run_composite_validation
 from ..environment import PWSH, ROOT
 from .application_surfaces import (
     CONFORMANCE_CORPUS_INTEGRATION_PY,
@@ -31,21 +31,12 @@ NEGATIVE_EXPECTATIONS_PS1 = ROOT / "scripts" / "check_objc3c_negative_fixture_ex
 BEHAVIOR_MATRIX_PY = ROOT / "scripts" / "check_objc3c_behavior_matrix.py"
 
 
-def _run_composite_validation(
-    action: str,
-    steps: list[tuple[str, Sequence[str]]],
-) -> int:
-    from scripts.objc3c_workflow.runner import run_composite_validation
-
-    return run_composite_validation(action, steps)
-
-
 def action_test_behavior_matrix(_: list[str]) -> int:
     return run([sys.executable, str(BEHAVIOR_MATRIX_PY)])
 
 
 def action_test_smoke(_: list[str]) -> int:
-    return _run_composite_validation(
+    return run_composite_validation(
         "test-smoke",
         [
             ("test-behavior-matrix", [sys.executable, str(BEHAVIOR_MATRIX_PY)]),
@@ -71,7 +62,7 @@ def action_test_smoke(_: list[str]) -> int:
 
 
 def action_test_ci(_: list[str]) -> int:
-    return _run_composite_validation(
+    return run_composite_validation(
         "test-ci",
         [
             ("task-hygiene", [sys.executable, str(TASK_HYGIENE_PY)]),
@@ -155,7 +146,7 @@ def action_test_negative_expectations(rest: list[str]) -> int:
 
 
 def action_test_full(_: list[str]) -> int:
-    return _run_composite_validation(
+    return run_composite_validation(
         "test-full",
         [
             ("test-behavior-matrix", [sys.executable, str(BEHAVIOR_MATRIX_PY)]),
@@ -198,7 +189,7 @@ def action_test_full(_: list[str]) -> int:
 
 
 def action_test_nightly(_: list[str]) -> int:
-    return _run_composite_validation(
+    return run_composite_validation(
         "test-nightly",
         [
             (

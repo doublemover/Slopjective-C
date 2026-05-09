@@ -9,7 +9,11 @@ from .environment import WORKFLOW_COMMAND_TEXT
 from .npm_surface import describe_package_script_payload
 from .registry import ACTION_SPECS
 from .reports import emit_json
-from .runner import describe_action_payload, execute_registered_action, list_actions_payload
+from .action_dispatch import (
+    describe_action_payload,
+    execute_registered_action,
+    list_actions_payload,
+)
 
 
 def main(argv: Sequence[str] | None = None) -> int:
