@@ -1,6 +1,14 @@
 {
   "contract_id": "objc3c.frontend.c_api.runner.contract.v1",
   "surface_kind": "frontend-public-c-api-runner-fixture-contract",
+  "owner_contract": {
+    "runner_owner": "frontend-c-api-runner",
+    "helper_owner": "frontend-c-api-helper-contract",
+    "result_owner": "frontend-c-api-runner-result",
+    "artifact_owner": "frontend-c-api-runner-artifact",
+    "status_owner": "frontend-c-api-runner-status",
+    "no_fallback_or_report_only_claims": true
+  },
   "runner": "artifacts/bin/objc3c-frontend-c-api-runner.exe",
   "source_glob": "native/objc3c/src/tools/objc3c_frontend_c_api_runner*",
   "summary_mode": "objc3c-frontend-c-api-runner-v1",

@@ -76,6 +76,11 @@ class RefreshCompilerDispatchSnapshotTests(unittest.TestCase):
             payload["source"]["issues_json"] = generate_compiler_dispatch_plan.display_path(
                 issues_path
             )
+            refresh_compiler_dispatch_snapshot.attach_snapshot_refresh_contract(
+                payload,
+                output_json_path=output_json,
+                output_md_path=output_md,
+            )
             expected_json = generate_compiler_dispatch_plan.render_json(payload)
             expected_md = generate_compiler_dispatch_plan.render_markdown(payload)
 
@@ -85,6 +90,10 @@ class RefreshCompilerDispatchSnapshotTests(unittest.TestCase):
             self.assertEqual(json_content, expected_json)
             self.assertEqual(md_content, expected_md)
             self.assertEqual(json.loads(json_content)["milestone"]["number"], 87)
+            self.assertEqual(
+                json.loads(json_content)["snapshot_refresh_contract"]["refresh_owner"],
+                refresh_compiler_dispatch_snapshot.SNAPSHOT_REFRESH_OWNER,
+            )
             self.assertNotIn("\r", json_content)
             self.assertNotIn("\r", md_content)
 

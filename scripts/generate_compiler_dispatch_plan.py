@@ -17,6 +17,24 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_ISSUES_JSON = ROOT / "tmp" / "gh_open_issues_pages.json"
 LANE_ORDER: tuple[str, ...] = ("A", "B", "C", "D", "E")
 TASK_ID_RE = re.compile(r"\[M(?P<milestone>\d+)-(?P<lane>[A-E])(?P<seq>\d{3})\]")
+COMPILER_DISPATCH_CONTRACT_ID = "objc3c.compiler.dispatch.plan.v1"
+COMPILER_DISPATCH_FIXTURE_CONTRACT_ID = (
+    "objc3c.compiler.dispatch.fixture.owner_contract.v1"
+)
+COMPILER_DISPATCH_OWNER = "compiler-dispatch-plan"
+COMPILER_DISPATCH_SNAPSHOT_OWNER = "compiler-dispatch-snapshot"
+COMPILER_DISPATCH_RESULT_OWNER = "compiler-dispatch-result"
+COMPILER_DISPATCH_ARTIFACT_OWNER = "compiler-dispatch-artifact"
+COMPILER_DISPATCH_STATUS_OWNER = "compiler-dispatch-status"
+OWNER_CONTRACT_FIELDS: tuple[str, ...] = (
+    "contract_id",
+    "dispatch_owner",
+    "snapshot_owner",
+    "result_owner",
+    "artifact_owner",
+    "status_owner",
+    "no_fallback_or_report_only_claims",
+)
 
 
 @dataclass(frozen=True)
@@ -42,12 +60,50 @@ def normalize_path(path: Path) -> Path:
     return ROOT / path
 
 
-
 def normalize_space(value: str) -> str:
     return " ".join(value.strip().split())
 
 
+def dispatch_owner_contract() -> dict[str, Any]:
+    return {
+        "contract_id": COMPILER_DISPATCH_FIXTURE_CONTRACT_ID,
+        "dispatch_owner": COMPILER_DISPATCH_OWNER,
+        "snapshot_owner": COMPILER_DISPATCH_SNAPSHOT_OWNER,
+        "result_owner": COMPILER_DISPATCH_RESULT_OWNER,
+        "artifact_owner": COMPILER_DISPATCH_ARTIFACT_OWNER,
+        "status_owner": COMPILER_DISPATCH_STATUS_OWNER,
+        "no_fallback_or_report_only_claims": True,
+    }
+
+
+def validate_fixture_owner_contract(payload: Any) -> None:
+    if not isinstance(payload, dict):
+        return
+    contract = payload.get("fixture_contract")
+    if contract is None:
+        return
+    if not isinstance(contract, dict):
+        raise ValueError("fixture_contract must be an object when present")
+
+    missing = [field for field in OWNER_CONTRACT_FIELDS if field not in contract]
+    if missing:
+        raise ValueError("fixture_contract missing owner fields: " + ", ".join(missing))
+
+    expected = dispatch_owner_contract()
+    for field in OWNER_CONTRACT_FIELDS:
+        if contract.get(field) != expected[field]:
+            raise ValueError(
+                f"fixture_contract field {field} drifted from dispatch owner"
+            )
+
+
 def flatten_json_pages(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, dict):
+        pages = payload.get("pages")
+        if pages is None:
+            raise ValueError("issues JSON object must include a pages array")
+        return flatten_json_pages(pages)
+
     if isinstance(payload, list):
         flattened: list[dict[str, Any]] = []
         if payload and all(isinstance(item, list) for item in payload):
@@ -88,6 +144,8 @@ def parse_issue_rows(path: Path) -> list[IssueRow]:
         raise ValueError(f"unable to read issues JSON file {display_path(path)}: {exc}") from exc
     except json.JSONDecodeError as exc:
         raise ValueError(f"invalid JSON in {display_path(path)}: {exc}") from exc
+
+    validate_fixture_owner_contract(raw_payload)
 
     rows: list[IssueRow] = []
     for raw in flatten_json_pages(raw_payload):
@@ -193,6 +251,8 @@ def build_payload(rows: Sequence[IssueRow], *, milestone_number: int, top_n: int
         if lane_summary["open_issue_count"] > 0
     ]
     return {
+        "contract_id": COMPILER_DISPATCH_CONTRACT_ID,
+        "owner_contract": dispatch_owner_contract(),
         "source": {
             "issues_json": display_path(DEFAULT_ISSUES_JSON),
         },
@@ -219,6 +279,18 @@ def render_markdown(payload: dict[str, Any]) -> str:
 
     lines: list[str] = [
         "# Compiler Dispatch Plan",
+        "",
+        "## Hard-Cutover Owners",
+        "",
+        f"- Dispatch owner: `{payload['owner_contract']['dispatch_owner']}`",
+        f"- Snapshot owner: `{payload['owner_contract']['snapshot_owner']}`",
+        f"- Result owner: `{payload['owner_contract']['result_owner']}`",
+        f"- Artifact owner: `{payload['owner_contract']['artifact_owner']}`",
+        f"- Status owner: `{payload['owner_contract']['status_owner']}`",
+        (
+            "- Retired fallback/report-only claims disallowed: "
+            f"**{str(payload['owner_contract']['no_fallback_or_report_only_claims']).lower()}**"
+        ),
         "",
         "## Milestone",
         "",

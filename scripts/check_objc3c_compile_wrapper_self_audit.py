@@ -26,6 +26,23 @@ REPORT_ROOT = ROOT / "tmp" / "reports" / "objc3c-compile-wrapper-self-audit"
 RUN_ROOT = ROOT / "tmp" / "artifacts" / "objc3c-compile-wrapper-self-audit"
 TRUTHFULNESS_CONTRACT_ID = "objc3c.native.compile.output.truthfulness.v1"
 PROVENANCE_CONTRACT_ID = "objc3c.native.compile.output.provenance.v1"
+SELF_AUDIT_CONTRACT_ID = "objc3c.native.compile.wrapper.self_audit.v1"
+WRAPPER_TRUTH_OWNER = "objc3c-native-compile-wrapper-truth"
+WRAPPER_RESULT_OWNER = "objc3c-native-compile-wrapper-result"
+WRAPPER_ARTIFACT_OWNER = "objc3c-native-compile-wrapper-artifact"
+WRAPPER_STATUS_OWNER = "objc3c-native-compile-wrapper-status"
+
+
+def wrapper_truth_owner_contract() -> dict[str, Any]:
+    return {
+        "wrapper_truth_owner": WRAPPER_TRUTH_OWNER,
+        "result_owner": WRAPPER_RESULT_OWNER,
+        "artifact_owner": WRAPPER_ARTIFACT_OWNER,
+        "status_owner": WRAPPER_STATUS_OWNER,
+        "truthfulness_contract_id": TRUTHFULNESS_CONTRACT_ID,
+        "provenance_contract_id": PROVENANCE_CONTRACT_ID,
+        "no_fallback_or_report_only_claims": True,
+    }
 
 
 def repo_display_path(path: Path) -> str:
@@ -121,6 +138,7 @@ def validate_compile_output(out_dir: Path) -> dict[str, Any]:
         "provenance artifact count does not match emitted_artifacts",
     )
     return {
+        "owner_contract": wrapper_truth_owner_contract(),
         "provenance_contract_id": provenance.get("contract_id"),
         "truthfulness_contract_id": truthfulness.get("contract_id"),
         "artifact_count": provenance.get("artifact_count"),
@@ -186,7 +204,8 @@ def main() -> int:
     elapsed = round(perf_counter() - started_at, 6)
     payload: dict[str, Any] = {
         "status": status,
-        "contract_id": "objc3c.native.compile.wrapper.self_audit.v1",
+        "contract_id": SELF_AUDIT_CONTRACT_ID,
+        "owner_contract": wrapper_truth_owner_contract(),
         "run_id": run_id,
         "elapsed_seconds": elapsed,
         "wrapper": repo_display_path(WRAPPER),
@@ -198,7 +217,7 @@ def main() -> int:
         "audit_model": (
             "one wrapper compile validates invariant compile-output provenance, "
             "truthfulness, registration-manifest digest binding, and required "
-            "artifact publication; runtime acceptance direct-native compiles can "
+            "artifact publication; downstream direct-native compiles can "
             "then avoid relaunching the PowerShell wrapper per fixture"
         ),
     }

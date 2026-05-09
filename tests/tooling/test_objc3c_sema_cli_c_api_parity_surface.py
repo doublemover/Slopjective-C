@@ -1,9 +1,11 @@
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 FRONTEND_ANCHOR = ROOT / "native" / "objc3c" / "src" / "libobjc3c_frontend" / "frontend_anchor.cpp"
 DIAG_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "io" / "objc3_diagnostics_artifacts.cpp"
 PIPELINE_ARTIFACTS = ROOT / "native" / "objc3c" / "src" / "artifacts" / "objc3_frontend_artifacts.cpp"
+FIXTURE_ROOT = ROOT / "tests" / "tooling" / "fixtures" / "native"
 
 
 def _read(path: Path) -> str:
@@ -78,3 +80,33 @@ def test_manifest_emits_sema_parity_contract_fields() -> None:
     assert "parity_ready" in artifacts
     assert "type_metadata_global_entries" in artifacts
     assert "type_metadata_function_entries" in artifacts
+
+
+def test_frontend_c_api_contract_fixtures_pin_owner_truth_surfaces() -> None:
+    runner_contract = json.loads(
+        (FIXTURE_ROOT / "frontend_c_api_runner_contract.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    helper_contract = json.loads(
+        (FIXTURE_ROOT / "frontend_c_api_helper_contract.json").read_text(
+            encoding="utf-8"
+        )
+    )
+
+    assert runner_contract["owner_contract"] == {
+        "runner_owner": "frontend-c-api-runner",
+        "helper_owner": "frontend-c-api-helper-contract",
+        "result_owner": "frontend-c-api-runner-result",
+        "artifact_owner": "frontend-c-api-runner-artifact",
+        "status_owner": "frontend-c-api-runner-status",
+        "no_fallback_or_report_only_claims": True,
+    }
+    assert helper_contract["owner_contract"] == {
+        "helper_owner": "frontend-c-api-helper-contract",
+        "runner_owner": "frontend-c-api-runner",
+        "result_owner": "frontend-c-api-helper-result-accessor",
+        "artifact_owner": "frontend-c-api-helper-artifact-accessor",
+        "status_owner": "frontend-c-api-helper-stage-status",
+        "no_fallback_or_report_only_claims": True,
+    }

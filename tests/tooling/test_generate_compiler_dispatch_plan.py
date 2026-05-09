@@ -19,6 +19,14 @@ SPEC.loader.exec_module(generate_compiler_dispatch_plan)
 FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures" / "compiler_dispatch"
 
 
+def _fixture_contract(path: Path) -> dict[str, object]:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert isinstance(payload, dict)
+    contract = payload["fixture_contract"]
+    assert isinstance(contract, dict)
+    return contract
+
+
 class GenerateCompilerDispatchPlanTests(unittest.TestCase):
     def run_main(self, argv: list[str]) -> tuple[int, str, str]:
         stdout = io.StringIO()
@@ -59,6 +67,14 @@ class GenerateCompilerDispatchPlanTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(stderr, "")
         payload = json.loads(output)
+        self.assertEqual(
+            payload["contract_id"],
+            generate_compiler_dispatch_plan.COMPILER_DISPATCH_CONTRACT_ID,
+        )
+        self.assertEqual(
+            payload["owner_contract"],
+            generate_compiler_dispatch_plan.dispatch_owner_contract(),
+        )
         self.assertEqual(payload["milestone"]["number"], 87)
         self.assertEqual(payload["milestone"]["open_issue_count"], 2)
         self.assertEqual(payload["parallelization"]["parallel_lanes"], ["A"])
@@ -121,6 +137,14 @@ class GenerateCompilerDispatchPlanTests(unittest.TestCase):
         lane_d = next(row for row in payload["lanes"] if row["lane"] == "D")
         self.assertEqual(lane_d["open_issue_count"], 1)
         self.assertEqual(lane_d["next_tasks"][0]["task_id"], "M02-D001")
+
+    def test_compiler_dispatch_fixtures_declare_hard_cutover_owner_contract(self) -> None:
+        for fixture_name in ("issues_pages.json", "issues_pages_m02_full_lanes.json"):
+            with self.subTest(fixture_name=fixture_name):
+                self.assertEqual(
+                    _fixture_contract(FIXTURES_DIR / fixture_name),
+                    generate_compiler_dispatch_plan.dispatch_owner_contract(),
+                )
 
 
 if __name__ == "__main__":
