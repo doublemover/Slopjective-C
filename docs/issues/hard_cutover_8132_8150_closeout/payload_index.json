@@ -1,0 +1,175 @@
+{
+  "schema_version": 1,
+  "payload_document": "docs/issues/hard_cutover_8132_8150_closeout/payloads.md",
+  "evidence_documents": [
+    "docs/issues/hard_cutover_8132_8150_evidence.json",
+    "docs/issues/hard_cutover_8132_8150_evidence.md",
+    "tests/conformance/hard_cutover_issue_index.json"
+  ],
+  "constraints": {
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed"
+  },
+  "retired_surface_policy": "old-mode, shim, fallback, compatibility, and migration-lane support must be rejection, strict-error, or absent evidence",
+  "issue_payloads": [
+    {
+      "issue": "#8132",
+      "anchor": "#8132",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "7e743549d"
+      ]
+    },
+    {
+      "issue": "#8133",
+      "anchor": "#8133",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "6a9b0b23f"
+      ]
+    },
+    {
+      "issue": "#8134",
+      "anchor": "#8134",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "7e743549d",
+        "e435cdea9",
+        "e04c6cf4a",
+        "4b5ca540d",
+        "94c0f0709"
+      ]
+    },
+    {
+      "issue": "#8135",
+      "anchor": "#8135",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "8dead58b3"
+      ]
+    },
+    {
+      "issue": "#8136",
+      "anchor": "#8136",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "68f793396",
+        "dae4e84b4"
+      ]
+    },
+    {
+      "issue": "#8137",
+      "anchor": "#8137",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "1da2a515b",
+        "062da3dbc",
+        "68f793396",
+        "3c335bfae"
+      ]
+    },
+    {
+      "issue": "#8138",
+      "anchor": "#8138",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "ffb2a715d"
+      ]
+    },
+    {
+      "issue": "#8139",
+      "anchor": "#8139",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": []
+    },
+    {
+      "issue": "#8140",
+      "anchor": "#8140",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": []
+    },
+    {
+      "issue": "#8141",
+      "anchor": "#8141",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "f0ba25851"
+      ]
+    },
+    {
+      "issue": "#8142",
+      "anchor": "#8142",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": []
+    },
+    {
+      "issue": "#8143",
+      "anchor": "#8143",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "6a9b0b23f"
+      ]
+    },
+    {
+      "issue": "#8144",
+      "anchor": "#8144",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "645e9c25f",
+        "239871c25"
+      ]
+    },
+    {
+      "issue": "#8145",
+      "anchor": "#8145",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "8dead58b3",
+        "f0ba25851"
+      ]
+    },
+    {
+      "issue": "#8146",
+      "anchor": "#8146",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "7e743549d"
+      ]
+    },
+    {
+      "issue": "#8147",
+      "anchor": "#8147",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "68f793396",
+        "3c335bfae",
+        "dae4e84b4"
+      ]
+    },
+    {
+      "issue": "#8148",
+      "anchor": "#8148",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": [
+        "ffb2a715d",
+        "db4fe91cf"
+      ]
+    },
+    {
+      "issue": "#8149",
+      "anchor": "#8149",
+      "status_for_tracker": "evidence-ready",
+      "primary_refresh_commits": []
+    },
+    {
+      "issue": "#8150",
+      "anchor": "#8150",
+      "status_for_tracker": "local-evidence-ready-not-remotely-closed",
+      "primary_refresh_commits": [
+        "645e9c25f",
+        "239871c25"
+      ]
+    }
+  ]
+}

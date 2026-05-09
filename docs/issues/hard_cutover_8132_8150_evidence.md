@@ -37,6 +37,16 @@ pass:
 - `ffb2a715d` adds config truth-table evidence for `#8138` and `#8148`.
 - `e435cdea9` and `e04c6cf4a` add parser contract/shard evidence for `#8134`.
 - `8dead58b3` adds diagnostic catalog table evidence for `#8135` and `#8145`.
+- `239871c25` adds tracker-ready closeout payloads for `#8132`-`#8150`.
+- `4b5ca540d` and `94c0f0709` add parser expression and statement node
+  owner evidence for `#8134`.
+- `dae4e84b4` adds lower control-flow contract evidence for `#8136` and
+  `#8147`.
+- `6a9b0b23f` adds class graph rebuild owner evidence for `#8133` and
+  `#8143`.
+- `f0ba25851` adds public API ownership contract evidence for `#8141` and
+  `#8145`.
+- `db4fe91cf` adds JSON schema support owner evidence for `#8148`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |
@@ -65,3 +75,5 @@ Primary local commit evidence is enumerated per issue in
 `tests/conformance/hard_cutover_issue_index.json` for test/fixture ownership.
 Per-issue tracker-ready closeout notes live in
 `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`.
+The machine-readable closeout lookup is
+`docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`.

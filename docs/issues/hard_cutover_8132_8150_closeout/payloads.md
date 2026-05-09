@@ -4,6 +4,13 @@ These are local, tracker-ready notes for `#8132`-`#8150`. They do not assert
 remote closure. Validation, `gh`, push, and issue edits were intentionally not
 run while preparing them.
 
+Post-payload refresh commits are indexed in
+`docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`. The refresh
+set folds in parser expression/statement node owners, lower control-flow
+contracts, runtime class graph rebuild ownership, public API ownership contract
+clarifications, and JSON schema support owners without changing the no-validation
+or no-GitHub status of these payloads.
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root

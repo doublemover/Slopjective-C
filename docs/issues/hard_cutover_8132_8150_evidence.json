@@ -97,6 +97,59 @@
         "#8137",
         "#8147"
       ]
+    },
+    {
+      "ref": "239871c25",
+      "summary": "HC refresh issue closeout evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ]
+    },
+    {
+      "ref": "4b5ca540d",
+      "summary": "HC split parser expression node owners",
+      "issues": [
+        "#8134"
+      ]
+    },
+    {
+      "ref": "94c0f0709",
+      "summary": "HC split parser statement node owners",
+      "issues": [
+        "#8134"
+      ]
+    },
+    {
+      "ref": "dae4e84b4",
+      "summary": "HC split lower control flow contract owner",
+      "issues": [
+        "#8136",
+        "#8147"
+      ]
+    },
+    {
+      "ref": "6a9b0b23f",
+      "summary": "HC move class graph rebuild owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ]
+    },
+    {
+      "ref": "f0ba25851",
+      "summary": "HC clarify public API ownership contracts",
+      "issues": [
+        "#8141",
+        "#8145"
+      ]
+    },
+    {
+      "ref": "db4fe91cf",
+      "summary": "HC split JSON schema support owners",
+      "issues": [
+        "#8148"
+      ]
     }
   ],
   "hard_cutover_disposition": {

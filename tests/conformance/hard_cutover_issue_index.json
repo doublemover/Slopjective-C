@@ -123,6 +123,92 @@
         "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.cpp",
         "native/objc3c/src/ir/objc3_ir_runtime_helper_calls.h"
       ]
+    },
+    {
+      "ref": "239871c25",
+      "summary": "HC refresh issue closeout evidence",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "docs/issues/hard_cutover_8132_8150_closeout/payloads.md",
+        "docs/issues/hard_cutover_8132_8150_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md",
+        "tests/conformance/hard_cutover_issue_index.json"
+      ]
+    },
+    {
+      "ref": "4b5ca540d",
+      "summary": "HC split parser expression node owners",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_literal_expression_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_unary_expression_nodes.cpp"
+      ]
+    },
+    {
+      "ref": "94c0f0709",
+      "summary": "HC split parser statement node owners",
+      "issues": [
+        "#8134"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/parse/objc3_parser_assignment_statement_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_expression_statement_nodes.cpp",
+        "native/objc3c/src/parse/objc3_parser_loop_control_statement_nodes.cpp"
+      ]
+    },
+    {
+      "ref": "dae4e84b4",
+      "summary": "HC split lower control flow contract owner",
+      "issues": [
+        "#8136",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/lower/contracts/control_flow_lowering_contracts.cpp"
+      ]
+    },
+    {
+      "ref": "6a9b0b23f",
+      "summary": "HC move class graph rebuild owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/classes/class_graph.cpp",
+        "native/objc3c/src/runtime/classes/class_graph.h"
+      ]
+    },
+    {
+      "ref": "f0ba25851",
+      "summary": "HC clarify public API ownership contracts",
+      "issues": [
+        "#8141",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "docs/compiler/public_c_api.md",
+        "docs/objc3c-native/src/library-api.md",
+        "native/objc3c/src/runtime/public/objc3_runtime_api.h",
+        "native/objc3c/src/runtime/public/objc3_runtime_result.h"
+      ]
+    },
+    {
+      "ref": "db4fe91cf",
+      "summary": "HC split JSON schema support owners",
+      "issues": [
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/io/json/json_equivalence.cpp",
+        "native/objc3c/src/io/json/json_pointer.cpp",
+        "native/objc3c/src/io/json/json_schema_type.cpp"
+      ]
     }
   ],
   "global_policy": {
