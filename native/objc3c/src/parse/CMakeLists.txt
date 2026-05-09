@@ -22,6 +22,7 @@ add_library(objc3c_parse STATIC
   objc3_parser_expression_nodes.cpp
   objc3_parser_expression_statement_nodes.cpp
   objc3_parser_expression_surface.cpp
+  objc3_parser_inline_asm_intrinsic_profiles.cpp
   objc3_parser_literal_expression_nodes.cpp
   objc3_parser_loop_control_statement_nodes.cpp
   objc3_parser_ns_error_bridging_profiles.cpp
