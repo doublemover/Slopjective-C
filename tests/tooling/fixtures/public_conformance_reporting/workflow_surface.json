@@ -13,6 +13,31 @@
     "validate-public-conformance-reporting-integration",
     "validate-public-conformance-reporting-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "public-conformance-source",
+    "gate_owner": "public-conformance-gate",
+    "blocker_owner": "public-conformance-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-public-conformance-reporting-surface",
+      "check-public-conformance-schema-surface",
+      "build-public-conformance-scorecard",
+      "publish-public-conformance-report",
+      "validate-public-conformance-reporting",
+      "validate-public-conformance-reporting-integration",
+      "validate-public-conformance-reporting-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-conformance-corpus",
+      "validate-external-validation"
+    ],
+    "workflow_child_actions": [
+      "check-public-conformance-reporting-surface",
+      "check-public-conformance-schema-surface",
+      "build-public-conformance-scorecard",
+      "publish-public-conformance-report"
+    ]
+  },
   "report_paths": [
     "tmp/reports/public-conformance/source-surface-summary.json",
     "tmp/reports/public-conformance/schema-surface-summary.json",

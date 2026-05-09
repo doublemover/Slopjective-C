@@ -20,6 +20,31 @@
     "validate-release-operations",
     "validate-release-operations-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "release-operations-source",
+    "gate_owner": "release-operations-gate",
+    "blocker_owner": "release-operations-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-release-operations-surface",
+      "check-release-operations-schema-surface",
+      "build-update-manifest",
+      "publish-release-operations",
+      "validate-release-operations",
+      "validate-release-operations-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-foundation",
+      "validate-packaging-channels"
+    ],
+    "workflow_child_actions": [
+      "validate-packaging-channels",
+      "check-release-operations-surface",
+      "check-release-operations-schema-surface",
+      "build-update-manifest",
+      "publish-release-operations"
+    ]
+  },
   "upstream_validate_actions": [
     "validate-release-foundation",
     "validate-packaging-channels"

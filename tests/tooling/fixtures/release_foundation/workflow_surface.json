@@ -9,6 +9,33 @@
     "build-release-manifest",
     "publish-release-provenance"
   ],
+  "owner_policy": {
+    "source_owner": "release-foundation-source",
+    "gate_owner": "release-foundation-gate",
+    "blocker_owner": "release-foundation-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-release-foundation-surface",
+      "check-release-foundation-schema-surface",
+      "build-release-manifest",
+      "publish-release-provenance",
+      "validate-release-foundation"
+    ],
+    "upstream_owner_actions": [
+      "validate-performance-governance",
+      "validate-runnable-release-candidate",
+      "check-release-evidence"
+    ],
+    "workflow_child_actions": [
+      "validate-performance-governance",
+      "validate-runnable-release-candidate",
+      "check-release-evidence",
+      "check-release-foundation-surface",
+      "check-release-foundation-schema-surface",
+      "build-release-manifest",
+      "publish-release-provenance"
+    ]
+  },
   "ordered_child_actions": [
     "validate-performance-governance",
     "validate-runnable-release-candidate",

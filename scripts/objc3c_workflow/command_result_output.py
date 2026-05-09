@@ -2,11 +2,9 @@
 
 from __future__ import annotations
 
-import sys
-
 from .command_result_model import WorkflowCommandResult
+from .command_result_policy import emit_command_result_message
 
 
 def emit_result_error(result: WorkflowCommandResult) -> None:
-    if result.message:
-        print(result.message, file=sys.stderr)
+    emit_command_result_message(result.message)

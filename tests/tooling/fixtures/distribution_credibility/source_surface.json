@@ -10,6 +10,20 @@
   "artifact_surface": "tests/tooling/fixtures/distribution_credibility/artifact_surface.json",
   "schema_surface": "tests/tooling/fixtures/distribution_credibility/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/distribution_credibility/workflow_surface.json",
+  "owner_policy": {
+    "source_owner": "distribution-credibility-source",
+    "gate_owner": "distribution-credibility-gate",
+    "blocker_owner": "distribution-credibility-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-distribution-credibility-surface",
+      "check-distribution-credibility-schema-surface",
+      "build-distribution-credibility-dashboard",
+      "publish-distribution-credibility",
+      "validate-distribution-credibility",
+      "validate-distribution-credibility-end-to-end"
+    ]
+  },
   "checked_in_sources": [
     "README.md",
     "docs/tutorials/getting_started.md",

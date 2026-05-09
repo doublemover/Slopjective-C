@@ -19,6 +19,21 @@
     "stability_policy_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
     "action_payload_fragments": "scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py"
   },
+  "owner_policy": {
+    "source_owner": "public-conformance-source",
+    "gate_owner": "public-conformance-gate",
+    "blocker_owner": "public-conformance-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-public-conformance-reporting-surface",
+      "check-public-conformance-schema-surface",
+      "build-public-conformance-scorecard",
+      "publish-public-conformance-report",
+      "validate-public-conformance-reporting",
+      "validate-public-conformance-reporting-integration",
+      "validate-public-conformance-reporting-end-to-end"
+    ]
+  },
   "checked_in_roots": [
     "tests/tooling/fixtures/public_conformance_reporting",
     "tests/tooling/fixtures/external_validation",

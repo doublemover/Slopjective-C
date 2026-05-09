@@ -14,6 +14,33 @@
     "validate-security-hardening",
     "validate-security-hardening-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "security-hardening-source",
+    "gate_owner": "security-hardening-gate",
+    "blocker_owner": "security-hardening-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-security-hardening-surface",
+      "check-security-hardening-schema-surface",
+      "build-security-posture",
+      "publish-security-advisories",
+      "validate-security-hardening",
+      "validate-security-hardening-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-operations",
+      "validate-distribution-credibility",
+      "validate-platform-hardening"
+    ],
+    "workflow_child_actions": [
+      "check-security-response-drill",
+      "check-security-runtime-hardening",
+      "check-security-hardening-surface",
+      "check-security-hardening-schema-surface",
+      "build-security-posture",
+      "publish-security-advisories"
+    ]
+  },
   "validation_child_actions": [
     "check-security-response-drill",
     "check-security-runtime-hardening",

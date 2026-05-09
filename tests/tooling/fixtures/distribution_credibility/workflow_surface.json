@@ -12,6 +12,32 @@
     "validate-distribution-credibility",
     "validate-distribution-credibility-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "distribution-credibility-source",
+    "gate_owner": "distribution-credibility-gate",
+    "blocker_owner": "distribution-credibility-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-distribution-credibility-surface",
+      "check-distribution-credibility-schema-surface",
+      "build-distribution-credibility-dashboard",
+      "publish-distribution-credibility",
+      "validate-distribution-credibility",
+      "validate-distribution-credibility-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-foundation",
+      "validate-packaging-channels",
+      "validate-release-operations"
+    ],
+    "workflow_child_actions": [
+      "validate-release-operations",
+      "check-distribution-credibility-surface",
+      "check-distribution-credibility-schema-surface",
+      "build-distribution-credibility-dashboard",
+      "publish-distribution-credibility"
+    ]
+  },
   "integrated_required_steps": [
     "validate-release-operations",
     "check-distribution-credibility-surface",

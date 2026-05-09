@@ -12,9 +12,28 @@
     "check-packaging-channels-schema-surface",
     "package-runnable-toolchain",
     "build-package-channels",
+    "build-platform-support-matrix",
     "validate-packaging-channels",
-    "validate-packaging-channels-end-to-end"
+    "validate-packaging-channels-end-to-end",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "packaging-channels-source",
+    "gate_owner": "packaging-channels-gate",
+    "blocker_owner": "packaging-channels-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ]
+  },
   "checked_in_sources": [
     "docs/runbooks/objc3c_packaging_channels.md",
     "docs/runbooks/objc3c_release_foundation.md"

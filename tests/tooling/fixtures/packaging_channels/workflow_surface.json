@@ -7,9 +7,38 @@
     "check-packaging-channels-surface",
     "check-packaging-channels-schema-surface",
     "build-package-channels",
+    "build-platform-support-matrix",
     "validate-packaging-channels",
-    "validate-packaging-channels-end-to-end"
+    "validate-packaging-channels-end-to-end",
+    "validate-platform-hardening",
+    "validate-platform-hardening-end-to-end"
   ],
+  "owner_policy": {
+    "source_owner": "packaging-channels-source",
+    "gate_owner": "packaging-channels-gate",
+    "blocker_owner": "packaging-channels-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix",
+      "validate-packaging-channels",
+      "validate-packaging-channels-end-to-end",
+      "validate-platform-hardening",
+      "validate-platform-hardening-end-to-end"
+    ],
+    "upstream_owner_actions": [
+      "validate-release-foundation"
+    ],
+    "workflow_child_actions": [
+      "validate-release-foundation",
+      "check-packaging-channels-surface",
+      "check-packaging-channels-schema-surface",
+      "build-package-channels",
+      "build-platform-support-matrix"
+    ]
+  },
   "upstream_validate_actions": [
     "validate-release-foundation"
   ],

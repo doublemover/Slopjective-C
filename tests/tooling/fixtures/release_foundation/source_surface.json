@@ -18,6 +18,19 @@
     "publish-release-provenance",
     "validate-release-foundation"
   ],
+  "owner_policy": {
+    "source_owner": "release-foundation-source",
+    "gate_owner": "release-foundation-gate",
+    "blocker_owner": "release-foundation-blockers",
+    "report_only_allowed": false,
+    "owned_actions": [
+      "check-release-foundation-surface",
+      "check-release-foundation-schema-surface",
+      "build-release-manifest",
+      "publish-release-provenance",
+      "validate-release-foundation"
+    ]
+  },
   "checked_in_sources": [
     "docs/runbooks/objc3c_release_foundation.md",
     "scripts/package_objc3c_runnable_toolchain.ps1",
