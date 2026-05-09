@@ -17,11 +17,11 @@ from scripts.objc3c_workflow.command_result import (
     rejected_extra_args,
     unknown_action,
 )
-from scripts.objc3c_workflow.registry import ACTION_SPECS
+from scripts.objc3c_workflow.registry_views import action_spec
 
 
 def resolve_registered_action(action: str, rest: Sequence[str]) -> WorkflowCommandResult:
-    spec = ACTION_SPECS.get(action)
+    spec = action_spec(action)
     handler = ACTION_HANDLERS.get(action)
     if spec is None or handler is None:
         return unknown_action(action)

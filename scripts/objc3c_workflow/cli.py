@@ -14,7 +14,8 @@ from .arguments import (
     parse_workflow_args,
 )
 from .npm_surface import describe_package_script_payload
-from .registry import ACTION_SPECS
+from .public_bridge import PACKAGE_BRIDGES
+from .registry_views import has_action
 from .reports import emit_json
 from .action_dispatch import (
     describe_action_payload,
@@ -33,12 +34,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     if isinstance(request, ListActionsRequest):
         return emit_json(list_actions_payload())
     if isinstance(request, DescribeActionRequest):
-        if request.action not in ACTION_SPECS:
+        if not has_action(request.action):
             print(f"unknown action: {request.action}", file=sys.stderr)
             return 2
         return emit_json(describe_action_payload(request.action))
     if isinstance(request, DescribePackageScriptRequest):
-        if request.package_script != "objc3c":
+        if request.package_script not in PACKAGE_BRIDGES:
             print(f"unknown package script: {request.package_script}", file=sys.stderr)
             return 2
         return emit_json(describe_package_script_payload(request.package_script))

@@ -199,13 +199,18 @@ ACTION_SPECS: dict[str, ActionSpec] = {
 
 
 def action_spec(action: str) -> ActionSpec | None:
-    return ACTION_SPECS.get(action)
+    from .registry_views import action_spec as view
+
+    return view(action)
 
 
 def action_names() -> list[str]:
-    return list(ACTION_SPECS)
+    from .registry_views import action_names as view
+
+    return view()
 
 
 def actions_by_category(category: str) -> list[str]:
-    prefix = f"{category}-"
-    return [action for action in ACTION_SPECS if action == category or action.startswith(prefix)]
+    from .registry_views import actions_by_category as view
+
+    return view(category)

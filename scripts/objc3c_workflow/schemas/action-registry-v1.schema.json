@@ -3,20 +3,52 @@
   "$id": "https://slopjective-c.local/schemas/action-registry-v1.schema.json",
   "title": "objc3c workflow action registry",
   "type": "object",
-  "required": ["mode", "runner_path", "action_count", "actions"],
+  "required": [
+    "mode",
+    "runner_path",
+    "action_count",
+    "public_action_count",
+    "package_bridge_count",
+    "package_bridges",
+    "single_package_bridge_only",
+    "actions"
+  ],
   "properties": {
     "mode": { "const": "objc3c-workflow-action-registry-v1" },
     "runner_path": { "type": "string" },
     "action_count": { "type": "integer", "minimum": 1 },
+    "public_action_count": { "type": "integer", "minimum": 1 },
+    "package_bridge_count": { "const": 1 },
+    "package_bridges": {
+      "type": "array",
+      "prefixItems": [{ "const": "objc3c" }],
+      "minItems": 1,
+      "maxItems": 1
+    },
+    "single_package_bridge_only": { "const": true },
     "actions": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["action", "summary", "backend", "pass_through_args"],
+        "required": [
+          "action",
+          "summary",
+          "backend",
+          "pass_through_args",
+          "package_bridge",
+          "public_invocation",
+          "public_entrypoint"
+        ],
         "properties": {
           "action": { "type": "string", "minLength": 1 },
           "summary": { "type": "string", "minLength": 1 },
           "backend": { "type": "string", "minLength": 1 },
+          "package_bridge": { "const": "objc3c" },
+          "public_invocation": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [A-Za-z0-9][A-Za-z0-9_-]*$"
+          },
+          "public_entrypoint": { "const": "single-npm-bridge" },
           "validation_tier": { "type": "string" },
           "guarantee_owner": { "type": "string" },
           "pass_through_args": { "type": "boolean" }

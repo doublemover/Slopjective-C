@@ -1,5 +1,6 @@
 from __future__ import annotations
 
-from .scanner import build_report, write_reports
+from .report_writer import write_reports
+from .scanner import build_report
 
 __all__ = ["build_report", "write_reports"]

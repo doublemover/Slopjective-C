@@ -3,13 +3,13 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from .scanner import (
+from .config import (
     DEFAULT_ALLOWLIST,
     DEFAULT_JSON_REPORT,
     DEFAULT_TEXT_REPORT,
-    build_report,
-    write_reports,
 )
+from .report_writer import write_reports
+from .scanner import build_report
 
 
 def parse_args() -> argparse.Namespace:

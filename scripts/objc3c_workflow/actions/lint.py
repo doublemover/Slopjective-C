@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from ..registry import actions_by_category
+from ..registry_views import actions_by_category
 
 CATEGORY = "lint"
 

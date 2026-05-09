@@ -5,16 +5,19 @@ from __future__ import annotations
 import shutil
 
 from .paths import ROOT, SCRIPT_ROOT
+from .public_bridge import (
+    WORKFLOW_MODULE,
+    WORKFLOW_PUBLIC_COMMAND_PREFIX,
+    WORKFLOW_RUNNER_MODE,
+    WORKFLOW_RUNNER_SURFACE,
+)
 
 
 PWSH = shutil.which("pwsh") or "pwsh"
 NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
 
-WORKFLOW_MODULE = "scripts.objc3c_workflow"
-WORKFLOW_PUBLIC_COMMAND = "npm run objc3c --"
+WORKFLOW_PUBLIC_COMMAND = WORKFLOW_PUBLIC_COMMAND_PREFIX
 WORKFLOW_COMMAND_TEXT = WORKFLOW_PUBLIC_COMMAND
-WORKFLOW_RUNNER_SURFACE = "package.json scripts.objc3c -> scripts.objc3c_workflow"
-WORKFLOW_RUNNER_MODE = "objc3c-workflow-action-registry-v1"
 
 MARKDOWN_GLOBS = [
     "README.md",
