@@ -1,26 +1,4 @@
 #pragma once
 
-#include "runtime/objc3_runtime_bootstrap_internal.h"
-
-namespace objc3c::runtime {
-
-struct RealizedClassNode;
-struct RealizedPropertyAccessor;
-struct RuntimeState;
-
-void ResetRuntimePropertyRegistryStateSnapshot(
-    objc3_runtime_property_registry_state_snapshot &snapshot);
-void PopulateRuntimePropertyRegistryStateSnapshotUnlocked(
-    const RuntimeState &state,
-    objc3_runtime_property_registry_state_snapshot &snapshot);
-
-void ResetRuntimePropertyEntrySnapshot(
-    objc3_runtime_property_entry_snapshot &snapshot);
-void PopulateRuntimePropertyEntrySnapshotUnlocked(
-    const RuntimeState &state,
-    const RealizedClassNode &resolved_node,
-    const RealizedPropertyAccessor &accessor,
-    bool inherited,
-    objc3_runtime_property_entry_snapshot &snapshot);
-
-}  // namespace objc3c::runtime
+#include "runtime/storage/property_entry_snapshot_fields.h"
+#include "runtime/storage/property_registry_snapshot_fields.h"

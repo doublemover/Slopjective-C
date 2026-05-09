@@ -98,8 +98,14 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/typed_dispatch_result.h
   errors/catch_filter.cpp
   errors/catch_filter.h
+  errors/error_bridge_kind.cpp
+  errors/error_bridge_kind.h
   errors/error_bridge.cpp
   errors/error_bridge.h
+  errors/error_bridge_operations.cpp
+  errors/error_bridge_operations.h
+  errors/error_bridge_state.cpp
+  errors/error_bridge_state.h
   images/image_descriptor.cpp
   images/image_descriptor.h
   images/multi_image_ordering.cpp
@@ -200,8 +206,11 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   storage/property_layout_rules.h
   storage/property_lookup.cpp
   storage/property_lookup.h
+  storage/property_entry_snapshot_fields.cpp
+  storage/property_entry_snapshot_fields.h
+  storage/property_registry_snapshot_fields.cpp
+  storage/property_registry_snapshot_fields.h
   storage/property_snapshot.cpp
-  storage/property_snapshot_fields.cpp
   storage/property_snapshot_fields.h
   storage/property_value_storage.cpp
   storage/property_value_storage.h
