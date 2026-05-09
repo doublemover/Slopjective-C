@@ -17,6 +17,7 @@
 #include "pipeline/readiness/objc3_parse_lowering_conformance_keys.h"
 #include "pipeline/readiness/objc3_parse_lowering_failure_reason_readiness.h"
 #include "pipeline/readiness/objc3_parse_lowering_parser_behavior_readiness.h"
+#include "pipeline/readiness/objc3_parse_lowering_recovery_determinism_readiness.h"
 #include "pipeline/readiness/objc3_typed_sema_lowering_readiness.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.h"
 #include "pipeline/readiness/objc3_toolchain_runtime_ga_operations_readiness_keys.h"
@@ -26,209 +27,9 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
     const Objc3FrontendOptions &options) {
   Objc3ParseLoweringReadinessSurface surface;
   BuildObjc3ParseLoweringParserBehaviorReadiness(surface, pipeline_result, options);
-  surface.parse_recovery_determinism_hardening_consistent =
-      surface.parser_contract_snapshot_present &&
-      surface.parser_contract_deterministic &&
-      surface.parser_recovery_replay_ready &&
-      surface.long_tail_grammar_core_feature_consistent &&
-      surface.long_tail_grammar_handoff_key_deterministic &&
-      surface.long_tail_grammar_expansion_accounting_consistent &&
-      surface.long_tail_grammar_replay_keys_ready &&
-      surface.long_tail_grammar_expansion_ready &&
-      surface.long_tail_grammar_compatibility_handoff_ready &&
-      surface.long_tail_grammar_edge_case_compatibility_consistent &&
-      surface.long_tail_grammar_edge_case_compatibility_ready &&
-      surface.long_tail_grammar_edge_case_expansion_consistent &&
-      surface.long_tail_grammar_edge_case_robustness_ready &&
-      surface.long_tail_grammar_diagnostics_hardening_ready &&
-      surface.parse_artifact_handoff_deterministic &&
-      surface.parse_artifact_replay_key_deterministic &&
-      surface.parse_artifact_diagnostics_hardening_consistent &&
-      surface.parse_artifact_edge_case_robustness_consistent &&
-      surface.parser_diagnostic_grammar_hooks_edge_case_expansion_consistent &&
-      surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready &&
-      surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_consistent &&
-      surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready &&
-      !surface.long_tail_grammar_handoff_key.empty() &&
-      !surface.long_tail_grammar_expansion_key.empty() &&
-      !surface.long_tail_grammar_edge_case_compatibility_key.empty() &&
-      !surface.long_tail_grammar_edge_case_robustness_key.empty() &&
-      !surface.long_tail_grammar_diagnostics_hardening_key.empty() &&
-      !surface.parse_artifact_handoff_key.empty() &&
-      !surface.parse_artifact_replay_key.empty() &&
-      !surface.parse_artifact_diagnostics_hardening_key.empty() &&
-      !surface.parse_artifact_edge_robustness_key.empty() &&
-      !surface.parser_diagnostic_grammar_hooks_edge_case_robustness_key.empty() &&
-      !surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_key.empty();
-  surface.parse_recovery_determinism_hardening_key = BuildObjc3ParseRecoveryDeterminismHardeningKey(
-      surface.parser_contract_snapshot_present,
-      surface.parser_contract_deterministic,
-      surface.parser_recovery_replay_ready,
-      surface.long_tail_grammar_core_feature_consistent,
-      surface.long_tail_grammar_handoff_key_deterministic,
-      surface.long_tail_grammar_expansion_accounting_consistent,
-      surface.long_tail_grammar_replay_keys_ready,
-      surface.long_tail_grammar_expansion_ready,
-      surface.long_tail_grammar_compatibility_handoff_ready,
-      surface.long_tail_grammar_edge_case_compatibility_consistent,
-      surface.long_tail_grammar_edge_case_compatibility_ready,
-      surface.long_tail_grammar_edge_case_expansion_consistent,
-      surface.long_tail_grammar_edge_case_robustness_ready,
-      surface.long_tail_grammar_diagnostics_hardening_ready,
-      surface.parse_artifact_handoff_deterministic,
-      surface.parse_artifact_replay_key_deterministic,
-      surface.parse_artifact_diagnostics_hardening_consistent,
-      surface.parse_artifact_edge_case_robustness_consistent,
-      surface.parse_recovery_determinism_hardening_consistent);
-  surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent =
-      surface.parse_recovery_determinism_hardening_consistent &&
-      surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready &&
-      surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready &&
-      surface.parser_recovery_replay_ready &&
-      surface.parse_artifact_replay_key_deterministic &&
-      !surface.parse_recovery_determinism_hardening_key.empty() &&
-      !surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_key.empty() &&
-      !surface.parser_diagnostic_grammar_hooks_edge_case_robustness_key.empty();
-  surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready =
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
-      surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready;
-  surface.parser_diagnostic_grammar_hooks_recovery_determinism_key =
-      BuildObjc3DiagnosticGrammarHooksRecoveryDeterminismKey(
-          surface.parser_recovery_replay_ready,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.parse_recovery_determinism_hardening_consistent,
-          surface.parser_diagnostic_grammar_hooks_diagnostics_hardening_ready,
-          surface.parser_diagnostic_grammar_hooks_edge_case_robustness_ready,
-          surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent,
-          surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready);
-  surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent =
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready &&
-      surface.parse_lowering_conformance_matrix_case_count ==
-          kObjc3ParseLoweringConformanceMatrixCaseCount &&
-      surface.parse_lowering_conformance_matrix_case_count > 0 &&
-      surface.parse_artifact_replay_key_deterministic &&
-      !surface.parser_diagnostic_grammar_hooks_recovery_determinism_key.empty() &&
-      !surface.parse_recovery_determinism_hardening_key.empty() &&
-      !surface.parse_artifact_replay_key.empty();
-  surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready =
-      surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent &&
-      surface.parse_lowering_conformance_corpus_case_count > 0 &&
-      surface.parse_lowering_performance_quality_guardrails_case_count > 0;
-  surface.parser_diagnostic_grammar_hooks_conformance_matrix_key =
-      BuildObjc3DiagnosticGrammarHooksConformanceMatrixKey(
-          surface.parse_lowering_conformance_matrix_case_count,
-          surface.parse_lowering_conformance_corpus_case_count,
-          surface.parse_lowering_performance_quality_guardrails_case_count,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready,
-          surface.parser_diagnostic_grammar_hooks_conformance_matrix_consistent,
-          surface.parser_diagnostic_grammar_hooks_conformance_matrix_ready);
-  surface.long_tail_grammar_recovery_determinism_consistent =
-      surface.parse_recovery_determinism_hardening_consistent &&
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_consistent &&
-      surface.parser_diagnostic_grammar_hooks_recovery_determinism_ready &&
-      surface.long_tail_grammar_diagnostics_hardening_ready &&
-      surface.parser_recovery_replay_ready &&
-      surface.parse_artifact_replay_key_deterministic &&
-      !surface.parse_recovery_determinism_hardening_key.empty() &&
-      !surface.parser_diagnostic_grammar_hooks_recovery_determinism_key.empty() &&
-      !surface.long_tail_grammar_diagnostics_hardening_key.empty();
-  surface.long_tail_grammar_recovery_determinism_ready =
-      surface.long_tail_grammar_recovery_determinism_consistent &&
-      surface.long_tail_grammar_expansion_ready &&
-      surface.long_tail_grammar_edge_case_robustness_ready;
-  surface.long_tail_grammar_recovery_determinism_key =
-      BuildObjc3LongTailGrammarRecoveryDeterminismKey(
-          surface.parser_recovery_replay_ready,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.parse_recovery_determinism_hardening_consistent,
-          surface.long_tail_grammar_diagnostics_hardening_ready,
-          surface.long_tail_grammar_edge_case_robustness_ready,
-          surface.long_tail_grammar_expansion_ready,
-          surface.long_tail_grammar_recovery_determinism_consistent,
-          surface.long_tail_grammar_recovery_determinism_ready);
-  const bool toolchain_runtime_ga_operations_recovery_determinism_consistent =
-      IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningConsistent(
-          surface.parser_recovery_replay_ready,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.long_tail_grammar_replay_keys_ready,
-          surface.long_tail_grammar_diagnostics_hardening_ready,
-          surface.parse_recovery_determinism_hardening_consistent,
-          surface.parse_artifact_handoff_key,
-          surface.parse_artifact_replay_key,
-          surface.parse_artifact_diagnostics_hardening_key,
-          surface.parse_artifact_edge_robustness_key,
-          surface.long_tail_grammar_handoff_key,
-          surface.long_tail_grammar_diagnostics_hardening_key,
-          surface.parse_recovery_determinism_hardening_key);
-  const bool toolchain_runtime_ga_operations_recovery_determinism_ready =
-      IsObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningReady(
-          toolchain_runtime_ga_operations_recovery_determinism_consistent,
-          surface.long_tail_grammar_recovery_determinism_consistent,
-          surface.long_tail_grammar_recovery_determinism_ready,
-          surface.long_tail_grammar_recovery_determinism_key);
-  surface.parse_recovery_determinism_hardening_consistent &=
-      toolchain_runtime_ga_operations_recovery_determinism_consistent;
-  surface.long_tail_grammar_recovery_determinism_consistent =
-      surface.long_tail_grammar_recovery_determinism_consistent &&
-      toolchain_runtime_ga_operations_recovery_determinism_consistent;
-  surface.long_tail_grammar_recovery_determinism_ready =
-      surface.long_tail_grammar_recovery_determinism_ready &&
-      toolchain_runtime_ga_operations_recovery_determinism_ready;
-  surface.parse_recovery_determinism_hardening_key =
-      BuildObjc3ParseRecoveryDeterminismHardeningKey(
-          surface.parser_contract_snapshot_present,
-          surface.parser_contract_deterministic,
-          surface.parser_recovery_replay_ready,
-          surface.long_tail_grammar_core_feature_consistent,
-          surface.long_tail_grammar_handoff_key_deterministic,
-          surface.long_tail_grammar_expansion_accounting_consistent,
-          surface.long_tail_grammar_replay_keys_ready,
-          surface.long_tail_grammar_expansion_ready,
-          surface.long_tail_grammar_compatibility_handoff_ready,
-          surface.long_tail_grammar_edge_case_compatibility_consistent,
-          surface.long_tail_grammar_edge_case_compatibility_ready,
-          surface.long_tail_grammar_edge_case_expansion_consistent,
-          surface.long_tail_grammar_edge_case_robustness_ready,
-          surface.long_tail_grammar_diagnostics_hardening_ready,
-          surface.parse_artifact_handoff_deterministic,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.parse_artifact_diagnostics_hardening_consistent,
-          surface.parse_artifact_edge_case_robustness_consistent,
-          surface.parse_recovery_determinism_hardening_consistent);
-  surface.long_tail_grammar_recovery_determinism_key =
-      BuildObjc3LongTailGrammarRecoveryDeterminismKey(
-          surface.parser_recovery_replay_ready,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.parse_recovery_determinism_hardening_consistent,
-          surface.long_tail_grammar_diagnostics_hardening_ready,
-          surface.long_tail_grammar_edge_case_robustness_ready,
-          surface.long_tail_grammar_expansion_ready,
-          surface.long_tail_grammar_recovery_determinism_consistent,
-          surface.long_tail_grammar_recovery_determinism_ready);
-  const std::string toolchain_runtime_ga_operations_recovery_determinism_key =
-      BuildObjc3ToolchainRuntimeGaOperationsRecoveryDeterminismHardeningKey(
-          surface.parser_recovery_replay_ready,
-          surface.parse_artifact_replay_key_deterministic,
-          surface.long_tail_grammar_replay_keys_ready,
-          surface.long_tail_grammar_diagnostics_hardening_ready,
-          surface.parse_artifact_handoff_key,
-          surface.parse_artifact_replay_key,
-          surface.parse_artifact_diagnostics_hardening_key,
-          surface.parse_artifact_edge_robustness_key,
-          surface.long_tail_grammar_handoff_key,
-          surface.long_tail_grammar_diagnostics_hardening_key,
-          surface.parse_recovery_determinism_hardening_key,
-          surface.long_tail_grammar_recovery_determinism_key,
-          toolchain_runtime_ga_operations_recovery_determinism_consistent,
-          toolchain_runtime_ga_operations_recovery_determinism_ready);
-  surface.parse_recovery_determinism_hardening_key +=
-      ";toolchain_runtime_ga_operations_recovery_determinism_key=" +
-      toolchain_runtime_ga_operations_recovery_determinism_key;
-  surface.long_tail_grammar_recovery_determinism_key +=
-      ";toolchain_runtime_ga_operations_recovery_determinism_key=" +
-      toolchain_runtime_ga_operations_recovery_determinism_key;
+  const Objc3ParseLoweringRecoveryDeterminismReadinessRecord
+      recovery_determinism_readiness =
+          ApplyObjc3ParseLoweringRecoveryDeterminismReadiness(surface);
   const Objc3TypedSemaLoweringReadinessRecord typed_sema_lowering_readiness =
       BuildObjc3TypedSemaLoweringReadiness(surface, pipeline_result, options);
 
@@ -275,8 +76,10 @@ inline Objc3ParseLoweringReadinessSurface BuildObjc3ParseLoweringReadinessSurfac
       conformance_performance_readiness =
           ApplyObjc3ParseLoweringConformancePerformanceReadiness(
               surface,
-              toolchain_runtime_ga_operations_recovery_determinism_consistent,
-              toolchain_runtime_ga_operations_recovery_determinism_ready,
+              recovery_determinism_readiness
+                  .toolchain_runtime_ga_operations_recovery_determinism_consistent,
+              recovery_determinism_readiness
+                  .toolchain_runtime_ga_operations_recovery_determinism_ready,
               parse_snapshot_replay_ready,
               sema_handoff_ready,
               semantic_handoff_deterministic,
