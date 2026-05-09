@@ -23,6 +23,15 @@ from scripts.objc3c_workflow.action_catalog_packaging_channels import PACKAGING_
 from scripts.objc3c_workflow.action_catalog_release_channels import RELEASE_CHANNEL_ACTION_SPECS
 from scripts.objc3c_workflow.action_catalog_release_foundation import RELEASE_FOUNDATION_ACTION_SPECS
 from scripts.objc3c_workflow.action_catalog_release_operations import RELEASE_OPERATIONS_ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog_runtime_acceptance import RUNTIME_ACCEPTANCE_ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog_runtime_architecture import RUNTIME_ARCHITECTURE_ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog_runtime_runnable_conformance import (
+    RUNTIME_RUNNABLE_CONFORMANCE_ACTION_SPECS,
+)
+from scripts.objc3c_workflow.action_catalog_runtime_runnable_e2e import (
+    RUNTIME_RUNNABLE_E2E_ACTION_SPECS,
+)
+from scripts.objc3c_workflow.action_catalog_runtime_validation import RUNTIME_VALIDATION_ACTION_SPECS
 from scripts.objc3c_workflow.argument_parser import parse_workflow_args as parse_workflow_args_impl
 from scripts.objc3c_workflow.argument_requests import (
     DescribeActionRequest as OwnedDescribeActionRequest,
@@ -162,6 +171,21 @@ def test_release_channel_catalog_aggregates_owner_catalogs() -> None:
     for catalog in owner_catalogs:
         for action, spec in catalog.items():
             assert RELEASE_CHANNEL_ACTION_SPECS[action] is spec
+
+
+def test_runtime_validation_catalog_aggregates_owner_catalogs() -> None:
+    owner_catalogs = (
+        RUNTIME_ACCEPTANCE_ACTION_SPECS,
+        RUNTIME_ARCHITECTURE_ACTION_SPECS,
+        RUNTIME_RUNNABLE_CONFORMANCE_ACTION_SPECS,
+        RUNTIME_RUNNABLE_E2E_ACTION_SPECS,
+    )
+    owner_actions = set().union(*(catalog.keys() for catalog in owner_catalogs))
+
+    assert owner_actions == set(RUNTIME_VALIDATION_ACTION_SPECS)
+    for catalog in owner_catalogs:
+        for action, spec in catalog.items():
+            assert RUNTIME_VALIDATION_ACTION_SPECS[action] is spec
 
 
 def test_workflow_path_roots_are_owned_by_package_module() -> None:
