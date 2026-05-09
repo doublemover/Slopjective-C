@@ -75,6 +75,13 @@ commits that landed after the first docs commit.
 | `#8138`, `#8142`, `#8149`, `#8150` | `2befd1155` | Performance action, artifact, metric, orchestration, scenario, and threshold-policy owners now refresh internal workflow/artifact evidence under the existing public command boundary. |
 | `#8132`, `#8134`, `#8135`, `#8140`, `#8141`, `#8144`, `#8150` | `e760e3450` | Hard-cutover issue-index alignment plus driver CLI, parser contract/sema integration, parser extraction, and token contract tooling checks refresh split-owner verification evidence. Validation remains deferred by this worker. |
 
+## Post-`e760e3450` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8142`, `#8144`, `#8149`, `#8150` | `c26e133a5`, `8f4e91f1f`, `6ef6ab779` | Stress workflow, external validation, and public test orchestration owner splits now refresh workflow/control-plane evidence. They stay under the same npm bridge and do not assert validation. |
+| `#8144`, `#8145`, `#8150` | `f737d848e`, `0350f4a4a` | Behavior fixture boundary contracts and positive fixture lexical residue docs now refresh retired-surface evidence. Residue remains lexical/symbol evidence only, not support for shim, fallback, migration, old-mode, or compatibility behavior. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
@@ -362,7 +369,8 @@ workflow command owners, release catalog specs, and public docs command-surface
 alignment, plus tooling catalog specs, public command budget contracts, and
 source-hygiene residue guardrails, plus validation timing report owners, release
 governance owner splits, playground workflow owners, runtime workflow owners,
-and performance workflow owners.
+performance workflow owners, stress workflow owners, external validation owners,
+and public test orchestration owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -376,8 +384,9 @@ are retired from public claims.
 Final closure evidence is local and evidence-ready, including the follow-up
 committed owner wave through `f4bf6228e` and the post-`f4bf6228e` owner wave
 through `89959f6cc`, plus the post-`89959f6cc` owner wave through `e760e3450`.
-Remote issue closure, push, and validation remain deferred under the current
-worker constraints.
+It also includes the post-`e760e3450` owner wave through `0350f4a4a`. Remote
+issue closure, push, and validation remain deferred under the current worker
+constraints.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

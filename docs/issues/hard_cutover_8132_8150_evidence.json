@@ -1037,6 +1037,44 @@
       }
     ]
   },
+  "post_e760_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "e760e3450",
+    "through_commit": "0350f4a4a",
+    "commit_count": 5,
+    "count_policy": "counts committed owner/evidence commits after the e760e3450 closeout refresh and excludes docs-only closeout commits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8142",
+          "#8144",
+          "#8149",
+          "#8150"
+        ],
+        "commits": [
+          "c26e133a5",
+          "8f4e91f1f",
+          "6ef6ab779"
+        ],
+        "owner_boundary": "stress workflow, external validation, and public test orchestration owners are workflow evidence under the npm bridge and do not assert validation"
+      },
+      {
+        "issues": [
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "commits": [
+          "f737d848e",
+          "0350f4a4a"
+        ],
+        "owner_boundary": "behavior fixture boundary contracts and positive fixture lexical residue docs classify residue as lexical or symbol evidence, not support for retired surfaces"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",

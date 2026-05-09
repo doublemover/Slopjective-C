@@ -134,6 +134,27 @@ worktree edits.
 | `#8149` | Source hygiene/control-plane evidence is refreshed by runtime/performance workflow split owners. |
 | `#8150` | Local closeout evidence now also includes the committed post-`89959f6cc` owner wave through `e760e3450`; remote closeout remains deferred. |
 
+## Post-`e760e3450` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `e760e3450`
+through `0350f4a4a`. It excludes docs-only closeout commits and uncommitted
+worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Stress, external validation, and public test orchestration owners | `#8142`, `#8144`, `#8149`, `#8150` | `c26e133a5`, `8f4e91f1f`, `6ef6ab779` | Stress catalog/execution, external validation execution/targets, and public test orchestration native/path/composite owners refresh workflow evidence without changing the public command boundary or asserting validation. |
+| Behavior fixture boundary and residue evidence | `#8144`, `#8145`, `#8150` | `f737d848e`, `0350f4a4a` | Behavior fixture boundary contracts and positive fixture lexical residue docs refresh retired-surface evidence. Positive residues remain classified as lexical/symbol evidence, not support for shim, fallback, migration, old-mode, or compatibility behavior. |
+
+## Post-`e760e3450` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8142` | Workflow evidence is refreshed by stress, external validation, and public test orchestration owner splits under the npm bridge. |
+| `#8144` | Behavior fixture evidence is refreshed by boundary contracts, positive residue docs, and test orchestration/stress workflow owners. |
+| `#8145` | Capability truth evidence is refreshed by positive fixture lexical residue docs, keeping retired terms out of support claims. |
+| `#8149` | Source hygiene/control-plane evidence is refreshed by stress, external validation, and public test orchestration owner splits. |
+| `#8150` | Local closeout evidence now also includes the committed post-`e760e3450` owner wave through `0350f4a4a`; remote closeout remains deferred. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -177,3 +198,6 @@ This post-`f4bf6228e` refresh references `91cdc9fcb`, `181c1c479`,
 
 This post-`89959f6cc` refresh references `7aa3372d1`, `2befd1155`,
 `806c7d063`, and `e760e3450`.
+
+This post-`e760e3450` refresh references `c26e133a5`, `f737d848e`,
+`8f4e91f1f`, `6ef6ab779`, and `0350f4a4a`.
