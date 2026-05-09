@@ -3,13 +3,13 @@
 
 from __future__ import annotations
 
-import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from objc3c_tooling.paths import repo_rel
 from objc3c_tooling.json_io import load_json_object as load_json
+from objc3c_tooling.json_io import write_report_json
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,7 +22,9 @@ SOURCE_SURFACE = (
     / "source_surface.json"
 )
 SUMMARY_PATH = ROOT / "tmp" / "reports" / "public-conformance" / "source-surface-summary.json"
+SURFACE_CONTRACT_ID = "objc3c.public_conformance_reporting.source.surface.v1"
 SUMMARY_CONTRACT_ID = "objc3c.public_conformance_reporting.source.surface.summary.v1"
+SOURCE_CHECK_SCRIPT = "scripts/check_public_conformance_reporting_source_surface.py"
 EXPECTED_ROOTS = [
     "tests/tooling/fixtures/public_conformance_reporting",
     "tests/tooling/fixtures/external_validation",
@@ -57,7 +59,7 @@ def main() -> int:
         return fail(f"missing source surface contract: {repo_rel(SOURCE_SURFACE)}")
 
     surface = load_json(SOURCE_SURFACE)
-    if surface.get("contract_id") != "objc3c.public_conformance_reporting.source.surface.v1":
+    if surface.get("contract_id") != SURFACE_CONTRACT_ID:
         return fail("contract_id drifted")
     if surface.get("schema_version") != 1:
         return fail("schema_version drifted")
@@ -67,7 +69,7 @@ def main() -> int:
         return fail("source_root drifted")
     if surface.get("source_readme") != "tests/tooling/fixtures/public_conformance_reporting/README.md":
         return fail("source_readme drifted")
-    if surface.get("source_check_script") != "scripts/check_public_conformance_reporting_source_surface.py":
+    if surface.get("source_check_script") != SOURCE_CHECK_SCRIPT:
         return fail("source_check_script drifted")
     if surface.get("stability_policy") != "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json":
         return fail("stability_policy drifted")
@@ -153,8 +155,7 @@ def main() -> int:
         "checked_in_roots": EXPECTED_ROOTS,
         "family_summaries": family_summaries,
     }
-    SUMMARY_PATH.parent.mkdir(parents=True, exist_ok=True)
-    SUMMARY_PATH.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    write_report_json(SUMMARY_PATH, summary, sort_keys=False)
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("public-conformance-reporting-source-surface: OK")
     return 0
