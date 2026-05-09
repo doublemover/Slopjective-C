@@ -4,6 +4,7 @@
 #include <cstring>
 #include <new>
 
+#include "libobjc3c_frontend/objc3c_frontend_result_payload.h"
 #include "libobjc3c_frontend/objc3c_frontend_result_ownership.h"
 
 namespace objc3c::frontend {

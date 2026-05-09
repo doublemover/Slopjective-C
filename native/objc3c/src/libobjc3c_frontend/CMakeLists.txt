@@ -44,6 +44,7 @@ add_library(objc3c_frontend STATIC
   objc3c_frontend_result_error_accessors.cpp
   objc3c_frontend_result_lifecycle.cpp
   objc3c_frontend_result_ownership.cpp
+  objc3c_frontend_result_payload.cpp
   objc3c_frontend_runtime_artifacts.cpp
   objc3c_frontend_string_api.cpp
   objc3_cli_frontend.cpp
