@@ -3,8 +3,10 @@ add_executable(objc3c_tools_frontend_c_api_runner
   objc3c_frontend_c_api_runner_c_string.cpp
   objc3c_frontend_c_api_runner_commands.cpp
   objc3c_frontend_c_api_runner_dump_actions.cpp
+  objc3c_frontend_c_api_runner_dump_options.cpp
   objc3c_frontend_c_api_runner_invocation.cpp
   objc3c_frontend_c_api_runner_observability_json.cpp
+  objc3c_frontend_c_api_runner_option_values.cpp
   objc3c_frontend_c_api_runner_options.cpp
   objc3c_frontend_c_api_runner_output_contract.cpp
   objc3c_frontend_c_api_runner_output_contract_json.cpp

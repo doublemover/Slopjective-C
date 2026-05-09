@@ -1,33 +1,8 @@
 #include "tools/objc3c_frontend_c_api_runner_options.h"
 
-#include <cerrno>
-#include <cstddef>
-#include <cstdlib>
-
 #include "diagnostics/modes/objc3_removed_mode_options.h"
-#include "support/objc3_ir_object_backend_token.h"
-#include "support/objc3_runtime_dispatch_symbol.h"
-
-namespace {
-
-constexpr std::size_t kFrontendCApiRunnerMaxMessageSendArgs = 16;
-
-bool ParseFrontendRunnerIrObjectBackend(
-    const std::string &value,
-    objc3c_frontend_c_ir_object_backend_t &backend) {
-  objc3c::support::IrObjectBackendToken token;
-  if (!objc3c::support::ParseIrObjectBackendToken(value, token)) {
-    return false;
-  }
-  if (token == objc3c::support::IrObjectBackendToken::Clang) {
-    backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_CLANG;
-    return true;
-  }
-  backend = OBJC3C_FRONTEND_IR_OBJECT_BACKEND_LLVM_DIRECT;
-  return true;
-}
-
-}  // namespace
+#include "tools/objc3c_frontend_c_api_runner_dump_options.h"
+#include "tools/objc3c_frontend_c_api_runner_option_values.h"
 
 std::string FrontendCApiRunnerUsage() {
   return "usage: objc3c-frontend-c-api-runner <input> [--out-dir <dir>] [--emit-prefix <name>] "
@@ -66,51 +41,30 @@ bool ParseFrontendCApiRunnerOptions(int argc,
     } else if (arg == "--summary-out" && i + 1 < argc) {
       options.summary_out = std::filesystem::path(argv[++i]);
     } else if (arg == "--objc3-max-message-args" && i + 1 < argc) {
-      const std::string value = argv[++i];
-      errno = 0;
-      char *end = nullptr;
-      const unsigned long parsed = std::strtoul(value.c_str(), &end, 10);
-      if (value.empty() || end == value.c_str() || *end != '\0' ||
-          errno == ERANGE || parsed > kFrontendCApiRunnerMaxMessageSendArgs) {
-        error = "invalid --objc3-max-message-args (expected integer 0-" +
-                std::to_string(kFrontendCApiRunnerMaxMessageSendArgs) + "): " +
-                value;
+      if (!ParseFrontendCApiRunnerMaxMessageSendArgs(
+              argv[++i], options.max_message_send_args, error)) {
         return false;
       }
-      options.max_message_send_args = static_cast<std::uint32_t>(parsed);
     } else if (arg == "--objc3-runtime-dispatch-symbol" && i + 1 < argc) {
-      options.runtime_dispatch_symbol = argv[++i];
-      if (!objc3c::support::IsValidRuntimeDispatchSymbol(
-              options.runtime_dispatch_symbol)) {
-        error =
-            "invalid --objc3-runtime-dispatch-symbol (expected [A-Za-z_.$][A-Za-z0-9_.$]*): " +
-            options.runtime_dispatch_symbol;
+      if (!ParseFrontendCApiRunnerRuntimeDispatchSymbol(
+              argv[++i], options.runtime_dispatch_symbol, error)) {
         return false;
       }
     } else if (arg == "--objc3-bootstrap-registration-order-ordinal" &&
                i + 1 < argc) {
-      const std::string value = argv[++i];
-      errno = 0;
-      char *end = nullptr;
-      const unsigned long long parsed =
-          std::strtoull(value.c_str(), &end, 10);
-      if (value.empty() || end == value.c_str() || *end != '\0' ||
-          errno == ERANGE || parsed == 0) {
-        error =
-            "invalid --objc3-bootstrap-registration-order-ordinal (expected "
-            "positive integer): " +
-            value;
+      if (!ParseFrontendCApiRunnerRegistrationOrderOrdinal(
+              argv[++i],
+              options.translation_unit_registration_order_ordinal,
+              error)) {
         return false;
       }
-      options.translation_unit_registration_order_ordinal =
-          static_cast<std::uint64_t>(parsed);
     } else if (objc3c::diagnostics::modes::BuildRemovedModeOptionDiagnostic(
                    arg, error)) {
       return false;
     } else if (arg == "--objc3-ir-object-backend" && i + 1 < argc) {
       const std::string backend = argv[++i];
-      if (!ParseFrontendRunnerIrObjectBackend(backend,
-                                              options.ir_object_backend)) {
+      if (!ParseFrontendCApiRunnerIrObjectBackend(backend,
+                                                  options.ir_object_backend)) {
         error = "invalid --objc3-ir-object-backend (expected clang|llvm-direct): " +
                 backend;
         return false;
@@ -121,16 +75,8 @@ bool ParseFrontendCApiRunnerOptions(int argc,
       options.emit_ir = false;
     } else if (arg == "--no-emit-object") {
       options.emit_object = false;
-    } else if (arg == "--dump-summary-json") {
-      options.dump_summary_json = true;
-    } else if (arg == "--dump-observability-json") {
-      options.dump_observability_json = true;
-    } else if (arg == "--dump-playground-repro-json") {
-      options.dump_playground_repro_json = true;
-    } else if (arg == "--dump-runtime-inspector-json") {
-      options.dump_runtime_inspector_json = true;
-    } else if (arg == "--dump-stage-trace-json") {
-      options.dump_stage_trace_json = true;
+    } else if (ApplyFrontendCApiRunnerDumpOption(arg, options)) {
+      continue;
     } else if (arg == "--help" || arg == "-h") {
       error = FrontendCApiRunnerUsage();
       return false;
