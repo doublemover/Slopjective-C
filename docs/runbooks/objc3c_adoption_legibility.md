@@ -60,7 +60,7 @@ Adoption copy may say that objc3c has a runnable evaluator path only when it
 points to checked-in README, site, tutorial, showcase, public-command,
 package, and support evidence. Conversion copy may describe incremental
 Objective-C 2 conversion only when it stays same-major scoped and names package
-locks, support windows, rollback guidance, and deferred unsupported runtime
+locks, support windows, revert guidance, and deferred unsupported runtime
 behavior.
 
 The policy fails closed on:
@@ -101,7 +101,7 @@ Replay it with:
 The public contract is canonical conversion over checked-in runnable examples
 and support evidence. Adoption replay has four ordered phases: orient on public docs, compile the
 showcase anchors, create or validate package/application workspace state, then
-check support and rollback evidence. Interop guidance is part of that path; it
+check support and revert evidence. Interop guidance is part of that path; it
 must name the runnable example and runbook that prove the current Objective-C 2,
 Swift-facing, or C++-facing boundary.
 

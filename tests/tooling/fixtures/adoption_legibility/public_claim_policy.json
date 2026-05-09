@@ -39,13 +39,13 @@
     },
     {
       "claim_id": "incremental-objc2-conversion",
-      "allowed_scope": "same-major adoption orientation with checked-in porting examples, package-lock evidence, rollback-risk inventory, and tutorial evidence",
+      "allowed_scope": "same-major adoption orientation with checked-in porting examples, package-lock evidence, revert-risk inventory, and tutorial evidence",
       "support_class": "same-major-porting-orientation",
       "requires_evidence": [
         "objc2-conversion-guide",
         "release-risk-policy",
         "package-lock-workflow",
-        "long-horizon-rollback-risk-inventory"
+        "long-horizon-revert-risk-inventory"
       ],
       "required_reference_surfaces": [
         "docs/tutorials/objc2_to_objc3_migration.md",

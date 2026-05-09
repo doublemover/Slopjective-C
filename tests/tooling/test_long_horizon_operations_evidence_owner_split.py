@@ -39,13 +39,13 @@ def test_long_horizon_owner_modules_are_explicit() -> None:
 def test_long_horizon_owner_contracts_are_source_owned() -> None:
     assert set(OWNER_CONTRACTS) == {
         "deprecation_owner",
-        "rollback_owner",
+        "revert_owner",
         "cadence_owner",
         "publication_owner",
     }
     assert set(BLOCKER_METADATA) == {
         "deprecation_support_policy",
-        "rollback",
+        "revert_readiness",
         "aging_release_cadence",
         "metadata_publication",
     }
@@ -67,7 +67,7 @@ def test_long_horizon_model_preserves_public_contract(tmp_path: Path) -> None:
     inputs = LongHorizonEvidenceInputs(
         steps=[{"name": "boundary-inventory", "exit_code": 0}],
         reports={
-            "migration": {"migration_replay_requirements": ["replay candidate over stable"]},
+            "conversion": {"conversion_replay_requirements": ["replay candidate over stable"]},
             "aging": {"publication_freshness_metric_count": 4},
         },
         update_manifest={
@@ -93,13 +93,14 @@ def test_long_horizon_model_preserves_public_contract(tmp_path: Path) -> None:
     assert model.artifact["owner_contracts"] == OWNER_CONTRACTS
     assert model.artifact["claim_audit"]["blocker_metadata"] == BLOCKER_METADATA
     assert model.artifact["support_window"]["current_version"] == "3.0.0"
-    assert model.artifact["migration_replay"]["target_version"] == "3.0.1-rc.1"
-    assert model.artifact["rollback"]["channels"] == ["stable"]
+    assert model.artifact["upgrade_replay"]["target_version"] == "3.0.1-rc.1"
+    assert model.artifact["upgrade_replay"]["requirements"] == ["replay candidate over stable"]
+    assert model.artifact["revert_readiness"]["channels"] == ["stable"]
     assert model.artifact["aging_regression"]["freshness_budget"]["publication_freshness_metric_count"] == 4
     assert model.summary["runner_path"] == "scripts/build_objc3c_long_horizon_operations_evidence.py"
     assert model.summary["owner_contract_count"] == 4
     assert model.summary["blocker_metadata_count"] == 4
-    assert model.summary["rollback_channel_count"] == 1
+    assert model.summary["revert_channel_count"] == 1
 
 
 def test_long_horizon_rendering_preserves_console_contract(tmp_path: Path) -> None:
