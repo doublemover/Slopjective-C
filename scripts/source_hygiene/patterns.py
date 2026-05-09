@@ -128,4 +128,16 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         "Milestone/proof language must not act as behavior truth.",
         r"\bmilestone-local\b|\bproof-only\b|\bproof\s+packet\b|\bproof\s+path\b",
     ),
+    ForbiddenPattern(
+        "report-only-claim",
+        "Report-only completion or support claims must not replace executable evidence.",
+        r"\breport[-_\s]+only\s+(?:claims?|completion|evidence|proof)\b"
+        r"|(?:\bclaim\b|\bcomplete\b|\bsupport\b)[^\n]{0,100}\breport[-_\s]+only\b",
+    ),
+    ForbiddenPattern(
+        "local-only-report-truth",
+        "Local-only reports must not become support truth or closeout evidence.",
+        r"\blocal[-_\s]+only\s+reports?\b"
+        r"|\b(?:tmp|reports)[\\/][^\n]{0,120}\b(?:truth|support|closeout|evidence)\b",
+    ),
 )

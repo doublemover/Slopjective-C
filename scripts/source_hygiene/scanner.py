@@ -13,6 +13,7 @@ from .config import (
 )
 from .files import is_excluded, iter_scan_files, normalize_path
 from .generated_reports import tracked_generated_reports
+from .guardrails import is_allowed_guardrail_context
 from .patterns import FORBIDDEN_PATTERNS
 from .report_writer import write_reports
 from .roots import DEFAULT_EXCLUDES, DEFAULT_SCAN_ROOTS
@@ -47,12 +48,18 @@ def scan_forbidden_patterns(
             lines = path.read_text(encoding="utf-8").splitlines()
         except UnicodeDecodeError:
             lines = path.read_text(encoding="utf-8", errors="ignore").splitlines()
-        for line_number, line in enumerate(lines, start=1):
+        for index, line in enumerate(lines):
+            line_number = index + 1
+            previous_line = lines[index - 1] if index > 0 else ""
+            next_line = lines[index + 1] if index + 1 < len(lines) else ""
             for pattern, regex in compiled:
                 if regex.search(line):
-                    if is_negative_test_assertion(repo_path, line):
-                        continue
-                    if is_guardrail_identifier(line):
+                    if is_allowed_guardrail_context(
+                        repo_path,
+                        previous_line,
+                        line,
+                        next_line,
+                    ):
                         continue
                     findings.append(
                         {
@@ -66,22 +73,6 @@ def scan_forbidden_patterns(
                     )
     findings.sort(key=lambda item: (item["path"], item["line"], item["pattern_id"]))
     return findings
-
-
-def is_negative_test_assertion(repo_path: str, line: str) -> bool:
-    return repo_path.startswith("tests/") and "assert" in line and " not in " in line
-
-
-def is_guardrail_identifier(line: str) -> bool:
-    return any(
-        marker in line
-        for marker in (
-            "no-milestone-local",
-            "no milestone-local",
-            "no-duplicate-milestone-local",
-            "no-proof-only",
-        )
-    )
 
 
 def build_report(
