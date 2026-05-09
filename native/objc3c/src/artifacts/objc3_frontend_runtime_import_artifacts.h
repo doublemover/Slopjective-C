@@ -32,6 +32,20 @@ BuildRuntimeAwareImportModuleFrontendClosureSummary(
 [[nodiscard]] std::string BuildRuntimeAwareImportModuleFrontendClosureSummaryJson(
     const Objc3RuntimeAwareImportModuleFrontendClosureSummary &summary);
 
+[[nodiscard]] std::string
+BuildCrossModuleRuntimeMetadataSemanticPreservationReplayKey(
+    const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary &summary);
+
+[[nodiscard]] Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary
+BuildCrossModuleRuntimeMetadataSemanticPreservationSummary(
+    const Objc3RuntimeAwareImportModuleFrontendClosureSummary
+        &source_frontend_closure,
+    const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
+
+[[nodiscard]] std::string
+BuildCrossModuleRuntimeMetadataSemanticPreservationSummaryJson(
+    const Objc3CrossModuleRuntimeMetadataSemanticPreservationSummary &summary);
+
 [[nodiscard]] std::string RenderRuntimeOwnedDeclarationsJson(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records);
 
