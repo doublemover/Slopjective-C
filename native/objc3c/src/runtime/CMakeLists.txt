@@ -32,6 +32,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_runtime_state.h
   classes/category_attachment.cpp
   classes/category_attachment.h
+  classes/class_metadata_tables.cpp
+  classes/class_metadata_tables.h
   classes/class_graph.cpp
   classes/class_graph.h
   classes/metaclass_graph.cpp
@@ -116,6 +118,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   images/registration.h
   images/registration_snapshots.cpp
   images/registration_snapshots.h
+  images/registration_state_publish.cpp
+  images/registration_state_publish.h
+  images/registration_table_walk.cpp
+  images/registration_table_walk.h
   memory/arc.cpp
   memory/arc.h
   memory/arc_debug_events.cpp

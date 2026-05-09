@@ -1,11 +1,10 @@
 #include "runtime/classes/class_graph.h"
 
 #include "runtime/classes/category_attachment.h"
+#include "runtime/classes/class_metadata_tables.h"
 #include "runtime/classes/metaclass_graph.h"
 #include "runtime/classes/protocol_conformance.h"
 #include "runtime/dispatch/dispatch_family.h"
-#include "runtime/images/image_descriptor.h"
-#include "runtime/images/multi_image_ordering.h"
 #include "runtime/metadata/runtime_emitted_records.h"
 #include "runtime/metadata/runtime_registration_records.h"
 #include "runtime/metadata/runtime_realized_records.h"
@@ -121,90 +120,6 @@ const RealizedClassNode *FindRealizedClassNodeByBaseIdentityUnlocked(
   return nullptr;
 }
 
-namespace {
-
-const void *ClassGraphAggregateEntry(
-    const objc3_runtime_pointer_aggregate *aggregate, std::uint64_t index) {
-  return RuntimeAggregateEntry(aggregate, index);
-}
-
-bool IsImplementationOwnerIdentity(const char *owner_identity) {
-  if (owner_identity == nullptr) {
-    return false;
-  }
-  static constexpr char kImplementationPrefix[] = "implementation:";
-  return std::string(owner_identity).rfind(kImplementationPrefix, 0) == 0;
-}
-
-std::vector<const RegisteredImageMetadata *> OrderedRegisteredImages(
-    const RuntimeState &state) {
-  std::vector<const RegisteredImageMetadata *> ordered;
-  ordered.reserve(state.registered_image_metadata_by_identity_key.size());
-  for (const auto &entry : state.registered_image_metadata_by_identity_key) {
-    ordered.push_back(&entry.second);
-  }
-  std::sort(
-      ordered.begin(), ordered.end(),
-      [](const RegisteredImageMetadata *lhs,
-         const RegisteredImageMetadata *rhs) {
-        return CompareRuntimeImageRegistrationOrder(
-                   lhs->registration_order_ordinal,
-                   lhs->translation_unit_identity_key.c_str(),
-                   rhs->registration_order_ordinal,
-                   rhs->translation_unit_identity_key.c_str()) < 0;
-      });
-  return ordered;
-}
-
-bool CollectSortedImageClassNames(const RegisteredImageMetadata &record,
-                                  std::vector<std::string> &class_names) {
-  std::unordered_set<std::string> seen;
-  seen.reserve(static_cast<std::size_t>(record.class_descriptor_count));
-  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
-    const auto *bundle = static_cast<const EmittedClassBundle *>(
-        ClassGraphAggregateEntry(record.class_descriptor_root, index));
-    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
-        bundle->class_record.class_name[0] == '\0') {
-      return false;
-    }
-    seen.insert(bundle->class_record.class_name);
-  }
-  class_names.assign(seen.begin(), seen.end());
-  std::sort(class_names.begin(), class_names.end());
-  return true;
-}
-
-std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
-    const RegisteredImageMetadata &record, const std::string &class_name) {
-  std::vector<const EmittedClassBundle *> implementation_bundles;
-  std::vector<const EmittedClassBundle *> candidate_bundles;
-  implementation_bundles.reserve(
-      static_cast<std::size_t>(record.class_descriptor_count));
-  candidate_bundles.reserve(
-      static_cast<std::size_t>(record.class_descriptor_count));
-  for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
-    const auto *bundle = static_cast<const EmittedClassBundle *>(
-        ClassGraphAggregateEntry(record.class_descriptor_root, index));
-    if (bundle == nullptr || bundle->class_record.class_name == nullptr ||
-        class_name != bundle->class_record.class_name) {
-      continue;
-    }
-    const bool implementation_backed =
-        bundle->class_record.method_list_ref != nullptr &&
-        IsImplementationOwnerIdentity(
-            bundle->class_record.method_list_ref->owner_identity);
-    if (implementation_backed) {
-      implementation_bundles.push_back(bundle);
-    } else {
-      candidate_bundles.push_back(bundle);
-    }
-  }
-  return implementation_bundles.empty() ? candidate_bundles
-                                        : implementation_bundles;
-}
-
-}  // namespace
-
 void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   // metaclass-graph-root-class anchor: runtime now republishes a
   // realized class/metaclass graph keyed by stable receiver base identities,
@@ -213,7 +128,7 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
   ClearRealizedClassGraphUnlocked(state);
 
   std::vector<const RegisteredImageMetadata *> ordered_images =
-      OrderedRegisteredImages(state);
+      OrderedClassGraphImages(state);
   std::size_t estimated_realized_node_count = 0;
   std::unordered_set<std::string> global_class_name_set;
   for (const RegisteredImageMetadata *record : ordered_images) {
@@ -282,28 +197,8 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
             bundle->class_record.bundle_owner_identity != nullptr
                 ? bundle->class_record.bundle_owner_identity
                 : "";
-        node.interface_owner_identity = node.bundle_owner_identity;
-        for (std::uint64_t candidate_index = 0;
-             candidate_index < record->class_descriptor_count;
-             ++candidate_index) {
-          const auto *candidate = static_cast<const EmittedClassBundle *>(
-              ClassGraphAggregateEntry(record->class_descriptor_root,
-                                       candidate_index));
-          if (candidate == nullptr ||
-              candidate->class_record.class_name == nullptr ||
-              candidate->class_record.bundle_owner_identity == nullptr) {
-            continue;
-          }
-          if (class_name != candidate->class_record.class_name) {
-            continue;
-          }
-          if (std::string(candidate->class_record.bundle_owner_identity).rfind(
-                  "interface:", 0) == 0) {
-            node.interface_owner_identity =
-                candidate->class_record.bundle_owner_identity;
-            break;
-          }
-        }
+        node.interface_owner_identity = ResolveInterfaceOwnerIdentityForClass(
+            *record, class_name, node.bundle_owner_identity);
         node.class_owner_identity =
             bundle->class_record.object_owner_identity != nullptr
                 ? bundle->class_record.object_owner_identity
@@ -330,10 +225,10 @@ void RebuildRealizedClassGraphUnlocked(RuntimeState &state) {
         node.is_root_class = bundle->class_record.super_bundle == nullptr;
         node.implementation_backed =
             (bundle->class_record.method_list_ref != nullptr &&
-             IsImplementationOwnerIdentity(
+             RuntimeImplementationOwnerIdentity(
                  bundle->class_record.method_list_ref->owner_identity)) ||
             (bundle->metaclass_record.method_list_ref != nullptr &&
-             IsImplementationOwnerIdentity(
+             RuntimeImplementationOwnerIdentity(
                  bundle->metaclass_record.method_list_ref->owner_identity));
         node.objc_final_declared = bundle->class_record.objc_final_declared;
         node.objc_sealed_declared = bundle->class_record.objc_sealed_declared;
