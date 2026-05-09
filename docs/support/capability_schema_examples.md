@@ -111,3 +111,4 @@ These are not valid support claims:
 - "migration lane accepts old syntax"
 - "run a direct helper script as the public command"
 - "implemented because a roadmap says it is planned"
+- "complete because a generated report says so without a matching implemented row"

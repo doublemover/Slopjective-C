@@ -33,6 +33,16 @@ Authoritative semantic contract:
 
 - `spec/STANDARD_LIBRARY_CONTRACT.md`
 
+Support truth:
+
+- `docs/support/capability_matrix.md`
+- `docs/support/evidence_map.md`
+- `docs/support/hard_cutover_capability_truth.md`
+
+Stdlib docs describe checked-in modules, package surfaces, and examples. They
+do not claim runtime behavior, compatibility aliases, fallback imports, or
+stdlib-wide completeness beyond implemented capability rows.
+
 ## Non-goals
 
 This root is not a place for:

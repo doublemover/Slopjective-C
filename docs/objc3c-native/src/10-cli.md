@@ -2,10 +2,14 @@
 
 # Objc3c Native Frontend (Current Surface)
 
-The native frontend supports two input modes:
+The native frontend accepts two input classes:
 
 - `.objc3`: native lexer, parser, sema, lowering, IR emission, and object build
-- non-`.objc3`: Objective-C parse/diagnostics and object build through the Objective-C path
+- non-`.objc3`: Objective-C parse/diagnostics and object build through the
+  Objective-C path
+
+The non-`.objc3` path is a driver/frontend integration path. It does not create
+an alternate Objective-C 3.0 source mode or compatibility surface.
 
 ## CLI Usage
 

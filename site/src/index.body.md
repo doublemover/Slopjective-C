@@ -12,14 +12,15 @@ Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more e
 Only the capability matrix states are support states. This overview points at
 those rows instead of inventing local status vocabulary.
 
-| Area                       | Matrix state | Notes                                                                                                                                       |
+| Area                       | Matrix boundary | Notes                                                                                                                                       |
 | -------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | Native compiler pipeline   | internal     | `objc3c` parses `.objc3`, emits diagnostics, manifests, LLVM IR, objects, and executables through split compiler/runtime/pipeline/artifact/IO owner modules. |
 | Runnable language subset   | implemented  | Parser, sema, lowering, IR, runtime strict-dispatch diagnostic, and e2e smoke rows carry executable evidence.                                |
 | Object-model declarations  | internal     | Parser/sema/metadata support exists, but executable object-model behavior is not widened beyond matrix rows.                                 |
 | Runtime metadata emission  | internal     | Class, protocol, category, property, ivar, selector, and string metadata are implementation evidence, not full runtime support claims.        |
 | Runtime dispatch result    | internal     | Strict dispatch and registration route through the public C runtime API; no alternate dispatch mode is documented.                           |
-| Advanced language features | reserved     | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until matrix evidence changes.     |
+| Advanced language features | reserved     | Blocks, ARC automation, `throws`, async/await, actors, tasks, macros, and broader interop stay unavailable until implemented matrix rows say otherwise. |
+| Retired/alternate surfaces | not a support state | Old modes, aliases, shims, fallbacks, migration lanes, direct helper commands, and report-only completion are negative evidence only.         |
 
 ## How to Read This Draft {#toc-how-to-read-this-draft}
 
@@ -49,6 +50,7 @@ Use this page in three passes:
 | inspect the native implementation boundary               | [docs/objc3c-native.md](../docs/objc3c-native.md) and `native/objc3c/`                          |
 | verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
 | inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
+| inspect hard-cutover support boundaries                  | [hard-cutover capability truth](../docs/support/hard_cutover_capability_truth.md)                |
 | inspect machine-readable capability truth                | [capability matrix JSON](../docs/support/capability_matrix.json) and [evidence map JSON](../docs/support/evidence_map.json) |
 | inspect public command ownership                         | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
 
@@ -82,9 +84,11 @@ This is a real compiler/runtime path, not parser scaffolding. It is still only a
 public support claim where the capability matrix marks a behavior implemented
 with evidence.
 
-## What Is Implemented but Not Yet Fully Live {#decisions}
+## Internal Evidence That Is Not Public Runtime Support {#decisions}
 
-The compiler already understands much more of the object-model surface than the runtime can fully execute today.
+The compiler already understands much more of the object-model surface than the
+runtime can fully execute today. The capability matrix keeps this as internal or
+reserved evidence until executable behavior is proven.
 
 Implemented in parser, semantic passes, and emitted metadata:
 
@@ -100,11 +104,15 @@ Implemented in parser, semantic passes, and emitted metadata:
   artifacts, and IO modules for lowering, IR, JSON/schema artifacts, dispatch
   classification, and public runtime C API boundaries.
 
-What is still incomplete is the last step: consuming all of that emitted metadata as a fully live runtime object system. The matrix keeps those owner files as internal evidence until executable behavior is proven.
+What is still incomplete is the last step: consuming all of that emitted
+metadata as a fully live runtime object system. The matrix keeps those owner
+files as internal evidence until executable behavior is proven.
 
-## What Remains {#status-remaining}
+## Reserved And Unclaimed Runtime Areas {#status-remaining}
 
-The biggest remaining gaps are runtime-completion gaps, not parser-only gaps:
+The biggest remaining gaps are runtime-completion gaps, not parser-only gaps.
+They remain unclaimed public support until implemented matrix rows link
+executable evidence:
 
 1. Finish runtime bootstrap and multi-image registration.
 2. Bind emitted methods, properties, and ivars to live runtime realization.
@@ -213,7 +221,7 @@ Defines structured error propagation, result surfaces, NSError/status bridging, 
 
 ### Part 7 — Concurrency, Async/Await, Tasks, and Actors {#part-7}
 
-Defines the future concurrency model: async/await, executor hopping, tasks, cancellation, and actor isolation.
+Defines the reserved concurrency model: async/await, executor hopping, tasks, cancellation, and actor isolation.
 
 ### Part 8 — System Programming Extensions {#part-8}
 
@@ -225,7 +233,7 @@ Defines direct/final/sealed-style controls and explicit dispatch/performance bou
 
 ### Part 10 — Metaprogramming, Derives, Macros, and Property Behaviors {#part-10}
 
-Defines the future boilerplate-reduction surface without turning the language into an opaque macro system.
+Defines the reserved boilerplate-reduction surface without turning the language into an opaque macro system.
 
 ### Part 11 — Interoperability with C, C++, and Swift {#part-11}
 
@@ -243,4 +251,5 @@ That is the right place to be honest:
 
 - the compiler can already do useful native work,
 - the spec is much broader than the currently runnable subset,
-- and the remaining work is runtime completion, not hand-wavy future intent.
+- and the remaining work is reserved runtime closure until evidence moves exact
+  rows to `implemented`.

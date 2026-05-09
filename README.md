@@ -31,22 +31,23 @@ Today it has:
 - integrated workflow surfaces for performance, conformance, stress,
   external-validation, packaging, release operations, and distribution
   credibility,
-- ongoing work to finish full runtime realization of classes, protocols, categories, properties, blocks, and ARC.
+- support truth routed through the schema-backed capability matrix and evidence
+  map.
 
-What is still incomplete:
+Current public support states:
 
-- full live Objective-C 3.0 object-model runtime behavior,
-- full property/ivar/runtime reflection closure,
-- full escaping block/byref and ARC automation,
-- complete runtime-backed semantics across `throws`/error propagation,
-  async/task/actor concurrency, metaprogramming/property-behavior surfaces, and
-  broader interop,
-- production-strength completeness and stability claims for the full intended
-  language/runtime envelope.
+| Area | Capability boundary | Public support wording |
+| --- | --- | --- |
+| Parser syntax, typed semantic flow, strict runtime-dispatch lowering, IR module emission, strict dispatch diagnostics, and runnable smoke | `implemented` where rows exist | Supported only at the exact row/evidence scope in `docs/support/capability_matrix.md`. |
+| Native module decomposition, public C runtime result APIs, workflow bridge, and JSON/schema helpers | `internal` | Owner and evidence surfaces, not language support claims. |
+| Full object-model runtime realization and property/ivar/reflection closure | `reserved` | Unclaimed until implemented matrix rows link executable evidence. |
+| Blocks, full ARC automation, `throws`, async/task/actor runtime closure, metaprogramming/property behavior runtime closure, and broader interop | `reserved` unless narrower rows say otherwise | Unavailable as public support outside exact implemented rows. |
+| Old modes, compatibility modes, aliases, fallback paths, shims, migration lanes, direct helper commands, and report-only completion | retired wording, not a support state | Negative evidence or source-hygiene inventory only. |
 
 ## Runnable Subset
 
-The current runnable subset is real, but it is still a subset.
+The current runnable subset is real, but it is still a subset. The capability
+matrix is the support boundary; prose in this README is only a routing summary.
 
 What you can compile and run today:
 
@@ -71,17 +72,19 @@ What you can compile and run today:
 The repo also now carries dedicated conformance and runnable-package workflows
 for block/ARC, concurrency, error handling, interop, metaprogramming,
 object-model, storage/reflection, and release-candidate validation. That means
-those feature families are actively modeled and validated. It does not mean
-every corresponding language/runtime behavior is fully complete.
+those feature families have owner/evidence surfaces. It does not mean every
+corresponding language/runtime behavior is implemented.
 
-What is not fully runnable yet:
+Reserved or unclaimed runtime-backed areas:
 
-- full class/protocol/category/property runtime realization,
-- full property synthesis and reflective runtime consumption,
-- full escaping block/byref runtime behavior,
+- class/protocol/category/property runtime realization outside implemented
+  matrix rows,
+- property synthesis and reflective runtime consumption outside implemented
+  matrix rows,
+- escaping block/byref runtime behavior,
 - full ARC automation,
-- complete runtime-backed closure for `throws`, async/await, tasks, actors,
-  macros, property behaviors, and broader interop.
+- runtime-backed closure for `throws`, async/await, tasks, actors, macros,
+  property behaviors, and broader interop.
 
 ## Start Here
 
@@ -115,6 +118,7 @@ Documentation boundary:
 - implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
 - operator runbooks: `docs/runbooks/`
 - support truth: `docs/support/capability_matrix.md`, `docs/support/evidence_map.md`
+- hard-cutover capability truth: `docs/support/hard_cutover_capability_truth.md`
 - machine-owned outputs, not onboarding: `tmp/`, `artifacts/`, `reports/`
 
 If you are new to the repo, stay out of `tmp/` and archived redirect material until you actually need them.

@@ -2,8 +2,9 @@
 
 ## Runtime Execution Architecture (Current)
 
-The live executable path is a single compile-to-runtime pipeline. Later runtime
-closure work must extend this path, not bypass it.
+The live executable path is a single compile-to-runtime pipeline. Reserved
+runtime-closure work must extend this path and earn exact capability rows before
+public docs can claim support.
 
 ## Runtime Architecture Section Owners
 
@@ -57,12 +58,12 @@ without adding fragment files that the stitcher contract does not know about.
   - `native/objc3c/src/runtime/blocks/`
   - `native/objc3c/src/runtime/errors/`
   - `native/objc3c/src/runtime/concurrency/`
-- currently intended completion claims only the named module tree plus wired
+- the current matrix claim boundary covers only the named module tree plus wired
   core helpers for dispatch, selector lookup, image registration, and realized
-  class graph consumption. Broader runtime behavior remains claimable only
-  through the live strict dispatch status probes and gates that exercise typed
-  success/error results from `objc3_runtime_dispatch_i32_checked` and
-  `objc3_runtime_dispatch_i32`.
+  class graph consumption. Broader runtime behavior remains unclaimed until live
+  strict dispatch status probes and gates exercise typed success/error results
+  from `objc3_runtime_dispatch_i32_checked` and `objc3_runtime_dispatch_i32`
+  under implemented capability rows.
 - authoritative emitted artifacts:
   - `<prefix>.obj`
   - `<prefix>.ll`

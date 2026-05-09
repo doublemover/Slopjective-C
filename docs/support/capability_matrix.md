@@ -37,10 +37,12 @@ Command and evidence truth is hard-cut to the current surfaces:
 - Shared JSON/schema claims are owned by checked-in schema files and the native
   `objc3c_json` split helpers / artifact JSON modules, not by prose-only
   summaries.
+- Runtime and object-model prose is not a support claim unless an implemented
+  matrix row links executable evidence for the exact behavior.
 - The hard-cutover matrix rejects shims, fallback paths, migration lanes,
   direct helper commands, and compatibility-mode labels as public support
-  surfaces. Future rows must use canonical feature names with evidence, not
-  revive those labels.
+  surfaces. Report-only completion is also not support evidence. Future rows
+  must use canonical feature names with evidence, not revive those labels.
 
 | Capability                                  | State       | Support claim                                      | Evidence                                                                                                       |
 | ------------------------------------------- | ----------- | -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
@@ -52,10 +54,13 @@ Command and evidence truth is hard-cut to the current surfaces:
 | Runtime dispatch strict diagnostic          | implemented | `objc3c.behavior.runtime.strict-dispatch-error`    | `tests/native/runtime/dispatch/message_send_runtime_dispatch.objc3`; `native/objc3c/src/runtime/dispatch/dispatch_api.cpp`; `native/objc3c/src/runtime/public/objc3_runtime_dispatch_diagnostics.cpp` |
 | Runnable smoke path                         | implemented | `objc3c.behavior.e2e.runnable-smoke`               | `tests/native/e2e/smoke/basic_i32_return_main.objc3`                                                           |
 | Async and actor runtime closure             | reserved    |                                                    | `docs/spec/concurrency_reserved.md`; `tests/conformance/diagnostics/manifest.json`                             |
+| Full object-model runtime realization       | reserved    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `spec/MODULE_METADATA_AND_ABI_TABLES.md`; `docs/runbooks/objc3c_object_model_closure.md` |
+| Advanced runtime-backed language closure    | reserved    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `spec/PART_6_ERRORS_RESULTS_THROWS.md`; `spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md`; `spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md` |
 | Native compiler module decomposition        | internal    |                                                    | `native/objc3c/src/CMakeLists.txt`; `native/objc3c/src/lower/metadata/runtime_metadata_layout_policy.cpp`; `native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp`; `native/objc3c/src/runtime/classes/class_graph.cpp` |
 | Public C runtime dispatch result surface    | internal    |                                                    | `native/objc3c/src/runtime/public/objc3_runtime_api.h`; `native/objc3c/src/runtime/public/objc3_runtime_result.h`; `native/objc3c/src/runtime/images/registration.cpp`; `native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp` |
 | npm objc3c workflow bridge                  | internal    |                                                    | `package.json`; `scripts/objc3c_workflow/action_catalog.py`; `scripts/objc3c_workflow/registry_views.py`; `scripts/objc3c_workflow/action_integrity.py`; `scripts/objc3c_workflow/request_dispatch.py`; `docs/runbooks/objc3c_public_command_surface.md` |
 | Shared JSON and schema registry helpers     | internal    |                                                    | `schemas/objc3c-capability-matrix-v1.schema.json`; `schemas/objc3c-capability-evidence-map-v1.schema.json`; `docs/support/README.md`; `docs/support/evidence_map.json`; `native/objc3c/src/io/json/json_schema_validation.cpp`; `native/objc3c/src/io/json/json_equivalence.cpp`; `native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp` |
+| Hard-cutover capability truth boundary      | internal    |                                                    | `docs/support/hard_cutover_capability_truth.md`; `docs/support/README.md`; `docs/issues/hard_cutover_8132_8150_evidence.md` |
 
 State meanings:
 
@@ -77,5 +82,8 @@ Command rule:
 - Compatibility shims, fallback paths, migration lanes, old modes, and
   prose-only capability claims are not alternate support states and must not be
   renamed into supported paths.
+- Runtime completion, full object-model behavior, or advanced language closure
+  must stay `reserved` until the matrix and evidence map carry exact
+  implemented rows.
 
 Schema examples live in `docs/support/capability_schema_examples.md`.

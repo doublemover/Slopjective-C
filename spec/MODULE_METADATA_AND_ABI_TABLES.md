@@ -131,7 +131,10 @@ newer metadata deterministically.
 ## D.6 Current implementation status {#d-6}
 
 The current implementation has a real native compiler and a real runnable subset,
-but it does not yet implement the full Objective-C 3.0 object model.
+but it does not yet implement the full Objective-C 3.0 object model. Public
+support claims in this section are subordinate to
+`docs/support/capability_matrix.json` and
+`docs/support/evidence_map.json`.
 
 ### D.6.1 Implemented and runnable {#d-6-1}
 
@@ -145,7 +148,7 @@ The current native toolchain can compile and run:
 - the current ownership baseline for runtime-backed objects,
 - native execution smoke for the supported subset.
 
-### D.6.2 Implemented in compiler and emitted artifacts, but not yet fully realized at runtime {#d-6-2}
+### D.6.2 Internal owner evidence, not public runtime support {#d-6-2}
 
 The compiler already parses, validates, and emits substantial metadata for:
 
@@ -155,26 +158,29 @@ The compiler already parses, validates, and emits substantial metadata for:
 - class, metaclass, protocol, category, property, and ivar descriptor families,
 - source-closure and legality rules for conformance, category merge, and related object-model semantics.
 
-That surface is broader than the current runnable subset. In particular, emitted
-metadata now exists for many object-model constructs whose full live runtime
-registration and realization is still being completed.
+That surface is broader than the current runnable subset. In capability-matrix
+terms, these are internal owner and artifact surfaces unless a narrower behavior
+row is marked `implemented`. Emitted metadata for object-model constructs does
+not by itself claim live runtime registration, realization, or reflection.
 
-### D.6.3 Not yet complete {#d-6-3}
+### D.6.3 Reserved or unclaimed runtime-backed areas {#d-6-3}
 
-The following major areas remain incomplete:
+The following major areas remain reserved or unclaimed as public support until
+the capability matrix links exact implemented rows to evidence:
 
-- full runtime bootstrap and multi-image registration completion,
-- binding emitted metadata to fully live class, protocol, and category realization,
-- full property, ivar, and accessor runtime behavior and reflective consumption,
-- cross-module import and module runtime semantics,
-- executable blocks, captures, and byref runtime support,
-- ARC automation beyond the current ownership baseline,
-- advanced language areas such as `throws`, richer error propagation,
-  `async` and `await`, actors, tasks, macros, derives, and broader interop closure.
+| Area | Matrix state | Current public wording |
+| --- | --- | --- |
+| Runtime bootstrap and multi-image registration beyond implemented rows | `reserved` | Unclaimed runtime closure. |
+| Emitted metadata bound to fully live class, protocol, and category realization | `reserved` | Owner/artifact evidence only until executable rows exist. |
+| Property, ivar, accessor, and reflection runtime behavior beyond implemented rows | `reserved` | Unclaimed runtime closure. |
+| Cross-module import and module runtime semantics beyond documented fail-closed contracts | `reserved` | Not a broad module-runtime support claim. |
+| Executable blocks, captures, and byref runtime support | `reserved` | Unavailable unless a narrower implemented row states otherwise. |
+| ARC automation beyond the current ownership baseline | `reserved` | Unavailable unless a narrower implemented row states otherwise. |
+| `throws`, richer error propagation, async/await, actors, tasks, macros, derives, and broader interop closure | `reserved` | Future-spec shape only, not current public runtime support. |
 
 ## D.7 Current implementation priorities {#d-7}
 
-The next implementation priorities are:
+Implementation priorities are planning context, not support states:
 
 1. finish runtime bootstrap and registration completion,
 2. bind emitted method, property, and ivar metadata to live runtime realization,

@@ -14,6 +14,7 @@ but they must not widen it beyond these files.
 | `evidence_map.md` | Human-readable evidence table. |
 | `capability_matrix.schema.json` | Local mirror for consumers that historically read the schema from this directory. |
 | `capability_schema_examples.md` | Examples and anti-examples for matrix and evidence rows. |
+| `hard_cutover_capability_truth.md` | Human-readable hard-cutover support boundary for docs, site, stdlib, and runbook prose. |
 
 The canonical schema registry entries live under `schemas/`:
 
@@ -37,3 +38,6 @@ The canonical schema registry entries live under `schemas/`:
   canonical capability names.
 - Retired alternate surfaces are diagnostics, history, or anti-examples; they
   are not support modes.
+- Runtime, object-model, stdlib, or workflow prose must not upgrade an
+  `internal` or `reserved` row into public behavior. Link the matrix row and
+  evidence instead.

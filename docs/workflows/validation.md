@@ -5,6 +5,9 @@ claims fail docs validation.
 Capability validation fails closed: missing evidence, unsupported alternate-name
 claims, old-behavior escape paths, or success-without-evidence wording must stay
 out of implemented support rows.
+Generated reports, static summaries, and workflow owner files are evidence
+inputs only; they do not complete a capability without a matching implemented
+matrix row.
 
 Validation prose must preserve the same ownership split as the capability
 matrix:

@@ -142,6 +142,41 @@
       "path": "tests/conformance/diagnostics/manifest.json"
     },
     {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "doc",
+      "path": "spec/MODULE_METADATA_AND_ABI_TABLES.md"
+    },
+    {
+      "capability_id": "runtime.object-model.full-realization",
+      "evidence_kind": "doc",
+      "path": "docs/runbooks/objc3c_object_model_closure.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "spec/PART_6_ERRORS_RESULTS_THROWS.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "spec/PART_7_CONCURRENCY_ASYNC_AWAIT_ACTORS.md"
+    },
+    {
+      "capability_id": "language.advanced-runtime-closure",
+      "evidence_kind": "doc",
+      "path": "spec/PART_10_METAPROGRAMMING_DERIVES_MACROS_PROPERTY_BEHAVIORS.md"
+    },
+    {
       "capability_id": "compiler.architecture.module-decomposition",
       "evidence_kind": "source",
       "path": "native/objc3c/src/CMakeLists.txt"
@@ -305,6 +340,21 @@
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "test",
       "path": "tests/tooling/test_objc3c_shared_json_schema.py"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/support/hard_cutover_capability_truth.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/support/README.md"
+    },
+    {
+      "capability_id": "support.hard-cutover-capability-truth",
+      "evidence_kind": "doc",
+      "path": "docs/issues/hard_cutover_8132_8150_evidence.md"
     }
   ]
 }
