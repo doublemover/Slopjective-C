@@ -52,6 +52,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   concurrency/actor_state.cpp
   concurrency/actor_state.h
   concurrency/actor_state_store.h
+  concurrency/runtime_concurrency_snapshot_contracts.h
   concurrency/continuation_operations.cpp
   concurrency/continuation_operations.h
   concurrency/continuation_resume_operations.cpp
@@ -89,6 +90,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/builtin_method_lookup.h
   dispatch/dispatch_result_state.cpp
   dispatch/dispatch_result_state.h
+  dispatch/dispatch_snapshot_contracts.h
   dispatch/dispatch_family.cpp
   dispatch/dispatch_family.h
   dispatch/dispatch_status.cpp
@@ -134,6 +136,7 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   errors/error_bridge_kind.h
   errors/error_bridge.cpp
   errors/error_bridge.h
+  errors/error_bridge_snapshot_contracts.h
   errors/error_bridge_operations.cpp
   errors/error_bridge_operations.h
   errors/error_bridge_snapshot.cpp
@@ -180,7 +183,9 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/runtime_instance_destroy_plan.h
   memory/runtime_instance_lifetime.cpp
   memory/runtime_instance_lifetime.h
+  memory/runtime_ownership_snapshot_contracts.h
   metadata/runtime_capability_contracts.h
+  metadata/runtime_artifact_snapshot_contracts.h
   metadata/runtime_emitted_records.h
   metadata/runtime_release_candidate_acceptance.cpp
   metadata/runtime_snapshot_helpers.cpp
@@ -218,10 +223,12 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   selectors/selector_spelling.h
   selectors/selector_table.cpp
   selectors/selector_table.h
+  selectors/runtime_selector_snapshot_contracts.h
   state/runtime_reset.cpp
   state/runtime_reset.h
   state/runtime_bootstrap_replay.cpp
   state/runtime_bootstrap_replay.h
+  state/runtime_bootstrap_contracts.h
   state/runtime_live_state_reset.cpp
   state/runtime_live_state_reset.h
   state/runtime_reset_policy.cpp

@@ -14,4 +14,5 @@ target_sources(${OBJC3_RUNTIME_LIBRARY_TARGET} PRIVATE
   protocol_conformance_snapshots.cpp
   receiver_identity.cpp
   receiver_identity.h
+  runtime_object_snapshot_contracts.h
 )
