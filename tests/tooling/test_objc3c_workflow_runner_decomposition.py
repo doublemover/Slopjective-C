@@ -15,7 +15,14 @@ from scripts.objc3c_workflow.action_handler_groups import ACTION_HANDLER_SECTION
 from scripts.objc3c_workflow.action_payload_builder import build_action_payload as owned_build_action_payload
 from scripts.objc3c_workflow.action_payload_fields import build_action_payload
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
+from scripts.objc3c_workflow.action_catalog_distribution_credibility import (
+    DISTRIBUTION_CREDIBILITY_ACTION_SPECS,
+)
 from scripts.objc3c_workflow.action_catalog_groups import ACTION_CATALOG_SECTION_GROUPS
+from scripts.objc3c_workflow.action_catalog_packaging_channels import PACKAGING_CHANNEL_ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog_release_channels import RELEASE_CHANNEL_ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog_release_foundation import RELEASE_FOUNDATION_ACTION_SPECS
+from scripts.objc3c_workflow.action_catalog_release_operations import RELEASE_OPERATIONS_ACTION_SPECS
 from scripts.objc3c_workflow.argument_parser import parse_workflow_args as parse_workflow_args_impl
 from scripts.objc3c_workflow.argument_requests import (
     DescribeActionRequest as OwnedDescribeActionRequest,
@@ -140,6 +147,21 @@ def test_handler_registry_matches_action_catalog() -> None:
     assert action_handler_registry_is_complete()
     assert missing_action_handlers() == []
     assert orphan_action_handlers() == []
+
+
+def test_release_channel_catalog_aggregates_owner_catalogs() -> None:
+    owner_catalogs = (
+        RELEASE_FOUNDATION_ACTION_SPECS,
+        PACKAGING_CHANNEL_ACTION_SPECS,
+        RELEASE_OPERATIONS_ACTION_SPECS,
+        DISTRIBUTION_CREDIBILITY_ACTION_SPECS,
+    )
+    owner_actions = set().union(*(catalog.keys() for catalog in owner_catalogs))
+
+    assert owner_actions == set(RELEASE_CHANNEL_ACTION_SPECS)
+    for catalog in owner_catalogs:
+        for action, spec in catalog.items():
+            assert RELEASE_CHANNEL_ACTION_SPECS[action] is spec
 
 
 def test_workflow_path_roots_are_owned_by_package_module() -> None:
