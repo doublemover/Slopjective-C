@@ -80,6 +80,15 @@ struct Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSurfaceSummary
   bool deterministic = false;
 };
 
+[[nodiscard]] Objc3MetaprogrammingExpansionLoweringContract
+BuildMetaprogrammingExpansionLoweringContract(
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+        &property_source_summary,
+    const Objc3MetaprogrammingDeriveExpansionInventorySummary &derive_summary,
+    const Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary &macro_summary,
+    const Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
+        &property_legality_summary);
+
 [[nodiscard]] std::string
 BuildMetaprogrammingExpansionBehaviorSemanticModelSummaryJson(
     const Objc3MetaprogrammingExpansionBehaviorSemanticModelSummary &summary);

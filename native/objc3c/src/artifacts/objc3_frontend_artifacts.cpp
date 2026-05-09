@@ -130,6 +130,8 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildMetaprogrammingExpansionBehaviorSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
+    BuildMetaprogrammingExpansionLoweringContract;
+using objc3::artifacts::frontend::
     BuildMetaprogrammingExpansionLoweringContractJson;
 using objc3::artifacts::frontend::
     BuildMetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary;
@@ -591,58 +593,6 @@ BuildDispatchDispatchControlLoweringContract(
       legality_summary.ready_for_lowering_and_runtime &&
       compatibility_summary.deterministic &&
       compatibility_summary.ready_for_lowering_and_runtime;
-  return contract;
-}
-
-Objc3MetaprogrammingExpansionLoweringContract BuildMetaprogrammingExpansionLoweringContract(
-    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
-        &property_source_summary,
-    const Objc3MetaprogrammingDeriveExpansionInventorySummary &derive_summary,
-    const Objc3MetaprogrammingMacroSafetySandboxDeterminismSummary &macro_summary,
-    const Objc3MetaprogrammingPropertyBehaviorLegalityCompatibilitySummary
-        &property_legality_summary) {
-  Objc3MetaprogrammingExpansionLoweringContract contract;
-  contract.derive_inventory_sites = derive_summary.supported_derive_request_sites;
-  contract.derived_selector_artifact_sites =
-      derive_summary.generated_method_entry_count;
-  contract.macro_replay_visible_sites = macro_summary.expansion_visible_macro_sites;
-  contract.property_behavior_sites = property_legality_summary.property_behavior_sites;
-  contract.synthesized_binding_sites =
-      property_source_summary.synthesized_binding_visible_sites;
-  contract.synthesized_getter_sites =
-      property_source_summary.synthesized_getter_visible_sites;
-  contract.synthesized_setter_sites =
-      property_source_summary.synthesized_setter_visible_sites;
-  contract.replay_visible_metadata_sites =
-      contract.derived_selector_artifact_sites +
-      contract.macro_replay_visible_sites + contract.property_behavior_sites +
-      contract.synthesized_binding_sites + contract.synthesized_getter_sites +
-      contract.synthesized_setter_sites;
-  contract.guard_blocked_sites =
-      derive_summary.unsupported_derive_request_sites +
-      derive_summary.unsupported_topology_sites +
-      derive_summary.selector_conflict_sites +
-      macro_summary.incomplete_macro_metadata_sites +
-      macro_summary.orphan_macro_metadata_sites +
-      macro_summary.invalid_package_sites +
-      macro_summary.invalid_provenance_sites +
-      macro_summary.nondeterministic_callable_sites +
-      macro_summary.unsupported_callable_topology_sites +
-      property_legality_summary.unsupported_behavior_sites +
-      property_legality_summary.observed_on_protocol_sites +
-      property_legality_summary.observed_readonly_conflict_sites +
-      property_legality_summary.projected_writable_conflict_sites +
-      property_legality_summary.non_object_behavior_sites;
-  contract.contract_violation_sites = 0;
-  contract.deterministic =
-      derive_summary.deterministic &&
-      derive_summary.ready_for_lowering_and_runtime &&
-      macro_summary.deterministic &&
-      macro_summary.ready_for_lowering_and_runtime &&
-      property_legality_summary.deterministic &&
-      property_legality_summary.ready_for_lowering_and_runtime &&
-      property_source_summary.deterministic_handoff &&
-      property_source_summary.ready_for_semantic_expansion;
   return contract;
 }
 
