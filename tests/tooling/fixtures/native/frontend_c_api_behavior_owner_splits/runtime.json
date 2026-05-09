@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-frontend-c-api-behavior-owner-split",
+  "owner_phase": "runtime",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
+  ],
+  "support_boundary": "runtime ownership covers result lifecycle, standalone string lifecycle, borrowed views, runtime inspector fields, public ABI versioning, and public/private partition checks only as strict C API contract evidence",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "required_ownership_fields:result_storage_owner",
+    "required_ownership_fields:result_release_function",
+    "required_ownership_fields:result_release_timing",
+    "required_ownership_fields:standalone_string_release_function",
+    "required_helpers:objc3c_frontend_c_result_destroy",
+    "required_helpers:objc3c_frontend_c_string_view",
+    "required_helpers:objc3c_frontend_c_string_release",
+    "required_header_ownership_phrases:OBJC3C_FRONTEND_C_API_NULL_INVALID_INPUT_OWNER owns fail-closed NULL",
+    "required_header_ownership_phrases:OBJC3C_FRONTEND_C_API_ABI_VERSION_OWNER owns exact ABI version gating",
+    "required_header_ownership_phrases:OBJC3C_FRONTEND_C_API_PUBLIC_PRIVATE_PARTITION_OWNER owns the rule"
+  ],
+  "canonical_anchor": "tests/native/runtime",
+  "retired_surface_rule": "runtime fallback, compatibility wrappers, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, and null-invalid-input success claims are strict-error or canonical rejection evidence"
+}

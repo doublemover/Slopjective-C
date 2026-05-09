@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-frontend-c-api-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
+  ],
+  "support_boundary": "e2e ownership covers runner executable summaries, compile status, process exit code, emitted artifact routing, and public C API runner result publication only after lower phase owners claim behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "runner:artifacts/bin/objc3c-frontend-c-api-runner.exe",
+    "required_summary_fields:status",
+    "required_summary_fields:process_exit_code",
+    "required_summary_fields:success",
+    "required_summary_fields:semantic_skipped",
+    "required_summary_fields:paths",
+    "required_summary_fields:last_error",
+    "required_summary_fields:result_error_message",
+    "fail_closed_reasons:compile status does not match result.status",
+    "fail_closed_reasons:successful compile did not set result.success",
+    "fail_closed_reasons:failing compile left result.success set"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "runner success without matching status, report-only runner summaries, generated summary-only support, fallback execution, shimmed execution, and semantic-skipped-as-success are canonical rejection or strict-error evidence"
+}

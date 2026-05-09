@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-frontend-c-api-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
+  ],
+  "support_boundary": "parser ownership covers C API runner inputs and lex/parse stage summaries only after canonical parser owners claim source behavior; runner summary fields do not create parser acceptance",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "required_stage_fields:lex",
+    "required_stage_fields:parse",
+    "required_stage_summary_fields:stage",
+    "required_stage_summary_fields:attempted",
+    "required_stage_summary_fields:skipped",
+    "required_helpers:objc3c_frontend_c_stage_summary_is_well_formed"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "old-mode parser inputs, parser fallback flags, compatibility parser routing, and parser-stage report-only success are canonical rejection or provenance-only evidence"
+}

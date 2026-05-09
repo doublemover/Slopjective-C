@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-frontend-c-api-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
+  ],
+  "support_boundary": "frontend C API rows that mention fallback, shim, old-mode, compatibility, report-only, generated-artifact-only, missing artifacts, empty artifacts, result/status mismatch, skipped semantic success, null-invalid-input success, ABI version bypass, public-private partition bypass, borrowed-view lifetime misuse, or stage-summary mismatch are non-positive unless canonical behavior owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "owner_contract:no_fallback_or_report_only_claims=true",
+    "fail_closed_reasons:compile status does not match result.status",
+    "fail_closed_reasons:successful compile did not set result.success",
+    "fail_closed_reasons:failing compile left result.success set",
+    "fail_closed_reasons:successful compile published a result-owned error message",
+    "fail_closed_reasons:failing compile published no result-owned error message",
+    "fail_closed_reasons:artifact path is present but empty",
+    "fail_closed_reasons:artifact path presence disagrees with result_has_artifact",
+    "fail_closed_reasons:artifact path is missing",
+    "fail_closed_reasons:frontend C API accessor contract fail-closed",
+    "null_and_error_expectations:null result artifact helpers return null, empty view, or false",
+    "null_and_error_expectations:invalid stage ids are rejected before summary shape inspection",
+    "null_and_error_expectations:stage attempted and skipped flags are mutually exclusive",
+    "required_header_ownership_phrases:undefined artifact kinds and NULL inputs fail closed as NULL/empty/0",
+    "*fallback*",
+    "*shim*",
+    "*old_mode*",
+    "*old-mode*",
+    "*compatibility*",
+    "*legacy*",
+    "*unsupported*",
+    "*report-only*",
+    "*generated-artifact*",
+    "*semantic-skipped-as-success*",
+    "*abi-version-bypass*",
+    "*public-private-partition-bypass*",
+    "*borrowed-view-lifetime*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "fallback, shim, old-mode, compatibility, report-only, generated-artifact-only, null-invalid-input success, ABI version bypass, public/private partition bypass, borrowed-view lifetime misuse, artifact mismatch, status mismatch, semantic-skipped success, and stage-summary mismatch remain canonical rejection, strict-error, or provenance-only evidence"
+}

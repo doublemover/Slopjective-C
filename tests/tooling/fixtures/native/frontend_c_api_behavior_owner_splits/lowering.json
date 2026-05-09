@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-frontend-c-api-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_contracts": [
+    "tests/tooling/fixtures/native/frontend_c_api_runner_contract.json",
+    "tests/tooling/fixtures/native/frontend_c_api_helper_contract.json"
+  ],
+  "support_boundary": "lowering ownership covers lower stage summaries, emit option coupling, and artifact requirement decisions before IR/runtime owners cite emitted paths as provenance",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "required_stage_fields:lower",
+    "required_stage_fields:emit",
+    "required_summary_fields:ir_object_backend",
+    "required_summary_fields:stages",
+    "required_summary_fields:output_contract",
+    "ownership_expectations:runner-required artifacts are explicit per emitted option and compile status"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime-dispatch fallback lowering, missing required artifacts, emitted-option mismatch, and lowering report-only success are strict-error, canonical rejection, or provenance-only evidence"
+}
