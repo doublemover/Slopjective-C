@@ -16,9 +16,11 @@ matrix:
 - internal rows may name source, schema, or generated-doc owners without
   becoming language support,
 - machine-readable capability truth lives in `docs/support/capability_matrix.json`
-  against `schemas/objc3c-capability-matrix-v1.schema.json`,
+  under schema id `objc3c-capability-matrix-v1` from
+  `scripts/objc3c_shared/schema_registry.py`,
 - machine-readable evidence truth lives in `docs/support/evidence_map.json`
-  against `schemas/objc3c-capability-evidence-map-v1.schema.json`,
+  under schema id `objc3c-capability-evidence-map-v1` from the same shared
+  registry,
 - replayable commands must use `npm run objc3c -- <action>`,
 - direct script, PowerShell, CMake, or native helper names are implementation
   evidence only,

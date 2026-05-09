@@ -18,11 +18,11 @@ Public support truth lives in:
 - `docs/support/capability_matrix.json`
 - `docs/support/evidence_map.json`
 - `docs/support/evidence_map.md`
-- `schemas/objc3c-capability-matrix-v1.schema.json`
-- `schemas/objc3c-capability-evidence-map-v1.schema.json`
+- `scripts/objc3c_shared/schema_registry.py`
 
 Any local claim in this part is subordinate to those capability and evidence
-surfaces.
+surfaces. The capability matrix and evidence map schemas are selected by shared
+registry ids, not by local schema fragments in this part.
 
 Public command truth lives in `package.json` and
 `scripts/objc3c_workflow/action_catalog.py`. The supported command shape is
@@ -231,9 +231,10 @@ language features.
 The machine-readable support contract is:
 
 - capability data: `docs/support/capability_matrix.json`
-- capability schema: `schemas/objc3c-capability-matrix-v1.schema.json`
+- capability schema id: `objc3c-capability-matrix-v1`
 - evidence data: `docs/support/evidence_map.json`
-- evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
+- evidence schema id: `objc3c-capability-evidence-map-v1`
+- schema owner: `scripts/objc3c_shared/schema_registry.py`
 
 Docs, spec prose, and site pages must not introduce a local status state beyond
 `implemented`, `rejected`, `reserved`, or `internal`.

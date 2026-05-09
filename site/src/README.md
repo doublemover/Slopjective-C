@@ -28,7 +28,8 @@ Generation input ownership is deterministic and ordered:
   `scripts/objc3c_workflow/action_catalog.py`; public examples use
   `npm run objc3c -- <action>`.
 - Source of truth for capability support: `docs/support/capability_matrix.md`,
-  `docs/support/capability_matrix.json`, and `docs/support/evidence_map.md`.
+  `docs/support/capability_matrix.json`, `docs/support/evidence_map.md`, and
+  registry-owned schemas from `scripts/objc3c_shared/schema_registry.py`.
 
 ## Tone and Accessibility Rules
 

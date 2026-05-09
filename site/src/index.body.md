@@ -3,7 +3,7 @@
 _Working draft v0.11_  
 _Last updated: 2026-05-09_
 
-Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the schema-backed capability matrix and evidence map instead of archived planning notes, and public commands route through `npm run objc3c -- <action>`.
+Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the registry-backed capability matrix and evidence map instead of archived planning notes, and public commands route through `npm run objc3c -- <action>`.
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model remains unclaimed until the capability matrix marks it implemented with evidence.
 
@@ -28,7 +28,7 @@ Use this page in three passes:
 
 1. Read the status sections below to understand what is real today.
 2. Use the spec map to find the normative area you care about.
-3. Use the schema-backed capability matrix and evidence map when you need to verify a support claim.
+3. Use the registry-backed capability matrix and evidence map when you need to verify a support claim.
 
 ## Quick Routes {#toc-quick-routes}
 
@@ -51,7 +51,7 @@ Use this page in three passes:
 | verify support status and evidence                       | [capability matrix](../docs/support/capability_matrix.md)                                       |
 | inspect executable evidence for support claims           | [evidence map](../docs/support/evidence_map.md)                                                 |
 | inspect hard-cutover support boundaries                  | [hard-cutover capability truth](../docs/support/hard_cutover_capability_truth.md)                |
-| inspect machine-readable capability truth                | [capability matrix JSON](../docs/support/capability_matrix.json) and [evidence map JSON](../docs/support/evidence_map.json) |
+| inspect machine-readable capability truth                | [capability matrix JSON](../docs/support/capability_matrix.json), [evidence map JSON](../docs/support/evidence_map.json), and [schema registry](../scripts/objc3c_shared/schema_registry.py) |
 | inspect public command ownership                         | [docs/runbooks/objc3c_public_command_surface.md](../docs/runbooks/objc3c_public_command_surface.md) |
 
 ## Reader Promises {#toc-reader-promises}
