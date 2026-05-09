@@ -9,6 +9,7 @@ add_library(objc3c_lower STATIC
   contracts/dispatch_surface_contracts.cpp
   contracts/executable_layout_lowering_contracts.cpp
   contracts/function_method_lowering_state.cpp
+  contracts/interop_lowering_contracts.cpp
   contracts/lowering_concurrency_contracts.cpp
   contracts/lowering_arc_contracts.cpp
   contracts/lowering_backend_handoff.cpp
