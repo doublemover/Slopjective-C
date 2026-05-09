@@ -6,6 +6,13 @@
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
   "summary_implementation_anchor": "scripts/build_runtime_corrective_boundary_inventory_summary.py",
   "generated_report_root": "tmp/reports/m316/M316-A001",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before corrective source-owner contract",
+    "support_authority": "runtime-corrective contracts are source, probe, acceptance, and provenance evidence only until a behavior owner split claims the phase",
+    "generated_report_rule": "generated corrective reports, compile artifacts, replay manifests, and proof bundles cannot define canonical support",
+    "retired_surface_rule": "fallback, shim, old-mode, compatibility, unsupported, unresolved dispatch, sidecar-only proof, and alternate acceptance evidence is canonical rejection, strict-error, or provenance-only evidence"
+  },
   "hard_cutover_source_owner_contract": {
     "source_owned": true,
     "report_only_allowed": false,
@@ -18,6 +25,13 @@
       "supporting_contracts": [
         "tests/tooling/fixtures/runtime_corrective/dispatch_lowering_implementation_contract.json"
       ],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "dispatch realization claims require semantic model, lowering implementation, and linked runtime probe ownership; unresolved dispatch remains strict-error evidence",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_dispatch_summary.py",
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_live_dispatch_runtime.py",
@@ -30,6 +44,13 @@
     "runtime_corrective_native_output_owner": {
       "source_contract": "tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json",
       "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "native-output truth requires coupled IR, object, provenance, registration manifest, and linked probe evidence; sidecar-only or generated-report proof is rejection/provenance",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_native_output_truth_summary.py",
       "check_implementation_anchors": [],
       "report_only_allowed": false,
@@ -39,6 +60,12 @@
     "runtime_corrective_lowering_provenance_owner": {
       "source_contract": "tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json",
       "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "lowering",
+        "ir",
+        "canonical_rejection"
+      ],
+      "support_boundary": "lowering provenance binds lowering surfaces to emitted IR/object artifacts, but artifact presence alone cannot create support",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_lowering_provenance_summary.py",
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_dispatch_lowering.py",
@@ -53,6 +80,13 @@
       "supporting_contracts": [
         "tests/tooling/fixtures/runtime_corrective/synthesized_accessor_lowering_implementation_contract.json"
       ],
+      "behavior_owner_phases": [
+        "sema",
+        "lowering",
+        "runtime",
+        "canonical_rejection"
+      ],
+      "support_boundary": "synthesized accessor claims require semantic ownership, lowering helper selection, and runtime-backed execution; storage-global fallback claims remain rejection evidence",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_synthesized_accessor_runtime.py",
@@ -65,6 +99,13 @@
     "runtime_corrective_executable_proof_owner": {
       "source_contract": "tests/tooling/fixtures/runtime_corrective/executable_proof_abi_contract.json",
       "supporting_contracts": [],
+      "behavior_owner_phases": [
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "support_boundary": "executable proof is e2e/runtime evidence only when compile artifacts and linked probes are coupled; milestone-local harness forks and sidecar-only proof stay rejected",
       "summary_implementation_anchor": "scripts/build_runtime_corrective_executable_proof_summary.py",
       "check_implementation_anchors": [
         "scripts/check_runtime_corrective_closeout_gate.py"

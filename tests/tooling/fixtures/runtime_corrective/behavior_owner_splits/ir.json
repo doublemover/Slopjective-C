@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "ir",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "IR ownership covers emitted LLVM IR, object output, module manifests, registration manifests, compile provenance, and truthfulness envelopes as coupled provenance artifacts",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_owner_contracts:runtime_corrective_native_output_owner",
+    "source_owner_contracts:runtime_corrective_lowering_provenance_owner",
+    "source_owner_contracts:runtime_corrective_executable_proof_owner",
+    "source_contract:tests/tooling/fixtures/runtime_corrective/native_output_truth_policy.json",
+    "source_contract:tests/tooling/fixtures/runtime_corrective/lowering_provenance_artifact_contract.json",
+    "source_contract:tests/tooling/fixtures/runtime_corrective/executable_proof_abi_contract.json",
+    "required_artifacts:module.manifest.json",
+    "required_artifacts:module.runtime-registration-manifest.json",
+    "required_artifacts:module.compile-provenance.json",
+    "required_artifacts:module.ll",
+    "required_artifacts:module.obj"
+  ],
+  "canonical_anchor": "tests/native/ir",
+  "retired_surface_rule": "hand-authored LL, sidecar-only manifests, uncoupled compile output, and proof bundles without truthfulness envelopes are provenance-only or rejection evidence"
+}

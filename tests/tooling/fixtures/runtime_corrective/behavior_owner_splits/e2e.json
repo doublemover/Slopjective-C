@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "e2e",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "e2e ownership covers public smoke/full suite wiring, executable proof, native-output truth, and linked-probe closeout only after phase owners assign behavior",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "suite_ids:public-test-smoke",
+    "suite_ids:public-test-full",
+    "source_owner_contracts:runtime_corrective_native_output_owner",
+    "source_owner_contracts:runtime_corrective_executable_proof_owner",
+    "required_reports:tmp/reports/runtime/acceptance/summary.json",
+    "required_reports:tmp/reports/objc3c-public-workflow/test-smoke.json",
+    "required_reports:tmp/reports/objc3c-public-workflow/test-full.json",
+    "proof_rules:compile-coupled-proof-must-bind-manifest-registration-manifest-provenance-llvm-ir-and-object-output",
+    "proof_rules:runtime-claims-must-link-real-compiled-module-objects-into-native-runtime-probes"
+  ],
+  "canonical_anchor": "tests/native/e2e",
+  "retired_surface_rule": "generated reports, milestone-local harness forks, sidecar-only proof, replay text alone, and catalog-only closeout claims are e2e provenance or rejection evidence"
+}

@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-runtime-corrective-behavior-owner-split",
+  "owner_phase": "canonical_rejection",
+  "source_surface": "tests/tooling/fixtures/runtime_corrective/boundary_inventory.json",
+  "acceptance_workload_map": "tests/tooling/fixtures/runtime_corrective/acceptance_workload_map.json",
+  "support_boundary": "runtime-corrective rows that mention unresolved dispatch, strict errors, fallback, shim, compatibility, old-mode, unsupported, sidecar-only proof, unlinked probes, generated-report claims, or alternate acceptance are non-positive unless canonical behavior owners claim support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "current_corrective_gaps:unresolved-dispatch-strict-error-after-slow-path-miss",
+    "current_corrective_gaps:synthesized-accessor-ir-transitional-residue",
+    "hard_cutover_source_owner_contract:fallback_claims_allowed=false",
+    "hard_cutover_source_owner_contract:generated_report_claims_allowed=false",
+    "forbidden_proof_sources:hand-authored-ll",
+    "forbidden_proof_sources:sidecar-only-report-or-manifest-without-coupled-compile-output",
+    "forbidden_proof_sources:unlinked-runtime-probe",
+    "explicit_non_goals:no-storage-global-fallback-claims",
+    "explicit_non_goals:no-runtime-pseudo-success-for-unresolved-dispatch",
+    "*fallback*",
+    "*compatibility*",
+    "*shim*",
+    "*old_mode*",
+    "*old-mode*",
+    "*legacy*",
+    "*unsupported*",
+    "*unresolved*"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_retired_surface_fixture_contracts.json",
+  "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, unresolved-dispatch, strict-error, sidecar-only, generated-report-only, unlinked-probe, and alternate acceptance path evidence is canonical rejection, strict-error, or provenance-only evidence"
+}

@@ -5,12 +5,26 @@
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
   "summary_implementation_anchor": "scripts/build_runtime_corrective_acceptance_workload_summary.py",
   "harness_path": "scripts/shared_compiler_runtime_acceptance_harness.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
+  "acceptance_boundary_policy": {
+    "primary_axis": "behavior owner before runtime acceptance suite",
+    "support_authority": "acceptance workload rows can cite support only through behavior owner splits",
+    "report_rule": "required tmp reports are generated acceptance provenance and cannot define positive behavior",
+    "retired_surface_rule": "unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance rows map to canonical_rejection"
+  },
   "suite_ids": [
     "runtime-acceptance",
     "public-test-smoke",
     "public-test-full"
   ],
   "dispatch_focus": {
+    "owner_phases": [
+      "lowering",
+      "runtime",
+      "e2e",
+      "canonical_rejection"
+    ],
+    "support_boundary": "dispatch acceptance cases prove canonical dispatch only through linked runtime probes; strict dispatch errors and unresolved dispatch are rejection evidence",
     "runtime_acceptance_case_ids": [
       "canonical-dispatch",
       "canonical-sample-set",
@@ -26,6 +40,14 @@
     ]
   },
   "synthesized_accessor_focus": {
+    "owner_phases": [
+      "sema",
+      "lowering",
+      "runtime",
+      "e2e",
+      "canonical_rejection"
+    ],
+    "support_boundary": "synthesized accessor acceptance ties semantic property ownership, lowering helper selection, and runtime-backed execution; fallback storage claims are rejection evidence",
     "authoritative_fixture_paths": [
       "tests/tooling/fixtures/native/synthesized_accessor_property_lowering_positive.objc3",
       "tests/tooling/fixtures/native/property_synthesis_default_ivar_binding_no_redeclaration.objc3",

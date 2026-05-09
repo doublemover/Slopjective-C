@@ -489,6 +489,36 @@
       "retired_disposition": "runtime-performance acceptance cases, probes, hot-path families, counter snapshots, generated report packets, and runnable package artifacts are resolved through behavior-first phase indexes before any timing row is cited as support; fallback, shim, compatibility, old-mode, unsupported, unresolved-dispatch, strict-dispatch, cache-only, and alternate acceptance semantics remain canonical rejection, strict-error, or provenance-only evidence"
     },
     {
+      "family": "runtime_corrective_owner_split_indexes",
+      "kind": "behavior_phase_split_index_family",
+      "source": "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits",
+      "acceptance_area": "runtime_dispatch_registration",
+      "owning_issues": [
+        "#8144",
+        "#8150"
+      ],
+      "owned_boundaries": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
+      "index_evidence": [
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/parser.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/sema.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/lowering.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/ir.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json",
+        "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json"
+      ],
+      "retired_disposition": "runtime-corrective source-owner contracts, acceptance suites, linked probes, generated reports, compile artifacts, native-output truth bundles, and executable proof rows are resolved through behavior-first phase indexes before any corrective row is cited as support; fallback, shim, compatibility, old-mode, unsupported, unresolved-dispatch, sidecar-only, unlinked-probe, generated-report-only, and alternate acceptance semantics remain canonical rejection, strict-error, or provenance-only evidence"
+    },
+    {
       "family": "issue_closeout_evidence",
       "kind": "issue_evidence_index_family",
       "source": "docs/issues",
@@ -580,6 +610,14 @@
     "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/parser.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/sema.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/lowering.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/ir.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/runtime.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/e2e.json",
+    "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/canonical_rejection.json",
     "docs/issues/hard_cutover_8132_8150_evidence.json",
     "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json"
   ]
