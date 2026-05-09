@@ -28,6 +28,7 @@ canonical support truth.
 | `objc3c-package-install-receipt-v1.schema.json` | Package install receipts with npm-bridge install commands and canonical bootstrap entrypoints. |
 | `objc3c-platform-support-matrix-v1.schema.json` | Platform publication surfaces constrained to npm-bridge commands. |
 | `objc3c-compiler-throughput-summary-v1.schema.json` | Compiler throughput summaries keyed to the objc3c bridge. |
+| `objc3c-performance-telemetry-v1.schema.json` | Performance telemetry samples with npm-bridge command strings. |
 
 The canonical data files are:
 
