@@ -10,6 +10,8 @@
 
 #include "pipeline/frontend_metadata_handoff_helpers.h"
 #include "pipeline/frontend_metadata_handoff_ordering.h"
+#include "pipeline/frontend_executable_metadata_source_graph_aggregation.h"
+#include "pipeline/frontend_executable_metadata_source_graph_readiness.h"
 #include "pipeline/objc3_frontend_types.h"
 #include "support/objc3_property_storage_profile_helpers.h"
 
@@ -20,46 +22,11 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     const Objc3RuntimeMetadataSourceRecordSet &runtime_metadata_source_records) {
   Objc3ExecutableMetadataSourceGraph graph;
 
-  struct AggregatedClassSurface {
-    bool has_interface = false;
-    bool has_implementation = false;
-    std::string interface_owner_identity;
-    std::string implementation_owner_identity;
-    std::string super_class_owner_identity;
-    std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
-    bool objc_direct_members_declared = false;
-    bool objc_final_declared = false;
-    bool objc_sealed_declared = false;
-    std::size_t interface_property_count = 0;
-    std::size_t implementation_property_count = 0;
-    std::size_t interface_method_count = 0;
-    std::size_t implementation_method_count = 0;
-    std::size_t interface_class_method_count = 0;
-    std::size_t implementation_class_method_count = 0;
-    unsigned line = 1;
-    unsigned column = 1;
-  };
-
-  struct AggregatedCategorySurface {
-    bool has_interface = false;
-    bool has_implementation = false;
-    std::string interface_owner_identity;
-    std::string implementation_owner_identity;
-    std::string class_owner_identity;
-    std::vector<std::string> adopted_protocol_owner_identities_lexicographic;
-    std::size_t interface_property_count = 0;
-    std::size_t implementation_property_count = 0;
-    std::size_t interface_method_count = 0;
-    std::size_t implementation_method_count = 0;
-    std::size_t interface_class_method_count = 0;
-    std::size_t implementation_class_method_count = 0;
-    unsigned line = 1;
-    unsigned column = 1;
-  };
-
-  std::unordered_map<std::string, AggregatedClassSurface> aggregated_classes;
+  std::unordered_map<std::string, ExecutableMetadataAggregatedClassSurface>
+      aggregated_classes;
   aggregated_classes.reserve(program.interfaces.size() + program.implementations.size());
-  std::unordered_map<std::string, AggregatedCategorySurface> aggregated_categories;
+  std::unordered_map<std::string, ExecutableMetadataAggregatedCategorySurface>
+      aggregated_categories;
   aggregated_categories.reserve(program.interfaces.size() + program.implementations.size());
 
   auto &owner_edges = graph.owner_edges_lexicographic;
@@ -80,13 +47,7 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     owner_edges.push_back(std::move(edge));
   };
 
-  struct MethodEdgeRecord {
-    std::string owner_identity;
-    std::string export_owner_identity;
-    std::string selector;
-    bool is_class_method = false;
-  };
-  std::vector<MethodEdgeRecord> method_edge_records;
+  std::vector<ExecutableMetadataMethodEdgeRecord> method_edge_records;
   std::unordered_set<std::string> class_implementation_names;
   class_implementation_names.reserve(program.implementations.size());
   std::unordered_set<std::string> implementation_property_keys;
@@ -305,7 +266,7 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     if (interface_decl.has_category) {
       const std::string category_owner_name =
           BuildCategoryOwnerName(interface_decl.name, interface_decl.category_name);
-      AggregatedCategorySurface &aggregate =
+      ExecutableMetadataAggregatedCategorySurface &aggregate =
           aggregated_categories[category_owner_name];
       if (!aggregate.has_interface && !aggregate.has_implementation) {
         aggregate.line = interface_decl.line;
@@ -369,7 +330,8 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     node.column = interface_decl.column;
     graph.interface_nodes_lexicographic.push_back(node);
 
-    AggregatedClassSurface &aggregate = aggregated_classes[interface_decl.name];
+    ExecutableMetadataAggregatedClassSurface &aggregate =
+        aggregated_classes[interface_decl.name];
     if (!aggregate.has_interface && !aggregate.has_implementation) {
       aggregate.line = interface_decl.line;
       aggregate.column = interface_decl.column;
@@ -416,7 +378,7 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
       const std::string category_owner_name =
           BuildCategoryOwnerName(implementation_decl.name,
                                  implementation_decl.category_name);
-      AggregatedCategorySurface &aggregate =
+      ExecutableMetadataAggregatedCategorySurface &aggregate =
           aggregated_categories[category_owner_name];
       if (!aggregate.has_interface && !aggregate.has_implementation) {
         aggregate.line = implementation_decl.line;
@@ -449,7 +411,8 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
       continue;
     }
 
-    AggregatedClassSurface &aggregate = aggregated_classes[implementation_decl.name];
+    ExecutableMetadataAggregatedClassSurface &aggregate =
+        aggregated_classes[implementation_decl.name];
     Objc3ExecutableMetadataImplementationGraphNode node;
     node.class_name = implementation_decl.name;
     node.owner_identity = implementation_decl.semantic_link_symbol;
@@ -573,7 +536,8 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
   graph.class_nodes_lexicographic.reserve(class_names.size());
   graph.metaclass_nodes_lexicographic.reserve(class_names.size());
   for (const std::string &class_name : class_names) {
-    const AggregatedClassSurface &aggregate = aggregated_classes.at(class_name);
+    const ExecutableMetadataAggregatedClassSurface &aggregate =
+        aggregated_classes.at(class_name);
 
     Objc3ExecutableMetadataClassGraphNode class_node;
     class_node.class_name = class_name;
@@ -669,7 +633,7 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
 
   graph.category_nodes_lexicographic.reserve(category_names.size());
   for (const std::string &category_owner_name : category_names) {
-    const AggregatedCategorySurface &aggregate =
+    const ExecutableMetadataAggregatedCategorySurface &aggregate =
         aggregated_categories.at(category_owner_name);
     const std::size_t open_paren = category_owner_name.find('(');
     const std::string class_name =
@@ -853,49 +817,14 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
     }
   }
 
-  std::sort(graph.interface_nodes_lexicographic.begin(),
-            graph.interface_nodes_lexicographic.end(),
-            IsExecutableMetadataInterfaceNodeLess);
-  std::sort(graph.implementation_nodes_lexicographic.begin(),
-            graph.implementation_nodes_lexicographic.end(),
-            IsExecutableMetadataImplementationNodeLess);
-  std::sort(graph.class_nodes_lexicographic.begin(),
-            graph.class_nodes_lexicographic.end(),
-            IsExecutableMetadataClassNodeLess);
-  std::sort(graph.metaclass_nodes_lexicographic.begin(),
-            graph.metaclass_nodes_lexicographic.end(),
-            IsExecutableMetadataMetaclassNodeLess);
-  std::sort(graph.protocol_nodes_lexicographic.begin(),
-            graph.protocol_nodes_lexicographic.end(),
-            IsExecutableMetadataProtocolNodeLess);
-  std::sort(graph.category_nodes_lexicographic.begin(),
-            graph.category_nodes_lexicographic.end(),
-            IsExecutableMetadataCategoryNodeLess);
-  std::sort(graph.property_nodes_lexicographic.begin(),
-            graph.property_nodes_lexicographic.end(),
-            IsExecutableMetadataPropertyNodeLess);
-  std::sort(graph.method_nodes_lexicographic.begin(),
-            graph.method_nodes_lexicographic.end(),
-            IsExecutableMetadataMethodNodeLess);
-  std::sort(graph.ivar_nodes_lexicographic.begin(),
-            graph.ivar_nodes_lexicographic.end(),
-            IsExecutableMetadataIvarNodeLess);
-  std::sort(graph.owner_edges_lexicographic.begin(),
-            graph.owner_edges_lexicographic.end(),
-            IsExecutableMetadataGraphEdgeLess);
+  SortExecutableMetadataSourceGraph(graph);
 
   const auto has_graph_edge = [&graph](const std::string &edge_kind,
                                        const std::string &source_owner_identity,
                                        const std::string &target_owner_identity) {
-    return std::any_of(
-        graph.owner_edges_lexicographic.begin(),
-        graph.owner_edges_lexicographic.end(),
-        [&edge_kind, &source_owner_identity, &target_owner_identity](
-            const Objc3ExecutableMetadataGraphEdge &edge) {
-          return edge.edge_kind == edge_kind &&
-                 edge.source_owner_identity == source_owner_identity &&
-                 edge.target_owner_identity == target_owner_identity;
-        });
+    return HasExecutableMetadataGraphEdge(graph, edge_kind,
+                                          source_owner_identity,
+                                          target_owner_identity);
   };
 
   const std::size_t expected_class_interface_count = static_cast<std::size_t>(
@@ -1104,36 +1033,7 @@ inline Objc3ExecutableMetadataSourceGraph BuildExecutableMetadataSourceGraph(
   }
 
   graph.deterministic =
-      std::is_sorted(graph.interface_nodes_lexicographic.begin(),
-                     graph.interface_nodes_lexicographic.end(),
-                     IsExecutableMetadataInterfaceNodeLess) &&
-      std::is_sorted(graph.implementation_nodes_lexicographic.begin(),
-                     graph.implementation_nodes_lexicographic.end(),
-                     IsExecutableMetadataImplementationNodeLess) &&
-      std::is_sorted(graph.class_nodes_lexicographic.begin(),
-                     graph.class_nodes_lexicographic.end(),
-                     IsExecutableMetadataClassNodeLess) &&
-      std::is_sorted(graph.metaclass_nodes_lexicographic.begin(),
-                     graph.metaclass_nodes_lexicographic.end(),
-                     IsExecutableMetadataMetaclassNodeLess) &&
-      std::is_sorted(graph.protocol_nodes_lexicographic.begin(),
-                     graph.protocol_nodes_lexicographic.end(),
-                     IsExecutableMetadataProtocolNodeLess) &&
-      std::is_sorted(graph.category_nodes_lexicographic.begin(),
-                     graph.category_nodes_lexicographic.end(),
-                     IsExecutableMetadataCategoryNodeLess) &&
-      std::is_sorted(graph.property_nodes_lexicographic.begin(),
-                     graph.property_nodes_lexicographic.end(),
-                     IsExecutableMetadataPropertyNodeLess) &&
-      std::is_sorted(graph.method_nodes_lexicographic.begin(),
-                     graph.method_nodes_lexicographic.end(),
-                     IsExecutableMetadataMethodNodeLess) &&
-      std::is_sorted(graph.ivar_nodes_lexicographic.begin(),
-                     graph.ivar_nodes_lexicographic.end(),
-                     IsExecutableMetadataIvarNodeLess) &&
-      std::is_sorted(graph.owner_edges_lexicographic.begin(),
-                     graph.owner_edges_lexicographic.end(),
-                     IsExecutableMetadataGraphEdgeLess);
+      IsExecutableMetadataSourceGraphDeterministic(graph);
   graph.source_graph_complete =
       graph.deterministic && interface_count_aligned &&
       implementation_count_aligned && metaclass_count_aligned &&
