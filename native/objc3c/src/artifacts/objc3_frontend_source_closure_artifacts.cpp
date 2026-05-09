@@ -454,4 +454,198 @@ std::string BuildDispatchDispatchIntentSourceCompletionSummaryJson(
   return out.str();
 }
 
+std::string BuildMetaprogrammingMetaprogrammingSourceClosureSummaryJson(
+    const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"derive_marker_sites\":" << summary.derive_marker_sites
+      << ",\"macro_marker_sites\":" << summary.macro_marker_sites
+      << ",\"property_behavior_sites\":" << summary.property_behavior_sites
+      << ",\"derive_marker_source_supported\":"
+      << (summary.derive_marker_source_supported ? "true" : "false")
+      << ",\"macro_marker_source_supported\":"
+      << (summary.macro_marker_source_supported ? "true" : "false")
+      << ",\"property_behavior_source_supported\":"
+      << (summary.property_behavior_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string
+BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummaryJson(
+    const Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << summary.contract_id
+      << "\",\"frontend_surface_path\":\"" << summary.frontend_surface_path
+      << "\",\"source_model\":\"" << summary.source_model
+      << "\",\"failure_model\":\"" << summary.failure_model
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"macro_marker_sites\":" << summary.macro_marker_sites
+      << ",\"macro_package_sites\":" << summary.macro_package_sites
+      << ",\"macro_provenance_sites\":" << summary.macro_provenance_sites
+      << ",\"macro_cache_key_sites\":" << summary.macro_cache_key_sites
+      << ",\"macro_sandbox_policy_sites\":"
+      << summary.macro_sandbox_policy_sites
+      << ",\"expansion_visible_macro_sites\":"
+      << summary.expansion_visible_macro_sites
+      << ",\"macro_package_source_supported\":"
+      << (summary.macro_package_source_supported ? "true" : "false")
+      << ",\"macro_provenance_source_supported\":"
+      << (summary.macro_provenance_source_supported ? "true" : "false")
+      << ",\"macro_cache_key_source_supported\":"
+      << (summary.macro_cache_key_source_supported ? "true" : "false")
+      << ",\"macro_sandbox_policy_source_supported\":"
+      << (summary.macro_sandbox_policy_source_supported ? "true" : "false")
+      << ",\"expansion_visible_source_supported\":"
+      << (summary.expansion_visible_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildMetaprogrammingPropertyBehaviorSourceCompletionSummaryJson(
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"failure_model\":\"" << EscapeJsonString(summary.failure_model)
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"property_behavior_sites\":" << summary.property_behavior_sites
+      << ",\"interface_property_behavior_sites\":"
+      << summary.interface_property_behavior_sites
+      << ",\"implementation_property_behavior_sites\":"
+      << summary.implementation_property_behavior_sites
+      << ",\"protocol_property_behavior_sites\":"
+      << summary.protocol_property_behavior_sites
+      << ",\"synthesized_binding_visible_sites\":"
+      << summary.synthesized_binding_visible_sites
+      << ",\"synthesized_getter_visible_sites\":"
+      << summary.synthesized_getter_visible_sites
+      << ",\"synthesized_setter_visible_sites\":"
+      << summary.synthesized_setter_visible_sites
+      << ",\"property_behavior_source_supported\":"
+      << (summary.property_behavior_source_supported ? "true" : "false")
+      << ",\"synthesized_declaration_visibility_supported\":"
+      << (summary.synthesized_declaration_visibility_supported ? "true"
+                                                               : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildInteropForeignImportSourceClosureSummaryJson(
+    const Objc3FrontendInteropForeignImportSourceClosureSummary &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"failure_model\":\"" << EscapeJsonString(summary.failure_model)
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"foreign_callable_sites\":" << summary.foreign_callable_sites
+      << ",\"extern_foreign_callable_sites\":"
+      << summary.extern_foreign_callable_sites
+      << ",\"import_module_annotation_sites\":"
+      << summary.import_module_annotation_sites
+      << ",\"imported_module_name_sites\":"
+      << summary.imported_module_name_sites
+      << ",\"export_header_annotation_sites\":"
+      << summary.export_header_annotation_sites
+      << ",\"export_header_name_sites\":"
+      << summary.export_header_name_sites
+      << ",\"mixed_image_annotation_sites\":"
+      << summary.mixed_image_annotation_sites
+      << ",\"mixed_image_name_sites\":" << summary.mixed_image_name_sites
+      << ",\"package_entry_annotation_sites\":"
+      << summary.package_entry_annotation_sites
+      << ",\"package_entry_name_sites\":"
+      << summary.package_entry_name_sites
+      << ",\"interop_annotation_sites\":" << summary.interop_annotation_sites
+      << ",\"foreign_declaration_source_supported\":"
+      << (summary.foreign_declaration_source_supported ? "true" : "false")
+      << ",\"imported_surface_source_supported\":"
+      << (summary.imported_surface_source_supported ? "true" : "false")
+      << ",\"interop_annotation_source_supported\":"
+      << (summary.interop_annotation_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
+std::string BuildInteropCppSwiftInteropAnnotationSourceCompletionSummaryJson(
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+        &summary) {
+  std::ostringstream out;
+  out << "{"
+      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
+      << "\",\"frontend_surface_path\":\""
+      << EscapeJsonString(summary.frontend_surface_path)
+      << "\",\"source_model\":\"" << EscapeJsonString(summary.source_model)
+      << "\",\"failure_model\":\"" << EscapeJsonString(summary.failure_model)
+      << "\",\"source_only_claim_ids\":"
+      << BuildStringArrayJson(summary.source_only_claim_ids)
+      << ",\"swift_name_annotation_sites\":"
+      << summary.swift_name_annotation_sites
+      << ",\"swift_private_annotation_sites\":"
+      << summary.swift_private_annotation_sites
+      << ",\"cpp_name_annotation_sites\":" << summary.cpp_name_annotation_sites
+      << ",\"header_name_annotation_sites\":"
+      << summary.header_name_annotation_sites
+      << ",\"abi_alignment_annotation_sites\":"
+      << summary.abi_alignment_annotation_sites
+      << ",\"foreign_type_annotation_sites\":"
+      << summary.foreign_type_annotation_sites
+      << ",\"interop_metadata_annotation_sites\":"
+      << summary.interop_metadata_annotation_sites
+      << ",\"named_annotation_payload_sites\":"
+      << summary.named_annotation_payload_sites
+      << ",\"swift_annotation_source_supported\":"
+      << (summary.swift_annotation_source_supported ? "true" : "false")
+      << ",\"cpp_annotation_source_supported\":"
+      << (summary.cpp_annotation_source_supported ? "true" : "false")
+      << ",\"interop_metadata_source_supported\":"
+      << (summary.interop_metadata_source_supported ? "true" : "false")
+      << ",\"deterministic_handoff\":"
+      << (summary.deterministic_handoff ? "true" : "false")
+      << ",\"ready_for_semantic_expansion\":"
+      << (summary.ready_for_semantic_expansion ? "true" : "false")
+      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
+      << "\"}";
+  return out.str();
+}
+
 }  // namespace objc3::artifacts::frontend

@@ -38,4 +38,27 @@ BuildOwnershipRetainableCFamilySourceCompletionSummaryJson(
 BuildDispatchDispatchIntentSourceCompletionSummaryJson(
     const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary &summary);
 
+[[nodiscard]] std::string
+BuildMetaprogrammingMetaprogrammingSourceClosureSummaryJson(
+    const Objc3FrontendMetaprogrammingMetaprogrammingSourceClosureSummary
+        &summary);
+
+[[nodiscard]] std::string
+BuildMetaprogrammingMacroPackageProvenanceSourceCompletionSummaryJson(
+    const Objc3FrontendMetaprogrammingMacroPackageProvenanceSourceCompletionSummary
+        &summary);
+
+[[nodiscard]] std::string
+BuildMetaprogrammingPropertyBehaviorSourceCompletionSummaryJson(
+    const Objc3FrontendMetaprogrammingPropertyBehaviorSourceCompletionSummary
+        &summary);
+
+[[nodiscard]] std::string BuildInteropForeignImportSourceClosureSummaryJson(
+    const Objc3FrontendInteropForeignImportSourceClosureSummary &summary);
+
+[[nodiscard]] std::string
+BuildInteropCppSwiftInteropAnnotationSourceCompletionSummaryJson(
+    const Objc3FrontendInteropCppSwiftInteropAnnotationSourceCompletionSummary
+        &summary);
+
 }  // namespace objc3::artifacts::frontend
