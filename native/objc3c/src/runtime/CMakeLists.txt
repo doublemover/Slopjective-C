@@ -95,6 +95,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   dispatch/method_invocation.h
   dispatch/method_cache.cpp
   dispatch/method_cache.h
+  dispatch/method_resolution_tables.cpp
+  dispatch/method_resolution_tables.h
   dispatch/runtime_method_return.cpp
   dispatch/runtime_method_return.h
   dispatch/runtime_resolution_records.h
