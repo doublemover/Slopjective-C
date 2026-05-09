@@ -32,6 +32,7 @@ add_library(objc3c_pipeline STATIC
   readiness/objc3_parse_lowering_conformance_performance_readiness.cpp
   readiness/objc3_parse_lowering_failure_reason_readiness.cpp
   readiness/objc3_parse_lowering_parser_behavior_readiness.cpp
+  readiness/objc3_parse_lowering_recovery_determinism_readiness.cpp
   readiness/objc3_typed_sema_lowering_readiness.cpp
   readiness/objc3_toolchain_runtime_ga_operations_advanced_readiness_keys.cpp
   readiness/objc3_toolchain_runtime_ga_operations_closeout_readiness.cpp
