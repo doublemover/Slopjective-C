@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-D003",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py",
+  "summary_implementation_anchor": "scripts/check_metaprogramming_interop_closure_packaged_interop_proof.py",
   "authoritative_report": "tmp/reports/runtime/runnable-interop-e2e/summary.json",
   "required_step_actions": [
     "package-runnable-toolchain",

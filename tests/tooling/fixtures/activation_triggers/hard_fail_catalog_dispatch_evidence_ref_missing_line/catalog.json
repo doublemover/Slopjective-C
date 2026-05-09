@@ -16,7 +16,7 @@
       ],
       "validation_commands": [
         "python -m pytest tests/tooling -q",
-        "python scripts/spec_lint.py"
+        "npm run objc3c -- lint-spec"
       ],
       "execution_status": "open",
       "execution_status_rationale": "Contract validation in progress.",

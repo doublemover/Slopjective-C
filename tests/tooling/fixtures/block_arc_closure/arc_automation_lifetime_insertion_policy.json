@@ -4,7 +4,7 @@
   "milestone": "M320",
   "issue": "M320-B002",
   "runbook": "docs/runbooks/objc3c_block_arc_closure.md",
-  "summary_script": "scripts/build_block_arc_closure_arc_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_block_arc_closure_arc_policy_summary.py",
   "canonical_surfaces": [
     "runtime_block_arc_unified_source_surface",
     "runtime_ownership_transfer_capture_family_source_surface",

@@ -27,8 +27,7 @@
       "support_status": "release-drill",
       "warning_classes": [
         "candidate-channel",
-        "downgrade-available",
-        "runtime-fallback-required"
+        "downgrade-available"
       ],
       "permitted_upgrade_targets": [
         "stable",
@@ -39,11 +38,11 @@
     {
       "channel_id": "preview",
       "precedence": 3,
-      "support_status": "best-effort",
+      "support_status": "blocked",
       "warning_classes": [
         "preview-channel",
         "cross-major-unsupported",
-        "data-format-fallback-required",
+        "data-format-migration-blocked",
         "rollback-recommended"
       ],
       "permitted_upgrade_targets": [
@@ -77,12 +76,12 @@
       "severity": "error"
     },
     {
-      "warning_id": "runtime-fallback-required",
-      "severity": "warn"
+      "warning_id": "runtime-metadata-contract-mismatch",
+      "severity": "error"
     },
     {
-      "warning_id": "data-format-fallback-required",
-      "severity": "warn"
+      "warning_id": "data-format-migration-blocked",
+      "severity": "error"
     },
     {
       "warning_id": "rollback-recommended",

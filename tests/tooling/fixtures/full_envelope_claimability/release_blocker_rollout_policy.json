@@ -4,7 +4,7 @@
   "milestone": "M324",
   "issue": "M324-B002",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
+  "summary_implementation_anchor": "scripts/build_full_envelope_claimability_release_blocker_summary.py",
   "required_reports": [
     {
       "name": "public-conformance",

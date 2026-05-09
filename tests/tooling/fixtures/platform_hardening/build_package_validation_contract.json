@@ -4,12 +4,14 @@
   "milestone": "M326",
   "issue": "M326-C002",
   "support_matrix_artifact": "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
-  "summary_script": "scripts/check_platform_hardening_build_package_validation.py",
+  "summary_action": "validate-platform-hardening",
+  "summary_command": "npm run objc3c -- validate-platform-hardening",
+  "summary_implementation_anchor": "scripts/check_platform_hardening_build_package_validation.py",
   "required_steps": [
     "build-native-binaries",
     "package-runnable-toolchain",
     "build-package-channels",
-    "check-packaging-channels-end-to-end"
+    "validate-packaging-channels-end-to-end"
   ],
   "required_reports": [
     "tmp/reports/package-channels/package-channels-summary.json",

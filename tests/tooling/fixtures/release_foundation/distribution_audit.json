@@ -26,11 +26,11 @@
     "native_executable",
     "frontend_c_api_runner",
     "runtime_library",
-    "compile_wrapper",
-    "execution_smoke_script",
-    "execution_replay_script",
+    "compile_action",
+    "execution_smoke_action",
+    "execution_replay_action",
     "repo_superclean_surface",
-    "release_evidence_gate_script",
+    "release_evidence_gate_action",
     "command_surfaces"
   ],
   "audited_upstream_manifests": [

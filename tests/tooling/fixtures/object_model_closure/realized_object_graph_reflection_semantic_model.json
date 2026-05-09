@@ -4,7 +4,7 @@
   "milestone": "M319",
   "issue": "M319-B001",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_semantic_summary.py",
   "canonical_surfaces": [
     "runtime_object_model_abi_query_surface",
     "runtime_realization_lookup_reflection_implementation_surface",

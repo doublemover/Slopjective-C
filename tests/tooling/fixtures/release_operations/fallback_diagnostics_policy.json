@@ -1,5 +1,5 @@
 {
-  "contract_id": "objc3c.release.operations.fallback.diagnostics.policy.v1",
+  "contract_id": "objc3c.release.operations.fail_closed.diagnostics.policy.v1",
   "schema_version": 1,
   "diagnostic_classes": [
     {
@@ -9,16 +9,16 @@
       "required_action": "block upgrade and require same-major rollback channel"
     },
     {
-      "diagnostic_id": "runtime-metadata-fallback",
-      "severity": "warn",
-      "trigger": "candidate or preview channel requires legacy runtime behavior",
-      "required_action": "publish runtime-fallback-required warning and rollback guidance"
+      "diagnostic_id": "runtime-metadata-contract-mismatch",
+      "severity": "error",
+      "trigger": "candidate or preview channel requires retired runtime metadata behavior",
+      "required_action": "block publication and require a same-major rollback channel"
     },
     {
       "diagnostic_id": "data-format-migration-required",
-      "severity": "warn",
+      "severity": "error",
       "trigger": "offline bundle or installer receipt format changes across minor lines",
-      "required_action": "publish data-format-fallback-required warning and explicit install-root backup guidance"
+      "required_action": "block publication until generated migration and rollback evidence exists"
     },
     {
       "diagnostic_id": "deprecated-channel-selected",
@@ -34,6 +34,8 @@
   "forbidden_behaviors": [
     "silent cross-major upgrade",
     "warning-free preview promotion",
-    "rollback path omission"
+    "rollback path omission",
+    "runtime fallback publication",
+    "data-format fallback publication"
   ]
 }

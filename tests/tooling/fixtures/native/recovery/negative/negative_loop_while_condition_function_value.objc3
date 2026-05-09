@@ -1,4 +1,4 @@
-// Negative fixture: while condition uses function value instead of bool-compatible expression.
+// Negative fixture: while condition uses function value instead of a canonical bool expression.
 // Expected diagnostic code(s): O3S206.
 module NegativeLoopWhileConditionFunctionValue;
 

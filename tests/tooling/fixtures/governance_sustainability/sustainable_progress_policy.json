@@ -4,7 +4,7 @@
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
   "budget_inventory": "tests/tooling/fixtures/governance_sustainability/budget_inventory.json",
   "waiver_registry": "tests/tooling/fixtures/governance_sustainability/waiver_registry.json",
-  "summary_script": "scripts/build_governance_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_governance_policy_summary.py",
   "governed_budget_surfaces": [
     {
       "surface_id": "package-script-budget",

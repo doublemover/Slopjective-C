@@ -20,7 +20,7 @@
         "repo_superclean_surface_sha256": { "type": "string" },
         "release_evidence_index_sha256": { "type": "string" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "source_stamps": {
       "type": "object",
@@ -34,8 +34,8 @@
         "sbom_path": { "type": "string" },
         "attestation_path": { "type": "string" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

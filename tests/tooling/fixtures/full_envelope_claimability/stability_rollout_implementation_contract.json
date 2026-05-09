@@ -4,7 +4,7 @@
   "milestone": "M324",
   "issue": "M324-B003",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/check_full_envelope_claimability_rollout_readiness.py",
+  "summary_implementation_anchor": "scripts/check_full_envelope_claimability_rollout_readiness.py",
   "required_policy_summaries": [
     "tmp/reports/full-envelope-claimability/support-matrix/support_matrix_summary.json",
     "tmp/reports/full-envelope-claimability/claim-policy/claim_policy_summary.json",

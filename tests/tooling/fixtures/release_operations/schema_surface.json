@@ -1,7 +1,10 @@
 {
   "contract_id": "objc3c.release.operations.schema.surface.v1",
   "schema_version": 1,
-  "schema_check_script": "scripts/check_release_operations_schema_surface.py",
+  "package_bridge": "objc3c",
+  "schema_check_action": "check-release-operations-schema-surface",
+  "schema_check_command": "npm run objc3c -- check-release-operations-schema-surface",
+  "schema_check_implementation_anchor": "scripts/check_release_operations_schema_surface.py",
   "update_manifest": "schemas/objc3c-update-manifest-v1.schema.json",
   "compatibility_report": "schemas/objc3c-compatibility-report-v1.schema.json"
 }

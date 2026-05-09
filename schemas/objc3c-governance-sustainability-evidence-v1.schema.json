@@ -54,5 +54,5 @@
       }
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

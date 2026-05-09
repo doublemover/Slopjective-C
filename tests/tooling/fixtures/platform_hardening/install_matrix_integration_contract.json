@@ -3,7 +3,7 @@
   "surface_kind": "install-matrix-integration-contract",
   "milestone": "M326",
   "issue": "M326-D001",
-  "summary_script": "scripts/check_platform_hardening_install_matrix_integration.py",
+  "summary_implementation_anchor": "scripts/check_platform_hardening_install_matrix_integration.py",
   "required_inputs": [
     "tmp/artifacts/platform-hardening/objc3c-platform-support-matrix.json",
     "tmp/reports/platform-hardening/build-package-validation-summary.json",

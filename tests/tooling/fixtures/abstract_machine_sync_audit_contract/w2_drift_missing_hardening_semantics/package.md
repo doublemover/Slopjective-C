@@ -12,7 +12,7 @@
 | `AMSA-DEP-M13-04` | `Hard` | M13 matrix/evidence schema must publish stable `DEP/CMD/EVID/AC` IDs with deterministic command and evidence-anchor mapping. | Schema IDs unstable. | `lane-a-owner` | Restore schema IDs. | `AC-V014-M13-05` |
 | `AMSA-DEP-M13-06` | `Soft` | Advisory drift handling is `HOLD` only when drift IDs/status/owner/ETA/evidence metadata remain explicit while all hard controls remain intact. | Advisory metadata missing. | `lane-a-owner` | Add metadata fields. | `AC-V014-M13-07` |
 | `AMSA-DEP-M13-07` | `Hard` | M13 disposition semantics are fail-closed with explicit `PASS`/`HOLD`/`FAIL` rules and no waiver path for hard failures. | Hard failure bypassed by waiver. | `lane-a-owner` | Reinstate fail-closed semantics. | `AC-V014-M13-08` |
-| `AMSA-DEP-M13-08` | `Hard` | Repository lint validator (`python scripts/spec_lint.py`) is blocking for lane-A-owned M13 artifacts. | Lint command fails. | `lane-a-owner` | Fix lint findings. | `AC-V014-M13-09` |
+| `AMSA-DEP-M13-08` | `Hard` | Repository lint validator (`npm run objc3c -- lint-spec`) is blocking for lane-A-owned M13 artifacts. | Lint command fails. | `lane-a-owner` | Fix lint findings. | `AC-V014-M13-09` |
 
 ### 8.3 Deterministic disposition rule
 

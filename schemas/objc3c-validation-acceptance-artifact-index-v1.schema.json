@@ -55,7 +55,7 @@
               "validation-surface-inventory",
               "validation-policy",
               "validation-harness-catalog",
-              "legacy-validation-surface-map"
+              "hard-cutover-validation-surface-map"
             ]
           },
           "report_path": {
@@ -72,7 +72,14 @@
           },
           "highlights": {
             "type": "object",
-            "additionalProperties": true
+            "additionalProperties": {
+              "type": [
+                "string",
+                "number",
+                "integer",
+                "boolean"
+              ]
+            }
           }
         }
       }

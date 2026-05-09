@@ -7,7 +7,7 @@
     "objc3c.executable.synthesized.accessor.property.lowering.v1"
   ],
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_synthesized_accessor_summary.py",
   "lowering_contract_source_path": "native/objc3c/src/lower/objc3_lowering_contract.h",
   "ir_emitter_source_path": "native/objc3c/src/ir/objc3_ir_emitter.cpp",
   "runtime_source_path": "native/objc3c/src/runtime/objc3_runtime.cpp",

@@ -4,7 +4,7 @@
   "milestone": "M326",
   "issue": "M326-A001",
   "runbook": "docs/runbooks/objc3c_platform_hardening.md",
-  "summary_script": "scripts/build_platform_hardening_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_platform_hardening_boundary_inventory_summary.py",
   "authoritative_code_paths": [
     "scripts/build_objc3c_native.ps1",
     "scripts/probe_objc3c_llvm_capabilities.py",

@@ -1,4 +1,4 @@
-// Negative fixture: typed bool return rejects non-bool-compatible return expression.
+// Negative fixture: typed bool return rejects a noncanonical bool return expression.
 // Expected diagnostic code(s): O3S211.
 module NegativeReturnAnnotationTypeMismatch;
 

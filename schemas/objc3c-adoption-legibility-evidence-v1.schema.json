@@ -61,7 +61,7 @@
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "migration_playbook": {
       "type": "object",
@@ -84,7 +84,7 @@
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "comparison_matrix": {
       "type": "object",
@@ -102,7 +102,7 @@
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "onboarding": {
       "type": "object",
@@ -125,7 +125,7 @@
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "candidate_claims": {
       "type": "object",
@@ -143,7 +143,7 @@
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "claim_audit": {
       "type": "object",
@@ -163,8 +163,8 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

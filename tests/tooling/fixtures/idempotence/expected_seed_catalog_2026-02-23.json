@@ -47,9 +47,9 @@
         "Lane-level dependency: execute under Lane D governance (Program Control & Release)."
       ],
       "validation_commands": [
-        "python scripts/spec_lint.py",
+        "npm run objc3c -- lint-spec",
         "npm run objc3c -- check-task-hygiene",
-        "python scripts/check_release_evidence.py"
+        "npm run objc3c -- check-release-evidence"
       ],
       "shard": "release-evidence-checklist",
       "execution_status": "open"
@@ -101,7 +101,7 @@
         "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
       ],
       "validation_commands": [
-        "python scripts/spec_lint.py",
+        "npm run objc3c -- lint-spec",
         "npm run objc3c -- check-task-hygiene"
       ],
       "shard": "conformance-profile-checklist",
@@ -154,7 +154,7 @@
         "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
       ],
       "validation_commands": [
-        "python scripts/spec_lint.py",
+        "npm run objc3c -- lint-spec",
         "npm run objc3c -- check-task-hygiene"
       ],
       "shard": "conformance-profile-checklist",
@@ -206,7 +206,7 @@
         "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
       ],
       "validation_commands": [
-        "python scripts/spec_lint.py"
+        "npm run objc3c -- lint-spec"
       ],
       "shard": "planning-issue-140",
       "execution_status": "open"
@@ -258,7 +258,7 @@
         "Lane-level dependency: execute under Lane B governance (Implementation & Tooling)."
       ],
       "validation_commands": [
-        "python scripts/spec_lint.py"
+        "npm run objc3c -- lint-spec"
       ],
       "shard": "planning-issue-140",
       "execution_status": "open"

@@ -3,7 +3,7 @@
   "$id": "https://objc3c.dev/schemas/objc3c-update-manifest-v1.schema.json",
   "title": "objc3c Update Manifest",
   "type": "object",
-  "additionalProperties": true,
+  "additionalProperties": false,
   "required": [
     "contract_id",
     "generated_at_utc",
@@ -30,7 +30,7 @@
     },
     "support_tiers": {
       "type": "array",
-      "items": { "type": "object" },
+      "items": { "$ref": "#/$defs/supportTier" },
       "minItems": 1
     },
     "channels": {
@@ -38,15 +38,34 @@
       "minItems": 1,
       "items": {
         "type": "object",
+        "additionalProperties": false,
         "required": ["channel_id", "version", "support_status", "artifacts"],
         "properties": {
           "channel_id": { "type": "string" },
           "version": { "type": "string" },
-          "support_status": { "type": "string" },
-          "artifacts": { "type": "object" }
+          "support_status": { "enum": ["supported", "preview", "deprecated", "blocked"] },
+          "artifacts": {
+            "type": "object",
+            "additionalProperties": { "type": "string" }
+          }
         }
       }
     },
     "compatibility_report": { "type": "string" }
+  },
+  "$defs": {
+    "supportTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tier_id", "status"],
+      "properties": {
+        "tier_id": { "type": "string" },
+        "status": { "enum": ["supported", "experimental", "unsupported"] },
+        "platform_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
   }
 }

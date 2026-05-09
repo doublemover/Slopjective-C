@@ -3,7 +3,7 @@
   "surface_kind": "runtime-corrective-realized-dispatch-semantic-model",
   "boundary_contract_id": "objc3c.runtime.corrective.boundary.inventory.v1",
   "runbook": "docs/runbooks/objc3c_runtime_corrective.md",
-  "summary_script": "scripts/build_runtime_corrective_dispatch_summary.py",
+  "summary_implementation_anchor": "scripts/build_runtime_corrective_dispatch_summary.py",
   "authoritative_runtime_entrypoint": "native/objc3c/src/runtime/objc3_runtime.cpp::objc3_runtime_dispatch_i32",
   "private_lookup_query_boundary": [
     "objc3_runtime_copy_selector_lookup_table_state_for_testing",

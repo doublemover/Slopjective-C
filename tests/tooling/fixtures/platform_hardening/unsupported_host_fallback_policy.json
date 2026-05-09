@@ -1,6 +1,6 @@
 {
-  "contract_id": "objc3c.platform.hardening.unsupported.host.fallback.policy.v1",
-  "surface_kind": "unsupported-host-fallback-policy",
+  "contract_id": "objc3c.platform.hardening.unsupported.host.fail_closed.policy.v1",
+  "surface_kind": "unsupported-host-fail-closed-policy",
   "milestone": "M326",
   "issue": "M326-B002",
   "supported_boundary_contract": "tests/tooling/fixtures/platform_hardening/boundary_inventory.json",
@@ -41,15 +41,15 @@
       "required_behavior": "fail-closed"
     }
   ],
-  "allowed_fallback_classes": [
+  "allowed_non_build_actions": [
     {
-      "fallback_id": "capability-inspection-only",
+      "action_id": "capability-inspection-only",
       "allowed_actions": [
         "check-llvm-capabilities",
         "check-documentation-surface",
         "check-repo-superclean-surface"
       ],
-      "claim_boundary": "must not widen support-tier or install claims"
+      "claim_boundary": "read-only inspection must not widen support-tier or install claims and must not continue build package or install flows"
     }
   ],
   "forbidden_phrases": [

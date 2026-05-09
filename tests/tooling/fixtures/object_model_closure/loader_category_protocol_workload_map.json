@@ -4,7 +4,7 @@
   "milestone": "M319",
   "issue": "M319-B002",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_workload_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_workload_summary.py",
   "workloads": [
     {
       "workload_id": "cross-module-loader-replay",

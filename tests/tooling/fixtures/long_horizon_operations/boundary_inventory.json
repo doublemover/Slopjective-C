@@ -34,7 +34,7 @@
     "tests/tooling/fixtures/application_architecture_testing/boundary_inventory.json",
     "tests/tooling/fixtures/application_architecture_testing/artifact_contract.json"
   ],
-  "substrate_scripts": [
+  "substrate_implementation_anchors": [
     "scripts/build_objc3c_update_manifest.py",
     "scripts/publish_objc3c_release_operations_metadata.py",
     "scripts/check_objc3c_release_operations_integration.py",

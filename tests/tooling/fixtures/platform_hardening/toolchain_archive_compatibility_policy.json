@@ -5,7 +5,7 @@
   "issue": "M326-B003",
   "package_channels_summary_contract": "objc3c.packaging.channels.summary.v1",
   "release_operations_update_manifest_contract": "objc3c.release.operations.update-manifest.v1",
-  "compatibility_rules": [
+  "claim_boundary_rules": [
     "archive compatibility claims are only published for the checked-in windows-x64 package and install surface",
     "portable archive installer archive and offline bundle must resolve to the same runnable payload family",
     "toolchain presence does not widen archive or install compatibility claims by itself",

@@ -59,6 +59,17 @@
       ]
     },
     {
+      "name": "hard_cutover_compatibility_shim_gate_rejections",
+      "feature": "compatibility shim feature gates are strict semantic errors",
+      "files": [
+        "HC-GATE-01.json"
+      ],
+      "hard_cutover": {
+        "positive_fixture_policy": "no semantic compatibility-shim positives",
+        "replacement_behavior": "strict semantic diagnostic before any shimmed behavior can be claimed"
+      }
+    },
+    {
       "name": "issue_66_key_path_literal_support",
       "feature": "key path literal support and unsupported-mode diagnostics",
       "issue": 66,

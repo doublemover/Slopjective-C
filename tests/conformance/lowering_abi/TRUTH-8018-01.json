@@ -13,7 +13,8 @@
     "reports/claimability/manifest-object-ir-truth-gate/manifest_object_ir_truth_gate_summary.json",
     "tests/tooling/fixtures/native/recovery/dispatch/parser_container_inherited_ivar_layout.objc3"
   ],
-  "source": "// RUN: python scripts/build_objc3c_manifest_object_ir_truth_gate.py --check\n@interface OC3LayoutBase : NSObject\n@property bool enabled;\n@property int baseCount;\n@end\n@implementation OC3LayoutBase\n@end\n@interface OC3LayoutChild : OC3LayoutBase\n@property id token;\n@property bool childFlag;\n@end\n@implementation OC3LayoutChild\n@end\n",
+  "implementation_anchor": "scripts/build_objc3c_manifest_object_ir_truth_gate.py --check",
+  "source": "// IMPLEMENTATION-ANCHOR: scripts/build_objc3c_manifest_object_ir_truth_gate.py --check\n@interface OC3LayoutBase : NSObject\n@property bool enabled;\n@property int baseCount;\n@end\n@implementation OC3LayoutBase\n@end\n@interface OC3LayoutChild : OC3LayoutBase\n@property id token;\n@property bool childFlag;\n@end\n@implementation OC3LayoutChild\n@end\n",
   "expect": {
     "parse": "accept",
     "diagnostics": [],

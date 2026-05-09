@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-C001",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_artifact_summary.py",
   "canonical_artifacts": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/architecture-integration/summary.json",

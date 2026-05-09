@@ -1,5 +1,5 @@
-// Positive fixture: nil reassignment elision preserves i32-compatible semantic expression flow.
-module MessageSendNilReceiverSemanticCompatibility;
+// Positive fixture: nil receiver reassignment lowers to the canonical zero-result message-send path.
+module MessageSendNilReceiverZeroResultPositive;
 
 fn main() {
   let receiver = 1;

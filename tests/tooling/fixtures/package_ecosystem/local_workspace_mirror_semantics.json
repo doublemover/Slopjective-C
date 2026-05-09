@@ -8,20 +8,38 @@
     {
       "workspace_id": "stdlib-workspace",
       "source": "stdlib/workspace.json",
-      "materializer": "scripts/materialize_objc3c_stdlib_workspace.py",
-      "validation_script": "scripts/check_objc3c_stdlib_program_integration.py"
+      "materialize_action": "materialize-stdlib-workspace",
+      "materialize_command": "npm run objc3c -- materialize-stdlib-workspace",
+      "validation_action": "validate-stdlib-program",
+      "validation_command": "npm run objc3c -- validate-stdlib-program",
+      "implementation_anchors": [
+        "scripts/materialize_objc3c_stdlib_workspace.py",
+        "scripts/check_objc3c_stdlib_program_integration.py"
+      ]
     },
     {
       "workspace_id": "canonical-application-workspace",
       "source": "tests/tooling/fixtures/application_architecture_testing/canonical_application_architecture_semantics.json",
-      "materializer": "scripts/materialize_objc3c_canonical_application_workspace.py",
-      "validation_script": "scripts/check_objc3c_application_architecture_integration.py"
+      "materialize_action": "materialize-canonical-application-workspace",
+      "materialize_command": "npm run objc3c -- materialize-canonical-application-workspace",
+      "validation_action": "validate-application-architecture",
+      "validation_command": "npm run objc3c -- validate-application-architecture",
+      "implementation_anchors": [
+        "scripts/materialize_objc3c_canonical_application_workspace.py",
+        "scripts/check_objc3c_application_architecture_integration.py"
+      ]
     },
     {
       "workspace_id": "runnable-package-workspace",
       "source": "stdlib/package_surface.json",
-      "materializer": "scripts/package_objc3c_runnable_toolchain.ps1",
-      "validation_script": "scripts/check_objc3c_runnable_stdlib_program_end_to_end.py"
+      "materialize_action": "package-runnable-toolchain",
+      "materialize_command": "npm run objc3c -- package-runnable-toolchain",
+      "validation_action": "validate-runnable-stdlib-program",
+      "validation_command": "npm run objc3c -- validate-runnable-stdlib-program",
+      "implementation_anchors": [
+        "scripts/package_objc3c_runnable_toolchain.ps1",
+        "scripts/check_objc3c_runnable_stdlib_program_end_to_end.py"
+      ]
     }
   ],
   "generated_roots": {
@@ -45,7 +63,7 @@
   },
   "workspace_rules": [
     "workspace roots must come from checked-in package/workspace surfaces",
-    "workspace materialization must be replayable from scripts/",
+    "workspace materialization must be replayable from npm run objc3c actions with script paths recorded only as implementation anchors",
     "lockfiles and mirrors are generated artifacts under tmp and never source authority",
     "offline mirrors are valid only when derived from the current lock graph",
     "canonical applications and stdlib programs must pressure the same package semantics"

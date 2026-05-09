@@ -38,14 +38,14 @@ Deterministic intake order:
 
 Lane minimum checks:
 
-1. Lane `A`: `python scripts/spec_lint.py`
-2. Lane `B`: `python -m pytest tests/tooling -q`; `python scripts/spec_lint.py`
-3. Lane `C`: `python scripts/spec_lint.py`; `python scripts/check_issue_checkbox_drift.py`
-4. Lane `D`: `python scripts/spec_lint.py`
+1. Lane `A`: `npm run objc3c -- lint-spec`
+2. Lane `B`: `python -m pytest tests/tooling -q`; `npm run objc3c -- lint-spec`
+3. Lane `C`: `npm run objc3c -- lint-spec`; `python scripts/check_issue_checkbox_drift.py`
+4. Lane `D`: `npm run objc3c -- lint-spec`
 
 Integrator final checks:
 
-1. `python scripts/spec_lint.py`
+1. `npm run objc3c -- lint-spec`
 2. `python scripts/check_issue_checkbox_drift.py`
 3. `python -m pytest tests/tooling -q`
 4. `npm run objc3c -- check-extension-registry-compatibility-w1-strict`

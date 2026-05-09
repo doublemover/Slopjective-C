@@ -1,0 +1,8 @@
+// Positive fixture: bool receiver and argument values lower through the canonical i32 dispatch operand contract.
+module MessageSendBoolOperandCoercionPositive;
+
+fn main() {
+  let receiver = 1 < 2;
+  let flag = 3 >= 3;
+  return [receiver setFlag: flag];
+}

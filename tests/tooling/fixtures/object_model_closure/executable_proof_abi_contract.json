@@ -4,7 +4,7 @@
   "milestone": "M319",
   "issue": "M319-D001",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_executable_proof_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_executable_proof_summary.py",
   "public_command_surfaces": [
     "test:objc3c:object-model-conformance",
     "test:objc3c:storage-reflection-conformance",

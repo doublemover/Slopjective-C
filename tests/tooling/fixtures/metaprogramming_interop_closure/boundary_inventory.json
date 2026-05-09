@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-A001",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_boundary_inventory_summary.py",
   "focus_tracks": [
     "metaprogramming-property-behavior-runtime-materialization",
     "mixed-image-package-loading-and-foreign-boundary-interop"

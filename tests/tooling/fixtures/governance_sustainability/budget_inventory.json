@@ -2,7 +2,7 @@
   "contract_id": "objc3c.governance.sustainability.budget.inventory.v1",
   "surface_kind": "governance-sustainability-budget-inventory",
   "runbook": "docs/runbooks/objc3c_governance_sustainability.md",
-  "summary_script": "scripts/build_governance_budget_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_governance_budget_inventory_summary.py",
   "measured_budget_surfaces": [
     {
       "surface_id": "package-bridge-budget",

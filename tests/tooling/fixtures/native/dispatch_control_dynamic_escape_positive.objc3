@@ -1,4 +1,4 @@
-module DispatchB003Positive;
+module DispatchControlDynamicEscapePositive;
 
 @interface BaseBox
 - (i32)shared;

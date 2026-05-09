@@ -43,9 +43,9 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.
   - Lane-level dependency: execute under Lane D governance (Program Control & Release).
 - Validation commands:
-  - `python scripts/spec_lint.py`
+  - `npm run objc3c -- lint-spec`
   - `npm run objc3c -- check-task-hygiene`
-  - `python scripts/check_release_evidence.py`
+  - `npm run objc3c -- check-release-evidence`
 
 ### SPT-0002 - [SPT-0002][Lane B] [CORE] Validate parser accepts let bindings in strict mode
 
@@ -74,7 +74,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
-  - `python scripts/spec_lint.py`
+  - `npm run objc3c -- lint-spec`
   - `npm run objc3c -- check-task-hygiene`
 
 ### SPT-0003 - [SPT-0003][Lane B] [OPT-CXX] Confirm interop marker appears in emitted metadata
@@ -104,7 +104,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - No explicit hard dependency in the source row; treat as lane-parallel unless blocked by shared files.
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
-  - `python scripts/spec_lint.py`
+  - `npm run objc3c -- lint-spec`
   - `npm run objc3c -- check-task-hygiene`
 
 ### SPT-0004 - [SPT-0004][Lane B] Document kickoff decision record for lane batching in artifact tracker
@@ -133,7 +133,7 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - No hard dependency encoded in the row; schedule as parallel-ready within the same lane shard.
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
-  - `python scripts/spec_lint.py`
+  - `npm run objc3c -- lint-spec`
 
 ### SPT-0005 - [SPT-0005][Lane B] Link dependency to Issue #111 and A-03 for traceability
 
@@ -162,4 +162,4 @@ _Generated on 2026-02-23 by scripts/seed_remaining_spec_tasks.py._
   - Explicit cross-task references detected: A-03; honor sequencing when these artifacts are touched.
   - Lane-level dependency: execute under Lane B governance (Implementation & Tooling).
 - Validation commands:
-  - `python scripts/spec_lint.py`
+  - `npm run objc3c -- lint-spec`

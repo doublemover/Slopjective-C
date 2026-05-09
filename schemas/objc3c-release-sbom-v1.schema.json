@@ -29,13 +29,13 @@
                 "sha256": { "type": "string" },
                 "byte_count": { "type": "integer", "minimum": 0 }
               },
-              "additionalProperties": true
+              "additionalProperties": false
             }
           }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

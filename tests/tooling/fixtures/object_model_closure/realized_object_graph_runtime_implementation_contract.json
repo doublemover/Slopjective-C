@@ -4,7 +4,7 @@
   "milestone": "M319",
   "issue": "M319-B003",
   "runbook": "docs/runbooks/objc3c_object_model_closure.md",
-  "summary_script": "scripts/build_object_model_closure_runtime_implementation_summary.py",
+  "summary_implementation_anchor": "scripts/build_object_model_closure_runtime_implementation_summary.py",
   "authoritative_runtime_symbols": [
     "objc3_runtime_register_image",
     "objc3_runtime_dispatch_i32",

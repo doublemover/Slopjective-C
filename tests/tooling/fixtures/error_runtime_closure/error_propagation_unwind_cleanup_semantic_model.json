@@ -4,7 +4,7 @@
   "milestone": "M321",
   "issue": "M321-B001",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
-  "summary_script": "scripts/build_error_runtime_closure_semantic_summary.py",
+  "summary_implementation_anchor": "scripts/build_error_runtime_closure_semantic_summary.py",
   "canonical_surfaces": [
     "runtime_error_execution_cleanup_source_surface",
     "runtime_catch_filter_finalization_source_surface",

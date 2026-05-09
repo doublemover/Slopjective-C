@@ -42,7 +42,7 @@
           "copied_file_count": { "type": "integer", "minimum": 1 },
           "release_payload_digest_sha256": { "type": "string" }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     },
     "release_payload_entries": {
@@ -57,7 +57,7 @@
           "byte_count": { "type": "integer", "minimum": 0 },
           "component_group": { "type": "string" }
         },
-        "additionalProperties": true
+        "additionalProperties": false
       }
     },
     "release_payload_digest_sha256": { "type": "string" },
@@ -74,8 +74,8 @@
         "git_commit": { "type": "string" },
         "git_tree_dirty": { "type": "boolean" }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

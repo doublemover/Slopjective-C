@@ -7,9 +7,18 @@
     "tests/tooling/fixtures/release_operations/update_channel_policy.json",
     "tests/tooling/fixtures/long_horizon_operations/deprecation_compatibility_policy.json"
   ],
+  "package_bridge": "objc3c",
+  "generation_actions": [
+    "build-update-manifest",
+    "publish-release-operations"
+  ],
   "generation_commands": [
-    "python scripts/build_objc3c_update_manifest.py",
-    "python scripts/publish_objc3c_release_operations_metadata.py"
+    "npm run objc3c -- build-update-manifest",
+    "npm run objc3c -- publish-release-operations"
+  ],
+  "generation_implementation_anchors": [
+    "scripts/build_objc3c_update_manifest.py",
+    "scripts/publish_objc3c_release_operations_metadata.py"
   ],
   "generated_inputs": [
     "tmp/artifacts/release-operations/update-manifest/objc3c-update-manifest.json",

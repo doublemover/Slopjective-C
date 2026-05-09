@@ -4,7 +4,14 @@
   "policy": {
     "positive_fixture_rule": "canonical Objective-C 3.0 behavior only",
     "negative_fixture_rule": "retired old-mode, shim, fallback, compatibility, and removed feature-toggle behavior must be represented as strict rejection metadata",
-    "validation_boundary": "fixture metadata only; runtime acceptance scripts and public command-surface metadata are owned by other lanes"
+    "validation_boundary": "fixture metadata only; runtime acceptance scripts and public command-surface metadata are owned by other lanes",
+    "forbidden_positive_name_tokens": [
+      "old_mode",
+      "shim",
+      "fallback",
+      "compatibility"
+    ],
+    "public_command_bridge": "npm run objc3c -- <action>"
   },
   "families": [
     {
@@ -34,6 +41,15 @@
       "hard_cutover_rule": "IR expectations use canonical lowering only and must not encode alternate shim paths"
     },
     {
+      "family": "artifact_manifest",
+      "paths": [
+        "tests/tooling/fixtures/native/library_cli_parity",
+        "tests/tooling/fixtures/native/parity_baseline"
+      ],
+      "metadata": "checked-in manifest and artifact truth fixtures",
+      "hard_cutover_rule": "manifest fixtures describe canonical JSON contracts and may not accept compatibility-era optional fields as success criteria"
+    },
+    {
       "family": "runtime_like_e2e",
       "paths": [
         "tests/tooling/fixtures/native/execution/positive",
@@ -49,6 +65,16 @@
       ],
       "metadata": "compile-stage sidecars for source surfaces that are parsed but not runnable in the native hard-cutover surface",
       "hard_cutover_rule": "throws and ARC ownership qualifier runnable claims are explicit O3S221 rejections, not source-only shims or fallback execution paths"
+    },
+    {
+      "family": "renamed_positive_claims",
+      "paths": [
+        "tests/tooling/fixtures/native/dispatch_control_dynamic_escape_positive.objc3",
+        "tests/tooling/fixtures/native/recovery/positive/message_send_bool_operand_coercion_positive.objc3",
+        "tests/tooling/fixtures/native/recovery/positive/message_send_nil_receiver_zero_result_positive.objc3"
+      ],
+      "metadata": "positive fixtures renamed away from compatibility-era wording while preserving canonical behavior",
+      "hard_cutover_rule": "compatibility-looking positive names are replaced by canonical behavior names or moved to negative strict-error coverage"
     },
     {
       "family": "library_cli_parity",

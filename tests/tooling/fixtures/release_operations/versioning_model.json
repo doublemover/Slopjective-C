@@ -33,7 +33,7 @@
       ]
     },
     "preview": {
-      "status": "best-effort",
+      "status": "blocked-until-generated-migration-evidence",
       "supported_minor_lines": [
         "1.2"
       ],

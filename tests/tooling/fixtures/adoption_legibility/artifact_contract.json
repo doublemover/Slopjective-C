@@ -36,7 +36,7 @@
     "Evaluator, migration, comparison, onboarding, and candidate-claim evidence must share one generated evidence contract.",
     "Unsupported or deferred behavior must be visible in claim_audit.demoted_or_out_of_scope_claims."
   ],
-  "required_generation_scripts": [
+  "required_generation_implementation_anchors": [
     "scripts/build_adoption_legibility_boundary_inventory_summary.py",
     "scripts/build_adoption_legibility_public_claim_policy_summary.py",
     "scripts/build_adoption_legibility_capability_comparison_summary.py",

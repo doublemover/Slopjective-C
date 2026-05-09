@@ -53,7 +53,7 @@
           "minItems": 1
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "migration_replay": {
       "type": "object",
@@ -67,7 +67,7 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "rollback": {
       "type": "object",
@@ -84,7 +84,7 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "soak": {
       "type": "object",
@@ -100,7 +100,7 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "aging_regression": {
       "type": "object",
@@ -113,7 +113,7 @@
         },
         "freshness_budget": {"type": "object"}
       },
-      "additionalProperties": true
+      "additionalProperties": false
     },
     "claim_audit": {
       "type": "object",
@@ -133,8 +133,8 @@
           "items": {"type": "string"}
         }
       },
-      "additionalProperties": true
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

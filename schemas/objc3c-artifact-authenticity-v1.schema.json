@@ -125,5 +125,5 @@
       }
     }
   ],
-  "additionalProperties": true
+  "additionalProperties": false
 }

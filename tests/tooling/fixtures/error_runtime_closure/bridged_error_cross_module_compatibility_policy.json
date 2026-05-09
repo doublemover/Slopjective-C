@@ -4,7 +4,7 @@
   "milestone": "M321",
   "issue": "M321-B002",
   "runbook": "docs/runbooks/objc3c_error_runtime_closure.md",
-  "summary_script": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_error_runtime_closure_bridge_policy_summary.py",
   "canonical_surfaces": [
     "runtime_bridging_filter_unwind_diagnostics_surface",
     "runtime_error_lowering_unwind_bridge_helper_surface",

@@ -1,4 +1,4 @@
-// Positive fixture: mixed immutable/mutable nil-bound receiver flows use optional sends and stay i32-compatible.
+// Positive fixture: mixed immutable/mutable nil-bound receiver flows use optional sends and stay on the canonical i32 dispatch operand path.
 module MessageSendNilBoundIdentifierMixedFlow;
 
 fn main() {

@@ -20,7 +20,7 @@
     "schemas/objc3c-package-channels-manifest-v1.schema.json",
     "schemas/objc3c-package-install-receipt-v1.schema.json"
   ],
-  "package_workflow_generators": [
+  "package_workflow_implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_package_channels.py",
     "scripts/build_objc3c_release_manifest.py",
@@ -28,7 +28,7 @@
     "scripts/materialize_objc3c_stdlib_workspace.py",
     "scripts/materialize_objc3c_canonical_application_workspace.py"
   ],
-  "existing_package_validation_surfaces": [
+  "package_validation_implementation_anchors": [
     "scripts/check_objc3c_stdlib_foundation_integration.py",
     "scripts/check_objc3c_stdlib_advanced_integration.py",
     "scripts/check_objc3c_stdlib_program_integration.py",
@@ -66,7 +66,7 @@
     "dependency-resolution, lockfile, and package-authoring semantics generated from checked-in contracts",
     "offline mirror and registry metadata modeled as local replayable artifacts before any hosted service claim",
     "canonical application and template pressure through the objc3c package bridge and workflow action registry",
-    "runnable package, package-channel, release-manifest, and update-manifest integration through existing scripts"
+    "runnable package, package-channel, release-manifest, and update-manifest integration through public objc3c workflow actions"
   ],
   "non_goals": [
     "hosted package registry service",

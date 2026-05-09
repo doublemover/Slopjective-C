@@ -22,7 +22,7 @@ Status: published package for issue `#786` (`[W1][V013-GOV-02] Add extension reg
 | `milestone_id` | `#31` |
 | `milestone_title` | `v0.13 Seed Wave W1 Reseed 1` |
 | `artifact_targets` | `docs/reference/legacy_spec_anchor_index.md`, `docs/reference/legacy_spec_anchor_index.md` |
-| `required_validator` | `python scripts/spec_lint.py` |
+| `required_validator` | `npm run objc3c -- lint-spec` |
 
 ### 1.2 Source references consumed
 
@@ -37,7 +37,7 @@ Status: published package for issue `#786` (`[W1][V013-GOV-02] Add extension reg
 2. Deterministic validator command set with explicit pass/fail signals.
 3. Waiver and escalation policy for compatibility validation outcomes.
 4. Acceptance checklist mapping to `AC-V013-GOV-02`.
-5. Validation transcript for `python scripts/spec_lint.py` plus lane-C evidence linkage.
+5. Validation transcript for `npm run objc3c -- lint-spec` plus lane-C evidence linkage.
 
 ### 1.4 Ownership lock for issue `#786`
 
@@ -83,7 +83,7 @@ The compatibility validation suite contract is published and validated against s
 
 | Validator ID | Command | Pass signal | Failure disposition |
 | --- | --- | --- | --- |
-| `VAL-RC-01` | `python scripts/spec_lint.py` | Output contains `spec-lint: OK`; exit `0`. | Mark validation run failed and stop closeout. |
+| `VAL-RC-01` | `npm run objc3c -- lint-spec` | Output contains `spec-lint: OK`; exit `0`. | Mark validation run failed and stop closeout. |
 | `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | Exit `0`; no blocking drift findings. | Open governance follow-up and block publish. |
 | `VAL-RC-03` | `rg -n "compat|version|schema" docs/reference/legacy_spec_anchor_index.md` | Exit `0`; at least one matching line. | Treat package as incomplete and block publish. |
 | `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | Output contains `schema-json: OK`; exit `0`. | Treat schema as invalid JSON and block publish. |
@@ -131,7 +131,7 @@ The compatibility validation suite contract is published and validated against s
 | `AC-V013-GOV-02-02` | Required-field compatibility behavior is explicit. | Section `3.2` and Section `5.2` define blocking behavior for required-field changes. | This package Sections `3` and `5`; schema `required_field_policy`. |
 | `AC-V013-GOV-02-03` | Validation suite command contract is deterministic. | Section `4.1` defines stable `VAL-RC-01`..`VAL-RC-06` commands and pass signals. | This package Section `4`; tests readme Section `3`. |
 | `AC-V013-GOV-02-04` | Governance waiver/escalation path is documented. | Section `5` defines waiver classes, non-waiverable conditions, and `E1`..`E4` escalation ladder. | This package Section `5`; tests readme Section `4`. |
-| `AC-V013-GOV-02-05` | Validation transcript for `python scripts/spec_lint.py` is recorded. | Section `7` includes command, output, and exit status. | This package Section `7`. |
+| `AC-V013-GOV-02-05` | Validation transcript for `npm run objc3c -- lint-spec` is recorded. | Section `7` includes command, output, and exit status. | This package Section `7`. |
 
 ### 6.2 Closeout checklist
 
@@ -141,7 +141,7 @@ The compatibility validation suite contract is published and validated against s
 | [x] | `CL-V013-GOV-02-02` | `AC-V013-GOV-02-02` | Required-field policy includes deterministic hard-fail conditions. |
 | [x] | `CL-V013-GOV-02-03` | `AC-V013-GOV-02-03` | Validator contract defines stable commands and deterministic pass signals. |
 | [x] | `CL-V013-GOV-02-04` | `AC-V013-GOV-02-04` | Waiver classes, non-waiverable conditions, and escalation ladder are complete. |
-| [x] | `CL-V013-GOV-02-05` | `AC-V013-GOV-02-05` | `python scripts/spec_lint.py` transcript is present with successful result. |
+| [x] | `CL-V013-GOV-02-05` | `AC-V013-GOV-02-05` | `npm run objc3c -- lint-spec` transcript is present with successful result. |
 
 Issue-body checklist closeout:
 
@@ -150,12 +150,12 @@ Issue-body checklist closeout:
 - [x] Governance escalation and waiver path is documented.
 - [x] Validation transcript included.
 
-## 7. Validation Transcript (`python scripts/spec_lint.py`)
+## 7. Validation Transcript (`npm run objc3c -- lint-spec`)
 
 Command:
 
 ```sh
-python scripts/spec_lint.py
+npm run objc3c -- lint-spec
 ```
 
 Recorded output:
@@ -178,7 +178,7 @@ Exit status: `0` (`PASS`)
 | `ERC-DEP-M15-04` | `Hard` | Breaking compatibility classes (`CM-RC-04`, `CM-RC-06`, `CM-RC-07`, `CM-RC-08`) remain non-waiverable fail-closed controls. | Any artifact permits waiver, `HOLD`, or conditional-success bypass for these breaking classes. | `Lane A M15 owner (#894)` | Restore non-waiverable fail-closed language and rerun disposition command anchor with exit `0`. | `AC-V014-M15-02` |
 | `ERC-DEP-M15-05` | `Soft` | Conditional classes (`CM-RC-02`, `CM-RC-03`, `CM-RC-05`) may enter `HOLD` only with explicit owner, ETA, and replay command; they cannot override hard gates. | Conditional drift lacks owner/ETA/replay command, or `HOLD` is used to bypass any hard gate failure. | `Lane A M15 owner (#894)` | Record owner + ETA + replay command, remediate drift, then rerun affected command anchors. | `AC-V014-M15-02` |
 | `ERC-DEP-M15-06` | `Hard` | M15 lane-A acceptance artifacts must preserve stable `DEP/CMD/EVID/AC` IDs and deterministic failure-handling schema fields. | Missing stable IDs, missing dependency type/fail criteria/escalation owner/unblock condition fields, or broken evidence mapping. | `Lane A M15 owner (#894)` | Repair matrix/evidence schema and rerun matrix/evidence command anchors with exit `0`. | `AC-V014-M15-06`, `AC-V014-M15-07` |
-| `ERC-DEP-M15-07` | `Hard` | Repository spec lint validator is the terminal release gate for lane-A-owned M15 artifacts. | `python scripts/spec_lint.py` exits non-zero or omits `spec-lint: OK`. | `Lane A M15 owner (#894)` | Resolve lint findings, rerun validator, and capture clean transcript evidence. | `AC-V014-M15-08` |
+| `ERC-DEP-M15-07` | `Hard` | Repository spec lint validator is the terminal release gate for lane-A-owned M15 artifacts. | `npm run objc3c -- lint-spec` exits non-zero or omits `spec-lint: OK`. | `Lane A M15 owner (#894)` | Resolve lint findings, rerun validator, and capture clean transcript evidence. | `AC-V014-M15-08` |
 
 ### 8.2 Fail-closed disposition rules
 
@@ -200,7 +200,7 @@ Exit status: `0` (`PASS`)
 | `ERC-DEP-M16-05` | `Hard` | Schema and runbook authority remain deterministic: governance schema contract keys/acceptance constant and runbook ID families stay intact. | Schema governance keys/`AC-V013-GOV-02` drift, or README loss/drift of `CM/VAL/ESC/AC` identifiers. | `Lane A M16 owner (#899)` | Repair schema/runbook drift and rerun schema + README command anchors with exit `0`. | `AC-V014-M16-05`, `AC-V014-M16-06` |
 | `ERC-DEP-M16-06` | `Soft` | Conditional compatibility documentation drift (`CM-RC-02`, `CM-RC-03`, `CM-RC-05`) may remain only as `HOLD` with explicit owner + ETA + replay command and no hard-gate impact. | Missing owner/ETA/replay metadata for conditional drift, or any attempt to use conditional drift to bypass hard gates. | `Lane A M16 owner (#899)` | Record owner + ETA + replay command or resolve drift, then rerun impacted command anchors. | `AC-V014-M16-07` |
 | `ERC-DEP-M16-07` | `Hard` | Publication gating is deterministic and fail-closed via `PUB-RC-M16-01`..`PUB-RC-M16-04`; ambiguous or incomplete state cannot publish. | Missing gate rules, contradictory gate logic, or ambiguous disposition outcomes in W2 artifacts. | `Lane A M16 owner (#899)` | Restore deterministic publication-gate rules and rerun gating command anchors with exit `0`. | `AC-V014-M16-08` |
-| `ERC-DEP-M16-08` | `Hard` | Repository spec lint is the terminal release gate for lane-A-owned M16 artifacts. | `python scripts/spec_lint.py` exits non-zero or omits `spec-lint: OK`. | `Lane A M16 owner (#899)` | Resolve lint findings, rerun validator, and capture clean transcript evidence with exit code. | `AC-V014-M16-09` |
+| `ERC-DEP-M16-08` | `Hard` | Repository spec lint is the terminal release gate for lane-A-owned M16 artifacts. | `npm run objc3c -- lint-spec` exits non-zero or omits `spec-lint: OK`. | `Lane A M16 owner (#899)` | Resolve lint findings, rerun validator, and capture clean transcript evidence with exit code. | `AC-V014-M16-09` |
 
 ### 9.2 Strict validator parity profile (`VPAR-RC-M16-*`)
 

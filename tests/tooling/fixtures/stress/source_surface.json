@@ -3,7 +3,10 @@
   "schema_version": 1,
   "runbook": "docs/runbooks/objc3c_stress_validation.md",
   "source_root": "tests/tooling/fixtures/stress",
-  "source_check_script": "scripts/check_stress_source_surface.py",
+  "package_bridge": "objc3c",
+  "source_check_action": "check-stress-surface",
+  "source_check_command": "npm run objc3c -- check-stress-surface",
+  "source_check_implementation_anchor": "scripts/check_stress_source_surface.py",
   "safety_policy": "tests/tooling/fixtures/stress/safety_policy.json",
   "artifact_surface": "tests/tooling/fixtures/stress/artifact_surface.json",
   "checked_in_roots": [
@@ -35,8 +38,8 @@
       "source_paths": [
         "scripts/run_objc3c_lowering_runtime_stress.py",
         "tests/tooling/fixtures/stress/lowering_runtime_stress_manifest.json",
-        "scripts/objc3c_native_compile.ps1",
-        "scripts/check_objc3c_native_execution_smoke.ps1",
+        "npm run objc3c -- compile-objc3c",
+        "npm run objc3c -- test-execution-smoke",
         "tests/tooling/fixtures/stress/safety_policy.json",
         "tests/tooling/fixtures/native/async_lowering_positive.objc3",
         "tests/tooling/fixtures/native/dispatch_lowering_positive.objc3",
@@ -62,8 +65,8 @@
         "tests/tooling/fixtures/native/bridge_packaging_toolchain_consumer.objc3",
         "tests/tooling/fixtures/native/header_module_bridge_provider.objc3",
         "tests/tooling/fixtures/native/header_module_bridge_consumer.objc3",
-        "scripts/check_objc3c_runtime_acceptance.py",
-        "scripts/check_objc3c_runnable_interop_conformance.py"
+        "npm run objc3c -- test-runtime-acceptance",
+        "npm run objc3c -- validate-interop-conformance"
       ]
     },
     {

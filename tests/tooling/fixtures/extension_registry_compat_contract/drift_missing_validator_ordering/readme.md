@@ -34,7 +34,7 @@ Run from repository root.
 
 | Validator ID | Command | Expected deterministic signal |
 | --- | --- | --- |
-| `VAL-RC-01` | `python scripts/spec_lint.py` | `spec-lint: OK` |
+| `VAL-RC-01` | `npm run objc3c -- lint-spec` | `spec-lint: OK` |
 | `VAL-RC-02` | `python scripts/check_issue_checkbox_drift.py` | exit `0` and no blocking drift |
 | `VAL-RC-03` | `rg -n "compat|version|schema" docs/reference/legacy_spec_anchor_index.md` | exit `0` |
 | `VAL-RC-04` | `python -c "import json,pathlib;json.loads(pathlib.Path('registries/experimental_extensions/index.schema.json').read_text(encoding='utf-8'));print('schema-json: OK')"` | `schema-json: OK` |
@@ -68,12 +68,12 @@ Escalation ladder:
 - [x] `AC-V013-GOV-02-02` Required-field policy is explicit and deterministic.
 - [x] `AC-V013-GOV-02-03` Validator command contract is deterministic.
 - [x] `AC-V013-GOV-02-04` Waiver and escalation policy is explicit.
-- [x] `AC-V013-GOV-02-05` `python scripts/spec_lint.py` transcript is recorded.
+- [x] `AC-V013-GOV-02-05` `npm run objc3c -- lint-spec` transcript is recorded.
 
 ## 6. Validation Transcript (`VAL-RC-01`)
 
 ```sh
-python scripts/spec_lint.py
+npm run objc3c -- lint-spec
 ```
 
 Recorded output:

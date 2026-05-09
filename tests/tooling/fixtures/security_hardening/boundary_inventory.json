@@ -4,7 +4,7 @@
   "milestone": "M327",
   "issue": "M327-A001",
   "runbook": "docs/runbooks/objc3c_security_hardening.md",
-  "summary_script": "scripts/build_security_hardening_boundary_inventory_summary.py",
+  "summary_implementation_anchor": "scripts/build_security_hardening_boundary_inventory_summary.py",
   "authoritative_code_paths": [
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",

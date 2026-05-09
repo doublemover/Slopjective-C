@@ -10,10 +10,16 @@
   "benchmark_parameters": "tests/tooling/fixtures/performance/benchmark_parameters.json",
   "comparative_baseline_manifest": "tests/tooling/fixtures/performance/comparative_baseline_manifest.json",
   "telemetry_schema": "schemas/objc3c-performance-telemetry-v1.schema.json",
-  "public_entrypoints": {
-    "build_native": "build:objc3c-native",
-    "compile_objc3c": "compile:objc3c",
-    "package_runnable_toolchain": "package:objc3c-native:runnable-toolchain"
+  "package_bridge": "objc3c",
+  "public_commands": {
+    "build_native": "npm run objc3c -- build-native-binaries",
+    "compile_objc3c": "npm run objc3c -- compile-objc3c",
+    "package_runnable_toolchain": "npm run objc3c -- package-runnable-toolchain"
+  },
+  "public_actions": {
+    "build_native": "build-native-binaries",
+    "compile_objc3c": "compile-objc3c",
+    "package_runnable_toolchain": "package-runnable-toolchain"
   },
   "objc3_workloads": [
     {

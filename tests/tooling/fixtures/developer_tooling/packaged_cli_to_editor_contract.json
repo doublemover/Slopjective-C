@@ -3,7 +3,9 @@
   "surface_kind": "developer-tooling-packaged-cli-to-editor-contract",
   "milestone": "M325",
   "issue": "M325-D002",
-  "summary_script": "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
+  "summary_action": "validate-runnable-developer-tooling",
+  "summary_command": "npm run objc3c -- validate-runnable-developer-tooling",
+  "summary_implementation_anchor": "scripts/check_objc3c_runnable_developer_tooling_end_to_end.py",
   "package_action": "package-runnable-toolchain",
   "package_bridge": "objc3c",
   "public_actions": [

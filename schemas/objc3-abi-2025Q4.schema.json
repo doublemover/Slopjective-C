@@ -15,7 +15,7 @@
     "target_triples",
     "symbol_policy_id",
     "mangling_policy_id",
-    "metadata_compatibility",
+    "metadata_contract",
     "artifacts"
   ],
   "properties": {
@@ -59,7 +59,7 @@
     "mangling_policy_id": {
       "$ref": "#/$defs/policyId"
     },
-    "metadata_compatibility": {
+    "metadata_contract": {
       "$ref": "#/$defs/metadataCompatibility"
     },
     "artifacts": {
@@ -71,8 +71,8 @@
     },
     "extensions": {
       "type": "object",
-      "description": "Non-normative extension metadata. Keys must not shadow required fields.",
-      "additionalProperties": true
+      "description": "Non-normative extension metadata is closed in hard-cutover manifests; use a versioned schema field instead of compatibility sidecars.",
+      "additionalProperties": false
     }
   },
   "$defs": {
@@ -145,10 +145,7 @@
         },
         "schema_policy": {
           "type": "string",
-          "enum": [
-            "strict",
-            "forward-compatible"
-          ]
+          "const": "strict"
         },
         "required_capabilities": {
           "type": "array",

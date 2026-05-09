@@ -4,7 +4,7 @@
   "milestone": "M325",
   "issue": "M325-C001",
   "runbook": "docs/runbooks/objc3c_developer_tooling.md",
-  "summary_script": "scripts/build_developer_tooling_artifact_contract_summary.py",
+  "summary_implementation_anchor": "scripts/build_developer_tooling_artifact_contract_summary.py",
   "schema_paths": [
     "schemas/objc3c-developer-tooling-editor-surface-v1.schema.json"
   ],

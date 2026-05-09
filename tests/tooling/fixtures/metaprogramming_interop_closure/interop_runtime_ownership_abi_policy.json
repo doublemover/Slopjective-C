@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-B003",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
+  "summary_implementation_anchor": "scripts/build_metaprogramming_interop_closure_interop_policy_summary.py",
   "canonical_surfaces": [
     "runtime_cross_module_package_interop_source_surface",
     "runtime_textual_binary_interface_parity_source_surface",

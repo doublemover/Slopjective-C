@@ -12,9 +12,9 @@
     {
       "claim_id": "preview-upgrade",
       "allowed_channels": ["preview"],
-      "allowed_scope": "best-effort only",
+      "allowed_scope": "blocked unless generated migration and rollback evidence exists",
       "requires_machine_warning": true,
-      "required_phrase": "preview compatibility is qualified"
+      "required_phrase": "preview upgrade is evidence-gated"
     },
     {
       "claim_id": "cross-major-upgrade",
@@ -28,6 +28,7 @@
     "background auto-update",
     "package-manager parity",
     "cross-major forward compatibility",
-    "manual waiver-only compatibility status"
+    "manual waiver-only compatibility status",
+    "best-effort preview compatibility"
   ]
 }

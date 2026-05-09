@@ -13,6 +13,15 @@
   "runtime_hardening_contract": "tests/tooling/fixtures/security_hardening/runtime_hardening_contract.json",
   "schema_surface": "tests/tooling/fixtures/security_hardening/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/security_hardening/workflow_surface.json",
+  "package_bridge": "objc3c",
+  "public_actions": [
+    "check-security-hardening-surface",
+    "check-security-hardening-schema-surface",
+    "build-security-posture",
+    "publish-security-advisories",
+    "validate-security-hardening",
+    "validate-security-hardening-end-to-end"
+  ],
   "checked_in_sources": [
     "docs/runbooks/objc3c_security_hardening.md",
     "schemas/objc3c-security-posture-v1.schema.json",
@@ -26,6 +35,15 @@
     "scripts/check_objc3c_security_hardening_integration.py",
     "scripts.objc3c_workflow",
     "package.json"
+  ],
+  "implementation_anchors": [
+    "scripts/check_security_hardening_source_surface.py",
+    "scripts/check_security_hardening_schema_surface.py",
+    "scripts/build_objc3c_security_posture.py",
+    "scripts/publish_objc3c_security_advisories.py",
+    "scripts/check_security_hardening_response_drill.py",
+    "scripts/check_security_hardening_runtime_hardening.py",
+    "scripts/check_objc3c_security_hardening_integration.py"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/security-hardening",

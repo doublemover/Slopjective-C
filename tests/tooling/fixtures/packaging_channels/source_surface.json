@@ -6,9 +6,20 @@
   "installer_policy": "tests/tooling/fixtures/packaging_channels/installer_policy.json",
   "metadata_surface": "tests/tooling/fixtures/packaging_channels/metadata_surface.json",
   "schema_surface": "tests/tooling/fixtures/packaging_channels/schema_surface.json",
+  "package_bridge": "objc3c",
+  "public_actions": [
+    "check-packaging-channels-surface",
+    "check-packaging-channels-schema-surface",
+    "package-runnable-toolchain",
+    "build-package-channels",
+    "validate-packaging-channels",
+    "validate-packaging-channels-end-to-end"
+  ],
   "checked_in_sources": [
     "docs/runbooks/objc3c_packaging_channels.md",
-    "docs/runbooks/objc3c_release_foundation.md",
+    "docs/runbooks/objc3c_release_foundation.md"
+  ],
+  "implementation_anchors": [
     "scripts/package_objc3c_runnable_toolchain.ps1",
     "scripts/build_objc3c_release_manifest.py",
     "scripts/publish_objc3c_release_provenance.py",

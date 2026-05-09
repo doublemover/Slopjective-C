@@ -16,7 +16,7 @@
       "validation_commands": [
         "python -m pytest tests/tooling -q",
         "python scripts/check_release_and_scale_foundation_w2_contract.py",
-        "python scripts/spec_lint.py"
+        "npm run objc3c -- lint-spec"
       ],
       "execution_status": "open-blocked",
       "blocker_owner": "lane:C",

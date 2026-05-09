@@ -11,7 +11,7 @@
 | --- | --- |
 | `FRL-V013-05` | `SMT-V013-05` |
 | `PBK-V013-03` | Added remediation ledger, metadata binding, and `AC-V013-GOV-04` mapping to playbook Section `12`. |
-| `AC-V013-GOV-04-06` | Validation transcript for `python scripts/spec_lint.py` is recorded. |
+| `AC-V013-GOV-04-06` | Validation transcript for `npm run objc3c -- lint-spec` is recorded. |
 
 | Evidence ID | Scenario | Evidence artifact | Result |
 | --- | --- | --- | --- |

@@ -4,7 +4,7 @@
   "milestone": "OC3-T01",
   "issue": "OC3-T01-001",
   "runbook": "docs/runbooks/objc3c_full_envelope_claimability.md",
-  "summary_script": "scripts/build_objc3c_support_classification.py",
+  "summary_implementation_anchor": "scripts/build_objc3c_support_classification.py",
   "support_classes": [
     {
       "class": "supported",

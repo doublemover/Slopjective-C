@@ -34,7 +34,7 @@
     },
     {
       "cadence_id": "preview-aging",
-      "allowed_scope": "best-effort preview only",
+      "allowed_scope": "preview release-drill only until generated migration and rollback evidence exists",
       "minimum_evidence_families": [
         "release-operations",
         "performance-governance",

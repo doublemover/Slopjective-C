@@ -17,7 +17,7 @@
       "path_id": "stable-to-stable-patch",
       "from": "1.0.x",
       "to": "1.0.x",
-      "compatibility": "in-place",
+      "upgrade_contract": "in-place",
       "requires_warning": false,
       "rollback_channel": "local-installer"
     },
@@ -25,7 +25,7 @@
       "path_id": "stable-to-candidate-minor",
       "from": "1.0.x",
       "to": "1.1.0-rc.x",
-      "compatibility": "qualified",
+      "upgrade_contract": "qualified-with-generated-warning",
       "requires_warning": true,
       "rollback_channel": "local-installer"
     },
@@ -33,7 +33,7 @@
       "path_id": "stable-to-preview-minor",
       "from": "1.0.x",
       "to": "1.2.0-preview.x",
-      "compatibility": "best-effort",
+      "upgrade_contract": "blocked-until-generated-migration-evidence",
       "requires_warning": true,
       "rollback_channel": "offline-bundle"
     }

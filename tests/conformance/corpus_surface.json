@@ -140,26 +140,33 @@
     "report_root": "tmp/reports/conformance",
     "artifact_root": "tmp/artifacts/conformance",
     "package_stage_root": "tmp/pkg/objc3c-native-runnable-toolchain",
-    "surface_check_script": "scripts/check_conformance_corpus_surface.py",
-    "coverage_index_script": "scripts/generate_conformance_corpus_index.py",
-    "legacy_suite_gate_script": "scripts/check_conformance_suite.ps1",
+    "package_bridge": "objc3c",
+    "surface_check_action": "validate-conformance-corpus",
+    "surface_check_command": "npm run objc3c -- validate-conformance-corpus",
+    "runnable_surface_check_action": "validate-runnable-conformance-corpus",
+    "runnable_surface_check_command": "npm run objc3c -- validate-runnable-conformance-corpus",
+    "implementation_anchors": [
+      "scripts/check_conformance_corpus_surface.py",
+      "scripts/generate_conformance_corpus_index.py",
+      "scripts/check_conformance_suite.ps1"
+    ],
     "coverage_map": "tests/conformance/COVERAGE_MAP.md",
     "longitudinal_suite_manifest": "tests/conformance/longitudinal_suites.json"
   },
   "audit_surface": {
     "runtime_and_lowering_coverage": [
       "tests/conformance/lowering_abi/manifest.json",
-      "scripts/check_objc3c_execution_replay_proof.ps1",
-      "scripts/check_objc3c_lowering_replay_proof.ps1"
+      "npm run objc3c -- test-execution-replay",
+      "npm run objc3c -- validate-runtime-architecture"
     ],
     "module_and_metadata_coverage": [
       "tests/conformance/module_roundtrip/manifest.json",
-      "scripts/generate_conformance_evidence_index.py"
+      "npm run objc3c -- validate-conformance-corpus"
     ],
     "interop_coverage": [
       "tests/conformance/semantic/manifest.json",
       "tests/conformance/module_roundtrip/manifest.json",
-      "scripts/check_objc3c_runnable_interop_conformance.py"
+      "npm run objc3c -- validate-interop-conformance"
     ],
     "example_and_tutorial_coverage": [
       "tests/conformance/examples/manifest.json",
@@ -169,7 +176,7 @@
     "packaging_and_release_coverage": [
       "schemas/objc3-conformance-evidence-bundle-v1.schema.json",
       "schemas/objc3-conformance-dashboard-status-v1.schema.json",
-      "scripts/check_release_evidence.py"
+      "npm run objc3c -- check-release-evidence"
     ],
     "remaining_gap_sink": "tests/conformance/spec_open_issues/manifest.json"
   }

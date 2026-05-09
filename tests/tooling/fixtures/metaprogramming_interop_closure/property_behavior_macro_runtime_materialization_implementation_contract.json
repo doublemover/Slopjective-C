@@ -4,7 +4,7 @@
   "milestone": "M323",
   "issue": "M323-C002",
   "runbook": "docs/runbooks/objc3c_metaprogramming_interop_closure.md",
-  "summary_script": "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py",
+  "summary_implementation_anchor": "scripts/check_metaprogramming_interop_closure_metaprogramming_lowering.py",
   "canonical_reports": [
     "tmp/reports/runtime/acceptance/summary.json",
     "tmp/reports/runtime/runnable-metaprogramming-conformance/summary.json",

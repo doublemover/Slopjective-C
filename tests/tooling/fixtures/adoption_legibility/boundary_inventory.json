@@ -50,7 +50,7 @@
     "tests/tooling/fixtures/long_horizon_operations/boundary_inventory.json",
     "tests/tooling/fixtures/long_horizon_operations/artifact_contract.json"
   ],
-  "substrate_scripts": [
+  "substrate_implementation_anchors": [
     "scripts/render_objc3c_public_command_surface.py",
     "scripts/check_objc3c_package_ecosystem_integration.py",
     "scripts/check_objc3c_runnable_package_ecosystem_end_to_end.py",
@@ -81,8 +81,15 @@
   "measured_inventory_queries": [
     "rg --files docs/tutorials --glob '*.md'",
     "rg --files showcase --glob '*.objc3'",
-    "rg --files showcase --glob 'workspace.json'",
-    "python - <<'PY'\nfrom scripts.objc3c_workflow.registry import action_names\nprint(len([name for name in action_names() if any(token in name for token in ('documentation', 'site', 'showcase', 'application', 'package', 'conformance', 'performance', 'long-horizon'))]))\nPY"
+    "rg --files showcase --glob 'workspace.json'"
+  ],
+  "measured_action_inventory": [
+    "build-public-command-surface",
+    "validate-package-ecosystem",
+    "validate-application-architecture",
+    "validate-public-conformance-reporting",
+    "validate-performance-governance",
+    "validate-long-horizon-operations"
   ],
   "machine_owned_output_roots": [
     "tmp/reports/adoption-legibility/",

@@ -1,4 +1,4 @@
-# Nil receiver semantic-compatibility lowering markers.
+# Nil receiver canonical zero-result lowering markers.
 define i32 @main()
 store i32 0, ptr %sent.addr.
 icmp eq i32 %t3, 0
