@@ -13,6 +13,7 @@ add_library(objc3c_json STATIC
   json/json_schema_type_names.cpp
   json/json_string_array_writer.cpp
   json/json_value.cpp
+  json/json_value_container_writer.cpp
   json/json_value_writer.cpp
   json/json_writer.cpp
   objc3_json.cpp
