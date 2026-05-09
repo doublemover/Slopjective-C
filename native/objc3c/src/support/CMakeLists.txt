@@ -60,7 +60,12 @@ add_library(objc3c_support STATIC
   objc3_super_dispatch_profile.h
   objc3_receiver_profile_helpers.h
   objc3_method_family.cpp
-  objc3_profile_token_match.cpp
+  objc3_profile_any_token_match.cpp
+  objc3_profile_any_token_match.h
+  objc3_profile_lowercase_token_match.cpp
+  objc3_profile_lowercase_token_match.h
+  objc3_profile_single_token_match.cpp
+  objc3_profile_single_token_match.h
   objc3_profile_token_match.h
   objc3_runtime_dispatch_symbol.cpp
   objc3_runtime_dispatch_symbol.h
