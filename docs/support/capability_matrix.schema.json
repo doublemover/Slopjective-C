@@ -10,6 +10,7 @@
     "evidence_map_path",
     "states",
     "command_surface",
+    "projection_policy",
     "hard_cutover_rules",
     "retired_surface_terms",
     "capabilities"
@@ -67,6 +68,49 @@
           },
           "minItems": 1,
           "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "projection_policy": {
+      "type": "object",
+      "required": [
+        "authoritative_data",
+        "schema_sources",
+        "human_projections",
+        "consumer_rule"
+      ],
+      "properties": {
+        "authoritative_data": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "schema_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "human_projections": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "consumer_rule": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "additionalProperties": false

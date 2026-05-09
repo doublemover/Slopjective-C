@@ -12,7 +12,7 @@ canonical support truth.
 
 | Schema | Owns |
 | ------ | ---- |
-| `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, and hard-cutover rules. |
+| `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, projection policy, and hard-cutover rules. |
 | `objc3c-capability-evidence-map-v1.schema.json` | Flattened capability-to-evidence rows used by docs and release evidence maps. |
 
 ## Release And Adoption Schemas

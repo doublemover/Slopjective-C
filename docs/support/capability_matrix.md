@@ -15,9 +15,15 @@ Machine-readable truth is split deliberately:
 - evidence rows: `docs/support/evidence_map.json`
 - evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
 - schema examples: `docs/support/capability_schema_examples.md`
+- projection policy: the `projection_policy` object in
+  `docs/support/capability_matrix.json`
 
 The matrix also carries `retired_surface_terms` for wording that may appear only
 in negative examples, issue evidence, or source-hygiene rejection data.
+
+Projection policy is part of the support contract: markdown files may explain
+the matrix and evidence map, but they do not create support claims without a
+matching row in the authoritative JSON data.
 
 Command and evidence truth is hard-cut to the current surfaces:
 

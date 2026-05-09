@@ -22,6 +22,10 @@ The canonical schema registry entries live under `schemas/`:
 - `schemas/objc3c-capability-evidence-map-v1.schema.json`
 - `schemas/README.md`
 
+`capability_matrix.json` also carries `projection_policy`. That object names
+the authoritative data files, schema sources, and human projections so consumers
+can distinguish source truth from reader-facing summaries.
+
 ## Change Rules
 
 - Add or change a support claim in `capability_matrix.json` first.
@@ -31,6 +35,8 @@ The canonical schema registry entries live under `schemas/`:
 - Update the markdown projections in this directory when the machine-readable
   truth changes.
 - Keep site/spec/runbook summaries subordinate to this directory.
+- Treat markdown projections as summaries of `capability_matrix.json` and
+  `evidence_map.json`; they cannot introduce support claims on their own.
 - Use only `implemented`, `rejected`, `reserved`, and `internal` as capability
   states.
 - Public replay commands must use `npm run objc3c -- <action>`.

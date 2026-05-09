@@ -23,6 +23,22 @@
       "runtime-behavior claims not represented by implemented matrix rows"
     ]
   },
+  "projection_policy": {
+    "authoritative_data": [
+      "docs/support/capability_matrix.json",
+      "docs/support/evidence_map.json"
+    ],
+    "schema_sources": [
+      "schemas/objc3c-capability-matrix-v1.schema.json",
+      "schemas/objc3c-capability-evidence-map-v1.schema.json"
+    ],
+    "human_projections": [
+      "docs/support/capability_matrix.md",
+      "docs/support/evidence_map.md",
+      "docs/support/hard_cutover_capability_truth.md"
+    ],
+    "consumer_rule": "Consumers may summarize only rows and evidence present in authoritative data; projection docs cannot introduce new support claims."
+  },
   "hard_cutover_rules": [
     "Only implemented behavior rows may claim public Objective-C 3.0 support.",
     "Rejected and reserved rows are diagnostic or documentation truth, not alternate acceptance paths.",
