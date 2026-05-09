@@ -128,6 +128,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_actor_semantic_artifacts.h
   objc3_frontend_artifact_arc_ownership_metadata.cpp
   objc3_frontend_artifact_arc_ownership_metadata.h
+  objc3_frontend_artifact_block_metadata.cpp
+  objc3_frontend_artifact_block_metadata.h
   objc3_frontend_artifact_block_lowering_plan.cpp
   objc3_frontend_artifact_block_lowering_plan.h
   objc3_frontend_artifact_concurrency_metadata.cpp
