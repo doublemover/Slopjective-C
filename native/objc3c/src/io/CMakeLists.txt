@@ -12,17 +12,23 @@ objc3c_apply_llvm_direct_config(objc3c_json)
 add_library(objc3c_io STATIC
   objc3_artifact_paths.cpp
   objc3_artifact_writers.cpp
+  objc3_conformance_artifact_paths.cpp
+  objc3_conformance_artifact_writers.cpp
   objc3_diagnostics_artifact_document.cpp
   objc3_diagnostics_artifacts.cpp
   objc3_file_io.cpp
   objc3_file_payload_io.cpp
   objc3_line_join.cpp
+  objc3_runtime_artifact_paths.cpp
+  objc3_runtime_artifact_writers.cpp
 )
 objc3c_apply_build_defaults(objc3c_io)
 objc3c_apply_llvm_direct_config(objc3c_io)
 
 add_library(objc3c_runtime_abi STATIC
+  objc3_conformance_artifact_documents.cpp
   objc3_process.cpp
+  objc3_runtime_artifact_documents.cpp
 )
 objc3c_apply_build_defaults(objc3c_runtime_abi)
 objc3c_apply_llvm_direct_config(objc3c_runtime_abi)
