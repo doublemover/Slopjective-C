@@ -521,6 +521,143 @@
         "native/objc3c/src/diag/objc3_diag_catalog_contract.cpp",
         "native/objc3c/src/diag/objc3_diag_catalog_contract.h"
       ]
+    },
+    {
+      "ref": "106006a74",
+      "summary": "HC index acceptance area ownership",
+      "issues": [
+        "#8144",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "tests/conformance/hard_cutover_acceptance_area_owners.json",
+        "tests/conformance/hard_cutover_positive_residue_audit.json",
+        "tests/conformance/hard_cutover_catalog.json",
+        "docs/issues/hard_cutover_8132_8150_evidence.md"
+      ]
+    },
+    {
+      "ref": "202409388",
+      "summary": "HC split frontend feature claim artifact inventory",
+      "issues": [
+        "#8138",
+        "#8145",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/artifacts/objc3_frontend_feature_claim_artifacts.cpp",
+        "native/objc3c/src/artifacts/objc3_frontend_feature_claim_artifacts.h"
+      ]
+    },
+    {
+      "ref": "6f529ddfd",
+      "summary": "HC split property accessor support owners",
+      "issues": [
+        "#8138",
+        "#8146",
+        "#8147"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/support/objc3_current_property_runtime_profiles.cpp",
+        "native/objc3c/src/support/objc3_property_accessor_profile_builder.cpp",
+        "native/objc3c/src/support/objc3_property_accessor_profile_builder.h"
+      ]
+    },
+    {
+      "ref": "ef2b4e7ad",
+      "summary": "HC split driver runtime command contract owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_accessor_surface.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_command_surface.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_publication.cpp"
+      ]
+    },
+    {
+      "ref": "e63ed1189",
+      "summary": "HC split contract helper boundaries",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_contract_descriptor_validation.h",
+        "native/objc3c/src/contracts/objc3_contract_id_match.h",
+        "native/objc3c/src/contracts/objc3_native_contract_descriptions.h",
+        "native/objc3c/src/contracts/objc3_native_contract_descriptor.h"
+      ]
+    },
+    {
+      "ref": "a8a4f9f34",
+      "summary": "HC align stdlib shape documentation",
+      "issues": [
+        "#8145"
+      ],
+      "evidence_paths": [
+        "docs/runbooks/objc3c_stdlib_advanced.md",
+        "docs/runbooks/objc3c_stdlib_core.md",
+        "site/src/index.body.md"
+      ]
+    },
+    {
+      "ref": "d7d299698",
+      "summary": "HC split native contract id registry",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/contracts/objc3_native_contract_id_kind.h",
+        "native/objc3c/src/contracts/objc3_native_contract_id_known.h",
+        "native/objc3c/src/contracts/objc3_native_contract_id_spelling.h",
+        "native/objc3c/src/contracts/objc3_native_contract_ids.h"
+      ]
+    },
+    {
+      "ref": "8ceaf5917",
+      "summary": "HC split JSON pointer type and equivalence helpers",
+      "issues": [
+        "#8148"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/io/json/json_equivalence_nodes.cpp",
+        "native/objc3c/src/io/json/json_pointer_tokens.cpp",
+        "native/objc3c/src/io/json/json_schema_type_names.cpp"
+      ]
+    },
+    {
+      "ref": "d713e3655",
+      "summary": "HC split frontend C API runner public result mapping",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_public_result.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_public_result.h",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_summary_json.cpp"
+      ]
+    },
+    {
+      "ref": "2728c61d5",
+      "summary": "HC remove drained runtime include shards",
+      "issues": [
+        "#8132",
+        "#8133",
+        "#8135",
+        "#8150"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/objc3_runtime.cpp",
+        "native/objc3c/src/sema/objc3_sema_contract_core.h",
+        "native/objc3c/src/sema/objc3_sema_contract_type_handoff.h"
+      ]
     }
   ],
   "global_policy": {

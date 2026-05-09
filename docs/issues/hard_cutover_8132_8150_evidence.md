@@ -99,6 +99,13 @@ pass:
 - `3334f4a59` adds checked dispatch owner evidence for `#8133` and `#8143`.
 - `9bbd9a143` adds diagnostic catalog contract evidence for `#8135` and
   `#8145`.
+- `106006a74` adds canonical acceptance-area ownership and positive-residue
+  audit indexes for `#8144` and `#8150`.
+- `202409388`, `6f529ddfd`, `ef2b4e7ad`, `e63ed1189`, `a8a4f9f34`,
+  `d7d299698`, `8ceaf5917`, `d713e3655`, and `2728c61d5` extend the
+  acceptance-area evidence across artifacts, property/accessor support, driver
+  runtime registration commands, contract helpers, stdlib docs, native contract
+  IDs, JSON helpers, public result mapping, and drained include-shard removal.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

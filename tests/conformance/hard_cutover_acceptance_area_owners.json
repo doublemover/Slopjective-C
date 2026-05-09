@@ -42,6 +42,8 @@
       "owner_code_paths": [
         "native/objc3c/src/diag/objc3_diag_catalog_contract.cpp",
         "native/objc3c/src/diag/objc3_diag_catalog_table.cpp",
+        "native/objc3c/src/sema/objc3_sema_contract_core.h",
+        "native/objc3c/src/sema/objc3_sema_contract_type_handoff.h",
         "native/objc3c/src/sema/objc3_semantic_feature_claim_rules.cpp",
         "native/objc3c/src/sema/objc3_semantic_feature_claim_context.cpp",
         "native/objc3c/src/contracts/objc3_frontend_diagnostic_stage_contract.h"
@@ -86,6 +88,8 @@
         "native/objc3c/src/runtime/dispatch/dispatch_api.cpp",
         "native/objc3c/src/runtime/dispatch/method_cache.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_accessor_surface.cpp",
+        "native/objc3c/src/driver/objc3_driver_runtime_registration_command_surface.cpp",
         "native/objc3c/src/runtime/classes/class_graph.cpp",
         "native/objc3c/src/runtime/selectors/selector_table.cpp",
         "native/objc3c/src/runtime/selectors/keypath_table.cpp"
@@ -109,6 +113,7 @@
         "native/objc3c/src/tools/objc3c_frontend_c_api_runner_compile_session.cpp",
         "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_core.cpp",
         "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_hardening.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_public_result.cpp",
         "native/objc3c/src/runtime/public/objc3_runtime_api.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result.h"
       ],
@@ -130,7 +135,11 @@
         "native/objc3c/src/artifacts/json/artifact_schema_contract_table.cpp",
         "native/objc3c/src/artifacts/json/artifact_json_publication_contract.cpp",
         "native/objc3c/src/artifacts/objc3_frontend_feature_claim_artifacts.cpp",
+        "native/objc3c/src/contracts/objc3_native_contract_id_spelling.h",
+        "native/objc3c/src/contracts/objc3_native_contract_descriptor.h",
         "native/objc3c/src/io/json/json_schema_validation.cpp",
+        "native/objc3c/src/io/json/json_equivalence_nodes.cpp",
+        "native/objc3c/src/io/json/json_pointer_tokens.cpp",
         "native/objc3c/src/io/json/json_schema_type.cpp",
         "native/objc3c/src/config/objc3_feature_state_query.cpp"
       ],

@@ -346,6 +346,91 @@
         "#8135",
         "#8145"
       ]
+    },
+    {
+      "ref": "106006a74",
+      "summary": "HC index acceptance area ownership",
+      "issues": [
+        "#8144",
+        "#8150"
+      ]
+    },
+    {
+      "ref": "202409388",
+      "summary": "HC split frontend feature claim artifact inventory",
+      "issues": [
+        "#8138",
+        "#8145",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "6f529ddfd",
+      "summary": "HC split property accessor support owners",
+      "issues": [
+        "#8138",
+        "#8146",
+        "#8147"
+      ]
+    },
+    {
+      "ref": "ef2b4e7ad",
+      "summary": "HC split driver runtime command contract owners",
+      "issues": [
+        "#8140",
+        "#8141",
+        "#8143"
+      ]
+    },
+    {
+      "ref": "e63ed1189",
+      "summary": "HC split contract helper boundaries",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "a8a4f9f34",
+      "summary": "HC align stdlib shape documentation",
+      "issues": [
+        "#8145"
+      ]
+    },
+    {
+      "ref": "d7d299698",
+      "summary": "HC split native contract id registry",
+      "issues": [
+        "#8138",
+        "#8141",
+        "#8148"
+      ]
+    },
+    {
+      "ref": "8ceaf5917",
+      "summary": "HC split JSON pointer type and equivalence helpers",
+      "issues": [
+        "#8148"
+      ]
+    },
+    {
+      "ref": "d713e3655",
+      "summary": "HC split frontend C API runner public result mapping",
+      "issues": [
+        "#8140",
+        "#8141"
+      ]
+    },
+    {
+      "ref": "2728c61d5",
+      "summary": "HC remove drained runtime include shards",
+      "issues": [
+        "#8132",
+        "#8133",
+        "#8135",
+        "#8150"
+      ]
     }
   ],
   "hard_cutover_disposition": {
