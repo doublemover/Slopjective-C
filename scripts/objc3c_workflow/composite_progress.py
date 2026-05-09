@@ -4,6 +4,11 @@ from __future__ import annotations
 
 from time import perf_counter
 
+from .composite_report_policy import (
+    composite_progress_done_line,
+    composite_progress_start_line,
+)
+
 
 def print_composite_step_start(
     *,
@@ -14,8 +19,13 @@ def print_composite_step_start(
     workflow_started_at: float,
 ) -> None:
     print(
-        f"public-workflow-progress: [{index}/{total}] START action={action} "
-        f"elapsed={perf_counter() - workflow_started_at:.3f}s last={previous_action}",
+        composite_progress_start_line(
+            index=index,
+            total=total,
+            action=action,
+            previous_action=previous_action,
+            elapsed_seconds=perf_counter() - workflow_started_at,
+        ),
         flush=True,
     )
 
@@ -29,9 +39,14 @@ def print_composite_step_done(
     workflow_started_at: float,
 ) -> None:
     print(
-        f"public-workflow-progress: [{index}/{total}] DONE action={action} "
-        f"duration={float(step.get('duration_seconds', 0.0)):.3f}s "
-        f"elapsed={perf_counter() - workflow_started_at:.3f}s exit={step['exit_code']}",
+        composite_progress_done_line(
+            index=index,
+            total=total,
+            action=action,
+            duration_seconds=float(step.get("duration_seconds", 0.0)),
+            elapsed_seconds=perf_counter() - workflow_started_at,
+            exit_code=step["exit_code"],
+        ),
         flush=True,
     )
 

@@ -6,6 +6,7 @@ from .actions.validation_timing import (
     validation_budget_violations,
     validation_speed_budget_mode,
 )
+from .composite_report_policy import COMPOSITE_STATUS_FAIL, COMPOSITE_STATUS_PASS
 
 
 def composite_budget_violations(child_timing: dict[str, object]) -> list[object]:
@@ -14,7 +15,7 @@ def composite_budget_violations(child_timing: dict[str, object]) -> list[object]
 
 
 def effective_composite_status(status: str, budget_violations: list[object]) -> str:
-    return "FAIL" if status == "PASS" and budget_violations else status
+    return COMPOSITE_STATUS_FAIL if status == COMPOSITE_STATUS_PASS and budget_violations else status
 
 
 def composite_budget_policy(budget_violations: list[object]) -> dict[str, object]:
