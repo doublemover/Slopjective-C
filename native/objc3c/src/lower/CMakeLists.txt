@@ -4,13 +4,14 @@ add_library(objc3c_lower STATIC
   contracts/lowering_extended_contracts.cpp
   contracts/lowering_diagnostics.cpp
   contracts/lowering_phase_io.cpp
+  contracts/lowering_contract_validators.cpp
   contracts/lowering_summary_contracts.cpp
+  contracts/lowering_summary_surfaces.cpp
   contracts/runtime_metadata_handoff.cpp
   contracts/runtime_dispatch_contracts.cpp
   core/lowering_primitive_ops.cpp
   metadata/lowering_metadata_helpers.cpp
   metadata/runtime_metadata_layout_policy.cpp
-  objc3_lowering_contract.cpp
 )
 objc3c_apply_build_defaults(objc3c_lower)
 objc3c_apply_llvm_direct_config(objc3c_lower)
