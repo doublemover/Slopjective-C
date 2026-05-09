@@ -57,7 +57,7 @@
     "result_err_tag": 2,
     "result_is_ok": "returns 1 only when tag equals result_ok_tag",
     "option_to_result_tag": "maps nonzero presence to result_ok_tag and zero presence to result_err_tag",
-    "result_bridge_diagnostic": "returns 0 when option presence matches the provided result tag, otherwise 30601",
+    "option_result_shape_diagnostic": "returns 0 when option presence matches the provided result tag, otherwise 30601",
     "result_unwrap_or": "returns value only when tag equals result_ok_tag, otherwise the caller-supplied default",
     "result_error_or": "returns code only when tag equals result_err_tag, otherwise the caller-supplied default",
     "ok_or_code": "returns value when nonzero, otherwise the caller-supplied default",
@@ -104,7 +104,7 @@
     "allocator or ownership ABI claims",
     "runtime-backed string or bytes storage before a checked-in core stdlib contract update",
     "generic collection ABI promises",
-    "moving error bridges into objc3.core",
+    "moving result-shape helpers into objc3.core",
     "claiming runtime-backed executor or reflection semantics before the checked-in helper exports exist",
     "widening strict-system helpers into always-on core imports"
   ]

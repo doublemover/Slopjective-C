@@ -27,7 +27,7 @@
     "objc3.errors": [
       "error-identity",
       "result-shape",
-      "optional-bridge",
+      "option-result-shape",
       "text-data-shape"
     ],
     "objc3.keypath": [
@@ -77,7 +77,7 @@
       "objc3_errors_result_err_tag",
       "objc3_errors_result_is_ok",
       "objc3_errors_option_to_result_tag",
-      "objc3_errors_result_bridge_diagnostic",
+      "objc3_errors_option_result_shape_diagnostic",
       "objc3_errors_result_unwrap_or",
       "objc3_errors_result_error_or",
       "objc3_errors_ok_or_code",
@@ -115,7 +115,7 @@
   },
   "module_roles": {
     "objc3.core": "foundational utility, text/data view, collection-shape, and option helpers",
-    "objc3.errors": "error identity, result helpers, and optional-to-error bridges",
+    "objc3.errors": "error identity, result helpers, and option-to-result shape diagnostics",
     "objc3.keypath": "typed key-path helpers that need text/data shape naming stability",
     "objc3.concurrency": "shared stdlib inventory module whose advanced helper families are owned by the advanced stdlib contract",
     "objc3.system": "shared stdlib inventory module whose strict-system helper families are owned by the advanced stdlib contract"

@@ -27,7 +27,7 @@ fn objc3_errors_option_to_result_tag(flag: i32) {
   }
 }
 
-fn objc3_errors_result_bridge_diagnostic(flag: i32, tag: i32) {
+fn objc3_errors_option_result_shape_diagnostic(flag: i32, tag: i32) {
   if (objc3_errors_option_to_result_tag(flag) == tag) {
     return 0;
   } else {
