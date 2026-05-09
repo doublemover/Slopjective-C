@@ -27,6 +27,7 @@
 #include "artifacts/objc3_frontend_artifact_runtime_metadata_plan.h"
 #include "artifacts/objc3_frontend_artifact_runtime_registration_plan.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
+#include "artifacts/objc3_frontend_artifact_type_system_lowering_plan.h"
 #include "artifacts/objc3_frontend_artifact_diagnostics.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
 #include "artifacts/objc3_frontend_concurrency_semantic_artifacts.h"
@@ -245,13 +246,6 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::Objc3AccessorStorageLoweringMetadataSummary;
 using objc3::artifacts::frontend::
     Objc3ExecutableAccessorLayoutLoweringSummary;
-using objc3::artifacts::frontend::BuildGenericMetadataAbiLoweringContract;
-using objc3::artifacts::frontend::
-    BuildLightweightGenericsConstraintLoweringContract;
-using objc3::artifacts::frontend::
-    BuildNullabilityFlowWarningPrecisionLoweringContract;
-using objc3::artifacts::frontend::
-    BuildProtocolQualifiedObjectTypeLoweringContract;
 using objc3::artifacts::frontend::
     BuildTypeSystemGenericContractPreservationJson;
 using objc3::artifacts::frontend::
@@ -264,7 +258,6 @@ using objc3::artifacts::frontend::
 using objc3::artifacts::frontend::
     BuildTypeSystemProtocolContractPreservationJson;
 using objc3::artifacts::frontend::BuildTypeSystemTypeSemanticModelSummaryJson;
-using objc3::artifacts::frontend::BuildVarianceBridgeCastLoweringContract;
 using objc3::artifacts::frontend::
     BuildToolingDiagnosticTaxonomyPortabilityContractSummaryJson;
 using objc3::artifacts::frontend::
@@ -1402,55 +1395,44 @@ Objc3FrontendArtifactBundle BuildObjc3FrontendArtifacts(const std::filesystem::p
   const std::string &block_determinism_perf_baseline_lowering_replay_key =
       block_lowering_plan
           .block_determinism_perf_baseline_lowering_replay_key;
-  const Objc3LightweightGenericsConstraintLoweringContract lightweight_generic_constraint_lowering_contract =
-      BuildLightweightGenericsConstraintLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3LightweightGenericsConstraintLoweringContract(
-          lightweight_generic_constraint_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid lightweight generics constraint lowering contract");
+  const Objc3FrontendArtifactTypeSystemLoweringPlan
+      type_system_lowering_plan =
+          BuildObjc3FrontendArtifactTypeSystemLoweringPlan(pipeline_result);
+  for (const auto &failure :
+       type_system_lowering_plan.post_pipeline_failures) {
+    record_post_pipeline_failure(failure.code.c_str(), failure.message);
   }
-  const std::string lightweight_generic_constraint_lowering_replay_key =
-      Objc3LightweightGenericsConstraintLoweringReplayKey(
-          lightweight_generic_constraint_lowering_contract);
-  const Objc3NullabilityFlowWarningPrecisionLoweringContract nullability_flow_warning_precision_lowering_contract =
-      BuildNullabilityFlowWarningPrecisionLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
-          nullability_flow_warning_precision_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid nullability-flow warning-precision lowering contract");
-  }
-  const std::string nullability_flow_warning_precision_lowering_replay_key =
-      Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
-          nullability_flow_warning_precision_lowering_contract);
-  const Objc3ProtocolQualifiedObjectTypeLoweringContract protocol_qualified_object_type_lowering_contract =
-      BuildProtocolQualifiedObjectTypeLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
-          protocol_qualified_object_type_lowering_contract)) {
-    const std::string protocol_contract_replay_key =
-        Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
-            protocol_qualified_object_type_lowering_contract);
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid protocol-qualified object type lowering contract (" +
-            protocol_contract_replay_key + ")");
-  }
-  const std::string protocol_qualified_object_type_lowering_replay_key =
-      Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
-          protocol_qualified_object_type_lowering_contract);
-  const Objc3VarianceBridgeCastLoweringContract variance_bridge_cast_lowering_contract =
-      BuildVarianceBridgeCastLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3VarianceBridgeCastLoweringContract(
-          variance_bridge_cast_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid variance/bridged-cast lowering contract");
-  }
-  const std::string variance_bridge_cast_lowering_replay_key =
-      Objc3VarianceBridgeCastLoweringReplayKey(
-          variance_bridge_cast_lowering_contract);
-  const Objc3GenericMetadataAbiLoweringContract generic_metadata_abi_lowering_contract =
-      BuildGenericMetadataAbiLoweringContract(pipeline_result.sema_parity_surface);
-  if (!IsValidObjc3GenericMetadataAbiLoweringContract(
-          generic_metadata_abi_lowering_contract)) {
-    record_post_pipeline_failure("O3L300",         "LLVM IR emission failed: invalid generic metadata ABI lowering contract");
-  }
-  const std::string generic_metadata_abi_lowering_replay_key =
-      Objc3GenericMetadataAbiLoweringReplayKey(
-          generic_metadata_abi_lowering_contract);
+  const Objc3LightweightGenericsConstraintLoweringContract
+      &lightweight_generic_constraint_lowering_contract =
+          type_system_lowering_plan
+              .lightweight_generic_constraint_lowering_contract;
+  const std::string &lightweight_generic_constraint_lowering_replay_key =
+      type_system_lowering_plan
+          .lightweight_generic_constraint_lowering_replay_key;
+  const Objc3NullabilityFlowWarningPrecisionLoweringContract
+      &nullability_flow_warning_precision_lowering_contract =
+          type_system_lowering_plan
+              .nullability_flow_warning_precision_lowering_contract;
+  const std::string &nullability_flow_warning_precision_lowering_replay_key =
+      type_system_lowering_plan
+          .nullability_flow_warning_precision_lowering_replay_key;
+  const Objc3ProtocolQualifiedObjectTypeLoweringContract
+      &protocol_qualified_object_type_lowering_contract =
+          type_system_lowering_plan
+              .protocol_qualified_object_type_lowering_contract;
+  const std::string &protocol_qualified_object_type_lowering_replay_key =
+      type_system_lowering_plan
+          .protocol_qualified_object_type_lowering_replay_key;
+  const Objc3VarianceBridgeCastLoweringContract
+      &variance_bridge_cast_lowering_contract =
+          type_system_lowering_plan.variance_bridge_cast_lowering_contract;
+  const std::string &variance_bridge_cast_lowering_replay_key =
+      type_system_lowering_plan.variance_bridge_cast_lowering_replay_key;
+  const Objc3GenericMetadataAbiLoweringContract
+      &generic_metadata_abi_lowering_contract =
+          type_system_lowering_plan.generic_metadata_abi_lowering_contract;
+  const std::string &generic_metadata_abi_lowering_replay_key =
+      type_system_lowering_plan.generic_metadata_abi_lowering_replay_key;
   const Objc3ModuleImportGraphLoweringContract module_import_graph_lowering_contract =
       BuildModuleImportGraphLoweringContract(pipeline_result.sema_parity_surface);
   if (!IsValidObjc3ModuleImportGraphLoweringContract(
