@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-8132-8150-closeout-evidence-owner-split",
+  "owner_phase": "canonical_accepted_evidence",
+  "source_documents": [
+    "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+    "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+  ],
+  "support_boundary": "canonical accepted closeout evidence covers committed hard-cutover branch source, docs, tests, checked-in owner surfaces, hard-cutover issue indexes, behavior owner split indexes, capability truth indexes, fixture metadata, and issue payload rows that explicitly point to committed refs and checked-in evidence documents. It does not create positive behavior, validation, push, GitHub issue edit, or remote closure truth by itself.",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "branch_evidence_policy:closeout_evidence_basis=committed hard-cutover branch surfaces only",
+    "branch_evidence_policy:latest_source_head_role=latest committed source evidence folded into this docs-only closeout map",
+    "current_branch_owner_refresh.issue_owner_buckets[]",
+    "current_head_docs_only_refresh.issue_owner_buckets[]",
+    "post_4fdd_local_owner_refresh.issue_owner_buckets[]",
+    "followup_local_owner_refresh.issue_owner_buckets[]",
+    "post_f4bf_local_owner_refresh.issue_owner_buckets[]",
+    "post_89959_local_owner_refresh.issue_owner_buckets[]",
+    "post_e760_local_owner_refresh.issue_owner_buckets[]",
+    "post_0350_local_owner_refresh.issue_owner_buckets[]",
+    "post_0d211_local_owner_refresh.issue_owner_buckets[]",
+    "post_2fb_local_owner_refresh.issue_owner_buckets[]",
+    "issue_payloads[].status_for_tracker=evidence-ready",
+    "issue_payloads[].status_for_tracker=local-capability-truth-indexed",
+    "issue_payloads[].primary_refresh_commits[]",
+    "evidence_documents:docs/issues/hard_cutover_8132_8150_evidence.json",
+    "evidence_documents:docs/issues/hard_cutover_8132_8150_evidence.md",
+    "evidence_documents:tests/conformance/hard_cutover_issue_index.json",
+    "payloads.md:Evidence:",
+    "payloads.md:Retired-surface state:",
+    "payloads.md:committed local source/test evidence only"
+  ],
+  "canonical_anchor": "tests/conformance/hard_cutover_fixture_family_owner_index.json",
+  "retired_surface_rule": "canonical accepted closeout evidence may cite committed rejection, strict-error, or absence evidence, but never turns shim, fallback, compatibility, old-mode, unsupported, generated-only, report-only, tmp-only, docs-only, local-scan-only, validation-not-run, GitHub-not-called, push-not-performed, or remote-deferred rows into positive behavior or remote closure support"
+}

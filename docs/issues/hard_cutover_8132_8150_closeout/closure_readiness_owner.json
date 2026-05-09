@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-hard-cutover-8132-8150-closeout-evidence-owner-split",
+  "owner_phase": "closure_readiness",
+  "source_documents": [
+    "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+    "docs/issues/hard_cutover_8132_8150_closeout/payloads.md"
+  ],
+  "support_boundary": "closure readiness owns local closeout status, tracker-readiness labels, deferred validation, deferred push, deferred GitHub issue edits, remote closeout exclusions, and issue payload status classification. It may say a local payload is evidence-ready or locally indexed, but it cannot assert validation, pushed state, GitHub issue edits, or remote issue closure unless those operations are separately recorded by their owning evidence.",
+  "phase_support_claim_authority": false,
+  "closure_claim_authority": {
+    "local_evidence_ready": true,
+    "remote_issue_closure": false,
+    "validation_passed": false,
+    "push_performed": false,
+    "github_issue_edits_performed": false
+  },
+  "selectors": [
+    "constraints",
+    "branch_evidence_policy.unsupported_evidence[]",
+    "issue_payloads[].status_for_tracker",
+    "issue_payloads[].status_for_tracker=evidence-ready",
+    "issue_payloads[].status_for_tracker=local-capability-truth-indexed",
+    "issue_payloads[].status_for_tracker=local-evidence-indexed-remote-deferred",
+    "current_docs_only_closeout_refresh",
+    "payloads.md:not remote completion claims and do not assert remote closure",
+    "payloads.md:Validation, gh, push, and issue edits were intentionally not run",
+    "payloads.md:remote-deferred status",
+    "payloads.md:Remaining closure gates:",
+    "payloads.md:Validation, push, GitHub issue edits, and remote closeout remain outside this local-only payload"
+  ],
+  "canonical_anchor": "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
+  "retired_surface_rule": "closure readiness never converts local evidence-ready labels, docs-only refreshes, generated summaries, report-only rows, validation-not-run state, GitHub-not-called state, push-not-performed state, remote-deferred state, shim claims, fallback claims, compatibility claims, or old-mode claims into remote closure"
+}

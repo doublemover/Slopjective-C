@@ -7,6 +7,19 @@ preparing them. Historic `local` refresh labels in this file mean committed
 refs in this checkout; they are not report-only evidence, uncommitted worktree
 evidence, or a substitute for deferred tracker operations.
 
+## Evidence Owner Boundary
+
+Closeout evidence is split by `evidence_owner_splits.json` into canonical
+accepted evidence, canonical rejection/strict-error evidence,
+provenance/report/generated evidence, and closure-readiness ownership. Accepted
+evidence must point to committed branch source, docs, tests, or checked-in owner
+surfaces. Shim, fallback, compatibility, old-mode, unsupported,
+missing-upstream, alternate-acceptance, and retired-source-lane rows are
+rejection, strict-error, or absent-support evidence. Docs-only refreshes, local
+scans, generated summaries, tmp reports, report-only rows, validation-not-run,
+GitHub-not-called, push-not-performed, and remote-deferred rows are provenance
+or closure-readiness state, not positive behavior or remote closeout.
+
 Post-payload refresh commits are indexed in
 `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`. The refresh
 set folds in parser expression/statement node owners, lower control-flow

@@ -1145,14 +1145,25 @@
         "#8149",
         "#8150"
       ],
+      "owned_boundaries": [
+        "canonical_accepted_evidence",
+        "canonical_rejection_strict_error_evidence",
+        "provenance_report_generated_evidence",
+        "closure_readiness"
+      ],
       "index_evidence": [
+        "docs/issues/hard_cutover_8132_8150_closeout/evidence_owner_splits.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/canonical_accepted_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/canonical_rejection_strict_error_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/provenance_report_generated_evidence.json",
+        "docs/issues/hard_cutover_8132_8150_closeout/closure_readiness_owner.json",
         "docs/issues/hard_cutover_8132_8150_evidence.json",
         "docs/issues/hard_cutover_8132_8150_evidence.md",
         "docs/issues/hard_cutover_8132_8150_closeout/payload_index.json",
         "docs/issues/hard_cutover_behavior_evidence_topology.md",
         "docs/issues/hard_cutover_fixture_family_owner_index.md"
       ],
-      "retired_disposition": "issue closeout evidence is a local map over committed code/docs/tests evidence and cannot itself create a retired adapter, alternate acceptance path, retired-source lane, or public compatibility claim"
+      "retired_disposition": "issue closeout evidence is a local map over committed code/docs/tests evidence and is resolved through canonical accepted evidence, canonical rejection/strict-error evidence, provenance/report/generated evidence, and closure-readiness owners before any issue row is cited as support; report-only, generated-only, generated-summary-only, tmp-report-only, docs-only refresh, local-scan-only, validation-not-run, GitHub-not-called, push-not-performed, remote-deferred, shim, fallback, compatibility, old-mode, unsupported, missing-upstream, alternate acceptance path, retired-source lane, and public compatibility claim rows cannot create positive behavior or remote closure and remain canonical rejection, strict-error, absent-support, provenance-only, or closure-readiness-blocking evidence"
     }
   ],
   "cross_indexes": [
