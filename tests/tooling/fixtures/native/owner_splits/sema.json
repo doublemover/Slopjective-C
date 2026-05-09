@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "sema",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "semantic fixtures own typed flow, ownership, ObjC declarations, control-flow diagnostics, and unsupported feature rejections",
+  "positive_support_authority": "tests/native/sema/{types,ownership,objc,control_flow,concurrency}",
+  "negative_support_authority": "tests/native/sema/{negative,errors,concurrency}",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/positive",
+      "selectors": [
+        "typed_*.objc3",
+        "*bool*_*.objc3",
+        "*_alias_signature.objc3",
+        "assignment_*.objc3",
+        "compound_assignment_*.objc3",
+        "increment_decrement_*.objc3",
+        "return_paths_ok.objc3"
+      ],
+      "disposition": "canonical type, bool-flow, selector signature, and return-path semantics only"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/negative",
+      "selectors": [
+        "expect_failure.stage=compile + O3S*",
+        "unsupported_feature_claim_*"
+      ],
+      "disposition": "typed semantic diagnostics, unsupported-feature runnable-claim rejections, and conservative analysis failures"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/*.objc3",
+      "selectors": [
+        "type_*",
+        "*semantic*",
+        "*source_closure_positive.objc3",
+        "*_rejected.objc3",
+        "*_negative.objc3"
+      ],
+      "disposition": "source and semantic model evidence only"
+    }
+  ],
+  "canonical_evidence": [
+    "tests/native/sema/types/typed_i32_bool_flow.objc3",
+    "tests/native/sema/ownership/strong_id_assignment.objc3",
+    "tests/native/sema/objc/objc_interface_method_contract.objc3",
+    "tests/native/sema/control_flow/definite_return_if_else.objc3",
+    "tests/native/sema/errors/removed_compatibility_shim_gate_rejected.objc3",
+    "tests/native/sema/errors/unsupported_arc_ownership_qualifier_rejected.objc3"
+  ],
+  "retired_surface_rule": "retired adapter gates and unsupported feature claims are semantic diagnostics, not opt-in support"
+}

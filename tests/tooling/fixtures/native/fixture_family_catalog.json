@@ -29,6 +29,43 @@
     ],
     "public_command_bridge": "npm run objc3c -- <action>"
   },
+  "behavior_phase_split_indexes": [
+    {
+      "phase": "parser",
+      "path": "tests/tooling/fixtures/native/owner_splits/parser.json",
+      "boundary": "canonical syntax acceptance and parser rejection metadata"
+    },
+    {
+      "phase": "sema",
+      "path": "tests/tooling/fixtures/native/owner_splits/sema.json",
+      "boundary": "typed semantic acceptance, diagnostics, and unsupported feature rejections"
+    },
+    {
+      "phase": "lowering",
+      "path": "tests/tooling/fixtures/native/owner_splits/lowering.json",
+      "boundary": "canonical lowering, ABI handoff, and strict link-error evidence"
+    },
+    {
+      "phase": "ir",
+      "path": "tests/tooling/fixtures/native/owner_splits/ir.json",
+      "boundary": "module, function, metadata, and runtime-call IR ownership"
+    },
+    {
+      "phase": "runtime",
+      "path": "tests/tooling/fixtures/native/owner_splits/runtime.json",
+      "boundary": "runtime dispatch, storage, reflection, ARC, blocks, and concurrency ownership"
+    },
+    {
+      "phase": "e2e",
+      "path": "tests/tooling/fixtures/native/owner_splits/e2e.json",
+      "boundary": "deterministic compile-link-run success and negative execution ownership"
+    },
+    {
+      "phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/native/owner_splits/canonical_rejection.json",
+      "boundary": "retired, unsupported, legacy-looking, shim-looking, and fallback-looking surfaces remain non-positive"
+    }
+  ],
   "families": [
     {
       "family": "parser",

@@ -43,8 +43,10 @@ coverage:
 
 The `recovery/positive`, `execution/positive`, `execution/negative`, and
 root-level `*.objc3` surfaces are intentionally mixed. Their owners are listed
-in `fixture_family_catalog.json` so a positive-looking basename cannot create a
-support claim outside the parser/sema/lowering/runtime/e2e or
-canonical-rejection boundary.
+in `fixture_family_catalog.json` and split into behavior-phase indexes under
+`owner_splits/` so a positive-looking basename cannot create a support claim
+outside the parser/sema/lowering/IR/runtime/e2e or canonical-rejection boundary.
 
-Use `fixture_family_catalog.json` for machine-readable boundary ownership.
+Use `fixture_family_catalog.json` for machine-readable boundary ownership and
+`owner_splits/*.json` for phase-local extraction when a mixed fixture surface is
+too broad to cite directly.

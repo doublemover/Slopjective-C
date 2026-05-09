@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "catalog": "native-fixture-owner-split",
+  "owner_phase": "e2e",
+  "source_catalog": "tests/tooling/fixtures/native/fixture_family_catalog.json",
+  "support_boundary": "e2e fixtures own deterministic compile-link-run positives and execution-boundary negative metadata",
+  "positive_support_authority": "tests/native/e2e/{smoke,feature_matrix}",
+  "negative_support_authority": "tests/native/e2e/negative_execution",
+  "mixed_surfaces": [
+    {
+      "surface": "tests/tooling/fixtures/native/execution/positive",
+      "selectors": [
+        "*.objc3",
+        "*.exitcode.txt",
+        "*.meta.json"
+      ],
+      "disposition": "deterministic compile-link-run success through canonical Objective-C 3.0 behavior only"
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/*.objc3",
+      "selectors": [
+        "canonical_runnable_sample_set.objc3",
+        "release_candidate_*",
+        "*packaging_*"
+      ],
+      "disposition": "end-to-end release or packaging witnesses only"
+    }
+  ],
+  "canonical_evidence": [
+    "tests/native/e2e/smoke/basic_i32_return_main.objc3",
+    "tests/native/e2e/feature_matrix/typed_i32_bool_flow.objc3",
+    "tests/native/e2e/feature_matrix/nil_keyword_message_send_elision.objc3",
+    "tests/native/e2e/negative_execution/legacy_null_literal_alias_rejected.objc3",
+    "tests/native/e2e/negative_execution/runtime_dispatch_unknown_receiver_strict_error.objc3"
+  ],
+  "retired_surface_rule": "legacy literals and runtime dispatch misses stay negative or strict-error execution evidence"
+}
