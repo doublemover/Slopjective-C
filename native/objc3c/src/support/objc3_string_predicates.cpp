@@ -24,4 +24,8 @@ bool EndsWith(std::string_view value, std::string_view suffix) {
          value.compare(value.size() - suffix.size(), suffix.size(), suffix) == 0;
 }
 
+bool Contains(std::string_view value, std::string_view needle) {
+  return value.find(needle) != std::string_view::npos;
+}
+
 }  // namespace objc3c::support

@@ -1,23 +1,20 @@
 #include "support/objc3_method_family.h"
 
+#include "support/objc3_string_predicates.h"
+
 namespace objc3c::support {
 
-bool SelectorStartsWith(std::string_view selector, std::string_view prefix) {
-  return selector.size() >= prefix.size() &&
-         selector.compare(0u, prefix.size(), prefix) == 0;
-}
-
 std::string ClassifyMethodFamilyFromSelector(std::string_view selector) {
-  if (SelectorStartsWith(selector, "mutableCopy")) {
+  if (StartsWith(selector, "mutableCopy")) {
     return "mutableCopy";
   }
-  if (SelectorStartsWith(selector, "copy")) {
+  if (StartsWith(selector, "copy")) {
     return "copy";
   }
-  if (SelectorStartsWith(selector, "init")) {
+  if (StartsWith(selector, "init")) {
     return "init";
   }
-  if (SelectorStartsWith(selector, "new")) {
+  if (StartsWith(selector, "new")) {
     return "new";
   }
   return "none";

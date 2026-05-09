@@ -2,7 +2,7 @@
 
 #include <limits>
 
-#include "diag/objc3_diag_code.h"
+#include "diag/objc3_diag_catalog.h"
 #include "diag/objc3_diag_text.h"
 
 bool TryParseUnsignedSegment(std::string_view text,
@@ -72,7 +72,7 @@ bool TryParseRenderedDiagnostic(std::string_view diag_text,
   code.assign(
       diag_text.substr(code_begin_marker + 2u,
                        diag_text.size() - code_begin_marker - 3u));
-  if (!IsNativeDiagCode(code)) {
+  if (!NativeDiagCodeIsWithinCatalog(code)) {
     return false;
   }
 

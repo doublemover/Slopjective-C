@@ -17,6 +17,8 @@ add_library(objc3c_support STATIC
   objc3_receiver_profile_helpers.cpp
   objc3_receiver_profile_helpers.h
   objc3_method_family.cpp
+  objc3_profile_token_match.cpp
+  objc3_profile_token_match.h
   objc3_runtime_dispatch_symbol.cpp
   objc3_runtime_dispatch_symbol.h
   objc3_runtime_metadata_record_set.h

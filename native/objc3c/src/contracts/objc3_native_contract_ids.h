@@ -22,5 +22,10 @@ inline constexpr std::string_view Objc3NativeContractIdSpelling(
     case Objc3NativeContractId::kRemovedOptionValidationV1:
       return "objc3c.config.removed_option_validation.v1";
   }
-  return "objc3c.contract.unknown";
+  return {};
+}
+
+inline constexpr bool Objc3NativeContractIdIsKnown(
+    Objc3NativeContractId contract_id) {
+  return !Objc3NativeContractIdSpelling(contract_id).empty();
 }

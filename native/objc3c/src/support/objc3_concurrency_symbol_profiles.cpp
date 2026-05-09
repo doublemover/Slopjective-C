@@ -1,5 +1,6 @@
 #include "support/objc3_concurrency_symbol_profiles.h"
 
+#include "support/objc3_profile_token_match.h"
 #include "support/objc3_string_predicates.h"
 
 namespace objc3c::support {
@@ -9,81 +10,58 @@ std::string BuildConcurrencyLowercaseProfileToken(std::string_view token) {
 }
 
 bool IsConcurrencyTaskCreationSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_spawn") != std::string::npos ||
-         lowered.find("spawn_task") != std::string::npos ||
-         lowered.find("detached_task") != std::string::npos ||
-         lowered.find("task_detach") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(
+             symbol,
+             {"task_spawn", "spawn_task", "detached_task", "task_detach"});
 }
 
 bool IsConcurrencyDetachedTaskCreationSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("detached_task") != std::string::npos ||
-         lowered.find("task_detach") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(symbol,
+                                          {"detached_task", "task_detach"});
 }
 
 bool IsConcurrencyTaskGroupScopeSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("with_task_group") != std::string::npos ||
-         lowered.find("task_group_scope") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(symbol,
+                                          {"with_task_group",
+                                           "task_group_scope"});
 }
 
 bool IsConcurrencyTaskGroupAddTaskSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_group_add_task") != std::string::npos ||
-         lowered.find("group_add_task") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(symbol,
+                                          {"task_group_add_task",
+                                           "group_add_task"});
 }
 
 bool IsConcurrencyTaskGroupWaitNextSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_group_wait_next") != std::string::npos ||
-         lowered.find("group_wait_next") != std::string::npos ||
-         lowered.find("wait_next") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(symbol,
+                                          {"task_group_wait_next",
+                                           "group_wait_next", "wait_next"});
 }
 
 bool IsConcurrencyTaskGroupCancelAllSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("task_group_cancel_all") != std::string::npos ||
-         lowered.find("group_cancel_all") != std::string::npos ||
-         lowered.find("cancel_all") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(
+             symbol,
+             {"task_group_cancel_all", "group_cancel_all", "cancel_all"});
 }
 
 bool IsConcurrencyCancellationCheckSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("cancelled") != std::string::npos ||
-         lowered.find("is_cancelled") != std::string::npos ||
-         lowered.find("cancellation") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(
+             symbol, {"cancelled", "is_cancelled", "cancellation"});
 }
 
 bool IsConcurrencyCancellationHandlerSymbol(std::string_view symbol) {
-  if (symbol.empty()) {
-    return false;
-  }
-  const std::string lowered = BuildConcurrencyLowercaseProfileToken(symbol);
-  return lowered.find("on_cancel") != std::string::npos ||
-         lowered.find("cancel_handler") != std::string::npos ||
-         lowered.find("with_cancellation_handler") != std::string::npos;
+  return !symbol.empty() &&
+         LowercaseProfileContainsAnyToken(
+             symbol,
+             {"on_cancel", "cancel_handler",
+              "with_cancellation_handler"});
 }
 
 }  // namespace objc3c::support

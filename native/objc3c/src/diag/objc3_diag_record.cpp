@@ -1,5 +1,6 @@
 #include "diag/objc3_diag_record.h"
 
+#include "diag/objc3_diag_catalog.h"
 #include "diag/objc3_diag_code.h"
 
 bool IsValidDiagnosticCoordinate(
@@ -22,9 +23,9 @@ bool IsValidDiagnosticPayload(const Objc3DiagnosticPayload &payload,
     }
     return false;
   }
-  if (!IsNativeDiagCode(payload.code)) {
+  if (!NativeDiagCodeIsWithinCatalog(payload.code)) {
     if (reason != nullptr) {
-      *reason = "diagnostic code is not an Objective-C 3 native code";
+      *reason = "diagnostic code is outside the Objective-C 3 catalog";
     }
     return false;
   }
