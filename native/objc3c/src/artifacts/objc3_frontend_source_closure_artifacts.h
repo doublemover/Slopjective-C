@@ -18,4 +18,24 @@ namespace objc3::artifacts::frontend {
 [[nodiscard]] std::string BuildConcurrencyAsyncSourceClosureSummaryJson(
     const Objc3FrontendConcurrencyAsyncSourceClosureSummary &summary);
 
+[[nodiscard]] std::string BuildOwnershipSystemExtensionSourceClosureSummaryJson(
+    const Objc3FrontendOwnershipSystemExtensionSourceClosureSummary &summary);
+
+[[nodiscard]] std::string
+BuildOwnershipCleanupResourceCaptureSourceCompletionSummaryJson(
+    const Objc3FrontendOwnershipCleanupResourceCaptureSourceCompletionSummary
+        &summary);
+
+[[nodiscard]] std::string
+BuildOwnershipRetainableCFamilySourceCompletionSummaryJson(
+    const Objc3FrontendOwnershipRetainableCFamilySourceCompletionSummary
+        &summary);
+
+[[nodiscard]] std::string BuildDispatchDispatchIntentSourceClosureSummaryJson(
+    const Objc3FrontendDispatchDispatchIntentSourceClosureSummary &summary);
+
+[[nodiscard]] std::string
+BuildDispatchDispatchIntentSourceCompletionSummaryJson(
+    const Objc3FrontendDispatchDispatchIntentSourceCompletionSummary &summary);
+
 }  // namespace objc3::artifacts::frontend
