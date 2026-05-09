@@ -31,6 +31,8 @@ from scripts.objc3c_workflow.arguments import (
 from scripts.objc3c_workflow.command_result_completion import completed_action
 from scripts.objc3c_workflow.entrypoint_module import main as module_entrypoint_main
 from scripts.objc3c_workflow.entrypoint_script import main as script_entrypoint_main
+from scripts.objc3c_workflow.environment import MARKDOWN_GLOBS
+from scripts.objc3c_workflow.environment_markdown import MARKDOWN_GLOBS as OWNED_MARKDOWN_GLOBS
 from scripts.objc3c_workflow.path_bootstrap import WORKFLOW_IMPORT_ROOTS
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
 from scripts.objc3c_workflow.registry_schema_index import (
@@ -149,3 +151,7 @@ def test_workflow_path_roots_are_owned_by_package_module() -> None:
 
 def test_workflow_entrypoints_have_separate_owners() -> None:
     assert module_entrypoint_main is not script_entrypoint_main
+
+
+def test_workflow_environment_facade_exports_owned_markdown_globs() -> None:
+    assert MARKDOWN_GLOBS is OWNED_MARKDOWN_GLOBS

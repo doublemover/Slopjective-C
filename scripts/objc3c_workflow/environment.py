@@ -2,30 +2,26 @@
 
 from __future__ import annotations
 
-import shutil
-
+from .environment_commands import WORKFLOW_COMMAND_TEXT, WORKFLOW_PUBLIC_COMMAND
+from .environment_markdown import MARKDOWN_GLOBS
+from .environment_tools import NPX, PWSH
 from .paths import ROOT, SCRIPT_ROOT
 from .public_bridge_constants import (
     WORKFLOW_MODULE,
-    WORKFLOW_PUBLIC_COMMAND_PREFIX,
     WORKFLOW_RUNNER_MODE,
     WORKFLOW_RUNNER_SURFACE,
 )
 
 
-PWSH = shutil.which("pwsh") or "pwsh"
-NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
-
-WORKFLOW_PUBLIC_COMMAND = WORKFLOW_PUBLIC_COMMAND_PREFIX
-WORKFLOW_COMMAND_TEXT = WORKFLOW_PUBLIC_COMMAND
-
-MARKDOWN_GLOBS = [
-    "README.md",
-    "CONTRIBUTING.md",
-    "docs/**/*.md",
-    "site/**/*.md",
-    "spec/**/*.md",
-    "showcase/**/*.md",
-    "stdlib/**/*.md",
-    "templates/**/*.md",
+__all__ = [
+    "MARKDOWN_GLOBS",
+    "NPX",
+    "PWSH",
+    "ROOT",
+    "SCRIPT_ROOT",
+    "WORKFLOW_COMMAND_TEXT",
+    "WORKFLOW_MODULE",
+    "WORKFLOW_PUBLIC_COMMAND",
+    "WORKFLOW_RUNNER_MODE",
+    "WORKFLOW_RUNNER_SURFACE",
 ]
