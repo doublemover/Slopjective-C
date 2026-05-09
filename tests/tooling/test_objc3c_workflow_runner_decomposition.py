@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from scripts.objc3c_workflow.action_dispatch import resolve_registered_action
-from scripts.objc3c_workflow.action_handlers import ACTION_HANDLERS
+from scripts.objc3c_workflow.action_integrity import (
+    action_handler_registry_is_complete,
+    missing_action_handlers,
+    orphan_action_handlers,
+)
 from scripts.objc3c_workflow.action_payloads import describe_action_payload, list_actions_payload
 from scripts.objc3c_workflow.arguments import (
     DescribeActionRequest,
@@ -13,7 +17,6 @@ from scripts.objc3c_workflow.arguments import (
 )
 from scripts.objc3c_workflow.command_result import completed_action
 from scripts.objc3c_workflow.paths import ROOT, SCRIPT_ROOT, workflow_import_roots
-from scripts.objc3c_workflow.action_catalog import ACTION_SPECS
 
 
 def test_workflow_argument_parser_models_public_requests() -> None:
@@ -60,7 +63,9 @@ def test_dispatch_resolution_returns_metadata_without_running_handlers() -> None
 
 
 def test_handler_registry_matches_action_catalog() -> None:
-    assert set(ACTION_HANDLERS) == set(ACTION_SPECS)
+    assert action_handler_registry_is_complete()
+    assert missing_action_handlers() == []
+    assert orphan_action_handlers() == []
 
 
 def test_workflow_path_roots_are_owned_by_package_module() -> None:
