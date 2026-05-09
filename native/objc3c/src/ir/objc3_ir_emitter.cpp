@@ -41,6 +41,7 @@
 #include "ir/objc3_ir_runtime_bootstrap_global_emission.h"
 #include "ir/objc3_ir_runtime_helper_calls.h"
 #include "ir/objc3_ir_runtime_metadata_emission.h"
+#include "ir/objc3_ir_scope_cleanup_emission.h"
 #include "ir/objc3_ir_statement_emission.h"
 #include "ir/objc3_ir_static_data_emission.h"
 #include "ir/objc3_ir_synthesized_property_accessors.h"
@@ -4884,248 +4885,62 @@ class Objc3IREmitter {
     return prefix + std::to_string(ctx.label_counter++);
   }
 
+  Objc3IRScopeCleanupEmissionCallbacks ScopeCleanupCallbacks() const {
+    return Objc3IRScopeCleanupEmissionCallbacks{
+        [this](FunctionContext &callback_ctx) {
+          return NewTemp(callback_ctx);
+        },
+        [this](FunctionContext &callback_ctx, const std::string &prefix) {
+          return NewLabel(callback_ctx, prefix);
+        },
+        [this](const Stmt *stmt, FunctionContext &callback_ctx) {
+          EmitStatement(stmt, callback_ctx);
+        }};
+  }
+
   void EmitAutoreleasepoolUnwindToDepth(FunctionContext &ctx,
                                         std::size_t target_depth) const {
-    while (ctx.autoreleasepool_scope_symbols.size() > target_depth) {
-      ctx.code_lines.push_back("  call void @" +
-                               std::string(
-                                   kObjc3RuntimePopAutoreleasepoolScopeSymbol) +
-                               "()");
-      ctx.autoreleasepool_scope_symbols.pop_back();
-    }
+    EmitObjc3IRAutoreleasepoolUnwindToDepth(ctx, target_depth);
   }
 
   void PushScope(FunctionContext &ctx) const {
-    ctx.scopes.push_back({});
-    ctx.pending_defer_scope_blocks.push_back({});
-    ctx.pending_block_dispose_scope_depths.push_back(
-        ctx.pending_block_dispose_calls.size());
-    ctx.pending_ownership_cleanup_scope_depths.push_back(
-        ctx.pending_ownership_cleanup_calls.size());
-    ctx.arc_cleanup_scope_depths.push_back(ctx.arc_owned_cleanup_ptrs.size());
-  }
-
-  void EmitDeferredCleanupBlock(const BlockStmt *block_stmt,
-                                FunctionContext &ctx) const {
-    // defer/guard lowering anchor: defer bodies now lower into
-    // explicit LIFO scope cleanups that execute inside the same lexical cleanup
-    // pipeline as existing block-dispose and ARC-owned teardown, rather than
-    // running eagerly at the original statement site.
-    if (block_stmt == nullptr) {
-      return;
-    }
-    const bool outer_terminated = ctx.terminated;
-    ctx.terminated = false;
-    const std::size_t autoreleasepool_depth =
-        ctx.autoreleasepool_scope_symbols.size();
-    if (block_stmt->is_autoreleasepool_scope) {
-      ctx.code_lines.push_back(
-          "  call void @" +
-          std::string(kObjc3RuntimePushAutoreleasepoolScopeSymbol) + "()");
-      ctx.autoreleasepool_scope_symbols.push_back(
-          block_stmt->autoreleasepool_scope_symbol);
-    }
-    PushScope(ctx);
-    for (const auto &nested_stmt : block_stmt->body) {
-      EmitStatement(nested_stmt.get(), ctx);
-    }
-    const bool block_terminated = ctx.terminated;
-    PopScope(ctx, !block_terminated);
-    if (!block_terminated) {
-      EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
-    }
-    ctx.terminated = outer_terminated;
-  }
-
-  void EmitDeferredCleanupForScopeBucket(
-      const std::vector<const BlockStmt *> &bucket, FunctionContext &ctx) const {
-    // Defer cleanup execution pushes/pops lexical scopes while replaying each
-    // deferred block. Copy the bucket first so those scope-vector mutations do
-    // not invalidate the source bucket reference mid-iteration when one scope
-    // owns multiple defer blocks.
-    const std::vector<const BlockStmt *> stable_bucket = bucket;
-    for (std::size_t index = stable_bucket.size(); index > 0; --index) {
-      EmitDeferredCleanupBlock(stable_bucket[index - 1u], ctx);
-    }
+    PushObjc3IRScope(ctx);
   }
 
   void EmitDeferredCleanupTerminalToDepth(FunctionContext &ctx,
                                           std::size_t target_scope_depth) const {
-    for (std::size_t index = ctx.pending_defer_scope_blocks.size();
-         index > target_scope_depth; --index) {
-      EmitDeferredCleanupForScopeBucket(ctx.pending_defer_scope_blocks[index - 1u],
-                                        ctx);
-    }
+    EmitObjc3IRDeferredCleanupTerminalToDepth(
+        ctx, target_scope_depth, ScopeCleanupCallbacks());
   }
 
   void EmitPendingBlockDisposeUnwindToDepth(FunctionContext &ctx,
                                             std::size_t target_depth) const {
-    while (ctx.pending_block_dispose_calls.size() > target_depth) {
-      const PendingBlockDisposeCall call = ctx.pending_block_dispose_calls.back();
-      ctx.pending_block_dispose_calls.pop_back();
-      if (call.helper_symbol.empty() || call.storage_ptr.empty()) {
-        continue;
-      }
-      ctx.code_lines.push_back("  call void @" + call.helper_symbol + "(ptr " +
-                               call.storage_ptr + ")");
-    }
+    EmitObjc3IRPendingBlockDisposeUnwindToDepth(ctx, target_depth);
   }
 
   void EmitPendingBlockDisposeTerminalCleanupToDepth(
       const FunctionContext &ctx, std::size_t target_depth,
       std::vector<std::string> &out_lines) const {
-    for (std::size_t index = ctx.pending_block_dispose_calls.size();
-         index > target_depth; --index) {
-      const PendingBlockDisposeCall &call =
-          ctx.pending_block_dispose_calls[index - 1u];
-      if (call.helper_symbol.empty() || call.storage_ptr.empty()) {
-        continue;
-      }
-      out_lines.push_back("  call void @" + call.helper_symbol + "(ptr " +
-                          call.storage_ptr + ")");
-    }
-  }
-
-  void EmitOwnershipCleanupCall(const PendingOwnershipCleanupCall &call,
-                            FunctionContext &ctx) const {
-    if (!call.active || call.storage_ptr.empty()) {
-      return;
-    }
-    const std::string loaded_value = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + loaded_value + " = load i32, ptr " +
-                             call.storage_ptr + ", align 4");
-    if (!call.resource_close_symbol.empty()) {
-      if (call.has_resource_invalid_value) {
-        const std::string resource_live = NewTemp(ctx);
-        const std::string resource_close_label =
-            NewLabel(ctx, "ownership_resource_close_");
-        const std::string resource_skip_label =
-            NewLabel(ctx, "ownership_resource_skip_");
-        ctx.code_lines.push_back("  " + resource_live + " = icmp ne i32 " +
-                                 loaded_value + ", " +
-                                 std::to_string(call.resource_invalid_value));
-        ctx.code_lines.push_back("  br i1 " + resource_live + ", label %" +
-                                 resource_close_label + ", label %" +
-                                 resource_skip_label);
-        ctx.code_lines.push_back(resource_close_label + ":");
-        ctx.code_lines.push_back("  call void @" + call.resource_close_symbol +
-                                 "(i32 " + loaded_value + ")");
-        ctx.code_lines.push_back("  br label %" + resource_skip_label);
-        ctx.code_lines.push_back(resource_skip_label + ":");
-      } else {
-        ctx.code_lines.push_back("  call void @" + call.resource_close_symbol +
-                                 "(i32 " + loaded_value + ")");
-      }
-    }
-    if (!call.cleanup_function_symbol.empty()) {
-      ctx.code_lines.push_back("  call void @" + call.cleanup_function_symbol +
-                               "(i32 " + loaded_value + ")");
-    }
-  }
-
-  void EmitOwnershipCleanupTerminalCall(const PendingOwnershipCleanupCall &call,
-                                    std::vector<std::string> &out_lines,
-                                    int &temp_counter) const {
-    if (!call.active || call.storage_ptr.empty()) {
-      return;
-    }
-    const std::string loaded_value = "%t" + std::to_string(temp_counter++);
-    out_lines.push_back("  " + loaded_value + " = load i32, ptr " +
-                        call.storage_ptr + ", align 4");
-    if (!call.resource_close_symbol.empty()) {
-      if (call.has_resource_invalid_value) {
-        const std::string resource_live = "%t" + std::to_string(temp_counter++);
-        const std::string resource_close_label =
-            "ownership_resource_close_" + std::to_string(temp_counter++);
-        const std::string resource_skip_label =
-            "ownership_resource_skip_" + std::to_string(temp_counter++);
-        out_lines.push_back("  " + resource_live + " = icmp ne i32 " +
-                            loaded_value + ", " +
-                            std::to_string(call.resource_invalid_value));
-        out_lines.push_back("  br i1 " + resource_live + ", label %" +
-                            resource_close_label + ", label %" +
-                            resource_skip_label);
-        out_lines.push_back(resource_close_label + ":");
-        out_lines.push_back("  call void @" + call.resource_close_symbol +
-                            "(i32 " + loaded_value + ")");
-        out_lines.push_back("  br label %" + resource_skip_label);
-        out_lines.push_back(resource_skip_label + ":");
-      } else {
-        out_lines.push_back("  call void @" + call.resource_close_symbol +
-                            "(i32 " + loaded_value + ")");
-      }
-    }
-    if (!call.cleanup_function_symbol.empty()) {
-      out_lines.push_back("  call void @" + call.cleanup_function_symbol +
-                          "(i32 " + loaded_value + ")");
-    }
+    EmitObjc3IRPendingBlockDisposeTerminalCleanupToDepth(
+        ctx, target_depth, out_lines);
   }
 
   void EmitOwnershipCleanupUnwindToDepth(FunctionContext &ctx,
                                      std::size_t target_depth) const {
-    while (ctx.pending_ownership_cleanup_calls.size() > target_depth) {
-      const PendingOwnershipCleanupCall call = ctx.pending_ownership_cleanup_calls.back();
-      if (!call.binding_name.empty()) {
-        ctx.ownership_cleanup_call_indices.erase(call.binding_name);
-      }
-      ctx.pending_ownership_cleanup_calls.pop_back();
-      EmitOwnershipCleanupCall(call, ctx);
-    }
+    EmitObjc3IROwnershipCleanupUnwindToDepth(
+        ctx, target_depth, ScopeCleanupCallbacks());
   }
 
   void EmitOwnershipCleanupTerminalCleanupToDepth(const FunctionContext &ctx,
                                               std::size_t target_depth,
                                               std::vector<std::string> &out_lines,
                                               int &temp_counter) const {
-    for (std::size_t index = ctx.pending_ownership_cleanup_calls.size();
-         index > target_depth; --index) {
-      EmitOwnershipCleanupTerminalCall(ctx.pending_ownership_cleanup_calls[index - 1u],
-                                   out_lines, temp_counter);
-    }
+    EmitObjc3IROwnershipCleanupTerminalCleanupToDepth(
+        ctx, target_depth, out_lines, temp_counter);
   }
 
   void PopScope(FunctionContext &ctx, bool emit_cleanup) const {
-    if (ctx.scopes.empty()) {
-      return;
-    }
-    const auto scope_bindings = std::move(ctx.scopes.back());
-    ctx.scopes.pop_back();
-    const auto deferred_blocks =
-        ctx.pending_defer_scope_blocks.empty()
-            ? std::vector<const BlockStmt *>{}
-            : std::move(ctx.pending_defer_scope_blocks.back());
-    if (!ctx.pending_defer_scope_blocks.empty()) {
-      ctx.pending_defer_scope_blocks.pop_back();
-    }
-    const std::size_t target_block_dispose_depth =
-        ctx.pending_block_dispose_scope_depths.empty()
-            ? 0u
-            : ctx.pending_block_dispose_scope_depths.back();
-    if (!ctx.pending_block_dispose_scope_depths.empty()) {
-      ctx.pending_block_dispose_scope_depths.pop_back();
-    }
-    const std::size_t target_ownership_cleanup_depth =
-        ctx.pending_ownership_cleanup_scope_depths.empty()
-            ? 0u
-            : ctx.pending_ownership_cleanup_scope_depths.back();
-    if (!ctx.pending_ownership_cleanup_scope_depths.empty()) {
-      ctx.pending_ownership_cleanup_scope_depths.pop_back();
-    }
-    const std::size_t target_arc_cleanup_depth =
-        ctx.arc_cleanup_scope_depths.empty() ? 0u : ctx.arc_cleanup_scope_depths.back();
-    if (!ctx.arc_cleanup_scope_depths.empty()) {
-      ctx.arc_cleanup_scope_depths.pop_back();
-    }
-    if (emit_cleanup) {
-      EmitDeferredCleanupForScopeBucket(deferred_blocks, ctx);
-      EmitOwnershipCleanupUnwindToDepth(ctx, target_ownership_cleanup_depth);
-      EmitPendingBlockDisposeUnwindToDepth(ctx, target_block_dispose_depth);
-      EmitArcOwnedCleanupUnwindToDepth(ctx, target_arc_cleanup_depth);
-    }
-    for (const auto &binding : scope_bindings) {
-      ctx.block_bindings.erase(binding.first);
-      ctx.ownership_cleanup_call_indices.erase(binding.first);
-    }
+    PopObjc3IRScope(ctx, emit_cleanup, ScopeCleanupCallbacks());
   }
 
   std::string LookupVarPtr(const FunctionContext &ctx, const std::string &name) const {
@@ -5161,46 +4976,16 @@ class Objc3IREmitter {
 
   void EmitArcOwnedCleanupUnwindToDepth(FunctionContext &ctx,
                                         std::size_t target_depth) const {
-    while (ctx.arc_owned_cleanup_ptrs.size() > target_depth) {
-      const std::string ptr = ctx.arc_owned_cleanup_ptrs.back();
-      ctx.arc_owned_cleanup_ptrs.pop_back();
-      ctx.arc_owned_cleanup_ptr_set.erase(ptr);
-      ctx.arc_owned_storage_ptrs.erase(ptr);
-      if (ptr.empty()) {
-        continue;
-      }
-      const std::string loaded_value = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + loaded_value + " = load i32, ptr " +
-                               ptr + ", align 4");
-      const std::string released_value = NewTemp(ctx);
-      ctx.code_lines.push_back("  " + released_value + " = call i32 @" +
-                               std::string(kObjc3RuntimeReleaseI32Symbol) +
-                               "(i32 " + loaded_value + ")");
-      (void)released_value;
-    }
+    EmitObjc3IRArcOwnedCleanupUnwindToDepth(
+        ctx, target_depth, ScopeCleanupCallbacks());
   }
 
   void EmitArcOwnedTerminalCleanupToDepth(const FunctionContext &ctx,
                                           std::size_t target_depth,
                                           std::vector<std::string> &out_lines,
                                           int &temp_counter) const {
-    for (std::size_t index = ctx.arc_owned_cleanup_ptrs.size();
-         index > target_depth; --index) {
-      const std::string &ptr = ctx.arc_owned_cleanup_ptrs[index - 1u];
-      if (ptr.empty()) {
-        continue;
-      }
-      const std::string loaded_value =
-          "%t" + std::to_string(temp_counter++);
-      out_lines.push_back("  " + loaded_value + " = load i32, ptr " + ptr +
-                          ", align 4");
-      const std::string released_value =
-          "%t" + std::to_string(temp_counter++);
-      out_lines.push_back("  " + released_value + " = call i32 @" +
-                          std::string(kObjc3RuntimeReleaseI32Symbol) +
-                          "(i32 " + loaded_value + ")");
-      (void)released_value;
-    }
+    EmitObjc3IRArcOwnedTerminalCleanupToDepth(
+        ctx, target_depth, out_lines, temp_counter);
   }
 
   void EmitBlockCopyHelper(const Expr &expr) const {
@@ -5861,15 +5646,11 @@ class Objc3IREmitter {
 
   void RegisterArcOwnedCleanupPtr(const std::string &ptr,
                                   FunctionContext &ctx) const {
-    if (ptr.empty() || !ctx.arc_owned_cleanup_ptr_set.insert(ptr).second) {
-      return;
-    }
-    ctx.arc_owned_cleanup_ptrs.push_back(ptr);
-    ctx.arc_owned_storage_ptrs.insert(ptr);
+    RegisterObjc3IRArcOwnedCleanupPtr(ptr, ctx);
   }
 
   void EmitArcOwnedCleanupReleases(FunctionContext &ctx) const {
-    EmitArcOwnedCleanupUnwindToDepth(ctx, 0u);
+    EmitObjc3IRArcOwnedCleanupReleases(ctx, ScopeCleanupCallbacks());
   }
 
   void EmitTerminalCleanupToDepth(FunctionContext &ctx, std::size_t scope_depth,
@@ -5877,14 +5658,9 @@ class Objc3IREmitter {
                                   std::size_t pending_block_dispose_depth,
                                   std::size_t ownership_cleanup_depth,
                                   std::size_t arc_cleanup_depth) const {
-    EmitDeferredCleanupTerminalToDepth(ctx, scope_depth);
-    EmitAutoreleasepoolUnwindToDepth(ctx, autoreleasepool_depth);
-    EmitOwnershipCleanupTerminalCleanupToDepth(
-        ctx, ownership_cleanup_depth, ctx.code_lines, ctx.temp_counter);
-    EmitPendingBlockDisposeTerminalCleanupToDepth(
-        ctx, pending_block_dispose_depth, ctx.code_lines);
-    EmitArcOwnedTerminalCleanupToDepth(
-        ctx, arc_cleanup_depth, ctx.code_lines, ctx.temp_counter);
+    EmitObjc3IRTerminalCleanupToDepth(
+        ctx, scope_depth, autoreleasepool_depth, pending_block_dispose_depth,
+        ownership_cleanup_depth, arc_cleanup_depth, ScopeCleanupCallbacks());
   }
 
   void EmitTypedReturn(const std::string &i32_value, FunctionContext &ctx) const {
