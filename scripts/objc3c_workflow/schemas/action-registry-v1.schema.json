@@ -17,6 +17,7 @@
     "single_package_bridge_only",
     "public_bridge_owners",
     "public_bridge_contracts",
+    "public_bridge_integrity",
     "public_bridge_capability_truth",
     "schema_index",
     "capability_truth",
@@ -63,6 +64,7 @@
       "minItems": 1,
       "maxItems": 1
     },
+    "public_bridge_integrity": { "$ref": "#/$defs/publicBridgeIntegrity" },
     "public_bridge_capability_truth": { "$ref": "#/$defs/capabilityTruth" },
     "schema_index": {
       "type": "object",
@@ -211,6 +213,42 @@
           "minItems": 1
         },
         "action_payload_schema_ref": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "publicBridgeIntegrity": {
+      "type": "object",
+      "required": [
+        "contract_id",
+        "owner_surface",
+        "package_bridge_count",
+        "canonical_package_bridge",
+        "canonical_invocation_template",
+        "single_package_bridge_only",
+        "retired_metadata_allowed",
+        "pass_through_args_required",
+        "validation_errors"
+      ],
+      "properties": {
+        "contract_id": {
+          "const": "objc3c-workflow-public-bridge-integrity-v1"
+        },
+        "owner_surface": {
+          "const": "scripts/objc3c_workflow/public_bridge_integrity.py"
+        },
+        "package_bridge_count": { "const": 1 },
+        "canonical_package_bridge": { "const": "objc3c" },
+        "canonical_invocation_template": {
+          "const": "npm run objc3c -- <action>"
+        },
+        "single_package_bridge_only": { "const": true },
+        "retired_metadata_allowed": { "const": false },
+        "pass_through_args_required": { "const": true },
+        "validation_errors": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "maxItems": 0
+        }
       },
       "additionalProperties": false
     },
