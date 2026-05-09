@@ -6,6 +6,9 @@
 
 namespace objc3::artifacts::frontend {
 
+[[nodiscard]] std::string BuildExecutableMetadataSourceGraphJson(
+    const Objc3ExecutableMetadataSourceGraph &graph);
+
 [[nodiscard]] Objc3RuntimeMetadataSectionAbiFreezeSummary
 BuildRuntimeMetadataSectionAbiFreezeSummary(
     const Objc3RuntimeMetadataSourceOwnershipBoundary
