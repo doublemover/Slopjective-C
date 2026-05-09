@@ -1,15 +1,8 @@
 #include "config/objc3_language_version.h"
 
-#include "config/objc3_config_parsing.h"
+#include <string>
 
 namespace objc3c::config {
-
-std::string UnsupportedLanguageVersionDiagnostic(std::uint32_t version) {
-  return "unsupported Objective-C language version for native frontend "
-         "(expected " +
-         std::to_string(static_cast<unsigned>(kCanonicalLanguageVersion)) +
-         "): " + std::to_string(version);
-}
 
 ConfigValidationResult ValidateCanonicalLanguageVersion(
     std::uint32_t version) {
@@ -18,10 +11,6 @@ ConfigValidationResult ValidateCanonicalLanguageVersion(
   }
   return MakeConfigValidationRejected(
       "O3C001", UnsupportedLanguageVersionDiagnostic(version));
-}
-
-bool ParseLanguageVersionText(std::string_view text, std::uint32_t &version) {
-  return ParseUnsignedConfigValue(text, version);
 }
 
 ConfigValidationResult ValidateCanonicalLanguageVersionText(
