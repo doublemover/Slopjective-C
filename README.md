@@ -25,7 +25,8 @@ Today it has:
 - a runnable subset of `.objc3`,
 - a checked-in standard library workspace with canonical modules under
   `stdlib/modules/`,
-- checked-in tutorials, migration guides, and capability-backed showcase
+- checked-in tutorials, canonical conversion guides, and capability-backed
+  showcase
   examples,
 - integrated workflow surfaces for performance, conformance, stress,
   external-validation, packaging, release operations, and distribution
@@ -93,9 +94,9 @@ Use the shortest path that matches what you are trying to do.
 | inspect the checked-in stdlib surface                           | [stdlib/README.md](stdlib/README.md)                                                             | then follow the core, advanced, and program runbooks                                                            |
 | follow the runnable tutorial path                               | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md)                           | compile one example first, then use the showcase surface                                                        |
 | pick the right capability-backed example first                  | [showcase/README.md](showcase/README.md)                                                         | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text                         |
-| migrate ObjC2 code or check Swift-facing migration expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md)         | then use the broader comparison boundary only where you need it                                                 |
+| map ObjC2 habits onto canonical ObjC3 or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it                                                 |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations         | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md)     | then follow the showcase examples that back the comparison                                                      |
-| evaluate adoption, migration, and support claims                | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated evidence summary              |
+| evaluate adoption and support claims                            | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated evidence summary              |
 | inspect performance surfaces                                    | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md)       | then use the performance and compiler-throughput commands                                                       |
 | inspect conformance, fuzz, and reporting work                   | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                      |
 | inspect package, installer, and release flows                   | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                |
@@ -108,7 +109,7 @@ Use the shortest path that matches what you are trying to do.
 Documentation boundary:
 
 - onboarding: `README.md`, `CONTRIBUTING.md`, `site/index.md`
-- tutorials and migration guides: `docs/tutorials/`
+- tutorials and canonical conversion guides: `docs/tutorials/`
 - checked-in stdlib product surface: `stdlib/`
 - runnable examples: `showcase/`
 - implementation narrative: `docs/objc3c-native.md`, `docs/objc3c-native/src/*.md`
@@ -150,7 +151,7 @@ Canonical roots:
 Explicit non-goals for cleanup work:
 
 - reintroducing milestone-coded command names or sidecar legacy files,
-- documenting Objective-C alias compatibility unless a capability row links live evidence,
+- documenting retired Objective-C aliases as supported public behavior,
 - describing old source modes, registry facades, fallback shims, or direct helper
   commands as supported public paths,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
@@ -161,7 +162,7 @@ Explicit non-goals for cleanup work:
 - `native/objc3c/`: native compiler, lowering, runtime, and driver implementation
 - `stdlib/`: checked-in standard library workspace and package/import contracts
 - `showcase/`: runnable example portfolio
-- `docs/tutorials/`: learning path and migration material
+- `docs/tutorials/`: learning path and canonical conversion material
 - `docs/runbooks/`: operator-facing workflow and validation boundaries
 - `schemas/`: checked-in artifact/report schema contracts
 - `scripts/`: build, validation, packaging, and publication tooling
