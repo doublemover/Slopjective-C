@@ -26,6 +26,7 @@
 #include "ir/objc3_ir_emitter_context.h"
 #include "ir/objc3_ir_frontend_metadata_publication.h"
 #include "ir/objc3_ir_function_definition_emission.h"
+#include "ir/objc3_ir_message_send_emission.h"
 #include "ir/objc3_ir_lowering_extension_metadata_publication.h"
 #include "ir/objc3_ir_message_send_lowering.h"
 #include "ir/objc3_ir_message_send_validation.h"
@@ -6508,254 +6509,42 @@ class Objc3IREmitter {
     return const_value != 0;
   }
 
-  LoweredMessageSend LowerMessageSendHeader(const Expr *expr,
-                                           FunctionContext &ctx) const {
-    LoweredMessageSend lowered;
-    lowered.args.assign(lowering_ir_boundary_.runtime_dispatch_arg_slots, "0");
-    if (expr == nullptr) {
-      return lowered;
-    }
-
-    lowered.receiver_dispatch_facts.compile_time_nil_receiver =
-        IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);
-    lowered.receiver_dispatch_facts.compile_time_nonzero_receiver =
-        IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);
-    lowered.receiver = EmitExpr(expr->receiver.get(), ctx);
-    lowered.selector = expr->selector;
-    lowered.dispatch_surface_family = expr->dispatch_surface_family_symbol;
-    lowered.dispatch_surface_entrypoint_family =
-        expr->dispatch_surface_entrypoint_family_symbol;
-    lowered.dispatch_symbol =
-        UsesCanonicalObjc3RuntimeDispatchEntrypoint(
-            lowered.dispatch_surface_family)
-            ? lowering_ir_boundary_.runtime_dispatch_symbol
-            : Objc3DispatchSurfaceRuntimeEntrypointSymbol(
-                  lowered.dispatch_surface_family);
-    lowered.direct_call_symbol = TryResolveDirectDispatchSymbol(expr, ctx);
-    return lowered;
-  }
-
-  void MaterializeMessageSendArgs(const Expr *expr, LoweredMessageSend &lowered,
-                                  FunctionContext &ctx) const {
-    if (expr == nullptr) {
-      return;
-    }
-    lowered.explicit_arg_count = expr->args.size();
-    for (std::size_t i = 0; i < expr->args.size() && i < lowered.args.size(); ++i) {
-      lowered.args[i] = EmitExpr(expr->args[i].get(), ctx);
-    }
-  }
-
-  std::string TryResolveDirectDispatchSymbol(const Expr *expr,
-                                             const FunctionContext &ctx) const {
-    if (expr == nullptr || expr->receiver == nullptr || expr->selector.empty()) {
-      return {};
-    }
-
-    std::string owner_name;
-    bool is_class_method = false;
-    if (expr->receiver->kind == Expr::Kind::Identifier &&
-        expr->receiver->ident == "self" &&
-        !ctx.current_implementation_name.empty()) {
-      owner_name = ctx.current_implementation_name;
-      is_class_method = ctx.current_method_is_class_method;
-    } else if (expr->receiver->kind == Expr::Kind::Identifier &&
-               class_receiver_constants_.find(expr->receiver->ident) !=
-                   class_receiver_constants_.end()) {
-      owner_name = expr->receiver->ident;
-      is_class_method = true;
-    } else {
-      return {};
-    }
-
-    const auto symbol_it = direct_dispatch_symbols_by_key_.find(
-        BuildDirectDispatchMethodKey(owner_name, expr->selector,
-                                     is_class_method));
-    if (symbol_it == direct_dispatch_symbols_by_key_.end()) {
-      return {};
-    }
-    return symbol_it->second;
-  }
-
-  LoweredMessageSend LowerMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
-    LoweredMessageSend lowered = LowerMessageSendHeader(expr, ctx);
-    MaterializeMessageSendArgs(expr, lowered, ctx);
-    return lowered;
-  }
-
-  std::string EmitRuntimeDispatch(const LoweredMessageSend &lowered, FunctionContext &ctx) const {
-    const Objc3IRMessageSendLoweringPlan plan =
-        BuildObjc3IRMessageSendLoweringPlan(
-            lowered.selector, lowered.dispatch_surface_family,
-            lowered.dispatch_symbol, lowered.direct_call_symbol,
-            lowered.receiver_dispatch_facts);
-    if (plan.emits_direct_dispatch) {
-      // dispatch-control lowering anchor: concrete self/known-class
-      // sends that target effective objc_direct methods now lower as exact LLVM
-      // direct calls instead of routing through the runtime dispatch entrypoint.
-      const std::string direct_value = NewTemp(ctx);
-      Objc3IRDirectDispatchCallRequest request;
-      request.result_value = direct_value;
-      request.callee_symbol = plan.direct_call_symbol;
-      request.args = lowered.args;
-      request.explicit_arg_count = lowered.explicit_arg_count;
-      if (!Objc3IRDirectDispatchCallRequestOwnsResult(request)) {
-        return EmitUnsupportedI32Value(
-            "direct dispatch result is missing explicit IR ownership");
-      }
-      ctx.code_lines.push_back(BuildObjc3IRDirectDispatchCall(request));
-      runtime_dispatch_call_state_.NoteDirectDispatchCall();
-      InvalidateGlobalProofState(ctx);
-      return direct_value;
-    }
-
-    if (plan.fail_closed) {
-      return EmitUnsupportedI32Value(plan.failure_reason);
-    }
-
-    if (plan.elides_to_nil_result) {
-      return "0";
-    }
-
-    auto selector_it = selector_pool_globals_.find(lowered.selector);
-    if (selector_it == selector_pool_globals_.end()) {
-      return EmitUnsupportedI32Value("missing selector global for message send selector '" + lowered.selector + "'");
-    }
-
-    const std::size_t selector_len = lowered.selector.size() + 1;
-    const std::string selector_ptr = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + selector_ptr + " = getelementptr inbounds [" + std::to_string(selector_len) +
-                             " x i8], ptr " + selector_it->second + ", i32 0, i32 0");
-    runtime_dispatch_call_state_.NoteSelectorPoolGep();
-
-    const auto emit_dispatch_call = [&](const std::string &dispatch_value) {
-      // dispatch-surface classification anchor: instance/class/super/dynamic
-      // message sends that survive folding all route through the live runtime family;
-      // direct dispatch remains an explicit non-goal for this freeze.
-      // dispatch legality/selector-resolution freeze anchor: lowering
-      // consumes normalized selector text only, preserves explicit receiver
-      // legality, and does not attempt overload or ambiguity recovery beyond the
-      // fail-closed frontend contract.
-      // selector-resolution implementation anchor: once lane-B sema
-      // resolves concrete self/super/known-class receivers, lowering still
-      // emits the same live runtime entrypoint family and relies on the
-      // fail-closed exact-signature result instead of performing its own
-      // overload recovery.
-      // super/direct/dynamic legality expansion anchor: lowering
-      // continues to route admitted super/dynamic sites through the live
-      // runtime family, preserves their normalized method-family metadata, and
-      // never synthesizes a reserved direct-dispatch entrypoint.
-      // dispatch lowering ABI anchor: lowering emits the canonical runtime
-      // entrypoint directly while selector lookup, receiver/result ABI, and
-      // the fixed four-slot argument vector remain stable.
-      // runtime call ABI generation anchor: normalized instance/class/super
-      // and dynamic sends all call objc3_runtime_dispatch_i32 directly.
-      // live-dispatch cutover anchor: supported dynamic sends now
-      // join instance/class/super on objc3_runtime_dispatch_i32, nil semantics
-      // for canonical surfaces stay runtime-owned, and reserved direct dispatch
-      // surfaces still fail closed before IR emission.
-      // live-dispatch gate anchor: supported live sends emit only
-      // objc3_runtime_dispatch_i32 calls here; any missing owner or
-      // non-canonical target fails closed before IR call construction.
-      // live-dispatch smoke/replay closeout anchor: smoke and replay
-      // now treat canonical runtime dispatch evidence as authoritative, so
-      // emitted live sends must continue to surface objc3_runtime_dispatch_i32
-      // even for nil-result paths that return 0 through the runtime.
-      // lookup/dispatch runtime freeze anchor: emitted IR still
-      // targets only the canonical lookup/dispatch boundary and does not
-      // materialize runtime selector-table, method-cache, or slow-path helper
-      // symbols. Runtime-owned details stay behind the explicit
-      // objc3_runtime_lookup_selector / objc3_runtime_dispatch_i32 boundary.
-      Objc3IRRuntimeDispatchCallRequest request;
-      request.result_value = dispatch_value;
-      request.result_owner = plan.dispatch_result_owner;
-      request.result_owner_model = plan.dispatch_result_owner_model;
-      request.dispatch_symbol = plan.dispatch_symbol;
-      request.receiver = lowered.receiver;
-      request.selector_ptr = selector_ptr;
-      request.args = lowered.args;
-      request.strict_no_fallback = plan.strict_no_fallback;
-      request.strict_no_compatibility = plan.strict_no_compatibility;
-      if (!Objc3IRRuntimeDispatchCallRequestOwnsResult(request)) {
-        unsupported_fail_closed_path_reason_ =
-            "runtime dispatch result is missing explicit IR ownership";
-        return false;
-      }
-      ctx.code_lines.push_back(BuildObjc3IRRuntimeDispatchCall(request));
-      runtime_dispatch_call_state_.NoteRuntimeDispatchCall(
-          plan.dispatch_symbol);
-      return true;
-    };
-
-    if (plan.receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
-      const std::string dispatch_value = NewTemp(ctx);
-      if (!emit_dispatch_call(dispatch_value)) {
-        return EmitUnsupportedI32Value(unsupported_fail_closed_path_reason_);
-      }
-      InvalidateGlobalProofState(ctx);
-      return dispatch_value;
-    }
-
-    const std::string is_nil = NewTemp(ctx);
-    const std::string nil_label = NewLabel(ctx, "msg_nil_");
-    const std::string dispatch_label = NewLabel(ctx, "msg_dispatch_");
-    const std::string merge_label = NewLabel(ctx, "msg_merge_");
-    const std::string dispatch_value = NewTemp(ctx);
-    const std::string out = NewTemp(ctx);
-    ctx.code_lines.push_back(BuildObjc3IRI32IsZeroLine(is_nil, lowered.receiver));
-    ctx.code_lines.push_back(
-        BuildObjc3IRConditionalBranchLine(is_nil, nil_label, dispatch_label));
-    ctx.code_lines.push_back(BuildObjc3IRLabelLine(nil_label));
-    ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
-    ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
-    if (!emit_dispatch_call(dispatch_value)) {
-      return EmitUnsupportedI32Value(unsupported_fail_closed_path_reason_);
-    }
-    ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
-    ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
-    ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
-        out, "0", nil_label, dispatch_value, dispatch_label));
-    InvalidateGlobalProofState(ctx);
-    return out;
-  }
-
   std::string EmitMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
-    if (expr != nullptr && expr->optional_send_enabled) {
-      LoweredMessageSend lowered = LowerMessageSendHeader(expr, ctx);
-      const Objc3IRReceiverDispatchPolicy receiver_dispatch_policy =
-          BuildObjc3IROptionalMessageSendReceiverPolicy(
-              lowered.receiver_dispatch_facts);
-      if (receiver_dispatch_policy.elide_to_nil_result) {
-        return "0";
-      }
-      if (receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
-        MaterializeMessageSendArgs(expr, lowered, ctx);
-        return EmitRuntimeDispatch(lowered, ctx);
-      }
-
-      const std::string is_nil = NewTemp(ctx);
-      const std::string nil_label = NewLabel(ctx, "opt_send_nil_");
-      const std::string dispatch_label = NewLabel(ctx, "opt_send_dispatch_");
-      const std::string merge_label = NewLabel(ctx, "opt_send_merge_");
-      const std::string out = NewTemp(ctx);
-
-      ctx.code_lines.push_back(BuildObjc3IRI32IsZeroLine(is_nil, lowered.receiver));
-      ctx.code_lines.push_back(
-          BuildObjc3IRConditionalBranchLine(is_nil, nil_label, dispatch_label));
-      ctx.code_lines.push_back(BuildObjc3IRLabelLine(nil_label));
-      ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
-      ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
-      lowered.receiver_dispatch_facts = Objc3IRKnownNonNilReceiverFacts();
-      MaterializeMessageSendArgs(expr, lowered, ctx);
-      const std::string dispatch_value = EmitRuntimeDispatch(lowered, ctx);
-      ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
-      ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
-      ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
-          out, "0", nil_label, dispatch_value, dispatch_label));
-      return out;
-    }
-    const LoweredMessageSend lowered = LowerMessageSendExpr(expr, ctx);
-    return EmitRuntimeDispatch(lowered, ctx);
+    return EmitObjc3IRMessageSendExpr(
+        expr, ctx,
+        Objc3IRMessageSendEmissionOptions{
+            selector_pool_globals_, class_receiver_constants_,
+            direct_dispatch_symbols_by_key_,
+            lowering_ir_boundary_.runtime_dispatch_arg_slots,
+            lowering_ir_boundary_.runtime_dispatch_symbol,
+            runtime_dispatch_call_state_},
+        Objc3IRMessageSendEmissionCallbacks{
+            [this](const Expr *arg_expr, FunctionContext &callback_ctx) {
+              return EmitExpr(arg_expr, callback_ctx);
+            },
+            [this](FunctionContext &callback_ctx) {
+              return NewTemp(callback_ctx);
+            },
+            [this](FunctionContext &callback_ctx,
+                   const std::string &prefix) {
+              return NewLabel(callback_ctx, prefix);
+            },
+            [this](const Expr *receiver_expr,
+                   const FunctionContext &callback_ctx) {
+              return IsCompileTimeNilReceiverExprInContext(receiver_expr,
+                                                           callback_ctx);
+            },
+            [this](const Expr *receiver_expr,
+                   const FunctionContext &callback_ctx) {
+              return IsCompileTimeKnownNonNilExprInContext(receiver_expr,
+                                                           callback_ctx);
+            },
+            [this](const std::string &reason) {
+              return EmitUnsupportedI32Value(reason);
+            },
+            [this](FunctionContext &callback_ctx) {
+              InvalidateGlobalProofState(callback_ctx);
+            }});
   }
 
   std::string EmitExpr(const Expr *expr, FunctionContext &ctx) const {
