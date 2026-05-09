@@ -1,6 +1,7 @@
 #pragma once
 
 #include "runtime/public/objc3_runtime_api.h"
+#include "runtime/selectors/selector_spelling.h"
 
 #include <cstdint>
 
@@ -8,8 +9,6 @@ namespace objc3c::runtime {
 
 struct RuntimeState;
 
-bool RuntimeSelectorTableAcceptsDynamicSelector(const char *selector);
-bool RuntimeSelectorTableAcceptsMetadataSelector(const char *selector);
 const objc3_runtime_selector_handle *LookupSelectorUnlocked(
     const char *selector);
 bool MaterializeSelectorLookupEntryUnlocked(

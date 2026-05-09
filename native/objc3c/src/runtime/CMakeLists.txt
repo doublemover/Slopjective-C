@@ -119,6 +119,13 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_contract.h
   selectors/keypath_table.cpp
   selectors/keypath_table.h
+  selectors/selector_materialization.cpp
+  selectors/selector_records.cpp
+  selectors/selector_records.h
+  selectors/selector_snapshot.cpp
+  selectors/selector_snapshot.h
+  selectors/selector_spelling.cpp
+  selectors/selector_spelling.h
   selectors/selector_table.cpp
   selectors/selector_table.h
   storage/current_property_binding.cpp
