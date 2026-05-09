@@ -85,6 +85,11 @@ pass:
   `#8147`.
 - `5354a91b0` adds config feature-state owner evidence for `#8138` and
   `#8148`.
+- `e74371e88` adds frontend C API runner output-contract owner evidence for
+  `#8140` and `#8141`.
+- `3334f4a59` adds checked dispatch owner evidence for `#8133` and `#8143`.
+- `9bbd9a143` adds diagnostic catalog contract evidence for `#8135` and
+  `#8145`.
 
 | Issue | Evidence Status | Local Evidence Summary |
 | --- | --- | --- |

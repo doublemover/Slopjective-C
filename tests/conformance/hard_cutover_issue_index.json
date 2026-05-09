@@ -484,6 +484,43 @@
         "native/objc3c/src/config/objc3_feature_state_names.cpp",
         "native/objc3c/src/config/objc3_feature_state_query.cpp"
       ]
+    },
+    {
+      "ref": "e74371e88",
+      "summary": "HC split frontend C API runner output contract owners",
+      "issues": [
+        "#8140",
+        "#8141"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_core.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_failure.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_contract_hardening.cpp",
+        "native/objc3c/src/tools/objc3c_frontend_c_api_runner_output_paths.cpp"
+      ]
+    },
+    {
+      "ref": "3334f4a59",
+      "summary": "HC move checked dispatch owner",
+      "issues": [
+        "#8133",
+        "#8143"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/runtime/dispatch/dispatch_api.cpp"
+      ]
+    },
+    {
+      "ref": "9bbd9a143",
+      "summary": "HC add diagnostic catalog contract owner",
+      "issues": [
+        "#8135",
+        "#8145"
+      ],
+      "evidence_paths": [
+        "native/objc3c/src/diag/objc3_diag_catalog_contract.cpp",
+        "native/objc3c/src/diag/objc3_diag_catalog_contract.h"
+      ]
     }
   ],
   "global_policy": {
