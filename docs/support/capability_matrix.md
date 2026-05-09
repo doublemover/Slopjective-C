@@ -9,10 +9,10 @@ commands.
 Command and evidence truth is hard-cut to the current surfaces:
 
 - `package.json` exposes one public bridge: `objc3c`.
-- `npm run objc3c -- <action>` dispatches into
-  `python -m scripts.objc3c_workflow`.
+- `npm run objc3c -- <action>` dispatches into the
+  `scripts.objc3c_workflow` module.
 - `scripts/objc3c_workflow/registry.py` owns action names and guarantee
-  owners. There is no `public_scripts` alias table.
+  owners. There is no retired public-script alias table.
 - Runtime dispatch claims are owned by the strict runtime C API and result
   headers under `native/objc3c/src/runtime/public/`.
 - Shared JSON/schema claims are owned by checked-in schema files and the native

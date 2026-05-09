@@ -55,6 +55,12 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"(?<![A-Za-z0-9_.-])python\s+-m\s+scripts\.objc3c_workflow\b",
     ),
     ForbiddenPattern(
+        "retired-public-script-alias-metadata",
+        "Retired public script alias metadata must not reappear on active hard-cutover surfaces.",
+        r"(?<![A-Za-z0-9_])public_scripts(?![A-Za-z0-9_])"
+        r"|(?<![A-Za-z0-9_])publicScripts(?![A-Za-z0-9_])",
+    ),
+    ForbiddenPattern(
         "legacy-language-profile-enum",
         "Language profile enums are canonical-only and must not retain legacy values.",
         r"\bkLegacy\b|\bLegacy\s*=\s*1\b|\bObjc3\w*LanguageProfile::k?Legacy\b",

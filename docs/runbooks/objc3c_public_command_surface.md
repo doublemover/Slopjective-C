@@ -36,4 +36,4 @@ It is an operator-facing appendix, not the primary onboarding or project-explana
 - Those integrated summaries record the exact child-suite report paths emitted by smoke, replay, runtime-acceptance, and other live validation scripts.
 - `compile-objc3c` and the fixture-backed suite actions accept pass-through arguments through the npm bridge.
 - No additional package-script compatibility names remain supported.
-- The repository does not publish a `public_scripts` alias surface.
+- The repository does not publish a retired public-script alias surface.

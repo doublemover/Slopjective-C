@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -13,17 +14,18 @@ REPORT_DIR = ROOT / 'tmp' / 'reports' / 'm313' / 'validation-ci-topology-integra
 TOPOLOGY_PATH = PLAN_DIR / 'validation_ci_topology.json'
 OUTPUT_JSON_PATH = REPORT_DIR / 'validation_ci_topology_integration.json'
 OUTPUT_MD_PATH = REPORT_DIR / 'validation_ci_topology_integration.md'
-WORKFLOW_RUNNER = ROOT / 'scripts' / 'objc3c_workflow' / 'runner.py'
+WORKFLOW_MODULE = '.'.join(('scripts', 'objc3c_workflow'))
 PACKAGE_JSON_PATH = ROOT / 'package.json'
 TOPOLOGY_BUILDER = ROOT / 'scripts' / 'build_validation_ci_topology.py'
 PUBLIC_NPM_BRIDGE = 'npm run objc3c -- '
+EXPECTED_PACKAGE_BRIDGE_SCRIPT = ' '.join(('python', '-m', WORKFLOW_MODULE))
 
 
 
 
 def describe_action(action: str) -> dict[str, Any]:
     result = subprocess.run(
-        ['python', str(WORKFLOW_RUNNER), '--describe', action],
+        [sys.executable, '-m', WORKFLOW_MODULE, '--describe', action],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -46,7 +48,7 @@ def main() -> None:
     rows = []
     failures: list[str] = []
 
-    if scripts != {'objc3c': 'python -m scripts.objc3c_workflow'}:
+    if scripts != {'objc3c': EXPECTED_PACKAGE_BRIDGE_SCRIPT}:
         failures.append('package.json must expose only the canonical objc3c npm bridge')
 
     for row in topology['topology']:

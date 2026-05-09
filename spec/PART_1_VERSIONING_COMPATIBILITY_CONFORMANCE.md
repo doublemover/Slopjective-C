@@ -38,7 +38,7 @@ as supported input.
 
 In this repository, the public command bridge is intentionally single-script:
 `package.json` exposes `objc3c`, and `npm run objc3c -- <action>` dispatches to
-`python -m scripts.objc3c_workflow`. Action names, validation tiers, and
+the `scripts.objc3c_workflow` module. Action names, validation tiers, and
 guarantee owners are registry-owned, not duplicated in per-doc command lists.
 
 A command-line mechanism equivalent to the following may select Objective-C 3.0

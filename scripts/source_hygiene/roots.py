@@ -3,8 +3,10 @@ from __future__ import annotations
 
 DEFAULT_SCAN_ROOTS: tuple[str, ...] = (
     "README.md",
+    "CONTRIBUTING.md",
     ".github",
     "docs",
+    "showcase",
     "spec",
     "schemas",
     "native/objc3c",
