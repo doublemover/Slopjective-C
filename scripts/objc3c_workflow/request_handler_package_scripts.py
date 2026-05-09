@@ -6,7 +6,7 @@ from .argument_requests import DescribePackageScriptRequest
 from .npm_surface import describe_package_script_payload
 from .public_bridge import PACKAGE_BRIDGES
 from .reports import emit_json
-from .request_errors import emit_unknown_package_script
+from .request_unknown_errors import emit_unknown_package_script
 
 
 def handle_describe_package_script_request(

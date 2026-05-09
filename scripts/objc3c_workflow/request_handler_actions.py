@@ -14,7 +14,7 @@ from .argument_requests import (
 )
 from .registry_views import has_action
 from .reports import emit_json
-from .request_errors import emit_unknown_action
+from .request_unknown_errors import emit_unknown_action
 
 
 def handle_list_actions_request(_: ListActionsRequest) -> int:
