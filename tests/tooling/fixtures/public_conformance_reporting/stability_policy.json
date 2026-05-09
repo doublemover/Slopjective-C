@@ -1,6 +1,12 @@
 {
   "contract_id": "objc3c.public_conformance_reporting.stability.policy.v1",
   "schema_version": 1,
+  "behavior_owner_split_index": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "e2e",
+    "provenance",
+    "canonical_rejection"
+  ],
   "allowed_public_statuses": [
     "pass",
     "caution",
@@ -56,6 +62,8 @@
     "checked-in dashboard and release-evidence schema anchors must exist",
     "public reporting cannot promote quarantined or blocked evidence into claim-ready status"
   ],
+  "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
+  "fail_closed_behavior_boundary": "provisional, blocked, quarantined, missing-upstream, report-only, generated-report-only, dashboard-only, fallback, shim, old-mode, compatibility, and unsupported public claims cannot be promoted to claim-ready support",
   "capability_truth_rules": [
     "claim-ready means every upstream evidence owner reported PASS and no hard blocks remain",
     "provisional means publishable with explicit deductions and caution status",

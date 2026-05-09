@@ -4,6 +4,12 @@
   "package_bridge": "objc3c",
   "owner_model": "scripts/objc3c_workflow/actions/release_governance_public_conformance_contracts.py",
   "action_payload_fragments": "scripts/objc3c_workflow/actions/release_governance_public_conformance_action_fragments.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "e2e",
+    "provenance",
+    "canonical_rejection"
+  ],
   "actions": [
     "check-public-conformance-reporting-surface",
     "check-public-conformance-schema-surface",
@@ -18,6 +24,8 @@
     "gate_owner": "public-conformance-gate",
     "blocker_owner": "public-conformance-blockers",
     "report_only_allowed": false,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
     "owned_actions": [
       "check-public-conformance-reporting-surface",
       "check-public-conformance-schema-surface",
@@ -44,11 +52,13 @@
     "tmp/reports/public-conformance/scorecard-summary.json",
     "tmp/reports/public-conformance/public-summary.json"
   ],
+  "report_path_behavior_boundary": "generated public conformance reports are provenance-only and cannot establish positive behavior support",
   "artifact_paths": [
     "tmp/artifacts/public-conformance/scorecard/public-conformance-scorecard.json",
     "tmp/artifacts/public-conformance/badge/public-conformance-badge.json",
     "tmp/artifacts/public-conformance/report/public-conformance-report.md"
   ],
+  "artifact_path_behavior_boundary": "tmp public conformance artifacts are provenance-only and cannot promote report-only, provisional, blocked, quarantined, fallback, shim, old-mode, or compatibility evidence to claim-ready support",
   "child_report_contracts": {
     "tmp/reports/public-conformance/source-surface-summary.json": "objc3c.public_conformance_reporting.source.surface.summary.v1",
     "tmp/reports/public-conformance/schema-surface-summary.json": "objc3c.public_conformance_reporting.schema.surface.summary.v1",

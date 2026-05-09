@@ -1,0 +1,42 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-public-conformance-reporting-behavior-owner-split-index",
+  "source_surface": "tests/tooling/fixtures/public_conformance_reporting/source_surface.json",
+  "workflow_surface": "tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before public reporting source family, schema anchor, workflow action, generated report, tmp artifact, badge, scorecard, or public claim language",
+    "positive_rule": "public conformance reporting rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners in the upstream evidence families",
+    "provenance_rule": "dashboard schemas, scorecard schemas, generated summaries, tmp reports, tmp artifacts, badges, release-evidence bundles, workflow actions, and public summaries are provenance or routing until a behavior owner claims the underlying behavior",
+    "retired_surface_rule": "report-only support, generated-report-only support, dashboard-only support, provisional-as-claim-ready promotion, blocked/quarantined evidence promotion, compatibility, shim, fallback, old-mode, and unsupported public claim language are canonical rejection, strict-error, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json"
+    }
+  ]
+}

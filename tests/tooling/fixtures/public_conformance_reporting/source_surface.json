@@ -9,6 +9,16 @@
   "source_check_command": "npm run objc3c -- check-public-conformance-reporting-surface",
   "source_check_script": "scripts/check_public_conformance_reporting_source_surface.py",
   "source_check_implementation_anchor": "scripts/check_public_conformance_reporting_source_surface.py",
+  "behavior_owner_split_index": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/index.json",
+  "behavior_owner_phases": [
+    "parser",
+    "sema",
+    "lowering",
+    "ir",
+    "runtime",
+    "e2e",
+    "canonical_rejection"
+  ],
   "stability_policy": "tests/tooling/fixtures/public_conformance_reporting/stability_policy.json",
   "schema_surface": "tests/tooling/fixtures/public_conformance_reporting/schema_surface.json",
   "workflow_surface": "tests/tooling/fixtures/public_conformance_reporting/workflow_surface.json",
@@ -24,6 +34,8 @@
     "gate_owner": "public-conformance-gate",
     "blocker_owner": "public-conformance-blockers",
     "report_only_allowed": false,
+    "behavior_owner_split_required": true,
+    "canonical_rejection_owner": "tests/tooling/fixtures/public_conformance_reporting/behavior_owner_splits/canonical_rejection.json",
     "owned_actions": [
       "check-public-conformance-reporting-surface",
       "check-public-conformance-schema-surface",
@@ -45,6 +57,15 @@
   "source_families": [
     {
       "family_id": "upstream-conformance-evidence",
+      "behavior_owner_phases": [
+        "parser",
+        "sema",
+        "lowering",
+        "ir",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "coverage_goal": "public reporting must terminate in the live checked-in corpus and coverage-index contracts instead of a dashboard-only summary",
       "source_paths": [
         "docs/runbooks/objc3c_public_conformance_reporting.md",
@@ -60,6 +81,12 @@
     },
     {
       "family_id": "external-credibility-evidence",
+      "behavior_owner_phases": [
+        "sema",
+        "runtime",
+        "e2e",
+        "canonical_rejection"
+      ],
       "coverage_goal": "public credibility claims must terminate in accepted external-validation replay and publication surfaces rather than manual narrative claims",
       "source_paths": [
         "docs/runbooks/objc3c_external_validation.md",
@@ -76,6 +103,12 @@
     },
     {
       "family_id": "public-reporting-schema-anchors",
+      "behavior_owner_phases": [
+        "ir",
+        "e2e",
+        "provenance",
+        "canonical_rejection"
+      ],
       "coverage_goal": "public status and scorecard claims must remain anchored to checked-in dashboard and release-evidence schemas",
       "source_paths": [
         "schemas/objc3-conformance-dashboard-status-v1.schema.json",
