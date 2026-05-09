@@ -6,7 +6,7 @@
 
 #include "objc3c_frontend.h"
 
-#define OBJC3C_FRONTEND_C_API_ABI_VERSION 1u
+#define OBJC3C_FRONTEND_C_API_ABI_VERSION OBJC3C_FRONTEND_ABI_VERSION
 
 #ifdef __cplusplus
 extern "C" {
@@ -17,11 +17,16 @@ extern "C" {
  * C-only names over the same objc3c_frontend ABI data structures and primary
  * libobjc3c_frontend entrypoints.
  *
- * Result/string ownership is explicit on this surface: compile_result storage
- * is caller-owned, result payload strings are released only by
- * objc3c_frontend_c_result_destroy(), standalone owned strings are released
- * with objc3c_frontend_c_string_release(), and borrowed option strings/paths
- * must remain valid for the duration of the call.
+ * Result/string ownership is explicit on this surface:
+ * - compile_result storage is caller-owned and must be zero-initialized before
+ *   first use.
+ * - result payload strings are result-owned and released only by
+ *   objc3c_frontend_c_result_destroy().
+ * - standalone owned strings are released with
+ *   objc3c_frontend_c_string_release().
+ * - borrowed option strings/paths must remain valid for the duration of the
+ *   call.
+ * - compile entrypoints require non-NULL context/options/result pointers.
  */
 typedef objc3c_frontend_context_t objc3c_frontend_c_context_t;
 typedef objc3c_frontend_stage_id_t objc3c_frontend_c_stage_id_t;
@@ -59,12 +64,16 @@ OBJC3C_FRONTEND_API objc3c_frontend_c_status_t objc3c_frontend_c_compile_source(
     objc3c_frontend_c_compile_result_t *result);
 
 /*
- * Null-safe ownership/accessor surface for C-only embedders.
- * - result_destroy releases only result-owned payload strings, then zeros the result.
- * - result_* accessors return borrowed pointers/views valid until result_destroy.
- * - string_release is for standalone owned strings only; do not pass result-owned
- *   strings returned by result_error_message/result_artifact_path.
- * - undefined artifact kinds and NULL inputs fail closed as NULL/empty/0.
+ * Ownership/accessor surface for C-only embedders.
+ * - result_destroy releases only result-owned payload strings, then zeros the
+ *   result. Passing NULL is a no-op because there is no owner to release.
+ * - result_* accessors return borrowed pointers/views valid until
+ *   result_destroy.
+ * - string_release is for standalone owned strings only; do not pass
+ *   result-owned strings returned by result_error_message/result_artifact_path.
+ * - NULL results, absent payloads, and undefined artifact kinds never
+ *   manufacture fallback values: pointer accessors return NULL, views return
+ *   {NULL, 0}, and boolean predicates return 0.
  */
 OBJC3C_FRONTEND_API void objc3c_frontend_c_result_destroy(
     objc3c_frontend_c_compile_result_t *result);

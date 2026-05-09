@@ -28,8 +28,6 @@ bool ValidateFrontendCompileSourceOptions(
     const objc3c_frontend_compile_options_t &options,
     std::string &error);
 
-uint8_t NormalizeFrontendLanguageVersion(uint8_t requested_language_version);
-
 bool ValidateSupportedFrontendLanguageVersion(uint8_t requested_language_version,
                                               std::string &error);
 

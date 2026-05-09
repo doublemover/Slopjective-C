@@ -44,4 +44,6 @@ void FrontendCApiRunnerCompileInvocation::RefreshBorrowedPointers() {
   compile_options_.emit_ir = runner_options_.emit_ir ? 1u : 0u;
   compile_options_.emit_object = runner_options_.emit_object ? 1u : 0u;
   compile_options_.ir_object_backend = runner_options_.ir_object_backend;
+  compile_options_.language_version =
+      OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3;
 }

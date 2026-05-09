@@ -6,7 +6,6 @@ namespace objc3c::frontend {
 
 namespace {
 
-constexpr const char *kDefaultEmitPrefix = "module";
 constexpr const char *kDefaultMemoryInputPath = "<memory>";
 
 }  // namespace
@@ -22,9 +21,17 @@ bool IsMissingFrontendBorrowedPath(objc3c_frontend_borrowed_path_t path) {
 bool ValidateFrontendEmitOptions(
     const objc3c_frontend_compile_options_t &options,
     std::string &error) {
-  if ((options.emit_ir != 0 || options.emit_object != 0) &&
-      IsMissingFrontendBorrowedPath(options.out_dir)) {
-    error = "emit_ir/emit_object require compile_options.out_dir.";
+  const bool wants_artifact = options.emit_manifest != 0 ||
+                              options.emit_ir != 0 ||
+                              options.emit_object != 0;
+  if (wants_artifact && IsMissingFrontendBorrowedPath(options.out_dir)) {
+    error =
+        "emit_manifest/emit_ir/emit_object require compile_options.out_dir.";
+    return false;
+  }
+  if (wants_artifact && IsMissingFrontendBorrowedText(options.emit_prefix)) {
+    error =
+        "emit_manifest/emit_ir/emit_object require compile_options.emit_prefix.";
     return false;
   }
 
@@ -74,25 +81,16 @@ bool ValidateFrontendCompileSourceOptions(
   return ValidateFrontendEmitOptions(options, error);
 }
 
-uint8_t NormalizeFrontendLanguageVersion(uint8_t requested_language_version) {
-  if (requested_language_version == 0u) {
-    return static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT);
-  }
-  return requested_language_version;
-}
-
 bool ValidateSupportedFrontendLanguageVersion(uint8_t requested_language_version,
                                               std::string &error) {
-  const uint8_t normalized_language_version =
-      NormalizeFrontendLanguageVersion(requested_language_version);
-  if (normalized_language_version ==
+  if (requested_language_version ==
       static_cast<uint8_t>(OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3)) {
     return true;
   }
 
   error = "invalid compile_options.language_version: " +
-          std::to_string(normalized_language_version) +
-          " (accepted value is Objective-C version 3 or 0 for default).";
+          std::to_string(requested_language_version) +
+          " (accepted value is Objective-C version 3).";
   return false;
 }
 
@@ -128,21 +126,16 @@ std::filesystem::path ResolveFrontendOutputDir(
 std::string ResolveFrontendEmitPrefix(
     const objc3c_frontend_compile_options_t &options,
     const std::filesystem::path &input_path) {
-  if (!IsMissingFrontendBorrowedText(options.emit_prefix)) {
-    return std::string(options.emit_prefix);
-  }
-  const std::string stem = input_path.stem().string();
-  if (!stem.empty()) {
-    return stem;
-  }
-  return kDefaultEmitPrefix;
+  (void)input_path;
+  return IsMissingFrontendBorrowedText(options.emit_prefix)
+             ? std::string()
+             : std::string(options.emit_prefix);
 }
 
 Objc3FrontendOptions BuildFrontendPipelineOptions(
     const objc3c_frontend_compile_options_t &options) {
   Objc3FrontendOptions frontend_options;
-  frontend_options.language_version =
-      NormalizeFrontendLanguageVersion(options.language_version);
+  frontend_options.language_version = options.language_version;
   frontend_options.language_profile = Objc3FrontendLanguageProfile::kCanonical;
   frontend_options.emit_manifest = options.emit_manifest != 0;
   frontend_options.emit_ir = options.emit_ir != 0;

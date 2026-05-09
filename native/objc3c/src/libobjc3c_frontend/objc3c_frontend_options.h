@@ -4,7 +4,6 @@
 #include <stdint.h>
 
 #define OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3 3u
-#define OBJC3C_FRONTEND_LANGUAGE_VERSION_DEFAULT OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3
 
 /* Deterministic IR->object backend selector for emit_object paths. */
 typedef enum objc3c_frontend_ir_object_backend {
@@ -23,11 +22,12 @@ typedef objc3c_frontend_borrowed_c_string_t objc3c_frontend_borrowed_text_t;
  * - borrowed_text_t fields are interpreted as literal source/symbol/prefix text.
  * - compile_file requires non-NULL, non-empty input_path.
  * - compile_source requires non-NULL, non-empty source_text.
- * - emit_ir or emit_object requires non-NULL, non-empty out_dir and fails
- *   before pipeline execution when absent.
+ * - emit_manifest, emit_ir, or emit_object requires non-NULL, non-empty
+ *   out_dir and emit_prefix and fails before pipeline execution when absent.
  * - emit_object requires clang_path for clang backend and llc_path for
  *   llvm-direct backend and fails before pipeline execution when absent.
- * - language_version uses Objective-C version 3 by default when set to 0.
+ * - language_version must be OBJC3C_FRONTEND_LANGUAGE_VERSION_OBJECTIVE_C_3;
+ *   zero is not a default.
  * - Set unused pointers to NULL and reserved fields to 0.
  */
 typedef struct objc3c_frontend_compile_options {

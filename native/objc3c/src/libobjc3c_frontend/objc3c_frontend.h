@@ -38,7 +38,8 @@ extern "C" {
  * Compile entrypoint for file-backed embedding.
  * Pipeline-backed behavior:
  * - Runs lexer/parser/sema/lower/emit through the extracted frontend pipeline.
- * - Writes selected artifacts to out_dir (when provided) based on emit flags.
+ * - Writes selected artifacts to out_dir based on explicit emit flags,
+ *   out_dir, and emit_prefix options.
  * - Returns OBJC3C_FRONTEND_STATUS_DIAGNOSTICS on source diagnostics,
  *   OBJC3C_FRONTEND_STATUS_EMIT_ERROR on object emission failures,
  *   and OBJC3C_FRONTEND_STATUS_USAGE_ERROR for invalid arguments.
