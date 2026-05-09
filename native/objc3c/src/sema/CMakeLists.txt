@@ -96,6 +96,15 @@ target_link_libraries(objc3c_sema_diagnostics_surface PUBLIC
   objc3c_semantic_type_surface
 )
 
+add_library(objc3c_sema_static_scalar_analysis STATIC
+  objc3_static_scalar_analysis.cpp
+)
+objc3c_apply_build_defaults(objc3c_sema_static_scalar_analysis)
+objc3c_apply_llvm_direct_config(objc3c_sema_static_scalar_analysis)
+target_link_libraries(objc3c_sema_static_scalar_analysis PUBLIC
+  ${OBJC3C_SEMA_PUBLIC_DEPS}
+)
+
 add_library(objc3c_semantic_passes_core STATIC
   objc3_pure_contract.cpp
   objc3_semantic_passes.cpp
@@ -105,6 +114,7 @@ objc3c_apply_llvm_direct_config(objc3c_semantic_passes_core)
 target_link_libraries(objc3c_semantic_passes_core PUBLIC
   ${OBJC3C_SEMA_PUBLIC_DEPS}
   objc3c_sema_contracts
+  objc3c_sema_static_scalar_analysis
   objc3c_semantic_type_surface
 )
 
@@ -124,6 +134,7 @@ target_link_libraries(objc3c_sema PUBLIC
   objc3c_sema_contracts
   objc3c_sema_diagnostics_surface
   objc3c_sema_equivalence
+  objc3c_sema_static_scalar_analysis
   objc3c_semantic_passes_core
   objc3c_semantic_type_surface
 )
