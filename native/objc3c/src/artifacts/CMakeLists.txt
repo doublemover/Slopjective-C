@@ -17,8 +17,10 @@ add_library(objc3c_artifacts STATIC
   json/artifact_json_model.cpp
   json/artifact_json_publication_contract.cpp
   json/artifact_json_writer.cpp
+  json/artifact_schema_contract_requirements.cpp
   json/artifact_schema_contract_table.cpp
   json/artifact_schema_registry.cpp
+  json/artifact_schema_registry_summary.cpp
   json/program_manifest_json.cpp
   json/runtime_metadata_manifest_json.cpp
   json/semantic_type_manifest_json.cpp
