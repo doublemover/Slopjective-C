@@ -218,6 +218,103 @@ BuildObjc3SemaSelectorPropertyTypeAnnotationReadinessRecord(
   return record;
 }
 
+Objc3SemaModuleTypeAbiSummaryReadinessRecord
+BuildObjc3SemaModuleTypeAbiSummaryReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaModuleTypeAbiSummaryReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.variance_bridge_cast_ready =
+      surface.deterministic_variance_bridge_cast_handoff &&
+      surface.variance_bridge_cast_summary.variance_bridge_cast_sites ==
+          surface.variance_bridge_cast_sites_total &&
+      surface.variance_bridge_cast_summary.protocol_composition_sites ==
+          surface.variance_bridge_cast_protocol_composition_sites_total &&
+      surface.variance_bridge_cast_summary.ownership_qualifier_sites ==
+          surface.variance_bridge_cast_ownership_qualifier_sites_total &&
+      surface.variance_bridge_cast_summary.object_pointer_type_sites ==
+          surface.variance_bridge_cast_object_pointer_type_sites_total &&
+      surface.variance_bridge_cast_summary.pointer_declarator_sites ==
+          surface.variance_bridge_cast_pointer_declarator_sites_total &&
+      surface.variance_bridge_cast_summary.normalized_sites ==
+          surface.variance_bridge_cast_normalized_sites_total &&
+      surface.variance_bridge_cast_summary.contract_violation_sites ==
+          surface.variance_bridge_cast_contract_violation_sites_total &&
+      surface.variance_bridge_cast_summary.protocol_composition_sites <=
+          surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+      surface.variance_bridge_cast_summary.normalized_sites <=
+          surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+      surface.variance_bridge_cast_summary.contract_violation_sites <=
+          surface.variance_bridge_cast_summary.variance_bridge_cast_sites &&
+      surface.variance_bridge_cast_summary.deterministic;
+  record.generic_metadata_abi_ready =
+      surface.deterministic_generic_metadata_abi_handoff &&
+      surface.generic_metadata_abi_summary.generic_metadata_abi_sites ==
+          surface.generic_metadata_abi_sites_total &&
+      surface.generic_metadata_abi_summary.generic_suffix_sites ==
+          surface.generic_metadata_abi_generic_suffix_sites_total &&
+      surface.generic_metadata_abi_summary.protocol_composition_sites ==
+          surface.generic_metadata_abi_protocol_composition_sites_total &&
+      surface.generic_metadata_abi_summary.ownership_qualifier_sites ==
+          surface.generic_metadata_abi_ownership_qualifier_sites_total &&
+      surface.generic_metadata_abi_summary.object_pointer_type_sites ==
+          surface.generic_metadata_abi_object_pointer_type_sites_total &&
+      surface.generic_metadata_abi_summary.pointer_declarator_sites ==
+          surface.generic_metadata_abi_pointer_declarator_sites_total &&
+      surface.generic_metadata_abi_summary.normalized_sites ==
+          surface.generic_metadata_abi_normalized_sites_total &&
+      surface.generic_metadata_abi_summary.contract_violation_sites ==
+          surface.generic_metadata_abi_contract_violation_sites_total &&
+      surface.generic_metadata_abi_summary.generic_suffix_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.protocol_composition_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.normalized_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.contract_violation_sites <=
+          surface.generic_metadata_abi_summary.generic_metadata_abi_sites &&
+      surface.generic_metadata_abi_summary.deterministic;
+  record.module_import_graph_ready =
+      surface.deterministic_module_import_graph_handoff &&
+      surface.module_import_graph_summary.module_import_graph_sites ==
+          surface.module_import_graph_sites_total &&
+      surface.module_import_graph_summary.import_edge_candidate_sites ==
+          surface.module_import_graph_import_edge_candidate_sites_total &&
+      surface.module_import_graph_summary.namespace_segment_sites ==
+          surface.module_import_graph_namespace_segment_sites_total &&
+      surface.module_import_graph_summary.object_pointer_type_sites ==
+          surface.module_import_graph_object_pointer_type_sites_total &&
+      surface.module_import_graph_summary.pointer_declarator_sites ==
+          surface.module_import_graph_pointer_declarator_sites_total &&
+      surface.module_import_graph_summary.normalized_sites ==
+          surface.module_import_graph_normalized_sites_total &&
+      surface.module_import_graph_summary.contract_violation_sites ==
+          surface.module_import_graph_contract_violation_sites_total &&
+      surface.module_import_graph_summary.import_edge_candidate_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.namespace_segment_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.normalized_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.contract_violation_sites <=
+          surface.module_import_graph_summary.module_import_graph_sites &&
+      surface.module_import_graph_summary.deterministic;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.module_type_abi_summary_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.variance_bridge_cast_ready &&
+      record.generic_metadata_abi_ready && record.module_import_graph_ready;
+  return record;
+}
+
 Objc3SemaTypedSemanticHandoffRecord BuildObjc3SemaTypedSemanticHandoffRecord(
     const Objc3SemaPassManagerInput &input,
     const Objc3SemaParityContractSurface &surface) {
