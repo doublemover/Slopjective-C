@@ -23,11 +23,12 @@ truth. They must point back to committed branch surfaces in the files above:
 - `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
 - `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
 
-The canonical schema registry entries live under `schemas/` and are registered
-through `scripts/objc3c_shared/schema_registry.py`:
+The canonical capability schema IDs are registered through
+`scripts/objc3c_shared/schema_registry.py`:
 
-- `schemas/objc3c-capability-matrix-v1.schema.json`
-- `schemas/objc3c-capability-evidence-map-v1.schema.json`
+- `objc3c-capability-matrix-v1`
+- `objc3c-capability-evidence-map-v1`
+- backing schema files under `schemas/`
 - `schemas/README.md`
 - `scripts/objc3c_shared/schema_registry.py`
 

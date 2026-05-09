@@ -8,10 +8,10 @@ files, source owners, schemas, or helper tests, not user-facing workflow
 actions.
 
 The machine-readable evidence map is `docs/support/evidence_map.json`; its
-schema is `schemas/objc3c-capability-evidence-map-v1.schema.json`. The
-capability matrix schema is `schemas/objc3c-capability-matrix-v1.schema.json`.
-Example rows and anti-examples live in
-`docs/support/capability_schema_examples.md`.
+schema id is `objc3c-capability-evidence-map-v1`. The capability matrix schema
+id is `objc3c-capability-matrix-v1`. Both IDs are owned by
+`scripts/objc3c_shared/schema_registry.py`. Example rows and anti-examples live
+in `docs/support/capability_schema_examples.md`.
 
 `projection_contract` in the JSON file makes this table a flattened projection
 of `docs/support/capability_matrix.json#/capabilities/*/evidence`. Its stable

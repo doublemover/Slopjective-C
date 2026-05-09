@@ -9,12 +9,13 @@ without becoming public workflow commands.
 Machine-readable truth is split deliberately:
 
 - matrix data: `docs/support/capability_matrix.json`
-- matrix schema: `schemas/objc3c-capability-matrix-v1.schema.json`
+- matrix schema id: `objc3c-capability-matrix-v1`
+- schema owner: `scripts/objc3c_shared/schema_registry.py`
 - support directory contract: `docs/support/README.md`
 - evidence rows: `docs/support/evidence_map.json`
 - issue closeout evidence: `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`
   and `docs/issues/hard_cutover_8132_8150_closeout/payloads.md`
-- evidence schema: `schemas/objc3c-capability-evidence-map-v1.schema.json`
+- evidence schema id: `objc3c-capability-evidence-map-v1`
 - schema examples: `docs/support/capability_schema_examples.md`
 - projection policy: the `projection_policy` object in
   `docs/support/capability_matrix.json`
@@ -41,9 +42,9 @@ Command and evidence truth is hard-cut to the current surfaces:
 - Runtime dispatch claims are owned by the strict runtime C API, dispatch
   owner modules, diagnostics owner modules, and result headers under
   `native/objc3c/src/runtime/public/`.
-- Shared JSON/schema claims are owned by checked-in schema files and the native
-  `objc3c_json` split helpers / artifact JSON modules, not by prose-only
-  summaries or support-directory schema copies.
+- Shared JSON/schema claims are owned by shared-registry schema IDs, checked-in
+  schema files, and the native `objc3c_json` split helpers / artifact JSON
+  modules, not by prose-only summaries or support-directory schema copies.
 - Runtime and object-model prose is not a support claim unless an implemented
   matrix row links executable evidence for the exact behavior.
 - The hard-cutover matrix rejects shims, fallback paths, migration lanes,
