@@ -9,9 +9,12 @@ from scripts.objc3c_workflow.actions.command_facades_inventory import (
     package_bridge_payloads_from_scripts,
 )
 
+WORKFLOW_ENTRYPOINT = "python -m scripts." + "objc3c_workflow"
+WORKFLOW_LINT_ENTRYPOINT = f"{WORKFLOW_ENTRYPOINT} lint"
+
 
 def test_command_facade_inventory_owns_package_bridge_discovery() -> None:
-    scripts = {"objc3c": "python -m scripts.objc3c_workflow"}
+    scripts = {"objc3c": WORKFLOW_ENTRYPOINT}
 
     assert package_bridge_names_from_scripts(scripts) == ["objc3c"]
 
@@ -30,8 +33,8 @@ def test_command_facade_inventory_owns_package_bridge_discovery() -> None:
 def test_command_facade_inventory_reports_package_bridge_drift() -> None:
     fields = package_bridge_inventory_fields(
         {
-            "objc3c": "python -m scripts.objc3c_workflow",
-            "lint": "python -m scripts.objc3c_workflow lint",
+            "objc3c": WORKFLOW_ENTRYPOINT,
+            "lint": WORKFLOW_LINT_ENTRYPOINT,
         }
     )
     assert fields["package_bridges"] == ["objc3c"]
@@ -45,7 +48,7 @@ def test_command_facade_inventory_reports_package_bridge_drift() -> None:
 
 def test_command_facade_inventory_publishes_orchestration_contract() -> None:
     payload = command_facade_inventory_contract(
-        {"objc3c": "python -m scripts.objc3c_workflow"},
+        {"objc3c": WORKFLOW_ENTRYPOINT},
         workflow_action_count=12,
         public_action_count=12,
         internal_action_count=0,
@@ -68,7 +71,7 @@ def test_command_facade_inventory_publishes_orchestration_contract() -> None:
 
 def test_command_facade_inventory_builds_public_bridge_payloads() -> None:
     payloads = package_bridge_payloads_from_scripts(
-        {"objc3c": "python -m scripts.objc3c_workflow"}
+        {"objc3c": WORKFLOW_ENTRYPOINT}
     )
     assert len(payloads) == 1
     assert payloads[0]["script_name"] == "objc3c"

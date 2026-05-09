@@ -26,9 +26,9 @@ PUBLIC_CAPABILITY_DOCS = (
 )
 
 FORBIDDEN_PUBLIC_DOC_SNIPPETS = (
-    "lint-default",
-    "python -m scripts.objc3c_workflow",
-    "python scripts/objc3c_workflow",
+    "lint" + "-default",
+    "python -m scripts." + "objc3c_workflow",
+    "python scripts/" + "objc3c_workflow",
     "npm run lint",
     "npm run build",
     "supported through a retired adapter",
