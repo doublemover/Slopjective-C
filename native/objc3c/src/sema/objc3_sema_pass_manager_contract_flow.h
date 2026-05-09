@@ -35,6 +35,8 @@ inline constexpr const char *kObjc3SemaPassManagerPublicationOwner =
     "native.frontend.sema.pass-manager-publication";
 inline constexpr const char *kObjc3SemaTypeMetadataPublicationOwner =
     "native.frontend.sema.type-metadata-publication";
+inline constexpr const char *kObjc3SemaTypedSemanticHandoffPublicationOwner =
+    "native.frontend.sema.typed-semantic-handoff-publication";
 inline constexpr const char *kObjc3SemaParityValidationOwner =
     "native.frontend.sema.parity-validation";
 inline constexpr const char *kObjc3SemaCloseoutSignoffOwner =
@@ -678,6 +680,43 @@ BuildObjc3SemaTypeMetadataPublicationRecord(
   return record;
 }
 
+struct Objc3SemaTypedSemanticHandoffRecord {
+  std::string typed_semantic_handoff_publication_owner =
+      kObjc3SemaTypedSemanticHandoffPublicationOwner;
+  std::string typed_semantic_handoff_owner =
+      kObjc3SemaTypedSemanticHandoffOwner;
+  std::string type_metadata_publication_owner =
+      kObjc3SemaTypeMetadataPublicationOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool type_metadata_identity_handoffs_ready = false;
+  bool type_annotation_handoffs_ready = false;
+  bool module_boundary_handoffs_ready = false;
+  bool concurrency_recovery_handoffs_ready = false;
+  bool symbol_dispatch_handoffs_ready = false;
+  bool block_dispatch_handoffs_ready = false;
+  bool ownership_runtime_handoffs_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaTypedSemanticHandoffRecord(
+    const Objc3SemaTypedSemanticHandoffRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.typed_semantic_handoff_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+         Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.type_metadata_identity_handoffs_ready &&
+         record.type_annotation_handoffs_ready &&
+         record.module_boundary_handoffs_ready &&
+         record.concurrency_recovery_handoffs_ready &&
+         record.symbol_dispatch_handoffs_ready &&
+         record.block_dispatch_handoffs_ready &&
+         record.ownership_runtime_handoffs_ready && record.deterministic;
+}
+
 struct Objc3SemaParityValidationRecord {
   std::string parity_validation_owner = kObjc3SemaParityValidationOwner;
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
@@ -1108,6 +1147,7 @@ struct Objc3SemaParityContractSurface {
   Objc3SemaPassFlowRecoveryRecord pass_flow_recovery_record;
   Objc3SemaPassManagerPublicationRecord pass_manager_publication_record;
   Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;
+  Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
   Objc3SemaParityValidationRecord parity_validation_record;
   Objc3SemaCloseoutSignoffRecord closeout_signoff_record;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
@@ -1538,6 +1578,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_pass_flow_recovery_record = false;
   bool deterministic_pass_manager_publication_record = false;
   bool deterministic_type_metadata_publication_record = false;
+  bool deterministic_typed_semantic_handoff_record = false;
   bool deterministic_parity_validation_record = false;
   bool deterministic_closeout_signoff_record = false;
   bool deterministic_semantic_diagnostics = false;
@@ -1650,6 +1691,85 @@ struct Objc3SemaParityContractSurface {
   bool ready = false;
 };
 
+inline Objc3SemaTypedSemanticHandoffRecord
+BuildObjc3SemaTypedSemanticHandoffRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaTypedSemanticHandoffRecord record;
+  record.typed_semantic_handoff_owner = input.typed_semantic_handoff_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.type_metadata_identity_handoffs_ready =
+      surface.deterministic_interface_implementation_handoff &&
+      surface.deterministic_protocol_category_composition_handoff &&
+      surface.deterministic_class_protocol_category_linking_handoff &&
+      surface.deterministic_selector_normalization_handoff;
+  record.type_annotation_handoffs_ready =
+      surface.deterministic_property_attribute_handoff &&
+      surface.deterministic_type_annotation_surface_handoff &&
+      surface.deterministic_lightweight_generic_constraint_handoff &&
+      surface.deterministic_nullability_flow_warning_precision_handoff &&
+      surface.deterministic_protocol_qualified_object_type_handoff &&
+      surface.deterministic_variance_bridge_cast_handoff &&
+      surface.deterministic_generic_metadata_abi_handoff;
+  record.module_boundary_handoffs_ready =
+      surface.deterministic_module_import_graph_handoff &&
+      surface.deterministic_namespace_collision_shadowing_handoff &&
+      surface.deterministic_public_private_api_partition_handoff &&
+      surface.deterministic_incremental_module_cache_invalidation_handoff &&
+      surface.deterministic_cross_module_conformance_handoff;
+  record.concurrency_recovery_handoffs_ready =
+      surface.deterministic_throws_propagation_handoff &&
+      surface.deterministic_unwind_cleanup_handoff &&
+      surface.deterministic_async_continuation_handoff &&
+      surface.deterministic_actor_isolation_sendability_handoff &&
+      surface.deterministic_task_runtime_cancellation_handoff &&
+      surface.deterministic_concurrency_replay_race_guard_handoff &&
+      surface.deterministic_unsafe_pointer_extension_handoff &&
+      surface.deterministic_inline_asm_intrinsic_governance_handoff &&
+      surface.deterministic_ns_error_bridging_handoff &&
+      surface.deterministic_error_diagnostics_recovery_handoff &&
+      surface.deterministic_result_like_lowering_handoff &&
+      surface.deterministic_await_lowering_suspension_state_lowering_handoff;
+  record.symbol_dispatch_handoffs_ready =
+      surface.deterministic_symbol_graph_scope_resolution_handoff &&
+      surface.deterministic_method_lookup_override_conflict_handoff &&
+      surface.deterministic_property_synthesis_ivar_binding_handoff &&
+      surface.deterministic_id_class_sel_object_pointer_type_checking_handoff &&
+      surface.deterministic_message_send_selector_lowering_handoff &&
+      surface.deterministic_dispatch_abi_marshalling_handoff &&
+      surface.deterministic_nil_receiver_semantics_foldability_handoff &&
+      surface.deterministic_super_dispatch_method_family_handoff;
+  record.block_dispatch_handoffs_ready =
+      surface.deterministic_block_literal_capture_semantics_handoff &&
+      surface.deterministic_block_abi_invoke_trampoline_handoff &&
+      surface.deterministic_block_storage_escape_handoff &&
+      surface.deterministic_block_copy_dispose_handoff &&
+      surface.deterministic_block_determinism_perf_baseline_handoff;
+  record.ownership_runtime_handoffs_ready =
+      surface.deterministic_runtime_link_host_link_handoff &&
+      surface.deterministic_retain_release_operation_handoff &&
+      surface.deterministic_weak_unowned_semantics_handoff &&
+      surface.deterministic_arc_diagnostics_fixit_handoff &&
+      surface.deterministic_autoreleasepool_scope_handoff;
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.typed_semantic_handoff_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(record.typed_semantic_handoff_owner) &&
+      Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.type_metadata_identity_handoffs_ready &&
+      record.type_annotation_handoffs_ready &&
+      record.module_boundary_handoffs_ready &&
+      record.concurrency_recovery_handoffs_ready &&
+      record.symbol_dispatch_handoffs_ready &&
+      record.block_dispatch_handoffs_ready &&
+      record.ownership_runtime_handoffs_ready;
+  return record;
+}
+
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
   return surface.ready && surface.deterministic_parser_sema_conformance_matrix &&
          surface.deterministic_parser_sema_conformance_corpus &&
@@ -1680,6 +1800,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_type_metadata_publication_record &&
          IsReadyObjc3SemaTypeMetadataPublicationRecord(
              surface.type_metadata_publication_record) &&
+         surface.deterministic_typed_semantic_handoff_record &&
+         IsReadyObjc3SemaTypedSemanticHandoffRecord(
+             surface.typed_semantic_handoff_record) &&
          surface.deterministic_parity_validation_record &&
          IsReadyObjc3SemaParityValidationRecord(
              surface.parity_validation_record) &&

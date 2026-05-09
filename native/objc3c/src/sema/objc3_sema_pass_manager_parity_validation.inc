@@ -1165,6 +1165,15 @@
   result.parity_surface.deterministic_atomic_memory_order_mapping = result.deterministic_atomic_memory_order_mapping;
   result.parity_surface.vector_type_lowering = result.vector_type_lowering;
   result.parity_surface.deterministic_vector_type_lowering = result.deterministic_vector_type_lowering;
+  result.typed_semantic_handoff_record =
+      BuildObjc3SemaTypedSemanticHandoffRecord(input, result.parity_surface);
+  result.deterministic_typed_semantic_handoff_record =
+      IsReadyObjc3SemaTypedSemanticHandoffRecord(
+          result.typed_semantic_handoff_record);
+  result.parity_surface.typed_semantic_handoff_record =
+      result.typed_semantic_handoff_record;
+  result.parity_surface.deterministic_typed_semantic_handoff_record =
+      result.deterministic_typed_semantic_handoff_record;
   const bool parity_parser_sema_contract_ready =
       result.parity_surface.deterministic_parser_sema_conformance_matrix &&
       result.parity_surface.deterministic_parser_sema_conformance_corpus &&
@@ -1235,61 +1244,9 @@
       result.parity_surface.implementations_total ==
           result.parity_surface.type_metadata_implementation_entries;
   const bool parity_typed_semantic_handoffs_ready =
-      result.parity_surface.deterministic_interface_implementation_handoff &&
-      result.parity_surface.deterministic_protocol_category_composition_handoff &&
-      result.parity_surface.deterministic_class_protocol_category_linking_handoff &&
-      result.parity_surface.deterministic_selector_normalization_handoff &&
-      result.parity_surface.deterministic_property_attribute_handoff &&
-      result.parity_surface.deterministic_type_annotation_surface_handoff &&
-      result.parity_surface
-          .deterministic_lightweight_generic_constraint_handoff &&
-      result.parity_surface
-          .deterministic_nullability_flow_warning_precision_handoff &&
-      result.parity_surface.deterministic_protocol_qualified_object_type_handoff &&
-      result.parity_surface.deterministic_variance_bridge_cast_handoff &&
-      result.parity_surface.deterministic_generic_metadata_abi_handoff &&
-      result.parity_surface.deterministic_module_import_graph_handoff &&
-      result.parity_surface.deterministic_namespace_collision_shadowing_handoff &&
-      result.parity_surface.deterministic_public_private_api_partition_handoff &&
-      result.parity_surface
-          .deterministic_incremental_module_cache_invalidation_handoff &&
-      result.parity_surface.deterministic_cross_module_conformance_handoff &&
-      result.parity_surface.deterministic_throws_propagation_handoff &&
-      result.parity_surface.deterministic_unwind_cleanup_handoff &&
-      result.parity_surface.deterministic_async_continuation_handoff &&
-      result.parity_surface.deterministic_actor_isolation_sendability_handoff &&
-      result.parity_surface.deterministic_task_runtime_cancellation_handoff &&
-      result.parity_surface
-          .deterministic_concurrency_replay_race_guard_handoff &&
-      result.parity_surface.deterministic_unsafe_pointer_extension_handoff &&
-      result.parity_surface
-          .deterministic_inline_asm_intrinsic_governance_handoff &&
-      result.parity_surface.deterministic_ns_error_bridging_handoff &&
-      result.parity_surface.deterministic_error_diagnostics_recovery_handoff &&
-      result.parity_surface.deterministic_result_like_lowering_handoff &&
-      result.parity_surface
-          .deterministic_await_lowering_suspension_state_lowering_handoff &&
-      result.parity_surface.deterministic_symbol_graph_scope_resolution_handoff &&
-      result.parity_surface.deterministic_method_lookup_override_conflict_handoff &&
-      result.parity_surface
-          .deterministic_property_synthesis_ivar_binding_handoff &&
-      result.parity_surface
-          .deterministic_id_class_sel_object_pointer_type_checking_handoff &&
-      result.parity_surface.deterministic_block_literal_capture_semantics_handoff &&
-      result.parity_surface.deterministic_block_abi_invoke_trampoline_handoff &&
-      result.parity_surface.deterministic_block_storage_escape_handoff &&
-      result.parity_surface.deterministic_block_copy_dispose_handoff &&
-      result.parity_surface.deterministic_block_determinism_perf_baseline_handoff &&
-      result.parity_surface.deterministic_message_send_selector_lowering_handoff &&
-      result.parity_surface.deterministic_dispatch_abi_marshalling_handoff &&
-      result.parity_surface
-          .deterministic_nil_receiver_semantics_foldability_handoff &&
-      result.parity_surface.deterministic_super_dispatch_method_family_handoff &&
-      result.parity_surface.deterministic_runtime_link_host_link_handoff &&
-      result.parity_surface.deterministic_retain_release_operation_handoff &&
-      result.parity_surface.deterministic_weak_unowned_semantics_handoff &&
-      result.parity_surface.deterministic_arc_diagnostics_fixit_handoff &&
-      result.parity_surface.deterministic_autoreleasepool_scope_handoff;
+      result.parity_surface.deterministic_typed_semantic_handoff_record &&
+      IsReadyObjc3SemaTypedSemanticHandoffRecord(
+          result.parity_surface.typed_semantic_handoff_record);
   const bool parity_mapping_summaries_ready =
       result.parity_surface.deterministic_atomic_memory_order_mapping &&
       result.parity_surface.deterministic_vector_type_lowering &&

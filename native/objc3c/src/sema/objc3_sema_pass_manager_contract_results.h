@@ -41,6 +41,8 @@
   bool deterministic_pass_manager_publication_record = false;
   Objc3SemaTypeMetadataPublicationRecord type_metadata_publication_record;
   bool deterministic_type_metadata_publication_record = false;
+  Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
+  bool deterministic_typed_semantic_handoff_record = false;
   Objc3SemaParityValidationRecord parity_validation_record;
   bool deterministic_parity_validation_record = false;
   Objc3SemaCloseoutSignoffRecord closeout_signoff_record;
