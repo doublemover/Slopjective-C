@@ -11,7 +11,7 @@ Post-payload refresh commits are indexed in
 `docs/issues/hard_cutover_8132_8150_closeout/payload_index.json`. The refresh
 set folds in parser expression/statement node owners, lower control-flow
 contracts, runtime class graph rebuild ownership, public API ownership contract
-clarifications, and JSON schema support owners without changing the no-validation
+clarifications, and JSON schema owner splits without changing the no-validation
 or no-GitHub status of these payloads.
 
 The latest docs/issues-only refresh is
@@ -23,8 +23,13 @@ remote-deferred status of these payloads.
 The current branch evidence policy is stricter than the historic local wording:
 closeout payloads may point only to committed hard-cutover branch surfaces, and
 implementation commit lists are local source evidence only. The current covered
-source head is `bdee53836` (`HC extract final readiness advanced keys`).
-Prior covered source heads were `605f0da0e` (`HC split retired surface matrix owners`),
+source head is `2a2d9759a` (`HC extract final readiness core keys`).
+Prior covered source heads were `e44d837ad` (`HC split parser behavior owner metadata`),
+`7f3a8c968` (`refactor(ir): extract protocol category metadata emission`),
+`8313028a7` (`HC extract frontend artifact runtime metadata plan`),
+`6ced5fcd0` (`HC split phase owner contract provenance`),
+`bdee53836` (`HC extract final readiness advanced keys`),
+`605f0da0e` (`HC split retired surface matrix owners`),
 `8a07c3be5` (`HC extract frontend artifact function manifest builder`),
 `ce773db3b` (`refactor(ir): extract runtime object metadata emission`),
 `0a08675a4` (`HC extract frontend artifact metadata mode gate`),
@@ -118,6 +123,13 @@ work forward to the current head. `tmp/` reports, generated summaries, and
 remote issue state are not closeout evidence here unless the relevant owner
 surface is checked in and the deferred validation or tracker operation actually
 ran.
+
+The local longest-file scan identified `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`,
+`native/objc3c/src/ir/objc3_ir_emitter.cpp`, and
+`native/objc3c/src/sema/objc3_sema_pass_manager_contract_flow.cpp` as the top
+monoliths. That scan is planning evidence only. Artifact, sema, IR, pipeline,
+and test slices named in these payloads are committed local evidence only, not
+validation, push, GitHub issue edits, or remote closure.
 
 The same local refresh document now also folds in the follow-up committed owner
 wave after `f66452822` through `f4bf6228e`. That follow-up covers JSON value
@@ -305,6 +317,11 @@ commits that landed after the first docs commit.
 | `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `8a07c3be5` | Frontend artifact function manifest builder ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
 | `#8133`, `#8134`, `#8144`, `#8145`, `#8150` | `605f0da0e` | Retired surface matrix owner splits refresh local strict-error/parser-rejection/fixture/capability evidence without asserting validation. |
 | `#8138`, `#8145`, `#8147`, `#8150` | `bdee53836` | Final readiness advanced key ownership refreshes local pipeline/capability/deep handoff evidence. |
+| `#8144`, `#8145`, `#8147`, `#8150` | `6ced5fcd0` | Phase owner contract provenance splits refresh local test/fixture/provenance/deep handoff evidence without asserting validation. |
+| `#8138`, `#8140`, `#8147`, `#8148`, `#8150` | `8313028a7` | Frontend artifact runtime metadata plan ownership refreshes local artifact/frontend/schema/deep handoff evidence. |
+| `#8137`, `#8143`, `#8147`, `#8150` | `7f3a8c968` | IR protocol category metadata emission ownership refreshes local IR/runtime metadata/deep handoff evidence. |
+| `#8134`, `#8144`, `#8145`, `#8150` | `e44d837ad` | Parser behavior owner metadata splits refresh local parser/fixture/rejection provenance/capability evidence without asserting validation. |
+| `#8138`, `#8145`, `#8147`, `#8150` | `2a2d9759a` | Final readiness core key ownership refreshes local pipeline/capability/deep handoff evidence. |
 | `#8133`, `#8134`, `#8135`, `#8143`, `#8146`, `#8147`, `#8150` | `cf7699123`, `89fcd99a7`, `4f5351c17` | Parser finalizer, semantic evaluator, and runtime dispatch entrypoint owners refresh parser, sema, runtime dispatch, and runtime acceptance evidence. |
 | `#8141`, `#8142`, `#8144`, `#8145`, `#8148`, `#8149`, `#8150` | `605b79d28`, `b8b9d8bf6`, `51cdb4db5`, `0d759203a` | Workflow metadata, acceptance, release-readiness schema, and docs support-truth owners refresh command, schema, capability, and closeout evidence without asserting validation or remote tracker action. |
 | `#8144`, `#8150` | `8eb0db7a6` | Stress fixture behavior owner splits refresh local fixture-ownership evidence without asserting a test run. |
@@ -612,14 +629,14 @@ are retired from public claims.
 ## #8150
 
 Local closeout evidence is branch-committed and indexed through source commit
-`bdee53836`.
+`2a2d9759a`.
 That local-only evidence includes the follow-up committed owner wave through
 `f4bf6228e`, the post-`f4bf6228e` owner wave through `89959f6cc`, the
 post-`89959f6cc` owner wave through `e760e3450`, the post-`e760e3450` owner
 wave through `0350f4a4a`, the post-`0350f4a4a` owner wave through `0d2111b18`,
 the post-`0d2111b18` owner wave through `2fb0664e0`, the post-`2fb0664e0`
 owner wave through `6efdaf8f9`, the committed branch owner wave through
-`98d10a61c`, and the latest local implementation slices through `bdee53836`.
+`98d10a61c`, and the latest local implementation slices through `2a2d9759a`.
 This is not validation, pushed-state evidence, GitHub issue editing, or remote
 closure.
 

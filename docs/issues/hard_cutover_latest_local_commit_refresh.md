@@ -4,7 +4,7 @@ This docs/issues-only refresh folds in the local owner-split wave after the last
 docs/issues outcome index commit, `abc203478`, through local commit
 `6d6fa804d`. A follow-up local evidence pass now also folds in committed owner
 work after `f66452822` through local commit `f4bf6228e`, with later local-only
-refreshes through source commit `bdee53836`. It does not assert validation, remote issue
+refreshes through source commit `2a2d9759a`. It does not assert validation, remote issue
 edits, GitHub status, push state, or remote closure.
 
 No scripts, tests, builds, lints, formatters, generators, npm, CMake, GitHub, or
@@ -371,8 +371,14 @@ issue edits. It groups that owner evidence as follows:
   `5ae39dfa8`, `b48450e96`, `0114f53ef`, `b5a547493`, `466f8ddcd`
 
 This post-`4fddfacb7` docs-only refresh folds the committed branch head forward
-to source commit `bdee53836` without running validation, GitHub commands, push, or remote
+to source commit `2a2d9759a` without running validation, GitHub commands, push, or remote
 issue edits. It groups the latest owner evidence as follows:
+
+The local longest-file scan identified `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`,
+`native/objc3c/src/ir/objc3_ir_emitter.cpp`, and
+`native/objc3c/src/sema/objc3_sema_pass_manager_contract_flow.cpp` as the top
+monoliths. That scan is planning evidence only; the artifact, sema, IR,
+pipeline, and test slices below are committed local evidence only.
 
 - lowering, IR, interop, ownership, and block contract owners: `1b588a61c`,
   `3a20d7886`, `ac55f3ae0`, `82a293066`, `b3361c3d4`, `97df6515a`,
@@ -459,6 +465,11 @@ issue edits. It groups the latest owner evidence as follows:
 - frontend artifact function manifest builder: `8a07c3be5`
 - retired surface matrix owners: `605f0da0e`
 - final readiness advanced keys: `bdee53836`
+- phase owner contract provenance: `6ced5fcd0`
+- frontend artifact runtime metadata plan: `8313028a7`
+- IR protocol category metadata emission owners: `7f3a8c968`
+- parser behavior owner metadata: `e44d837ad`
+- final readiness core keys: `2a2d9759a`
 - parser, sema, and runtime dispatch owner splits: `cf7699123`, `89fcd99a7`,
   `4f5351c17`
 - workflow, release-readiness schema, acceptance, and docs truth owners:
