@@ -36,20 +36,6 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   blocks/block_runtime_records.h
   blocks/block_runtime_state.cpp
   blocks/block_runtime_state.h
-  classes/category_attachment.cpp
-  classes/category_attachment.h
-  classes/class_metadata_tables.cpp
-  classes/class_metadata_tables.h
-  classes/class_graph.cpp
-  classes/class_graph.h
-  classes/class_graph_snapshots.cpp
-  classes/metaclass_graph.cpp
-  classes/metaclass_graph.h
-  classes/protocol_conformance.cpp
-  classes/protocol_conformance.h
-  classes/protocol_conformance_snapshots.cpp
-  classes/receiver_identity.cpp
-  classes/receiver_identity.h
   concurrency/actor.cpp
   concurrency/actor.h
   concurrency/actor_guard_operations.cpp
@@ -207,20 +193,6 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   public/objc3_runtime_result_contract.h
   public/objc3_runtime_result_diagnostics.cpp
   public/objc3_runtime_selector.h
-  reflection/property_entry_descriptor_snapshot_fields.cpp
-  reflection/property_entry_descriptor_snapshot_fields.h
-  reflection/property_entry_layout_snapshot_fields.cpp
-  reflection/property_entry_layout_snapshot_fields.h
-  reflection/property_entry_query.cpp
-  reflection/property_entry_query.h
-  reflection/property_entry_snapshot_fields.cpp
-  reflection/property_entry_snapshot_fields.h
-  reflection/property_reflection_query_state.cpp
-  reflection/property_reflection_query_state.h
-  reflection/property_registry_snapshot_fields.cpp
-  reflection/property_registry_snapshot_fields.h
-  reflection/property_snapshot_api.cpp
-  reflection/storage_accessor_snapshot.cpp
   selectors/keypath_table.cpp
   selectors/keypath_table.h
   selectors/selector_lookup.cpp
@@ -233,12 +205,6 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   selectors/selector_spelling.h
   selectors/selector_table.cpp
   selectors/selector_table.h
-  storage/current_property_binding.cpp
-  storage/current_property_binding_resolution.cpp
-  storage/current_property_binding_resolution.h
-  storage/current_property_context.h
-  storage/current_property_value.cpp
-  storage/current_property_weak.cpp
   state/runtime_reset.cpp
   state/runtime_reset.h
   state/runtime_bootstrap_replay.cpp
@@ -264,41 +230,10 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   state/runtime_thread_local_reset.h
   strings/borrowed_string.cpp
   strings/borrowed_string.h
-  storage/instance_storage.cpp
-  storage/instance_storage.h
-  storage/ivar_storage_span.cpp
-  storage/ivar_storage_span.h
-  storage/ivar_layout.cpp
-  storage/ivar_layout.h
-  storage/property_accessor_dispatch_record.cpp
-  storage/property_accessor_dispatch_record.h
-  storage/property_accessor_profiles.cpp
-  storage/property_accessor_profiles.h
-  storage/property_accessor_records.cpp
-  storage/property_accessor_records.h
-  storage/property_accessor_resolution.cpp
-  storage/property_accessor_resolution.h
-  storage/property_accessors.cpp
-  storage/property_accessors.h
-  storage/property_ivar_layout_index.cpp
-  storage/property_ivar_layout_index.h
-  storage/property_layout_realization.cpp
-  storage/property_layout_realization.h
-  storage/property_layout_rules.cpp
-  storage/property_layout_rules.h
-  storage/property_lookup.cpp
-  storage/property_lookup.h
-  storage/property_value_storage.cpp
-  storage/property_value_storage.h
-  storage/runtime_instance_records.h
-  storage/weak_slot_ref_match.cpp
-  storage/weak_slot_ref_match.h
-  storage/weak_slot_registry.cpp
-  storage/weak_slot_target.cpp
-  storage/weak_slot_target.h
-  storage/weak_slot_zeroing.cpp
-  storage/weak_slots.h
 )
+add_subdirectory(classes)
+add_subdirectory(reflection)
+add_subdirectory(storage)
 objc3c_apply_build_defaults(${OBJC3_RUNTIME_LIBRARY_TARGET})
 target_link_libraries(${OBJC3_RUNTIME_LIBRARY_TARGET} PUBLIC
   objc3c_runtime_metadata
