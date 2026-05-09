@@ -1,12 +1,6 @@
 #pragma once
 
-#include <string_view>
-
-namespace objc3c::support {
-
-bool IsConcurrencyTaskGroupScopeSymbol(std::string_view symbol);
-bool IsConcurrencyTaskGroupAddTaskSymbol(std::string_view symbol);
-bool IsConcurrencyTaskGroupWaitNextSymbol(std::string_view symbol);
-bool IsConcurrencyTaskGroupCancelAllSymbol(std::string_view symbol);
-
-}  // namespace objc3c::support
+#include "support/objc3_concurrency_task_group_add_task_symbols.h"
+#include "support/objc3_concurrency_task_group_cancel_symbols.h"
+#include "support/objc3_concurrency_task_group_scope_symbols.h"
+#include "support/objc3_concurrency_task_group_wait_symbols.h"
