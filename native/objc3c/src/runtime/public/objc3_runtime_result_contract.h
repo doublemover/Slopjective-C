@@ -1,6 +1,5 @@
 #pragma once
 
-#include "runtime/public/objc3_runtime_result.h"
 #include "runtime/public/objc3_runtime_result_code_contract.h"
 #include "runtime/public/objc3_runtime_result_materialization_contract.h"
 #include "runtime/public/objc3_runtime_result_message_contract.h"
@@ -10,8 +9,8 @@ namespace objc3c::runtime {
 
 /*
  * Aggregate contract header for internal runtime public-ABI result helpers.
- * These helpers are not exported C entrypoints; objc3_runtime_result.h remains
- * the C layout owner.
+ * These helpers are not exported C entrypoints; focused public headers own the
+ * C status/result layout.
  *
  * Header ownership:
  * - objc3_runtime_result_code_contract.h owns diagnostic code access.

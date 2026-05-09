@@ -239,7 +239,7 @@
     {
       "capability_id": "runtime.public-c-api.strict-result",
       "evidence_kind": "source",
-      "path": "native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp"
+      "path": "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h"
     },
     {
       "capability_id": "runtime.public-c-api.strict-result",

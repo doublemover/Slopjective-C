@@ -1,7 +1,8 @@
 #pragma once
 
+#include "runtime/public/objc3_runtime_dispatch_result.h"
 #include "runtime/public/objc3_runtime_registration.h"
-#include "runtime/public/objc3_runtime_result.h"
+#include "runtime/public/objc3_runtime_registration_status.h"
 #include "runtime/public/objc3_runtime_selector.h"
 
 #ifdef __cplusplus
@@ -14,7 +15,8 @@ extern "C" {
  * Header ownership:
  * - objc3_runtime_api.h owns callable runtime entrypoints and caller-visible
  *   snapshot structs.
- * - objc3_runtime_result.h owns status/result payload layout.
+ * - objc3_runtime_registration_status.h owns registration status codes.
+ * - objc3_runtime_dispatch_result.h owns checked i32 dispatch payloads.
  * - runtime implementation directories own storage, dispatch, selector, image,
  *   class, and reset behavior behind this ABI.
  *

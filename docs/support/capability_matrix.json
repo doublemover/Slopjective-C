@@ -414,7 +414,7 @@
       "owner_modules": [
         "native/objc3c/src/runtime/public/objc3_runtime_api.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result.h",
-        "native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp",
+        "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h",
         "native/objc3c/src/runtime/public/objc3_runtime_result_contract.cpp",
         "native/objc3c/src/runtime/images/registration.cpp",
         "native/objc3c/src/runtime/dispatch/typed_dispatch_result.cpp"
@@ -430,7 +430,7 @@
         },
         {
           "kind": "source",
-          "path": "native/objc3c/src/runtime/public/objc3_runtime_result_builder.cpp"
+          "path": "native/objc3c/src/runtime/public/objc3_runtime_result_materialization_contract.h"
         },
         {
           "kind": "source",

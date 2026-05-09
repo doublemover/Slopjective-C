@@ -1,6 +1,6 @@
 #pragma once
 
-#include "runtime/public/objc3_runtime_result.h"
+#include "runtime/public/objc3_runtime_dispatch_status.h"
 
 namespace objc3c::runtime {
 
