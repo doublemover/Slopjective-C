@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 
+#include "artifacts/json/artifact_record_array_json.h"
 #include "io/json/json_writer.h"
 #include "support/objc3_value_type_names.h"
 
@@ -13,19 +14,6 @@ namespace {
 
 using objc3::io::json::JsonObjectWriter;
 using objc3::io::json::JsonArrayWriter;
-
-template <typename RecordT, typename WriteRecordFn>
-std::string RenderRecordArray(const std::vector<RecordT> &records,
-                              WriteRecordFn write_record) {
-  std::ostringstream out;
-  JsonArrayWriter array(out);
-  for (const auto &record : records) {
-    array.BeginElement();
-    write_record(out, record);
-  }
-  array.End();
-  return out.str();
-}
 
 void WriteCanonicalType(std::ostream &out,
                         const Objc3SemanticCanonicalType &type);
@@ -38,7 +26,7 @@ std::string RenderCanonicalType(const Objc3SemanticCanonicalType &type) {
 
 std::string RenderCanonicalTypeArray(
     const std::vector<Objc3SemanticCanonicalType> &types) {
-  return RenderRecordArray(types, WriteCanonicalType);
+  return RenderArtifactRecordArray(types, WriteCanonicalType);
 }
 
 void WriteCanonicalType(std::ostream &out,
@@ -103,11 +91,12 @@ void WriteInterfaceTypeMetadata(
   object.StringArrayField("adopted_protocols_lexicographic",
                           metadata.adopted_protocols_lexicographic);
   object.RawJsonField("properties",
-                      RenderRecordArray(metadata.properties_lexicographic,
-                                        WritePropertyTypeMetadata));
+                      RenderArtifactRecordArray(
+                          metadata.properties_lexicographic,
+                          WritePropertyTypeMetadata));
   object.RawJsonField("methods",
-                      RenderRecordArray(metadata.methods_lexicographic,
-                                        WriteMethodTypeMetadata));
+                      RenderArtifactRecordArray(metadata.methods_lexicographic,
+                                                WriteMethodTypeMetadata));
   object.End();
 }
 
@@ -117,11 +106,12 @@ void WriteImplementationTypeMetadata(
   JsonObjectWriter object(out);
   object.StringField("name", metadata.name);
   object.RawJsonField("properties",
-                      RenderRecordArray(metadata.properties_lexicographic,
-                                        WritePropertyTypeMetadata));
+                      RenderArtifactRecordArray(
+                          metadata.properties_lexicographic,
+                          WritePropertyTypeMetadata));
   object.RawJsonField("methods",
-                      RenderRecordArray(metadata.methods_lexicographic,
-                                        WriteMethodTypeMetadata));
+                      RenderArtifactRecordArray(metadata.methods_lexicographic,
+                                                WriteMethodTypeMetadata));
   object.End();
 }
 
@@ -131,14 +121,16 @@ void WriteSemanticTypeMetadataHandoffManifestObject(
     std::ostream &out, const Objc3SemanticTypeMetadataHandoff &handoff) {
   JsonObjectWriter object(out);
   object.RawJsonField("functions",
-                      RenderRecordArray(handoff.functions_lexicographic,
-                                        WriteFunctionTypeMetadata));
+                      RenderArtifactRecordArray(handoff.functions_lexicographic,
+                                                WriteFunctionTypeMetadata));
   object.RawJsonField("interfaces",
-                      RenderRecordArray(handoff.interfaces_lexicographic,
-                                        WriteInterfaceTypeMetadata));
+                      RenderArtifactRecordArray(
+                          handoff.interfaces_lexicographic,
+                          WriteInterfaceTypeMetadata));
   object.RawJsonField("implementations",
-                      RenderRecordArray(handoff.implementations_lexicographic,
-                                        WriteImplementationTypeMetadata));
+                      RenderArtifactRecordArray(
+                          handoff.implementations_lexicographic,
+                          WriteImplementationTypeMetadata));
   object.End();
 }
 

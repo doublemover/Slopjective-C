@@ -3,6 +3,7 @@
 #include <ostream>
 #include <sstream>
 
+#include "artifacts/json/artifact_record_array_json.h"
 #include "io/json/json_writer.h"
 
 namespace objc3::artifacts::json {
@@ -10,19 +11,6 @@ namespace {
 
 using objc3::io::json::JsonObjectWriter;
 using objc3::io::json::JsonArrayWriter;
-
-template <typename RecordT, typename WriteRecordFn>
-std::string RenderRecordArray(const std::vector<RecordT> &records,
-                              WriteRecordFn write_record) {
-  std::ostringstream out;
-  JsonArrayWriter array(out);
-  for (const auto &record : records) {
-    array.BeginElement();
-    write_record(out, record);
-  }
-  array.End();
-  return out.str();
-}
 
 template <typename Predicate>
 std::string RenderFilteredClassRecordArray(
@@ -246,12 +234,14 @@ void WriteRuntimeMetadataImplementationManifestArray(
 
 void WriteRuntimeMetadataProtocolManifestArray(
     std::ostream &out, const Objc3RuntimeMetadataSourceRecordSet &records) {
-  out << RenderRecordArray(records.protocols_lexicographic, WriteProtocolRecord);
+  out << RenderArtifactRecordArray(records.protocols_lexicographic,
+                                   WriteProtocolRecord);
 }
 
 void WriteRuntimeMetadataCategoryManifestArray(
     std::ostream &out, const Objc3RuntimeMetadataSourceRecordSet &records) {
-  out << RenderRecordArray(records.categories_lexicographic, WriteCategoryRecord);
+  out << RenderArtifactRecordArray(records.categories_lexicographic,
+                                   WriteCategoryRecord);
 }
 
 void WriteRuntimeMetadataSourceRecordSetManifestObject(
@@ -260,12 +250,14 @@ void WriteRuntimeMetadataSourceRecordSetManifestObject(
   object.BoolField("deterministic", records.deterministic);
   object.RawJsonField(
       "properties",
-      RenderRecordArray(records.properties_lexicographic, WritePropertyRecord));
-  object.RawJsonField("methods", RenderRecordArray(records.methods_lexicographic,
-                                                   WriteMethodRecord));
+      RenderArtifactRecordArray(records.properties_lexicographic,
+                                WritePropertyRecord));
+  object.RawJsonField("methods",
+                      RenderArtifactRecordArray(records.methods_lexicographic,
+                                                WriteMethodRecord));
   object.RawJsonField("ivars",
-                      RenderRecordArray(records.ivars_lexicographic,
-                                        WriteIvarRecord));
+                      RenderArtifactRecordArray(records.ivars_lexicographic,
+                                                WriteIvarRecord));
   object.End();
 }
 
