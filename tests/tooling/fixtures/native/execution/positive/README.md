@@ -13,6 +13,12 @@ Each positive execution fixture is a pair of files sharing a basename:
 
 The expected exit code must be deterministic.
 
+Execution-positive fixtures are e2e-owned success contracts. A filename that
+mentions a parser, semantic, lowering, or runtime concept is phase provenance
+for the corresponding canonical owner, but the positive claim remains a
+deterministic compile-link-run claim. It must not be cited as shim, fallback,
+compatibility, migration, or alternate runtime acceptance support.
+
 Optional meta sidecar schema:
 
 - `fixture`: must match `<name>.objc3`.

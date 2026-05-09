@@ -9,6 +9,15 @@
     "canonical_behavior_manifest": "tests/fixtures/canonical/manifest.json",
     "legacy_positive_residue_policy": "compatibility-looking positives are deleted or converted to tests/native rejection and strict-error fixtures",
     "runtime_dispatch_symbol_rule": "runtime_dispatch_symbol is only present when execution.requires_live_runtime_dispatch is true",
+    "large_surface_split_rule": "large or legacy-looking fixture directories must be split by behavior owner before a fixture path can be cited as positive coverage",
+    "behavior_owner_labels": [
+      "parser",
+      "sema",
+      "lowering",
+      "runtime",
+      "e2e",
+      "canonical_rejection"
+    ],
     "forbidden_positive_name_tokens": [
       "legacy",
       "old_mode",
@@ -98,6 +107,181 @@
       ],
       "metadata": "fixture data for command/library parity and comparison baselines",
       "hard_cutover_rule": "baseline comparison is provenance-only evidence, not interoperability, drop-in compatibility, fallback acceptance, or an alternate success path"
+    }
+  ],
+  "owner_splits": [
+    {
+      "surface": "tests/tooling/fixtures/native/recovery/positive",
+      "surface_kind": "large mixed recovery-positive fixture tree",
+      "split_rule": "Accepted recovery fixtures are provenance for the phase that owns the behavior they exercise; this directory is not a generic positive support bucket.",
+      "owners": [
+        {
+          "owner": "parser",
+          "selectors": [
+            "function_return_annotation_*.objc3",
+            "message_send_keywords.objc3"
+          ],
+          "disposition": "canonical syntax and selector-shape acceptance only"
+        },
+        {
+          "owner": "sema",
+          "selectors": [
+            "typed_*.objc3",
+            "*bool*_*.objc3",
+            "return_paths_ok.objc3"
+          ],
+          "disposition": "canonical type, bool-flow, and return-path semantics only"
+        },
+        {
+          "owner": "lowering",
+          "selectors": [
+            "message_send_*_elision.objc3",
+            "message_send_*_short_circuit.objc3",
+            "main_bool_entrypoint.objc3"
+          ],
+          "disposition": "canonical lowering or ABI handoff evidence only; no runtime fallback acceptance"
+        },
+        {
+          "owner": "runtime",
+          "selectors": [
+            "message_send_numeric_zero_receiver_non_elided.objc3",
+            "message_send_keyword_bool_control_flow_mix.objc3"
+          ],
+          "disposition": "runtime-dispatch requirement evidence only when live dispatch remains canonical"
+        }
+      ]
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/positive",
+      "surface_kind": "large execution-positive fixture tree",
+      "split_rule": "Executable positives are owned by e2e; phase-specific names inside this tree are witnesses for canonical behavior, not alternate phase support lanes.",
+      "owners": [
+        {
+          "owner": "e2e",
+          "selectors": [
+            "*.objc3",
+            "*.exitcode.txt",
+            "*.meta.json"
+          ],
+          "disposition": "deterministic compile-link-run success through canonical Objective-C 3.0 behavior only"
+        },
+        {
+          "owner": "lowering",
+          "selectors": [
+            "message_send_*_elision.objc3",
+            "message_send_*_short_circuit.objc3",
+            "unary_plus_*.objc3"
+          ],
+          "disposition": "phase provenance for lowering contracts; the positive claim remains e2e-owned"
+        },
+        {
+          "owner": "runtime",
+          "selectors": [
+            "*runtime_dispatch*.meta.json"
+          ],
+          "disposition": "live dispatch positives must name objc3_runtime_dispatch_i32 and require live runtime dispatch"
+        }
+      ]
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/execution/negative",
+      "surface_kind": "large execution-negative fixture tree",
+      "split_rule": "Negative execution fixtures are split by first failing owner and retired-surface disposition, not by path convenience.",
+      "owners": [
+        {
+          "owner": "parser",
+          "selectors": [
+            "expect_failure.stage=compile + O3P*"
+          ],
+          "disposition": "syntax and grammar rejection metadata"
+        },
+        {
+          "owner": "sema",
+          "selectors": [
+            "expect_failure.stage=compile + O3S*"
+          ],
+          "disposition": "typed semantic, unsupported-feature, and conservative analysis rejection metadata"
+        },
+        {
+          "owner": "lowering",
+          "selectors": [
+            "expect_failure.stage=link + link.unresolved_symbol:*"
+          ],
+          "disposition": "strict link-error evidence for required runtime symbols; not a fallback path"
+        },
+        {
+          "owner": "runtime",
+          "selectors": [
+            "expect_failure.stage=run + O3RT*",
+            "execution.requires_live_runtime_dispatch=true"
+          ],
+          "disposition": "strict runtime-status and dispatch-error evidence"
+        },
+        {
+          "owner": "canonical_rejection",
+          "selectors": [
+            "legacy_*",
+            "removed_*",
+            "unsupported_feature_claim_*",
+            "*compatibility*",
+            "*fallback*"
+          ],
+          "disposition": "retired or unsupported surfaces are non-positive canonical rejection or strict-error contracts"
+        }
+      ]
+    },
+    {
+      "surface": "tests/tooling/fixtures/native/*.objc3",
+      "surface_kind": "legacy root-level mixed fixture surface",
+      "split_rule": "Root-level fixture names that look positive are provenance only until a canonical manifest entry assigns parser, sema, lowering, runtime, e2e, or canonical-rejection ownership.",
+      "owners": [
+        {
+          "owner": "sema",
+          "selectors": [
+            "type_*",
+            "*semantic*",
+            "*source_closure_positive.objc3"
+          ],
+          "disposition": "source and semantic model evidence only"
+        },
+        {
+          "owner": "lowering",
+          "selectors": [
+            "*lowering_positive.objc3",
+            "*ir_*",
+            "*artifact_positive.objc3"
+          ],
+          "disposition": "lowering, IR, or artifact-shape evidence only"
+        },
+        {
+          "owner": "runtime",
+          "selectors": [
+            "*runtime*_positive.objc3",
+            "*library.objc3",
+            "*contract_positive.objc3"
+          ],
+          "disposition": "runtime-backed behavior evidence only after canonical runtime ownership is indexed"
+        },
+        {
+          "owner": "e2e",
+          "selectors": [
+            "canonical_runnable_sample_set.objc3",
+            "release_candidate_*",
+            "*packaging_*"
+          ],
+          "disposition": "end-to-end release or packaging witnesses only"
+        },
+        {
+          "owner": "canonical_rejection",
+          "selectors": [
+            "*_rejected.objc3",
+            "*_negative.objc3",
+            "*compatibility_negative.objc3",
+            "*fail_closed*.objc3"
+          ],
+          "disposition": "canonical rejection or strict-error evidence; never legacy-positive support"
+        }
+      ]
     }
   ]
 }

@@ -26,4 +26,25 @@ diagnostic expectations.
   interoperability, drop-in compatibility, fallback acceptance, or alternate
   success paths.
 
+## Owner Split Boundaries
+
+Large fixture surfaces are split by behavior owner before they can be cited as
+coverage:
+
+- parser owns canonical syntax acceptance and grammar rejections.
+- sema owns typed diagnostics, unsupported-feature runnable-claim rejections,
+  and conservative semantic analysis boundaries.
+- lowering owns canonical lowering, ABI handoff, IR-shape, and strict link
+  errors for required runtime symbols.
+- runtime owns live dispatch/status failures and runtime-backed behavior.
+- e2e owns deterministic compile-link-run positives.
+- canonical_rejection owns legacy-looking, fallback-looking, shim-looking,
+  unsupported, or compatibility-looking surfaces that must remain non-positive.
+
+The `recovery/positive`, `execution/positive`, `execution/negative`, and
+root-level `*.objc3` surfaces are intentionally mixed. Their owners are listed
+in `fixture_family_catalog.json` so a positive-looking basename cannot create a
+support claim outside the parser/sema/lowering/runtime/e2e or
+canonical-rejection boundary.
+
 Use `fixture_family_catalog.json` for machine-readable boundary ownership.

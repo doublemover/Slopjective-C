@@ -20,6 +20,14 @@ issue-closeout indexes may point at those families, but they do not create a new
 support lane and must not relabel rejection or strict-error evidence as a
 fallback, shim, compatibility, or migration success path.
 
+Mixed fixture surfaces must use the explicit owner split recorded in
+`tests/tooling/fixtures/native/fixture_family_catalog.json`. Parser, sema,
+lowering, runtime, and e2e owners are the only positive behavior owners.
+Legacy-looking, fallback-looking, shim-looking, unsupported, or
+compatibility-looking surfaces are owned by canonical rejection unless their
+canonical manifest entry proves otherwise with no retired-surface tag and no
+diagnostic code.
+
 The issue-closeout indexes for `#8132`-`#8150` intentionally reference the
 canonical fixture tree rather than generated artifacts when documenting
 behavior support. Retired-source lanes and retired adapter surfaces are either

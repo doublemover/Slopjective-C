@@ -10,6 +10,18 @@ unsupported, or compatibility-looking basename does not imply a preserved
 compatibility path; the sidecar must describe the canonical compile, link, or
 run failure.
 
+Owner boundaries are behavior-first:
+
+- parser-owned cases fail at compile stage with `O3P*` diagnostics.
+- sema-owned cases fail at compile stage with `O3S*` diagnostics.
+- lowering-owned cases fail at link stage when canonical lowering requires a
+  runtime symbol that is intentionally unresolved in the fixture.
+- runtime-owned cases fail at run stage with strict `O3RT*` dispatch/status
+  diagnostics.
+- canonical-rejection cases cover retired modes, unsupported runnable claims,
+  compatibility-looking names, shim-looking names, and fallback-looking names.
+  They must stay non-positive even when the source file parses.
+
 ## Sidecar schema (`<name>.meta.json`)
 
 ```json

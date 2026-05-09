@@ -19,6 +19,11 @@ parser owns syntax rejections, semantic owns typed diagnostics, lowering ABI and
 IR own strict lowering/link failures, runtime owns dispatch/status failures, and
 e2e owns execution-boundary confirmation. No canonical entry should describe a
 retired surface as fallback, shim, compatibility, or migration support.
+Mixed fixture directories in `tests/tooling/fixtures/native` are split by the
+same owner phases before they can be cited as canonical coverage. Legacy-looking
+positive residues are canonical-rejection candidates first; they become positive
+behavior only when this manifest gives them a parser, sema, lowering, runtime,
+or e2e owner with an empty diagnostic code and no retired-surface tag.
 `tests/conformance/hard_cutover_retired_surface_fixture_contracts.json` is the
 fixture-contract index for those retired surfaces: it names the owning behavior
 outcome, diagnostic owner, sidecar file, and non-positive disposition for each

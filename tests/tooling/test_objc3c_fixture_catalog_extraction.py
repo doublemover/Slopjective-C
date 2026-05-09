@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[2]
 NATIVE_CATALOG = (
     ROOT / "tests" / "tooling" / "fixtures" / "native" / "fixture_family_catalog.json"
 )
+CANONICAL_MANIFEST = ROOT / "tests" / "fixtures" / "canonical" / "manifest.json"
 PARSER_CORPUS = ROOT / "tests" / "tooling" / "fixtures" / "parser_conformance_corpus"
 PARSER_MANIFEST = PARSER_CORPUS / "manifest.json"
 NEGATIVE_EXECUTION = (
@@ -15,6 +16,28 @@ NEGATIVE_EXECUTION = (
 POSITIVE_EXECUTION = (
     ROOT / "tests" / "tooling" / "fixtures" / "native" / "execution" / "positive"
 )
+EXPECTED_OWNER_LABELS = {
+    "parser",
+    "sema",
+    "lowering",
+    "runtime",
+    "e2e",
+    "canonical_rejection",
+}
+EXPECTED_CANONICAL_POSITIVE_OWNER_PHASES = {
+    "parser",
+    "sema",
+    "lowering",
+    "ir",
+    "runtime",
+    "e2e",
+}
+EXPECTED_OWNER_SPLIT_SURFACES = {
+    "tests/tooling/fixtures/native/recovery/positive",
+    "tests/tooling/fixtures/native/execution/positive",
+    "tests/tooling/fixtures/native/execution/negative",
+    "tests/tooling/fixtures/native/*.objc3",
+}
 
 
 def _read_json(path: Path) -> dict:
@@ -38,6 +61,76 @@ def test_native_fixture_catalog_tracks_behavior_first_boundaries() -> None:
     ]
     assert "O3S221" in unsupported_claims["hard_cutover_rule"]
     assert "fallback execution paths" in unsupported_claims["hard_cutover_rule"]
+
+
+def test_large_fixture_surfaces_are_split_by_behavior_owner() -> None:
+    catalog = _read_json(NATIVE_CATALOG)
+    owner_labels = set(catalog["policy"]["behavior_owner_labels"])
+    assert owner_labels == EXPECTED_OWNER_LABELS
+    assert "large or legacy-looking fixture directories" in catalog["policy"][
+        "large_surface_split_rule"
+    ]
+
+    owner_splits = {split["surface"]: split for split in catalog["owner_splits"]}
+    assert EXPECTED_OWNER_SPLIT_SURFACES <= set(owner_splits)
+
+    observed_owners = set()
+    for split in owner_splits.values():
+        assert split["surface_kind"]
+        assert split["split_rule"]
+        assert split["owners"]
+        for owner_split in split["owners"]:
+            assert owner_split["owner"] in owner_labels
+            assert owner_split["selectors"]
+            assert owner_split["disposition"]
+            observed_owners.add(owner_split["owner"])
+
+    assert EXPECTED_OWNER_LABELS <= observed_owners
+
+
+def test_legacy_positive_residue_is_owned_by_canonical_rejection() -> None:
+    catalog = _read_json(NATIVE_CATALOG)
+    owner_splits = {split["surface"]: split for split in catalog["owner_splits"]}
+    negative_surface = owner_splits["tests/tooling/fixtures/native/execution/negative"]
+    root_surface = owner_splits["tests/tooling/fixtures/native/*.objc3"]
+
+    canonical_rejection_splits = [
+        owner_split
+        for surface in (negative_surface, root_surface)
+        for owner_split in surface["owners"]
+        if owner_split["owner"] == "canonical_rejection"
+    ]
+    assert len(canonical_rejection_splits) == 2
+
+    serialized = json.dumps(canonical_rejection_splits, sort_keys=True)
+    assert "unsupported_feature_claim_*" in serialized
+    assert "*compatibility_negative.objc3" in serialized
+    assert "non-positive canonical rejection or strict-error contracts" in serialized
+    assert "legacy-positive support" in serialized
+
+
+def test_canonical_manifest_keeps_retired_surfaces_non_positive() -> None:
+    manifest = _read_json(CANONICAL_MANIFEST)
+    boundary = manifest["boundary"]
+    assert set(boundary["positive_owner_phases"]) == (
+        EXPECTED_CANONICAL_POSITIVE_OWNER_PHASES
+    )
+    assert boundary["canonical_rejection_owner"] == "canonical_rejection"
+    assert "canonical rejection candidates" in boundary[
+        "legacy_positive_residue_disposition"
+    ]
+
+    retired_surface_entries = []
+    for fixture in manifest["fixtures"]:
+        if fixture["fixture_kind"] == "positive":
+            assert fixture["expected_diagnostic_code"] == ""
+            assert "retired_surface_tags" not in fixture
+        if fixture.get("retired_surface_tags"):
+            retired_surface_entries.append(fixture)
+            assert fixture["fixture_kind"] != "positive"
+            assert fixture["expected_diagnostic_code"]
+
+    assert retired_surface_entries
 
 
 def test_compatibility_named_sources_are_not_positive_contracts() -> None:
