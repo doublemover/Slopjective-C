@@ -128,6 +128,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_interop_semantic_artifacts.h
   objc3_frontend_metaprogramming_semantic_artifacts.cpp
   objc3_frontend_metaprogramming_semantic_artifacts.h
+  objc3_frontend_module_semantic_artifacts.cpp
+  objc3_frontend_module_semantic_artifacts.h
   objc3_frontend_parser_diagnostic_artifacts.cpp
   objc3_frontend_parser_diagnostic_artifacts.h
   objc3_frontend_runtime_bootstrap_artifacts.cpp
@@ -146,6 +148,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_tooling_source_artifacts.h
   objc3_frontend_type_system_contract_artifacts.cpp
   objc3_frontend_type_system_contract_artifacts.h
+  objc3_frontend_type_system_semantic_artifacts.cpp
+  objc3_frontend_type_system_semantic_artifacts.h
 )
 objc3c_apply_build_defaults(objc3c_artifacts)
 objc3c_apply_llvm_direct_config(objc3c_artifacts)

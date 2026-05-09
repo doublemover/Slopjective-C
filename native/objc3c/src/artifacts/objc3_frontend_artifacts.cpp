@@ -27,6 +27,7 @@
 #include "artifacts/objc3_frontend_feature_claim_truth_artifacts.h"
 #include "artifacts/objc3_frontend_interop_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_metaprogramming_semantic_artifacts.h"
+#include "artifacts/objc3_frontend_module_semantic_artifacts.h"
 #include "artifacts/objc3_frontend_parser_diagnostic_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_bootstrap_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_capability_artifacts.h"
@@ -38,6 +39,7 @@
 #include "artifacts/objc3_frontend_source_closure_artifacts.h"
 #include "artifacts/objc3_frontend_tooling_source_artifacts.h"
 #include "artifacts/objc3_frontend_type_system_contract_artifacts.h"
+#include "artifacts/objc3_frontend_type_system_semantic_artifacts.h"
 #include "artifacts/reports/frontend_conformance_report_contracts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "diag/objc3_diag_utils.h"
@@ -148,6 +150,7 @@ using objc3::artifacts::frontend::
     BuildTypeSystemNullabilityContractPreservationJson;
 using objc3::artifacts::frontend::
     BuildTypeSystemProtocolContractPreservationJson;
+using objc3::artifacts::frontend::BuildTypeSystemTypeSemanticModelSummaryJson;
 using objc3::artifacts::frontend::
     BuildToolingDiagnosticTaxonomyPortabilityContractSummaryJson;
 using objc3::artifacts::frontend::
@@ -165,6 +168,8 @@ using objc3::artifacts::frontend::
     BuildConcurrencyTaskGroupCancellationSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
     BuildControlFlowControlFlowSourceClosureSummaryJson;
+using objc3::artifacts::frontend::
+    BuildCrossModuleSemanticContractsDiagnosticsSummaryJson;
 using objc3::artifacts::frontend::
     BuildDispatchDispatchIntentSourceClosureSummaryJson;
 using objc3::artifacts::frontend::
@@ -421,88 +426,6 @@ std::string BuildStringArrayJson(const std::vector<std::string> &values) {
   return objc3::io::json::RenderJsonStringArray(values);
 }
 
-std::string BuildTypeSystemTypeSemanticModelSummaryJson(
-    const Objc3TypeSystemTypeSemanticModelSummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
-      << "\",\"optional_binding_sites\":" << summary.optional_binding_sites
-      << ",\"optional_binding_clause_sites\":"
-      << summary.optional_binding_clause_sites
-      << ",\"guard_binding_sites\":" << summary.guard_binding_sites
-      << ",\"optional_send_sites\":" << summary.optional_send_sites
-      << ",\"nil_coalescing_sites\":" << summary.nil_coalescing_sites
-      << ",\"optional_propagation_sites\":"
-      << summary.optional_propagation_sites
-      << ",\"optional_flow_refinement_sites\":"
-      << summary.optional_flow_refinement_sites
-      << ",\"guard_binding_exit_enforcement_sites\":"
-      << summary.guard_binding_exit_enforcement_sites
-      << ",\"typed_keypath_literal_sites\":"
-      << summary.typed_keypath_literal_sites
-      << ",\"typed_keypath_self_root_sites\":"
-      << summary.typed_keypath_self_root_sites
-      << ",\"typed_keypath_class_root_sites\":"
-      << summary.typed_keypath_class_root_sites
-      << ",\"object_pointer_semantic_sites\":"
-      << summary.object_pointer_semantic_sites
-      << ",\"protocol_composition_semantic_sites\":"
-      << summary.protocol_composition_semantic_sites
-      << ",\"generic_suffix_semantic_sites\":"
-      << summary.generic_suffix_semantic_sites
-      << ",\"generic_erasure_semantic_sites\":"
-      << summary.generic_erasure_semantic_sites
-      << ",\"nullability_suffix_semantic_sites\":"
-      << summary.nullability_suffix_semantic_sites
-      << ",\"nullability_semantic_sites\":"
-      << summary.nullability_semantic_sites
-      << ",\"canonical_type_entries\":"
-      << summary.canonical_type_entries
-      << ",\"canonical_object_type_entries\":"
-      << summary.canonical_object_type_entries
-      << ",\"canonical_protocol_qualified_entries\":"
-      << summary.canonical_protocol_qualified_entries
-      << ",\"canonical_generic_argument_entries\":"
-      << summary.canonical_generic_argument_entries
-      << ",\"canonical_nullable_entries\":"
-      << summary.canonical_nullable_entries
-      << ",\"canonical_nonnull_entries\":"
-      << summary.canonical_nonnull_entries
-      << ",\"canonical_implicitly_unwrapped_entries\":"
-      << summary.canonical_implicitly_unwrapped_entries
-      << ",\"canonical_null_resettable_entries\":"
-      << summary.canonical_null_resettable_entries
-      << ",\"canonical_unspecified_nullability_entries\":"
-      << summary.canonical_unspecified_nullability_entries
-      << ",\"canonical_invalid_type_entries\":"
-      << summary.canonical_invalid_type_entries
-      << ",\"invalid_generic_suffix_semantic_sites\":"
-      << summary.invalid_generic_suffix_semantic_sites
-      << ",\"invalid_nullability_suffix_semantic_sites\":"
-      << summary.invalid_nullability_suffix_semantic_sites
-      << ",\"invalid_protocol_composition_semantic_sites\":"
-      << summary.invalid_protocol_composition_semantic_sites
-      << ",\"optional_binding_contract_violation_sites\":"
-      << summary.optional_binding_contract_violation_sites
-      << ",\"optional_send_contract_violation_sites\":"
-      << summary.optional_send_contract_violation_sites
-      << ",\"optional_flow_contract_violation_sites\":"
-      << summary.optional_flow_contract_violation_sites
-      << ",\"typed_keypath_root_legality_violation_sites\":"
-      << summary.typed_keypath_root_legality_violation_sites
-      << ",\"typed_keypath_member_path_contract_violation_sites\":"
-      << summary.typed_keypath_member_path_contract_violation_sites
-      << ",\"typed_keypath_contract_violation_sites\":"
-      << summary.typed_keypath_contract_violation_sites
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_lowering_and_runtime\":"
-      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key) << "\"}";
-  return out.str();
-}
-
 std::string BuildEffectsOwnershipSemanticModelSummaryJson(
     const Objc3EffectsOwnershipSemanticModelSummary &summary) {
   std::ostringstream out;
@@ -575,75 +498,6 @@ std::string BuildEffectsOwnershipSemanticModelSummaryJson(
       << (summary.actor_semantics_landed ? "true" : "false")
       << ",\"foreign_boundary_semantics_landed\":"
       << (summary.foreign_boundary_semantics_landed ? "true" : "false")
-      << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
-      << ",\"ready_for_lowering_and_runtime\":"
-      << (summary.ready_for_lowering_and_runtime ? "true" : "false")
-      << ",\"replay_key\":\"" << EscapeJsonString(summary.replay_key)
-      << "\",\"failure_reason\":\""
-      << EscapeJsonString(summary.failure_reason) << "\"}";
-  return out.str();
-}
-
-std::string BuildCrossModuleSemanticContractsDiagnosticsSummaryJson(
-    const Objc3CrossModuleSemanticContractsDiagnosticsSummary &summary) {
-  std::ostringstream out;
-  out << "{"
-      << "\"contract_id\":\"" << EscapeJsonString(summary.contract_id)
-      << "\",\"surface_path\":\"" << EscapeJsonString(summary.surface_path)
-      << "\",\"semantic_model\":\"" << EscapeJsonString(summary.semantic_model)
-      << "\",\"module_import_graph_sites\":"
-      << summary.module_import_graph_sites
-      << ",\"import_edge_candidate_sites\":"
-      << summary.import_edge_candidate_sites
-      << ",\"namespace_segment_sites\":" << summary.namespace_segment_sites
-      << ",\"object_pointer_type_sites\":"
-      << summary.object_pointer_type_sites
-      << ",\"pointer_declarator_sites\":"
-      << summary.pointer_declarator_sites
-      << ",\"namespace_collision_shadowing_sites\":"
-      << summary.namespace_collision_shadowing_sites
-      << ",\"public_private_api_partition_sites\":"
-      << summary.public_private_api_partition_sites
-      << ",\"incremental_module_cache_invalidation_sites\":"
-      << summary.incremental_module_cache_invalidation_sites
-      << ",\"cross_module_conformance_sites\":"
-      << summary.cross_module_conformance_sites
-      << ",\"normalized_cross_module_sites\":"
-      << summary.normalized_cross_module_sites
-      << ",\"cache_invalidation_candidate_sites\":"
-      << summary.cache_invalidation_candidate_sites
-      << ",\"diagnostic_recovery_sites\":"
-      << summary.diagnostic_recovery_sites
-      << ",\"diagnostic_emit_sites\":" << summary.diagnostic_emit_sites
-      << ",\"recovery_anchor_sites\":" << summary.recovery_anchor_sites
-      << ",\"recovery_boundary_sites\":" << summary.recovery_boundary_sites
-      << ",\"fail_closed_diagnostic_sites\":"
-      << summary.fail_closed_diagnostic_sites
-      << ",\"diagnostic_normalized_sites\":"
-      << summary.diagnostic_normalized_sites
-      << ",\"diagnostic_gate_blocked_sites\":"
-      << summary.diagnostic_gate_blocked_sites
-      << ",\"interop_import_module_annotation_sites\":"
-      << summary.interop_import_module_annotation_sites
-      << ",\"interop_imported_module_name_sites\":"
-
-      << summary.interop_imported_module_name_sites
-      << ",\"contract_violation_sites\":"
-      << summary.contract_violation_sites
-      << ",\"module_import_graph_semantics_landed\":"
-      << (summary.module_import_graph_semantics_landed ? "true" : "false")
-      << ",\"namespace_collision_semantics_landed\":"
-      << (summary.namespace_collision_semantics_landed ? "true" : "false")
-      << ",\"public_private_partition_semantics_landed\":"
-      << (summary.public_private_partition_semantics_landed ? "true" : "false")
-      << ",\"incremental_cache_semantics_landed\":"
-      << (summary.incremental_cache_semantics_landed ? "true" : "false")
-      << ",\"cross_module_conformance_semantics_landed\":"
-      << (summary.cross_module_conformance_semantics_landed ? "true" : "false")
-      << ",\"diagnostic_recovery_semantics_landed\":"
-      << (summary.diagnostic_recovery_semantics_landed ? "true" : "false")
-      << ",\"interop_import_semantics_landed\":"
-      << (summary.interop_import_semantics_landed ? "true" : "false")
       << ",\"deterministic\":" << (summary.deterministic ? "true" : "false")
       << ",\"ready_for_lowering_and_runtime\":"
       << (summary.ready_for_lowering_and_runtime ? "true" : "false")
