@@ -1,12 +1,6 @@
-#include "support/objc3_type_spelling_consistency.h"
+#include "support/objc3_pointer_declarator_depth_consistency.h"
 
 namespace objc3c::support {
-
-bool IsObjectPointerTypeNameConsistent(
-    bool object_pointer_type_spelling,
-    std::string_view object_pointer_type_name) {
-  return !object_pointer_type_spelling || !object_pointer_type_name.empty();
-}
 
 bool IsPointerDeclaratorDepthConsistent(bool has_pointer_declarator,
                                         unsigned pointer_declarator_depth) {

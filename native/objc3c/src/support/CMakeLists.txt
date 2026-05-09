@@ -38,8 +38,12 @@ add_library(objc3c_support STATIC
   objc3_objc_type_surface_profiles.h
   objc3_objc_value_type_names.cpp
   objc3_objc_value_type_names.h
+  objc3_object_pointer_type_name_consistency.cpp
+  objc3_object_pointer_type_name_consistency.h
   objc3_nil_receiver_profile.cpp
   objc3_nil_receiver_profile.h
+  objc3_pointer_declarator_depth_consistency.cpp
+  objc3_pointer_declarator_depth_consistency.h
   objc3_current_property_runtime_profiles.cpp
   objc3_current_property_runtime_profiles.h
   objc3_property_accessor_profile_builder.cpp
@@ -95,7 +99,6 @@ add_library(objc3c_support STATIC
   objc3_string_predicates.h
   objc3_string_search_predicates.cpp
   objc3_string_search_predicates.h
-  objc3_type_spelling_consistency.cpp
   objc3_type_spelling_consistency.h
   objc3_type_profile_helpers.h
   objc3_value_type_names.cpp
