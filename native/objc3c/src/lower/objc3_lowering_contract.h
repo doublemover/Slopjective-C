@@ -4,6 +4,7 @@
 #include "lower/contracts/arc_boundary_lowering_contracts.h"
 #include "lower/contracts/block_arc_lowering_plan.h"
 #include "lower/contracts/block_runtime_lowering_contracts.h"
+#include "lower/contracts/dispatch_control_lowering_contracts.h"
 #include "lower/contracts/error_handling_lowering_contracts.h"
 #include "lower/contracts/function_method_lowering_state.h"
 #include "lower/contracts/interop_lowering_contracts.h"
@@ -506,22 +507,6 @@ inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringDeferredModel
     "live-cleanup-runtime-carriers-borrowed-lifetime-enforcement-and-runnable-retainable-family-runtime-interop-remain-later-system-extension-runtime-work";
 inline constexpr const char *kObjc3OwnershipSystemExtensionLoweringLaneContract =
     "objc3c.ownership.system.extension.lowering.contract.v1";
-// lowering-freeze anchor: Part 9 now freezes one explicit emitted
-// lowering contract for direct-call candidates, final/sealed dispatch-boundary
-// metadata, and replay-stable callable/container dynamism intent carriage. Live
-// selector-bypass/direct-call rewrites and runnable dispatch-boundary behavior
-// remain later lane-C and lane-D work.
-inline constexpr const char *kObjc3DispatchDispatchControlLoweringContractId =
-    "objc3c.dispatch.dispatch.control.lowering.contract.v1";
-inline constexpr const char *kObjc3DispatchDispatchControlLoweringSurfacePath =
-    "frontend.pipeline.semantic_surface."
-    "objc_dispatch_dispatch_control_lowering_contract";
-inline constexpr const char *kObjc3DispatchDispatchControlLoweringModel =
-    "dispatch-direct-call-candidates-final-sealed-boundaries-and-dynamism-intent-metadata-now-feed-one-deterministic-lowering-contract-for-manifest-and-ir-carriage";
-inline constexpr const char *kObjc3DispatchDispatchControlLoweringDeferredModel =
-    "live-direct-call-selector-bypass-runtime-dispatch-boundary-realization-and-runnable-metadata-consumption-remain-later-dispatch-control-runtime-work";
-inline constexpr const char *kObjc3DispatchDispatchControlLoweringLaneContract =
-    "objc3c.dispatch.dispatch.control.lowering.contract.v1";
 // expansion/lowering freeze anchor: lane-C freezes one deterministic
 // Part 10 lowering packet over derived selector inventory, macro replay
 // visibility, and synthesized property metadata carriage. Runnable derive body
@@ -624,29 +609,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationFailClosedModel =
         "missing-runner-corrupt-cache-or-import-surface-drift-disables-metaprogramming-host-process-cache-claims";
-// preservation anchor: lane-C now preserves the direct/final/sealed
-// intent introduced by C002 through runtime metadata source records, emitted
-// runtime-import-surface artifacts, and replay-stable frontend metadata instead
-// of restricting those facts to local IR/object payloads only.
-inline constexpr const char
-    *kObjc3DispatchDispatchMetadataInterfacePreservationContractId =
-        "objc3c.dispatch.dispatch.metadata.interface.preservation.v1";
-inline constexpr const char
-    *kObjc3DispatchDispatchMetadataInterfacePreservationSurfacePath =
-        "frontend.pipeline.semantic_surface."
-        "objc_dispatch_dispatch_metadata_and_interface_preservation";
-inline constexpr const char
-    *kObjc3DispatchDispatchMetadataInterfacePreservationImportArtifactMemberName =
-        "objc_dispatch_dispatch_metadata_and_interface_preservation";
-inline constexpr const char
-    *kObjc3DispatchDispatchMetadataInterfacePreservationSourceModel =
-        "runtime-metadata-source-records-and-runtime-import-surface-artifacts-preserve-direct-final-sealed-intent-for-separate-compilation-and-interface-replay";
-inline constexpr const char
-    *kObjc3DispatchDispatchMetadataInterfacePreservationModel =
-        "provider-and-consumer-runtime-import-surface-artifacts-preserve-direct-final-sealed-dispatch-intent-beyond-local-ir-object-emission";
-inline constexpr const char
-    *kObjc3DispatchDispatchMetadataInterfacePreservationFailClosedModel =
-        "missing-or-drifted-dispatch-intent-preservation-packets-disable-cross-module-dispatch-preservation-claims";
 // ABI/artifact completion anchor: keep the frozen Part 8 lowering
 // contract from C001 as the single lowering boundary, but publish one
 // dedicated ABI/replay packet above it for borrowed-return contracts and
@@ -1040,20 +1002,6 @@ struct Objc3OwnershipSystemExtensionLoweringContract {
   bool deterministic = true;
 };
 
-struct Objc3DispatchDispatchControlLoweringContract {
-  std::size_t direct_call_candidate_sites = 0;
-  std::size_t direct_members_defaulted_sites = 0;
-  std::size_t dynamic_opt_out_sites = 0;
-  std::size_t final_container_sites = 0;
-  std::size_t sealed_container_sites = 0;
-  std::size_t override_legality_sites = 0;
-  std::size_t metadata_preserved_callable_sites = 0;
-  std::size_t metadata_preserved_container_sites = 0;
-  std::size_t guard_blocked_sites = 0;
-  std::size_t contract_violation_sites = 0;
-  bool deterministic = true;
-};
-
 struct Objc3MetaprogrammingExpansionLoweringContract {
   std::size_t derive_inventory_sites = 0;
   std::size_t derived_selector_artifact_sites = 0;
@@ -1306,10 +1254,6 @@ bool IsValidObjc3OwnershipSystemExtensionLoweringContract(
     const Objc3OwnershipSystemExtensionLoweringContract &contract);
 std::string Objc3OwnershipSystemExtensionLoweringReplayKey(
     const Objc3OwnershipSystemExtensionLoweringContract &contract);
-bool IsValidObjc3DispatchDispatchControlLoweringContract(
-    const Objc3DispatchDispatchControlLoweringContract &contract);
-std::string Objc3DispatchDispatchControlLoweringReplayKey(
-    const Objc3DispatchDispatchControlLoweringContract &contract);
 bool IsValidObjc3MetaprogrammingExpansionLoweringContract(
     const Objc3MetaprogrammingExpansionLoweringContract &contract);
 std::string Objc3MetaprogrammingExpansionLoweringReplayKey(
@@ -1321,7 +1265,6 @@ std::string Objc3MetaprogrammingSynthesizedArtifactEmissionReplayKey(
 std::string Objc3MetaprogrammingModuleInterfaceReplayPreservationSummary();
 std::string Objc3MetaprogrammingExpansionHostRuntimeBoundarySummary();
 std::string Objc3MetaprogrammingMacroHostProcessCacheRuntimeIntegrationSummary();
-std::string Objc3DispatchDispatchMetadataInterfacePreservationSummary();
 bool IsValidObjc3UnsafePointerExtensionLoweringContract(
     const Objc3UnsafePointerExtensionLoweringContract &contract);
 std::string Objc3UnsafePointerExtensionLoweringReplayKey(
