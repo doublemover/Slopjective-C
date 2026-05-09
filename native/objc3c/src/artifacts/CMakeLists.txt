@@ -11,6 +11,8 @@ target_link_libraries(objc3c_artifacts_reports INTERFACE
 )
 
 add_library(objc3c_artifacts STATIC
+  identity/artifact_identity.cpp
+  interop/interop_bridge_artifacts.cpp
   json/artifact_json_model.cpp
   json/artifact_json_writer.cpp
   json/artifact_schema_registry.cpp

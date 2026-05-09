@@ -11,6 +11,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "artifacts/identity/artifact_identity.h"
+#include "artifacts/interop/interop_bridge_artifacts.h"
 #include "artifacts/json/program_manifest_json.h"
 #include "artifacts/json/runtime_metadata_manifest_json.h"
 #include "artifacts/json/semantic_type_manifest_json.h"
@@ -43,12 +45,13 @@ namespace {
 
 using objc3::io::EscapeJsonString;
 using objc3::io::json::JsonObjectWriter;
+using objc3::artifacts::identity::BuildObjc3TranslationUnitIdentityKey;
+using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
+using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
+using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
-std::string BuildObjc3TranslationUnitIdentityKey(
-    const std::string &constructor_root_symbol,
-    std::uint64_t bootstrap_registration_order_ordinal);
 std::string BuildExecutableMetadataSourceGraphJson(
     const Objc3ExecutableMetadataSourceGraph &graph);
 std::string BuildExecutableMetadataSemanticConsistencyBoundaryJson(
@@ -235,57 +238,6 @@ inline constexpr const char
 inline constexpr const char
     *kObjc3OwnershipBorrowedRetainableAbiCompletionProofModel =
         "the-supported-proof-slice-remains-direct-call-abi-emission-and-replay-stability-without-claiming-lane-d-runtime-helper-integration";
-
-std::string BuildInteropBridgeCType(ValueType type, unsigned pointer_depth,
-                                   bool object_pointer_type_spelling) {
-  std::string base;
-  switch (type) {
-    case ValueType::I32:
-      base = "int32_t";
-      break;
-    case ValueType::Bool:
-      base = "bool";
-      break;
-    case ValueType::Void:
-      base = "void";
-      break;
-    case ValueType::ObjCId:
-    case ValueType::ObjCClass:
-    case ValueType::ObjCSel:
-    case ValueType::ObjCProtocol:
-    case ValueType::ObjCInstancetype:
-    case ValueType::ObjCObjectPtr:
-    case ValueType::Function:
-    default:
-      base = "void";
-      pointer_depth = std::max(pointer_depth, 1u);
-      break;
-  }
-  if (object_pointer_type_spelling) {
-    base = "void";
-    pointer_depth = std::max(pointer_depth, 1u);
-  }
-  for (unsigned i = 0; i < pointer_depth; ++i) {
-    base += "*";
-  }
-  return base;
-}
-
-std::string BuildInteropBridgeReturnType(const FunctionDecl &function) {
-  return BuildInteropBridgeCType(function.return_type,
-                                function.has_return_pointer_declarator
-                                    ? function.return_pointer_declarator_depth
-                                    : 0u,
-                                function.return_object_pointer_type_spelling);
-}
-
-std::string BuildInteropBridgeParameterType(const FuncParam &param) {
-  return BuildInteropBridgeCType(param.type,
-                                param.has_pointer_declarator
-                                    ? param.pointer_declarator_depth
-                                    : 0u,
-                                param.object_pointer_type_spelling);
-}
 
 const char *LanguageProfileName(Objc3FrontendLanguageProfile mode) {
   (void)mode;

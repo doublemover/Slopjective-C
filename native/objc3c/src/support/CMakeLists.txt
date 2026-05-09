@@ -25,6 +25,8 @@ add_library(objc3c_support STATIC
   objc3_value_type_names.h
   selectors/selector_normalization.cpp
   selectors/selector_normalization.h
+  selectors/selector_spelling.cpp
+  selectors/selector_spelling.h
 )
 objc3c_apply_build_defaults(objc3c_support)
 target_link_libraries(objc3c_support PUBLIC
