@@ -10,9 +10,12 @@ add_library(objc3c_driver STATIC
   objc3_driver_command_dispatch.cpp
   objc3_driver_conformance_publication.cpp
   objc3_driver_conformance_surface.cpp
+  objc3_driver_frontend_core_artifact_publication.cpp
   objc3_driver_frontend_artifact_handoff.cpp
+  objc3_driver_interop_artifact_publication.cpp
   objc3_driver_metaprogramming_cache_publication.cpp
   objc3_driver_object_backend.cpp
+  objc3_driver_runtime_import_artifact_publication.cpp
   objc3_driver_runtime_registration_accessor_surface.cpp
   objc3_driver_runtime_registration_command_surface.cpp
   objc3_driver_runtime_registration_publication.cpp
