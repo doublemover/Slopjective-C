@@ -6,6 +6,8 @@
 #include "pipeline/objc3_frontend_types.h"
 
 struct Objc3ActorLoweringMetadataContract;
+struct Objc3RuntimeBlockOwnershipArtifactPreservationSummary;
+struct Objc3RuntimeStorageReflectionArtifactPreservationSummary;
 
 namespace objc3::artifacts::frontend {
 
@@ -94,6 +96,14 @@ BuildDispatchDispatchMetadataInterfacePreservationSummary(
 BuildDispatchDispatchMetadataInterfacePreservationSummaryJson(
     const Objc3DispatchDispatchMetadataInterfacePreservationSurfaceSummary
         &summary);
+
+[[nodiscard]] std::string
+BuildRuntimeStorageReflectionArtifactPreservationSummaryJson(
+    const Objc3RuntimeStorageReflectionArtifactPreservationSummary &summary);
+
+[[nodiscard]] std::string
+BuildRuntimeBlockOwnershipArtifactPreservationSummaryJson(
+    const Objc3RuntimeBlockOwnershipArtifactPreservationSummary &summary);
 
 [[nodiscard]] std::string
 BuildCrossModuleRuntimeMetadataSemanticPreservationReplayKey(
