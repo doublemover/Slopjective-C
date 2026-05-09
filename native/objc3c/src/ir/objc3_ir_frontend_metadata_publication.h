@@ -71,3 +71,6 @@ void EmitObjc3IRAsyncDiagnosticLoweringCounterNodes(
 
 void EmitObjc3IRInteropLoweringMetadataNodes(
     const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
+
+void EmitObjc3IRMetaprogrammingLoweringMetadataNodes(
+    const Objc3IRFrontendMetadata &metadata, std::ostringstream &out);
