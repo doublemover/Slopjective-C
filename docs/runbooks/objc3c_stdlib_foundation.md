@@ -95,15 +95,15 @@ and identifier-safe implementation module declarations.
 
 ## Exact Live Commands
 
-- `python -m scripts.objc3c_workflow check-stdlib-surface`
 - `npm run objc3c -- check-stdlib-surface`
-- `python -m scripts.objc3c_workflow materialize-stdlib-workspace`
+- `npm run objc3c -- check-stdlib-surface`
 - `npm run objc3c -- materialize-stdlib-workspace`
-- `python -m scripts.objc3c_workflow validate-stdlib-foundation`
+- `npm run objc3c -- materialize-stdlib-workspace`
 - `npm run objc3c -- validate-stdlib-foundation`
-- `python -m scripts.objc3c_workflow validate-runnable-stdlib-foundation`
+- `npm run objc3c -- validate-stdlib-foundation`
 - `npm run objc3c -- validate-runnable-stdlib-foundation`
-- `python -m scripts.objc3c_workflow package-runnable-toolchain`
+- `npm run objc3c -- validate-runnable-stdlib-foundation`
+- `npm run objc3c -- package-runnable-toolchain`
 - `npm run objc3c -- package-runnable-toolchain`
 
 ## Public actions

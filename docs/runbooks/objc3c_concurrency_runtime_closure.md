@@ -72,7 +72,7 @@ Lowering and runtime artifact contract:
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone remains `test:objc3c:concurrency-conformance` and `test:objc3c:runnable-concurrency`
+- the public command surface for this milestone is `npm run objc3c -- validate-concurrency-conformance` and `npm run objc3c -- validate-runnable-concurrency`
 - the public workflow surface remains `validate-concurrency-conformance` and `validate-runnable-concurrency`
 - concurrency closure still relies on the private runtime-owned helper ABI and snapshot surfaces; the public runtime header is not widened by this milestone
 

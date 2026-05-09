@@ -205,7 +205,7 @@ Disallowed optimization moves:
 
 - benchmark the live direct-compile throughput and wrapper cache surface:
   - `npm run objc3c -- benchmark-compiler-throughput`
-  - `python -m scripts.objc3c_workflow benchmark-compiler-throughput`
+  - `npm run objc3c -- benchmark-compiler-throughput`
 - build the compile-coupled docs generators used by this milestone:
   - `npm run objc3c -- build-native-docs`
   - `npm run objc3c -- build-public-command-surface`

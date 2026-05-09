@@ -448,7 +448,7 @@ def list_actions_payload() -> dict[str, object]:
         "action_count": len(ACTION_SPECS),
         "public_action_count": len(ACTION_SPECS),
         "internal_action_count": 0,
-        "public_script_count": 1,
+        "package_bridge_count": 1,
         "actions": [enrich_action_payload(spec) for spec in ACTION_SPECS.values()],
     }
 

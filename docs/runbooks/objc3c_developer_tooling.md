@@ -107,36 +107,36 @@ Downstream issues must extend these exact surfaces before inventing new ones.
 - compile one source through the public compiler path:
   - `npm run objc3c -- compile-objc3c tests/tooling/fixtures/native/hello.objc3`
 - materialize a runnable workspace with editor/debug drill references:
-  - `python -m scripts.objc3c_workflow materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
+  - `npm run objc3c -- materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
   - `npm run objc3c -- materialize-playground-workspace tests/tooling/fixtures/native/hello.objc3`
 - inspect the direct compiler/summary boundary:
   - `artifacts/bin/objc3c-frontend-c-api-runner.exe tests/tooling/fixtures/native/hello.objc3 --summary-out tmp/reports/objc3c-public-workflow/frontend-c-api-runner-summary.json`
 - dump the structured developer observability object through the public command surface:
-  - `python -m scripts.objc3c_workflow inspect-compile-observability`
+  - `npm run objc3c -- inspect-compile-observability`
   - `npm run objc3c -- inspect-compile-observability`
 - dump the structured runtime inspector object through the public command surface:
-  - `python -m scripts.objc3c_workflow inspect-runtime-inspector`
+  - `npm run objc3c -- inspect-runtime-inspector`
   - `npm run objc3c -- inspect-runtime-inspector`
 - dump the live capability-explorer object through the public command surface:
-  - `python -m scripts.objc3c_workflow inspect-capability-explorer`
+  - `npm run objc3c -- inspect-capability-explorer`
   - `npm run objc3c -- inspect-capability-explorer`
 - benchmark the runtime-inspector and capability-explorer workflow through the public command surface:
-  - `python -m scripts.objc3c_workflow benchmark-runtime-inspector`
+  - `npm run objc3c -- benchmark-runtime-inspector`
   - `npm run objc3c -- benchmark-runtime-inspector`
 - dump the structured compile-stage trace through the public command surface:
-  - `python -m scripts.objc3c_workflow trace-compile-stages`
+  - `npm run objc3c -- trace-compile-stages`
   - `npm run objc3c -- trace-compile-stages`
 - inspect the combined editor tooling surface:
-  - `python -m scripts.objc3c_workflow inspect-editor-tooling`
+  - `npm run objc3c -- inspect-editor-tooling`
   - `npm run objc3c -- inspect-editor-tooling`
 - format one supported objc3c source through the preview formatter subset:
-  - `python -m scripts.objc3c_workflow format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
+  - `npm run objc3c -- format-objc3c -- tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
   - `npm run objc3c -- format-objc3c tests/tooling/fixtures/developer_tooling/messy_hello.objc3`
 - run the integrated developer-tooling validation flow:
-  - `python -m scripts.objc3c_workflow validate-developer-tooling`
+  - `npm run objc3c -- validate-developer-tooling`
   - `npm run objc3c -- validate-developer-tooling`
 - run the packaged developer-tooling validation flow against the staged runnable bundle:
-  - `python -m scripts.objc3c_workflow validate-runnable-developer-tooling`
+  - `npm run objc3c -- validate-runnable-developer-tooling`
   - `npm run objc3c -- validate-runnable-developer-tooling`
 - validate compiler/library parity:
   - `python scripts/check_objc3c_library_cli_parity.py`
@@ -287,9 +287,9 @@ The current generator for the combined surface is:
 
 The current and follow-on public entrypoints for the surface converge on:
 
-- `python -m scripts.objc3c_workflow inspect-editor-tooling`
-- `python -m scripts.objc3c_workflow format-objc3c`
-- `python -m scripts.objc3c_workflow validate-developer-tooling`
+- `npm run objc3c -- inspect-editor-tooling`
+- `npm run objc3c -- format-objc3c`
+- `npm run objc3c -- validate-developer-tooling`
 
 Exact implementation anchors for the current formatter/debug/workspace slice:
 

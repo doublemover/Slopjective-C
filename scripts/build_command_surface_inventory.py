@@ -50,7 +50,7 @@ def main() -> None:
         'orphan_public_script_count': len(orphan_public_scripts),
         'category_counts': dict(sorted(category_counts.items())),
         'orchestration_model': {
-            'public_entrypoint_owner': 'package.json -> python -m scripts.objc3c_workflow',
+            'public_entrypoint_owner': 'package.json objc3c bridge -> scripts.objc3c_workflow',
             'internal_action_owner': 'ACTION_SPECS actions are reached through the objc3c package bridge',
             'appendix_generator': 'scripts/render_objc3c_public_command_surface.py',
         },

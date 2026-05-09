@@ -188,8 +188,8 @@ of hiding behind the generic stdlib label:
 
 - `npm run objc3c -- validate-stdlib-advanced`
 - `npm run objc3c -- validate-runnable-stdlib-advanced`
-- `python -m scripts.objc3c_workflow validate-stdlib-advanced`
-- `python -m scripts.objc3c_workflow validate-runnable-stdlib-advanced`
+- `npm run objc3c -- validate-stdlib-advanced`
+- `npm run objc3c -- validate-runnable-stdlib-advanced`
 
 That workflow must continue to:
 

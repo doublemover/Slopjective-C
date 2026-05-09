@@ -30,9 +30,9 @@ Replayable boundary inventory:
 - `python scripts/check_application_architecture_template_harness.py`
 - `python scripts/materialize_objc3c_canonical_application_workspace.py`
 - `python scripts/check_objc3c_application_architecture_integration.py`
-- `python -m scripts.objc3c_workflow validate-application-architecture`
+- `npm run objc3c -- validate-application-architecture`
 - `python scripts/check_objc3c_runnable_application_architecture_end_to_end.py`
-- `python -m scripts.objc3c_workflow validate-runnable-application-architecture`
+- `npm run objc3c -- validate-runnable-application-architecture`
 - `python scripts/check_objc3c_application_architecture_integration.py`
 
 ## Current Boundary

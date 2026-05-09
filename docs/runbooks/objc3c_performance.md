@@ -92,25 +92,25 @@ The only current claim classes allowed from this surface are:
 ## Exact Live Commands
 
 - build the native toolchain before measuring:
-  - `python -m scripts.objc3c_workflow build-native-binaries`
+  - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- build-native-binaries`
 - compile one checked-in objc3c workload through the public compile path:
-  - `python -m scripts.objc3c_workflow compile-objc3c showcase/auroraBoard/main.objc3`
+  - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
   - `npm run objc3c -- compile-objc3c showcase/auroraBoard/main.objc3`
 - benchmark the live objc3 showcase workloads:
-  - `python -m scripts.objc3c_workflow benchmark-performance`
+  - `npm run objc3c -- benchmark-performance`
   - `npm run objc3c -- benchmark-performance`
 - benchmark the checked-in ObjC2 Swift and C++ baselines:
-  - `python -m scripts.objc3c_workflow benchmark-comparative-baselines`
+  - `npm run objc3c -- benchmark-comparative-baselines`
   - `npm run objc3c -- benchmark-comparative-baselines`
 - validate the staged runnable benchmark bundle:
-  - `python -m scripts.objc3c_workflow validate-runnable-performance`
+  - `npm run objc3c -- validate-runnable-performance`
   - `npm run objc3c -- validate-runnable-performance`
 - run the integrated benchmark foundation validation flow:
-  - `python -m scripts.objc3c_workflow validate-performance-foundation`
+  - `npm run objc3c -- validate-performance-foundation`
   - `npm run objc3c -- validate-performance-foundation`
 - stage the runnable toolchain before packaged benchmark validation:
-  - `python -m scripts.objc3c_workflow package-runnable-toolchain`
+  - `npm run objc3c -- package-runnable-toolchain`
   - `npm run objc3c -- package-runnable-toolchain`
 
 ## Exact Live Paths For Downstream Work

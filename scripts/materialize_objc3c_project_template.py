@@ -111,10 +111,10 @@ def main() -> int:
                 f"- source example: `{example_record['source']}`",
                 f"- generated source: `{display_path(template_source)}`",
                 "- live commands:",
-                f"  - `python -m scripts.objc3c_workflow materialize-project-template --example {args.example}`",
-                f"  - `python -m scripts.objc3c_workflow materialize-playground-workspace {display_path(template_source)}`",
-                f"  - `python -m scripts.objc3c_workflow benchmark-runtime-inspector {display_path(template_source)}`",
-                "  - `python -m scripts.objc3c_workflow inspect-bonus-tool-integration`",
+                f"  - `npm run objc3c -- materialize-project-template --example {args.example}`",
+                f"  - `npm run objc3c -- materialize-playground-workspace {display_path(template_source)}`",
+                f"  - `npm run objc3c -- benchmark-runtime-inspector {display_path(template_source)}`",
+                "  - `npm run objc3c -- inspect-bonus-tool-integration`",
             ]
         )
         + "\n",

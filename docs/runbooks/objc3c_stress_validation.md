@@ -123,7 +123,7 @@ Downstream work must preserve these rules:
 ## Exact Live Commands
 
 - build the native toolchain before stress validation:
-  - `python -m scripts.objc3c_workflow build-native-binaries`
+  - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- build-native-binaries`
 - run the current parser/sema malformed-input gate:
   - `python scripts/run_objc3c_fuzz_safety.py`
@@ -138,13 +138,13 @@ Downstream work must preserve these rules:
 - validate the checked-in stress source contract:
   - `python scripts/check_stress_source_surface.py`
 - run the current executable smoke and replay evidence paths:
-  - `python -m scripts.objc3c_workflow test-execution-smoke`
-  - `python -m scripts.objc3c_workflow test-execution-replay`
+  - `npm run objc3c -- test-execution-smoke`
+  - `npm run objc3c -- test-execution-replay`
 - run the current conformance-corpus integration paths:
-  - `python -m scripts.objc3c_workflow validate-conformance-corpus`
-  - `python -m scripts.objc3c_workflow validate-runnable-conformance-corpus`
+  - `npm run objc3c -- validate-conformance-corpus`
+  - `npm run objc3c -- validate-runnable-conformance-corpus`
 - stage the runnable package before packaged stress validation:
-  - `python -m scripts.objc3c_workflow package-runnable-toolchain`
+  - `npm run objc3c -- package-runnable-toolchain`
   - `npm run objc3c -- package-runnable-toolchain`
 
 ## Exact Live Paths For Downstream Work

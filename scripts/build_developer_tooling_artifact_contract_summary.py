@@ -36,7 +36,7 @@ def main() -> int:
         "runbook_mentions_tmp_report_family": "tmp/reports/developer-tooling/" in runbook_text,
         "runbook_mentions_public_runner_entrypoint": "inspect-editor-tooling" in runbook_text and "format-objc3c" in runbook_text,
         "runner_can_be_extended_at_declared_spine": "validate-developer-tooling" in runner_text,
-        "package_retains_developer_tooling_script": scripts.get("test:objc3c:developer-tooling") == "python -m scripts.objc3c_workflow validate-developer-tooling",
+        "package_exposes_objc3c_bridge": "objc3c" in scripts,
     }
 
     summary = {

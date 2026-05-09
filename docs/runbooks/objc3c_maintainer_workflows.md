@@ -15,9 +15,9 @@ checked into the repo:
   - source: `package.json` + `scripts.objc3c_workflow` + `scripts/build_objc3c_public_command_contract.py`
   - build/check: `npm run objc3c -- build-public-command-surface` / `npm run objc3c -- check-public-command-surface`
   - maintainer contract checks:
-    - `python -m scripts.objc3c_workflow build-public-command-contract`
-    - `python -m scripts.objc3c_workflow check-public-command-contract`
-    - `python -m scripts.objc3c_workflow check-public-command-budget`
+    - `npm run objc3c -- build-public-command-contract`
+    - `npm run objc3c -- check-public-command-contract`
+    - `npm run objc3c -- check-public-command-budget`
 
 Do not hand-edit generated outputs. Do not treat `tmp/reports/` or
 `tmp/artifacts/` as canonical documentation.
@@ -265,9 +265,9 @@ npm run objc3c -- validate-repo-superclean
 
 ## Direct tools
 
-- command-surface contract build: `python -m scripts.objc3c_workflow build-public-command-contract`
-- command-surface contract check: `python -m scripts.objc3c_workflow check-public-command-contract`
-- command-surface budget check: `python -m scripts.objc3c_workflow check-public-command-budget`
+- command-surface contract build: `npm run objc3c -- build-public-command-contract`
+- command-surface contract check: `npm run objc3c -- check-public-command-contract`
+- command-surface budget check: `npm run objc3c -- check-public-command-budget`
 - dependency boundaries: `npm run objc3c -- check-dependency-boundaries`
 - task hygiene: `npm run objc3c -- check-task-hygiene`
 - repo superclean surface: `npm run objc3c -- check-repo-superclean-surface`

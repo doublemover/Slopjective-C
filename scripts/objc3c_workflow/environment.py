@@ -13,8 +13,9 @@ PWSH = shutil.which("pwsh") or "pwsh"
 NPX = shutil.which("npx.cmd") or shutil.which("npx") or "npx"
 
 WORKFLOW_MODULE = "scripts.objc3c_workflow"
-WORKFLOW_COMMAND_TEXT = f"python -m {WORKFLOW_MODULE}"
-WORKFLOW_RUNNER_SURFACE = WORKFLOW_MODULE
+WORKFLOW_PUBLIC_COMMAND = "npm run objc3c --"
+WORKFLOW_COMMAND_TEXT = WORKFLOW_PUBLIC_COMMAND
+WORKFLOW_RUNNER_SURFACE = "package.json scripts.objc3c -> scripts.objc3c_workflow"
 WORKFLOW_RUNNER_MODE = "objc3c-workflow-action-registry-v1"
 
 MARKDOWN_GLOBS = [

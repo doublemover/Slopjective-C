@@ -63,7 +63,7 @@ Lowering and runtime artifact contract:
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone remains `test:objc3c:error-conformance` and `test:objc3c:runnable-error`
+- the public command surface for this milestone is `npm run objc3c -- validate-error-conformance` and `npm run objc3c -- validate-runnable-error`
 - the public workflow surface remains `validate-error-conformance` and `validate-runnable-error`
 - error closure still relies on the private runtime-owned helper ABI and snapshot surfaces; the public runtime header is not widened by this milestone
 

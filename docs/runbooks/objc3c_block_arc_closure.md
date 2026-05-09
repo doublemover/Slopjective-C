@@ -63,7 +63,7 @@ Lowering and runtime ABI contract:
 
 Executable proof and ABI contract:
 
-- the public command surface for this milestone remains `test:objc3c:block-arc-conformance` and `test:objc3c:runnable-block-arc`
+- the public command surface for this milestone is `npm run objc3c -- validate-block-arc-conformance` and `npm run objc3c -- validate-runnable-block-arc`
 - the public workflow surface remains `validate-block-arc-conformance` and `validate-runnable-block-arc`
 - block and ARC closure still relies on private runtime-owned helper and snapshot surfaces; the public runtime header is not widened by this milestone
 

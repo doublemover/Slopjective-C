@@ -247,7 +247,7 @@ constructor-root to loader-table edge.
   - fixture: `tests/tooling/fixtures/native/runtime_canonical_runnable_object_runtime_library.objc3`
   - probe: `tests/tooling/runtime/runtime_installation_loader_lifecycle_probe.cpp`
   - acceptance command: `python scripts/check_objc3c_runtime_acceptance.py`
-  - public workflow command: `python -m scripts.objc3c_workflow validate-runtime-architecture`
+  - public workflow command: `npm run objc3c -- validate-runtime-architecture`
 - authoritative runtime fields:
   - `last_rejected_module_name`
   - `last_rejected_translation_unit_identity_key`
@@ -1873,7 +1873,7 @@ summary that points back to those child executable reports.
 - runner:
   - `scripts/check_objc3c_runtime_architecture_proof_packet.py`
 - public action:
-  - `python -m scripts.objc3c_workflow proof-runtime-architecture`
+  - `npm run objc3c -- proof-runtime-architecture`
 - packet path:
   - `tmp/reports/runtime/architecture-proof/summary.json`
 
@@ -1888,7 +1888,7 @@ runtime installation ABI surface, and runtime loader lifecycle surface.
 - runner:
   - `scripts/check_objc3c_runtime_architecture_integration.py`
 - public action:
-  - `python -m scripts.objc3c_workflow validate-runtime-architecture`
+  - `npm run objc3c -- validate-runtime-architecture`
 - summary path:
   - `tmp/reports/runtime/architecture-integration/summary.json`
 

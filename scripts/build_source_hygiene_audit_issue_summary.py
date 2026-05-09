@@ -32,8 +32,8 @@ def main() -> int:
     summary = {
         "issue": "source-hygiene-audit-issue-summary",
         "audit_script": "scripts/check_source_hygiene_authenticity.py",
-        "runner_entrypoint": "python -m scripts.objc3c_workflow check-source-hygiene-authenticity",
-        "package_script": "check:objc3c:source-hygiene",
+        "runner_entrypoint": "npm run objc3c -- check-source-hygiene-authenticity",
+        "package_script": "objc3c",
         "check_count": len(payload["checks"]),
         "generator_exit_zero": result.returncode == 0,
         "audit_ok": payload.get("ok") is True,

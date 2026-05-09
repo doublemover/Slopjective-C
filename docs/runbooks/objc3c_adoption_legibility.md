@@ -146,9 +146,9 @@ The repo-scope adoption workflow is:
 
 It maps to:
 
-- `python -m scripts.objc3c_workflow validate-adoption-legibility`
+- `npm run objc3c -- validate-adoption-legibility`
 - `python scripts/check_objc3c_adoption_legibility_integration.py`
-- `python -m scripts.objc3c_workflow publish-adoption-legibility`
+- `npm run objc3c -- publish-adoption-legibility`
 - `python scripts/publish_objc3c_adoption_legibility_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, evaluator

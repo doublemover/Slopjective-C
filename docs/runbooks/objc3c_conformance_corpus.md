@@ -147,9 +147,9 @@ Current live scripts:
 - surface check: `scripts/check_conformance_corpus_surface.py`
 - coverage index generation: `scripts/generate_conformance_corpus_index.py`
 - legacy suite gate: `scripts/check_conformance_suite.ps1`
-- integrated validation: `python -m scripts.objc3c_workflow validate-conformance-corpus`
-- runnable packaged validation: `python -m scripts.objc3c_workflow validate-runnable-conformance-corpus`
-- nightly umbrella integration: `python -m scripts.objc3c_workflow test-nightly`
+- integrated validation: `npm run objc3c -- validate-conformance-corpus`
+- runnable packaged validation: `npm run objc3c -- validate-runnable-conformance-corpus`
+- nightly umbrella integration: `npm run objc3c -- test-nightly`
 
 Checked-in references:
 

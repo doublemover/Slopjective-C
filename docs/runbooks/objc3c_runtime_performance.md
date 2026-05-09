@@ -137,19 +137,19 @@ Disallowed optimization moves:
 ## Exact Live Commands
 
 - build the native runtime surface before measuring:
-  - `python -m scripts.objc3c_workflow build-native-binaries`
+  - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- build-native-binaries`
 - inspect the live runtime boundary already used by developer tooling:
-  - `python -m scripts.objc3c_workflow inspect-runtime-inspector`
+  - `npm run objc3c -- inspect-runtime-inspector`
   - `npm run objc3c -- inspect-runtime-inspector`
 - benchmark the runtime hot-path surface:
-  - `python -m scripts.objc3c_workflow benchmark-runtime-performance`
+  - `npm run objc3c -- benchmark-runtime-performance`
   - `npm run objc3c -- benchmark-runtime-performance`
 - validate the integrated runtime-performance surface:
-  - `python -m scripts.objc3c_workflow validate-runtime-performance`
+  - `npm run objc3c -- validate-runtime-performance`
   - `npm run objc3c -- validate-runtime-performance`
 - validate the staged runnable runtime-performance surface:
-  - `python -m scripts.objc3c_workflow validate-runnable-runtime-performance`
+  - `npm run objc3c -- validate-runnable-runtime-performance`
   - `npm run objc3c -- validate-runnable-runtime-performance`
 
 ## Explicit Non-Goals

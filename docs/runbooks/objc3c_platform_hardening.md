@@ -237,11 +237,11 @@ inventing a second matrix format.
 The live build/package validation path for this milestone must stay on the same
 public build/package surfaces users run:
 
-- `python -m scripts.objc3c_workflow build-platform-support-matrix`
-- `python -m scripts.objc3c_workflow build-native-binaries`
-- `python -m scripts.objc3c_workflow package-runnable-toolchain`
-- `python -m scripts.objc3c_workflow validate-platform-hardening`
-- `python -m scripts.objc3c_workflow validate-platform-hardening-end-to-end`
+- `npm run objc3c -- build-platform-support-matrix`
+- `npm run objc3c -- build-native-binaries`
+- `npm run objc3c -- package-runnable-toolchain`
+- `npm run objc3c -- validate-platform-hardening`
+- `npm run objc3c -- validate-platform-hardening-end-to-end`
 - `python scripts/build_objc3c_package_channels.py`
 - `python scripts/check_objc3c_packaging_channels_integration.py`
 - `python scripts/check_objc3c_packaging_channels_end_to_end.py`

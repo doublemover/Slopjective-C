@@ -68,7 +68,7 @@ Current closure constraints:
 
 ## Executable Proof and ABI Surface
 
-- the public command surface for this milestone remains `test:objc3c:metaprogramming-conformance`, `test:objc3c:runnable-metaprogramming`, `test:objc3c:interop-conformance`, and `test:objc3c:runnable-interop`
+- the public command surface for this milestone is `npm run objc3c -- validate-metaprogramming-conformance`, `npm run objc3c -- validate-runnable-metaprogramming`, `npm run objc3c -- validate-interop-conformance`, and `npm run objc3c -- validate-runnable-interop`
 - the public workflow surface remains `validate-metaprogramming-conformance`, `validate-runnable-metaprogramming`, `validate-interop-conformance`, and `validate-runnable-interop`
 - private runtime-owned helper and snapshot boundaries continue to define the live executable proof surface; the public runtime header is not widened by this milestone
 

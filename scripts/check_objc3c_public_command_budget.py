@@ -38,8 +38,8 @@ def main(argv: Sequence[str]) -> int:
     failures: list[str] = []
     if contract['unmapped_scripts']:
         failures.append(f"unmapped package scripts present: {contract['unmapped_scripts']}")
-    if contract['extra_runner_public_scripts']:
-        failures.append(f"runner advertises extra public scripts: {contract['extra_runner_public_scripts']}")
+    if contract['unexpected_runner_package_scripts']:
+        failures.append(f"runner advertises unexpected package scripts: {contract['unexpected_runner_package_scripts']}")
     if operator_categories != CANONICAL_CATEGORIES:
         failures.append(f"operator categories drifted: expected {CANONICAL_CATEGORIES} got {operator_categories}")
     if contract['maintainer_script_count'] > MAX_MAINTAINER_SCRIPTS:
@@ -50,7 +50,7 @@ def main(argv: Sequence[str]) -> int:
     summary = {
         'status': 'PASS' if not failures else 'FAIL',
         'package_script_count': contract['package_script_count'],
-        'public_script_count': contract['public_script_count'],
+        'package_bridge_count': contract['package_bridge_count'],
         'workflow_action_count': contract['workflow_action_count'],
         'internal_action_count': contract['internal_action_count'],
         'operator_script_count': contract['operator_script_count'],
@@ -69,7 +69,7 @@ def main(argv: Sequence[str]) -> int:
             '',
             f"- status: `{summary['status']}`",
             f"- package_script_count: `{summary['package_script_count']}`",
-            f"- public_script_count: `{summary['public_script_count']}`",
+            f"- package_bridge_count: `{summary['package_bridge_count']}`",
             f"- workflow_action_count: `{summary['workflow_action_count']}`",
             f"- internal_action_count: `{summary['internal_action_count']}`",
             f"- operator_script_count: `{summary['operator_script_count']}`",

@@ -189,9 +189,9 @@ The repo-scope long-horizon workflow is:
 
 It maps to:
 
-- `python -m scripts.objc3c_workflow validate-long-horizon-operations`
+- `npm run objc3c -- validate-long-horizon-operations`
 - `python scripts/check_objc3c_long_horizon_operations_integration.py`
-- `python -m scripts.objc3c_workflow publish-long-horizon-operations`
+- `npm run objc3c -- publish-long-horizon-operations`
 - `python scripts/publish_objc3c_long_horizon_operations_metadata.py`
 
 The public workflow validates the generated evidence artifact shape, claim

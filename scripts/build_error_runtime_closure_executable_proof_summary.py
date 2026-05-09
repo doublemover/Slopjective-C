@@ -43,7 +43,7 @@ def main() -> int:
         "all_authoritative_code_paths_exist": all(path.is_file() for path in code_paths),
         "all_authoritative_fixture_paths_exist": all(path.is_file() for path in fixture_paths),
         "all_authoritative_probe_paths_exist": all(path.is_file() for path in probe_paths),
-        "runbook_mentions_public_command_boundary": "test:objc3c:error-conformance" in runbook_text and "test:objc3c:runnable-error" in runbook_text,
+        "runbook_mentions_public_command_boundary": "npm run objc3c -- validate-error-conformance" in runbook_text and "npm run objc3c -- validate-runnable-error" in runbook_text,
         "package_json_preserves_public_commands": all(command in package_text for command in contract["public_commands"]),
         "workflow_preserves_public_actions": all(action in workflow_text for action in contract["public_workflows"]),
         "command_surface_documents_public_commands": all(command in command_surface_text for command in contract["public_commands"]) and all(action in command_surface_text for action in contract["public_workflows"]),

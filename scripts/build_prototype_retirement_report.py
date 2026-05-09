@@ -30,7 +30,7 @@ FORBIDDEN_SNIPPETS = {
     'docs/runbooks/objc3c_compiler_throughput.md': [
         'python scripts/render_objc3c_public_command_surface.py',
         'python scripts/build_objc3c_native_docs.py',
-        'python -m scripts.objc3c_workflow benchmark-compiler-throughput',
+        'npm run objc3c -- benchmark-compiler-throughput',
     ],
     'docs/runbooks/objc3c_external_validation.md': [
         'python scripts/check_external_validation_source_surface.py',
@@ -43,14 +43,14 @@ FORBIDDEN_SNIPPETS = {
     'docs/objc3c-native/src/60-tests.md': [
         'python scripts/ci/check_task_hygiene.py',
         'python scripts/check_objc3c_dependency_boundaries.py --strict',
-        'python -m scripts.objc3c_workflow test-smoke',
-        'python -m scripts.objc3c_workflow test-recovery',
+        'npm run objc3c -- test-smoke',
+        'npm run objc3c -- test-recovery',
     ],
     'docs/objc3c-native.md': [
         'python scripts/ci/check_task_hygiene.py',
         'python scripts/check_objc3c_dependency_boundaries.py --strict',
-        'python -m scripts.objc3c_workflow test-smoke',
-        'python -m scripts.objc3c_workflow test-recovery',
+        'npm run objc3c -- test-smoke',
+        'npm run objc3c -- test-recovery',
     ],
 }
 REQUIRED_SNIPPETS = {

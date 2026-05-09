@@ -199,10 +199,10 @@ The repo-scope package ecosystem workflow is:
 - `npm run objc3c -- validate-package-ecosystem`
 - `npm run objc3c -- validate-runnable-package-ecosystem`
 
-`test:objc3c:package-ecosystem` composes the local package authoring workflow
+`npm run objc3c -- validate-package-ecosystem` composes the local package authoring workflow
 with the canonical application architecture and stdlib program integration
 surfaces so package claims remain user-shaped instead of package-only probes.
-`test:objc3c:package-ecosystem:e2e` stages the runnable toolchain bundle and
+`npm run objc3c -- validate-runnable-package-ecosystem` stages the runnable toolchain bundle and
 reruns package authoring plus offline mirror validation from the package root.
 
 ## Successor Pressure

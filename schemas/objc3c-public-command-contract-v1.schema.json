@@ -9,13 +9,13 @@
     "runner_mode",
     "runner_path",
     "package_script_count",
+    "package_bridge_count",
     "workflow_action_count",
-    "public_script_count",
     "internal_action_count",
     "operator_script_count",
     "maintainer_script_count",
     "unmapped_scripts",
-    "extra_runner_public_scripts",
+    "unexpected_runner_package_scripts",
     "actions",
     "package_scripts"
   ],
@@ -37,11 +37,11 @@
       "type": "integer",
       "minimum": 0
     },
-    "workflow_action_count": {
+    "package_bridge_count": {
       "type": "integer",
       "minimum": 0
     },
-    "public_script_count": {
+    "workflow_action_count": {
       "type": "integer",
       "minimum": 0
     },
@@ -63,7 +63,7 @@
         "type": "string"
       }
     },
-    "extra_runner_public_scripts": {
+    "unexpected_runner_package_scripts": {
       "type": "array",
       "items": {
         "type": "string"

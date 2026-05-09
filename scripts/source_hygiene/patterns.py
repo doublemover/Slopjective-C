@@ -50,6 +50,11 @@ FORBIDDEN_PATTERNS: tuple[ForbiddenPattern, ...] = (
         r"\bnpm\s+run\s+(?!objc3c\b)[a-z0-9][a-z0-9:_-]*:",
     ),
     ForbiddenPattern(
+        "direct-workflow-module-doc-command",
+        "Documentation must expose the npm workflow bridge instead of direct scripts.objc3c_workflow module commands.",
+        r"`python\s+-m\s+scripts\.objc3c_workflow\b",
+    ),
+    ForbiddenPattern(
         "legacy-language-profile-enum",
         "Language profile enums are canonical-only and must not retain legacy values.",
         r"\bkLegacy\b|\bLegacy\s*=\s*1\b|\bObjc3\w*LanguageProfile::k?Legacy\b",

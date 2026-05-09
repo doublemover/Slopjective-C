@@ -46,7 +46,7 @@ def build_contract() -> dict[str, object]:
     package_script_names = sorted(package_scripts)
     bridge_scripts = {'objc3c'}
     unmapped_scripts = sorted(set(package_script_names) - bridge_scripts)
-    extra_runner_public_scripts: list[str] = []
+    unexpected_runner_package_scripts: list[str] = []
 
     action_payloads = [runner.describe_action_payload(action_name) for action_name in sorted(runner.ACTION_SPECS)]
     package_script_payloads = [runner.describe_package_script_payload(script_name) for script_name in package_script_names]
@@ -59,13 +59,13 @@ def build_contract() -> dict[str, object]:
         'runner_path': list_payload['runner_path'],
         'schema_path': schema['$id'],
         'package_script_count': len(package_script_names),
+        'package_bridge_count': list_payload['package_bridge_count'],
         'workflow_action_count': list_payload['action_count'],
-        'public_script_count': len(package_script_names),
         'internal_action_count': list_payload['internal_action_count'],
         'operator_script_count': operator_script_count,
         'maintainer_script_count': maintainer_script_count,
         'unmapped_scripts': unmapped_scripts,
-        'extra_runner_public_scripts': extra_runner_public_scripts,
+        'unexpected_runner_package_scripts': unexpected_runner_package_scripts,
         'actions': action_payloads,
         'package_scripts': package_script_payloads,
     }

@@ -13,7 +13,7 @@ def describe_package_script_payload(script_name: str) -> dict[str, object]:
             "summary": "canonical npm bridge for the objc3c workflow action registry",
             "audience": "operator",
             "category": "bridge",
-            "backend": "python -m scripts.objc3c_workflow",
+            "backend": "npm run objc3c -- <action>",
             "validation_tier": "repo",
             "guarantee_owner": "GitHub Actions and local npm users route workflow actions through one package bridge",
             "pass_through_args": True,
