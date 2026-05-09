@@ -1,7 +1,13 @@
 add_library(objc3c_driver STATIC
   objc3_cli_options.cpp
   objc3_cli_environment.cpp
+  objc3_cli_conformance_options.cpp
+  objc3_cli_language_options.cpp
+  objc3_cli_option_reader.cpp
   objc3_cli_option_application.cpp
+  objc3_cli_output_options.cpp
+  objc3_cli_runtime_options.cpp
+  objc3_cli_toolchain_options.cpp
   objc3_cli_option_validation.cpp
   objc3_cli_value_parsers.cpp
   objc3_driver_cross_module_imported_input_block.cpp
