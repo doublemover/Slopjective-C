@@ -2,9 +2,9 @@
 
 #include "diag/objc3_diag_utils.h"
 #include "parse/objc3_parser_cursor.h"
+#include "parse/objc3_parser_cstyle_type_classifier.h"
 #include "parse/objc3_parser_declaration_surface.h"
 #include "parse/objc3_parser_diagnostics.h"
-#include "parse/objc3_parser_type_surface.h"
 
 namespace objc3c::parse {
 

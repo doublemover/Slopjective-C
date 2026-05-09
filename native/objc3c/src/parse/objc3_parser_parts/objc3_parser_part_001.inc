@@ -11,6 +11,7 @@
 #include "parse/objc3_parse_support.h"
 #include "parse/objc3_parser_attributes.h"
 #include "parse/objc3_parser_block_literal_source.h"
+#include "parse/objc3_parser_cstyle_type_classifier.h"
 #include "parse/objc3_parser_cstyle_type_parser.h"
 #include "parse/objc3_parser_cursor.h"
 #include "parse/objc3_parser_core.h"
@@ -24,7 +25,6 @@
 #include "parse/objc3_parser_statement_profiles.h"
 #include "parse/objc3_parser_statement_surface.h"
 #include "parse/objc3_parser_token_metadata.h"
-#include "parse/objc3_parser_type_surface.h"
 #include "parse/objc3_type_feature_profiles.h"
 #include "support/objc3_method_family.h"
 

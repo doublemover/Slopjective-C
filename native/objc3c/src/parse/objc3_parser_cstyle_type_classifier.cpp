@@ -1,4 +1,4 @@
-#include "parse/objc3_parser_type_surface.h"
+#include "parse/objc3_parser_cstyle_type_classifier.h"
 
 namespace objc3c::parse {
 
@@ -124,14 +124,17 @@ bool IsObjc3CStyleFunctionDeclarationStart(
     return false;
   }
   std::size_t cursor = index + 1u;
-  while (cursor < tokens.size() && tokens[cursor].kind == Objc3LexTokenKind::Star) {
+  while (cursor < tokens.size() &&
+         tokens[cursor].kind == Objc3LexTokenKind::Star) {
     ++cursor;
   }
-  if (cursor >= tokens.size() || tokens[cursor].kind != Objc3LexTokenKind::Identifier) {
+  if (cursor >= tokens.size() ||
+      tokens[cursor].kind != Objc3LexTokenKind::Identifier) {
     return false;
   }
   ++cursor;
-  return cursor < tokens.size() && tokens[cursor].kind == Objc3LexTokenKind::LParen;
+  return cursor < tokens.size() &&
+         tokens[cursor].kind == Objc3LexTokenKind::LParen;
 }
 
 }  // namespace objc3c::parse

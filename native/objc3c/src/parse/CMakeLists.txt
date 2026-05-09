@@ -9,19 +9,21 @@ add_library(objc3c_parse STATIC
   objc3_parser_attributes.cpp
   objc3_parser_block_literal_source.cpp
   objc3_parser_core.cpp
+  objc3_parser_cstyle_type_classifier.cpp
   objc3_parser_cstyle_type_parser.cpp
   objc3_parser_cursor.cpp
   objc3_parser_declaration_surface.cpp
-  objc3_parser_diagnostics.cpp
+  objc3_parser_diagnostic_builder.cpp
   objc3_parser_expression_nodes.cpp
   objc3_parser_expression_surface.cpp
   objc3_parser_profile_helpers.cpp
+  objc3_parser_recovery_boundaries.cpp
+  objc3_parser_rejection_diagnostics.cpp
   objc3_parser_recovery.cpp
   objc3_parser_statement_nodes.cpp
   objc3_parser_statement_profiles.cpp
   objc3_parser_statement_surface.cpp
   objc3_parser_token_metadata.cpp
-  objc3_parser_type_surface.cpp
   objc3_type_feature_profiles.cpp
   objc3_parser.cpp
   objc3_parser_contract_types.h
