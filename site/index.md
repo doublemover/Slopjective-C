@@ -8,7 +8,7 @@ layout: default
 _Working draft v0.11_  
 _Last updated: 2026-05-09_
 
-Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the schema-backed capability matrix and evidence map instead of archived planning notes, and public commands route through the single npm objc3c bridge.
+Objective-C 3.0 is a native compiler and runtime effort aimed at a safer, more explicit, still recognizably Objective-C language mode. This page is the public overview of the draft and the current implementation. It is intentionally curated: support claims route through the schema-backed capability matrix and evidence map instead of archived planning notes, and public commands route through `npm run objc3c -- <action>`.
 
 > Current status: the project has a real native compiler, real LLVM IR/object emission, and a runnable subset. Full runtime realization of the Objective-C 3.0 object model remains unclaimed until the capability matrix marks it implemented with evidence.
 
@@ -46,7 +46,7 @@ Use this page in three passes:
 | pick a capability-backed showcase example first          | [showcase/README.md](../showcase/README.md)                                                     |
 | see the tutorial build run and verify flow               | [docs/tutorials/build_run_verify.md](../docs/tutorials/build_run_verify.md)                     |
 | follow the guided showcase walkthrough                   | [docs/tutorials/guided_walkthrough.md](../docs/tutorials/guided_walkthrough.md)                 |
-| map ObjC2 habits to canonical ObjC3 examples            | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)     |
+| map ObjC2 patterns to canonical ObjC3 examples          | [docs/tutorials/objc2_to_objc3_migration.md](../docs/tutorials/objc2_to_objc3_migration.md)     |
 | compare ObjC3 against ObjC2, Swift, and C++ expectations | [docs/tutorials/objc2_swift_cpp_comparison.md](../docs/tutorials/objc2_swift_cpp_comparison.md) |
 | evaluate adoption, support, and claim boundaries         | [docs/runbooks/objc3c_adoption_legibility.md](../docs/runbooks/objc3c_adoption_legibility.md)   |
 | find the right draft section                             | [Specification Map](#toc-front-matter)                                                          |
@@ -79,7 +79,7 @@ The current native toolchain can compile and run a real subset of Objective-C 3.
 - integer and boolean values in the canonical runnable subset,
 - bracket message-send syntax lowered through the current runtime dispatch path,
 - strict runtime dispatch diagnostics through `objc3_runtime_dispatch_i32_checked` and the public runtime result surface,
-- npm bridge workflow dispatch through `npm run objc3c -- <action>`,
+- workflow dispatch through `npm run objc3c -- <action>`,
 - native ownership-baseline runtime behavior for retainable object storage,
 - deterministic selector/string pool emission and metadata-bearing object artifacts.
 
@@ -101,7 +101,7 @@ Implemented in parser, semantic passes, and emitted metadata:
 - object-model legality checks,
 - class, metaclass, protocol, category, property, and ivar descriptor families,
 - registration/bootstrap metadata and related artifact plumbing.
-- include-sharded native ownership split across compiler, runtime, pipeline,
+- split native ownership across compiler, runtime, pipeline,
   artifacts, and IO modules for lowering, IR, JSON/schema artifacts, dispatch
   classification, and public runtime C API boundaries.
 

@@ -94,13 +94,13 @@ Use the shortest path that matches what you are trying to do.
 | inspect the checked-in stdlib surface                           | [stdlib/README.md](stdlib/README.md)                                                             | then follow the core, advanced, and program runbooks                                                            |
 | follow the runnable tutorial path                               | [docs/tutorials/getting_started.md](docs/tutorials/getting_started.md)                           | compile one example first, then use the showcase surface                                                        |
 | pick the right capability-backed example first                  | [showcase/README.md](showcase/README.md)                                                         | choose `auroraBoard`, `signalMesh`, or `patchKit` before reading deeper comparison text                         |
-| convert ObjC2 habits into canonical ObjC3 examples or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it                                                 |
+| map ObjC2 patterns into canonical ObjC3 examples or check Swift-facing expectations | [docs/tutorials/objc2_to_objc3_migration.md](docs/tutorials/objc2_to_objc3_migration.md) | then use the broader comparison boundary only where you need it                                                |
 | compare ObjC3 against ObjC2, Swift, or C++ expectations         | [docs/tutorials/objc2_swift_cpp_comparison.md](docs/tutorials/objc2_swift_cpp_comparison.md)     | then follow the showcase examples that back the comparison                                                      |
 | evaluate adoption and support claims                            | [docs/runbooks/objc3c_adoption_legibility.md](docs/runbooks/objc3c_adoption_legibility.md)       | replay `npm run objc3c -- validate-adoption-legibility` and inspect the generated evidence summary              |
 | inspect performance surfaces                                    | [docs/runbooks/objc3c_runtime_performance.md](docs/runbooks/objc3c_runtime_performance.md)       | then use the performance and compiler-throughput commands                                                       |
 | inspect conformance, fuzz, and reporting work                   | [docs/runbooks/objc3c_conformance_corpus.md](docs/runbooks/objc3c_conformance_corpus.md)         | then use the stress, external-validation, and public-conformance workflows                                      |
 | inspect package, installer, and release flows                   | [docs/runbooks/objc3c_release_foundation.md](docs/runbooks/objc3c_release_foundation.md)         | then follow packaging channels, release operations, and distribution credibility                                |
-| contribute a normal repo change                                 | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use the single npm bridge                                               |
+| contribute a normal repo change                                 | [CONTRIBUTING.md](CONTRIBUTING.md)                                                               | stay inside the superclean boundary and use `npm run objc3c -- <action>`                                        |
 | inspect runnable showcase examples                              | [showcase/README.md](showcase/README.md)                                                         | compile them through `npm run objc3c -- compile-objc3c ...` or the showcase surface check                       |
 | inspect implementation boundaries                               | [docs/objc3c-native.md](docs/objc3c-native.md)                                                   | then open `native/objc3c/`                                                                                      |
 | run exact public workflow actions                               | [docs/runbooks/objc3c_public_command_surface.md](docs/runbooks/objc3c_public_command_surface.md) | use `npm run objc3c -- <action>` instead of guessing                                                            |
@@ -152,7 +152,7 @@ Explicit non-goals for cleanup work:
 
 - reintroducing milestone-coded command names or sidecar legacy files,
 - documenting retired Objective-C aliases as supported public behavior,
-- describing old source modes, registry facades, fallback shims, or direct helper
+- describing old source modes, registry facades, adapter layers, or direct helper
   commands as supported public paths,
 - treating `tmp/`, `artifacts/`, or archived redirect material as onboarding surfaces,
 - hand-editing generated outputs instead of their canonical inputs.
@@ -292,7 +292,7 @@ Use these entrypoints:
 
 Operational facts:
 
-- native builds run through the CMake/Ninja-backed wrapper
+- native builds run through the public `build-native-*` actions backed by CMake/Ninja
 - the persistent build tree lives under `tmp/build-objc3c-native`
 - published binaries and libraries live under `artifacts/`
 - contract artifacts and summaries live under `tmp/artifacts/` and `tmp/reports/`
@@ -303,8 +303,9 @@ For the exact backend and artifact contract, use
 
 ## Public Command Surface
 
-Use the single npm bridge for normal work. The public surface is now large and
-purpose-specific, so use the generated appendix for the full action map.
+Use `npm run objc3c -- <action>` for normal work. The public surface is now
+large and purpose-specific, so use the generated appendix for the full action
+map.
 
 Common entrypoints by job:
 
@@ -345,7 +346,7 @@ Common entrypoints by job:
 Rules:
 
 - prefer `npm run objc3c -- <action>` over invoking implementation helpers for workflow actions,
-- use the same npm bridge for maintainer-only command-surface upkeep: `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
+- use the same public command surface for maintainer-only command-surface upkeep: `build-public-command-contract`, `check-public-command-contract`, and `check-public-command-budget`,
 - treat `native/objc3c/` as the only supported compiler implementation root,
 - treat `stdlib/` as the canonical checked-in standard-library root instead of inventing parallel helper trees,
 - use `docs/runbooks/objc3c_public_command_surface.md` for the synchronized command/action/backend reference,

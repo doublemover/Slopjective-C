@@ -29,7 +29,7 @@ This file defines source ownership for generated `site/index.md`.
 - Contract or policy changes in `site/src/*` require `compiler/docs` review.
 - Anchor or status-model changes in `site/src/index.body.md` require `compiler/docs` review.
 - PR description must include regeneration command and drift-check result.
-- Command examples must use the package bridge,
+- Command examples must use the public npm action surface,
   `npm run objc3c -- <action>`, and must not introduce package-script alias
   names.
 - Capability status changes must cite `docs/support/capability_matrix.*` and
@@ -50,7 +50,7 @@ Treat these as the live documentation-generation surfaces:
   - `docs/objc3c-native.md`
 - machine-facing generated operator appendix:
   - `package.json`
-  - package bridge: `npm run objc3c -- <action>`
+  - public npm action surface: `npm run objc3c -- <action>`
   - action catalog: `scripts/objc3c_workflow/action_catalog.py`
   - `npm run objc3c -- build-public-command-surface`
   - `docs/runbooks/objc3c_public_command_surface.md`

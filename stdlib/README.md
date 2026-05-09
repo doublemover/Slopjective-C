@@ -66,6 +66,9 @@ This root is not a place for:
   than dotted
 - machine-owned materializations belong under `tmp/artifacts/stdlib/`
 - validation reports belong under `tmp/reports/stdlib/`
-- runnable package staging stays on the existing runnable toolchain bundle flow
+- runnable package staging stays on the existing
+  `npm run objc3c -- package-runnable-toolchain` flow
+- validation and packaging commands for this root use the public
+  `npm run objc3c -- <action>` surface
 - reader-facing onboarding, comparison, and capability-demo work stays on the
   live `docs/tutorials/`, `showcase/`, and `site/src/index.body.md` surfaces
