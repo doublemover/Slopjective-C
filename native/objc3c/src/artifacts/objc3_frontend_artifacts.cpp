@@ -19,6 +19,7 @@
 #include "artifacts/json/semantic_type_manifest_json.h"
 #include "artifacts/objc3_frontend_artifact_sanity.h"
 #include "artifacts/objc3_frontend_conformance_artifacts.h"
+#include "artifacts/objc3_frontend_feature_claim_artifacts.h"
 #include "artifacts/objc3_frontend_runtime_import_artifacts.h"
 #include "contracts/objc3_frontend_diagnostics_bus_contract.h"
 #include "diag/objc3_diag_utils.h"
@@ -57,6 +58,12 @@ using objc3::artifacts::identity::BuildObjc3TranslationUnitIdentityKey;
 using objc3::artifacts::interop::BuildInteropBridgeArtifactJson;
 using objc3::artifacts::interop::BuildInteropBridgeHeaderArtifactText;
 using objc3::artifacts::interop::BuildInteropBridgeModuleArtifactText;
+using objc3::artifacts::BuildRunnableFeatureClaimIds;
+using objc3::artifacts::BuildSourceOnlyFeatureClaimIds;
+using objc3::artifacts::BuildSupportedSelectionSurfaceIds;
+using objc3::artifacts::BuildSuppressedMacroClaimIds;
+using objc3::artifacts::BuildUnsupportedFeatureClaimIds;
+using objc3::artifacts::BuildUnsupportedSelectionSurfaceIds;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetDeclarations;
 using objc3c::support::CountRuntimeMetadataSourceRecordSetReferences;
 
@@ -189,41 +196,6 @@ std::string BuildStringArrayJson(const std::vector<std::string> &values) {
   return objc3::io::json::RenderJsonStringArray(values);
 }
 
-std::vector<std::string> BuildRunnableFeatureClaimIds() {
-  return {
-      kObjc3RunnableFeatureClaimModule,
-      kObjc3RunnableFeatureClaimGlobalLet,
-      kObjc3RunnableFeatureClaimFunctionBodies,
-      kObjc3RunnableFeatureClaimExternPrototypes,
-      kObjc3RunnableFeatureClaimScalarCore,
-      kObjc3RunnableFeatureClaimControlFlow,
-      kObjc3RunnableFeatureClaimMessageSend,
-  };
-}
-
-std::vector<std::string> BuildSourceOnlyFeatureClaimIds() {
-  return {
-      kObjc3SourceOnlyFeatureClaimProtocols,
-      kObjc3SourceOnlyFeatureClaimInterfaces,
-      kObjc3SourceOnlyFeatureClaimImplementations,
-      kObjc3SourceOnlyFeatureClaimCategories,
-      kObjc3SourceOnlyFeatureClaimProperties,
-      kObjc3SourceOnlyFeatureClaimObjectPointerSurface,
-  };
-}
-
-std::vector<std::string> BuildUnsupportedFeatureClaimIds() {
-  return {
-      kObjc3UnsupportedFeatureClaimStrictness,
-      kObjc3UnsupportedFeatureClaimStrictConcurrency,
-      kObjc3UnsupportedFeatureClaimThrows,
-      kObjc3UnsupportedFeatureClaimAsyncAwait,
-      kObjc3UnsupportedFeatureClaimActors,
-      kObjc3UnsupportedFeatureClaimBlocks,
-      kObjc3UnsupportedFeatureClaimArc,
-  };
-}
-
 constexpr char kObjc3RuntimeAwareImportModuleSurfaceContractId[] =
     "objc3c.runtime.aware.import.module.surface.v1";
 constexpr char kObjc3RuntimeAwareImportModuleSurfacePath[] =
@@ -234,29 +206,6 @@ constexpr char kObjc3RuntimeAwareImportModuleSurfaceNonGoalModel[] =
     "no-imported-module-artifact-reader-no-imported-runtime-declaration-materialization-no-imported-runtime-metadata-reference-lowering";
 constexpr char kObjc3RuntimeAwareImportModuleSurfaceFailureModel[] =
     "fail-closed-on-runtime-aware-import-module-surface-drift-or-premature-capability-claims";
-
-std::vector<std::string> BuildSupportedSelectionSurfaceIds() {
-  return {
-      kObjc3SupportedSelectionSurfaceLanguageVersion,
-      kObjc3SupportedSelectionSurfaceLanguageProfile,
-  };
-}
-
-std::vector<std::string> BuildUnsupportedSelectionSurfaceIds() {
-  return {
-      kObjc3UnsupportedSelectionSurfaceStrictness,
-      kObjc3UnsupportedSelectionSurfaceStrictConcurrency,
-      kObjc3RejectedSelectionSurfaceCanonicalRejectionDiagnostics,
-  };
-}
-
-std::vector<std::string> BuildSuppressedMacroClaimIds() {
-  return {
-      kObjc3SuppressedMacroClaimStrictnessLevel,
-      kObjc3SuppressedMacroClaimConcurrencyMode,
-      kObjc3SuppressedMacroClaimConcurrencyStrict,
-  };
-}
 
 std::string BuildRunnableFeatureClaimInventoryReplayKey(
     const Objc3FrontendOptions &options,
