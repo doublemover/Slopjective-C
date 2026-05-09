@@ -11,6 +11,8 @@ from .progress_format import command_display
 from .progress_format import format_seconds
 from .progress_format import repo_display_path
 from .progress_format import round_seconds
+from .progress_snapshots import build_final_progress_summary
+from .progress_snapshots import build_progress_snapshot
 
 
 class RuntimeAcceptanceProgress:
@@ -38,47 +40,21 @@ class RuntimeAcceptanceProgress:
         self.write_progress()
 
     def snapshot(self) -> dict[str, Any]:
-        return {
-            "status": "RUNNING",
-            "run_id": self.run_id,
-            "run_dir": repo_display_path(self.run_dir),
-            "progress_path": repo_display_path(self.progress_path),
-            "elapsed_seconds": self.elapsed_seconds(),
-            "total_case_count": self.total_cases,
-            "completed_case_count": len(self.case_timings),
-            "current_case": self.current_case,
-            "current_command": self.current_command,
-            "last_completed_case": self.last_completed_case,
-            "case_timings": self.case_timings,
-            "command_timings": self.command_timings,
-            "progress_report_write_overhead": {
-                "contract_id": "objc3c.runtime.acceptance.progress.write.overhead.v1",
-                "write_count": self.progress_write_count,
-                "total_seconds": round_seconds(self.progress_write_seconds),
-                "max_seconds": round_seconds(self.progress_write_max_seconds),
-                "overhead_percent_of_elapsed": round_seconds(
-                    (
-                        self.progress_write_seconds
-                        / max(perf_counter() - self.started_at, 0.000001)
-                    )
-                    * 100.0
-                ),
-                "model": (
-                    "console progress stays immediate; progress.json remains the "
-                    "durable current-state snapshot while report-write overhead is measured"
-                ),
-            },
-            "slowest_cases": sorted(
-                self.case_timings,
-                key=lambda entry: float(entry.get("duration_seconds", 0.0)),
-                reverse=True,
-            )[:10],
-            "slowest_commands": sorted(
-                self.command_timings,
-                key=lambda entry: float(entry.get("duration_seconds", 0.0)),
-                reverse=True,
-            )[:10],
-        }
+        return build_progress_snapshot(
+            run_id=self.run_id,
+            run_dir=self.run_dir,
+            progress_path=self.progress_path,
+            elapsed_seconds=self.elapsed_seconds(),
+            total_cases=self.total_cases,
+            current_case=self.current_case,
+            current_command=self.current_command,
+            last_completed_case=self.last_completed_case,
+            case_timings=self.case_timings,
+            command_timings=self.command_timings,
+            progress_write_count=self.progress_write_count,
+            progress_write_seconds=self.progress_write_seconds,
+            progress_write_max_seconds=self.progress_write_max_seconds,
+        )
 
     def write_progress(self) -> None:
         self.progress_path.parent.mkdir(parents=True, exist_ok=True)
@@ -188,11 +164,7 @@ class RuntimeAcceptanceProgress:
         )
 
     def final_summary(self) -> dict[str, Any]:
-        summary = self.snapshot()
-        summary["status"] = "PASS"
-        summary["current_case"] = None
-        summary["current_command"] = None
-        return summary
+        return build_final_progress_summary(self.snapshot())
 
 
 ACCEPTANCE_PROGRESS: RuntimeAcceptanceProgress | None = None
