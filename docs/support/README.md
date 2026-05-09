@@ -25,6 +25,8 @@ The canonical schema registry entries live under `schemas/`:
 
 - Add or change a support claim in `capability_matrix.json` first.
 - Add matching evidence rows in `evidence_map.json`.
+- Use `owner_modules` for internal implementation boundaries that support a
+  claim without becoming public command surface.
 - Update the markdown projections in this directory when the machine-readable
   truth changes.
 - Keep site/spec/runbook summaries subordinate to this directory.

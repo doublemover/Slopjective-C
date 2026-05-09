@@ -15,6 +15,10 @@ truth schemas. They are illustrative; the checked-in truth remains
   "support_claims": [
     "objc3c.behavior.parser.canonical-syntax"
   ],
+  "owner_modules": [
+    "native/objc3c/src/parse/objc3_parser_core.cpp",
+    "native/objc3c/src/parse/objc3_parser_declaration_surface.cpp"
+  ],
   "evidence": [
     {
       "kind": "test",
@@ -33,7 +37,8 @@ Rules shown by this entry:
 
 - `implemented` behavior needs evidence.
 - Public replay commands use the npm bridge only.
-- Source files may be evidence without becoming public command surface.
+- Source files and `owner_modules` may bound the implementation without
+  becoming public command surface.
 
 ## Reserved Capability Entry
 
