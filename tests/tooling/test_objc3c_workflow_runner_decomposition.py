@@ -100,7 +100,10 @@ from scripts.objc3c_workflow.registry_schema_index import (
 from scripts.objc3c_workflow.registry_lookup import catalog_action_spec as owned_catalog_action_spec
 from scripts.objc3c_workflow.registry_store import catalog_action_spec
 from scripts.objc3c_workflow.report_output import emit_json as owned_emit_json
-from scripts.objc3c_workflow.reports import emit_json, write_json_report
+from scripts.objc3c_workflow.report_rendering import (
+    render_report_json as owned_render_report_json,
+)
+from scripts.objc3c_workflow.reports import emit_json, render_report_json, write_json_report
 from scripts.objc3c_workflow.request_handler_dispatch import (
     dispatch_parsed_workflow_request as owned_dispatch_parsed_workflow_request,
 )
@@ -179,6 +182,10 @@ def test_action_registry_payload_publishes_schema_index_and_capability_truth() -
 
 def test_workflow_report_json_helpers_emit_canonical_json(tmp_path, capsys) -> None:
     assert emit_json is owned_emit_json
+    assert render_report_json is owned_render_report_json
+    assert render_report_json({"b": 2, "a": 1}) == (
+        '{\n  "b": 2,\n  "a": 1\n}\n'
+    )
     assert emit_json({"b": 2, "a": 1}) == 0
     assert capsys.readouterr().out == '{\n  "b": 2,\n  "a": 1\n}\n'
 

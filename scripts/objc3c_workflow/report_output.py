@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import sys
 
-from scripts.objc3c_shared.json_io import render_json
+from .report_rendering import render_report_json
 
 
 def emit_json(payload: object) -> int:
-    sys.stdout.write(render_json(payload))
+    sys.stdout.write(render_report_json(payload))
     return 0
 
 
