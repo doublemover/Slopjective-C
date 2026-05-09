@@ -5,6 +5,12 @@
   "package_bridge": "objc3c",
   "compile_action": "compile-objc3c",
   "native_build_action": "build-native-binaries",
+  "behavior_owner_split_index": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/index.json",
+  "behavior_boundary": {
+    "primary_axis": "behavior phase before throughput workload bucket",
+    "support_authority": "throughput sources and scripts are timing, provenance, and runner evidence only until a behavior owner split claims the phase",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, and alternate acceptance path evidence is canonical rejection, strict-error, or provenance-only evidence"
+  },
   "heavy_validation_actions": [
     "test-execution-smoke",
     "test-recovery",

@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-compiler-throughput-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+  "support_boundary": "semantic ownership covers typed diagnostics and source validation surfaced during compile workloads; cache measurements cannot widen semantic support",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_roots:native/objc3c/src/sema",
+    "heavy_validation_actions:test-negative-expectations",
+    "workloads:incremental-cache-invalidation",
+    "source:tests/tooling/fixtures/native/macro_host_process_provider.objc3"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "compatibility shim gates, unsupported feature claims, and semantic recovery positives are strict diagnostics or canonical rejection evidence"
+}

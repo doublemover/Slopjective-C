@@ -1,6 +1,13 @@
 {
   "contract_id": "objc3c.compiler.throughput.artifact.surface.v1",
   "schema_version": 1,
+  "behavior_owner_split_index": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/index.json",
+  "artifact_boundary": {
+    "support_authority": false,
+    "primary_axis": "provenance artifact before behavior support",
+    "generated_rule": "tmp reports, perf summaries, command surfaces, docs outputs, and runnable packages are generated/provenance-only evidence",
+    "retired_surface_rule": "cache, macro-host, or runner artifacts that mention fallback, shim, compatibility, old-mode, unsupported, or recovery-positive semantics map to canonical_rejection"
+  },
   "benchmark_script": "scripts/check_objc3c_native_perf_budget.ps1",
   "summary_contract_id": "objc3c.compiler.throughput.summary.v1",
   "summary_schema": "schemas/objc3c-compiler-throughput-summary-v1.schema.json",

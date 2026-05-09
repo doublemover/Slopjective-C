@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-compiler-throughput-behavior-owner-split",
+  "owner_phase": "parser",
+  "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+  "support_boundary": "parser ownership covers source-form parse acceptance cited by throughput compile wrappers; timing rows do not create parser support on their own",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "source_roots:native/objc3c/src/ast",
+    "heavy_validation_actions:test-recovery",
+    "heavy_validation_actions:test-fixture-matrix",
+    "workloads:compile-cold-wrapper",
+    "workloads:compile-cache-hit-wrapper",
+    "source:tests/tooling/fixtures/native/hello.objc3"
+  ],
+  "canonical_anchor": "tests/native/parser",
+  "retired_surface_rule": "legacy syntax, old-mode flags, parser fallback flags, and compatibility parser lanes remain parser rejection evidence unless canonical parser fixtures claim support"
+}

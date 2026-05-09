@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-compiler-throughput-behavior-owner-split-index",
+  "source_surface": "tests/tooling/fixtures/compiler_throughput/source_surface.json",
+  "workload_manifest": "tests/tooling/fixtures/compiler_throughput/workload_manifest.json",
+  "artifact_surface": "tests/tooling/fixtures/compiler_throughput/artifact_surface.json",
+  "split_policy": {
+    "primary_axis": "behavior phase before timing workload, generated artifact, or runner bucket",
+    "positive_rule": "compiler throughput rows can cite canonical behavior only through parser, sema, lowering, IR, runtime, or e2e owners",
+    "provenance_rule": "generated docs, command surfaces, perf summaries, cache artifacts, and tmp packages are provenance-only and never define native behavior support",
+    "retired_surface_rule": "old-mode, shim, fallback, compatibility, unsupported, alternate acceptance path, and cache-recovery claims are canonical rejection, strict-error, or provenance-only evidence"
+  },
+  "owner_splits": [
+    {
+      "owner_phase": "parser",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/parser.json"
+    },
+    {
+      "owner_phase": "sema",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/sema.json"
+    },
+    {
+      "owner_phase": "lowering",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/lowering.json"
+    },
+    {
+      "owner_phase": "ir",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/ir.json"
+    },
+    {
+      "owner_phase": "runtime",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/runtime.json"
+    },
+    {
+      "owner_phase": "e2e",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/e2e.json"
+    },
+    {
+      "owner_phase": "canonical_rejection",
+      "path": "tests/tooling/fixtures/compiler_throughput/behavior_owner_splits/canonical_rejection.json"
+    }
+  ]
+}
