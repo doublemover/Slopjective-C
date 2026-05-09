@@ -1,5 +1,11 @@
 add_library(objc3c_diag STATIC
+  objc3_diag_category.cpp
+  objc3_diag_code.cpp
   objc3_diag_format.cpp
+  objc3_diag_record.cpp
+  objc3_diag_render.cpp
+  objc3_diag_severity.cpp
+  objc3_diag_sink.cpp
   objc3_diag_sort.cpp
   objc3_diag_catalog.cpp
   objc3_diag_parse.cpp

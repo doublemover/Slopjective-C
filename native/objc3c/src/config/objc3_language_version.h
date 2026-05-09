@@ -2,6 +2,9 @@
 
 #include <cstdint>
 #include <string>
+#include <string_view>
+
+#include "config/objc3_config_validation.h"
 
 namespace objc3c::config {
 
@@ -12,10 +15,10 @@ inline constexpr bool IsCanonicalLanguageVersion(std::uint32_t version) {
   return version == kCanonicalLanguageVersion;
 }
 
-inline std::string UnsupportedLanguageVersionDiagnostic(std::uint32_t version) {
-  return "unsupported Objective-C language version for native frontend (expected " +
-         std::to_string(static_cast<unsigned>(kCanonicalLanguageVersion)) +
-         "): " + std::to_string(version);
-}
+std::string UnsupportedLanguageVersionDiagnostic(std::uint32_t version);
+ConfigValidationResult ValidateCanonicalLanguageVersion(std::uint32_t version);
+bool ParseLanguageVersionText(std::string_view text, std::uint32_t &version);
+ConfigValidationResult ValidateCanonicalLanguageVersionText(
+    std::string_view text);
 
 }  // namespace objc3c::config

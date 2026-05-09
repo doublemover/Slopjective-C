@@ -1,41 +1,55 @@
 #include "diag/objc3_diag_catalog.h"
 
-#include <cctype>
-#include <string>
+#include <array>
 
-#include "diag/objc3_diag_text.h"
+namespace {
 
-unsigned DiagSeverityRank(std::string_view severity) {
-  const std::string normalized = ToLower(std::string(severity));
-  if (normalized == "fatal") {
-    return 0;
+constexpr std::array<NativeDiagCodeCatalogEntry, 8> kNativeDiagCodeCatalog = {{
+    {'C', Objc3DiagnosticSubsystem::kCanonicalConfig,
+     Objc3DiagnosticCategory::kConfiguration,
+     "canonical language/configuration hard-cutover diagnostics", 1, 99},
+    {'L', Objc3DiagnosticSubsystem::kLanguageSurface,
+     Objc3DiagnosticCategory::kLexical,
+     "lexer, language surface, lowering, and post-pipeline diagnostics", 1,
+     399},
+    {'P', Objc3DiagnosticSubsystem::kParser,
+     Objc3DiagnosticCategory::kParsing,
+     "parser grammar and typed AST construction diagnostics", 1, 399},
+    {'S', Objc3DiagnosticSubsystem::kSemantic,
+     Objc3DiagnosticCategory::kSemanticAnalysis,
+     "semantic analysis, type system, and contract diagnostics", 1, 399},
+    {'R', Objc3DiagnosticSubsystem::kRuntime,
+     Objc3DiagnosticCategory::kRuntime,
+     "runtime dispatch, C API, and metadata diagnostics", 1, 399},
+    {'E', Objc3DiagnosticSubsystem::kFrontendApi,
+     Objc3DiagnosticCategory::kFrontendApi,
+     "public frontend C API and embedding diagnostics", 1, 99},
+    {'A', Objc3DiagnosticSubsystem::kArtifact,
+     Objc3DiagnosticCategory::kArtifact,
+     "artifact, manifest, and schema diagnostics", 1, 399},
+    {'T', Objc3DiagnosticSubsystem::kTooling,
+     Objc3DiagnosticCategory::kTooling,
+     "tooling and workflow diagnostics", 1, 399},
+}};
+
+}  // namespace
+
+const NativeDiagCodeCatalogEntry *FindNativeDiagCodeCatalogEntry(
+    std::string_view candidate) {
+  Objc3DiagnosticCode parsed;
+  if (!TryParseNativeDiagCode(candidate, parsed)) {
+    return nullptr;
   }
-  if (normalized == "error") {
-    return 1;
+  for (const auto &entry : kNativeDiagCodeCatalog) {
+    if (entry.family == candidate[2] && entry.subsystem == parsed.subsystem &&
+        parsed.ordinal >= entry.min_ordinal &&
+        parsed.ordinal <= entry.max_ordinal) {
+      return &entry;
+    }
   }
-  if (normalized == "warning") {
-    return 2;
-  }
-  if (normalized == "note") {
-    return 3;
-  }
-  if (normalized == "ignored") {
-    return 4;
-  }
-  return 5;
+  return nullptr;
 }
 
-bool IsNativeDiagCode(std::string_view candidate) {
-  if (candidate.size() != 6) {
-    return false;
-  }
-  if (candidate[0] != 'O' || candidate[1] != '3') {
-    return false;
-  }
-  if (std::isupper(static_cast<unsigned char>(candidate[2])) == 0) {
-    return false;
-  }
-  return std::isdigit(static_cast<unsigned char>(candidate[3])) != 0 &&
-         std::isdigit(static_cast<unsigned char>(candidate[4])) != 0 &&
-         std::isdigit(static_cast<unsigned char>(candidate[5])) != 0;
+bool NativeDiagCodeIsWithinCatalog(std::string_view candidate) {
+  return FindNativeDiagCodeCatalogEntry(candidate) != nullptr;
 }

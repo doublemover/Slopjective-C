@@ -3,3 +3,6 @@ add_library(objc3c_diagnostics_modes STATIC
 )
 objc3c_apply_build_defaults(objc3c_diagnostics_modes)
 objc3c_apply_llvm_direct_config(objc3c_diagnostics_modes)
+target_link_libraries(objc3c_diagnostics_modes PUBLIC
+  objc3c_config
+)

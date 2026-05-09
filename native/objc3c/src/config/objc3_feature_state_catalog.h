@@ -1,7 +1,8 @@
 #pragma once
 
-#include <array>
 #include <cstdint>
+#include <span>
+#include <string_view>
 
 namespace objc3c::config {
 
@@ -19,21 +20,11 @@ struct LanguageFeatureState {
   const char *summary;
 };
 
-inline constexpr std::array<LanguageFeatureState, 7> kCanonicalFeatureStates = {{
-    {"objc3-language-version", FeatureState::Implemented, "",
-     "Objective-C 3.0 is the only accepted native frontend language version."},
-    {"legacy-objective-c-mode", FeatureState::Rejected, "O3C001",
-     "Legacy Objective-C compatibility mode is removed from active surfaces."},
-    {"legacy-literal-aliases", FeatureState::Rejected, "O3C002",
-     "YES, NO, and NULL are rejected as legacy aliases on the canonical path."},
-    {"migration-assist", FeatureState::Rejected, "O3C003",
-     "Migration-assist behavior is not a supported hard-cutover mode."},
-    {"optional-template-alias", FeatureState::Rejected, "O3C004",
-     "optional<T> aliases are rejected in favor of canonical Optional<T> spelling."},
-    {"runtime-shim-dispatch", FeatureState::Rejected, "O3R001",
-     "Runtime dispatch must resolve or return a structured error."},
-    {"feature-reservation", FeatureState::Reserved, "",
-     "Reserved syntax must remain explicit and fail closed until implemented."},
-}};
+const char *FeatureStateName(FeatureState state);
+bool FeatureStateIsAccepted(FeatureState state);
+bool FeatureStateIsRejected(FeatureState state);
+std::span<const LanguageFeatureState> CanonicalFeatureStates();
+const LanguageFeatureState *FindCanonicalFeatureState(
+    std::string_view feature);
 
 }  // namespace objc3c::config

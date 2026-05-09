@@ -2,6 +2,7 @@
 
 #include <limits>
 
+#include "diag/objc3_diag_code.h"
 #include "diag/objc3_diag_text.h"
 
 bool TryParseUnsignedSegment(std::string_view text,
@@ -27,16 +28,23 @@ bool TryParseUnsignedSegment(std::string_view text,
   return true;
 }
 
-bool TryParseDiagnosticCoordinateAndCode(std::string_view diag_text,
-                                         unsigned &line,
-                                         unsigned &column,
-                                         std::string &code) {
-  constexpr std::string_view kPrefix = "error:";
-  if (!StartsWith(diag_text, kPrefix)) {
+bool TryParseRenderedDiagnostic(std::string_view diag_text,
+                                Objc3DiagnosticPayload &payload) {
+  payload = Objc3DiagnosticPayload{};
+  const std::size_t severity_end = diag_text.find(':');
+  if (severity_end == std::string_view::npos) {
+    return false;
+  }
+  const Objc3DiagnosticSeverity severity =
+      ParseDiagnosticSeverity(diag_text.substr(0, severity_end));
+  if (severity == Objc3DiagnosticSeverity::kUnknown) {
     return false;
   }
 
-  const std::size_t line_begin = kPrefix.size();
+  unsigned line = 0;
+  unsigned column = 0;
+  std::string code;
+  const std::size_t line_begin = severity_end + 1u;
   const std::size_t first_colon = diag_text.find(':', line_begin);
   if (first_colon == std::string_view::npos ||
       !TryParseUnsignedSegment(diag_text, line_begin, first_colon, line)) {
@@ -64,5 +72,36 @@ bool TryParseDiagnosticCoordinateAndCode(std::string_view diag_text,
   code.assign(
       diag_text.substr(code_begin_marker + 2u,
                        diag_text.size() - code_begin_marker - 3u));
-  return !code.empty();
+  if (!IsNativeDiagCode(code)) {
+    return false;
+  }
+
+  std::size_t message_begin = second_colon + 1u;
+  while (message_begin < diag_text.size() && diag_text[message_begin] == ' ') {
+    ++message_begin;
+  }
+  if (code_begin_marker <= message_begin) {
+    return false;
+  }
+
+  payload.severity = severity;
+  payload.coordinate = Objc3DiagnosticCoordinate{line, column};
+  payload.code = code;
+  payload.message = std::string(
+      diag_text.substr(message_begin, code_begin_marker - message_begin));
+  return !payload.message.empty();
+}
+
+bool TryParseDiagnosticCoordinateAndCode(std::string_view diag_text,
+                                         unsigned &line,
+                                         unsigned &column,
+                                         std::string &code) {
+  Objc3DiagnosticPayload payload;
+  if (!TryParseRenderedDiagnostic(diag_text, payload)) {
+    return false;
+  }
+  line = payload.coordinate.line;
+  column = payload.coordinate.column;
+  code = payload.code;
+  return true;
 }

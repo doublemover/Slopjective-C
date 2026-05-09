@@ -1,7 +1,12 @@
-add_library(objc3c_config INTERFACE)
-target_link_libraries(objc3c_config INTERFACE
-  objc3c_build_defaults
+add_library(objc3c_config STATIC
+  objc3_config_parsing.cpp
+  objc3_config_validation.cpp
+  objc3_feature_state_catalog.cpp
+  objc3_language_profile.cpp
+  objc3_language_version.cpp
+  objc3_removed_command_options.cpp
 )
+objc3c_apply_build_defaults(objc3c_config)
 
 add_library(objc3c_pipeline_results INTERFACE)
 target_link_libraries(objc3c_pipeline_results INTERFACE
