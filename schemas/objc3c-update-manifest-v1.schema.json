@@ -14,7 +14,7 @@
     "supported_platform_ids",
     "support_tiers",
     "channels",
-    "compatibility_report"
+    "upgrade_support_report"
   ],
   "properties": {
     "contract_id": { "const": "objc3c.release.operations.update-manifest.v1" },
@@ -51,7 +51,7 @@
         }
       }
     },
-    "compatibility_report": { "type": "string" }
+    "upgrade_support_report": { "type": "string", "minLength": 1 }
   },
   "$defs": {
     "supportTier": {

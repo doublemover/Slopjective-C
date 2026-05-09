@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://objc3c.dev/schemas/objc3c-compatibility-report-v1.schema.json",
+  "$id": "https://objc3c.dev/schemas/objc3c-upgrade-support-report-v1.schema.json",
   "title": "objc3c Upgrade Support Report",
   "type": "object",
   "additionalProperties": false,
@@ -15,10 +15,10 @@
     "support_windows",
     "upgrade_paths",
     "warnings",
-    "rollback_guidance"
+    "revert_guidance"
   ],
   "properties": {
-    "contract_id": { "const": "objc3c.release.operations.compatibility-report.v1" },
+    "contract_id": { "const": "objc3c.release.operations.upgrade-support-report.v1" },
     "generated_at_utc": { "type": "string" },
     "current_version": { "type": "string" },
     "default_platform_id": { "type": "string" },
@@ -54,10 +54,10 @@
       "type": "array",
       "items": { "$ref": "#/$defs/reportWarning" }
     },
-    "rollback_guidance": {
+    "revert_guidance": {
       "type": "array",
       "minItems": 1,
-      "items": { "$ref": "#/$defs/rollbackGuidance" }
+      "items": { "$ref": "#/$defs/revertGuidance" }
     }
   },
   "$defs": {
@@ -95,7 +95,7 @@
         "message": { "type": "string" }
       }
     },
-    "rollbackGuidance": {
+    "revertGuidance": {
       "type": "object",
       "additionalProperties": false,
       "required": ["channel_id", "instruction"],

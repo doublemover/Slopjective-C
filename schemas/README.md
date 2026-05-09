@@ -16,6 +16,17 @@ published IDs may keep their existing IDs, but placeholder domains and relative
 | `objc3c-capability-matrix-v1.schema.json` | Public capability states, support claims, evidence entries, command-surface policy, and hard-cutover rules. |
 | `objc3c-capability-evidence-map-v1.schema.json` | Flattened capability-to-evidence rows used by docs and release evidence maps. |
 
+## Release And Adoption Schemas
+
+| Schema | Owns |
+| ------ | ---- |
+| `objc3c-adoption-legibility-evidence-v1.schema.json` | Adoption, onboarding, comparison, and claim-audit evidence without migration-lane support claims. |
+| `objc3c-long-horizon-operations-evidence-v1.schema.json` | Support-window, upgrade replay, revert-readiness, soak, and aging-regression evidence. |
+| `objc3c-upgrade-support-report-v1.schema.json` | Upgrade support reporting, support windows, warnings, and revert guidance. |
+| `objc3c-update-manifest-v1.schema.json` | Release-channel update metadata linked to the upgrade support report. |
+| `objc3c-package-lock-v1.schema.json` | Package lock provenance with npm-bridge replay commands. |
+| `objc3c-package-offline-mirror-index-v1.schema.json` | Offline package mirror metadata with npm-bridge replay commands. |
+
 The canonical data files are:
 
 - `docs/support/capability_matrix.json`
@@ -35,6 +46,9 @@ The human-readable projections are:
   states.
 - Shims, fallback paths, migration lanes, legacy modes, old modes, and
   prose-only support claims are not alternate states.
+- Historical schema words such as compatibility mode, migration lane, or
+  rollback may appear only as retired-surface examples; active fields use
+  upgrade, adoption, support, and revert terminology.
 - Internal rows may identify implementation owners, schema owners, workflow
   owners, or report owners without claiming public Objective-C 3.0 language
   behavior.

@@ -8,8 +8,8 @@
     "schema_version",
     "generated_from",
     "support_window",
-    "migration_replay",
-    "rollback",
+    "upgrade_replay",
+    "revert_readiness",
     "soak",
     "aging_regression",
     "claim_audit"
@@ -35,7 +35,10 @@
         },
         "commands": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
           "minItems": 1
         }
       },
@@ -55,7 +58,7 @@
       },
       "additionalProperties": false
     },
-    "migration_replay": {
+    "upgrade_replay": {
       "type": "object",
       "required": ["status", "source_version", "target_version", "evidence_paths"],
       "properties": {
@@ -69,7 +72,7 @@
       },
       "additionalProperties": false
     },
-    "rollback": {
+    "revert_readiness": {
       "type": "object",
       "required": ["status", "channels", "evidence_paths"],
       "properties": {

@@ -8,7 +8,7 @@
     "schema_version",
     "generated_from",
     "evaluator_path",
-    "migration_playbook",
+    "adoption_playbook",
     "comparison_matrix",
     "onboarding",
     "candidate_claims",
@@ -35,7 +35,10 @@
         },
         "commands": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": {
+            "type": "string",
+            "pattern": "^npm run objc3c -- [a-z0-9][a-z0-9-]*(?: .*)?$"
+          },
           "minItems": 1
         }
       },
@@ -63,7 +66,7 @@
       },
       "additionalProperties": false
     },
-    "migration_playbook": {
+    "adoption_playbook": {
       "type": "object",
       "required": ["status", "phases", "interop_axes", "replay_fields"],
       "properties": {
