@@ -843,7 +843,8 @@
         "ir",
         "runtime",
         "e2e",
-        "canonical_rejection"
+        "canonical_rejection",
+        "runtime_performance_provenance"
       ],
       "index_evidence": [
         "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/index.json",
@@ -853,9 +854,10 @@
         "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/ir.json",
         "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime.json",
         "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/e2e.json",
-        "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json"
+        "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json",
+        "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime_performance_provenance.json"
       ],
-      "retired_disposition": "runtime-performance acceptance cases, probes, hot-path families, counter snapshots, generated report packets, and runnable package artifacts are resolved through behavior-first phase indexes before any timing row is cited as support; fallback, shim, compatibility, old-mode, unsupported, unresolved-dispatch, strict-dispatch, cache-only, and alternate acceptance semantics remain canonical rejection, strict-error, or provenance-only evidence"
+      "retired_disposition": "runtime-performance acceptance cases, probes, hot-path families, timing rows, cache rows, counter snapshots, generated report packets, runtime acceptance reports, integration summaries, runnable summaries, packet roots, tmp reports, tmp artifacts, runnable package artifacts, source-surface rows, workload manifest rows, artifact-surface rows, optimization-policy rows, generated-only rows, report-only rows, and migration-only rows are resolved through behavior-first phase indexes and runtime performance provenance before any timing row, cache row, report packet, counter snapshot, or generated artifact is cited as support; fallback, shim, compatibility, old-mode, unsupported, unresolved-dispatch, strict-dispatch, cache-only, timing-only, runner-only, package-only, counter-only, generated-only, report-only, migration-only, and alternate acceptance semantics remain canonical rejection, strict-error, absent-support, or provenance-only evidence"
     },
     {
       "family": "runtime_corrective_owner_split_indexes",
@@ -1264,6 +1266,7 @@
     "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime.json",
     "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/e2e.json",
     "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/canonical_rejection.json",
+    "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/runtime_performance_provenance.json",
     "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/index.json",
     "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/parser.json",
     "tests/tooling/fixtures/runtime_corrective/behavior_owner_splits/sema.json",

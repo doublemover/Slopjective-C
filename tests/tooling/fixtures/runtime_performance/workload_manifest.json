@@ -4,10 +4,10 @@
   "manifest_kind": "startup-dispatch-reflection-ownership-runtime-workloads",
   "behavior_owner_split_index": "tests/tooling/fixtures/runtime_performance/behavior_owner_splits/index.json",
   "workload_boundary_policy": {
-    "primary_axis": "behavior owner before hot-path workload family",
-    "support_authority": "runtime performance workloads measure acceptance cases and probes; canonical support must be cited through behavior owner splits",
-    "runtime_acceptance_rule": "runtime acceptance reports are runtime/e2e evidence only after parser, sema, lowering, and IR boundaries remain provenance or are claimed by canonical fixtures",
-    "retired_surface_rule": "strict dispatch, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, and alternate acceptance rows map to canonical_rejection"
+    "primary_axis": "behavior owner before hot-path workload family, acceptance case, probe path, timing row, cache row, report packet, generated artifact, report-only row, migration-only row, runner-only row, package artifact, or counter snapshot",
+    "support_authority": "runtime performance workloads measure acceptance cases and probes; canonical support must be cited through behavior owner splits and never through workload names, measured fields, reports, packets, or counters alone",
+    "runtime_acceptance_rule": "runtime acceptance reports are runtime/e2e evidence only after parser, sema, lowering, and IR boundaries remain provenance or are claimed by canonical fixtures; report-only, generated-only, migration-only, runner-only, timing-only, cache-only, package-only, and counter-only acceptance rows stay provenance or rejection",
+    "retired_surface_rule": "strict dispatch, unresolved dispatch, fallback, shim, compatibility, old-mode, unsupported, alternate acceptance, cache-only, timing-only, runner-only, package-only, counter-only, generated-only, report-only, and migration-only rows map to canonical_rejection or runtime_performance_provenance"
   },
   "benchmark_root": "tests/tooling/fixtures/runtime_performance",
   "artifact_root": "tmp/artifacts/runtime-performance",
