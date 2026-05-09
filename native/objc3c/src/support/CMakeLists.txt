@@ -67,8 +67,11 @@ add_library(objc3c_support STATIC
   objc3_profile_single_token_match.cpp
   objc3_profile_single_token_match.h
   objc3_profile_token_match.h
-  objc3_runtime_dispatch_symbol.cpp
+  objc3_runtime_dispatch_symbol_characters.cpp
+  objc3_runtime_dispatch_symbol_characters.h
   objc3_runtime_dispatch_symbol.h
+  objc3_runtime_dispatch_symbol_validation.cpp
+  objc3_runtime_dispatch_symbol_validation.h
   objc3_runtime_metadata_category_reference_counts.h
   objc3_runtime_metadata_class_reference_counts.h
   objc3_runtime_metadata_declaration_counts.h

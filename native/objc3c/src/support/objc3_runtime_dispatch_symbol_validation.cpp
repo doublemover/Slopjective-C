@@ -1,18 +1,10 @@
-#include "support/objc3_runtime_dispatch_symbol.h"
+#include "support/objc3_runtime_dispatch_symbol_validation.h"
 
 #include <cstddef>
 
-#include "support/objc3_ascii_predicates.h"
+#include "support/objc3_runtime_dispatch_symbol_characters.h"
 
 namespace objc3c::support {
-
-bool IsRuntimeDispatchSymbolStart(char c) {
-  return IsAsciiAlpha(c) || c == '_' || c == '$' || c == '.';
-}
-
-bool IsRuntimeDispatchSymbolBody(char c) {
-  return IsAsciiAlphaNumeric(c) || c == '_' || c == '$' || c == '.';
-}
 
 bool IsValidRuntimeDispatchSymbol(std::string_view symbol) {
   if (symbol.empty() || !IsRuntimeDispatchSymbolStart(symbol.front())) {

@@ -1,11 +1,4 @@
 #pragma once
 
-#include <string_view>
-
-namespace objc3c::support {
-
-bool IsRuntimeDispatchSymbolStart(char c);
-bool IsRuntimeDispatchSymbolBody(char c);
-bool IsValidRuntimeDispatchSymbol(std::string_view symbol);
-
-}  // namespace objc3c::support
+#include "support/objc3_runtime_dispatch_symbol_characters.h"
+#include "support/objc3_runtime_dispatch_symbol_validation.h"
