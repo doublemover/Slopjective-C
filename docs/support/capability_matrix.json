@@ -17,7 +17,7 @@
       "direct python or PowerShell helper invocations",
       "direct CMake or native helper invocations",
       "retired package-script aliases",
-      "public_scripts alias metadata",
+      "retired public_scripts alias metadata",
       "workflow registry facade claims",
       "success-without-evidence capability claims",
       "runtime-behavior claims not represented by implemented matrix rows"

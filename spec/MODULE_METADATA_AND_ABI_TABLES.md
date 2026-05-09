@@ -22,7 +22,7 @@ This section applies to:
 
 - exported declarations and their semantic signatures,
 - emitted object-model metadata needed for runtime realization,
-- cross-module import and compatibility checks,
+- cross-module import support and rejection checks,
 - textual interfaces used for distribution or debugging.
 
 ## D.2 Required module metadata surface {#d-2}
@@ -32,7 +32,7 @@ reconstruct the exported semantic surface without guessing.
 
 At minimum, exported metadata shall include:
 
-1. **Module identity and compatibility information**
+1. **Module identity and version/support information**
    - module name,
    - language version requirement,
    - metadata format version,
@@ -60,7 +60,7 @@ At minimum, exported metadata shall include:
    - registration and bootstrap records required to make emitted metadata discoverable at runtime.
 
 5. **Importer validation data**
-   - whether a field is required or optional for compatibility,
+   - whether a field is required or optional for import support,
    - whether a missing field is a hard import failure,
    - whether an unknown field may be ignored safely.
 
@@ -1902,7 +1902,7 @@ OCI-1 requirements:
 - declaration identity key stable across emit/import within a release line,
 - required concurrency fields listed in [Table F](#d-3-6).
 
-OCI-1 versioning and compatibility follow the same rules as [D.2.2](#d-2-2) and [D.3.4](#d-3-4).
+OCI-1 versioning and importer outcomes follow the same rules as [D.2.2](#d-2-2) and [D.3.4](#d-3-4).
 Unknown required OCI-1 fields/capabilities are hard errors.
 
 ## D.3 Required metadata tables {#d-legacy-3}
@@ -1954,9 +1954,9 @@ This table names **conceptual hooks**. Implementations may use different symbol 
 | Autorelease pools    | Push/pop implicit pools around execution slices                      | Normative on ObjC runtimes ([C.7](#c-7)).                              |
 | Diagnostics metadata | Preserve enough source mapping for async/macro debugging             | [Part 12](#part-12) requires debuggability.                            |
 
-### D.3.4 Table D — Metadata version compatibility matrix (normative) {#d-3-4}
+### D.3.4 Table D — Metadata version and importer-outcome matrix (normative) {#d-3-4}
 
-| Producer metadata vs importer support / payload condition             | Compatibility direction                      | Required importer behavior                                                                                    |
+| Producer metadata vs importer support / payload condition             | Import direction                             | Required importer behavior                                                                                    |
 | --------------------------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `schema_major` equal; producer `schema_minor` <= importer max minor   | backward (new importer reads older payload)  | Accept; treat absent newer fields as unavailable.                                                             |
 | `schema_major` equal; producer `schema_minor` > importer max minor    | forward (older importer reads newer payload) | Accept only if all unknown elements are ignorable extension fields and all `required_capabilities` are known. |
@@ -1964,7 +1964,7 @@ This table names **conceptual hooks**. Implementations may use different symbol 
 | `schema_major` equal; known-required field missing/invalid in payload | both                                         | Diagnose per [Table E](#d-3-5); ABI-significant/effect-lowering omissions remain hard errors in all profiles. |
 | `schema_major` differs                                                | both                                         | Hard error: reject import; report producer and importer major versions.                                       |
 
-For forward compatibility, ignorable extension fields are explicitly non-semantic for [Table A](#d-3-1) conformance and may be skipped.
+For forward evolution, ignorable extension fields are explicitly non-semantic for [Table A](#d-3-1) conformance and may be skipped.
 
 ### D.3.5 Table E — Importer validation by conformance profile (normative) {#d-3-5}
 

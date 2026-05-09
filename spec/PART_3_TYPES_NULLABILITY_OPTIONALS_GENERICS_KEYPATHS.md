@@ -65,7 +65,7 @@ In Objective‑C 3.0 mode, the following keywords are reserved by this part:
 - `optional`, `some`, `none` (reserved for future value-optional syntax)
 
 In ObjC 3.0 mode, the type-constructor spelling `Optional<...>` is reserved for a future value-optional ABI.
-User declarations shall not occupy unescaped `Optional`/`optional`/`some`/`none` spellings; use the raw-identifier escape in [§1.3.3](#part-1-3-2) when source compatibility requires these names.
+User declarations shall not occupy unescaped `Optional`/`optional`/`some`/`none` spellings; use the raw-identifier escape in [§1.3.3](#part-1-3-2) when imported source needs these names preserved.
 
 (Additional reserved keywords are specified in [Part 1](#part-1).)
 
@@ -91,7 +91,7 @@ Objective‑C 3.0 recognizes the following nullability kinds for Objective‑C o
 - **Nullable**: value may be `nil`.
 - **Unspecified**: nullability is unknown (legacy).
 
-The **unspecified** kind exists only for compatibility and shall be treated as “potentially nil” for safety diagnostics.
+The **unspecified** kind exists only for imported Objective-C declarations that lack stronger nullability facts and shall be treated as “potentially nil” for safety diagnostics.
 
 ### 3.2.2 Where nullability applies {#part-3-2-2}
 
@@ -171,7 +171,7 @@ Outside such a region:
 
 - unannotated object/block pointer types are treated as **unspecified**.
 
-> Rationale: this allows headers to become “safe by default” while preserving compatibility with legacy code.
+> Rationale: this allows headers to become “safe by default” while preserving imported legacy declarations as explicit, diagnosable source.
 
 ### 3.2.5 Nullability completeness {#part-3-2-5}
 
@@ -199,7 +199,7 @@ Declarations with no inspected positions are **not applicable** for completeness
 A module interface is **nullability-complete** for an import view if all exported, applicable declarations in that view are complete.
 A module interface is **nullability-incomplete** if any exported, applicable declaration in that view is nullability-incomplete.
 
-Intentional use of `_Null_unspecified` for compatibility is permitted, but still counts as incompleteness for this classification.
+Intentional use of `_Null_unspecified` for imported legacy declarations is permitted, but still counts as incompleteness for this classification.
 
 #### 3.2.5.3 Mixed C/ObjC/ObjC++ import views {#part-3-2-5-3}
 
@@ -393,7 +393,7 @@ Per [D-013](DECISIONS_LOG.md#decisions-d-013), any future value-optional feature
 
 ## 3.4 Nullable receivers and optional access {#part-3-4}
 
-Objective‑C historically allows messaging `nil` and returns zero/`nil`. ObjC 3.0 preserves this behavior for compatibility but provides **explicit, typed optional access** and enables strict diagnostics.
+Objective-C historically allows messaging `nil` and returns zero/`nil`. ObjC 3.0 treats that as the canonical nullable-receiver semantic rule while also providing **explicit, typed optional access** and strict diagnostics.
 
 ### 3.4.1 Optional member access: `?.` {#part-3-4-1}
 

@@ -71,7 +71,7 @@
     },
     "extensions": {
       "type": "object",
-      "description": "Non-normative extension metadata is closed in hard-cutover manifests; use a versioned schema field instead of compatibility sidecars.",
+      "description": "Non-normative extension metadata is closed in hard-cutover manifests; use a versioned schema field instead of retired sidecars.",
       "additionalProperties": false
     }
   },
