@@ -2,6 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://slopjective-c.dev/schemas/objc3c-validation-acceptance-artifact-index-v1.schema.json",
   "title": "ObjC3C Validation Acceptance Artifact Index v1",
+  "x-objc3c-artifact-contract": {
+    "schema_id": "objc3c-validation-acceptance-artifact-index-v1",
+    "payload_id_field": "contract_id",
+    "payload_id_value": "objc3c.validation.acceptance.artifact.index.v1",
+    "registry_owner": "native/objc3c/src/artifacts/json/artifact_schema_registry.cpp",
+    "artifact_family": "validation-acceptance"
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [

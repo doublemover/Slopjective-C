@@ -12,25 +12,18 @@ namespace objc3::artifacts::json {
 namespace {
 
 using objc3::io::json::JsonObjectWriter;
-
-void WriteArraySeparator(std::ostream &out, bool &first) {
-  if (!first) {
-    out << ',';
-  }
-  first = false;
-}
+using objc3::io::json::JsonArrayWriter;
 
 template <typename RecordT, typename WriteRecordFn>
 std::string RenderRecordArray(const std::vector<RecordT> &records,
                               WriteRecordFn write_record) {
   std::ostringstream out;
-  out << '[';
-  bool first = true;
+  JsonArrayWriter array(out);
   for (const auto &record : records) {
-    WriteArraySeparator(out, first);
+    array.BeginElement();
     write_record(out, record);
   }
-  out << ']';
+  array.End();
   return out.str();
 }
 

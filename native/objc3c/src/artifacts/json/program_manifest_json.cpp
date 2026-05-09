@@ -12,13 +12,7 @@ namespace objc3::artifacts::json {
 namespace {
 
 using objc3::io::json::JsonObjectWriter;
-
-void WriteArraySeparator(std::ostream &out, bool &first) {
-  if (!first) {
-    out << ',';
-  }
-  first = false;
-}
+using objc3::io::json::JsonArrayWriter;
 
 std::vector<std::string> BuildParamTypeNames(const FunctionDecl &function) {
   std::vector<std::string> names;
@@ -56,24 +50,22 @@ void WriteFunctionRecord(std::ostream &out, const FunctionDecl &function) {
 void WriteProgramGlobalsManifestArray(
     std::ostream &out, const std::vector<GlobalDecl> &globals,
     const std::vector<int> &resolved_global_values) {
-  out << '[';
-  bool first = true;
+  JsonArrayWriter array(out);
   for (std::size_t index = 0; index < globals.size(); ++index) {
-    WriteArraySeparator(out, first);
+    array.BeginElement();
     WriteGlobalRecord(out, globals[index], resolved_global_values[index]);
   }
-  out << ']';
+  array.End();
 }
 
 void WriteFunctionDeclarationsManifestArray(
     std::ostream &out, const std::vector<const FunctionDecl *> &functions) {
-  out << '[';
-  bool first = true;
+  JsonArrayWriter array(out);
   for (const FunctionDecl *function : functions) {
-    WriteArraySeparator(out, first);
+    array.BeginElement();
     WriteFunctionRecord(out, *function);
   }
-  out << ']';
+  array.End();
 }
 
 }  // namespace objc3::artifacts::json

@@ -104,6 +104,11 @@ void JsonObjectWriter::StringArrayField(std::string_view name,
   WriteJsonStringArray(out_, values);
 }
 
+void JsonObjectWriter::ValueField(std::string_view name, const JsonValue &value) {
+  BeginField(name);
+  WriteJson(out_, value);
+}
+
 void JsonObjectWriter::RawJsonField(std::string_view name, std::string_view value) {
   BeginField(name);
   out_ << value;
@@ -114,6 +119,65 @@ void JsonObjectWriter::End() {
     return;
   }
   out_ << '}';
+  ended_ = true;
+}
+
+JsonArrayWriter::JsonArrayWriter(std::ostream &out) : out_(out) {
+  out_ << '[';
+}
+
+void JsonArrayWriter::BeginElement() {
+  if (!first_) {
+    out_ << ',';
+  }
+  first_ = false;
+}
+
+void JsonArrayWriter::StringValue(std::string_view value) {
+  BeginElement();
+  objc3::io::WriteJsonString(out_, value);
+}
+
+void JsonArrayWriter::BoolValue(bool value) {
+  BeginElement();
+  out_ << (value ? "true" : "false");
+}
+
+void JsonArrayWriter::IntValue(std::int64_t value) {
+  BeginElement();
+  out_ << value;
+}
+
+void JsonArrayWriter::NumberValue(double value) {
+  BeginElement();
+  out_ << std::setprecision(17) << value;
+}
+
+void JsonArrayWriter::SizeValue(std::size_t value) {
+  BeginElement();
+  out_ << value;
+}
+
+void JsonArrayWriter::UnsignedValue(std::uint64_t value) {
+  BeginElement();
+  out_ << value;
+}
+
+void JsonArrayWriter::Value(const JsonValue &value) {
+  BeginElement();
+  WriteJson(out_, value);
+}
+
+void JsonArrayWriter::RawJsonValue(std::string_view value) {
+  BeginElement();
+  out_ << value;
+}
+
+void JsonArrayWriter::End() {
+  if (ended_) {
+    return;
+  }
+  out_ << ']';
   ended_ = true;
 }
 
@@ -129,14 +193,11 @@ std::string RenderJson(const JsonValue &value) {
 
 void WriteJsonStringArray(std::ostream &out,
                           const std::vector<std::string> &values) {
-  out << '[';
-  for (std::size_t index = 0; index < values.size(); ++index) {
-    if (index > 0) {
-      out << ',';
-    }
-    objc3::io::WriteJsonString(out, values[index]);
+  JsonArrayWriter array(out);
+  for (const std::string &value : values) {
+    array.StringValue(value);
   }
-  out << ']';
+  array.End();
 }
 
 std::string RenderJsonStringArray(const std::vector<std::string> &values) {

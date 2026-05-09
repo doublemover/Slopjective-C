@@ -25,12 +25,36 @@ class JsonObjectWriter {
   void UnsignedField(std::string_view name, std::uint64_t value);
   void StringArrayField(std::string_view name,
                         const std::vector<std::string> &values);
+  void ValueField(std::string_view name, const JsonValue &value);
   void RawJsonField(std::string_view name, std::string_view value);
   void End();
 
  private:
   void BeginField(std::string_view name);
 
+  std::ostream &out_;
+  bool first_ = true;
+  bool ended_ = false;
+};
+
+class JsonArrayWriter {
+ public:
+  explicit JsonArrayWriter(std::ostream &out);
+  JsonArrayWriter(const JsonArrayWriter &) = delete;
+  JsonArrayWriter &operator=(const JsonArrayWriter &) = delete;
+
+  void BeginElement();
+  void StringValue(std::string_view value);
+  void BoolValue(bool value);
+  void IntValue(std::int64_t value);
+  void NumberValue(double value);
+  void SizeValue(std::size_t value);
+  void UnsignedValue(std::uint64_t value);
+  void Value(const JsonValue &value);
+  void RawJsonValue(std::string_view value);
+  void End();
+
+ private:
   std::ostream &out_;
   bool first_ = true;
   bool ended_ = false;
