@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from scripts.source_hygiene.roots import DEFAULT_SCAN_ROOTS
 from scripts.source_hygiene.scanner import build_report, write_reports
 
 
@@ -245,6 +246,38 @@ def test_hard_cutover_gate_rejects_retired_npm_workflow_aliases(tmp_path: Path) 
 
     assert report["ok"] is False
     assert report["active_findings"][0]["pattern_id"] == "retired-npm-workflow-command"
+
+
+def test_hard_cutover_gate_rejects_retired_public_script_alias_metadata(
+    tmp_path: Path,
+) -> None:
+    write(
+        tmp_path / "docs/support/capability_matrix.md",
+        "The public_scripts alias table remains authoritative.\n",
+    )
+    write(
+        tmp_path / "site/src/index.body.md",
+        "The publicScripts metadata field is still displayed.\n",
+    )
+
+    report = build_report(root=tmp_path, scan_roots=("docs", "site"), excludes=())
+
+    assert report["ok"] is False
+    assert [finding["pattern_id"] for finding in report["active_findings"]] == [
+        "retired-public-script-alias-metadata",
+        "retired-public-script-alias-metadata",
+    ]
+
+
+def test_hard_cutover_default_roots_cover_public_command_truth_surfaces() -> None:
+    assert "README.md" in DEFAULT_SCAN_ROOTS
+    assert "CONTRIBUTING.md" in DEFAULT_SCAN_ROOTS
+    assert "docs" in DEFAULT_SCAN_ROOTS
+    assert "showcase" in DEFAULT_SCAN_ROOTS
+    assert "spec" in DEFAULT_SCAN_ROOTS
+    assert "stdlib" in DEFAULT_SCAN_ROOTS
+    assert "site" in DEFAULT_SCAN_ROOTS
+    assert "tests" in DEFAULT_SCAN_ROOTS
 
 
 def test_hard_cutover_gate_rejects_legacy_literal_diagnostics_switch(tmp_path: Path) -> None:
