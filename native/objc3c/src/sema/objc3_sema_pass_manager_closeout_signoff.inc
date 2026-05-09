@@ -109,15 +109,10 @@
           result.parity_surface.type_metadata_publication_record) &&
       result.parity_surface.diagnostics_after_pass_monotonic &&
       result.parity_surface.deterministic_semantic_diagnostics &&
-      result.parity_surface.deterministic_type_metadata_handoff &&
-      result.parity_surface.deterministic_atomic_memory_order_mapping &&
-      result.parity_surface.deterministic_vector_type_lowering &&
-      result.parity_surface.atomic_memory_order_mapping.deterministic &&
-      result.parity_surface.vector_type_lowering.deterministic &&
-      result.parity_surface.globals_total == result.parity_surface.type_metadata_global_entries &&
-      result.parity_surface.functions_total == result.parity_surface.type_metadata_function_entries &&
-      result.parity_surface.interfaces_total == result.parity_surface.type_metadata_interface_entries &&
-      result.parity_surface.implementations_total == result.parity_surface.type_metadata_implementation_entries &&
+      result.parity_surface
+          .deterministic_type_metadata_mapping_readiness_record &&
+      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
+          result.parity_surface.type_metadata_mapping_readiness_record) &&
       result.parity_surface.deterministic_typed_semantic_handoff_record &&
       IsReadyObjc3SemaTypedSemanticHandoffRecord(
           result.parity_surface.typed_semantic_handoff_record) &&
@@ -205,21 +200,14 @@
       IsReadyObjc3SemaPassFlowRecoveryRecord(
           result.parity_surface.pass_flow_recovery_record);
   const bool closeout_type_metadata_handoff_ready =
-      result.parity_surface.deterministic_type_metadata_handoff &&
-      result.parity_surface.globals_total ==
-          result.parity_surface.type_metadata_global_entries &&
-      result.parity_surface.functions_total ==
-          result.parity_surface.type_metadata_function_entries &&
-      result.parity_surface.interfaces_total ==
-          result.parity_surface.type_metadata_interface_entries &&
-      result.parity_surface.implementations_total ==
-          result.parity_surface.type_metadata_implementation_entries;
+      result.parity_surface
+          .deterministic_type_metadata_mapping_readiness_record &&
+      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
+          result.parity_surface.type_metadata_mapping_readiness_record);
   const bool closeout_typed_semantic_handoffs_ready =
       result.parity_surface.deterministic_typed_semantic_handoff_record &&
       IsReadyObjc3SemaTypedSemanticHandoffRecord(
-          result.parity_surface.typed_semantic_handoff_record) &&
-      result.parity_surface.deterministic_atomic_memory_order_mapping &&
-      result.parity_surface.deterministic_vector_type_lowering;
+          result.parity_surface.typed_semantic_handoff_record);
   const bool closeout_parity_validation_ready =
       result.parity_surface.ready &&
       result.parity_surface.deterministic_parity_validation_record &&
