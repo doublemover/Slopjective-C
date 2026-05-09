@@ -1,6 +1,8 @@
 #pragma once
 
-#include "lower/metadata/lowering_metadata_helpers.h"
+#include "lower/metadata/metadata_replay_token_helpers.h"
+
+#include "lower/objc3_lowering_contract.h"
 
 #include <ostream>
 

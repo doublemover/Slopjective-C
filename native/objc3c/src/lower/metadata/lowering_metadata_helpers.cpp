@@ -1,5 +1,7 @@
 #include "lower/metadata/lowering_metadata_helpers.h"
 
+// Canonical family ordering is the single lower-side ordering authority used
+// by policy build, readiness, and replay helpers.
 extern const std::array<const char *,
                         kObjc3RuntimeMetadataLayoutPolicyFamilyCount>
     kCanonicalRuntimeMetadataFamilyOrder = {
@@ -12,9 +14,8 @@ extern const std::array<const char *,
 
 const char *BoolToken(bool value) { return value ? "true" : "false"; }
 
-// object-format policy expansion anchor: lowering selects one
-// supported host object format and derives emitted section spellings from the
-// logical metadata ABI surface before IR emission begins.
+// Object-format mapping owns host format detection and logical-to-emitted
+// section spelling rules before IR emission begins.
 const char *HostRuntimeMetadataObjectFormat() {
 #if defined(_WIN32)
   return kObjc3RuntimeMetadataObjectFormatCoff;
@@ -71,6 +72,8 @@ std::string MapRuntimeMetadataSectionForObjectFormat(
   return "";
 }
 
+// Retention flags are driver-linker spellings for keeping the metadata root
+// live across the supported object formats.
 std::string BuildRuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
     const std::string &object_format, const std::string &symbol_name) {
   if (symbol_name.empty()) {
@@ -88,6 +91,8 @@ std::string BuildRuntimeMetadataDriverLinkerRetentionFlagForObjectFormat(
   return "";
 }
 
+// Descriptor counting is intentionally isolated from retention-root accounting;
+// callers add non-descriptor globals at their policy boundary.
 std::size_t CountRuntimeMetadataLayoutDescriptors(
     const std::array<Objc3RuntimeMetadataLayoutPolicyFamily,
                      kObjc3RuntimeMetadataLayoutPolicyFamilyCount> &families) {
