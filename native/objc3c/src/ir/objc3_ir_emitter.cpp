@@ -14,6 +14,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_block_runtime_contracts.h"
+#include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
 #include "ir/objc3_ir_message_send_validation.h"
 #include "ir/objc3_ir_method_definition_plan.h"
@@ -11765,16 +11766,14 @@ class Objc3IREmitter {
       // runtime family, preserves their normalized method-family metadata, and
       // never synthesizes a reserved direct-dispatch entrypoint.
       // dispatch lowering ABI anchor: lowering emits the canonical runtime
-      // entrypoint directly. The compatibility symbol stays exported only as a
-      // non-emitted alias while selector lookup, receiver/result ABI, and the
-      // fixed four-slot argument vector remain stable.
+      // entrypoint directly while selector lookup, receiver/result ABI, and
+      // the fixed four-slot argument vector remain stable.
       // runtime call ABI generation anchor: normalized instance/class/super
       // and dynamic sends all call objc3_runtime_dispatch_i32 directly.
       // live-dispatch cutover anchor: supported dynamic sends now
       // join instance/class/super on objc3_runtime_dispatch_i32, nil semantics
-      // for canonical surfaces stay runtime-owned, the compatibility symbol is
-      // retained only as a non-emitted alias/test surface, and reserved direct
-      // dispatch surfaces still fail closed before IR emission.
+      // for canonical surfaces stay runtime-owned, and reserved direct dispatch
+      // surfaces still fail closed before IR emission.
       // live-dispatch gate anchor: supported live sends must
       // continue to emit only objc3_runtime_dispatch_i32 calls here. The
       // non-authoritative test surface remains exported only as evidence/test surface, and
@@ -11813,16 +11812,17 @@ class Objc3IREmitter {
     const std::string merge_label = NewLabel(ctx, "msg_merge_");
     const std::string dispatch_value = NewTemp(ctx);
     const std::string out = NewTemp(ctx);
-    ctx.code_lines.push_back("  " + is_nil + " = icmp eq i32 " + lowered.receiver + ", 0");
-    ctx.code_lines.push_back("  br i1 " + is_nil + ", label %" + nil_label + ", label %" + dispatch_label);
-    ctx.code_lines.push_back(nil_label + ":");
-    ctx.code_lines.push_back("  br label %" + merge_label);
-    ctx.code_lines.push_back(dispatch_label + ":");
+    ctx.code_lines.push_back(BuildObjc3IRI32IsZeroLine(is_nil, lowered.receiver));
+    ctx.code_lines.push_back(
+        BuildObjc3IRConditionalBranchLine(is_nil, nil_label, dispatch_label));
+    ctx.code_lines.push_back(BuildObjc3IRLabelLine(nil_label));
+    ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
+    ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
     emit_dispatch_call(dispatch_value);
-    ctx.code_lines.push_back("  br label %" + merge_label);
-    ctx.code_lines.push_back(merge_label + ":");
-    ctx.code_lines.push_back("  " + out + " = phi i32 [0, %" + nil_label + "], [" + dispatch_value + ", %" +
-                             dispatch_label + "]");
+    ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
+    ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
+    ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
+        out, "0", nil_label, dispatch_value, dispatch_label));
     InvalidateGlobalProofState(ctx);
     return out;
   }
@@ -11848,21 +11848,19 @@ class Objc3IREmitter {
       const std::string merge_label = NewLabel(ctx, "opt_send_merge_");
       const std::string out = NewTemp(ctx);
 
-      ctx.code_lines.push_back("  " + is_nil + " = icmp eq i32 " +
-                               lowered.receiver + ", 0");
-      ctx.code_lines.push_back("  br i1 " + is_nil + ", label %" + nil_label +
-                               ", label %" + dispatch_label);
-      ctx.code_lines.push_back(nil_label + ":");
-      ctx.code_lines.push_back("  br label %" + merge_label);
-      ctx.code_lines.push_back(dispatch_label + ":");
+      ctx.code_lines.push_back(BuildObjc3IRI32IsZeroLine(is_nil, lowered.receiver));
+      ctx.code_lines.push_back(
+          BuildObjc3IRConditionalBranchLine(is_nil, nil_label, dispatch_label));
+      ctx.code_lines.push_back(BuildObjc3IRLabelLine(nil_label));
+      ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
+      ctx.code_lines.push_back(BuildObjc3IRLabelLine(dispatch_label));
       lowered.receiver_dispatch_facts = Objc3IRKnownNonNilReceiverFacts();
       MaterializeMessageSendArgs(expr, lowered, ctx);
       const std::string dispatch_value = EmitRuntimeDispatch(lowered, ctx);
-      ctx.code_lines.push_back("  br label %" + merge_label);
-      ctx.code_lines.push_back(merge_label + ":");
-      ctx.code_lines.push_back("  " + out + " = phi i32 [0, %" + nil_label +
-                               "], [" + dispatch_value + ", %" +
-                               dispatch_label + "]");
+      ctx.code_lines.push_back(BuildObjc3IRBranchLine(merge_label));
+      ctx.code_lines.push_back(BuildObjc3IRLabelLine(merge_label));
+      ctx.code_lines.push_back(BuildObjc3IRI32PhiLine(
+          out, "0", nil_label, dispatch_value, dispatch_label));
       return out;
     }
     const LoweredMessageSend lowered = LowerMessageSendExpr(expr, ctx);

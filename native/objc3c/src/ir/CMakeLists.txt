@@ -1,6 +1,7 @@
 add_library(objc3c_ir STATIC
   objc3_ir_block_runtime_contracts.cpp
   objc3_ir_c_string.cpp
+  objc3_ir_control_flow_ops.cpp
   objc3_ir_function_signature_model.cpp
   objc3_ir_literal_parsing.cpp
   objc3_ir_message_send_validation.cpp

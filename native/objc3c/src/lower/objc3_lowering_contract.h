@@ -458,7 +458,7 @@ inline constexpr const char
         "property-descriptors-carry-effective-accessor-selectors-binding-symbols-layout-symbols-and-accessor-implementation-pointers";
 inline constexpr const char
     *kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel =
-        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-storage-global-fallbacks";
+        "no-missing-effective-accessor-bindings-no-duplicate-synthesized-owner-identities-no-shared-storage-bypasses";
 // runtime property/layout consumption freeze anchor: lane-D now
 // freezes the truthful runtime boundary above C003. Runtime consumes emitted
 // synthesized accessor implementation pointers plus property/layout attachment
@@ -479,7 +479,7 @@ inline constexpr const char
         "synthesized-accessor-execution-consumes-runtime-owned-per-instance-slots-selected-by-the-dispatch-frame-property-context";
 inline constexpr const char
     *kObjc3RuntimePropertyLayoutConsumptionFailClosedModel =
-        "no-layout-rederivation-no-storage-global-fallbacks-no-reflective-property-registration";
+        "no-layout-rederivation-no-shared-storage-bypasses-no-reflective-property-registration";
 // instance-allocation-layout-runtime anchor: lane-D upgrades the
 // frozen D001 runtime-consumption boundary into true per-instance allocation
 // backed by realized class layout, emitted ivar offsets, and runtime-owned slot

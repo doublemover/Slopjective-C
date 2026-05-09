@@ -179,7 +179,7 @@ std::string Objc3ExecutableSynthesizedAccessorPropertyLoweringSummary() {
       << kObjc3ExecutableSynthesizedAccessorPropertyLoweringPropertyDescriptorModel
       << ";fail_closed_model="
       << kObjc3ExecutableSynthesizedAccessorPropertyLoweringFailClosedModel
-      << ";non_goals=no-storage-global-fallbacks-no-source-layout-rederivation-no-runtime-property-registration";
+      << ";non_goals=no-shared-storage-bypasses-no-source-layout-rederivation-no-runtime-property-registration";
   return out.str();
 }
 
