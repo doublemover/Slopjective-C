@@ -19,7 +19,7 @@ canonical support truth.
 
 | Schema | Owns |
 | ------ | ---- |
-| `objc3c-adoption-legibility-evidence-v1.schema.json` | Adoption, onboarding, comparison, and claim-audit evidence without migration-lane support claims. |
+| `objc3c-adoption-legibility-evidence-v1.schema.json` | Adoption, onboarding, comparison, and claim-audit evidence without retired-surface support claims. |
 | `objc3c-long-horizon-operations-evidence-v1.schema.json` | Support-window, upgrade replay, revert-readiness, soak, and aging-regression evidence. |
 | `objc3c-upgrade-support-report-v1.schema.json` | Upgrade support reporting, support windows, warnings, and revert guidance. |
 | `objc3c-update-manifest-v1.schema.json` | Release-channel update metadata linked to the upgrade support report. |
@@ -47,11 +47,10 @@ The human-readable projections are:
   user-facing command support.
 - `implemented`, `rejected`, `reserved`, and `internal` are the only capability
   states.
-- Shims, fallback paths, migration lanes, legacy modes, old modes, and
-  prose-only support claims are not alternate states.
-- Historical schema words such as compatibility mode, migration lane, or
-  rollback may appear only as retired-surface examples; active fields use
-  upgrade, adoption, support, and revert terminology.
+- Retired surface terms listed in `docs/support/capability_matrix.json` are
+  not alternate states.
+- Historical wording may appear only through retired-surface examples; active
+  fields use upgrade, adoption, support, and revert terminology.
 - Internal rows may identify implementation owners, schema owners, workflow
   owners, or report owners without claiming public Objective-C 3.0 language
   behavior.
