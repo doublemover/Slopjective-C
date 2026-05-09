@@ -45,6 +45,7 @@ target_link_libraries(objc3c_ir_runtime_surface PUBLIC
 )
 
 add_library(objc3c_ir_publication_surface STATIC
+  objc3_ir_canonical_literal_pools.cpp
   objc3_ir_deterministic_publication.cpp
   objc3_ir_emission_prologue.cpp
   objc3_ir_emission_readiness_publication.cpp

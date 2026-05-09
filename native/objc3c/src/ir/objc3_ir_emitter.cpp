@@ -14,6 +14,7 @@
 
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_block_runtime_contracts.h"
+#include "ir/objc3_ir_canonical_literal_pools.h"
 #include "ir/objc3_ir_concurrency_identity.h"
 #include "ir/objc3_ir_control_flow_ops.h"
 #include "ir/objc3_ir_emission_helpers.h"
@@ -37,7 +38,6 @@
 #include "ir/objc3_ir_runtime_metadata_emission.h"
 #include "ir/objc3_ir_synthesized_property_accessors.h"
 #include "parse/objc3_parse_support.h"
-#include "support/objc3_string_predicates.h"
 
 bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std::vector<int> &values);
 
@@ -84,7 +84,14 @@ class Objc3IREmitter {
         method_definition_plan.metaprogramming_derived_method_count;
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
     CollectKnownClassReceiverConstants();
-    CollectCanonicalPoolLiterals();
+    Objc3IRCanonicalLiteralPools canonical_literal_pools =
+        BuildObjc3IRCanonicalLiteralPools(program_, frontend_metadata_);
+    selector_pool_globals_ =
+        std::move(canonical_literal_pools.selector_pool_globals);
+    runtime_string_pool_globals_ =
+        std::move(canonical_literal_pools.runtime_string_pool_globals);
+    typed_keypath_artifacts_ =
+        std::move(canonical_literal_pools.typed_keypath_artifacts);
     CollectMutableGlobalSymbols();
     CollectFunctionEffects();
   }
@@ -2585,273 +2592,6 @@ class Objc3IREmitter {
     EmitObjc3IRDispatchMetadataPreservationNodes(frontend_metadata_, out);
     EmitObjc3IROwnershipExtensionMetadataNodes(frontend_metadata_, out);
     EmitObjc3IRAsyncDiagnosticLoweringCounterNodes(frontend_metadata_, out);
-  }
-
-  void RegisterSelectorLiteral(const std::string &selector) {
-    if (selector.empty() ||
-        selector_pool_globals_.find(selector) != selector_pool_globals_.end()) {
-      return;
-    }
-    selector_pool_globals_.emplace(selector, "");
-  }
-
-  void RegisterRuntimeStringLiteral(const std::string &value) {
-    if (value.empty() ||
-        runtime_string_pool_globals_.find(value) !=
-            runtime_string_pool_globals_.end()) {
-      return;
-    }
-    runtime_string_pool_globals_.emplace(value, "");
-  }
-
-  void AssignCanonicalPoolGlobalNames() {
-    std::size_t index = 0;
-    for (auto &entry : selector_pool_globals_) {
-      entry.second = "@__objc3_sel_pool_" +
-                     FormatRuntimeMetadataDescriptorOrdinal(index++);
-    }
-    index = 0;
-    for (auto &entry : runtime_string_pool_globals_) {
-      entry.second = "@__objc3_str_pool_" +
-                     FormatRuntimeMetadataDescriptorOrdinal(index++);
-    }
-  }
-
-  void RegisterTypedKeyPathLiteral(const Expr &expr) {
-    if (!expr.typed_keypath_literal_enabled ||
-        !expr.typed_keypath_literal_is_normalized ||
-        expr.typed_keypath_components.empty()) {
-      return;
-    }
-    const std::string profile =
-        expr.typed_keypath_literal_profile.empty()
-            ? std::string("typed-keypath:root=") + expr.typed_keypath_root_name
-            : expr.typed_keypath_literal_profile;
-    if (typed_keypath_artifacts_.find(profile) != typed_keypath_artifacts_.end()) {
-      return;
-    }
-    TypedKeyPathArtifact artifact;
-    artifact.root_is_self = expr.typed_keypath_root_is_self;
-    artifact.root_name = expr.typed_keypath_root_name;
-    artifact.component_path = JoinStringParts(expr.typed_keypath_components, ".");
-    artifact.profile = profile;
-    typed_keypath_artifacts_.emplace(profile, std::move(artifact));
-    RegisterRuntimeStringLiteral(expr.typed_keypath_root_name);
-    RegisterRuntimeStringLiteral(JoinStringParts(expr.typed_keypath_components, "."));
-    RegisterRuntimeStringLiteral(profile);
-    if (!frontend_metadata_.lowering_generic_metadata_abi_replay_key.empty()) {
-      RegisterRuntimeStringLiteral(
-          frontend_metadata_.lowering_generic_metadata_abi_replay_key);
-    }
-  }
-
-  void AssignTypedKeyPathArtifactOrdinals() {
-    std::size_t ordinal = 0;
-    for (auto &entry : typed_keypath_artifacts_) {
-      entry.second.ordinal = ordinal;
-      entry.second.descriptor_symbol =
-          "@__objc3_keypath_desc_" + FormatRuntimeMetadataDescriptorOrdinal(ordinal);
-      ++ordinal;
-    }
-  }
-
-  void CollectSelectorExpr(const Expr *expr) {
-    if (expr == nullptr) {
-      return;
-    }
-    if (expr->typed_keypath_literal_enabled) {
-      RegisterTypedKeyPathLiteral(*expr);
-    }
-    switch (expr->kind) {
-      case Expr::Kind::MessageSend:
-        RegisterSelectorLiteral(expr->selector);
-        CollectSelectorExpr(expr->receiver.get());
-        for (const auto &arg : expr->args) {
-          CollectSelectorExpr(arg.get());
-        }
-        return;
-      case Expr::Kind::Binary:
-        CollectSelectorExpr(expr->left.get());
-        CollectSelectorExpr(expr->right.get());
-        return;
-      case Expr::Kind::Conditional:
-        CollectSelectorExpr(expr->left.get());
-        CollectSelectorExpr(expr->right.get());
-        CollectSelectorExpr(expr->third.get());
-        return;
-      case Expr::Kind::Call:
-        for (const auto &arg : expr->args) {
-          CollectSelectorExpr(arg.get());
-        }
-        return;
-      default:
-        return;
-    }
-  }
-
-  void CollectSelectorStmt(const Stmt *stmt) {
-    if (stmt == nullptr) {
-      return;
-    }
-    switch (stmt->kind) {
-      case Stmt::Kind::Let:
-        if (stmt->let_stmt != nullptr) {
-          CollectSelectorExpr(stmt->let_stmt->value.get());
-        }
-        return;
-      case Stmt::Kind::Assign:
-        if (stmt->assign_stmt != nullptr) {
-          CollectSelectorExpr(stmt->assign_stmt->value.get());
-        }
-        return;
-      case Stmt::Kind::Return:
-        if (stmt->return_stmt != nullptr) {
-          CollectSelectorExpr(stmt->return_stmt->value.get());
-        }
-        return;
-      case Stmt::Kind::Expr:
-        if (stmt->expr_stmt != nullptr) {
-          CollectSelectorExpr(stmt->expr_stmt->value.get());
-        }
-        return;
-      case Stmt::Kind::If:
-        if (stmt->if_stmt == nullptr) {
-          return;
-        }
-        CollectSelectorExpr(stmt->if_stmt->condition.get());
-        for (const auto &then_stmt : stmt->if_stmt->then_body) {
-          CollectSelectorStmt(then_stmt.get());
-        }
-        for (const auto &else_stmt : stmt->if_stmt->else_body) {
-          CollectSelectorStmt(else_stmt.get());
-        }
-        return;
-      case Stmt::Kind::DoWhile:
-        if (stmt->do_while_stmt == nullptr) {
-          return;
-        }
-        for (const auto &loop_stmt : stmt->do_while_stmt->body) {
-          CollectSelectorStmt(loop_stmt.get());
-        }
-        CollectSelectorExpr(stmt->do_while_stmt->condition.get());
-        return;
-      case Stmt::Kind::For:
-        if (stmt->for_stmt == nullptr) {
-          return;
-        }
-        CollectSelectorExpr(stmt->for_stmt->init.value.get());
-        CollectSelectorExpr(stmt->for_stmt->condition.get());
-        CollectSelectorExpr(stmt->for_stmt->step.value.get());
-        for (const auto &loop_stmt : stmt->for_stmt->body) {
-          CollectSelectorStmt(loop_stmt.get());
-        }
-        return;
-      case Stmt::Kind::Switch:
-        if (stmt->switch_stmt == nullptr) {
-          return;
-        }
-        CollectSelectorExpr(stmt->switch_stmt->condition.get());
-        for (const auto &case_stmt : stmt->switch_stmt->cases) {
-          for (const auto &case_body_stmt : case_stmt.body) {
-            CollectSelectorStmt(case_body_stmt.get());
-          }
-        }
-        return;
-      case Stmt::Kind::While:
-        if (stmt->while_stmt == nullptr) {
-          return;
-        }
-        CollectSelectorExpr(stmt->while_stmt->condition.get());
-        for (const auto &loop_stmt : stmt->while_stmt->body) {
-          CollectSelectorStmt(loop_stmt.get());
-        }
-        return;
-      case Stmt::Kind::Block:
-      case Stmt::Kind::Defer:
-        if (stmt->block_stmt == nullptr) {
-          return;
-        }
-        for (const auto &nested_stmt : stmt->block_stmt->body) {
-          CollectSelectorStmt(nested_stmt.get());
-        }
-        return;
-      case Stmt::Kind::Break:
-      case Stmt::Kind::Continue:
-      case Stmt::Kind::Empty:
-        return;
-    }
-  }
-
-  void CollectRuntimeMetadataPoolLiterals() {
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_class_metaclass_bundles_lexicographic) {
-      RegisterRuntimeStringLiteral(bundle.class_name);
-      RegisterRuntimeStringLiteral(bundle.owner_identity);
-    }
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_protocol_bundles_lexicographic) {
-      RegisterRuntimeStringLiteral(bundle.protocol_name);
-      RegisterRuntimeStringLiteral(bundle.owner_identity);
-    }
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_category_bundles_lexicographic) {
-      RegisterRuntimeStringLiteral(bundle.class_name);
-      RegisterRuntimeStringLiteral(bundle.category_name);
-      RegisterRuntimeStringLiteral(bundle.owner_identity);
-      RegisterRuntimeStringLiteral(bundle.record_kind);
-      RegisterRuntimeStringLiteral(bundle.category_owner_identity);
-      RegisterRuntimeStringLiteral(bundle.class_owner_identity);
-    }
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic) {
-      RegisterRuntimeStringLiteral(bundle.declaration_owner_identity);
-      RegisterRuntimeStringLiteral(bundle.export_owner_identity);
-      for (const auto &entry : bundle.entries_lexicographic) {
-        RegisterSelectorLiteral(entry.selector);
-        RegisterRuntimeStringLiteral(entry.owner_identity);
-        RegisterRuntimeStringLiteral(entry.return_type_name);
-      }
-    }
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
-      RegisterRuntimeStringLiteral(bundle.property_name);
-      RegisterRuntimeStringLiteral(bundle.type_name);
-      RegisterRuntimeStringLiteral(bundle.owner_identity);
-      RegisterRuntimeStringLiteral(bundle.declaration_owner_identity);
-      RegisterRuntimeStringLiteral(bundle.export_owner_identity);
-      if (bundle.has_getter) {
-        RegisterSelectorLiteral(bundle.getter_selector);
-      }
-      if (bundle.has_setter) {
-        RegisterSelectorLiteral(bundle.setter_selector);
-      }
-      if (!bundle.ivar_binding_symbol.empty()) {
-        RegisterRuntimeStringLiteral(bundle.ivar_binding_symbol);
-      }
-    }
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_ivar_bundles_lexicographic) {
-      RegisterRuntimeStringLiteral(bundle.owner_identity);
-      RegisterRuntimeStringLiteral(bundle.declaration_owner_identity);
-      RegisterRuntimeStringLiteral(bundle.export_owner_identity);
-      RegisterRuntimeStringLiteral(bundle.property_owner_identity);
-      RegisterRuntimeStringLiteral(bundle.property_name);
-      RegisterRuntimeStringLiteral(bundle.ivar_binding_symbol);
-    }
-  }
-
-  void CollectCanonicalPoolLiterals() {
-    for (const auto &global : program_.globals) {
-      CollectSelectorExpr(global.value.get());
-    }
-    for (const auto &fn : program_.functions) {
-      for (const auto &stmt : fn.body) {
-        CollectSelectorStmt(stmt.get());
-      }
-    }
-    CollectRuntimeMetadataPoolLiterals();
-    AssignCanonicalPoolGlobalNames();
-    AssignTypedKeyPathArtifactOrdinals();
   }
 
   static bool IsNameBoundInScopes(const std::vector<std::unordered_set<std::string>> &scopes,
