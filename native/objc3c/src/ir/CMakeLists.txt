@@ -40,6 +40,7 @@ add_library(objc3c_ir_runtime_surface STATIC
   objc3_ir_runtime_helper_calls.cpp
   objc3_ir_runtime_artifact_emission.cpp
   objc3_ir_runtime_dispatch_state.cpp
+  objc3_ir_runtime_member_metadata_emission.cpp
   objc3_ir_scope_cleanup_emission.cpp
   objc3_ir_runtime_bootstrap_global_emission.cpp
   objc3_ir_runtime_metadata_emission.cpp
