@@ -134,6 +134,8 @@ add_library(objc3c_artifacts STATIC
   objc3_frontend_runtime_metadata_section_artifacts.h
   objc3_frontend_runtime_registration_artifacts.cpp
   objc3_frontend_runtime_registration_artifacts.h
+  objc3_frontend_tooling_source_artifacts.cpp
+  objc3_frontend_tooling_source_artifacts.h
   objc3_frontend_type_system_contract_artifacts.cpp
   objc3_frontend_type_system_contract_artifacts.h
 )
