@@ -19,6 +19,17 @@ from objc3c_runtime_acceptance.result_normalization import normalize_case_result
 from objc3c_runtime_acceptance.runtime_artifact_registry import ACCEPTANCE_ARTIFACT_REGISTRY
 from objc3c_runtime_acceptance.c_api import PUBLIC_RUNTIME_ABI_BOUNDARY
 from objc3c_runtime_acceptance.surfaces import build_claim_boundary
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    ARTIFACT_EVIDENCE_OWNER_CONTRACT,
+    FINAL_STATUS_OWNER_CONTRACT,
+    RESULT_NORMALIZATION_OWNER_CONTRACT,
+)
+
+
+def runtime_acceptance_summary_status(results: list[CaseResult]) -> str:
+    if all(result.passed for result in results):
+        return "PASS"
+    return "FAIL"
 
 
 def build_base_summary_fields(
@@ -32,7 +43,14 @@ def build_base_summary_fields(
     available_suites: dict[str, tuple[str, ...]],
 ) -> dict[str, Any]:
     return {
-        "status": "PASS",
+        "status": runtime_acceptance_summary_status(results),
+        "status_decision": {
+            "contract_id": FINAL_STATUS_OWNER_CONTRACT.contract_id,
+            "owner_surface": FINAL_STATUS_OWNER_CONTRACT.owner_surface,
+            "case_statuses": {
+                result.case_id: result.status for result in results
+            },
+        },
         "run_dir": str(run_dir.relative_to(ROOT)).replace("\\", "/"),
         "clangxx": clangxx,
         "runtime_library": str(RUNTIME_LIB.relative_to(ROOT)).replace("\\", "/"),
@@ -50,10 +68,17 @@ def build_base_summary_fields(
         "probe_retry_events": ACCEPTANCE_PROBE_RETRY_EVENTS,
         "progress_report_path": repo_display_path(progress_path),
         "timing": acceptance_progress.final_summary(),
+        "artifact_evidence_owner_contract": ARTIFACT_EVIDENCE_OWNER_CONTRACT.payload(),
         "artifact_registry": ACCEPTANCE_ARTIFACT_REGISTRY.summary(),
+        "result_normalization_owner_contract": (
+            RESULT_NORMALIZATION_OWNER_CONTRACT.payload()
+        ),
         "cases": normalize_case_results(results),
         "claim_boundary": build_claim_boundary(PUBLIC_RUNTIME_ABI_BOUNDARY),
     }
 
 
-__all__ = ["build_base_summary_fields"]
+__all__ = [
+    "build_base_summary_fields",
+    "runtime_acceptance_summary_status",
+]

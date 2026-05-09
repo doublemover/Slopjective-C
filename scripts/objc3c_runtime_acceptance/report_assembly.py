@@ -10,6 +10,9 @@ from objc3c_runtime_acceptance.progress_state import RuntimeAcceptanceProgress
 from objc3c_runtime_acceptance.reports import write_json_report
 from objc3c_runtime_acceptance.scenario_loading import RuntimeAcceptanceScenarios
 from objc3c_runtime_acceptance.summary import build_runtime_acceptance_summary
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    REPORT_ASSEMBLY_OWNER_CONTRACT,
+)
 
 
 def assemble_runtime_acceptance_summary(
@@ -24,7 +27,7 @@ def assemble_runtime_acceptance_summary(
     scenarios: RuntimeAcceptanceScenarios,
     available_suites: dict[str, tuple[str, ...]],
 ) -> dict[str, Any]:
-    return build_runtime_acceptance_summary(
+    summary = build_runtime_acceptance_summary(
         args=args,
         run_dir=run_dir,
         report_path=report_path,
@@ -35,6 +38,8 @@ def assemble_runtime_acceptance_summary(
         domains=scenarios.domains,
         available_suites=available_suites,
     )
+    summary["report_assembly_owner_contract"] = REPORT_ASSEMBLY_OWNER_CONTRACT.payload()
+    return summary
 
 
 def persist_runtime_acceptance_reports(

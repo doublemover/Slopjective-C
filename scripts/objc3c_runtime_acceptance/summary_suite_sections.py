@@ -24,6 +24,10 @@ from objc3c_runtime_acceptance.runtime_contract_registration import (
     RUNTIME_ACCEPTANCE_SUITE_SURFACE_CONTRACT_ID,
 )
 from objc3c_runtime_acceptance.surfaces import build_acceptance_suite_surface
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    SUMMARY_OWNER_SURFACE,
+    build_summary_section_owner_payload,
+)
 
 
 def build_suite_and_abi_summary_sections(
@@ -33,6 +37,11 @@ def build_suite_and_abi_summary_sections(
     domains: RuntimeAcceptanceDomains,
 ) -> dict[str, Any]:
     return {
+        "runtime_suite_summary_owner": build_summary_section_owner_payload(
+            owner_module="summary_suite_sections",
+            owner_surface=SUMMARY_OWNER_SURFACE,
+            section_group="suite-and-runtime-abi",
+        ),
         "acceptance_suite_surface": build_acceptance_suite_surface(
             results,
             report_path,

@@ -36,6 +36,9 @@ from objc3c_runtime_acceptance.summary_storage_block_sections import (
 from objc3c_runtime_acceptance.summary_suite_sections import (
     build_suite_and_abi_summary_sections,
 )
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    build_reporting_owner_contract,
+)
 
 
 def build_runtime_acceptance_summary(
@@ -51,6 +54,7 @@ def build_runtime_acceptance_summary(
     available_suites: dict[str, tuple[str, ...]],
 ) -> dict[str, Any]:
     return {
+        "reporting_owner_contract": build_reporting_owner_contract(),
         **build_base_summary_fields(
             args=args,
             run_dir=run_dir,

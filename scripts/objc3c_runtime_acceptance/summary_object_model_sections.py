@@ -6,6 +6,9 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_catalog import RuntimeAcceptanceDomains
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    build_domain_summary_owner_payload,
+)
 
 
 def build_object_model_summary_sections(
@@ -14,6 +17,10 @@ def build_object_model_summary_sections(
     domains: RuntimeAcceptanceDomains,
 ) -> dict[str, Any]:
     return {
+        "runtime_object_model_summary_owner": build_domain_summary_owner_payload(
+            owner_module="summary_object_model_sections",
+            domain="object-model",
+        ),
         "runtime_object_model_realization_source_surface": (
             domains.object_model.build_runtime_object_model_realization_source_surface(
                 results

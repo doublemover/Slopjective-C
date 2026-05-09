@@ -7,6 +7,14 @@ from typing import Any
 
 from .progress_format import repo_display_path
 from .progress_format import round_seconds
+from .summary_owner_contracts import FINAL_STATUS_OWNER_CONTRACT
+from .summary_owner_contracts import PROGRESS_OWNER_CONTRACT
+
+
+def progress_snapshot_status(current_case: dict[str, Any] | None) -> str:
+    if current_case and current_case.get("error"):
+        return "FAIL"
+    return "RUNNING"
 
 
 def build_progress_write_overhead(
@@ -48,7 +56,9 @@ def build_progress_snapshot(
     progress_write_max_seconds: float,
 ) -> dict[str, Any]:
     return {
-        "status": "RUNNING",
+        "contract_id": PROGRESS_OWNER_CONTRACT.contract_id,
+        "owner_surface": PROGRESS_OWNER_CONTRACT.owner_surface,
+        "status": progress_snapshot_status(current_case),
         "run_id": run_id,
         "run_dir": repo_display_path(run_dir),
         "progress_path": repo_display_path(progress_path),
@@ -58,6 +68,11 @@ def build_progress_snapshot(
         "current_case": current_case,
         "current_command": current_command,
         "last_completed_case": last_completed_case,
+        "status_decision": {
+            "contract_id": FINAL_STATUS_OWNER_CONTRACT.contract_id,
+            "owner_surface": FINAL_STATUS_OWNER_CONTRACT.owner_surface,
+            "failed_current_case": bool(current_case and current_case.get("error")),
+        },
         "case_timings": case_timings,
         "command_timings": command_timings,
         "progress_report_write_overhead": build_progress_write_overhead(
@@ -81,7 +96,16 @@ def build_progress_snapshot(
 
 def build_final_progress_summary(snapshot: dict[str, Any]) -> dict[str, Any]:
     summary = dict(snapshot)
-    summary["status"] = "PASS"
+    all_cases_completed = (
+        int(summary.get("completed_case_count", 0))
+        == int(summary.get("total_case_count", 0))
+    )
+    summary["status"] = "PASS" if all_cases_completed else "FAIL"
+    summary["status_decision"] = {
+        "contract_id": FINAL_STATUS_OWNER_CONTRACT.contract_id,
+        "owner_surface": FINAL_STATUS_OWNER_CONTRACT.owner_surface,
+        "all_cases_completed": all_cases_completed,
+    }
     summary["current_case"] = None
     summary["current_command"] = None
     return summary
@@ -91,4 +115,5 @@ __all__ = [
     "build_final_progress_summary",
     "build_progress_snapshot",
     "build_progress_write_overhead",
+    "progress_snapshot_status",
 ]

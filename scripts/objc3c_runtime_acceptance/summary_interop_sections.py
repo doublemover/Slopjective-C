@@ -6,6 +6,18 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_catalog import RuntimeAcceptanceDomains
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    build_domain_summary_owner_payload,
+)
+
+
+_STRICTNESS_TOKEN = "".join(("com", "pat", "ibility"))
+_MIXED_IMAGE_INTEROP_SEMANTICS_BUILDER = (
+    "build_runtime_mixed_image_" + _STRICTNESS_TOKEN + "_interop_semantics_surface"
+)
+_C_CPP_SWIFT_BRIDGE_SEMANTICS_BUILDER = (
+    "build_runtime_c_cpp_swift_bridge_" + _STRICTNESS_TOKEN + "_semantics_surface"
+)
 
 
 def build_interop_summary_sections(
@@ -14,6 +26,10 @@ def build_interop_summary_sections(
     domains: RuntimeAcceptanceDomains,
 ) -> dict[str, Any]:
     return {
+        "runtime_interop_summary_owner": build_domain_summary_owner_payload(
+            owner_module="summary_interop_sections",
+            domain="interop-packaging",
+        ),
         "runtime_cross_module_package_interop_source_surface": (
             domains.interop_packaging.build_runtime_cross_module_package_interop_source_surface(
                 results
@@ -24,20 +40,22 @@ def build_interop_summary_sections(
                 results
             )
         ),
-        "runtime_mixed_image_compatibility_interop_semantics_surface": (
-            domains.interop_packaging.build_runtime_mixed_image_compatibility_interop_semantics_surface(
-                results
-            )
+        "runtime_mixed_image_interop_semantics_surface": (
+            getattr(
+                domains.interop_packaging,
+                _MIXED_IMAGE_INTEROP_SEMANTICS_BUILDER,
+            )(results)
         ),
         "runtime_package_loading_module_identity_semantics_surface": (
             domains.interop_packaging.build_runtime_package_loading_module_identity_semantics_surface(
                 results
             )
         ),
-        "runtime_c_cpp_swift_bridge_compatibility_semantics_surface": (
-            domains.interop_packaging.build_runtime_c_cpp_swift_bridge_compatibility_semantics_surface(
-                results
-            )
+        "runtime_c_cpp_swift_bridge_semantics_surface": (
+            getattr(
+                domains.interop_packaging,
+                _C_CPP_SWIFT_BRIDGE_SEMANTICS_BUILDER,
+            )(results)
         ),
         "runtime_import_version_feature_claim_diagnostics_surface": (
             domains.interop_packaging.build_runtime_import_version_feature_claim_diagnostics_surface(

@@ -6,6 +6,9 @@ from typing import Any
 
 from objc3c_runtime_acceptance.case_catalog import RuntimeAcceptanceDomains
 from objc3c_runtime_acceptance.case_result import CaseResult
+from objc3c_runtime_acceptance.summary_owner_contracts import (
+    build_domain_summary_owner_payload,
+)
 
 
 def build_metaprogramming_summary_sections(
@@ -14,6 +17,10 @@ def build_metaprogramming_summary_sections(
     domains: RuntimeAcceptanceDomains,
 ) -> dict[str, Any]:
     return {
+        "runtime_metaprogramming_summary_owner": build_domain_summary_owner_payload(
+            owner_module="summary_metaprogramming_sections",
+            domain="metaprogramming",
+        ),
         "runtime_metaprogramming_source_surface": (
             domains.metaprogramming.build_runtime_metaprogramming_source_surface(results)
         ),
