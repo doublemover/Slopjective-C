@@ -1,5 +1,6 @@
 #include "lower/contracts/type_system_lowering_contracts.h"
 
+#include "lower/contracts/type_system_generic_lowering_validation_contracts.h"
 #include "lower/metadata/lowering_metadata_helpers.h"
 
 #include <string>
