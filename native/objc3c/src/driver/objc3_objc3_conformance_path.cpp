@@ -6,6 +6,7 @@
 #include <string>
 
 #include "ast/objc3_ast.h"
+#include "driver/objc3_driver_conformance_surface.h"
 #include "driver/objc3_frontend_options.h"
 #include "io/objc3_diagnostics_artifacts.h"
 #include "io/objc3_file_io.h"
@@ -99,10 +100,10 @@ bool TryDeriveConformanceEmitPrefix(const fs::path &report_path,
 // parallel lane-E publication channel for derives/macros/property behaviors.
 
 int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
-  if (cli_options.emit_objc3_conformance_format != "json") {
-    std::cerr << "unsupported --emit-objc3-conformance-format selection: "
-              << cli_options.emit_objc3_conformance_format
-              << " (current validation format is json)\n";
+  std::string conformance_selection_error;
+  if (!ValidateObjc3DriverConformanceSelection(cli_options,
+                                               conformance_selection_error)) {
+    std::cerr << conformance_selection_error << "\n";
     return 125;
   }
 
@@ -131,11 +132,11 @@ int RunObjc3ConformanceValidationPath(const Objc3CliOptions &cli_options) {
               << publication_path.string() << "\n";
     return 125;
   }
-  std::string deprecated_claim_sidecar_error;
-  if (!DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+  std::string retired_claim_sidecar_error;
+  if (!DiagnoseObjc3RetiredClaimSidecars(
           cli_options.validate_conformance_report_path.parent_path(), emit_prefix,
-          deprecated_claim_sidecar_error)) {
-    std::cerr << deprecated_claim_sidecar_error << "\n";
+          retired_claim_sidecar_error)) {
+    std::cerr << retired_claim_sidecar_error << "\n";
     return 125;
   }
 

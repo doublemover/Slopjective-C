@@ -14,7 +14,7 @@ std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds() {
 }
 
 std::vector<std::filesystem::path>
-BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(
+BuildObjc3RetiredClaimSidecarPaths(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix) {
   return {
@@ -24,29 +24,29 @@ BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(
   };
 }
 
-bool DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+bool DiagnoseObjc3RetiredClaimSidecars(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     std::string &error) {
   error.clear();
-  std::vector<std::string> deprecated_artifacts;
+  std::vector<std::string> retired_sidecars;
   for (const auto &path :
-       BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(out_dir, emit_prefix)) {
+       BuildObjc3RetiredClaimSidecarPaths(out_dir, emit_prefix)) {
     if (std::filesystem::exists(path)) {
-      deprecated_artifacts.push_back(path.filename().string());
+      retired_sidecars.push_back(path.filename().string());
     }
   }
-  if (deprecated_artifacts.empty()) {
+  if (retired_sidecars.empty()) {
     return true;
   }
 
   std::ostringstream out;
-  out << "deprecated claim/scaffold sidecar(s) detected next to the live release artifacts: ";
-  for (std::size_t index = 0; index < deprecated_artifacts.size(); ++index) {
+  out << "retired claim sidecar(s) detected next to the active release artifacts: ";
+  for (std::size_t index = 0; index < retired_sidecars.size(); ++index) {
     if (index != 0u) {
       out << ", ";
     }
-    out << deprecated_artifacts[index];
+    out << retired_sidecars[index];
   }
   out << " (remove them; the canonical release surface is the integrated "
          ".objc3-conformance-publication.json, "
@@ -64,7 +64,7 @@ bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id) {
          profile_id == "strict-concurrency" || profile_id == "strict-system";
 }
 
-bool IsObjc3SupportedConformanceFormat(const std::string &format) {
+bool IsObjc3JsonConformanceFormat(const std::string &format) {
   return format == "json";
 }
 

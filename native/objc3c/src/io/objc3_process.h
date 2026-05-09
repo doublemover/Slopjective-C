@@ -518,15 +518,15 @@ std::vector<std::string> BuildObjc3ClaimedConformanceProfileIds();
 std::vector<std::string> BuildObjc3RejectedConformanceProfileIds();
 std::vector<std::string> BuildObjc3ReleaseTargetedProfileIds();
 std::vector<std::filesystem::path>
-BuildObjc3DeprecatedClaimCompatibilityArtifactPaths(
+BuildObjc3RetiredClaimSidecarPaths(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix);
-bool DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+bool DiagnoseObjc3RetiredClaimSidecars(
     const std::filesystem::path &out_dir,
     const std::string &emit_prefix,
     std::string &error);
 bool IsObjc3ClaimedConformanceProfile(const std::string &profile_id);
-bool IsObjc3SupportedConformanceFormat(const std::string &format);
+bool IsObjc3JsonConformanceFormat(const std::string &format);
 std::string BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
     const std::string &profile_id);
 std::string BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(

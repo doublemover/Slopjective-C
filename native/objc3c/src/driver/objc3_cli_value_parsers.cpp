@@ -103,7 +103,7 @@ std::string Objc3CliUsage() {
          "[-fobjc-version=<N>] [--objc3-language-version <N>] "
          "[-fobjc-arc] [-fno-objc-arc] "
          "[--objc3-conformance-profile <core|strict|strict-concurrency|strict-system>] "
-         "[--emit-objc3-conformance] [--emit-objc3-conformance-format <json|yaml>] "
+         "[--emit-objc3-conformance] [--emit-objc3-conformance-format <json>] "
          "[--validate-objc3-conformance <report.json>] "
          "[--objc3-bootstrap-registration-order-ordinal <positive-int>] "
          "[--objc3-metaprogramming-cache-root <dir>] "

@@ -145,10 +145,9 @@ bool ParseObjc3CliOptions(int argc, char **argv, Objc3CliOptions &options, std::
     return false;
   }
 
-  if (options.emit_objc3_conformance_format != "json" &&
-      options.emit_objc3_conformance_format != "yaml") {
+  if (options.emit_objc3_conformance_format != "json") {
     error =
-        "invalid --emit-objc3-conformance-format (expected json|yaml): " +
+        "invalid --emit-objc3-conformance-format (expected json): " +
         options.emit_objc3_conformance_format;
     return false;
   }

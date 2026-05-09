@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include "ast/objc3_ast.h"
+#include "driver/objc3_driver_conformance_surface.h"
 #include "driver/objc3_driver_frontend_artifact_handoff.h"
 #include "driver/objc3_driver_object_backend.h"
 #include "driver/objc3_frontend_options.h"
@@ -19,25 +20,17 @@
 namespace fs = std::filesystem;
 int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
   try {
-    std::string deprecated_claim_sidecar_error;
-    if (!DiagnoseObjc3DeprecatedClaimCompatibilityArtifacts(
+    std::string retired_claim_sidecar_error;
+    if (!DiagnoseObjc3RetiredClaimSidecars(
             cli_options.out_dir, cli_options.emit_prefix,
-            deprecated_claim_sidecar_error)) {
-      std::cerr << deprecated_claim_sidecar_error << "\n";
+            retired_claim_sidecar_error)) {
+      std::cerr << retired_claim_sidecar_error << "\n";
       return 125;
     }
-    if (!IsObjc3SupportedConformanceFormat(
-            cli_options.emit_objc3_conformance_format)) {
-      std::cerr << BuildUnsupportedObjc3ConformanceFormatSelectionDiagnostic(
-                       cli_options.emit_objc3_conformance_format)
-                << "\n";
-      return 125;
-    }
-    if (!IsObjc3ClaimedConformanceProfile(
-            ConformanceProfileName(cli_options.conformance_profile))) {
-      std::cerr << BuildUnsupportedObjc3ConformanceProfileSelectionDiagnostic(
-                       ConformanceProfileName(cli_options.conformance_profile))
-                << "\n";
+    std::string conformance_selection_error;
+    if (!ValidateObjc3DriverConformanceSelection(
+            cli_options, conformance_selection_error)) {
+      std::cerr << conformance_selection_error << "\n";
       return 125;
     }
     const std::string source = ReadText(cli_options.input);
@@ -114,22 +107,24 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
     }
     std::string conformance_publication_artifact_json;
     std::string conformance_publication_error;
-        if (!TryBuildObjc3ConformanceReportPublicationArtifact(
+    const Objc3DriverConformanceProfileSelection conformance_profiles =
+        BuildObjc3DriverConformanceProfileSelection(cli_options);
+    if (!TryBuildObjc3ConformanceReportPublicationArtifact(
             {.contract_id = "objc3c.driver.conformance.report.publication.v1",
              .schema_id = "objc3c-driver-conformance-publication-v1",
              .selected_profile =
-                 ConformanceProfileName(cli_options.conformance_profile),
-             .selected_profile_supported = IsObjc3ClaimedConformanceProfile(
-                 ConformanceProfileName(cli_options.conformance_profile)),
-             .supported_profile_ids = BuildObjc3ClaimedConformanceProfileIds(),
-             .rejected_profile_ids = BuildObjc3RejectedConformanceProfileIds(),
+                 conformance_profiles.selected_profile,
+             .selected_profile_supported =
+                 conformance_profiles.selected_profile_supported,
+             .supported_profile_ids = conformance_profiles.supported_profile_ids,
+             .rejected_profile_ids = conformance_profiles.rejected_profile_ids,
              .effective_language_profile = "canonical",
              .canonical_literal_rejection_diagnostics_enabled = false,
              .publication_model =
                  "driver-publishes-lowered-conformance-sidecar-and-runtime-capability-sidecar-next-to-manifest",
              .publication_surface_kind = "native-cli",
              .fail_closed_diagnostic_model =
-                 "known-profiles-claimed-json-publication-remains-fail-closed-on-unsupported-formats-and-unknown-profiles",
+                 "known-profiles-json-publication-remains-fail-closed-on-unsupported-formats-and-unknown-profiles",
              .lowered_report_contract_id =
                  "objc3c.versioned.conformance.report.lowering.v1",
              .runtime_capability_contract_id =
@@ -148,7 +143,7 @@ int RunObjc3LanguagePath(const Objc3CliOptions &cli_options) {
              .dashboard_schema_path =
                  "schemas/objc3-conformance-dashboard-status-v1.schema.json",
              .advanced_feature_targeted_profile_ids =
-                 BuildObjc3ReleaseTargetedProfileIds(),
+                 conformance_profiles.release_targeted_profile_ids,
              .report_artifact_relative_path =
                  (cli_options.emit_prefix +
                   kObjc3VersionedConformanceReportLoweringArtifactSuffix)},
