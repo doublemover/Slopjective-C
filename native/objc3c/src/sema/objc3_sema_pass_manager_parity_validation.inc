@@ -253,54 +253,20 @@
       result.parser_sema_contract_readiness_record;
   result.parity_surface.deterministic_parser_sema_contract_readiness_record =
       result.deterministic_parser_sema_contract_readiness_record;
-  const bool parity_parser_sema_contract_ready =
-      result.parity_surface
-          .deterministic_parser_sema_contract_readiness_record &&
-      IsReadyObjc3ParserSemaContractReadinessRecord(
-          result.parity_surface.parser_sema_contract_readiness_record);
-  const bool parity_publication_records_ready =
-      result.parity_surface.deterministic_pass_manager_publication_record &&
-      IsReadyObjc3SemaPassManagerPublicationRecord(
-          result.parity_surface.pass_manager_publication_record) &&
-      result.parity_surface.deterministic_type_metadata_publication_record &&
-      IsReadyObjc3SemaTypeMetadataPublicationRecord(
-          result.parity_surface.type_metadata_publication_record);
-  const bool parity_diagnostics_publication_ready =
-      result.parity_surface.deterministic_diagnostics_publication_record &&
-      IsReadyObjc3SemaDiagnosticsPublicationRecord(
-          result.parity_surface.diagnostics_publication_record);
-  const bool parity_pass_flow_recovery_ready =
-      result.parity_surface.deterministic_pass_flow_recovery_record &&
-      IsReadyObjc3SemaPassFlowRecoveryRecord(
-          result.parity_surface.pass_flow_recovery_record);
-  const bool parity_type_metadata_cardinality_ready =
-      result.parity_surface
-          .deterministic_type_metadata_mapping_readiness_record &&
-      result.parity_surface.type_metadata_mapping_readiness_record
-          .type_metadata_handoff_ready &&
-      result.parity_surface.type_metadata_mapping_readiness_record
-          .cardinality_consistent;
-  const bool parity_typed_semantic_handoffs_ready =
-      result.parity_surface.deterministic_typed_semantic_handoff_record &&
-      IsReadyObjc3SemaTypedSemanticHandoffRecord(
-          result.parity_surface.typed_semantic_handoff_record);
-  const bool parity_mapping_summaries_ready =
-      result.parity_surface
-          .deterministic_type_metadata_mapping_readiness_record &&
-      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
-          result.parity_surface.type_metadata_mapping_readiness_record);
+  result.parity_closeout_publication_readiness_record =
+      BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
+          input, result.executed, result.parity_surface);
+  result.deterministic_parity_closeout_publication_readiness_record =
+      IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
+          result.parity_closeout_publication_readiness_record);
+  result.parity_surface.parity_closeout_publication_readiness_record =
+      result.parity_closeout_publication_readiness_record;
+  result.parity_surface
+      .deterministic_parity_closeout_publication_readiness_record =
+      result.deterministic_parity_closeout_publication_readiness_record;
   result.parity_validation_record = BuildObjc3SemaParityValidationRecord(
       input,
-      result.executed,
-      parity_parser_sema_contract_ready,
-      IsReadyObjc3SemaPassFlowSummary(
-          result.parity_surface.sema_pass_flow_summary),
-      parity_publication_records_ready,
-      parity_diagnostics_publication_ready,
-      parity_pass_flow_recovery_ready,
-      parity_type_metadata_cardinality_ready,
-      parity_typed_semantic_handoffs_ready,
-      parity_mapping_summaries_ready);
+      result.parity_closeout_publication_readiness_record);
   result.deterministic_parity_validation_record =
       IsReadyObjc3SemaParityValidationRecord(result.parity_validation_record);
   result.parity_surface.parity_validation_record =
@@ -308,24 +274,11 @@
   result.parity_surface.deterministic_parity_validation_record =
       result.deterministic_parity_validation_record;
   result.parity_surface.ready =
-      result.executed &&
+      result.parity_surface
+          .deterministic_parity_closeout_publication_readiness_record &&
+      IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
+          result.parity_surface
+              .parity_closeout_publication_readiness_record) &&
       result.parity_surface.deterministic_parity_validation_record &&
       IsReadyObjc3SemaParityValidationRecord(
           result.parity_surface.parity_validation_record) &&
-      result.parity_surface.deterministic_diagnostics_publication_record &&
-      IsReadyObjc3SemaDiagnosticsPublicationRecord(
-          result.parity_surface.diagnostics_publication_record) &&
-      result.parity_surface.deterministic_pass_flow_recovery_record &&
-      IsReadyObjc3SemaPassFlowRecoveryRecord(
-          result.parity_surface.pass_flow_recovery_record) &&
-      result.parity_surface
-          .deterministic_parser_sema_contract_readiness_record &&
-      IsReadyObjc3ParserSemaContractReadinessRecord(
-          result.parity_surface.parser_sema_contract_readiness_record) &&
-      result.parity_surface.deterministic_pass_manager_publication_record &&
-      IsReadyObjc3SemaPassFlowSummary(result.parity_surface.sema_pass_flow_summary) &&
-      IsReadyObjc3SemaPassManagerPublicationRecord(
-          result.parity_surface.pass_manager_publication_record) &&
-      result.parity_surface.deterministic_type_metadata_publication_record &&
-      IsReadyObjc3SemaTypeMetadataPublicationRecord(
-          result.parity_surface.type_metadata_publication_record) &&

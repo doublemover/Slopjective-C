@@ -88,6 +88,9 @@
   bool deterministic_atomic_vector_mapping_publication_record = false;
   Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
   bool deterministic_typed_semantic_handoff_record = false;
+  Objc3SemaParityCloseoutPublicationReadinessRecord
+      parity_closeout_publication_readiness_record;
+  bool deterministic_parity_closeout_publication_readiness_record = false;
   Objc3SemaParityValidationRecord parity_validation_record;
   bool deterministic_parity_validation_record = false;
   Objc3SemaCloseoutSignoffRecord closeout_signoff_record;

@@ -71,6 +71,8 @@ inline constexpr const char *kObjc3SemaTypedSemanticHandoffPublicationOwner =
     "native.frontend.sema.typed-semantic-handoff-publication";
 inline constexpr const char *kObjc3SemaParityValidationOwner =
     "native.frontend.sema.parity-validation";
+inline constexpr const char *kObjc3SemaParityCloseoutPublicationReadinessOwner =
+    "native.frontend.sema.parity-closeout-publication-readiness";
 inline constexpr const char *kObjc3SemaCloseoutSignoffOwner =
     "native.frontend.sema.closeout-signoff";
 inline constexpr const char *kObjc3SemaNoFallbackOwnerModel =
@@ -830,6 +832,59 @@ inline bool IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
          record.deterministic;
 }
 
+struct Objc3SemaParityCloseoutPublicationReadinessRecord {
+  std::string parity_closeout_publication_readiness_owner =
+      kObjc3SemaParityCloseoutPublicationReadinessOwner;
+  std::string stage_input_owner = kObjc3SemaStageInputOwner;
+  std::string pass_manager_publication_owner =
+      kObjc3SemaPassManagerPublicationOwner;
+  std::string type_metadata_publication_owner =
+      kObjc3SemaTypeMetadataPublicationOwner;
+  std::string type_metadata_mapping_readiness_owner =
+      kObjc3SemaTypeMetadataMappingReadinessOwner;
+  std::string typed_semantic_handoff_publication_owner =
+      kObjc3SemaTypedSemanticHandoffPublicationOwner;
+  std::string parser_sema_contract_readiness_owner =
+      kObjc3ParserSemaContractReadinessOwner;
+  std::string owner_model = kObjc3SemaNoFallbackOwnerModel;
+  bool strict_no_fallback = true;
+  bool strict_no_compatibility = true;
+  bool pass_manager_executed = false;
+  bool parser_sema_contract_ready = false;
+  bool pass_flow_summary_ready = false;
+  bool publication_records_ready = false;
+  bool diagnostics_publication_ready = false;
+  bool pass_flow_recovery_ready = false;
+  bool type_metadata_cardinality_ready = false;
+  bool typed_semantic_handoffs_ready = false;
+  bool mapping_summaries_ready = false;
+  bool deterministic = false;
+};
+
+inline bool IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
+    const Objc3SemaParityCloseoutPublicationReadinessRecord &record) {
+  return Objc3SemaOwnerIsExplicit(
+             record.parity_closeout_publication_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+         Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.type_metadata_mapping_readiness_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.typed_semantic_handoff_publication_owner) &&
+         Objc3SemaOwnerIsExplicit(
+             record.parser_sema_contract_readiness_owner) &&
+         record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+         record.strict_no_fallback && record.strict_no_compatibility &&
+         record.pass_manager_executed && record.parser_sema_contract_ready &&
+         record.pass_flow_summary_ready && record.publication_records_ready &&
+         record.diagnostics_publication_ready &&
+         record.pass_flow_recovery_ready &&
+         record.type_metadata_cardinality_ready &&
+         record.typed_semantic_handoffs_ready &&
+         record.mapping_summaries_ready && record.deterministic;
+}
+
 struct Objc3SemaParityValidationRecord {
   std::string parity_validation_owner = kObjc3SemaParityValidationOwner;
   std::string stage_input_owner = kObjc3SemaStageInputOwner;
@@ -908,6 +963,22 @@ inline Objc3SemaParityValidationRecord BuildObjc3SemaParityValidationRecord(
       record.type_metadata_cardinality_ready &&
       record.typed_semantic_handoffs_ready && record.mapping_summaries_ready;
   return record;
+}
+
+inline Objc3SemaParityValidationRecord BuildObjc3SemaParityValidationRecord(
+    const Objc3SemaPassManagerInput &input,
+    const Objc3SemaParityCloseoutPublicationReadinessRecord &readiness) {
+  return BuildObjc3SemaParityValidationRecord(
+      input,
+      readiness.pass_manager_executed,
+      readiness.parser_sema_contract_ready,
+      readiness.pass_flow_summary_ready,
+      readiness.publication_records_ready,
+      readiness.diagnostics_publication_ready,
+      readiness.pass_flow_recovery_ready,
+      readiness.type_metadata_cardinality_ready,
+      readiness.typed_semantic_handoffs_ready,
+      readiness.mapping_summaries_ready);
 }
 
 struct Objc3SemaCloseoutSignoffRecord {
@@ -1950,6 +2021,8 @@ struct Objc3SemaParityContractSurface {
   Objc3SemaAtomicVectorMappingPublicationRecord
       atomic_vector_mapping_publication_record;
   Objc3SemaTypedSemanticHandoffRecord typed_semantic_handoff_record;
+  Objc3SemaParityCloseoutPublicationReadinessRecord
+      parity_closeout_publication_readiness_record;
   Objc3SemaParityValidationRecord parity_validation_record;
   Objc3SemaCloseoutSignoffRecord closeout_signoff_record;
   std::array<std::size_t, 3> diagnostics_after_pass = {0, 0, 0};
@@ -2395,6 +2468,7 @@ struct Objc3SemaParityContractSurface {
   bool deterministic_type_metadata_mapping_readiness_record = false;
   bool deterministic_atomic_vector_mapping_publication_record = false;
   bool deterministic_typed_semantic_handoff_record = false;
+  bool deterministic_parity_closeout_publication_readiness_record = false;
   bool deterministic_parity_validation_record = false;
   bool deterministic_closeout_signoff_record = false;
   bool deterministic_semantic_diagnostics = false;
@@ -5338,6 +5412,73 @@ BuildObjc3ParserSemaContractReadinessRecord(
   return record;
 }
 
+inline Objc3SemaParityCloseoutPublicationReadinessRecord
+BuildObjc3SemaParityCloseoutPublicationReadinessRecord(
+    const Objc3SemaPassManagerInput &input,
+    bool pass_manager_executed,
+    const Objc3SemaParityContractSurface &surface) {
+  Objc3SemaParityCloseoutPublicationReadinessRecord record;
+  record.stage_input_owner = input.stage_input_owner;
+  record.owner_model = input.owner_model;
+  record.strict_no_fallback = input.strict_no_fallback;
+  record.strict_no_compatibility = input.strict_no_compatibility;
+  record.pass_manager_executed = pass_manager_executed;
+  record.parser_sema_contract_ready =
+      surface.deterministic_parser_sema_contract_readiness_record &&
+      IsReadyObjc3ParserSemaContractReadinessRecord(
+          surface.parser_sema_contract_readiness_record);
+  record.pass_flow_summary_ready =
+      IsReadyObjc3SemaPassFlowSummary(surface.sema_pass_flow_summary);
+  record.publication_records_ready =
+      surface.deterministic_pass_manager_publication_record &&
+      IsReadyObjc3SemaPassManagerPublicationRecord(
+          surface.pass_manager_publication_record) &&
+      surface.deterministic_type_metadata_publication_record &&
+      IsReadyObjc3SemaTypeMetadataPublicationRecord(
+          surface.type_metadata_publication_record);
+  record.diagnostics_publication_ready =
+      surface.deterministic_diagnostics_publication_record &&
+      IsReadyObjc3SemaDiagnosticsPublicationRecord(
+          surface.diagnostics_publication_record);
+  record.pass_flow_recovery_ready =
+      surface.deterministic_pass_flow_recovery_record &&
+      IsReadyObjc3SemaPassFlowRecoveryRecord(surface.pass_flow_recovery_record);
+  record.type_metadata_cardinality_ready =
+      surface.deterministic_type_metadata_mapping_readiness_record &&
+      surface.type_metadata_mapping_readiness_record
+          .type_metadata_handoff_ready &&
+      surface.type_metadata_mapping_readiness_record.cardinality_consistent;
+  record.typed_semantic_handoffs_ready =
+      surface.deterministic_typed_semantic_handoff_record &&
+      IsReadyObjc3SemaTypedSemanticHandoffRecord(
+          surface.typed_semantic_handoff_record);
+  record.mapping_summaries_ready =
+      surface.deterministic_type_metadata_mapping_readiness_record &&
+      IsReadyObjc3SemaTypeMetadataMappingReadinessRecord(
+          surface.type_metadata_mapping_readiness_record);
+  record.deterministic =
+      Objc3SemaOwnerIsExplicit(
+          record.parity_closeout_publication_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(record.stage_input_owner) &&
+      Objc3SemaOwnerIsExplicit(record.pass_manager_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(record.type_metadata_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(
+          record.type_metadata_mapping_readiness_owner) &&
+      Objc3SemaOwnerIsExplicit(
+          record.typed_semantic_handoff_publication_owner) &&
+      Objc3SemaOwnerIsExplicit(
+          record.parser_sema_contract_readiness_owner) &&
+      record.owner_model == kObjc3SemaNoFallbackOwnerModel &&
+      record.strict_no_fallback && record.strict_no_compatibility &&
+      record.pass_manager_executed && record.parser_sema_contract_ready &&
+      record.pass_flow_summary_ready && record.publication_records_ready &&
+      record.diagnostics_publication_ready &&
+      record.pass_flow_recovery_ready &&
+      record.type_metadata_cardinality_ready &&
+      record.typed_semantic_handoffs_ready && record.mapping_summaries_ready;
+  return record;
+}
+
 inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractSurface &surface) {
   return surface.ready &&
          surface.deterministic_parser_sema_contract_readiness_record &&
@@ -5362,6 +5503,9 @@ inline bool IsReadyObjc3SemaParityContractSurface(const Objc3SemaParityContractS
          surface.deterministic_typed_semantic_handoff_record &&
          IsReadyObjc3SemaTypedSemanticHandoffRecord(
              surface.typed_semantic_handoff_record) &&
+         surface.deterministic_parity_closeout_publication_readiness_record &&
+         IsReadyObjc3SemaParityCloseoutPublicationReadinessRecord(
+             surface.parity_closeout_publication_readiness_record) &&
          surface.deterministic_parity_validation_record &&
          IsReadyObjc3SemaParityValidationRecord(
              surface.parity_validation_record) &&
