@@ -1,0 +1,345 @@
+#include "lower/contracts/type_system_lowering_contracts.h"
+
+#include "lower/metadata/lowering_metadata_helpers.h"
+
+#include <string>
+
+bool IsValidObjc3TypeSystemOptionalKeypathLoweringContract(
+    const Objc3TypeSystemOptionalKeypathLoweringContract &contract) {
+  if (contract.optional_binding_clause_sites > contract.optional_binding_sites ||
+      contract.typed_keypath_self_root_sites >
+          contract.typed_keypath_literal_sites ||
+      contract.typed_keypath_class_root_sites >
+          contract.typed_keypath_literal_sites) {
+    return false;
+  }
+  if (contract.live_optional_lowering_sites !=
+      contract.optional_binding_sites + contract.optional_send_sites +
+          contract.nil_coalescing_sites) {
+    return false;
+  }
+  if (contract.single_evaluation_nil_short_circuit_sites !=
+      contract.optional_binding_clause_sites + contract.optional_send_sites +
+          contract.nil_coalescing_sites) {
+    return false;
+  }
+  if (contract.live_typed_keypath_artifact_sites +
+          contract.deferred_typed_keypath_sites !=
+      contract.typed_keypath_literal_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites >
+      contract.live_optional_lowering_sites +
+          contract.live_typed_keypath_artifact_sites +
+          contract.deferred_typed_keypath_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3TypeSystemOptionalKeypathLoweringReplayKey(
+    const Objc3TypeSystemOptionalKeypathLoweringContract &contract) {
+  return std::string("optional_binding_sites=") +
+         std::to_string(contract.optional_binding_sites) +
+         ";optional_binding_clause_sites=" +
+         std::to_string(contract.optional_binding_clause_sites) +
+         ";optional_send_sites=" +
+         std::to_string(contract.optional_send_sites) +
+         ";nil_coalescing_sites=" +
+         std::to_string(contract.nil_coalescing_sites) +
+         ";typed_keypath_literal_sites=" +
+         std::to_string(contract.typed_keypath_literal_sites) +
+         ";typed_keypath_self_root_sites=" +
+         std::to_string(contract.typed_keypath_self_root_sites) +
+         ";typed_keypath_class_root_sites=" +
+         std::to_string(contract.typed_keypath_class_root_sites) +
+         ";live_optional_lowering_sites=" +
+         std::to_string(contract.live_optional_lowering_sites) +
+         ";single_evaluation_nil_short_circuit_sites=" +
+         std::to_string(contract.single_evaluation_nil_short_circuit_sites) +
+         ";live_typed_keypath_artifact_sites=" +
+         std::to_string(contract.live_typed_keypath_artifact_sites) +
+         ";deferred_typed_keypath_sites=" +
+         std::to_string(contract.deferred_typed_keypath_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3TypeSystemOptionalKeypathLoweringLaneContract;
+}
+
+bool IsValidObjc3ControlFlowControlFlowSafetyLoweringContract(
+    const Objc3ControlFlowControlFlowSafetyLoweringContract &contract) {
+  if (contract.guard_clause_sites < contract.guard_statement_sites) {
+    return false;
+  }
+  if (contract.live_guard_short_circuit_sites +
+          contract.fail_closed_guard_short_circuit_sites !=
+      contract.guard_statement_sites) {
+    return false;
+  }
+  if (contract.live_match_dispatch_sites +
+          contract.fail_closed_match_dispatch_sites !=
+      contract.match_statement_sites) {
+    return false;
+  }
+  if (contract.live_defer_cleanup_sites +
+          contract.fail_closed_defer_cleanup_sites !=
+      contract.defer_statement_sites) {
+    return false;
+  }
+  if (contract.deterministic_fail_closed_sites !=
+      contract.fail_closed_guard_short_circuit_sites +
+          contract.fail_closed_match_dispatch_sites +
+          contract.fail_closed_defer_cleanup_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites >
+      contract.live_guard_short_circuit_sites +
+          contract.live_match_dispatch_sites +
+          contract.live_defer_cleanup_sites +
+          contract.deterministic_fail_closed_sites) {
+    return false;
+  }
+  if (contract.contract_violation_sites > 0 && contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ControlFlowControlFlowSafetyLoweringReplayKey(
+    const Objc3ControlFlowControlFlowSafetyLoweringContract &contract) {
+  return std::string("guard_statement_sites=") +
+         std::to_string(contract.guard_statement_sites) +
+         ";guard_clause_sites=" +
+         std::to_string(contract.guard_clause_sites) +
+         ";match_statement_sites=" +
+         std::to_string(contract.match_statement_sites) +
+         ";defer_statement_sites=" +
+         std::to_string(contract.defer_statement_sites) +
+         ";live_guard_short_circuit_sites=" +
+         std::to_string(contract.live_guard_short_circuit_sites) +
+         ";live_match_dispatch_sites=" +
+         std::to_string(contract.live_match_dispatch_sites) +
+         ";live_defer_cleanup_sites=" +
+         std::to_string(contract.live_defer_cleanup_sites) +
+         ";fail_closed_guard_short_circuit_sites=" +
+         std::to_string(contract.fail_closed_guard_short_circuit_sites) +
+         ";fail_closed_match_dispatch_sites=" +
+         std::to_string(contract.fail_closed_match_dispatch_sites) +
+         ";fail_closed_defer_cleanup_sites=" +
+         std::to_string(contract.fail_closed_defer_cleanup_sites) +
+         ";deterministic_fail_closed_sites=" +
+         std::to_string(contract.deterministic_fail_closed_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3ControlFlowControlFlowSafetyLoweringLaneContract;
+}
+
+bool IsValidObjc3LightweightGenericsConstraintLoweringContract(
+    const Objc3LightweightGenericsConstraintLoweringContract &contract) {
+  if (contract.generic_suffix_sites > contract.generic_constraint_sites ||
+      contract.object_pointer_type_sites > contract.generic_constraint_sites ||
+      contract.terminated_generic_suffix_sites > contract.generic_suffix_sites ||
+      contract.pointer_declarator_sites > contract.generic_constraint_sites ||
+      contract.normalized_constraint_sites > contract.generic_constraint_sites ||
+      contract.contract_violation_sites > contract.generic_constraint_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_constraint_sites !=
+           contract.generic_constraint_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3LightweightGenericsConstraintLoweringReplayKey(
+    const Objc3LightweightGenericsConstraintLoweringContract &contract) {
+  return std::string("generic_constraint_sites=") +
+         std::to_string(contract.generic_constraint_sites) +
+         ";generic_suffix_sites=" +
+         std::to_string(contract.generic_suffix_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";terminated_generic_suffix_sites=" +
+         std::to_string(contract.terminated_generic_suffix_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_constraint_sites=" +
+         std::to_string(contract.normalized_constraint_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3LightweightGenericsConstraintLoweringLaneContract;
+}
+
+bool IsValidObjc3NullabilityFlowWarningPrecisionLoweringContract(
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract) {
+  if (contract.nullability_suffix_sites > contract.nullability_flow_sites ||
+      contract.nullable_suffix_sites > contract.nullability_suffix_sites ||
+      contract.nonnull_suffix_sites > contract.nullability_suffix_sites ||
+      contract.object_pointer_type_sites < contract.nullability_suffix_sites ||
+      contract.normalized_sites > contract.nullability_flow_sites ||
+      contract.contract_violation_sites > contract.nullability_flow_sites) {
+    return false;
+  }
+  if (contract.nullability_suffix_sites !=
+      contract.nullable_suffix_sites + contract.nonnull_suffix_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.nullability_flow_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3NullabilityFlowWarningPrecisionLoweringReplayKey(
+    const Objc3NullabilityFlowWarningPrecisionLoweringContract &contract) {
+  return std::string("nullability_flow_sites=") +
+         std::to_string(contract.nullability_flow_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";nullability_suffix_sites=" +
+         std::to_string(contract.nullability_suffix_sites) +
+         ";nullable_suffix_sites=" +
+         std::to_string(contract.nullable_suffix_sites) +
+         ";nonnull_suffix_sites=" +
+         std::to_string(contract.nonnull_suffix_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3NullabilityFlowWarningPrecisionLoweringLaneContract;
+}
+
+bool IsValidObjc3ProtocolQualifiedObjectTypeLoweringContract(
+    const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract) {
+  if (contract.terminated_protocol_composition_sites >
+          contract.protocol_composition_sites ||
+      contract.normalized_protocol_composition_sites >
+          contract.protocol_qualified_object_type_sites ||
+      contract.contract_violation_sites >
+          contract.protocol_qualified_object_type_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_protocol_composition_sites !=
+           contract.protocol_qualified_object_type_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3ProtocolQualifiedObjectTypeLoweringReplayKey(
+    const Objc3ProtocolQualifiedObjectTypeLoweringContract &contract) {
+  return std::string("protocol_qualified_object_type_sites=") +
+         std::to_string(contract.protocol_qualified_object_type_sites) +
+         ";protocol_composition_sites=" +
+         std::to_string(contract.protocol_composition_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";terminated_protocol_composition_sites=" +
+         std::to_string(contract.terminated_protocol_composition_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_protocol_composition_sites=" +
+         std::to_string(contract.normalized_protocol_composition_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" +
+         kObjc3ProtocolQualifiedObjectTypeLoweringLaneContract;
+}
+
+bool IsValidObjc3VarianceBridgeCastLoweringContract(
+    const Objc3VarianceBridgeCastLoweringContract &contract) {
+  if (contract.protocol_composition_sites >
+          contract.variance_bridge_cast_sites ||
+      contract.ownership_qualifier_sites >
+          contract.variance_bridge_cast_sites ||
+      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
+      contract.pointer_declarator_sites > contract.variance_bridge_cast_sites ||
+      contract.normalized_sites > contract.variance_bridge_cast_sites ||
+      contract.contract_violation_sites > contract.variance_bridge_cast_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.variance_bridge_cast_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3VarianceBridgeCastLoweringReplayKey(
+    const Objc3VarianceBridgeCastLoweringContract &contract) {
+  return std::string("variance_bridge_cast_sites=") +
+         std::to_string(contract.variance_bridge_cast_sites) +
+         ";protocol_composition_sites=" +
+         std::to_string(contract.protocol_composition_sites) +
+         ";ownership_qualifier_sites=" +
+         std::to_string(contract.ownership_qualifier_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3VarianceBridgeCastLoweringLaneContract;
+}
+
+bool IsValidObjc3GenericMetadataAbiLoweringContract(
+    const Objc3GenericMetadataAbiLoweringContract &contract) {
+  if (contract.generic_suffix_sites > contract.generic_metadata_abi_sites ||
+      contract.protocol_composition_sites >
+          contract.generic_metadata_abi_sites ||
+      contract.ownership_qualifier_sites >
+          contract.generic_metadata_abi_sites ||
+      contract.object_pointer_type_sites < contract.protocol_composition_sites ||
+      contract.pointer_declarator_sites > contract.generic_metadata_abi_sites ||
+      contract.normalized_sites > contract.generic_metadata_abi_sites ||
+      contract.contract_violation_sites > contract.generic_metadata_abi_sites) {
+    return false;
+  }
+  if ((contract.contract_violation_sites > 0 ||
+       contract.normalized_sites != contract.generic_metadata_abi_sites) &&
+      contract.deterministic) {
+    return false;
+  }
+  return true;
+}
+
+std::string Objc3GenericMetadataAbiLoweringReplayKey(
+    const Objc3GenericMetadataAbiLoweringContract &contract) {
+  return std::string("generic_metadata_abi_sites=") +
+         std::to_string(contract.generic_metadata_abi_sites) +
+         ";generic_suffix_sites=" +
+         std::to_string(contract.generic_suffix_sites) +
+         ";protocol_composition_sites=" +
+         std::to_string(contract.protocol_composition_sites) +
+         ";ownership_qualifier_sites=" +
+         std::to_string(contract.ownership_qualifier_sites) +
+         ";object_pointer_type_sites=" +
+         std::to_string(contract.object_pointer_type_sites) +
+         ";pointer_declarator_sites=" +
+         std::to_string(contract.pointer_declarator_sites) +
+         ";normalized_sites=" + std::to_string(contract.normalized_sites) +
+         ";contract_violation_sites=" +
+         std::to_string(contract.contract_violation_sites) +
+         ";deterministic=" + BoolToken(contract.deterministic) +
+         ";lane_contract=" + kObjc3GenericMetadataAbiLoweringLaneContract;
+}

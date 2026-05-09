@@ -16,3 +16,11 @@ bool IsValidObjc3AutoreleasePoolScopeLoweringContract(
     const Objc3AutoreleasePoolScopeLoweringContract &contract);
 std::string Objc3AutoreleasePoolScopeLoweringReplayKey(
     const Objc3AutoreleasePoolScopeLoweringContract &contract);
+bool IsValidObjc3WeakUnownedSemanticsLoweringContract(
+    const Objc3WeakUnownedSemanticsLoweringContract &contract);
+std::string Objc3WeakUnownedSemanticsLoweringReplayKey(
+    const Objc3WeakUnownedSemanticsLoweringContract &contract);
+bool IsValidObjc3ArcDiagnosticsFixitLoweringContract(
+    const Objc3ArcDiagnosticsFixitLoweringContract &contract);
+std::string Objc3ArcDiagnosticsFixitLoweringReplayKey(
+    const Objc3ArcDiagnosticsFixitLoweringContract &contract);

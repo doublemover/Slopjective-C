@@ -1,16 +1,21 @@
 add_library(objc3c_lower STATIC
   contracts/block_arc_lowering_plan.cpp
+  contracts/cross_module_lowering_contracts.cpp
+  contracts/dispatch_surface_contracts.cpp
   contracts/function_method_lowering_state.cpp
   contracts/lowering_arc_contracts.cpp
   contracts/lowering_extended_contracts.cpp
-  contracts/lowering_dispatch_and_arc_contracts.cpp
+  contracts/lowering_artifact_publication.cpp
   contracts/lowering_diagnostics.cpp
   contracts/lowering_phase_io.cpp
   contracts/lowering_contract_validators.cpp
   contracts/lowering_summary_contracts.cpp
   contracts/lowering_summary_surfaces.cpp
+  contracts/object_model_lowering_contracts.cpp
+  contracts/runtime_dispatch_abi_contracts.cpp
+  contracts/runtime_dispatch_boundary_contracts.cpp
   contracts/runtime_metadata_handoff.cpp
-  contracts/runtime_dispatch_contracts.cpp
+  contracts/type_system_lowering_contracts.cpp
   core/lowering_primitive_ops.cpp
   metadata/lowering_metadata_helpers.cpp
   metadata/runtime_metadata_layout_policy.cpp

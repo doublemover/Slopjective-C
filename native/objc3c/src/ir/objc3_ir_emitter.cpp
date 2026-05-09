@@ -16,8 +16,13 @@
 #include "ast/objc3_ast.h"
 #include "ir/objc3_ir_block_runtime_contracts.h"
 #include "ir/objc3_ir_emission_helpers.h"
+#include "ir/objc3_ir_method_definition_plan.h"
+#include "ir/objc3_ir_module_emission_surface.h"
+#include "ir/objc3_ir_receiver_dispatch_policy.h"
 #include "ir/objc3_ir_receiver_identity_contracts.h"
-#include "ir/objc3_runtime_call_lowering.h"
+#include "ir/objc3_ir_runtime_dispatch_calls.h"
+#include "ir/objc3_ir_runtime_dispatch_declarations.h"
+#include "ir/objc3_ir_runtime_dispatch_state.h"
 #include "parse/objc3_parse_support.h"
 #include "support/objc3_identifier_safe_suffix.h"
 #include "support/objc3_property_storage_profile_helpers.h"
@@ -27,39 +32,6 @@ bool ResolveGlobalInitializerValues(const std::vector<GlobalDecl> &globals, std:
 
 class Objc3IREmitter {
  public:
-  enum class SyntheticMethodKind {
-    None,
-    PropertyGetter,
-    PropertySetter,
-    MetaprogrammingDerivedEquality,
-    MetaprogrammingDerivedHash,
-    MetaprogrammingDerivedDebugDescription,
-  };
-
-  struct MethodDefinition {
-    std::string symbol;
-    std::string implementation_name;
-    std::string method_owner_identity;
-    std::string superclass_name;
-    const Objc3MethodDecl *method = nullptr;
-    SyntheticMethodKind synthetic_method_kind = SyntheticMethodKind::None;
-    ValueType synthesized_value_type = ValueType::Unknown;
-    std::size_t synthesized_parameter_count = 0;
-    std::string synthesized_ownership_lifetime_profile;
-    std::string synthesized_ownership_runtime_hook_profile;
-    std::string synthesized_accessor_ownership_profile;
-  };
-
-  struct MetaprogrammingGlobalArtifact {
-    std::string symbol;
-    std::string payload;
-  };
-
-  static bool IsImplementationOwnedPropertyBundle(
-      const Objc3IRRuntimeMetadataPropertyBundle &bundle) {
-    return bundle.synthesizes_executable_accessors;
-  }
-
   Objc3IREmitter(const Objc3Program &program,
                  const Objc3LoweringContract &lowering_contract,
                  const Objc3IRFrontendMetadata &frontend_metadata)
@@ -80,226 +52,21 @@ class Objc3IREmitter {
         function_definitions_.push_back(&fn);
       }
     }
-    std::unordered_map<std::string, std::string> implementation_superclass_names;
-    std::unordered_map<std::string, bool> interface_direct_members_by_name;
-    for (const auto &interface_decl : program_.interfaces) {
-      if (interface_decl.has_category) {
-        continue;
-      }
-      implementation_superclass_names.emplace(interface_decl.name,
-                                              interface_decl.super_name);
-      interface_direct_members_by_name.emplace(
-          interface_decl.name, interface_decl.objc_direct_members_declared);
+    Objc3IRMethodDefinitionPlan method_definition_plan =
+        BuildObjc3IRMethodDefinitionPlan(program_, frontend_metadata_);
+    if (!method_definition_plan.error.empty()) {
+      boundary_error_ = method_definition_plan.error;
+      return;
     }
-    std::unordered_map<std::string, std::size_t> method_symbol_counts;
-    std::unordered_set<std::string> method_owner_identities;
-    for (const auto &implementation : program_.implementations) {
-      const auto direct_members_it =
-          interface_direct_members_by_name.find(implementation.name);
-      const bool direct_members_declared =
-          !implementation.has_category &&
-          direct_members_it != interface_direct_members_by_name.end() &&
-          direct_members_it->second;
-      for (const auto &method : implementation.methods) {
-        if (!method.has_body) {
-          continue;
-        }
-        const std::string base_symbol =
-            BuildImplementationMethodFunctionSymbol(implementation.name, method.selector, method.is_class_method);
-        const std::size_t ordinal = method_symbol_counts[base_symbol]++;
-        const std::string symbol =
-            ordinal == 0 ? base_symbol : base_symbol + "_" + std::to_string(ordinal + 1u);
-        const auto super_it =
-            implementation_superclass_names.find(implementation.name);
-        const std::string superclass_name =
-            super_it == implementation_superclass_names.end() ? std::string()
-                                                              : super_it->second;
-        method_definitions_.push_back(
-            MethodDefinition{symbol,
-                             implementation.name,
-                             method.scope_path_symbol,
-                             superclass_name,
-                             &method,
-                             SyntheticMethodKind::None,
-                             ValueType::Unknown,
-                             0u,
-                             std::string{},
-                             std::string{},
-                             std::string{}});
-        const bool effective_direct_dispatch =
-            !implementation.has_category &&
-            (method.objc_direct_declared ||
-             (direct_members_declared && !method.objc_dynamic_declared));
-        if (effective_direct_dispatch) {
-          direct_dispatch_symbols_by_key_.emplace(
-              BuildDirectDispatchMethodKey(implementation.name, method.selector,
-                                           method.is_class_method),
-              "@" + symbol);
-        }
-        if (!method.scope_path_symbol.empty()) {
-          method_owner_identities.insert(method.scope_path_symbol);
-        }
-      }
-    }
-    for (const auto &bundle :
-         frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
-      if (!IsImplementationOwnedPropertyBundle(bundle) ||
-          bundle.declaration_owner_identity.empty() || bundle.owner_name.empty() ||
-          bundle.type_name.empty() || bundle.effective_getter_selector.empty() ||
-          bundle.executable_synthesized_binding_kind.empty() ||
-          bundle.executable_synthesized_binding_symbol.empty()) {
-        continue;
-      }
-      const ValueType property_type = RuntimeMetadataValueType(bundle.type_name);
-      if (property_type == ValueType::Unknown || property_type == ValueType::Void) {
-        boundary_error_ =
-            "unsupported synthesized property accessor type '" +
-            bundle.type_name + "' for owner '" + bundle.declaration_owner_identity +
-            "'";
-        return;
-      }
-      const auto append_synthesized_method =
-          [&](const std::string &selector, SyntheticMethodKind kind) {
-            if (selector.empty()) {
-              boundary_error_ =
-                  "missing synthesized property accessor selector for owner '" +
-                  bundle.declaration_owner_identity + "'";
-              return;
-            }
-            const std::string method_owner_identity =
-                BuildSynthesizedInstanceMethodOwnerIdentity(
-                    bundle.declaration_owner_identity, selector);
-            if (!method_owner_identities.insert(method_owner_identity).second) {
-              return;
-            }
-            const std::string base_symbol =
-                BuildImplementationMethodFunctionSymbol(bundle.owner_name,
-                                                        selector, false);
-            const std::size_t ordinal = method_symbol_counts[base_symbol]++;
-            const std::string symbol =
-                ordinal == 0
-                    ? base_symbol
-                    : base_symbol + "_" + std::to_string(ordinal + 1u);
-            method_definitions_.push_back(MethodDefinition{
-                symbol,
-                bundle.owner_name,
-                method_owner_identity,
-                std::string{},
-                nullptr,
-                kind,
-                property_type,
-                kind == SyntheticMethodKind::PropertySetter ? 1u : 0u,
-                bundle.ownership_lifetime_profile,
-                bundle.ownership_runtime_hook_profile,
-                bundle.accessor_ownership_profile,
-            });
-            const auto direct_members_it =
-                interface_direct_members_by_name.find(bundle.owner_name);
-            const bool effective_direct_dispatch =
-                bundle.owner_kind == "class-implementation" &&
-                direct_members_it != interface_direct_members_by_name.end() &&
-                direct_members_it->second;
-            if (effective_direct_dispatch) {
-              direct_dispatch_symbols_by_key_.emplace(
-                  BuildDirectDispatchMethodKey(bundle.owner_name, selector,
-                                               false),
-                  "@" + symbol);
-            }
-            ++synthesized_property_accessor_count_;
-          };
-      append_synthesized_method(bundle.effective_getter_selector,
-                                SyntheticMethodKind::PropertyGetter);
-      if (!boundary_error_.empty()) {
-        return;
-      }
-      if (bundle.effective_setter_available) {
-        append_synthesized_method(bundle.effective_setter_selector,
-                                  SyntheticMethodKind::PropertySetter);
-        if (!boundary_error_.empty()) {
-          return;
-        }
-      }
-    }
-    for (const auto &bundle :
-         frontend_metadata_.metaprogramming_derived_method_bundles_lexicographic) {
-      if (bundle.implementation_name.empty() ||
-          bundle.declaration_owner_identity.empty() || bundle.selector.empty() ||
-          bundle.emitted_symbol.empty()) {
-        boundary_error_ =
-            "incomplete Part 10 derived method lowering bundle";
-        return;
-      }
-      const std::string method_owner_identity =
-          BuildSynthesizedInstanceMethodOwnerIdentity(
-              bundle.declaration_owner_identity, bundle.selector);
-      if (!method_owner_identities.insert(method_owner_identity).second) {
-        continue;
-      }
-      SyntheticMethodKind synthetic_kind = SyntheticMethodKind::None;
-      if (bundle.derive_name == "Equality") {
-        synthetic_kind = SyntheticMethodKind::MetaprogrammingDerivedEquality;
-      } else if (bundle.derive_name == "Hash") {
-        synthetic_kind = SyntheticMethodKind::MetaprogrammingDerivedHash;
-      } else if (bundle.derive_name == "DebugDescription") {
-        synthetic_kind = SyntheticMethodKind::MetaprogrammingDerivedDebugDescription;
-      } else {
-        boundary_error_ = "unsupported Part 10 derive kind '" +
-                          bundle.derive_name + "'";
-        return;
-      }
-      method_definitions_.push_back(MethodDefinition{
-          bundle.emitted_symbol,
-          bundle.implementation_name,
-          method_owner_identity,
-          std::string{},
-          nullptr,
-          synthetic_kind,
-          ValueType::I32,
-          bundle.parameter_count,
-          std::string{},
-          std::string{},
-          std::string{},
-      });
-      ++metaprogramming_derived_method_count_;
-      metaprogramming_global_artifacts_.push_back(
-          MetaprogrammingGlobalArtifact{BuildSynthesizedPropertyStorageSymbol(
-                                   bundle.emitted_symbol + "_selector"),
-                               "derive=" + bundle.derive_name + ";owner=" +
-                                   bundle.implementation_name + ";selector=" +
-                                   bundle.selector + ";symbol=" +
-                                   bundle.emitted_symbol});
-    }
-    for (const auto &bundle :
-         frontend_metadata_.metaprogramming_macro_artifact_bundles_lexicographic) {
-      if (bundle.emitted_symbol.empty()) {
-        boundary_error_ = "incomplete Part 10 macro artifact lowering bundle";
-        return;
-      }
-      metaprogramming_global_artifacts_.push_back(
-          MetaprogrammingGlobalArtifact{bundle.emitted_symbol,
-                               "function=" + bundle.function_name +
-                                   ";macro=" + bundle.macro_name +
-                                   ";package=" + bundle.package_name +
-                                   ";provenance=" + bundle.provenance_name +
-                                   ";cache_key=" + bundle.cache_key_name +
-                                   ";sandbox_policy=" +
-                                   bundle.sandbox_policy_name});
-    }
-    for (const auto &bundle :
-         frontend_metadata_.metaprogramming_property_behavior_artifact_bundles_lexicographic) {
-      if (bundle.emitted_symbol.empty()) {
-        boundary_error_ =
-            "incomplete Part 10 property behavior lowering bundle";
-        return;
-      }
-      metaprogramming_global_artifacts_.push_back(
-          MetaprogrammingGlobalArtifact{bundle.emitted_symbol,
-                               "owner_kind=" + bundle.owner_kind + ";owner=" +
-                                   bundle.owner_name + ";property=" +
-                                   bundle.property_name + ";behavior=" +
-                                   bundle.behavior_name + ";binding=" +
-                                   bundle.binding_symbol});
-    }
+    method_definitions_ = method_definition_plan.method_definitions;
+    direct_dispatch_symbols_by_key_ =
+        method_definition_plan.direct_dispatch_symbols_by_key;
+    metaprogramming_global_artifacts_ =
+        method_definition_plan.metaprogramming_global_artifacts;
+    synthesized_property_accessor_count_ =
+        method_definition_plan.synthesized_property_accessor_count;
+    metaprogramming_derived_method_count_ =
+        method_definition_plan.metaprogramming_derived_method_count;
     function_signatures_ = BuildLoweredFunctionSignatures(program_);
     CollectKnownClassReceiverConstants();
     CollectCanonicalPoolLiterals();
@@ -308,7 +75,7 @@ class Objc3IREmitter {
   }
 
   bool Emit(std::string &ir, std::string &error) {
-    runtime_call_lowering_state_.Reset();
+    runtime_dispatch_call_state_.Reset();
     synthesized_getter_definition_count_ = 0;
     synthesized_setter_definition_count_ = 0;
     current_property_read_helper_call_count_ = 0;
@@ -383,7 +150,7 @@ class Objc3IREmitter {
       EmitFunction(*fn, body);
       body << "\n";
     }
-    for (const MethodDefinition &method_def : method_definitions_) {
+    for (const Objc3IRMethodDefinition &method_def : method_definitions_) {
       EmitMethod(method_def, body);
       body << "\n";
     }
@@ -588,7 +355,7 @@ class Objc3IREmitter {
         std::size_t writable_property_entries = 0u;
         for (const auto &bundle :
              frontend_metadata_.runtime_metadata_property_bundles_lexicographic) {
-          if (IsImplementationOwnedPropertyBundle(bundle) &&
+          if (Objc3IRRuntimeMetadataPropertyBundleIsImplementationOwned(bundle) &&
               !bundle.executable_synthesized_binding_symbol.empty()) {
             writable_property_entries += bundle.effective_setter_available ? 1u : 0u;
           }
@@ -2875,58 +2642,31 @@ class Objc3IREmitter {
     //   out << ", i32";
     // }
     // out << ")\n\n";
-    if (runtime_call_lowering_state_.runtime_dispatch_call_emitted) {
-      out << "; runtime_dispatch_call_decl = "
-          << Objc3RuntimeDispatchDeclarationReplayKey(lowering_ir_boundary_)
-          << "\n\n";
-    }
-    if (synthesized_getter_definition_count_ > 0 ||
-        synthesized_setter_definition_count_ > 0) {
-      out << "; synthesized_getter_setter_llvm_ir_generation_surface = "
-          << "contract_id=objc3c.synthesized.getter.setter.llvm.ir.generation.v1"
-          << ";getter_definitions=" << synthesized_getter_definition_count_
-          << ";setter_definitions=" << synthesized_setter_definition_count_
-          << ";read_current_property_calls="
-          << current_property_read_helper_call_count_
-          << ";write_current_property_calls="
-          << current_property_write_helper_call_count_
-          << ";exchange_current_property_calls="
-          << current_property_exchange_helper_call_count_
-          << ";weak_load_current_property_calls="
-          << weak_current_property_load_helper_call_count_
-          << ";weak_store_current_property_calls="
-          << weak_current_property_store_helper_call_count_
-          << ";retain_calls=" << retain_helper_call_count_
-          << ";release_calls=" << release_helper_call_count_
-          << ";autorelease_calls=" << autorelease_helper_call_count_
-          << "\n";
-    }
-    if (runtime_call_lowering_state_.runtime_dispatch_call_emitted ||
-        runtime_call_lowering_state_.direct_dispatch_call_sites_emitted > 0) {
-      out << "; method_dispatch_and_selector_thunk_lowering_surface = "
-          << "contract_id=objc3c.method.dispatch.selector.thunk.lowering.v1"
-          << ";runtime_dispatch_symbol=" << lowering_ir_boundary_.runtime_dispatch_symbol
-          << ";runtime_dispatch_call_emitted="
-          << (runtime_call_lowering_state_.runtime_dispatch_call_emitted
-                  ? "true"
-                  : "false")
-          << ";runtime_dispatch_call_sites="
-          << runtime_call_lowering_state_.runtime_dispatch_call_sites_emitted
-          << ";direct_dispatch_call_sites="
-          << runtime_call_lowering_state_.direct_dispatch_call_sites_emitted
-          << ";selector_pool_gep_sites="
-          << runtime_call_lowering_state_.selector_pool_gep_sites_emitted
-          << ";selector_pool_count=" << selector_pool_globals_.size()
-          << ";direct_dispatch_candidate_sites="
-          << frontend_metadata_
-                 .dispatch_dispatch_control_lowering_direct_call_candidate_sites
-          << ";dynamic_opt_out_sites="
-          << frontend_metadata_.dispatch_dispatch_control_lowering_dynamic_opt_out_sites
-          << ";selector_pool_symbol="
-          << (selector_pool_globals_.empty() ? "null"
-                                             : "@__objc3_sec_selector_pool")
-          << "\n";
-    }
+    EmitObjc3IRRuntimeDispatchDeclarationSurface(
+        lowering_ir_boundary_, runtime_dispatch_call_state_, out);
+    EmitObjc3IRSynthesizedAccessorEmissionSurface(
+        Objc3IRSynthesizedAccessorEmissionStats{
+            synthesized_getter_definition_count_,
+            synthesized_setter_definition_count_,
+            current_property_read_helper_call_count_,
+            current_property_write_helper_call_count_,
+            current_property_exchange_helper_call_count_,
+            weak_current_property_load_helper_call_count_,
+            weak_current_property_store_helper_call_count_,
+            retain_helper_call_count_,
+            release_helper_call_count_,
+            autorelease_helper_call_count_},
+        out);
+    EmitObjc3IRMethodDispatchEmissionSurface(
+        lowering_ir_boundary_, runtime_dispatch_call_state_,
+        Objc3IRMethodDispatchEmissionStats{
+            selector_pool_globals_.size(),
+            frontend_metadata_
+                .dispatch_dispatch_control_lowering_direct_call_candidate_sites,
+            frontend_metadata_
+                .dispatch_dispatch_control_lowering_dynamic_opt_out_sites,
+            !selector_pool_globals_.empty()},
+        out);
     out << body.str();
     ir = out.str();
     return true;
@@ -2941,8 +2681,7 @@ class Objc3IREmitter {
 
   struct LoweredMessageSend {
     std::string receiver = "0";
-    bool receiver_is_compile_time_zero = false;
-    bool receiver_is_compile_time_nonzero = false;
+    Objc3IRReceiverDispatchFacts receiver_dispatch_facts;
     std::vector<std::string> args;
     std::size_t explicit_arg_count = 0;
     std::string selector;
@@ -3081,7 +2820,7 @@ class Objc3IREmitter {
     return StablePositiveAsyncTag("resume-entry:function:" + fn.name);
   }
 
-  static int AsyncResumeEntryTag(const MethodDefinition &method_def) {
+  static int AsyncResumeEntryTag(const Objc3IRMethodDefinition &method_def) {
     return StablePositiveAsyncTag("resume-entry:method:" + method_def.symbol);
   }
 
@@ -8086,7 +7825,7 @@ class Objc3IREmitter {
         emit_member_table_payloads) {
       std::unordered_set<std::string> implementation_method_owner_identities;
       implementation_method_owner_identities.reserve(method_definitions_.size());
-      for (const MethodDefinition &method_def : method_definitions_) {
+      for (const Objc3IRMethodDefinition &method_def : method_definitions_) {
         if (method_def.method_owner_identity.empty()) {
           continue;
         }
@@ -8413,7 +8152,7 @@ class Objc3IREmitter {
                                   bundle.list_kind),
             bundle.entries_lexicographic.size());
       }
-      for (const MethodDefinition &method_def : method_definitions_) {
+      for (const Objc3IRMethodDefinition &method_def : method_definitions_) {
         if (method_def.method_owner_identity.empty()) {
           continue;
         }
@@ -8894,7 +8633,7 @@ class Objc3IREmitter {
                   << "\\00\", section \"" << family.emitted_section_name
                   << "\", align 1\n";
             }
-            if (IsImplementationOwnedPropertyBundle(bundle)) {
+            if (Objc3IRRuntimeMetadataPropertyBundleIsImplementationOwned(bundle)) {
               const auto getter_implementation_it =
                   implementation_method_symbols_by_owner_identity.find(
                       BuildSynthesizedInstanceMethodOwnerIdentity(
@@ -12241,8 +11980,10 @@ class Objc3IREmitter {
       return lowered;
     }
 
-    lowered.receiver_is_compile_time_zero = IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);
-    lowered.receiver_is_compile_time_nonzero = IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);
+    lowered.receiver_dispatch_facts.compile_time_nil_receiver =
+        IsCompileTimeNilReceiverExprInContext(expr->receiver.get(), ctx);
+    lowered.receiver_dispatch_facts.compile_time_nonzero_receiver =
+        IsCompileTimeKnownNonNilExprInContext(expr->receiver.get(), ctx);
     lowered.receiver = EmitExpr(expr->receiver.get(), ctx);
     lowered.selector = expr->selector;
     lowered.dispatch_surface_family = expr->dispatch_surface_family_symbol;
@@ -12312,12 +12053,12 @@ class Objc3IREmitter {
       // sends that target effective objc_direct methods now lower as exact LLVM
       // direct calls instead of routing through the runtime dispatch entrypoint.
       const std::string direct_value = NewTemp(ctx);
-      ctx.code_lines.push_back(BuildObjc3DirectDispatchCallIR(
-          Objc3DirectDispatchCallRequest{direct_value,
-                                         lowered.direct_call_symbol,
-                                         lowered.args,
-                                         lowered.explicit_arg_count}));
-      runtime_call_lowering_state_.NoteDirectDispatchCall();
+      ctx.code_lines.push_back(BuildObjc3IRDirectDispatchCall(
+          Objc3IRDirectDispatchCallRequest{direct_value,
+                                           lowered.direct_call_symbol,
+                                           lowered.args,
+                                           lowered.explicit_arg_count}));
+      runtime_dispatch_call_state_.NoteDirectDispatchCall();
       InvalidateGlobalProofState(ctx);
       return direct_value;
     }
@@ -12331,7 +12072,11 @@ class Objc3IREmitter {
     const bool uses_canonical_runtime_entrypoint =
         UsesCanonicalObjc3RuntimeDispatchEntrypoint(
             lowered.dispatch_surface_family);
-    if (lowered.receiver_is_compile_time_zero) {
+    const Objc3IRReceiverDispatchPolicy receiver_dispatch_policy =
+        BuildObjc3IRReceiverDispatchPolicy(
+            lowered.receiver_dispatch_facts,
+            uses_canonical_runtime_entrypoint);
+    if (receiver_dispatch_policy.elide_to_nil_result) {
       return "0";
     }
 
@@ -12344,7 +12089,7 @@ class Objc3IREmitter {
     const std::string selector_ptr = NewTemp(ctx);
     ctx.code_lines.push_back("  " + selector_ptr + " = getelementptr inbounds [" + std::to_string(selector_len) +
                              " x i8], ptr " + selector_it->second + ", i32 0, i32 0");
-    runtime_call_lowering_state_.NoteSelectorPoolGep();
+    runtime_dispatch_call_state_.NoteSelectorPoolGep();
 
     const auto emit_dispatch_call = [&](const std::string &dispatch_value) {
       // dispatch-surface classification anchor: instance/class/super/dynamic
@@ -12389,18 +12134,17 @@ class Objc3IREmitter {
       // symbols. Those runtime-owned details stay behind the frozen
       // objc3_runtime_lookup_selector / objc3_runtime_dispatch_i32 surface
       // until later lane-D issues extend them explicitly.
-      ctx.code_lines.push_back(BuildObjc3RuntimeDispatchCallIR(
-          Objc3RuntimeDispatchCallRequest{dispatch_value,
-                                          lowered.dispatch_symbol,
-                                          lowered.receiver,
-                                          selector_ptr,
-                                          lowered.args}));
-      runtime_call_lowering_state_.NoteRuntimeDispatchCall(
+      ctx.code_lines.push_back(BuildObjc3IRRuntimeDispatchCall(
+          Objc3IRRuntimeDispatchCallRequest{dispatch_value,
+                                            lowered.dispatch_symbol,
+                                            lowered.receiver,
+                                            selector_ptr,
+                                            lowered.args}));
+      runtime_dispatch_call_state_.NoteRuntimeDispatchCall(
           lowered.dispatch_symbol);
     };
 
-    if (uses_canonical_runtime_entrypoint ||
-        lowered.receiver_is_compile_time_nonzero) {
+    if (receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
       const std::string dispatch_value = NewTemp(ctx);
       emit_dispatch_call(dispatch_value);
       InvalidateGlobalProofState(ctx);
@@ -12430,10 +12174,14 @@ class Objc3IREmitter {
   std::string EmitMessageSendExpr(const Expr *expr, FunctionContext &ctx) const {
     if (expr != nullptr && expr->optional_send_enabled) {
       LoweredMessageSend lowered = LowerMessageSendHeader(expr, ctx);
-      if (lowered.receiver_is_compile_time_zero) {
+      const Objc3IRReceiverDispatchPolicy receiver_dispatch_policy =
+          BuildObjc3IRReceiverDispatchPolicy(
+              lowered.receiver_dispatch_facts,
+              false);
+      if (receiver_dispatch_policy.elide_to_nil_result) {
         return "0";
       }
-      if (lowered.receiver_is_compile_time_nonzero) {
+      if (receiver_dispatch_policy.emit_dispatch_without_nil_branch) {
         MaterializeMessageSendArgs(expr, lowered, ctx);
         return EmitRuntimeDispatch(lowered, ctx);
       }
@@ -12451,8 +12199,7 @@ class Objc3IREmitter {
       ctx.code_lines.push_back(nil_label + ":");
       ctx.code_lines.push_back("  br label %" + merge_label);
       ctx.code_lines.push_back(dispatch_label + ":");
-      lowered.receiver_is_compile_time_zero = false;
-      lowered.receiver_is_compile_time_nonzero = true;
+      lowered.receiver_dispatch_facts = Objc3IRKnownNonNilReceiverFacts();
       MaterializeMessageSendArgs(expr, lowered, ctx);
       const std::string dispatch_value = EmitRuntimeDispatch(lowered, ctx);
       ctx.code_lines.push_back("  br label %" + merge_label);
@@ -13779,8 +13526,8 @@ class Objc3IREmitter {
   }
 
   void EmitRuntimeDispatchDeclarations(std::ostringstream &out) const {
-    EmitObjc3RuntimeDispatchDeclarations(lowering_ir_boundary_,
-                                         runtime_call_lowering_state_, out);
+    EmitObjc3IRRuntimeDispatchDeclarations(lowering_ir_boundary_,
+                                           runtime_dispatch_call_state_, out);
   }
 
   void EmitFunction(const FunctionDecl &fn, std::ostringstream &out) const {
@@ -13847,7 +13594,7 @@ class Objc3IREmitter {
     out << "}\n";
   }
 
-  void EmitMethod(const MethodDefinition &method_def,
+  void EmitMethod(const Objc3IRMethodDefinition &method_def,
                   std::ostringstream &out) const {
     if (method_def.method == nullptr) {
       EmitSyntheticMethod(method_def, out);
@@ -13943,10 +13690,10 @@ class Objc3IREmitter {
     out << "}\n";
   }
 
-  void EmitSyntheticMethod(const MethodDefinition &method_def,
+  void EmitSyntheticMethod(const Objc3IRMethodDefinition &method_def,
                            std::ostringstream &out) const {
     if (method_def.synthetic_method_kind ==
-        SyntheticMethodKind::MetaprogrammingDerivedEquality) {
+        Objc3IRSyntheticMethodKind::MetaprogrammingDerivedEquality) {
       out << "define i32 @" << method_def.symbol << "(i32 %arg0) {\n";
       out << "entry:\n";
       out << "  ret i32 1\n";
@@ -13954,9 +13701,9 @@ class Objc3IREmitter {
       return;
     }
     if (method_def.synthetic_method_kind ==
-            SyntheticMethodKind::MetaprogrammingDerivedHash ||
+            Objc3IRSyntheticMethodKind::MetaprogrammingDerivedHash ||
         method_def.synthetic_method_kind ==
-            SyntheticMethodKind::MetaprogrammingDerivedDebugDescription) {
+            Objc3IRSyntheticMethodKind::MetaprogrammingDerivedDebugDescription) {
       std::uint32_t seed = 2166136261u;
       for (unsigned char ch : method_def.symbol) {
         seed ^= static_cast<std::uint32_t>(ch);
@@ -13970,9 +13717,9 @@ class Objc3IREmitter {
       return;
     }
     if ((method_def.synthetic_method_kind !=
-         SyntheticMethodKind::PropertyGetter &&
+         Objc3IRSyntheticMethodKind::PropertyGetter &&
          method_def.synthetic_method_kind !=
-             SyntheticMethodKind::PropertySetter)) {
+             Objc3IRSyntheticMethodKind::PropertySetter)) {
       return;
     }
     const bool uses_weak_runtime_hooks =
@@ -13984,7 +13731,7 @@ class Objc3IREmitter {
             method_def.synthesized_accessor_ownership_profile);
     const char *llvm_value_type = LLVMScalarType(method_def.synthesized_value_type);
     if (method_def.synthetic_method_kind ==
-        SyntheticMethodKind::PropertyGetter) {
+        Objc3IRSyntheticMethodKind::PropertyGetter) {
       ++synthesized_getter_definition_count_;
       out << "define " << llvm_value_type << " @" << method_def.symbol << "() {\n";
       out << "entry:\n";
@@ -14123,9 +13870,9 @@ class Objc3IREmitter {
   std::unordered_set<std::string> defined_functions_;
   std::unordered_set<std::string> declared_pure_functions_;
   std::vector<const FunctionDecl *> function_definitions_;
-  std::vector<MethodDefinition> method_definitions_;
+  std::vector<Objc3IRMethodDefinition> method_definitions_;
   std::size_t synthesized_property_accessor_count_ = 0;
-  std::vector<MetaprogrammingGlobalArtifact> metaprogramming_global_artifacts_;
+  std::vector<Objc3IRMetaprogrammingGlobalArtifact> metaprogramming_global_artifacts_;
   std::size_t metaprogramming_derived_method_count_ = 0;
   std::unordered_map<std::string, FunctionEffectInfo> function_effects_;
   std::unordered_set<std::string> impure_functions_;
@@ -14141,7 +13888,7 @@ class Objc3IREmitter {
   mutable std::unordered_set<std::string> emitted_block_invoke_symbols_;
   mutable std::unordered_set<std::string> emitted_block_copy_helper_symbols_;
   mutable std::unordered_set<std::string> emitted_block_dispose_helper_symbols_;
-  mutable Objc3RuntimeCallLoweringState runtime_call_lowering_state_;
+  mutable Objc3IRRuntimeDispatchCallState runtime_dispatch_call_state_;
   mutable std::size_t synthesized_getter_definition_count_ = 0;
   mutable std::size_t synthesized_setter_definition_count_ = 0;
   mutable std::size_t current_property_read_helper_call_count_ = 0;
