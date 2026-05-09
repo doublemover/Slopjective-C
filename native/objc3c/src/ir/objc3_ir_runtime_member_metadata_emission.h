@@ -14,8 +14,16 @@ struct Objc3IRRuntimeMemberMetadataEmissionOptions {
   const Objc3IRFrontendMetadata &frontend_metadata;
   const Objc3RuntimeMetadataLayoutPolicy &layout_policy;
   const std::unordered_map<std::string, std::string>
+      &method_list_symbols_by_key;
+  const std::unordered_map<std::string, std::string>
       &implementation_method_symbols_by_owner_identity;
 };
+
+bool EmitObjc3IRRuntimeMethodListBundlesForFamily(
+    const Objc3IRRuntimeMemberMetadataEmissionOptions &options,
+    const Objc3RuntimeMetadataLayoutPolicyFamily &family,
+    std::ostringstream &out, std::vector<std::string> &retained_globals,
+    std::string &error);
 
 bool EmitObjc3IRRuntimePropertyDescriptorSection(
     const Objc3IRRuntimeMemberMetadataEmissionOptions &options,

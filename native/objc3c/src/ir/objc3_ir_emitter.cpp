@@ -2660,10 +2660,6 @@ class Objc3IREmitter {
     return Objc3IRRuntimeMetadataSectionScaffoldReady(frontend_metadata_);
   }
 
-  static std::string FormatRuntimeMetadataDescriptorOrdinal(std::size_t ordinal) {
-    return FormatObjc3IRRuntimeMetadataDescriptorOrdinal(ordinal);
-  }
-
   std::string BuildRuntimeMetadataDescriptorSymbol(
       const std::string &descriptor_symbol_prefix, const std::string &kind,
       std::size_t ordinal) const {
@@ -3267,179 +3263,18 @@ class Objc3IREmitter {
 
     const auto emit_method_list_bundles_for_family =
         [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
-          if (!emit_member_table_payloads) {
-            return true;
-          }
-          for (std::size_t bundle_index = 0;
-               bundle_index <
-               frontend_metadata_.runtime_metadata_method_list_bundles_lexicographic
-                   .size();
-               ++bundle_index) {
-            const auto &bundle =
-                frontend_metadata_
-                    .runtime_metadata_method_list_bundles_lexicographic[bundle_index];
-            if (bundle.owner_family_kind != family.kind) {
-              continue;
-            }
-
-            const auto method_list_it = method_list_symbols_by_key.find(
-                build_method_list_key(bundle.owner_family_kind,
-                                      bundle.declaration_owner_identity,
-                                      bundle.list_kind));
-            if (method_list_it == method_list_symbols_by_key.end()) {
-              continue;
-            }
-
-            const std::string list_symbol = method_list_it->second;
-            const std::string owner_identity_symbol =
-                BuildRuntimeMetadataAuxiliarySymbol(
-                    layout_policy.descriptor_symbol_prefix, family.kind,
-                    bundle.list_kind + "_methods_owner_identity", bundle_index);
-            const std::string export_owner_identity_symbol =
-                BuildRuntimeMetadataAuxiliarySymbol(
-                    layout_policy.descriptor_symbol_prefix, family.kind,
-                    bundle.list_kind + "_methods_export_owner_identity",
-                    bundle_index);
-
-            out << owner_identity_symbol << " = private constant ["
-                << (bundle.declaration_owner_identity.size() + 1u)
-                << " x i8] c\""
-                << EscapeCStringLiteral(bundle.declaration_owner_identity)
-                << "\\00\", section \"" << family.emitted_section_name
-                << "\", align 1\n";
-            out << export_owner_identity_symbol << " = private constant ["
-                << (bundle.export_owner_identity.size() + 1u) << " x i8] c\""
-                << EscapeCStringLiteral(bundle.export_owner_identity)
-                << "\\00\", section \"" << family.emitted_section_name
-                << "\", align 1\n";
-            std::vector<std::string> entry_initializers;
-            entry_initializers.reserve(bundle.entries_lexicographic.size());
-            for (std::size_t entry_index = 0;
-                 entry_index < bundle.entries_lexicographic.size();
-                 ++entry_index) {
-              const auto &entry = bundle.entries_lexicographic[entry_index];
-              const std::string bundle_ordinal =
-                  FormatRuntimeMetadataDescriptorOrdinal(bundle_index);
-              const std::string entry_ordinal =
-                  FormatRuntimeMetadataDescriptorOrdinal(entry_index);
-              const std::string selector_symbol =
-                  "@" + layout_policy.descriptor_symbol_prefix + family.kind +
-                  "_" + bundle.list_kind + "_method_selector_" +
-                  bundle_ordinal + "_" + entry_ordinal;
-              const std::string entry_owner_identity_symbol =
-                  "@" + layout_policy.descriptor_symbol_prefix + family.kind +
-                  "_" + bundle.list_kind + "_method_owner_identity_" +
-                  bundle_ordinal + "_" + entry_ordinal;
-              const std::string return_type_symbol =
-                  "@" + layout_policy.descriptor_symbol_prefix + family.kind +
-                  "_" + bundle.list_kind + "_method_return_type_" +
-                  bundle_ordinal + "_" + entry_ordinal;
-              std::string implementation_symbol = "null";
-              if (entry.has_body &&
-                  (bundle.owner_kind == "class-implementation" ||
-                   bundle.owner_kind == "category-implementation")) {
-                // executable object artifact lowering freeze anchor:
-                // object emission binds implementation-owned method entries by
-                // canonical owner identity to concrete LLVM definition symbols;
-                // later executable-runtime work must extend this binding
-                // surface instead of rediscovering bodies from source.
-                // executable method-body binding anchor: the
-                // implementation pointer is now a fail-closed requirement for
-                // every implementation-owned executable method entry. If the
-                // canonical method owner identity cannot resolve to exactly one
-                // emitted LLVM body symbol, IR/object emission aborts instead
-                // of silently leaving a null implementation slot.
-                // slow-path anchor: class and category
-                // implementation method-table entries now carry callable
-                // implementation pointers from registered metadata.
-                // slow-path anchor: class-implementation method-table
-                // entries now carry callable implementation pointers so the
-                // runtime can resolve live class/metaclass bodies from
-                // registered metadata.
-                // slow-path anchor: category-implementation
-                // method-table entries now carry callable implementation
-                // pointers so the runtime can resolve live category bodies from
-                // registered metadata.
-                const auto implementation_it =
-                    implementation_method_symbols_by_owner_identity.find(
-                        entry.owner_identity);
-                if (implementation_it ==
-                    implementation_method_symbols_by_owner_identity.end()) {
-                  executable_method_binding_error =
-                      "missing executable method-body binding for owner identity '" +
-                      entry.owner_identity + "' in emitted " +
-                      bundle.owner_kind + " " + bundle.list_kind +
-                      " method list";
-                  return false;
-                }
-                implementation_symbol = implementation_it->second;
-              }
-
-              out << selector_symbol << " = private constant ["
-                  << (entry.selector.size() + 1u) << " x i8] c\""
-                  << EscapeCStringLiteral(entry.selector)
-                  << "\\00\", section \"" << family.emitted_section_name
-                  << "\", align 1\n";
-              out << entry_owner_identity_symbol << " = private constant ["
-                  << (entry.owner_identity.size() + 1u) << " x i8] c\""
-                  << EscapeCStringLiteral(entry.owner_identity)
-                  << "\\00\", section \"" << family.emitted_section_name
-                  << "\", align 1\n";
-              out << return_type_symbol << " = private constant ["
-                  << (entry.return_type_name.size() + 1u) << " x i8] c\""
-                  << EscapeCStringLiteral(entry.return_type_name)
-                  << "\\00\", section \"" << family.emitted_section_name
-                  << "\", align 1\n";
-              std::ostringstream entry_initializer;
-              // dispatch-control lowering anchor: method entries now
-              // preserve effective-direct and objc_final intent bits alongside
-              // implementation bindings so emitted metadata matches the live
-              // direct-call lowering surface.
-              entry_initializer << "{ ptr, ptr, ptr, i64, ptr, i64, i1, i1 } { ptr "
-                                << selector_symbol << ", ptr "
-                                << entry_owner_identity_symbol << ", ptr "
-                                << return_type_symbol << ", i64 "
-                                << entry.parameter_count << ", ptr "
-                                << implementation_symbol << ", i64 "
-                                << (entry.has_body ? 1 : 0) << ", i1 "
-                                << (entry.effective_direct_dispatch ? 1 : 0)
-                                << ", i1 "
-                                << (entry.objc_final_declared ? 1 : 0) << " }";
-              entry_initializers.push_back(entry_initializer.str());
-            }
-            out << list_symbol << " = private global ";
-            if (entry_initializers.empty()) {
-              out << "{ i64, ptr, ptr } { i64 0, ptr " << owner_identity_symbol
-                  << ", ptr " << export_owner_identity_symbol << " }";
-            } else {
-              out << "{ i64, ptr, ptr, [" << entry_initializers.size()
-                  << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1 }] } { i64 "
-                  << entry_initializers.size() << ", ptr "
-                  << owner_identity_symbol << ", ptr "
-                  << export_owner_identity_symbol << ", ["
-                  << entry_initializers.size()
-                  << " x { ptr, ptr, ptr, i64, ptr, i64, i1, i1 }] [";
-              for (std::size_t entry_index = 0;
-                   entry_index < entry_initializers.size(); ++entry_index) {
-                if (entry_index != 0) {
-                  out << ", ";
-                }
-                out << entry_initializers[entry_index];
-              }
-              out << "] }";
-            }
-            out << ", section \"" << family.emitted_section_name
-                << "\", align 8\n";
-            emit_retained(list_symbol);
-          }
-          return true;
+          return EmitObjc3IRRuntimeMethodListBundlesForFamily(
+              Objc3IRRuntimeMemberMetadataEmissionOptions{
+                  frontend_metadata_, layout_policy, method_list_symbols_by_key,
+                  implementation_method_symbols_by_owner_identity},
+              family, out, retained_globals, executable_method_binding_error);
         };
 
     const auto emit_property_descriptor_section =
         [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
           return EmitObjc3IRRuntimePropertyDescriptorSection(
               Objc3IRRuntimeMemberMetadataEmissionOptions{
-                  frontend_metadata_, layout_policy,
+                  frontend_metadata_, layout_policy, method_list_symbols_by_key,
                   implementation_method_symbols_by_owner_identity},
               family, out, retained_globals, executable_method_binding_error);
         };
@@ -3448,7 +3283,7 @@ class Objc3IREmitter {
         [&](const Objc3RuntimeMetadataLayoutPolicyFamily &family) {
           EmitObjc3IRRuntimeIvarDescriptorSection(
               Objc3IRRuntimeMemberMetadataEmissionOptions{
-                  frontend_metadata_, layout_policy,
+                  frontend_metadata_, layout_policy, method_list_symbols_by_key,
                   implementation_method_symbols_by_owner_identity},
               family, out, retained_globals);
         };
