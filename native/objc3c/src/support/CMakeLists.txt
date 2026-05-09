@@ -212,20 +212,8 @@ add_library(objc3c_support_selectors STATIC
 )
 objc3c_apply_build_defaults(objc3c_support_selectors)
 
-add_library(objc3c_support INTERFACE)
-target_link_libraries(objc3c_support INTERFACE
-  objc3c_support_ascii
-  objc3c_support_concurrency
-  objc3c_support_identifier_io
-  objc3c_support_method_family
-  objc3c_support_profile_matchers
-  objc3c_support_properties
-  objc3c_support_runtime_dispatch
-  objc3c_support_selectors
-  objc3c_support_strings
-  objc3c_support_type_surfaces
-)
-target_sources(objc3c_support INTERFACE
+add_library(objc3c_support_metadata INTERFACE)
+target_sources(objc3c_support_metadata INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/metadata/record_set_counts.h
   ${CMAKE_CURRENT_LIST_DIR}/metadata/reference_counts/category_record_reference_counts.h
   ${CMAKE_CURRENT_LIST_DIR}/metadata/reference_counts/class_record_reference_counts.h
@@ -242,4 +230,19 @@ target_sources(objc3c_support INTERFACE
   ${CMAKE_CURRENT_LIST_DIR}/objc3_runtime_metadata_protocol_reference_counts.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_runtime_metadata_reference_counts.h
   ${CMAKE_CURRENT_LIST_DIR}/objc3_runtime_metadata_record_set.h
+)
+
+add_library(objc3c_support INTERFACE)
+target_link_libraries(objc3c_support INTERFACE
+  objc3c_support_ascii
+  objc3c_support_concurrency
+  objc3c_support_identifier_io
+  objc3c_support_metadata
+  objc3c_support_method_family
+  objc3c_support_profile_matchers
+  objc3c_support_properties
+  objc3c_support_runtime_dispatch
+  objc3c_support_selectors
+  objc3c_support_strings
+  objc3c_support_type_surfaces
 )
