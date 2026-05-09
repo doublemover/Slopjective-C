@@ -13,10 +13,11 @@ from .model import build_release_manifest_payload
 from .package import package_once
 from .paths import (
     EVIDENCE_INDEX_PATH,
+    PACKAGE_MANIFEST_RELATIVE_PATH,
+    PACKAGE_STAGE_ROOT,
     PAYLOAD_POLICY,
     RELEASE_EVIDENCE_PY,
     REPRO_POLICY,
-    ROOT,
     SOURCE_SURFACE,
     SUMMARY_PATH,
 )
@@ -34,15 +35,21 @@ def main() -> int:
         raise RuntimeError(f"missing release evidence index {repo_rel(EVIDENCE_INDEX_PATH)}")
 
     run_root = (
-        ROOT
-        / "tmp"
-        / "pkg"
-        / "objc3c-release-foundation"
+        PACKAGE_STAGE_ROOT
+        / "release-foundation"
         / datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
     )
-    manifest_relative_path = "artifacts/package/objc3c-runnable-toolchain-package.json"
-    first = package_once(run_root / "run-1", manifest_relative_path)
-    second = package_once(run_root / "run-2", manifest_relative_path)
+    required_manifest_fields = tuple(payload_policy["required_manifest_fields"])
+    first = package_once(
+        run_root / "run-1",
+        PACKAGE_MANIFEST_RELATIVE_PATH,
+        required_manifest_fields,
+    )
+    second = package_once(
+        run_root / "run-2",
+        PACKAGE_MANIFEST_RELATIVE_PATH,
+        required_manifest_fields,
+    )
     validation = validate_release_inputs(
         first=first,
         second=second,
@@ -71,4 +78,3 @@ def main() -> int:
     print(f"summary_path: {repo_rel(SUMMARY_PATH)}")
     print("objc3c-release-manifest: PASS")
     return 0
-

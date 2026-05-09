@@ -135,7 +135,11 @@ def build_release_manifest_summary(
         "reproducibility_match": validation.reproducibility_match,
         "primary_package_root": payload["primary_package_root"],
         "primary_package_manifest_path": payload["primary_package_manifest_path"],
+        "primary_package_manifest_sha256": payload["primary_package_manifest_sha256"],
         "release_payload_file_count": len(first.entries),
         "release_payload_digest_sha256": payload["release_payload_digest_sha256"],
+        "release_evidence_index_path": payload["release_evidence_index_path"],
+        "release_evidence_index_sha256": payload["release_evidence_index_sha256"],
+        "repo_superclean_surface_path": payload["repo_superclean_surface_path"],
+        "repo_superclean_surface_sha256": payload["repo_superclean_surface_sha256"],
     }
-

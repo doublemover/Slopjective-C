@@ -9,6 +9,15 @@
     "build-release-manifest",
     "publish-release-provenance"
   ],
+  "ordered_child_actions": [
+    "validate-performance-governance",
+    "validate-runnable-release-candidate",
+    "check-release-evidence",
+    "check-release-foundation-surface",
+    "check-release-foundation-schema-surface",
+    "build-release-manifest",
+    "publish-release-provenance"
+  ],
   "release_evidence_paths": [
     "tmp/reports/release-foundation/source-surface-summary.json",
     "tmp/reports/release-foundation/schema-surface-summary.json",
@@ -26,5 +35,9 @@
   "upstream_direct_checks": [
     "check-release-evidence"
   ],
+  "report_contracts": {
+    "manifest_summary": "objc3c.release.foundation.manifest.summary.v1",
+    "publication_summary": "objc3c.release.foundation.publication.summary.v1"
+  },
   "nightly_action": "test-nightly"
 }

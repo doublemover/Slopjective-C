@@ -10,9 +10,11 @@
     "reproducibility_scope",
     "build_run_count",
     "reproducibility_match",
+    "source_surface",
     "package_runs",
     "release_payload_entries",
     "release_payload_digest_sha256",
+    "primary_package_root",
     "primary_package_manifest_path",
     "primary_package_manifest_sha256",
     "repo_superclean_surface_path",
@@ -28,6 +30,7 @@
     "reproducibility_scope": { "type": "string" },
     "build_run_count": { "type": "integer", "minimum": 1 },
     "reproducibility_match": { "type": "boolean" },
+    "source_surface": { "type": "string" },
     "package_runs": {
       "type": "array",
       "minItems": 1,
@@ -61,6 +64,7 @@
       }
     },
     "release_payload_digest_sha256": { "type": "string" },
+    "primary_package_root": { "type": "string" },
     "primary_package_manifest_path": { "type": "string" },
     "primary_package_manifest_sha256": { "type": "string" },
     "repo_superclean_surface_path": { "type": "string" },
@@ -69,8 +73,9 @@
     "release_evidence_index_sha256": { "type": "string" },
     "source_stamps": {
       "type": "object",
-      "required": ["git_commit", "git_tree_dirty"],
+      "required": ["generated_at_utc", "git_commit", "git_tree_dirty"],
       "properties": {
+        "generated_at_utc": { "type": "string" },
         "git_commit": { "type": "string" },
         "git_tree_dirty": { "type": "boolean" }
       },

@@ -20,6 +20,9 @@
   ],
   "checked_in_sources": [
     "docs/runbooks/objc3c_release_foundation.md",
+    "scripts/package_objc3c_runnable_toolchain.ps1",
+    "scripts/check_release_evidence.py",
+    "scripts/build_objc3c_native.ps1",
     "docs/runbooks/objc3c_maintainer_workflows.md"
   ],
   "upstream_surfaces": [
@@ -27,10 +30,7 @@
     "docs/runbooks/objc3c_public_command_surface.md",
     "tmp/artifacts/objc3c-native/repo_superclean_source_of_truth.json"
   ],
-  "implementation_anchors": [
-    "scripts/package_objc3c_runnable_toolchain.ps1",
-    "scripts/check_release_evidence.py",
-    "scripts/build_objc3c_native.ps1",
+  "build_scripts": [
     "scripts/check_release_foundation_source_surface.py",
     "scripts/check_release_foundation_schema_surface.py",
     "scripts/build_objc3c_release_manifest.py",
