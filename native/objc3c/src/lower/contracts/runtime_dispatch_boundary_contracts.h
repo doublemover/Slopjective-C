@@ -3,7 +3,8 @@
 #include <cstddef>
 #include <string>
 
-#include "lower/contracts/runtime_dispatch_lowering_contracts.h"
+#include "lower/contracts/runtime_dispatch_selector_contracts.h"
+#include "lower/contracts/runtime_dispatch_strict_abi_entrypoint_contracts.h"
 
 struct Objc3LoweringContract {
   std::size_t max_message_send_args = kObjc3RuntimeDispatchDefaultArgs;

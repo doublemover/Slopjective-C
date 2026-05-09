@@ -1,5 +1,8 @@
 #include "lower/contracts/runtime_dispatch_boundary_contracts.h"
 
+#include "lower/contracts/runtime_dispatch_strict_abi_lowering_contracts.h"
+#include "lower/contracts/runtime_dispatch_strict_abi_validation_contracts.h"
+
 #include <string>
 
 bool IsValidRuntimeDispatchSymbol(const std::string &symbol) {

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "lower/contracts/lowering_artifact_publication.h"
-#include "lower/contracts/runtime_dispatch_lowering_contracts.h"
+#include "lower/contracts/runtime_dispatch_strict_abi_lowering_contracts.h"
 
 #include <cstddef>
 #include <string>

@@ -1,6 +1,7 @@
 #include "lower/contracts/runtime_dispatch_abi_contracts.h"
 
 #include "lower/contracts/runtime_dispatch_boundary_contracts.h"
+#include "lower/contracts/runtime_dispatch_strict_abi_call_contracts.h"
 #include "lower/metadata/lowering_metadata_helpers.h"
 
 #include <string>
