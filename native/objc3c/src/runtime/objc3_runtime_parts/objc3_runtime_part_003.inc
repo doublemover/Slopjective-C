@@ -408,43 +408,6 @@ int objc3_runtime_register_image(const objc3_runtime_image_descriptor *image) {
                                false);
 }
 
-int objc3_runtime_copy_method_cache_state_for_testing(
-    objc3_runtime_method_cache_state_snapshot *snapshot) {
-  if (snapshot == nullptr) {
-    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
-  }
-
-  RuntimeState &state = ProcessRuntimeState();
-  std::lock_guard<std::mutex> lock(state.mutex);
-  snapshot->cache_entry_count =
-      static_cast<std::uint64_t>(state.method_cache.size());
-  snapshot->cache_hit_count = state.method_cache_hit_count;
-  snapshot->cache_miss_count = state.method_cache_miss_count;
-  snapshot->slow_path_lookup_count = state.slow_path_lookup_count;
-  snapshot->live_dispatch_count = state.live_dispatch_count;
-  snapshot->strict_dispatch_error_count = state.strict_dispatch_error_count;
-  snapshot->fast_path_seed_count = state.fast_path_seed_count;
-  snapshot->fast_path_hit_count = state.fast_path_hit_count;
-  snapshot->last_selector_stable_id = state.last_dispatch_selector_stable_id;
-  snapshot->last_normalized_receiver_identity =
-      state.last_dispatch_normalized_receiver_identity;
-  snapshot->last_category_probe_count = state.last_category_probe_count;
-  snapshot->last_protocol_probe_count = state.last_protocol_probe_count;
-  snapshot->last_dispatch_used_cache = state.last_dispatch_used_cache ? 1 : 0;
-  snapshot->last_dispatch_used_fast_path =
-      state.last_dispatch_used_fast_path ? 1 : 0;
-  snapshot->last_dispatch_resolved_live_method =
-      state.last_dispatch_resolved_live_method ? 1 : 0;
-  snapshot->last_dispatch_strict_error = state.last_dispatch_strict_error ? 1 : 0;
-  snapshot->last_selector = BorrowRuntimeCString(state.last_dispatch_selector);
-  snapshot->last_fast_path_reason = BorrowRuntimeCString(state.last_fast_path_reason);
-  snapshot->last_resolved_class_name =
-      BorrowRuntimeCString(state.last_resolved_class_name);
-  snapshot->last_resolved_owner_identity =
-      BorrowRuntimeCString(state.last_resolved_owner_identity);
-  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
-}
-
 int objc3_runtime_copy_dispatch_state_for_testing(
     objc3_runtime_dispatch_state_snapshot *snapshot) {
   if (snapshot == nullptr) {
