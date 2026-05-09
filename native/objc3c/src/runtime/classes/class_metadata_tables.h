@@ -18,6 +18,6 @@ std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
     const RegisteredImageMetadata &record, const std::string &class_name);
 std::string ResolveInterfaceOwnerIdentityForClass(
     const RegisteredImageMetadata &record, const std::string &class_name,
-    const std::string &fallback_owner_identity);
+    const std::string &default_owner_identity);
 
 }  // namespace objc3c::runtime

@@ -100,7 +100,7 @@ std::vector<const EmittedClassBundle *> CollectPreferredClassBundlesForImage(
 
 std::string ResolveInterfaceOwnerIdentityForClass(
     const RegisteredImageMetadata &record, const std::string &class_name,
-    const std::string &fallback_owner_identity) {
+    const std::string &default_owner_identity) {
   for (std::uint64_t index = 0; index < record.class_descriptor_count; ++index) {
     const auto *candidate = static_cast<const EmittedClassBundle *>(
         ClassMetadataAggregateEntry(record.class_descriptor_root, index));
@@ -117,7 +117,7 @@ std::string ResolveInterfaceOwnerIdentityForClass(
       return candidate->class_record.bundle_owner_identity;
     }
   }
-  return fallback_owner_identity;
+  return default_owner_identity;
 }
 
 }  // namespace objc3c::runtime
