@@ -489,11 +489,14 @@
       "id": "tooling.json.schema-registry",
       "title": "JSON and schema registry helpers",
       "state": "internal",
-      "summary": "The canonical capability matrix schema under schemas/, the machine-readable evidence map, split native objc3c_json helpers, and artifact JSON registry modules own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
+      "summary": "The canonical capability matrix schema under schemas/, the machine-readable evidence map, split native parser/writer/schema/error helpers, and artifact JSON registry modules own deterministic support truth. Publicly replayable evidence commands are npm-bridge commands only.",
       "owner_modules": [
         "schemas/objc3c-capability-matrix-v1.schema.json",
         "schemas/objc3c-capability-evidence-map-v1.schema.json",
+        "native/objc3c/src/io/json/json_parser.cpp",
+        "native/objc3c/src/io/json/json_writer.cpp",
         "native/objc3c/src/io/json/json_schema.cpp",
+        "native/objc3c/src/io/json/json_schema_errors.cpp",
         "native/objc3c/src/io/json/json_schema_validation.cpp",
         "native/objc3c/src/io/json/json_equivalence.cpp",
         "native/objc3c/src/io/json/json_pointer.cpp",
@@ -532,7 +535,19 @@
         },
         {
           "kind": "source",
+          "path": "native/objc3c/src/io/json/json_parser.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_writer.cpp"
+        },
+        {
+          "kind": "source",
           "path": "native/objc3c/src/io/json/json_schema.cpp"
+        },
+        {
+          "kind": "source",
+          "path": "native/objc3c/src/io/json/json_schema_errors.cpp"
         },
         {
           "kind": "source",

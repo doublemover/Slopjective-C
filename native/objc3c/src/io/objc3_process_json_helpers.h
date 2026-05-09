@@ -19,6 +19,10 @@ bool TryParseJsonObjectText(const std::string &text,
                             const std::string &label,
                             objc3::io::json::JsonValue &value,
                             std::string &error);
+bool TryParseJsonValueText(const std::string &text,
+                           const std::string &label,
+                           objc3::io::json::JsonValue &value,
+                           std::string &error);
 bool TryGetJsonStringField(const objc3::io::json::JsonValue &object,
                            std::string_view field,
                            std::string &value);
@@ -51,4 +55,3 @@ bool TryExtractJsonBoolField(const std::string &text,
 bool TryExtractJsonStringArrayField(const std::string &text,
                                     const std::string &field,
                                     std::vector<std::string> &values);
-

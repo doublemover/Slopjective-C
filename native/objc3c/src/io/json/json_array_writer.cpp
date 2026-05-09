@@ -1,8 +1,11 @@
 #include "io/json/json_writer.h"
 
+#include <cmath>
 #include <iomanip>
+#include <stdexcept>
 #include <string_view>
 
+#include "io/json/json_parser.h"
 #include "io/objc3_json.h"
 
 namespace objc3::io::json {
@@ -34,6 +37,9 @@ void JsonArrayWriter::IntValue(std::int64_t value) {
 }
 
 void JsonArrayWriter::NumberValue(double value) {
+  if (!std::isfinite(value)) {
+    throw std::invalid_argument("NumberValue received a non-finite number");
+  }
   BeginElement();
   out_ << std::setprecision(17) << value;
 }
@@ -54,8 +60,12 @@ void JsonArrayWriter::Value(const JsonValue &value) {
 }
 
 void JsonArrayWriter::RawJsonValue(std::string_view value) {
-  BeginElement();
-  out_ << value;
+  JsonParseResult parsed = ParseJson(value);
+  if (!parsed.ok()) {
+    throw std::invalid_argument("RawJsonValue received invalid JSON: " +
+                                parsed.error->Format());
+  }
+  Value(parsed.value);
 }
 
 void JsonArrayWriter::End() {
@@ -67,4 +77,3 @@ void JsonArrayWriter::End() {
 }
 
 }  // namespace objc3::io::json
-

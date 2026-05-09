@@ -52,14 +52,11 @@ std::string BuildObjc3ReleaseCandidateMatrixArtifactDocumentJson(
                      inputs.dashboard_artifact_path);
   matrix.StringArrayField("targeted_profile_ids",
                           BuildObjc3ReleaseTargetedProfileIds());
-  matrix.RawJsonField(
-      "matrix_rows",
-      objc3::io::json::RenderJson(
-          JsonValue::ArrayValue(std::move(matrix_rows))));
+  matrix.ValueField("matrix_rows",
+                    JsonValue::ArrayValue(std::move(matrix_rows)));
   matrix.StringField(
       "matrix_model",
       "release-candidate-matrix-freezes-cross-lane-advanced-feature-evidence-over-the-final-claim-publication-artifact-set");
   matrix.BoolField("ready", true);
   return FinishJsonObject(matrix, out);
 }
-

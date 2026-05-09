@@ -1,8 +1,11 @@
 #include "io/json/json_writer.h"
 
+#include <cmath>
 #include <iomanip>
+#include <stdexcept>
 #include <string_view>
 
+#include "io/json/json_parser.h"
 #include "io/objc3_json.h"
 
 namespace objc3::io::json {
@@ -37,6 +40,9 @@ void JsonObjectWriter::IntField(std::string_view name, std::int64_t value) {
 }
 
 void JsonObjectWriter::NumberField(std::string_view name, double value) {
+  if (!std::isfinite(value)) {
+    throw std::invalid_argument("NumberField received a non-finite number");
+  }
   BeginField(name);
   out_ << std::setprecision(17) << value;
 }
@@ -67,8 +73,12 @@ void JsonObjectWriter::ValueField(std::string_view name,
 
 void JsonObjectWriter::RawJsonField(std::string_view name,
                                     std::string_view value) {
-  BeginField(name);
-  out_ << value;
+  JsonParseResult parsed = ParseJson(value);
+  if (!parsed.ok()) {
+    throw std::invalid_argument("RawJsonField received invalid JSON: " +
+                                parsed.error->Format());
+  }
+  ValueField(name, parsed.value);
 }
 
 void JsonObjectWriter::End() {
@@ -80,4 +90,3 @@ void JsonObjectWriter::End() {
 }
 
 }  // namespace objc3::io::json
-

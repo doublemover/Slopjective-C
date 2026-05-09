@@ -312,7 +312,22 @@
     {
       "capability_id": "tooling.json.schema-registry",
       "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_parser.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_writer.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
       "path": "native/objc3c/src/io/json/json_schema.cpp"
+    },
+    {
+      "capability_id": "tooling.json.schema-registry",
+      "evidence_kind": "source",
+      "path": "native/objc3c/src/io/json/json_schema_errors.cpp"
     },
     {
       "capability_id": "tooling.json.schema-registry",

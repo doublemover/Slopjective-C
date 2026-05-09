@@ -1,6 +1,8 @@
 #include "io/json/json_value_writer.h"
 
+#include <cmath>
 #include <iomanip>
+#include <stdexcept>
 
 #include "io/json/json_value_container_writer.h"
 #include "io/objc3_json.h"
@@ -16,6 +18,10 @@ void WriteJsonValue(std::ostream &out, const JsonValue &value) {
       out << (value.AsBool() ? "true" : "false");
       return;
     case JsonValue::Kind::kNumber:
+      if (!std::isfinite(value.AsNumber())) {
+        throw std::invalid_argument(
+            "WriteJsonValue received a non-finite number");
+      }
       out << std::setprecision(17) << value.AsNumber();
       return;
     case JsonValue::Kind::kString:

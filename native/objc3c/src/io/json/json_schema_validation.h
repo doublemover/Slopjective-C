@@ -10,7 +10,8 @@ namespace objc3::io::json {
 void ValidateJsonSchemaNode(const JsonValue &schema_root,
                             const JsonValue &schema,
                             const JsonValue &payload,
-                            std::string path,
+                            std::string instance_path,
+                            std::string schema_path,
                             JsonSchemaResult &result);
 
 }  // namespace objc3::io::json

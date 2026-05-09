@@ -49,6 +49,31 @@ bool TryBuildObjc3DashboardStatusArtifact(
 
   std::ostringstream out;
   JsonObjectWriter dashboard(out);
+  JsonValue profiles;
+  JsonValue dependencies;
+  JsonValue artifacts;
+  JsonValue blockers = JsonValue::ArrayValue({});
+  JsonValue summary;
+  JsonValue refresh;
+  JsonValue change_history;
+  if (!TryParseJsonValueText(RenderDashboardProfiles(), "dashboard profiles",
+                             profiles, error) ||
+      !TryParseJsonValueText(RenderDashboardDependencies(),
+                             "dashboard dependencies", dependencies, error) ||
+      !TryParseJsonValueText(
+          RenderDashboardArtifacts(inputs, report_json, publication_json,
+                                   validation_json,
+                                   release_evidence_operation_json),
+          "dashboard artifacts", artifacts, error) ||
+      !TryParseJsonValueText(RenderDashboardSummary(), "dashboard summary",
+                             summary, error) ||
+      !TryParseJsonValueText(RenderDashboardRefresh(), "dashboard refresh",
+                             refresh, error) ||
+      !TryParseJsonValueText(RenderDashboardChangeHistory(),
+                             "dashboard change history", change_history,
+                             error)) {
+    return false;
+  }
   dashboard.StringField("schema_id", kObjc3DashboardStatusSchemaId);
   dashboard.IntField("schema_version", 1);
   dashboard.StringField("dashboard_version", kObjc3DashboardVersion);
@@ -57,17 +82,13 @@ bool TryBuildObjc3DashboardStatusArtifact(
   dashboard.StringField("generated_at", kObjc3DeterministicReplayTimestamp);
   dashboard.StringField("source_revision", kObjc3DeterministicSourceRevision);
   dashboard.StringField("status", "pass");
-  dashboard.RawJsonField("profiles", RenderDashboardProfiles());
-  dashboard.RawJsonField("dependencies", RenderDashboardDependencies());
-  dashboard.RawJsonField(
-      "artifacts",
-      RenderDashboardArtifacts(inputs, report_json, publication_json,
-                               validation_json,
-                               release_evidence_operation_json));
-  dashboard.RawJsonField("blockers", "[]");
-  dashboard.RawJsonField("summary", RenderDashboardSummary());
-  dashboard.RawJsonField("refresh", RenderDashboardRefresh());
-  dashboard.RawJsonField("change_history", RenderDashboardChangeHistory());
+  dashboard.ValueField("profiles", profiles);
+  dashboard.ValueField("dependencies", dependencies);
+  dashboard.ValueField("artifacts", artifacts);
+  dashboard.ValueField("blockers", blockers);
+  dashboard.ValueField("summary", summary);
+  dashboard.ValueField("refresh", refresh);
+  dashboard.ValueField("change_history", change_history);
   artifact_json = FinishJsonObject(dashboard, out);
   return true;
 }

@@ -31,13 +31,23 @@ bool TryParseJsonObjectText(const std::string &text,
                             const std::string &label,
                             JsonValue &value,
                             std::string &error) {
+  if (!TryParseJsonValueText(text, label, value, error)) {
+    return false;
+  }
+  if (!value.IsObject()) {
+    error = label + " is not a JSON object";
+    return false;
+  }
+  return true;
+}
+
+bool TryParseJsonValueText(const std::string &text,
+                           const std::string &label,
+                           JsonValue &value,
+                           std::string &error) {
   objc3::io::json::JsonParseResult parsed = objc3::io::json::ParseJson(text);
   if (!parsed.ok()) {
     error = label + " is not valid JSON: " + parsed.error->Format();
-    return false;
-  }
-  if (!parsed.value.IsObject()) {
-    error = label + " is not a JSON object";
     return false;
   }
   value = std::move(parsed.value);
@@ -173,4 +183,3 @@ bool TryExtractJsonStringArrayField(const std::string &text,
   }
   return TryGetJsonStringArrayField(parsed, field, values);
 }
-

@@ -12,44 +12,92 @@ namespace objc3::io::json {
 void ValidateJsonSchemaArrayFields(const JsonValue &schema_root,
                                    const JsonValue &schema,
                                    const JsonValue &payload,
-                                   const std::string &path,
+                                   const std::string &instance_path,
+                                   const std::string &schema_path,
                                    JsonSchemaResult &result) {
   const JsonValue *items = schema.Find("items");
   if (items != nullptr && payload.IsArray()) {
+    if (!items->IsObject()) {
+      AddJsonSchemaContractError(result, "invalid_items",
+                                 JsonSchemaKeywordPath(schema_path, "items"),
+                                 "items must be a schema object");
+      return;
+    }
     const auto &array = payload.AsArray();
     for (std::size_t i = 0; i < array.size(); ++i) {
       ValidateJsonSchemaNode(schema_root, *items, array[i],
-                             path + "[" + std::to_string(i) + "]", result);
+                             JsonInstanceArrayElementPath(instance_path, i),
+                             JsonSchemaKeywordPath(schema_path, "items"),
+                             result);
     }
   }
   const JsonValue *contains = schema.Find("contains");
   if (contains != nullptr && payload.IsArray()) {
+    if (!contains->IsObject()) {
+      AddJsonSchemaContractError(
+          result, "invalid_contains",
+          JsonSchemaKeywordPath(schema_path, "contains"),
+          "contains must be a schema object");
+      return;
+    }
     bool matched = false;
     for (const JsonValue &item : payload.AsArray()) {
-      if (JsonSubschemaPasses(schema_root, *contains, item, path + "[]")) {
+      if (JsonSubschemaPasses(schema_root, *contains, item,
+                              instance_path + "[]",
+                              JsonSchemaKeywordPath(schema_path, "contains"))) {
         matched = true;
         break;
       }
     }
     if (!matched) {
-      AddJsonSchemaError(result, path + " did not contain a matching item");
+      AddJsonSchemaPayloadError(
+          result, "contains", instance_path,
+          JsonSchemaKeywordPath(schema_path, "contains"),
+          "array did not contain a matching item");
     }
   }
   const JsonValue *min_items = schema.Find("minItems");
-  if (min_items != nullptr && min_items->IsNumber() && payload.IsArray() &&
-      payload.AsArray().size() <
-          static_cast<std::size_t>(min_items->AsNumber())) {
-    AddJsonSchemaError(result, path + " has too few items");
+  if (min_items != nullptr && payload.IsArray()) {
+    if (!min_items->IsNumber()) {
+      AddJsonSchemaContractError(
+          result, "invalid_min_items",
+          JsonSchemaKeywordPath(schema_path, "minItems"),
+          "minItems must be a number");
+    } else if (payload.AsArray().size() <
+               static_cast<std::size_t>(min_items->AsNumber())) {
+      AddJsonSchemaPayloadError(
+          result, "min_items", instance_path,
+          JsonSchemaKeywordPath(schema_path, "minItems"),
+          "array has too few items");
+    }
   }
   const JsonValue *max_items = schema.Find("maxItems");
-  if (max_items != nullptr && max_items->IsNumber() && payload.IsArray() &&
-      payload.AsArray().size() >
-          static_cast<std::size_t>(max_items->AsNumber())) {
-    AddJsonSchemaError(result, path + " has too many items");
+  if (max_items != nullptr && payload.IsArray()) {
+    if (!max_items->IsNumber()) {
+      AddJsonSchemaContractError(
+          result, "invalid_max_items",
+          JsonSchemaKeywordPath(schema_path, "maxItems"),
+          "maxItems must be a number");
+    } else if (payload.AsArray().size() >
+               static_cast<std::size_t>(max_items->AsNumber())) {
+      AddJsonSchemaPayloadError(
+          result, "max_items", instance_path,
+          JsonSchemaKeywordPath(schema_path, "maxItems"),
+          "array has too many items");
+    }
   }
   const JsonValue *unique_items = schema.Find("uniqueItems");
-  if (unique_items != nullptr && unique_items->IsBool() &&
-      unique_items->AsBool() && payload.IsArray()) {
+  if (unique_items != nullptr && payload.IsArray()) {
+    if (!unique_items->IsBool()) {
+      AddJsonSchemaContractError(
+          result, "invalid_unique_items",
+          JsonSchemaKeywordPath(schema_path, "uniqueItems"),
+          "uniqueItems must be a boolean");
+      return;
+    }
+    if (!unique_items->AsBool()) {
+      return;
+    }
     const JsonValue::Array &array = payload.AsArray();
     bool duplicate = false;
     for (std::size_t i = 0; i < array.size(); ++i) {
@@ -60,7 +108,10 @@ void ValidateJsonSchemaArrayFields(const JsonValue &schema_root,
         }
       }
       if (duplicate) {
-        AddJsonSchemaError(result, path + " contains duplicate items");
+        AddJsonSchemaPayloadError(
+            result, "unique_items", instance_path,
+            JsonSchemaKeywordPath(schema_path, "uniqueItems"),
+            "array contains duplicate items");
         break;
       }
     }
@@ -68,4 +119,3 @@ void ValidateJsonSchemaArrayFields(const JsonValue &schema_root,
 }
 
 }  // namespace objc3::io::json
-

@@ -9,60 +9,117 @@
 #include "io/json/json_schema_subschema.h"
 #include "io/json/json_schema_type.h"
 
+#include <cstddef>
 #include <sstream>
+#include <utility>
 
 namespace objc3::io::json {
 
 void ValidateJsonSchemaNode(const JsonValue &schema_root,
                             const JsonValue &schema,
                             const JsonValue &payload,
-                            std::string path,
+                            std::string instance_path,
+                            std::string schema_path,
                             JsonSchemaResult &result) {
   if (!schema.IsObject()) {
+    AddJsonSchemaContractError(result, "invalid_schema_node", schema_path,
+                               "schema node must be a JSON object");
     return;
   }
-  if (const auto ref = schema.GetString("$ref")) {
-    const JsonValue *resolved = ResolveLocalJsonPointerRef(schema_root, *ref);
-    if (resolved == nullptr) {
-      AddJsonSchemaError(result, path + " unresolved schema reference " + *ref);
+  if (const JsonValue *ref = schema.Find("$ref"); ref != nullptr) {
+    if (!ref->IsString()) {
+      AddJsonSchemaContractError(
+          result, "invalid_ref", JsonSchemaKeywordPath(schema_path, "$ref"),
+          "$ref must be a local JSON pointer string");
       return;
     }
-    ValidateJsonSchemaNode(schema_root, *resolved, payload, path, result);
+    const JsonValue *resolved =
+        ResolveLocalJsonPointerRef(schema_root, ref->AsString());
+    if (resolved == nullptr) {
+      AddJsonSchemaContractError(
+          result, "unresolved_ref", JsonSchemaKeywordPath(schema_path, "$ref"),
+          "unresolved schema reference " + ref->AsString());
+      return;
+    }
+    ValidateJsonSchemaNode(schema_root, *resolved, payload, instance_path,
+                           ref->AsString(), result);
     return;
   }
   const JsonValue *all_of = schema.Find("allOf");
-  if (all_of != nullptr && all_of->IsArray()) {
-    for (const JsonValue &candidate : all_of->AsArray()) {
-      ValidateJsonSchemaNode(schema_root, candidate, payload, path, result);
+  if (all_of != nullptr) {
+    if (!all_of->IsArray()) {
+      AddJsonSchemaContractError(
+          result, "invalid_all_of", JsonSchemaKeywordPath(schema_path, "allOf"),
+          "allOf must be an array of schema objects");
+    } else {
+      const JsonValue::Array &candidates = all_of->AsArray();
+      for (std::size_t i = 0; i < candidates.size(); ++i) {
+        ValidateJsonSchemaNode(schema_root, candidates[i], payload,
+                               instance_path,
+                               JsonSchemaArrayElementPath(schema_path, "allOf",
+                                                          i),
+                               result);
+      }
     }
   }
   const JsonValue *any_of = schema.Find("anyOf");
-  if (any_of != nullptr && any_of->IsArray()) {
-    bool matched = false;
-    for (const JsonValue &candidate : any_of->AsArray()) {
-      if (JsonSubschemaPasses(schema_root, candidate, payload, path)) {
-        matched = true;
-        break;
+  if (any_of != nullptr) {
+    if (!any_of->IsArray()) {
+      AddJsonSchemaContractError(
+          result, "invalid_any_of", JsonSchemaKeywordPath(schema_path, "anyOf"),
+          "anyOf must be an array of schema objects");
+    } else {
+      bool matched = false;
+      bool schema_failed = false;
+      const JsonValue::Array &candidates = any_of->AsArray();
+      for (std::size_t i = 0; i < candidates.size(); ++i) {
+        JsonSchemaResult probe;
+        ValidateJsonSchemaNode(schema_root, candidates[i], payload,
+                               instance_path,
+                               JsonSchemaArrayElementPath(schema_path, "anyOf",
+                                                          i),
+                               probe);
+        if (HasJsonSchemaContractIssue(probe)) {
+          schema_failed = true;
+          for (JsonSchemaIssue &issue : probe.errors) {
+            if (issue.domain == "schema") {
+              AppendJsonSchemaIssue(result, std::move(issue));
+            }
+          }
+          continue;
+        }
+        if (probe.ok) {
+          matched = true;
+          break;
+        }
       }
-    }
-    if (!matched) {
-      AddJsonSchemaError(result, path + " did not match any allowed schema");
+      if (!matched && !schema_failed) {
+        AddJsonSchemaPayloadError(
+            result, "any_of", instance_path,
+            JsonSchemaKeywordPath(schema_path, "anyOf"),
+            "value did not match any allowed schema");
+      }
     }
   }
   if (const JsonValue *schema_type = schema.Find("type");
       schema_type != nullptr) {
     if (!JsonSchemaMatchesType(*schema_type, payload)) {
       std::ostringstream out;
-      out << path << " expected "
-          << DescribeExpectedJsonSchemaType(*schema_type) << " but found "
+      out << "expected " << DescribeExpectedJsonSchemaType(*schema_type)
+          << " but found "
           << JsonSchemaValueTypeName(payload);
-      AddJsonSchemaError(result, out.str());
+      AddJsonSchemaPayloadError(
+          result, "type_mismatch", instance_path,
+          JsonSchemaKeywordPath(schema_path, "type"), out.str());
       return;
     }
   }
   const JsonValue *const_value = schema.Find("const");
   if (const_value != nullptr && !JsonEquals(*const_value, payload)) {
-    AddJsonSchemaError(result, path + " did not match const value");
+    AddJsonSchemaPayloadError(
+        result, "const_mismatch", instance_path,
+        JsonSchemaKeywordPath(schema_path, "const"),
+        "value did not match const value");
   }
   const JsonValue *enum_values = schema.Find("enum");
   if (enum_values != nullptr && enum_values->IsArray()) {
@@ -74,14 +131,19 @@ void ValidateJsonSchemaNode(const JsonValue &schema_root,
       }
     }
     if (!matched) {
-      AddJsonSchemaError(result, path + " did not match enum values");
+      AddJsonSchemaPayloadError(
+          result, "enum_mismatch", instance_path,
+          JsonSchemaKeywordPath(schema_path, "enum"),
+          "value did not match enum values");
     }
   }
   const JsonValue *properties = schema.Find("properties");
-  ValidateJsonSchemaObjectFields(schema_root, schema, payload, properties, path,
+  ValidateJsonSchemaObjectFields(schema_root, schema, payload, properties,
+                                 instance_path, schema_path, result);
+  ValidateJsonSchemaArrayFields(schema_root, schema, payload, instance_path,
+                                schema_path, result);
+  ValidateJsonSchemaScalarFields(schema, payload, instance_path, schema_path,
                                  result);
-  ValidateJsonSchemaArrayFields(schema_root, schema, payload, path, result);
-  ValidateJsonSchemaScalarFields(schema, payload, path, result);
 }
 
 }  // namespace objc3::io::json
