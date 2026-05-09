@@ -1164,6 +1164,67 @@
       }
     ]
   },
+  "post_2fb_local_owner_refresh": {
+    "document": "docs/issues/hard_cutover_latest_local_commit_refresh.md",
+    "since_commit": "2fb0664e0",
+    "through_commit": "6efdaf8f9",
+    "commit_count": 4,
+    "count_policy": "counts committed owner/evidence commits after the 2fb0664e0 closeout refresh and excludes docs-only closeout commits",
+    "validation": "not run",
+    "github": "not called",
+    "push": "not performed",
+    "issue_commit_buckets": [
+      {
+        "issues": [
+          "#8133",
+          "#8143",
+          "#8144",
+          "#8145",
+          "#8150"
+        ],
+        "commits": [
+          "34411837b"
+        ],
+        "owner_boundary": "runtime strict-error fixture renames refresh conformance indexes and retired-surface matrices while preserving strict-error classification"
+      },
+      {
+        "issues": [
+          "#8138",
+          "#8142",
+          "#8149"
+        ],
+        "commits": [
+          "c36b89616"
+        ],
+        "owner_boundary": "LLVM developer tooling owner splits are internal workflow evidence under the public command boundary"
+      },
+      {
+        "issues": [
+          "#8133",
+          "#8141",
+          "#8143",
+          "#8147",
+          "#8150"
+        ],
+        "commits": [
+          "b4f3a295f"
+        ],
+        "owner_boundary": "runtime image registration table record, shape, and walk owners refresh runtime registration and public runtime contract evidence"
+      },
+      {
+        "issues": [
+          "#8136",
+          "#8137",
+          "#8147",
+          "#8150"
+        ],
+        "commits": [
+          "6efdaf8f9"
+        ],
+        "owner_boundary": "runtime dispatch lowering contracts refresh lowering and deep handoff evidence while fallback behavior remains rejection or strict-error evidence"
+      }
+    ]
+  },
   "hard_cutover_disposition": {
     "old_mode": "rejected by parser and e2e negative fixtures",
     "compatibility_shim": "rejected by semantic fixture metadata",

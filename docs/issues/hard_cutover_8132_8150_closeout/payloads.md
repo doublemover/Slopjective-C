@@ -97,6 +97,15 @@ commits that landed after the first docs commit.
 | `#8136`, `#8137`, `#8138`, `#8147`, `#8148`, `#8150` | `9b61442c4` | Parse/lowering readiness artifact and diagnostic key owners now refresh lowering, IR/deep handoff, pipeline, artifact, and schema evidence. |
 | `#8138`, `#8142`, `#8149` | `2fb0664e0` | Bonus tooling inspection/template owner splits now refresh internal developer-tooling workflow evidence without adding public direct-helper support. |
 
+## Post-`2fb0664e0` Local Owner Refresh
+
+| Issue Area | Local Commits | Closeout Meaning |
+| --- | --- | --- |
+| `#8133`, `#8143`, `#8144`, `#8145`, `#8150` | `34411837b` | Runtime strict-error fixture renames refresh conformance indexes and retired-surface matrices while preserving strict-error classification for unsupported dispatch. |
+| `#8138`, `#8142`, `#8149` | `c36b89616` | LLVM developer-tooling owner splits refresh internal tooling workflow evidence under the public command boundary. |
+| `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `b4f3a295f` | Runtime image registration table record, shape, and walk owners refresh runtime image registration and public runtime contract evidence. |
+| `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed fallback behavior remains rejection or strict-error evidence. |
+
 ## #8132
 
 Compiler architecture decomposition is indexed from local commits covering root
@@ -386,7 +395,7 @@ source-hygiene residue guardrails, plus validation timing report owners, release
 governance owner splits, playground workflow owners, runtime workflow owners,
 performance workflow owners, stress workflow owners, external validation owners,
 public test orchestration owners, ecosystem publication owners, and application
-workflow owners, plus bonus tooling workflow owners.
+workflow owners, plus bonus tooling and LLVM tooling workflow owners.
 
 Evidence: `docs/workflows/commands.md`, `docs/workflows/validation.md`,
 `docs/support/capability_matrix.json`, commits `606775842`, `fd675f294`,
@@ -404,7 +413,7 @@ It also includes the post-`e760e3450` owner wave through `0350f4a4a`. Remote
 issue closure, push, and validation remain deferred under the current worker
 constraints. The post-`0350f4a4a` owner wave through `0d2111b18` is also folded
 into these local payloads, along with the post-`0d2111b18` owner wave through
-`2fb0664e0`.
+`2fb0664e0` and the post-`2fb0664e0` owner wave through `6efdaf8f9`.
 
 Evidence: `tests/conformance/hard_cutover_issue_index.json`,
 `tests/conformance/hard_cutover_retired_surface_absence.json`,

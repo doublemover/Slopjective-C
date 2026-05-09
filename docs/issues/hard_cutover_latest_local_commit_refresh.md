@@ -207,6 +207,35 @@ through `2fb0664e0`. It excludes uncommitted worktree edits.
 | `#8149` | Control-plane evidence is refreshed by bonus tooling workflow owners. |
 | `#8150` | Local closeout evidence now also includes the committed post-`0d2111b18` owner wave through `2fb0664e0`; remote closeout remains deferred. |
 
+## Post-`2fb0664e0` Owner Refresh
+
+This local-only refresh also folds in committed owner work after `2fb0664e0`
+through `6efdaf8f9`. It excludes uncommitted worktree edits.
+
+| Owner Bucket | Issues | Local Commits Folded In | Acceptance Ownership |
+| --- | --- | --- | --- |
+| Strict-error fixture and retired-surface evidence | `#8133`, `#8143`, `#8144`, `#8145`, `#8150` | `34411837b` | Runtime strict-error fixture renames refresh conformance indexes and retired-surface matrices while preserving strict-error classification for unsupported dispatch. |
+| LLVM/developer tooling workflow owners | `#8138`, `#8142`, `#8149` | `c36b89616` | LLVM explorer, hosted, parity, and probe owner splits refresh developer-tooling workflow evidence under the public command boundary. |
+| Runtime image registration support | `#8133`, `#8141`, `#8143`, `#8147`, `#8150` | `b4f3a295f` | Registration table record, shape, and walk owners refresh runtime image registration and public runtime contract evidence. |
+| Lowering dispatch contracts | `#8136`, `#8137`, `#8147`, `#8150` | `6efdaf8f9` | Runtime dispatch lowering contracts refresh lowering/deep handoff evidence; removed fallback behavior remains rejection or strict-error evidence. |
+
+## Post-`2fb0664e0` Issue Ownership
+
+| Issue | Post-Refresh Acceptance Ownership |
+| --- | --- |
+| `#8133` | Runtime dispatch evidence is refreshed by strict-error fixture renames and runtime image registration support. |
+| `#8136` | Lowering evidence is refreshed by runtime dispatch lowering contract splits. |
+| `#8137` | IR/deep handoff evidence is refreshed by runtime dispatch lowering contracts. |
+| `#8138` | Developer tooling evidence is refreshed by LLVM workflow owner splits. |
+| `#8141` | Public runtime/C API evidence is refreshed by registration table record/shape/walk owners. |
+| `#8142` | Workflow evidence is refreshed by LLVM/developer tooling workflow owners. |
+| `#8143` | Runtime acceptance evidence is refreshed by strict-error fixture renames and registration table owners. |
+| `#8144` | Behavior fixture evidence is refreshed by strict-error fixture renames and retired-surface matrices. |
+| `#8145` | Capability truth evidence is refreshed by strict-error fixture naming and retired-surface metadata. |
+| `#8147` | Runtime metadata/deep semantic evidence is refreshed by registration table and lowering dispatch contract owners. |
+| `#8149` | Control-plane evidence is refreshed by LLVM tooling workflow owners. |
+| `#8150` | Local closeout evidence now also includes the committed post-`2fb0664e0` owner wave through `6efdaf8f9`; remote closeout remains deferred. |
+
 ## Commit Coverage
 
 This refresh intentionally references each local commit in the post-outcome wave:
@@ -259,3 +288,6 @@ This post-`0350f4a4a` refresh references `0a2204b59`, `2bee2d918`, and
 
 This post-`0d2111b18` refresh references `f2c3dc1ea`, `9b61442c4`, and
 `2fb0664e0`.
+
+This post-`2fb0664e0` refresh references `34411837b`, `c36b89616`,
+`b4f3a295f`, and `6efdaf8f9`.
