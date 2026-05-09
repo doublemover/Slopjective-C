@@ -40,9 +40,9 @@ real implementation exists.
   - `docs/runbooks/objc3c_public_command_surface.md`
 - native compiler/runtime tooling entrypoints:
   - `native/objc3c/src/tools/objc3c_frontend_c_api_runner.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
-  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/tools/objc3c_frontend_c_api_runner_*.{h,cpp}`
+  - `native/objc3c/src/runtime/{classes,dispatch,images,selectors,state}/`
+  - `native/objc3c/src/artifacts/`
 - native build and package wiring:
   - `npm run objc3c -- build-native-binaries`
   - `npm run objc3c -- package-runnable-toolchain`

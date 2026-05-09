@@ -44,16 +44,18 @@ The current bottleneck map is:
 
 - startup registration:
   - `objc3_runtime_register_image`
-  - `TryWalkRegistrationTableUnlocked`
-  - `RebuildRealizedClassGraphUnlocked`
-  - `SeedDispatchIntentFastPathCacheUnlocked`
+  - `native/objc3c/src/runtime/images/registration.{h,cpp}`
+  - `native/objc3c/src/runtime/classes/class_graph.{h,cpp}`
+  - `native/objc3c/src/runtime/dispatch/method_cache.{h,cpp}`
 - selector lookup and dispatch:
   - `LookupSelectorUnlocked`
-  - `MaterializeSelectorLookupEntryUnlocked`
-  - `ResolveMethodSlowPathUnlocked`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/dispatch/`
   - `objc3_runtime_dispatch_i32`
 - reflection and ownership:
-  - `FindRuntimePropertyAccessorByNameUnlocked`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
   - `objc3_runtime_copy_property_entry_for_testing`
   - `objc3_runtime_copy_object_model_query_state_for_testing`
   - `objc3_runtime_bind_current_property_context_for_testing`
@@ -98,8 +100,11 @@ Disallowed optimization moves:
 
 - runtime library:
   - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/images/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
   - `native/objc3c/src/runtime/ARCHITECTURE.md`
 - compile/build/runtime harness:
   - `npm run objc3c -- build-native-binaries`

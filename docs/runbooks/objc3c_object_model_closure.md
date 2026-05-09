@@ -54,11 +54,15 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - lowering and manifests:
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/lower/objc3_lowering_contract.h`
-  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/ir/`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/artifacts/`
 - acceptance and public workflow:
   - `npm run objc3c -- test-runtime-acceptance-fast`
   - `npm run objc3c -- validate-object-model-conformance`

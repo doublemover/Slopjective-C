@@ -55,14 +55,19 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/images/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - lowering and IR:
-  - `native/objc3c/src/lower/objc3_lowering_contract.h`
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/ir/`
 - proof and provenance:
   - `npm run objc3c -- compile-objc3c`
   - `npm run objc3c -- test-execution-replay`
-  - `scripts/shared_compiler_runtime_acceptance_harness.py`
+  - package bridge: `npm run objc3c -- <action>`
 - claims:
   - `docs/objc3c-native.md`
   - `tests/tooling/runtime/README.md`

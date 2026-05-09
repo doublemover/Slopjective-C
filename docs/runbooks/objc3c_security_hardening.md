@@ -79,9 +79,9 @@ Security claims must stay narrower than the evidence:
 
 Macro trust currently terminates in the checked-in compiler and runtime surfaces:
 
-- `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-- `native/objc3c/src/pipeline/objc3_frontend_pipeline.cpp`
-- `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+- `native/objc3c/src/sema/`
+- `native/objc3c/src/pipeline/`
+- `native/objc3c/src/artifacts/`
 - `native/objc3c/src/io/objc3_process.cpp`
 - `npm run objc3c -- test-runtime-acceptance-fast`
 - `tests/tooling/fixtures/native/macro_safety_sandbox_positive.objc3`

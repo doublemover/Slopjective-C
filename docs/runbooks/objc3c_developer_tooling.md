@@ -48,14 +48,12 @@ anchors for those actions, not separate current-facing commands.
   - `package.json`
   - `docs/runbooks/objc3c_public_command_surface.md`
 - runtime inspection and debug-state implementation:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/{classes,dispatch,images,selectors,state,public}/`
   - `native/objc3c/src/io/objc3_process.cpp`
-  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/artifacts/`
 - runtime/debug ABI and contract emitters:
-  - `native/objc3c/src/lower/objc3_lowering_contract.cpp`
-  - `native/objc3c/src/lower/objc3_lowering_contract.h`
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/ir/`
 - live validation and parity paths:
   - `npm run objc3c -- test-capability-routed-source-parity`
   - `npm run objc3c -- test-runtime-acceptance-fast`
@@ -265,7 +263,7 @@ statement debugger.
 
 ## Editor Protocol And Debug Artifact Contract
 
-the checked-in developer-tooling surface must publish one machine-owned editor tooling surface instead of
+The checked-in developer-tooling surface must publish one machine-owned editor tooling surface instead of
 scattering separate editor-only payloads across ad hoc scripts.
 
 The canonical generated surface must group:

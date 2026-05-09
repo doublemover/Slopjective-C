@@ -86,12 +86,16 @@ Follow-on tracks:
 Authoritative live surfaces:
 
 - runtime:
-  - `native/objc3c/src/runtime/objc3_runtime.cpp`
-  - `native/objc3c/src/runtime/objc3_runtime_bootstrap_internal.h`
+  - `native/objc3c/src/runtime/classes/`
+  - `native/objc3c/src/runtime/dispatch/`
+  - `native/objc3c/src/runtime/selectors/`
+  - `native/objc3c/src/runtime/state/`
+  - `native/objc3c/src/runtime/public/objc3_runtime_api.h`
 - sema and lowering:
-  - `native/objc3c/src/sema/objc3_semantic_passes.cpp`
-  - `native/objc3c/src/ir/objc3_ir_emitter.cpp`
-  - `native/objc3c/src/artifacts/objc3_frontend_artifacts.cpp`
+  - `native/objc3c/src/sema/`
+  - `native/objc3c/src/lower/contracts/`
+  - `native/objc3c/src/ir/`
+  - `native/objc3c/src/artifacts/`
   - `native/objc3c/src/pipeline/objc3_runtime_import_surface.cpp`
 - acceptance and public workflow:
   - `npm run objc3c -- test-runtime-acceptance-concurrency`
