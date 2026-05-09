@@ -63,6 +63,35 @@ int CopyRuntimeImageWalkStateForTesting(
   return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
 }
 
+int CopyRuntimeRegistrationStateForTesting(
+    objc3_runtime_registration_state_snapshot *snapshot) {
+  if (snapshot == nullptr) {
+    return OBJC3_RUNTIME_REGISTRATION_STATUS_INVALID_DESCRIPTOR;
+  }
+
+  RuntimeState &state = ProcessRuntimeState();
+  std::lock_guard<std::mutex> lock(state.mutex);
+  snapshot->registered_image_count = state.registered_image_count;
+  snapshot->registered_descriptor_total = state.registered_descriptor_total;
+  snapshot->next_expected_registration_order_ordinal =
+      state.next_expected_registration_order_ordinal;
+  snapshot->last_successful_registration_order_ordinal =
+      state.last_successful_registration_order_ordinal;
+  snapshot->last_registration_status = state.last_registration_status;
+  (void)RuntimeCStringSnapshotOwnershipModel();
+  snapshot->last_registered_module_name =
+      BorrowRuntimeCString(state.last_registered_module_name);
+  snapshot->last_registered_translation_unit_identity_key =
+      BorrowRuntimeCString(state.last_registered_translation_unit_identity_key);
+  snapshot->last_rejected_module_name =
+      BorrowRuntimeCString(state.last_rejected_module_name);
+  snapshot->last_rejected_translation_unit_identity_key =
+      BorrowRuntimeCString(state.last_rejected_translation_unit_identity_key);
+  snapshot->last_rejected_registration_order_ordinal =
+      state.last_rejected_registration_order_ordinal;
+  return OBJC3_RUNTIME_REGISTRATION_STATUS_OK;
+}
+
 int CopyRuntimeResetReplayStateForTesting(
     objc3_runtime_reset_replay_state_snapshot *snapshot) {
   if (snapshot == nullptr) {
@@ -91,6 +120,11 @@ int CopyRuntimeResetReplayStateForTesting(
 extern "C" int objc3_runtime_copy_image_walk_state_for_testing(
     objc3_runtime_image_walk_state_snapshot *snapshot) {
   return objc3c::runtime::CopyRuntimeImageWalkStateForTesting(snapshot);
+}
+
+extern "C" int objc3_runtime_copy_registration_state_for_testing(
+    objc3_runtime_registration_state_snapshot *snapshot) {
+  return objc3c::runtime::CopyRuntimeRegistrationStateForTesting(snapshot);
 }
 
 extern "C" int objc3_runtime_copy_reset_replay_state_for_testing(
