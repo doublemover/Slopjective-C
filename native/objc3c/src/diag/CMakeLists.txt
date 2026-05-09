@@ -10,7 +10,10 @@ add_library(objc3c_diag STATIC
   objc3_diag_render_invalid.cpp
   objc3_diag_render_unchecked.cpp
   objc3_diag_route.cpp
-  objc3_diag_severity.cpp
+  objc3_diag_severity_failure.cpp
+  objc3_diag_severity_parse.cpp
+  objc3_diag_severity_rank.cpp
+  objc3_diag_severity_spelling.cpp
   objc3_diag_sink_emit_helpers.cpp
   objc3_diag_sink_methods.cpp
   objc3_diag_sort_key.cpp
