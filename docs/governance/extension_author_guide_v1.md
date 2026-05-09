@@ -9,7 +9,7 @@ Primary references:
 - `templates/experimental_extension_proposal.md` (`C-03` intake contract)
 - `templates/vendor_extension_conformance_claim.md` (`C-08` declaration contract)
 - `scripts/objc3c_shared/schema_registry.py` plus `docs/support/capability_matrix.md` and `docs/support/evidence_map.md` (`C-11` registry/schema ownership and publication truth)
-- `docs/reference/legacy_spec_anchor_index.md#planning-issue-170-review-board-operating-model-package` (`C-10` decision publication model)
+- `spec/governance/review_board_operating_model_v1.md` plus `spec/governance/macro_derive_extension_charter_v1.md` (`C-10` board authority and decision publication model)
 - `tests/tooling/fixtures/governance_sustainability/extension_review_policy.json` (current review policy contract)
 
 Current review policy:
