@@ -111,6 +111,8 @@ add_library(${OBJC3_RUNTIME_LIBRARY_TARGET} ${OBJC3_RUNTIME_LIBRARY_KIND}
   memory/dispatch_frame_state.cpp
   memory/dispatch_frame_state.h
   memory/memory_management_snapshot.cpp
+  memory/memory_management_snapshot_fields.cpp
+  memory/memory_management_snapshot_fields.h
   memory/runtime_instance_destroy_plan.cpp
   memory/runtime_instance_destroy_plan.h
   memory/runtime_instance_lifetime.cpp
