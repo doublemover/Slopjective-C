@@ -8,6 +8,12 @@ from scripts.source_hygiene.gate_contracts import (
     REQUIRED_RESIDUE_CLASSES,
     RETIRED_ALLOWLIST_REPORT_FIELDS,
 )
+from scripts.source_hygiene.hard_cutover_gate import (
+    HARD_CUTOVER_GATE_CLI_CONTRACT_ID,
+    HARD_CUTOVER_GATE_SUMMARY_FIELDS,
+    format_gate_summary,
+    hard_cutover_gate_cli_contract_payload,
+)
 from scripts.source_hygiene.generated_reports import (
     GENERATED_TRUTH_BOUNDARY_CLAIM_POLICY,
     GENERATED_TRUTH_BOUNDARY_CONTRACT_ID,
@@ -670,6 +676,27 @@ def test_hard_cutover_report_matches_schema_shape(tmp_path: Path) -> None:
     assert [line.split(":", 1)[0] for line in text.splitlines()[:5]] == list(
         REPORT_SUMMARY_FIELDS
     )
+
+
+def test_hard_cutover_gate_cli_summary_declares_owner_contract(tmp_path: Path) -> None:
+    report = build_report(root=tmp_path, scan_roots=("native/objc3c",), excludes=())
+    contract = hard_cutover_gate_cli_contract_payload()
+    summary = format_gate_summary(
+        report=report,
+        json_path=tmp_path / "tmp/reports/source_hygiene/hard-cutover/report.json",
+        text_path=tmp_path / "tmp/reports/source_hygiene/hard-cutover/report.txt",
+        root=tmp_path,
+    )
+
+    assert contract["contract_id"] == HARD_CUTOVER_GATE_CLI_CONTRACT_ID
+    assert contract["summary_fields"] == list(HARD_CUTOVER_GATE_SUMMARY_FIELDS)
+    assert [line.split(":", 1)[0] for line in summary] == list(
+        HARD_CUTOVER_GATE_SUMMARY_FIELDS
+    )
+    assert summary[0] == (
+        "source_hygiene_cli_contract: source-hygiene-hard-cutover-cli-v1"
+    )
+    assert summary[-1] == "generated_truth_boundary_findings: 0"
 
 
 def test_hard_cutover_gate_excludes_canonical_config_registry(tmp_path: Path) -> None:
