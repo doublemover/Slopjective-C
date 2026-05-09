@@ -15,3 +15,7 @@ provenance, while the phase owner indexes decide whether the referenced behavior
 is supported, rejected, strict-error, or absent.
 `tests/conformance/hard_cutover_fixture_boundary_contracts.json` records this
 generated-provenance-only contract beside the canonical manifest boundary.
+The larger replay tree under `tests/tooling/fixtures/objc3c` is additionally
+split by behavior owner in `tests/tooling/fixtures/objc3c/behavior_owner_splits/`
+so generated diagnostics, semantic, lowering, IR, runtime, e2e, and rejection
+provenance cannot be cited as generic generated support.

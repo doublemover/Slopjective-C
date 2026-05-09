@@ -11,6 +11,16 @@
     "positive_fixture_policy": "generated artifacts never define positive native behavior",
     "boundary_contract_index": "tests/conformance/hard_cutover_fixture_boundary_contracts.json",
     "phase_owner_contract_index": "tests/conformance/hard_cutover_behavior_phase_owner_contracts.json",
+    "behavior_phase_split_indexes": [
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/index.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/parser.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/sema.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/lowering.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/ir.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/runtime.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/e2e.json",
+      "tests/tooling/fixtures/objc3c/behavior_owner_splits/canonical_rejection.json"
+    ],
     "phase_support_claim_authority": false
   },
   "fixtures": [

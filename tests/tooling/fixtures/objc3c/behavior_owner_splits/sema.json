@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-replay-behavior-owner-split",
+  "owner_phase": "sema",
+  "source_root": "tests/tooling/fixtures/objc3c",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "semantic replay provenance covers type, nullability, ownership, generics, actor/sendability, diagnostics, and unsafe-pointer contract artifacts",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "validation_id_class_sel_object_pointer_typecheck_contract/**",
+    "validation_protocol_qualified_object_type_contract/**",
+    "validation_nullability_flow_warning_precision_contract/**",
+    "validation_lightweight_generics_constraints_contract/**",
+    "validation_ownership_qualifier_contract/**",
+    "validation_actor_isolation_sendability_contract/**",
+    "validation_unsafe_pointer_contract/**",
+    "validation_variance_bridge_cast_contract/**",
+    "validation_arc_diagnostics_fixit_contract/**"
+  ],
+  "canonical_anchor": "tests/native/sema",
+  "retired_surface_rule": "unsupported ownership, nullability, generics, and actor/sendability claims are semantic rejection provenance unless canonical sema fixtures say otherwise"
+}

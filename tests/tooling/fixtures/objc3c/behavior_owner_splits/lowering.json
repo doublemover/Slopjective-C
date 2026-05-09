@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "catalog": "objc3c-generated-replay-behavior-owner-split",
+  "owner_phase": "lowering",
+  "source_root": "tests/tooling/fixtures/objc3c",
+  "source_manifest": "tests/fixtures/generated/manifest.json",
+  "support_boundary": "lowering replay provenance covers canonical lowering handoff, ABI lowering, cleanup emission, message-send lowering, and strict link-error contract artifacts",
+  "phase_support_claim_authority": false,
+  "selectors": [
+    "validation_await_lowering_suspension_state_contract/**",
+    "validation_message_send_selector_lowering_contract/**",
+    "validation_result_like_lowering_contract/**",
+    "validation_throws_propagation_contract/**",
+    "validation_ns_error_bridging_contract/**",
+    "validation_unwind_safety_cleanup_emission_contract/**",
+    "validation_block_literal_capture_contract/**",
+    "validation_block_storage_escape_contract/**",
+    "validation_autoreleasepool_scope_contract/**"
+  ],
+  "canonical_anchor": "tests/native/lowering",
+  "retired_surface_rule": "runtime dispatch fallback and alternate ABI lowering paths are strict-error or rejection provenance"
+}
