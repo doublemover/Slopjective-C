@@ -2,18 +2,19 @@
 
 from __future__ import annotations
 
+from .action_catalog_performance_core_benchmarks import (
+    PERFORMANCE_CORE_BENCHMARK_ACTION_SPECS,
+)
+from .action_catalog_performance_packaging import PERFORMANCE_PACKAGING_ACTION_SPECS
+from .action_catalog_performance_runtime import PERFORMANCE_RUNTIME_ACTION_SPECS
+from .action_catalog_performance_throughput import PERFORMANCE_THROUGHPUT_ACTION_SPECS
 from .action_spec import ActionSpec
 
 PERFORMANCE_BENCHMARK_ACTION_SPECS: dict[str, ActionSpec] = {
-    "benchmark-runtime-inspector": ActionSpec("benchmark-runtime-inspector", "measure the live runtime-inspector and capability-explorer workflow and write a reproducible benchmark report", "python:scripts/benchmark_objc3c_runtime_inspector.py", validation_tier="repo", guarantee_owner="runtime inspector timing and capability comparisons stay tied to executable public actions and real emitted artifacts", pass_through_args=True),
-    "benchmark-performance": ActionSpec("benchmark-performance", "measure the checked-in objc3 showcase workloads and write reproducible compile/runtime telemetry packets", "python:scripts/benchmark_objc3c_performance.py", validation_tier="repo", guarantee_owner="objc3 benchmark telemetry stays tied to checked-in showcase workloads and raw sample packets", pass_through_args=True),
-    "benchmark-runtime-performance": ActionSpec("benchmark-runtime-performance", "measure the live runtime startup dispatch reflection and ownership hot paths and write reproducible telemetry packets", "python:scripts/benchmark_objc3c_runtime_performance.py", validation_tier="repo", guarantee_owner="runtime hot-path telemetry stays tied to the live runtime acceptance probes and counter snapshots", pass_through_args=True),
-    "benchmark-compiler-throughput": ActionSpec("benchmark-compiler-throughput", "measure direct native compile throughput, wrapper cache proof, cache invalidation, macro-host cache publication, and docs-generation cost", "pwsh:scripts/check_objc3c_native_perf_budget.ps1", validation_tier="repo", guarantee_owner="compiler-throughput telemetry stays tied to the live native compiler executable, wrapper cache contract, macro-host artifact path, and checked-in docs generators", pass_through_args=True),
-    "validate-compiler-throughput": ActionSpec("validate-compiler-throughput", "run the integrated compiler-throughput benchmark and cache-proof validation flow", "python:scripts/check_objc3c_compiler_throughput_integration.py", validation_tier="repo", guarantee_owner="compiler-throughput benchmark outputs stay executable across the live native compiler, wrapper cache proof, macro-host artifact path, and docs generators"),
-    "validate-runnable-compiler-throughput": ActionSpec("validate-runnable-compiler-throughput", "validate the staged runnable compiler-throughput surface end to end from the package root", "python:scripts/check_objc3c_runnable_compiler_throughput_end_to_end.py", validation_tier="full", guarantee_owner="packaged compiler-throughput fixtures, contracts, benchmark script, and command surfaces stay reproducible from the staged runnable toolchain bundle"),
-    "validate-runtime-performance": ActionSpec("validate-runtime-performance", "run the integrated runtime hot-path benchmark and packaged validation flow", "python:scripts/check_objc3c_runtime_performance_integration.py", validation_tier="repo", guarantee_owner="runtime hot-path benchmark outputs stay executable across the live runtime probes and the staged runnable bundle"),
-    "validate-runnable-runtime-performance": ActionSpec("validate-runnable-runtime-performance", "validate the staged runnable runtime-performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_runtime_performance_end_to_end.py", validation_tier="full", guarantee_owner="packaged runtime-performance fixtures, contracts, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
-    "benchmark-comparative-baselines": ActionSpec("benchmark-comparative-baselines", "measure the checked-in ObjC2 Swift and C++ baseline workloads and write reproducible comparison telemetry packets", "python:scripts/run_objc3c_comparative_baselines.py", validation_tier="repo", guarantee_owner="comparative baseline telemetry stays tied to checked-in language fixtures and recorded availability states", pass_through_args=True),
-    "validate-runnable-performance": ActionSpec("validate-runnable-performance", "validate the staged runnable toolchain performance surface end to end from the package root", "python:scripts/check_objc3c_runnable_performance_end_to_end.py", validation_tier="full", guarantee_owner="packaged benchmark fixtures, schemas, and benchmark command surfaces stay reproducible from the staged runnable toolchain bundle"),
-    "validate-performance-foundation": ActionSpec("validate-performance-foundation", "run the integrated benchmark and comparative baseline validation flow", "python:scripts/check_objc3c_performance_integration.py", validation_tier="repo", guarantee_owner="benchmark foundations stay executable across live objc3 workloads, comparative baselines, and the staged runnable bundle"),
+    **PERFORMANCE_CORE_BENCHMARK_ACTION_SPECS,
+    **PERFORMANCE_RUNTIME_ACTION_SPECS,
+    **PERFORMANCE_THROUGHPUT_ACTION_SPECS,
+    **PERFORMANCE_PACKAGING_ACTION_SPECS,
 }
+
+__all__ = ["PERFORMANCE_BENCHMARK_ACTION_SPECS"]
