@@ -239,7 +239,7 @@ def write_compile_output_provenance(
         for entry in artifact_entries
     ]
     artifact_set_digest = sha256_text_hex("\n".join(artifact_digest_lines))
-    driver_script = Path(__file__).resolve().with_name("fixture_compilation.py")
+    driver_script = Path(__file__).resolve().with_name("fixture_compile_runner.py")
     payload = {
         "contract_id": COMPILE_PROVENANCE_CONTRACT_ID,
         "provenance_artifact": provenance_file_name,
